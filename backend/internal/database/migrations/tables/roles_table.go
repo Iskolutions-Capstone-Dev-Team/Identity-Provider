@@ -1,0 +1,30 @@
+package tables
+
+import "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database/migrations"
+
+var RolesMigration = migrations.TableMigration{
+	TableName: "roles",
+	Steps: []migrations.MigrationStep{
+		{
+			ID: "create-roles-table",
+			SQL: `CREATE TABLE IF NOT EXISTS roles (
+				id INT AUTO_INCREMENT PRIMARY KEY,
+				role_name VARCHAR(50) NOT NULL UNIQUE,
+				description VARCHAR(255),
+				created_at TIMESTAMP DEFAULT NOW(),
+				updated_at TIMESTAMP DEFAULT NOW() ON UPDATE NOW(),
+				deleted_at TIMESTAMP NULL
+			);`,
+		},
+		{
+			ID: "insert-admin-role",
+			SQL: `
+				INSERT IGNORE INTO roles (role_name, description)
+				VALUES (
+					'idp:superadmin', 
+					'Admin who oversees the whole Identity Provider'
+				);
+			`,
+		},
+	},
+}
