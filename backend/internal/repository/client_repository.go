@@ -21,7 +21,7 @@ type ClientRepository struct {
 func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 	var client models.Client
 	query := `
-        SELECT id, client_name, abbreviation, description, 
+        SELECT id, client_name, tag, description, 
                image_location, base_url, redirect_uri, logout_uri, updated_at
         FROM clients 
         WHERE id = ? AND deleted_at IS NULL`
@@ -42,7 +42,7 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 func (r *ClientRepository) ListClients(limit, offset int, keyword string) ([]models.Client, error) {
 	var clients []models.Client
 	query := `
-        SELECT id, client_name, abbreviation, description, image_location 
+        SELECT id, client_name, tag, description, image_location 
         FROM clients 
         WHERE deleted_at IS NULL 
         LIMIT ? OFFSET ?`
@@ -68,10 +68,10 @@ func (r *ClientRepository) CreateClient(
 	defer tx.Rollback()
 
 	// 1. Insert Client
-	q1 := `INSERT INTO clients (id, client_name, abbreviation, client_secret, 
+	q1 := `INSERT INTO clients (id, client_name, tag, client_secret, 
                base_url, redirect_uri, logout_uri, description, image_location) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err = tx.Exec(q1, client.ID, client.ClientName, client.Abbreviation,
+	_, err = tx.Exec(q1, client.ID, client.ClientName, client.Tag,
 		client.ClientSecret, client.BaseUrl, client.RedirectUri,
 		client.LogoutUri, client.Description, client.ImageLocation)
 	if err != nil {
@@ -89,7 +89,7 @@ func (r *ClientRepository) CreateClient(
 	return tx.Commit()
 }
 
-// UpdateClient modifies safe fields only. Abbreviation and Secret are locked.
+// UpdateClient modifies safe fields only. tag and Secret are locked.
 // @Summary Update Client
 // @ID update-client
 func (r *ClientRepository) UpdateClient(c *models.Client) error {
@@ -122,7 +122,7 @@ func (r *ClientRepository) GetGrantTypes(clientID []byte) ([]string, error) {
 
 func (r *ClientRepository) GetClientRoles(abbr string) ([]string, error) {
 	var roles []string
-	// Using LIKE to find all roles prefixed with the abbreviation
+	// Using LIKE to find all roles prefixed with the tag
 	query := `SELECT role_name FROM roles WHERE role_name LIKE ?`
 	err := r.db.Select(&roles, query, abbr+":%")
 	return roles, err
