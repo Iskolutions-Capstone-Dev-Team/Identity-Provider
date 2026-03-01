@@ -1,2 +1,15 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+@keyframes floatLogo {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.float-logo {
+  animation: floatLogo 2.5s ease-in-out infinite;
+}
