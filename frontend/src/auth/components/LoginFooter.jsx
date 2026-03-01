@@ -46,7 +46,7 @@ export default function LoginFooter() {
       </div>
 
       <div className="mt-6 flex justify-center gap-2 text-[.46rem] sm:text-[.85rem] opacity-90 text-center">
-        <a href="#" className="hover:text-yellow-400 font-bold">Privacy Policy</a>
+        <a href="https://www.pup.edu.ph/privacy/" className="hover:text-yellow-400 font-bold">Privacy Policy</a>
         <span>•</span>
         <a href="#" className="hover:text-yellow-400 font-bold">Terms of Service</a>
         <span>•</span>
