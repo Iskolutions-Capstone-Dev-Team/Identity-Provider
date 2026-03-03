@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/auth"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/initializers"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
 )
 
 // ProcessAndUploadIcon handles validation, seeking, and the S3 transfer
@@ -17,6 +17,7 @@ func ProcessAndUploadIcon(
 	fileName string,
 	fileReader io.ReadSeeker,
 	size int64,
+	storage *storage.S3Provider,
 ) (string, error) {
 	// 1. Validate Header
 	header := make([]byte, 512)
@@ -40,7 +41,7 @@ func ProcessAndUploadIcon(
 	finalPath := fmt.Sprintf("icons/%s-%s", tag, fileName)
 
 	// 5. Execute Upload (S3Provider handles the 'Replace' logic naturally)
-	err := initializers.Storage.UploadOrReplace(
+	err := storage.UploadOrReplace(
 		ctx,
 		finalPath,
 		fileReader,
