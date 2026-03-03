@@ -20,7 +20,9 @@ func InitializeHandlers(db *sqlx.DB) *v1.Handlers {
 		AuthHandler: &v1.AuthHandler{
 			Repo:        authRepo,
 			SessionRepo: sessionRepo,
+			ClientRepo:  clientRepo,
 			PrivateKey:  PrivKey,
+			PublicKey:   PubKey,
 		},
 		ClientHandler: &v1.ClientHandler{
 			Repo:       clientRepo,
