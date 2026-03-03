@@ -17,7 +17,7 @@ var RolesMigration = migrations.TableMigration{
 			);`,
 		},
 		{
-			ID: "insert-admin-role",
+			ID: "insert-superadmin-role",
 			SQL: `
 				INSERT IGNORE INTO roles (role_name, description)
 				VALUES (
@@ -25,6 +25,17 @@ var RolesMigration = migrations.TableMigration{
 					'Admin who oversees the whole Identity Provider'
 				);
 			`,
+		},
+		{
+			ID: "insert-admin-role",
+			SQL: `
+				INSERT IGNORE INTO roles (role_name, description)
+				VALUES (
+					'idp:admin', 
+					'Admin who has some rights to oversee the IdP'
+				);
+			`,
+
 		},
 	},
 }
