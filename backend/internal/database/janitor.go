@@ -14,7 +14,7 @@ func StartJanitor(ctx context.Context, db *sqlx.DB, interval time.Duration) {
 
 	go func() {
 		defer ticker.Stop()
-		log.Println("[Janitor] %s: Initialized cleanup routine", "Startup")
+		log.Printf("[Janitor] %s: Initialized cleanup routine", "Startup")
 
 		for {
 			select {
@@ -24,7 +24,7 @@ func StartJanitor(ctx context.Context, db *sqlx.DB, interval time.Duration) {
 				cleanExpiredRecords(db, "refresh_tokens")
 				cleanExpiredRecords(db, "idp_sessions")
 			case <-ctx.Done():
-				log.Println("[Janitor] %s: Shutting down", "Signal Received")
+				log.Printf("[Janitor] %s: Shutting down", "Signal Received")
 				return
 			}
 		}
