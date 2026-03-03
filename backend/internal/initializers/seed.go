@@ -10,6 +10,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 )
 
 /**
@@ -82,5 +83,27 @@ func MigrateAndSeed() {
 		log.Printf("[Migrate] Client seeding failed: %v", err)
 	} else {
 		fmt.Printf("Client %s registered successfully.\n", cName)
+	}
+}
+
+func GrantDeleteOnTable(tableName string, db *sqlx.DB) {
+	databaseName := os.Getenv("MYSQL_DB_NAME")
+	appUser := os.Getenv("APP_USER")
+	
+	query := fmt.Sprintf(
+		"GRANT DELETE ON `%s`.`%s` TO '%s'@'%%'",
+		databaseName,
+		tableName,
+		appUser,
+	)
+
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Fatalf("[GrantDeleteOnTable] {Database Query}: %v", err)
+	}
+
+	_, err = db.Exec("FLUSH PRIVILEGES")
+	if err != nil {
+		log.Fatalf("[GrantDeleteOnTable] {Flush Privileges}: %v", err)
 	}
 }
