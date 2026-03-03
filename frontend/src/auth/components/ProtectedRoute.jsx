@@ -7,18 +7,10 @@ export default function ProtectedRoute({ children }) {
 
   useEffect(() => {
     const validate = async () => {
-      const token = localStorage.getItem("access_token");
-
-      if (!token) {
-        setAuthState("denied");
-        return;
-      }
-
       try {
         await authService.checkSession();
         setAuthState("allowed");
-      } catch (err) {
-        localStorage.removeItem("access_token");
+      } catch {
         setAuthState("denied");
       }
     };
