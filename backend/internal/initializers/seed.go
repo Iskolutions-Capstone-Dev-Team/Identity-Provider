@@ -118,7 +118,7 @@ func grantDeleteOnTable(tableName string, db *sqlx.DB) error {
 	appUser := os.Getenv("APP_USER")
 	
 	query := fmt.Sprintf(
-		"GRANT DELETE ON `%s`.`%s` TO '%s'@'%%'",
+		"GRANT DELETE ON `%s`.`%s` TO '%s'@'%%'; FLUSH PRIVILEGES;",
 		databaseName,
 		tableName,
 		appUser,
@@ -126,13 +126,7 @@ func grantDeleteOnTable(tableName string, db *sqlx.DB) error {
 
 	_, err := db.Exec(query)
 	if err != nil {
-		return fmt.Errorf("[GrantDeleteOnTable] {Database Query}: %v", err)
+		return fmt.Errorf("[GrantDeleteOnTable] {Query}: %v", err)
 	}
-
-	_, err = db.Exec("FLUSH PRIVILEGES")
-	if err != nil {
-		return fmt.Errorf("[GrantDeleteOnTable] {Flush Privileges}: %v", err)
-	}
-
 	return nil
 }
