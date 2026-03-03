@@ -27,6 +27,12 @@ services:
       dockerfile: Dockerfile
     container_name: idp_frontend
     restart: always
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      VITE_CLIENT_ID: ${VITE_CLIENT_ID}
+      VITE_REDIRECT_URI: ${VITE_REDIRECT_URI}
+      VITE_CLIENT_SECRET: ${VITE_CLIENT_SECRET}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}
     ports:
       - "5173:5173"
     networks:
