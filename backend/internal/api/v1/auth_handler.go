@@ -2,8 +2,10 @@ package v1
 
 import (
 	"crypto/rsa"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/auth"
@@ -17,7 +19,67 @@ import (
 type AuthHandler struct {
 	Repo        *repository.AuthCodeRepository
 	SessionRepo *repository.SessionRepository
+	ClientRepo  *repository.ClientRepository
 	PrivateKey  *rsa.PrivateKey
+	PublicKey   *rsa.PublicKey
+}
+
+func (h *AuthHandler) Authorize(c *gin.Context) {
+	loginUIPath := os.Getenv("LOGIN_UI_PATH")
+	clientID := c.Query("client_id")
+	if clientID == "" {
+		log.Print("[Authorize] No client_id given")
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "no client id given"},
+		)
+	}
+
+	clientIDBytes, err := uuid.Parse(clientID)
+	if err != nil {
+		log.Printf("[Authorize] failed to parse client id: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "parse failed"},
+		)
+		return
+	}
+
+	accessTokenString, err := c.Cookie(ACCESS_TOKEN_NAME)
+	if err != nil {
+		log.Print("[Authorize] No cookie found, redirecting to login")
+		c.Redirect(http.StatusFound, loginUIPath)
+		return
+	}
+
+	isValid, err := auth.ValidateToken(accessTokenString, h.PublicKey)
+	if !isValid || err != nil {
+		log.Printf("[Authorize] Validation Error: %v", err)
+		c.Redirect(http.StatusFound, loginUIPath)
+		return
+	}
+
+	code, err := auth.GenerateAuthorizationCode()
+	if err != nil {
+		log.Printf("[LoginAndAuthorize] Code Generation Error: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "internal error"},
+		)
+		return
+	}
+
+	client, err := h.ClientRepo.GetByID(clientIDBytes[:])
+	if err != nil {
+		log.Printf("[Authorize] client with id %s not found: %v", clientID, err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "id not found"})
+		return
+	}
+
+	log.Print("[Authorize] Token found, redirecting...")
+	redirectURL := fmt.Sprintf("%s?code=%s", client.RedirectUri, code)
+	c.Redirect(http.StatusFound, redirectURL)
+
 }
 
 // LoginAndAuthorize verifies credentials and issues an authorization code
@@ -39,7 +101,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[LoginAndAuthorize] Bind JSON Error: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "Invalid request format"},
 		)
 		return
@@ -49,17 +111,19 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] User Lookup Error: %s", req.Email)
 		c.JSON(
-			http.StatusUnauthorized, 
+			http.StatusUnauthorized,
 			dto.ErrorResponse{Error: "invalid credentials"},
 		)
 		return
 	}
 
 	if err := auth.CompareSecret(storedHash, req.Password); err != nil {
-		log.Printf("[LoginAndAuthorize] Password Verification Failed: %s",
-			req.Email)
+		log.Printf(
+			"[LoginAndAuthorize] Password Verification Failed: %s",
+			req.Email,
+		)
 		c.JSON(
-			http.StatusUnauthorized, 
+			http.StatusUnauthorized,
 			dto.ErrorResponse{Error: "invalid credentials"},
 		)
 		return
@@ -69,7 +133,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] Code Generation Error: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "internal error"},
 		)
 		return
@@ -79,7 +143,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] Client ID Parse Error: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "invalid client_id"},
 		)
 		return
@@ -110,7 +174,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] Database Store Code Error: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "database error"},
 		)
 		return
@@ -130,7 +194,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	if err := h.SessionRepo.Create(newSession); err != nil {
 		log.Printf("[LoginAndAuthorize] Database Session Create Error: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "session error"},
 		)
 		return
@@ -169,7 +233,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	if err := h.Repo.RevokeTokens(session.UserId); err != nil {
 		log.Printf("[Logout] Token Revocation Error: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "logout failed"},
 		)
 		return
