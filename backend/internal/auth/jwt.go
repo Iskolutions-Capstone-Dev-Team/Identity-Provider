@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -41,4 +42,24 @@ func GenerateToken(privateKey *rsa.PrivateKey,
 	}
 
 	return signedToken, nil
+}
+
+func ValidateToken(token string, pubKey *rsa.PublicKey,) (bool, error) {
+	parsedToken, err := jwt.ParseWithClaims(
+		token,
+		&models.UserClaims{},
+		func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+				return nil, fmt.Errorf("unexpected signing method")
+			}
+			return pubKey, nil
+		},
+	)
+
+	if err != nil {
+		log.Printf("[ValidateToken] Validation failed: %v", err)
+		return false, err
+	}
+
+	return parsedToken.Valid, nil
 }
