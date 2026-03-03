@@ -36,7 +36,7 @@ func MigrateAndSeed() {
 	}
 
 	privelegedTables := [...]string{
-		"authrization_codes", 
+		"authorization_codes", 
 		"refresh_tokens",
 		"user_roles",
 		"idp_sessions",
