@@ -13,9 +13,8 @@ COPY . .
 
 # Build the application with static linking for Alpine
 # Line broken to stay under 80 chars
-RUN CGO_ENABLED=0 GOOS=linux go build \
-    -o main \
-    ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -o main ./cmd/main.go
 
 # Stage 2: Final runtime image
 FROM alpine:latest
@@ -23,10 +22,10 @@ FROM alpine:latest
 # Install CA certificates for HTTPS/S3 connections
 RUN apk --no-cache add ca-certificates
 
-WORKDIR /root/
+WORKDIR /app
 
 # Copy only the compiled binary from the builder stage
-COPY --from=builder /app/idp_backend .
+COPY --from=builder /app/main .
 
 # Copy the .env file if your app loads it directly
 COPY --from=builder /app/.env . 
