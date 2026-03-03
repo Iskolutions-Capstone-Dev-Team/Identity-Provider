@@ -11,6 +11,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -18,6 +19,7 @@ import (
 type ClientHandler struct {
 	Repo       *repository.ClientRepository
 	PrivateKey *rsa.PrivateKey
+	Storage    *storage.S3Provider
 }
 
 // PostClient handles POST /v1/admin/clients
@@ -48,6 +50,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 		file.Filename,
 		f,
 		file.Size,
+		h.Storage,
 	)
 	if err != nil {
 		log.Printf("[PostClient] Failed to process image: %v", err)
@@ -220,6 +223,7 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		file.Filename,
 		f,
 		file.Size,
+		h.Storage,
 	)
 	if err != nil {
 		log.Printf("[PostClient] Failed to process image: %v", err)
