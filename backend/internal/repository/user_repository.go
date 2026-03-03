@@ -12,53 +12,103 @@ type UserRepository struct {
 	db *sqlx.DB
 }
 
+type userRow struct {
+	models.User
+	RID   *int    `db:"role_id"`
+	RName *string `db:"role_name"`
+	RDesc *string `db:"role_description"`
+}
+
 // GetUserList retrieves a paginated list of non-deleted users.
 func (r *UserRepository) GetUserList(limit, offset int) ([]models.User, error) {
-	var users []models.User
-	query := `
-		SELECT id, username, first_name, middle_name, last_name,
-		       email, status, created_at, updated_at
-		FROM users
-		WHERE deleted_at IS NULL 
-		LIMIT ? OFFSET ?`
+	// 1. Fetch only the IDs for the current page
+	var ids [][]byte
+	idQuery := `SELECT id FROM users WHERE deleted_at IS NULL LIMIT ? OFFSET ?`
 
-	err := r.db.Select(&users, query, limit, offset)
+	err := r.db.Select(&ids, idQuery, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list users: %w", err)
+		return nil, fmt.Errorf("[GetUserList] ID Fetch: %w", err)
 	}
-	return users, nil
+
+	if len(ids) == 0 {
+		return []models.User{}, nil
+	}
+
+	// 2. Fetch all data + roles for ONLY those specific IDs
+	// sqlx.In handles the IN (?) expansion for the slice of []byte
+	fullQuery, args, err := sqlx.In(`
+        SELECT u.id, u.username, u.first_name, u.middle_name, u.last_name,
+               u.email, u.status, u.created_at, u.updated_at, 
+               r.id AS role_id, r.name AS role_name, 
+               r.description AS role_description
+        FROM users u
+        LEFT JOIN user_roles ur ON ur.user_id = u.id
+        LEFT JOIN roles r ON ur.role_id = r.id
+        WHERE u.id IN (?) AND u.deleted_at IS NULL
+        ORDER BY u.created_at DESC`, ids)
+	if err != nil {
+		return nil, fmt.Errorf("[GetUserList] Query Expansion: %w", err)
+	}
+
+	fullQuery = r.db.Rebind(fullQuery)
+
+	var rows []userRow
+	err = r.db.Select(&rows, fullQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("[GetUserList] Database Join: %w", err)
+	}
+
+	return r.groupRows(rows, ids), nil
 }
 
-// GetUserByEmail finds a user by email, including the hash for auth logic.
+// GetUserByEmail finds a user by email, including the hash and roles.
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
-	var user models.User
-	query := `
-		SELECT id, username, first_name, middle_name, last_name, 
-		       email, password_hash, status, created_at, updated_at
-		FROM users
-		WHERE email = ? AND deleted_at IS NULL`
+    var rows []userRow
+    query := `
+        SELECT u.id, u.username, u.first_name, u.middle_name, u.last_name,
+               u.email, u.password_hash, u.status, u.created_at, 
+               u.updated_at, r.id AS role_id, r.name AS role_name, 
+               r.description AS role_description
+        FROM users u
+        LEFT JOIN user_roles ur ON ur.user_id = u.id
+        LEFT JOIN roles r ON ur.role_id = r.id
+        WHERE u.email = ? AND u.deleted_at IS NULL`
 
-	err := r.db.Get(&user, query, email)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+    err := r.db.Select(&rows, query, email)
+    if err != nil {
+        return nil, fmt.Errorf("[GetUserByEmail] Database Query: %w", err)
+    }
+
+    if len(rows) == 0 {
+        return nil, nil
+    }
+
+    return r.mapSingleUser(rows), nil
 }
 
-// GetUserById retrieves a specific user by binary UUID.
+// GetUserById retrieves a specific user by binary UUID including roles.
 func (r *UserRepository) GetUserById(id []byte) (*models.User, error) {
-	var user models.User
-	query := `
-		SELECT id, username, first_name, middle_name, last_name, 
-		       email, status, created_at, updated_at
-		FROM users
-		WHERE id = ? AND deleted_at IS NULL`
+    var rows []userRow
+    query := `
+        SELECT u.id, u.username, u.first_name, u.middle_name, u.last_name,
+               u.email, u.status, u.created_at, u.updated_at, 
+               r.id AS role_id, r.name AS role_name, 
+               r.description AS role_description
+        FROM users u
+        LEFT JOIN user_roles ur ON ur.user_id = u.id
+        LEFT JOIN roles r ON ur.role_id = r.id
+        WHERE u.id = ? AND u.deleted_at IS NULL`
 
-	err := r.db.Get(&user, query, id)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+    err := r.db.Select(&rows, query, id)
+    if err != nil {
+        return nil, fmt.Errorf("[GetUserById] Database Query: %w", err)
+    }
+
+    if len(rows) == 0 {
+        return nil, nil
+    }
+
+    return r.mapSingleUser(rows), nil
 }
 
 // CreateUser executes a stored procedure to handle User and Roles atomically.
@@ -176,6 +226,67 @@ func (r *UserRepository) CountUsers() (int, error) {
 	query := `SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`
 	err := r.db.Get(&count, query)
 	return count, err
+}
+
+func (r *UserRepository) mapSingleUser(rows []userRow) *models.User {
+    // Initialize user using the first row's data
+    user := &models.User{
+        ID:           rows[0].ID,
+        Username:     rows[0].Username,
+        FirstName:    rows[0].FirstName,
+        MiddleName:   rows[0].MiddleName,
+        LastName:     rows[0].LastName,
+        Email:        rows[0].Email,
+        PasswordHash: rows[0].PasswordHash,
+        Status:       rows[0].Status,
+        CreatedAt:    rows[0].CreatedAt,
+        UpdatedAt:    rows[0].UpdatedAt,
+        Roles:        []models.Role{},
+    }
+
+    for _, row := range rows {
+        if row.RID != nil {
+            user.Roles = append(user.Roles, models.Role{
+                ID:          *row.RID,
+                RoleName:        *row.RName,
+                Description: *row.RDesc,
+            })
+        }
+    }
+
+    return user
+}
+
+func (r *UserRepository) groupRows(rows []userRow, ids [][]byte) []models.User {
+	userMap := make(map[string]*models.User)
+
+	for _, row := range rows {
+		idKey := string(row.ID)
+		if _, exists := userMap[idKey]; !exists {
+			userMap[idKey] = &models.User{
+				ID: row.ID, Username: row.Username, FirstName: row.FirstName,
+				MiddleName: row.MiddleName, LastName: row.LastName,
+				Email: row.Email, Status: row.Status,
+				CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+				Roles: []models.Role{},
+			}
+		}
+
+		if row.RID != nil {
+			userMap[idKey].Roles = append(userMap[idKey].Roles, models.Role{
+				ID: *row.RID, RoleName: *row.RName, Description: *row.RDesc,
+			})
+		}
+	}
+
+	// Use the original IDs slice to maintain the SQL sort order
+	result := make([]models.User, 0, len(ids))
+	for _, id := range ids {
+		if u, ok := userMap[string(id)]; ok {
+			result = append(result, *u)
+		}
+	}
+	return result
 }
 
 func NewUserRepository(db *sqlx.DB) *UserRepository {
