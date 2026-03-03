@@ -11,8 +11,8 @@ import (
 var (
 	PrivKey              *rsa.PrivateKey
 	PubKey               *rsa.PublicKey
-	PRIVATE_KEY_LOCATION = os.Getenv("PRIVATE_KEY_LOCATION")
-	PUBLIC_KEY_LOCATION  = os.Getenv("PUBLIC_KEY_LOCATION")
+	PRIVATE_KEY_LOCATION = os.Getenv("RSA_PRIVATE_KEY_PATH")
+	PUBLIC_KEY_LOCATION  = os.Getenv("RSA_PUBLIC_KEY_PATH")
 )
 
 func LoadRSAKeys() {

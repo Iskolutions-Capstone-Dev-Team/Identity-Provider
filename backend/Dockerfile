@@ -22,16 +22,11 @@ FROM alpine:latest
 # Install CA certificates for HTTPS/S3 connections
 RUN apk --no-cache add ca-certificates
 
-WORKDIR /app
-
 # Copy only the compiled binary from the builder stage
-COPY --from=builder /app/main .
-
-# Copy the .env file if your app loads it directly
-COPY --from=builder /app/.env . 
+COPY --from=builder /app/main /app/backend
 
 # Expose the port your Gin server runs on
 EXPOSE 8080
 
 # Run the binary
-CMD ["./main"]
+CMD sh -c "echo 'Starting...' && sleep 5 && ./backend -migrate"

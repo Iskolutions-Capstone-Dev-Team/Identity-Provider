@@ -15,14 +15,6 @@ mysql -u root -p"$MYSQL_ROOT_PASSWORD" <<-EOSQL
     -- General permissions for the IdP Backend
     GRANT SELECT, INSERT, UPDATE, EXECUTE ON \`${MYSQL_DB_NAME}\`.* TO '${APP_USER}'@'%';
 
-    -- Specific DELETE permissions for the Janitor cleanup task
-    GRANT DELETE ON \`${MYSQL_DB_NAME}\`.authorization_codes 
-    TO '${APP_USER}'@'%';
-    GRANT DELETE ON \`${MYSQL_DB_NAME}\`.refresh_tokens 
-    TO '${APP_USER}'@'%';
-    GRANT DELETE ON \`${MYSQL_DB_NAME}\`.idp_sessions 
-    TO '${APP_USER}'@'%';
-
     FLUSH PRIVILEGES;
 EOSQL
 
