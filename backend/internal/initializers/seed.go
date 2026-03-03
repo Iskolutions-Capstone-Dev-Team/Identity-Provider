@@ -27,6 +27,29 @@ func MigrateAndSeed() {
 	database.RunAllMigrations(adminDatabase)
 	fmt.Println("Database migration completed successfully.")
 
+	err = seedAdminUser(adminDatabase); if err != nil {
+		log.Print(err)
+	}
+
+	err = seedAppClient(adminDatabase); if err != nil {
+		log.Print(err)
+	}
+
+	privelegedTables := [...]string{
+		"authorization_codes", 
+		"refresh_tokens",
+		"user_roles",
+		"idp_sessions",
+	}
+
+	for _, tableName := range privelegedTables {
+		err = grantDeleteOnTable(tableName, adminDatabase); if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func seedAdminUser(adminDatabase *sqlx.DB) error {
 	userRepo := repository.NewUserRepository(adminDatabase)
 
 	adminEmail := os.Getenv("ADMIN_EMAIL")
@@ -43,15 +66,18 @@ func MigrateAndSeed() {
 		Username:     adminUser,
 		Email:        adminEmail,
 		PasswordHash: hashedPassword,
-		RoleString:   []string{"idp:admin"},
+		RoleString:   []string{"idp:superadmin"},
 	}
 
 	if err := userRepo.CreateUser(user); err != nil {
-		log.Printf("[Migrate] Admin seeding failed: %v", err)
+		return fmt.Errorf("[Migrate] Admin seeding failed: %v", err)
 	} else {
 		fmt.Printf("Admin user %s seeded successfully.\n", adminEmail)
 	}
+	return nil
+}
 
+func seedAppClient(adminDatabase *sqlx.DB) error {
 	// Fetch client magic values from environment
 	cID := os.Getenv("CLIENT_ID")
 	cSecret := os.Getenv("CLIENT_SECRET")
@@ -78,20 +104,21 @@ func MigrateAndSeed() {
 	}
 
 	clientRepo := repository.NewClientRepository(adminDatabase)
-	err = clientRepo.CreateClient(client, grants)
+	err := clientRepo.CreateClient(client, grants)
 	if err != nil {
-		log.Printf("[Migrate] Client seeding failed: %v", err)
+		return fmt.Errorf("[Migrate] Client seeding failed: %v", err)
 	} else {
 		fmt.Printf("Client %s registered successfully.\n", cName)
 	}
+	return nil
 }
 
-func GrantDeleteOnTable(tableName string, db *sqlx.DB) {
+func grantDeleteOnTable(tableName string, db *sqlx.DB) error {
 	databaseName := os.Getenv("MYSQL_DB_NAME")
 	appUser := os.Getenv("APP_USER")
 	
 	query := fmt.Sprintf(
-		"GRANT DELETE ON `%s`.`%s` TO '%s'@'%%'",
+		"GRANT DELETE ON `%s`.`%s` TO '%s'@'%%'; FLUSH PRIVILEGES;",
 		databaseName,
 		tableName,
 		appUser,
@@ -99,11 +126,7 @@ func GrantDeleteOnTable(tableName string, db *sqlx.DB) {
 
 	_, err := db.Exec(query)
 	if err != nil {
-		log.Fatalf("[GrantDeleteOnTable] {Database Query}: %v", err)
+		return fmt.Errorf("[GrantDeleteOnTable] {Query}: %v", err)
 	}
-
-	_, err = db.Exec("FLUSH PRIVILEGES")
-	if err != nil {
-		log.Fatalf("[GrantDeleteOnTable] {Flush Privileges}: %v", err)
-	}
+	return nil
 }
