@@ -82,7 +82,7 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 	cID := os.Getenv("CLIENT_ID")
 	cSecret := os.Getenv("CLIENT_SECRET")
 	cName := os.Getenv("CLIENT_NAME")
-	cCallback := os.Getenv("CLIENT_CALLBACK")
+	cCallback := os.Getenv("CLIENT_CALLBACK_URL")
 	cBase := os.Getenv("CLIENT_BASE_URL")
 	ctag := os.Getenv("CLIENT_TAG")
 
