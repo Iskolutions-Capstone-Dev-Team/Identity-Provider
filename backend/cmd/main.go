@@ -33,6 +33,7 @@ import (
 func main() {
 	godotenv.Load()
 	initializers.LoadRSAKeys()
+	initializers.NewS3Storage()
 
 	doMigrate := flag.Bool("migrate", false, "Run database migration first")
 	flag.Parse()
@@ -60,7 +61,6 @@ func main() {
 
 	r := gin.Default()
 	r.Use(h.CORS)
-	r.Static("/public", "./public")
 
 	// Register Swagger UI route
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
