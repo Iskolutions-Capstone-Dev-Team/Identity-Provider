@@ -20,6 +20,7 @@ type Handlers struct {
 func MapRoutes(v1Group *gin.RouterGroup, h Handlers) {
 	auth := v1Group.Group("/auth")
 	{
+		auth.GET("/authorize", h.AuthHandler.Authorize)
 		auth.POST("/login", h.AuthHandler.LoginAndAuthorize)
 		auth.POST("/token", h.AuthHandler.PostTokenExchange)
 		auth.POST("/refresh", h.AuthHandler.PostTokenRotate)
