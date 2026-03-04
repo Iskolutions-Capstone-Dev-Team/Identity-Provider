@@ -13,6 +13,16 @@ export const authService = {
     return response.data;
   },
 
+  async exchangeCode(code) {
+    const response = await axiosInstance.post("/auth/token", {
+      code,
+      client_id: import.meta.env.VITE_CLIENT_ID,
+      client_secret: import.meta.env.VITE_CLIENT_SECRET,
+    });
+
+    return response.data;
+  },
+
   async logout() {
     return axiosInstance.post("/auth/logout");
   },
