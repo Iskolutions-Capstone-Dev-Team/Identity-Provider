@@ -30,7 +30,7 @@ func MapRoutes(v1Group *gin.RouterGroup, h Handlers) {
 
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
-	admin.Use(middleware.AuthorizeRBAC(h.PubKey, "idp:admin"))
+	admin.Use(middleware.AuthorizeRBAC(h.PubKey, "idp:superadmin"))
 	{
 		admin.GET("/status", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "IdP is operational"})

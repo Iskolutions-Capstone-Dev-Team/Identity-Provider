@@ -3,7 +3,8 @@ import Login from "./auth/pages/Login";
 import Callback from "./auth/pages/Callback";
 import Unauthorized from "./auth/pages/Unauthorized";
 import ProtectedRoute from "./auth/components/ProtectedRoute";
-import DashboardTest from "./auth/pages/DashboardTest";
+import Roles from "./pages/Roles";
+import IdpLayout from "./layouts/IdpLayout";
 
 export default function App() {
   return (
@@ -16,13 +17,14 @@ export default function App() {
 
         {/* Protected Route */}
         <Route
-          path="/dashboard"
           element={
             <ProtectedRoute>
-              <DashboardTest />
+              <IdpLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path="/roles" element={<Roles />} />
+        </Route>
       </Routes>
     </Router>
   );

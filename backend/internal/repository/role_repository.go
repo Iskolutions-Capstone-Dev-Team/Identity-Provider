@@ -46,7 +46,7 @@ func (r *RoleRepository) SearchRoles(keyword string) ([]models.Role, error) {
 	var roles []models.Role
 	pattern := "%" + keyword + "%"
 	query := `
-        SELECT (id, role_name, description, created_at, updated_at) 
+        SELECT id, role_name, description, created_at, updated_at
         FROM roles WHERE deleted_at IS NULL AND role_name LIKE ?
         LIMIT 10
     `
@@ -61,7 +61,7 @@ func (r *RoleRepository) SearchRoles(keyword string) ([]models.Role, error) {
 func (r *RoleRepository) ListRoles(limit, offset int) ([]models.Role, error) {
 	var roles []models.Role
 	query := `
-        SELECT (id, role_name, description, created_at, updated_at) FROM roles 
+        SELECT id, role_name, description, created_at, updated_at FROM roles 
         WHERE deleted_at IS NULL 
         ORDER BY id DESC 
         LIMIT ? OFFSET ?`

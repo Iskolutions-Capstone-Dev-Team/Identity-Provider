@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 @keyframes floatLogo {
   0%, 100% {
     transform: translateY(0px);
