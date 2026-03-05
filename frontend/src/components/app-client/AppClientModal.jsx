@@ -106,36 +106,25 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isView) return onClose();
-
     setAttemptedSubmit(true);
 
-    // ✅ same validations as Create
     const hasLogo = Boolean(imageFile) || Boolean(imageLocation);
     if (!hasLogo) {
       setError("System logo is required.");
       return;
     }
-
     if (!name.trim() || name.length < 5 || name.length > 100) {
       setError("Client name must be between 5 and 100 characters.");
       return;
     }
-
-    if (!tag.trim() || tag.length > 10) {
-      setError("Tag is required (max 10 characters).");
-      return;
-    }
-
     if (!baseURL.trim() || !redirectURL.trim() || !logoutURL.trim()) {
       setError("All URL fields are required.");
       return;
     }
-
     if (!selectedGrants || selectedGrants.length === 0) {
       setError("At least one grant must be selected.");
       return;
     }
-
     if (!roles || roles.length === 0) {
       setError("Please select at least one role.");
       return;
@@ -149,7 +138,6 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
     await onSubmit({
       id: client?.id,
       name,
-      tag,
       description,
       base_url: baseURL,
       redirect_uri: redirectURL,
@@ -238,10 +226,9 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
                 </div>
                 <div className="space-y-0.5">
                   <label className="block text-sm font-semibold text-gray-700">
-                    Tag{!isView && <span className="text-red-500"> *</span>}
+                    Tag
                   </label>
-                  <input type="text" required maxLength={10} value={tag} onChange={(e) => setTag(e.target.value.toUpperCase())} className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} disabled={isView}/>
-                  {!isView && <div className="validator-hint">Maximum 10 characters</div>}
+                  <input type="text" readOnly value={tag} className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
                 </div>
                 <div className="space-y-0.5">
                     <label className="block text-sm font-semibold text-gray-700">
