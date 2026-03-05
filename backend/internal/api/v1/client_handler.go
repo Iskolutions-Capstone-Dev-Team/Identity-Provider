@@ -132,6 +132,9 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 			Tag:           cl.Tag,
 			Description:   cl.Description,
 			ImageLocation: cl.ImageLocation,
+			BaseURL:       cl.BaseUrl,
+			RedirectURI:   cl.RedirectUri,
+			LogoutURI:     cl.LogoutUri,
 		})
 	}
 
