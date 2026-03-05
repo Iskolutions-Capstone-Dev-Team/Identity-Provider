@@ -3,6 +3,7 @@ import { useAppClients } from "../hooks/useAppClients";
 import ConnectedAppClientCard from "../components/app-client/ConnectedAppClientCard";
 import AppClientModal from "../components/app-client/AppClientModal";
 import AppClientCreateModal from "../components/app-client/AppClientCreateModal";
+import ClientSecretModal from "../components/app-client/ClientSecretModal";
 import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
@@ -23,13 +24,30 @@ export default function AppClient() {
         createClient,
         updateClient,
         deleteClient,
+        rotateClientSecret,
+        secretModal,
+        setSecretModal,
     } = useAppClients();
+
     const [createOpen, setCreateOpen] = useState(false);
     const [editViewOpen, setEditViewOpen] = useState(false);
     const [mode, setMode] = useState("create");
     const [activeClient, setActiveClient] = useState(null);
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
+
+    const handleCreateClient = async (payload) => {
+        const res = await createClient(payload);
+        setSecretModal({
+            open: true,
+            title: "Client secret created",
+            clientId: res?.client_id || "",
+            clientName: payload?.name || "",
+            secret: res?.client_secret || "",
+            loading: false,
+            error: "",
+        });
+    };
 
     const openCreate = () => setCreateOpen(true);
 
@@ -45,7 +63,7 @@ export default function AppClient() {
         setEditViewOpen(true);
     };
 
-    const handleDeleteClick  = (clientId) => {
+    const handleDeleteClick = (clientId) => {
         setDeleteTarget(clientId);
         setShowDeleteAlert(true);
     };
@@ -54,6 +72,18 @@ export default function AppClient() {
         deleteClient(deleteTarget);
         setShowDeleteAlert(false);
         setDeleteTarget(null);
+    };
+
+    const resetSecretModal = () => {
+        setSecretModal({
+            open: false,
+            clientId: "",
+            clientName: "",
+            secret: "",
+            title: "",
+            loading: false,
+            error: "",
+        });
     };
 
     return (
@@ -81,13 +111,14 @@ export default function AppClient() {
                     onEdit={openEdit}
                     onDelete={handleDeleteClick}
                     onCreate={openCreate}
+                    onRotateSecret={rotateClientSecret}
                 />
                 <AppClientCreateModal
                     open={createOpen}
                     onClose={() => setCreateOpen(false)}
-                    onSubmit={createClient}
+                    onSubmit={handleCreateClient}
                 />
-                <AppClientModal 
+                <AppClientModal
                     open={editViewOpen}
                     mode={mode}
                     client={activeClient}
@@ -96,7 +127,20 @@ export default function AppClient() {
                 />
             </div>
 
-            <DeleteConfirmModal open={showDeleteAlert} message="Delete this app client?" onCancel={() => {
+            <ClientSecretModal
+                open={secretModal.open}
+                clientName={secretModal.clientName}
+                clientId={secretModal.clientId}
+                secret={secretModal.secret}
+                loading={secretModal.loading}
+                error={secretModal.error}
+                onClose={resetSecretModal}
+            />
+
+            <DeleteConfirmModal
+                open={showDeleteAlert}
+                message="Delete this app client?"
+                onCancel={() => {
                     setShowDeleteAlert(false);
                     setDeleteTarget(null);
                 }}

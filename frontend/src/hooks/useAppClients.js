@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { clientService } from "../services/clientService";
 
 const ITEMS_PER_PAGE = 10;
-const FIXED_UUID = "00000000-0000-0000-0000-000000000001";
 
 export function useAppClients() {
   const [clients, setClients] = useState([]);
@@ -10,6 +9,15 @@ export function useAppClients() {
   const [page, setPage] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
+  const [secretModal, setSecretModal] = useState({
+    open: false,
+    clientId: "",
+    clientName: "",
+    secret: "",
+    title: "",
+    loading: false,
+    error: "",
+  });
 
   const offset = (page - 1) * ITEMS_PER_PAGE;
 
@@ -52,9 +60,10 @@ export function useAppClients() {
   // CREATE
   // =========================
   const createClient = async (payload) => {
-    await clientService.createClient(payload);
+    const res = await clientService.createClient(payload);
     setSuccessMessage("App client successfully created!");
     await fetchClients();
+    return res;
   };
 
   // =========================
@@ -79,6 +88,65 @@ export function useAppClients() {
     await fetchClients();
   };
 
+  const rotateClientSecret = async (client) => {
+    const id = typeof client === "string" ? client : client?.id;
+    const name = typeof client === "string" ? "" : client?.name || "";
+
+    if (!id) {
+      setSecretModal({
+        open: true,
+        clientId: "",
+        clientName: "",
+        secret: "",
+        title: "Unable to rotate client secret",
+        loading: false,
+        error: "Missing client ID.",
+      });
+      return;
+    }
+
+    setSecretModal({
+      open: true,
+      clientId: id,
+      clientName: name,
+      secret: "",
+      title: "Rotating client secret...",
+      loading: true,
+      error: "",
+    });
+
+    try {
+      const res = await clientService.rotateClientSecret(id);
+      const rotatedSecret = res?.client_secret || "";
+
+      setSecretModal({
+        open: true,
+        clientId: res?.client_id || id,
+        clientName: name,
+        secret: rotatedSecret,
+        title: "Client secret rotated",
+        loading: false,
+        error: rotatedSecret ? "" : "Rotate request succeeded but no secret was returned.",
+      });
+    } catch (err) {
+      const message =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Rotate request failed.";
+
+      setSecretModal({
+        open: true,
+        clientId: id,
+        clientName: name,
+        secret: "",
+        title: "Unable to rotate client secret",
+        loading: false,
+        error: message,
+      });
+    }
+  };
+
   return {
     search,
     setSearch,
@@ -92,5 +160,8 @@ export function useAppClients() {
     createClient,
     updateClient,
     deleteClient,
+    rotateClientSecret,
+    secretModal,
+    setSecretModal,
   };
 }

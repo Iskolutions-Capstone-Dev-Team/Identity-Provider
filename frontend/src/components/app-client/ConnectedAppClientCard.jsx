@@ -3,7 +3,7 @@ import Pagination from "../Pagination";
 import ConnectedAppClientTable from "./ConnectedAppClientTable";
 import ResultsCount from "../ResultsCount";
 
-export default function ConnectedAppClientCard({ clients, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate }) {
+export default function ConnectedAppClientCard({ clients, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate, onRotateSecret }) {
     return (
         <AppClientCard title="Connected App Clients">
             <div className="flex flex-col gap-4 mb-6 lg:flex-row lg:items-end lg:justify-between">
@@ -25,7 +25,7 @@ export default function ConnectedAppClientCard({ clients, totalResults, itemsPer
                     </button>
                 </div>
             </div>
-            <ConnectedAppClientTable clients={clients} onView={onView} onEdit={onEdit} onDelete={onDelete} />
+            <ConnectedAppClientTable clients={clients} onView={onView} onEdit={onEdit} onDelete={onDelete} onRotateSecret={onRotateSecret} />
             <div className="flex justify-center mt-6">
                 <ResultsCount page={page} itemsPerPage={itemsPerPage} totalResults={totalResults} />
             </div>
