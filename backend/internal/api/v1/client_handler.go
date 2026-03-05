@@ -224,17 +224,13 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Client UUID"
-// @Param body body dto.UpdateClientRequest true "Updated Client Data"
 // @Success 200 {object} dto.MessageResponse
 // @Router /v1/admin/clients/{id} [put]
 func (h *ClientHandler) PutClient(c *gin.Context) {
 	idParam := c.Param("id")
 	clientUUID, _ := uuid.Parse(idParam)
-	file, _ := c.FormFile("image")
-	f, _ := file.Open()
-	defer f.Close()
 
-	client, err := h.Repo.GetByID(clientUUID[:])
+	existingClient, err := h.Repo.GetByID(clientUUID[:])
 	if err != nil {
 		log.Printf("[PutClient] Client search failed: %v", err)
 		c.JSON(
@@ -243,23 +239,31 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		)
 	}
 
-	imagePath, err := service.ProcessAndUploadIcon(
-		c.Request.Context(),
-		client.Tag,
-		file.Filename,
-		f,
-		file.Size,
-		h.Storage,
-	)
-	if err != nil {
-		log.Printf("[PostClient] Failed to process image: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "upload failed"},
+	file, err := c.FormFile("image")
+	imagePath := existingClient.ImageLocation
+	if err == nil {
+		f, _ := file.Open()
+		defer f.Close()
+
+		imagePath, err = service.ProcessAndUploadIcon(
+			c.Request.Context(),
+			existingClient.Tag,
+			file.Filename,
+			f,
+			file.Size,
+			h.Storage,
 		)
+		if err != nil {
+			log.Printf("[PutClient] Failed to process image: %v", err)
+			c.JSON(
+				http.StatusInternalServerError,
+				dto.ErrorResponse{Error: "upload failed"},
+			)
+			return
+		}
 	}
 
-	client = &models.Client{
+	client := &models.Client{
 		ID:            clientUUID[:],
 		ClientName:    c.PostForm("name"),
 		BaseUrl:       c.PostForm("base_url"),
