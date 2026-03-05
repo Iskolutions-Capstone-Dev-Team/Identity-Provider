@@ -100,12 +100,22 @@ func (r *ClientRepository) CreateClient(
 func (r *ClientRepository) UpdateClient(c *models.Client) error {
 	query := `
         UPDATE clients 
-        SET client_name = ?, description = ?, image_location = ?, 
+        SET client_name = ?, description = ?, 
+            image_location = IF(? = '', image_location, ?), 
             base_url = ?, redirect_uri = ?, logout_uri = ?
-        WHERE id = ? AND deleted_at IS NULL`
+        WHERE id = ?`
 
-	_, err := r.db.Exec(query, c.ClientName, c.Description, c.ImageLocation,
-		c.BaseUrl, c.RedirectUri, c.LogoutUri, c.ID)
+	_, err := r.db.Exec(
+		query,
+		c.ClientName,
+		c.Description,
+		c.ImageLocation, 
+		c.ImageLocation, 
+		c.BaseUrl,
+		c.RedirectUri,
+		c.LogoutUri,
+		c.ID,
+	)
 	return err
 }
 
