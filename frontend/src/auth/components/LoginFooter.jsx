@@ -49,8 +49,6 @@ export default function LoginFooter() {
         <a href="https://www.pup.edu.ph/privacy/" className="hover:text-yellow-400 font-bold">Privacy Policy</a>
         <span>•</span>
         <a href="https://www.pup.edu.ph/terms/" className="hover:text-yellow-400 font-bold">Terms of Service</a>
-        <span>•</span>
-        <a href="#" className="hover:text-yellow-400 font-bold">Feedback</a>
       </div>
     </footer>
   );
