@@ -25,6 +25,13 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
   const [showFullImage, setShowFullImage] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
+  const resolveImageSrc = (img) => {
+    if (!img) return null;
+    if (img.startsWith("data:")) return img;
+    if (img.startsWith("http://") || img.startsWith("https://")) return img;
+    return `${import.meta.env.VITE_BACKEND_URL}${img}`;
+  };
+
   useEffect(() => {
     if (!open || !client) return;
     setName(client.name || "");
@@ -39,17 +46,9 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
     setIsDragging(false);
     setError("");
     setAttemptedSubmit(false);
-    setImageLocation(client.image || null);
-
-    if (client.image) {
-      setImagePreview(
-        client.image.startsWith("data:")
-          ? client.image
-          : `${import.meta.env.VITE_BACKEND_URL}${client.image}`
-      );
-    } else {
-      setImagePreview(null);
-    }
+    const img = client.image || client.image_location || null;
+    setImageLocation(img || "");
+    setImagePreview(resolveImageSrc(img));
   }, [client, open]);
 
   const toggleGrant = (grant) => {
@@ -174,7 +173,7 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
               </button>
             </div>
           </div>
-          <form id="app-client-form" className="flex-1 overflow-y-auto p-6 space-y-4 bg-white" onSubmit={handleSubmit}>
+          <form id="app-client-form" noValidate className="flex-1 overflow-y-auto p-6 space-y-4 bg-white" onSubmit={handleSubmit}>
             <ErrorAlert message={error} onClose={() => setError("")}/>
             <div className="space-y-1.5">
               <label className="block text-sm font-semibold text-gray-700">System Logo{!isView && <span className="text-red-500"> *</span>}</label>
