@@ -79,7 +79,10 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	grants := c.PostFormArray("grants")
 	if err := h.Repo.CreateClient(clientModel, grants); err != nil {
 		log.Printf("[PostClient] Creation failed: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "db error"})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "db error"},
+		)
 		return
 	}
 
@@ -112,26 +115,43 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	total, err := h.Repo.CountClients()
 	if err != nil {
 		log.Printf("[GetClientList] Count failed: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "count error"})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "count error"},
+		)
 		return
 	}
 
 	clients, err := h.Repo.ListClients(limit, offset, keyword)
 	if err != nil {
 		log.Printf("[GetClientList] Fetching list failed: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "fetch error"})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "fetch error"},
+		)
 		return
 	}
 
 	var res []dto.ClientResponse
 	for _, cl := range clients {
 		id, _ := uuid.FromBytes(cl.ID)
+		imageLocation, err := service.GetPresignedURL(
+			c.Request.Context(),
+			cl.ImageLocation,
+			h.Storage,
+		)
+		if err != nil {
+			log.Printf("[GetClientList] failed to get image url: %v", err)
+		}
 		res = append(res, dto.ClientResponse{
 			ID:            id.String(),
 			Name:          cl.ClientName,
 			Tag:           cl.Tag,
 			Description:   cl.Description,
-			ImageLocation: cl.ImageLocation,
+			ImageLocation: imageLocation,
+			BaseURL:       cl.BaseUrl,
+			RedirectURI:   cl.RedirectUri,
+			LogoutURI:     cl.LogoutUri,
 		})
 	}
 
@@ -160,14 +180,20 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	clientUUID, err := uuid.Parse(idParam)
 	if err != nil {
 		log.Printf("[GetClient] Invalid uuid %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid uuid format"})
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid uuid format"},
+		)
 		return
 	}
 
 	cl, err := h.Repo.GetByID(clientUUID[:])
 	if err != nil {
 		log.Printf("[GetClient] Client not found %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "client not found"})
+		c.JSON(
+			http.StatusNotFound,
+			dto.ErrorResponse{Error: "client not found"},
+		)
 		return
 	}
 
@@ -198,17 +224,13 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Client UUID"
-// @Param body body dto.UpdateClientRequest true "Updated Client Data"
 // @Success 200 {object} dto.MessageResponse
 // @Router /v1/admin/clients/{id} [put]
 func (h *ClientHandler) PutClient(c *gin.Context) {
 	idParam := c.Param("id")
 	clientUUID, _ := uuid.Parse(idParam)
-	file, _ := c.FormFile("image")
-	f, _ := file.Open()
-	defer f.Close()
 
-	client, err := h.Repo.GetByID(clientUUID[:])
+	existingClient, err := h.Repo.GetByID(clientUUID[:])
 	if err != nil {
 		log.Printf("[PutClient] Client search failed: %v", err)
 		c.JSON(
@@ -217,23 +239,31 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		)
 	}
 
-	imagePath, err := service.ProcessAndUploadIcon(
-		c.Request.Context(),
-		client.Tag,
-		file.Filename,
-		f,
-		file.Size,
-		h.Storage,
-	)
-	if err != nil {
-		log.Printf("[PostClient] Failed to process image: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "upload failed"},
+	file, err := c.FormFile("image")
+	imagePath := existingClient.ImageLocation
+	if err == nil {
+		f, _ := file.Open()
+		defer f.Close()
+
+		imagePath, err = service.ProcessAndUploadIcon(
+			c.Request.Context(),
+			existingClient.Tag,
+			file.Filename,
+			f,
+			file.Size,
+			h.Storage,
 		)
+		if err != nil {
+			log.Printf("[PutClient] Failed to process image: %v", err)
+			c.JSON(
+				http.StatusInternalServerError,
+				dto.ErrorResponse{Error: "upload failed"},
+			)
+			return
+		}
 	}
 
-	client = &models.Client{
+	client := &models.Client{
 		ID:            clientUUID[:],
 		ClientName:    c.PostForm("name"),
 		BaseUrl:       c.PostForm("base_url"),
@@ -245,10 +275,13 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 
 	if err := h.Repo.UpdateClient(client); err != nil {
 		log.Printf("[PutClient] Update failed: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "update fail"})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "update fail"},
+		)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "client updated"})
+	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "client updated"})
 }
 
 // DeleteClient handles DELETE /v1/admin/clients/:id
@@ -261,15 +294,24 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 	clientUUID, err := uuid.Parse(idParam)
 	if err != nil {
 		log.Printf("[DeleteClient] Invalid uuid %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid uuid"})
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid uuid"},
+		)
 		return
 	}
 
 	if err := h.Repo.SoftDelete(clientUUID[:]); err != nil {
 		log.Printf("[DeleteClient] Deletion failed: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "delete fail"})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "delete fail"},
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "client deactivated successfully"})
+	c.JSON(
+		http.StatusOK,
+		dto.SuccessResponse{Message: "client deactivated successfully"},
+	)
 }

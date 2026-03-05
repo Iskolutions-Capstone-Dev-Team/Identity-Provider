@@ -39,10 +39,15 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 // @Param limit query int true "Limit"
 // @Param offset query int true "Offset"
 // @Success 200 {array} models.Client
-func (r *ClientRepository) ListClients(limit, offset int, keyword string) ([]models.Client, error) {
+func (r *ClientRepository) ListClients(limit,
+	offset int, keyword string,
+) ([]models.Client, error) {
 	var clients []models.Client
 	query := `
-        SELECT id, client_name, tag, description, image_location 
+        SELECT 
+			id, client_name, tag, 
+			description, image_location, 
+			base_url, redirect_uri, logout_uri
         FROM clients 
         WHERE deleted_at IS NULL 
         LIMIT ? OFFSET ?`
@@ -95,12 +100,22 @@ func (r *ClientRepository) CreateClient(
 func (r *ClientRepository) UpdateClient(c *models.Client) error {
 	query := `
         UPDATE clients 
-        SET client_name = ?, description = ?, image_location = ?, 
+        SET client_name = ?, description = ?, 
+            image_location = IF(? = '', image_location, ?), 
             base_url = ?, redirect_uri = ?, logout_uri = ?
-        WHERE id = ? AND deleted_at IS NULL`
+        WHERE id = ?`
 
-	_, err := r.db.Exec(query, c.ClientName, c.Description, c.ImageLocation,
-		c.BaseUrl, c.RedirectUri, c.LogoutUri, c.ID)
+	_, err := r.db.Exec(
+		query,
+		c.ClientName,
+		c.Description,
+		c.ImageLocation, 
+		c.ImageLocation, 
+		c.BaseUrl,
+		c.RedirectUri,
+		c.LogoutUri,
+		c.ID,
+	)
 	return err
 }
 
@@ -141,7 +156,7 @@ func (r *ClientRepository) ListClientBaseURLS() ([]string, error) {
 func (r *ClientRepository) CountClients() (int, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL`
-	err := r.db.Get(count, query)
+	err := r.db.Get(&count, query)
 	if err != nil {
 		return 0, err
 	}

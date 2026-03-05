@@ -9,6 +9,35 @@ body,
   overflow-x: hidden;
 }
 
+.steps .step-primary {
+  color: #991b1b !important;
+}
+
+.steps .step-primary:before {
+  background-color: #991b1b !important;
+  border-color: #991b1b !important;
+}
+
+.steps .step-primary:after {
+  background-color: #991b1b !important;
+}
+
+.steps .step-primary .step-icon {
+  background-color: #991b1b !important;
+  color: white !important;
+  border-color: #991b1b !important;
+}
+
+.steps .step-primary .step-icon svg {
+  color: white !important;
+  fill: white !important;
+}
+
+.steps .step-primary + .step-primary:before {
+  background-color: #991b1b !important;
+  border-color: #991b1b !important;
+}
+
 @keyframes floatLogo {
   0%, 100% {
     transform: translateY(0px);
