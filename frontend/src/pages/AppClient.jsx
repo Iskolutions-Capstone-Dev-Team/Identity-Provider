@@ -4,6 +4,7 @@ import ConnectedAppClientCard from "../components/app-client/ConnectedAppClientC
 import AppClientModal from "../components/app-client/AppClientModal";
 import AppClientCreateModal from "../components/app-client/AppClientCreateModal";
 import ClientSecretModal from "../components/app-client/ClientSecretModal";
+import SecretConfirmModal from "../components/app-client/SecretConfirmModal";
 import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
@@ -12,29 +13,20 @@ const ITEMS_PER_PAGE = 10;
 
 export default function AppClient() {
     const {
-        search,
-        setSearch,
-        page,
-        setPage,
-        paginatedClients,
-        totalPages,
-        totalResults,
-        successMessage,
-        setSuccessMessage,
-        createClient,
-        updateClient,
-        deleteClient,
-        rotateClientSecret,
-        secretModal,
-        setSecretModal,
+        search, setSearch, page, setPage,
+        paginatedClients, totalPages, totalResults,
+        successMessage, setSuccessMessage,
+        createClient, updateClient, deleteClient,
+        rotateClientSecret, secretModal, setSecretModal,
     } = useAppClients();
-
     const [createOpen, setCreateOpen] = useState(false);
     const [editViewOpen, setEditViewOpen] = useState(false);
     const [mode, setMode] = useState("create");
     const [activeClient, setActiveClient] = useState(null);
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [showSecretConfirm, setShowSecretConfirm] = useState(false);
+    const [secretTarget, setSecretTarget] = useState(null);
 
     const handleCreateClient = async (payload) => {
         const res = await createClient(payload);
@@ -74,6 +66,23 @@ export default function AppClient() {
         setDeleteTarget(null);
     };
 
+    const handleRotateClick = (client) => {
+        setSecretTarget(client || null);
+        setShowSecretConfirm(true);
+    };
+
+    const cancelRotateSecret = () => {
+        setShowSecretConfirm(false);
+        setSecretTarget(null);
+    };
+
+    const confirmRotateSecret = async () => {
+        if (!secretTarget) return;
+        await rotateClientSecret(secretTarget);
+        setShowSecretConfirm(false);
+        setSecretTarget(null);
+    };
+
     const resetSecretModal = () => {
         setSecretModal({
             open: false,
@@ -111,7 +120,7 @@ export default function AppClient() {
                     onEdit={openEdit}
                     onDelete={handleDeleteClick}
                     onCreate={openCreate}
-                    onRotateSecret={rotateClientSecret}
+                    onRotateSecret={handleRotateClick}
                 />
                 <AppClientCreateModal
                     open={createOpen}
@@ -135,6 +144,13 @@ export default function AppClient() {
                 loading={secretModal.loading}
                 error={secretModal.error}
                 onClose={resetSecretModal}
+            />
+
+            <SecretConfirmModal
+                open={showSecretConfirm}
+                message="Generate a new client secret?"
+                onCancel={cancelRotateSecret}
+                onConfirm={confirmRotateSecret}
             />
 
             <DeleteConfirmModal
