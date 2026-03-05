@@ -49,16 +49,28 @@ export const clientService = {
   },
 
   async updateClient(id, data) {
+    const formData = new FormData();
+
+    formData.append("name", data.name);
+    formData.append("tag", data.tag);
+    formData.append("description", data.description || "");
+    formData.append("base_url", data.base_url);
+    formData.append("redirect_uri", data.redirect_uri);
+    formData.append("logout_uri", data.logout_uri);
+
+    (data.grants || []).forEach((g) => formData.append("grants", g));
+    (data.roles || []).forEach((r) => formData.append("roles", r));
+
+    if (data.imageFile) {
+      formData.append("image", data.imageFile);
+    } else if (data.image_location !== undefined) {
+      formData.append("image_location", data.image_location);
+    }
+
     const response = await axiosInstance.put(
       `/admin/clients/${id}`,
-      {
-        name: data.name,
-        description: data.description,
-        base_url: data.base_url,
-        redirect_uri: data.redirect_uri,
-        logout_uri: data.logout_uri,
-        image_location: data.image_location,
-      }
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
 
     return response.data;

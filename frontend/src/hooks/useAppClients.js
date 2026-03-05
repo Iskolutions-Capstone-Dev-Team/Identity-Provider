@@ -61,9 +61,13 @@ export function useAppClients() {
   // UPDATE
   // =========================
   const updateClient = async (payload) => {
-    await clientService.updateClient(payload.id, payload);
-    setSuccessMessage("App client successfully updated!");
-    await fetchClients();
+    try {
+      await clientService.updateClient(payload.id, payload);
+      setSuccessMessage("App client successfully updated!");
+      await fetchClients();
+    } catch (err) {
+      console.error("Update failed:", err);
+    }
   };
 
   // =========================

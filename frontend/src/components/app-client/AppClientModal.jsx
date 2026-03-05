@@ -100,7 +100,7 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
     e.stopPropagation();
     setImagePreview(null);
     setImageFile(null);
-    setImageLocation(""); // removed existing
+    setImageLocation("");
   };
 
   const handleSubmit = async (e) => {
@@ -156,7 +156,8 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
       logout_uri: logoutURL,
       grants: selectedGrants,
       roles,
-      image_location: finalImageLocation,
+      imageFile,
+      image_location: imageLocation ?? "",
     });
 
     onClose();
