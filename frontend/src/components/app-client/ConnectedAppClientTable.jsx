@@ -13,8 +13,8 @@ export default function ConnectedAppClientTable({ clients, onView, onEdit, onDel
                     <th className="text-white text-center">Name</th>
                     <th className="text-white text-center">Client ID</th>
                     <th className="text-white text-center">Created</th>
+                    <th className="text-white text-center">Secret</th>
                     <th className="text-white text-center">Actions</th>
-                    <th className="text-white text-center">Security</th>
                     </tr>
                 </thead>
 
@@ -43,6 +43,13 @@ export default function ConnectedAppClientTable({ clients, onView, onEdit, onDel
                             <td className="text-[#991b1b] text-center border-gray-200">{c.name}</td>
                             <td className="text-[#991b1b] text-center border-gray-200">{c.id || c.clientId}</td>
                             <td className="text-[#991b1b] text-center border-gray-200">{c.created}</td>
+                            <td className="text-center border-gray-200">
+                                <button type="button" className="btn btn-ghost p-2 border-none rounded-xl text-[#991b1b] hover:bg-[#ffd700]/30 hover:scale-110 hover:shadow-xl transition-all" onClick={() => onRotateSecret?.({ id: getClientId(c), name: c.name })}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+                                    </svg>
+                                </button>
+                            </td>
                             <td className="gap-2 text-center border-gray-200">
                                 <div className="flex gap-2 justify-center">
                                     <button type="button" className="btn btn-ghost p-2 border-none rounded-xl text-[#991b1b] hover:bg-[#ffd700]/30 hover:scale-110 hover:shadow-xl transition-all" onClick={() => onView?.(c)}>
@@ -62,13 +69,6 @@ export default function ConnectedAppClientTable({ clients, onView, onEdit, onDel
                                         </svg>
                                     </button>
                                 </div>
-                            </td>
-                            <td className="text-center border-gray-200">
-                                <button type="button" className="btn btn-ghost p-2 border-none rounded-xl text-[#991b1b] hover:bg-[#ffd700]/30 hover:scale-110 hover:shadow-xl transition-all" onClick={() => onRotateSecret?.({ id: getClientId(c), name: c.name })}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
-                                    </svg>
-                                </button>
                             </td>
                         </TableRowFade>
                     ))}
