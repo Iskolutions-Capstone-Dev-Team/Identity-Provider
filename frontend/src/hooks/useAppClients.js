@@ -18,27 +18,29 @@ export function useAppClients() {
   // =========================
   const fetchClients = useCallback(async () => {
     try {
-      const data = await clientService.getClients(
-        ITEMS_PER_PAGE,
-        offset
-      );
+      const { items, total } = await clientService.getClients(ITEMS_PER_PAGE, offset);
 
-      const mapped = data.map((c) => ({
-        id: c.id,
-        clientId: c.id,
+      const mapped = items.map((c) => ({
+        id: c.id ?? c.client_id,
+        clientId: c.id ?? c.client_id,
         name: c.name,
+        tag: c.tag,
         description: c.description || "",
-        created: c.created_at?.slice(0, 10) || "-",
-        image: c.image_location || null,
+        created: (c.created_at || c.createdAt || "").slice(0, 10) || "-",
+        image: c.image_location || c.image || null,
         base_url: c.base_url,
         redirect_uri: c.redirect_uri,
         logout_uri: c.logout_uri,
+        grants: c.grants || [],
+        roles: c.roles || [],
       }));
 
       setClients(mapped);
-      setTotalResults(data.length);
+      setTotalResults(total);
     } catch (err) {
       console.error("Fetch clients error:", err);
+      setClients([]);
+      setTotalResults(0);
     }
   }, [offset]);
 

@@ -5,7 +5,14 @@ export const clientService = {
     const response = await axiosInstance.get(`/admin/clients`, {
       params: { limit, offset },
     });
-    return response.data;
+    const payload = response.data;
+    const items = Array.isArray(payload)
+      ? payload
+      : (payload.data ?? payload.clients ?? payload.items ?? []);
+
+    const total = payload?.total ?? payload?.count ?? items.length;
+
+    return { items, total };
   },
 
   async getClientById(id) {
