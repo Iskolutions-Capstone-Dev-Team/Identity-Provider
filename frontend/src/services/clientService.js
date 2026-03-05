@@ -17,7 +17,7 @@ export const clientService = {
     const formData = new FormData();
 
     formData.append("name", data.name);
-    formData.append("abbreviation", data.abbreviation);
+    formData.append("tag", data.tag);
     formData.append("description", data.description || "");
     formData.append("base_url", data.base_url);
     formData.append("redirect_uri", data.redirect_uri);

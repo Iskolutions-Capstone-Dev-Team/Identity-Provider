@@ -10,7 +10,7 @@ const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
 export default function AppClientCreateModal({ open, onClose, onSubmit }) {
     const [step, setStep] = useState(1);
     const [name, setName] = useState("");
-    const [abbreviation, setAbbreviation] = useState("");
+    const [tag, setTag] = useState("");
     const [description, setDescription] = useState("");
     const [baseURL, setBaseURL] = useState("");
     const [redirectURL, setRedirectURL] = useState("");
@@ -29,7 +29,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
         if (!open) {
             setStep(1);
             setName("");
-            setAbbreviation("");
+            setTag("");
             setDescription("");
             setBaseURL("");
             setRedirectURL("");
@@ -107,8 +107,8 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                 setError("Client name must be between 5 and 100 characters.");
                 return;
             }
-            if (!abbreviation.trim() || abbreviation.length > 10) {
-                setError("Abbreviation is required (max 10 characters).");
+            if (!tag.trim() || tag.length > 10) {
+                setError("Tag is required (max 10 characters).");
                 return;
             }
         }
@@ -144,8 +144,8 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
             setStep(1);
             return;
         }
-        if (!abbreviation.trim() || abbreviation.length > 10) {
-            setError("Abbreviation is required (max 10 characters).");
+        if (!tag.trim() || tag.length > 10) {
+            setError("Tag is required (max 10 characters).");
             setStep(1);
             return;
         }
@@ -169,7 +169,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
 
         onSubmit({
             name,
-            abbreviation,
+            tag,
             description,
             base_url: baseURL,
             redirect_uri: redirectURL,
@@ -275,9 +275,9 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                                 </div>
                                 <div className="space-y-0.5">
                                     <label className="block text-base font-semibold text-gray-700">
-                                        Abbreviation<span className="text-red-500"> *</span>
+                                        Tag<span className="text-red-500"> *</span>
                                     </label>
-                                    <input type="text" required maxLength={10} value={abbreviation} onChange={(e) => setAbbreviation(e.target.value.toUpperCase())} placeholder="(e.g., IdP)" className="input validator w-full rounded-lg bg-transparent border border-gray-200 text-gray-700"/>
+                                    <input type="text" required maxLength={10} value={tag} onChange={(e) => setTag(e.target.value.toUpperCase())} placeholder="(e.g., IdP)" className="input validator w-full rounded-lg bg-transparent border border-gray-200 text-gray-700"/>
                                     <div className="validator-hint">Maximum 10 characters</div>
                                 </div>
                             </div>

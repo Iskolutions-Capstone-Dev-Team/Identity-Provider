@@ -10,7 +10,7 @@ const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
 export default function AppClientModal({ open, mode, client, onClose, onSubmit }) {
   const isView = mode === "view";
   const [name, setName] = useState("");
-  const [abbreviation, setAbbreviation] = useState("");
+  const [tag, setTag] = useState("");
   const [description, setDescription] = useState("");
   const [baseURL, setBaseURL] = useState("");
   const [redirectURL, setRedirectURL] = useState("");
@@ -29,7 +29,7 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
   useEffect(() => {
     if (!open || !client) return;
     setName(client.name || "");
-    setAbbreviation(client.abbreviation || "");
+    setTag(client.tag || "");
     setDescription(client.description || "");
     setBaseURL(client.base_url || "");
     setRedirectURL(client.redirect_uri || "");
@@ -122,8 +122,8 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
       return;
     }
 
-    if (!abbreviation.trim() || abbreviation.length > 10) {
-      setError("Abbreviation is required (max 10 characters).");
+    if (!tag.trim() || tag.length > 10) {
+      setError("Tag is required (max 10 characters).");
       return;
     }
 
@@ -150,7 +150,7 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
     await onSubmit({
       id: client?.id,
       name,
-      abbreviation,
+      tag,
       description,
       base_url: baseURL,
       redirect_uri: redirectURL,
@@ -238,9 +238,9 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
                 </div>
                 <div className="space-y-0.5">
                   <label className="block text-sm font-semibold text-gray-700">
-                    Abbreviation<span className="text-red-500"> *</span>
+                    Tag<span className="text-red-500"> *</span>
                   </label>
-                  <input type="text" required maxLength={10} value={abbreviation} onChange={(e) => setAbbreviation(e.target.value.toUpperCase())} className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} disabled={isView}/>
+                  <input type="text" required maxLength={10} value={tag} onChange={(e) => setTag(e.target.value.toUpperCase())} className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} disabled={isView}/>
                   {!isView && <div className="validator-hint">Maximum 10 characters</div>}
                 </div>
                 <div className="space-y-0.5">
