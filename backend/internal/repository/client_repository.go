@@ -39,7 +39,9 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 // @Param limit query int true "Limit"
 // @Param offset query int true "Offset"
 // @Success 200 {array} models.Client
-func (r *ClientRepository) ListClients(limit, offset int, keyword string) ([]models.Client, error) {
+func (r *ClientRepository) ListClients(limit,
+	offset int, keyword string,
+) ([]models.Client, error) {
 	var clients []models.Client
 	query := `
         SELECT 
