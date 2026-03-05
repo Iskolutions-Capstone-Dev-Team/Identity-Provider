@@ -3,7 +3,6 @@ import ErrorAlert from "../ErrorAlert";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import MultiSelect from "../MultiSelect";
 
-const FIXED_UUID = "00000000-0000-0000-0000-000000000001";
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
 
@@ -226,19 +225,19 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
                   <label className="block text-sm font-semibold text-gray-700">
                     Client Id
                   </label>
-                  <input type="text" value={FIXED_UUID} readOnly className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
+                  <input type="text" value={client?.id || ""} readOnly className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
                 </div>
               
                 <div className="space-y-0.5">
                   <label className="block text-sm font-semibold text-gray-700">
-                      Name<span className="text-red-500"> *</span>
+                      Name{!isView && <span className="text-red-500"> *</span>}
                     </label>
                   <input type="text" required minLength={5} maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="(e.g., Identity Provider System)" className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} disabled={isView}/>
                   {!isView && <div className="validator-hint">Must be 5–100 characters</div>}
                 </div>
                 <div className="space-y-0.5">
                   <label className="block text-sm font-semibold text-gray-700">
-                    Tag<span className="text-red-500"> *</span>
+                    Tag{!isView && <span className="text-red-500"> *</span>}
                   </label>
                   <input type="text" required maxLength={10} value={tag} onChange={(e) => setTag(e.target.value.toUpperCase())} className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} disabled={isView}/>
                   {!isView && <div className="validator-hint">Maximum 10 characters</div>}
@@ -256,14 +255,14 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-0.5">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Base URLs<span className="text-red-500"> *</span>
+                      Base URLs{!isView && <span className="text-red-500"> *</span>}
                     </label>
                     <input type="url" required value={baseURL} onChange={(e) => setBaseURL(e.target.value)} placeholder="https://app.example.com" className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}/>
                     {!isView && <p className="validator-hint">Must be valid URL</p>}
                   </div>
                   <div className="space-y-0.5">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Redirect URLs<span className="text-red-500"> *</span>
+                      Redirect URLs{!isView && <span className="text-red-500"> *</span>}
                     </label>
                     <input type="url" required value={redirectURL} onChange={(e) => setRedirectURL(e.target.value)} placeholder="https://app.example.com/callback" className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}/>
                     {!isView && <p className="validator-hint">Must be valid URL</p>}
@@ -273,7 +272,7 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
                   <div className="md:col-span-2 flex justify-center">
                     <div className="w-full md:w-1/2 space-y-0.5">
                       <label className="block text-sm font-semibold text-gray-700">
-                        Logout URLs<span className="text-red-500"> *</span>
+                        Logout URLs{!isView && <span className="text-red-500"> *</span>}
                       </label>
                       <input type="url" required value={logoutURL} onChange={(e) => setLogoutURL(e.target.value)} placeholder="https://app.example.com/logout" className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}/>
                       {!isView && <p className="validator-hint">Must be valid URL</p>}
@@ -282,7 +281,7 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
                 </div>
 
                 <div className="mb-5">
-                  <span className="block text-sm font-medium text-gray-700">Grants<span className="text-red-500"> *</span></span>
+                  <span className="block text-sm font-medium text-gray-700">Grants{!isView && <span className="text-red-500"> *</span>}</span>
                   <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-5">
                     {["authorization_code", "refresh_token", "client_credentials"].map((grant) => (
                       <label key={grant} className="flex items-center gap-2 text-gray-700">
@@ -297,7 +296,7 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
                 </div>
                 <div className="mt-6">
                   <label className="block text-sm font-medium text-gray-700">
-                    Roles<span className="text-red-500"> *</span>
+                    Roles{!isView && <span className="text-red-500"> *</span>}
                   </label>
                   <p className="text-xs text-gray-500 italic mb-2">
                     Select at least one role allowed for this client
