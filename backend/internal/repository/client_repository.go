@@ -42,7 +42,10 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 func (r *ClientRepository) ListClients(limit, offset int, keyword string) ([]models.Client, error) {
 	var clients []models.Client
 	query := `
-        SELECT id, client_name, tag, description, image_location 
+        SELECT 
+			id, client_name, tag, 
+			description, image_location, 
+			base_url, redirect_uri, logout_uri
         FROM clients 
         WHERE deleted_at IS NULL 
         LIMIT ? OFFSET ?`
@@ -141,7 +144,7 @@ func (r *ClientRepository) ListClientBaseURLS() ([]string, error) {
 func (r *ClientRepository) CountClients() (int, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL`
-	err := r.db.Get(count, query)
+	err := r.db.Get(&count, query)
 	if err != nil {
 		return 0, err
 	}
