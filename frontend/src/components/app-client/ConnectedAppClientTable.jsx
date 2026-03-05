@@ -28,7 +28,7 @@ export default function ConnectedAppClientTable({ clients, onView, onEdit, onDel
                                 <div className="avatar">
                                     <div className="mask mask-squircle w-10 h-10 bg-gray-100 border border-gray-200">
                                         {c.image ? (
-                                            <img src={ c.image.startsWith("data:") ? c.image : `${import.meta.env.VITE_BACKEND_URL}${c.image}`} alt={c.name} className="object-cover"/>
+                                            <img src={ c.image.startsWith("data:") ? c.image : `${c.image}`} alt={c.name} className="object-cover"/>
                                         ) : (
                                             <div className="flex items-center justify-center h-full text-[#991b1b] font-bold text-xs">
                                                 {c.name.substring(0, 2).toUpperCase()}
