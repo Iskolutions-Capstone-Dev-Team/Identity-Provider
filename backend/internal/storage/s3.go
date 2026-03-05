@@ -9,8 +9,9 @@ import (
 )
 
 type S3Provider struct {
-	Client     *minio.Client
-	BucketName string
+	Client         *minio.Client
+	BucketName     string
+	PublicEndpoint string
 }
 
 // UploadOrReplace saves a file to MinIO.
