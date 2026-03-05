@@ -374,7 +374,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                     )}
                     {step === 3 && (
                         <>
-                            <button onClick={handleSubmit} className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]">Create User</button>
+                            <button onClick={handleSubmit} className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]">Create Client</button>
                         </>
                     )}
                 </div>
