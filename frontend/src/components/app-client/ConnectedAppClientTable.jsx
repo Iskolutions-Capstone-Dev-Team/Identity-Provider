@@ -4,8 +4,9 @@ const getClientId = (client) => client?.id ?? client?.clientId ?? "";
 
 export default function ConnectedAppClientTable({ clients, onView, onEdit, onDelete, onRotateSecret }) {
     return (
-        <div className="overflow-x-auto">
-            <table className="table w-full border rounded-2xl border-gray-200">
+        <div className="rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+            <table className="table w-full">
                 {/* head */}
                 <thead>
                     <tr className="bg-[#991b1b]">
@@ -74,6 +75,7 @@ export default function ConnectedAppClientTable({ clients, onView, onEdit, onDel
                     ))}
                 </tbody>
             </table>
+            </div>
         </div>
     );
 }
