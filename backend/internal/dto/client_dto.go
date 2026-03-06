@@ -18,3 +18,9 @@ type ClientListResponse struct {
 	CurrentPage int              `json:"current_page"`
 	LastPage    int              `json:"last_page"`
 }
+
+type ClientSecretResponse struct {
+	ID           string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	Message      string `json:"message"`
+}
