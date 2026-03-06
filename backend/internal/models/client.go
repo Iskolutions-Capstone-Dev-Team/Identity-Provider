@@ -31,7 +31,8 @@ type Client struct {
 	ImageLocation string    `db:"image_location"`
 	UpdatedAt     time.Time `db:"updated_at"`
 
-	Grants []string
+	Grants       []string
+	AllowedRoles []Role
 }
 
 type ClientGrantTypes struct {
