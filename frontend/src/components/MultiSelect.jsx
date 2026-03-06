@@ -135,7 +135,7 @@ export default function MultiSelect({
                     type="checkbox"
                     checked={true}
                     readOnly
-                    className="w-4 h-4 rounded border-[#991b1b] text-red-600 focus:ring-0 mr-3 pointer-events-none"
+                    className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"
                   />
                   <span className="text-sm text-gray-700 font-medium">{option.role_name}</span>
                 </div>
@@ -151,7 +151,12 @@ export default function MultiSelect({
                 onClick={() => toggleOption(option.id)}
                 className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer group"
               >
-                <div className="w-4 h-4 rounded border border-gray-300 mr-3 group-hover:border-[#991b1b] transition-colors" />
+                <input
+                  type="checkbox"
+                  checked={false}
+                  readOnly
+                  className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"
+                />
                 <span className="text-sm text-gray-600">{option.role_name}</span>
               </div>
             ))
@@ -163,3 +168,4 @@ export default function MultiSelect({
     </div>
   );
 }
+
