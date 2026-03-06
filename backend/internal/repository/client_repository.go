@@ -114,7 +114,7 @@ func (r *ClientRepository) CreateClient(
 
 	// 3. Insert Client-allowed Roles
 	q3 := `
-		INSERT INTO client_allowed_roles_table (client_id, role_id) 
+		INSERT INTO client_allowed_roles (client_id, role_id) 
 		VALUES (?, ?)
 	`
 	for _, roleID := range roleIDs {
