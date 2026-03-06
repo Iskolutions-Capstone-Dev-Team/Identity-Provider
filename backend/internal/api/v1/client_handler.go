@@ -307,6 +307,15 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 		)
 		return
 	}
+	cl, err := h.Repo.GetByID(clientUUID[:])
+	if err != nil {
+		log.Printf("[GetClient] Client not found %v", err)
+		c.JSON(
+			http.StatusNotFound,
+			dto.ErrorResponse{Error: "client not found"},
+		)
+		return
+	}
 
 	if err := h.Repo.SoftDelete(clientUUID[:]); err != nil {
 		log.Printf("[DeleteClient] Deletion failed: %v", err)
@@ -315,6 +324,15 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 			dto.ErrorResponse{Error: "delete fail"},
 		)
 		return
+	}
+
+	err = service.DeleteImage(c.Request.Context(), cl.ImageLocation, h.Storage)
+	if err != nil {
+		log.Printf("[DeleteClient] Image deletion failed: %v", err)
+		c.JSON(
+			http.StatusInternalServerError, 
+			dto.ErrorResponse{Error: "failed to delete image"},
+		)
 	}
 
 	c.JSON(
