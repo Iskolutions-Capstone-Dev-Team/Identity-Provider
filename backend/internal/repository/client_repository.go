@@ -106,7 +106,9 @@ func (r *ClientRepository) CreateClient(
 // UpdateClient modifies safe fields only. tag and Secret are locked.
 // @Summary Update Client
 // @ID update-client
-func (r *ClientRepository) UpdateClient(c *models.Client) error {
+func (r *ClientRepository) UpdateClient(c *models.Client,
+	grants []string,
+) error {
 	query := `
         UPDATE clients 
         SET client_name = ?, description = ?, 
@@ -125,7 +127,39 @@ func (r *ClientRepository) UpdateClient(c *models.Client) error {
 		c.LogoutUri,
 		c.ID,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Delete all and insert new grants
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	
+	deleteQuery := `DELETE from client_grant_types WHERE client_id = ?`
+	_, err = tx.Exec(deleteQuery, c.ID)
+	if err != nil {
+		return err
+	}
+
+	insertQuery := `
+		INSERT INTO client_grant_types (client_id, grant_type)
+		VALUES (?, ?)
+	`
+	for _, grant := range grants {
+		_, err = tx.Exec(insertQuery, c.ID, grant)
+		if err != nil {
+			return err
+		}
+	}
+	
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	
+	return nil
 }
 
 // SoftDelete marks a client as deleted without removing the audit trail.
