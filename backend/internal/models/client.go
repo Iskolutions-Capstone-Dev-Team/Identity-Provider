@@ -23,6 +23,7 @@ type Client struct {
 	ClientName    string    `db:"client_name"`
 	Tag           string    `db:"tag"`
 	ClientSecret  string    `db:"client_secret"`
+	OldSecret     string    `db:"old_secret"`
 	BaseUrl       string    `db:"base_url"`
 	RedirectUri   string    `db:"redirect_uri"`
 	LogoutUri     string    `db:"logout_uri"`
