@@ -23,9 +23,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
   const [showFullImage, setShowFullImage] = useState(false);
-  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
-  const [isViewLoading, setIsViewLoading] = useState(false);
-
+  const [isDetailsLoading, setIsDetailsLoading] = useState(false);
   const roleOptions = [
     ...rolesData.map((r) => ({ id: r.id, role_name: r.role_name })),
     ...roles
@@ -57,20 +55,20 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setImageFile(null);
     setIsDragging(false);
     setError("");
-    setAttemptedSubmit(false);
     const img = client.image || client.image_location || null;
     setImageLocation(img || "");
     setImagePreview(resolveImageSrc(img));
   }, [client, open]);
 
   useEffect(() => {
-    if (!open || !isView || !client || typeof getClientDetails !== "function") return;
+    if (!open || !client || typeof getClientDetails !== "function") return;
 
     const clientId = client.id || client.clientId;
     if (!clientId) return;
 
     let cancelled = false;
-    setIsViewLoading(true);
+    setIsDetailsLoading(true);
+    setError("");
 
     getClientDetails(clientId)
       .then((details) => {
@@ -95,13 +93,13 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         setError("Unable to load latest app client details.");
       })
       .finally(() => {
-        if (!cancelled) setIsViewLoading(false);
+        if (!cancelled) setIsDetailsLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [client, getClientDetails, isView, open]);
+  }, [client, getClientDetails, open]);
 
   const toggleGrant = (grant) => {
     if (selectedGrants.includes(grant)) {
@@ -157,7 +155,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isView) return onClose();
-    setAttemptedSubmit(true);
 
     const hasLogo = Boolean(imageFile) || Boolean(imageLocation);
     if (!hasLogo) {
@@ -176,18 +173,11 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
       setError("At least one grant must be selected.");
       return;
     }
-    if (!roles || roles.length === 0) {
-      setError("Please select at least one role.");
-      return;
-    }
 
     setError("");
 
-    let finalImageLocation = imageLocation || "";
-    if (imageFile) finalImageLocation = imagePreview;
-
     await onSubmit({
-      id: client?.id,
+      id: client?.id || client?.clientId,
       name,
       description,
       base_url: baseURL,
@@ -227,7 +217,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
           </div>
           <form id="app-client-form" noValidate className="flex-1 overflow-y-auto p-6 space-y-4 bg-white" onSubmit={handleSubmit}>
             <ErrorAlert message={error} onClose={() => setError("")}/>
-            {isView && isViewLoading && (
+            {isDetailsLoading && (
               <p className="text-sm text-gray-500">Loading latest app client details...</p>
             )}
             <div className="space-y-1.5">
@@ -338,11 +328,11 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                 </div>
                 <div className="mt-6">
                   <label className="block text-sm font-medium text-gray-700">
-                    Roles{!isView && <span className="text-red-500"> *</span>}
+                    Roles
                   </label>
-                  <p className="text-xs text-gray-500 italic mb-2">
-                    Select at least one role allowed for this client
-                  </p>
+                  {!isView && <p className="text-xs text-gray-500 italic mb-2">
+                    select roles that are permitted to use this client
+                  </p>}
                   <MultiSelect
                     options={roleOptions}
                     selectedValues={roles}
@@ -350,9 +340,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     placeholder="Select roles"
                     disabled={isView}
                   />
-                  {!isView && attemptedSubmit && roles.length === 0 && (
-                    <p className="text-xs text-[#ff637d] mt-2">At least one role is required.</p>
-                  )}
                 </div>
             </div>
           </form>

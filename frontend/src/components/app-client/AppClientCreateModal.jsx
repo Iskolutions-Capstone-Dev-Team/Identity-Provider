@@ -23,7 +23,16 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
     const [isDragging, setIsDragging] = useState(false);
     const [showFullImage, setShowFullImage] = useState(false);
     const [error, setError] = useState("");
-    const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+    const roleOptions = [
+        ...rolesData.map((r) => ({ id: r.id, role_name: r.role_name })),
+        ...roles
+            .filter(
+                (value) =>
+                    typeof value === "string" &&
+                    !rolesData.some((role) => role.id === value),
+            )
+            .map((value) => ({ id: value, role_name: value })),
+    ];
 
     useEffect(() => {
         if (!open) {
@@ -41,7 +50,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
             setIsDragging(false);
             setShowFullImage(false);
             setError("");
-            setAttemptedSubmit(false);
         }
     }, [open]);
 
@@ -123,17 +131,12 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                 setError("At least one grant must be selected.");
                 return;
             }
-            if (!roles || roles.length === 0) {
-                setError("Please select at least one role.");
-                return;
-            }
         }
         setError("");
         setStep(step + 1);
     };
 
     const handleSubmit = () => {
-        setAttemptedSubmit(true);
         if (!imageFile) {
             setError("System logo is required.");
             setStep(1);
@@ -156,11 +159,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
         }
         if (grants.length === 0) {
             setError("At least one grant must be selected.");
-            setStep(3);
-            return;
-        }
-        if (!roles || roles.length === 0) {
-            setError("Please select at least one role.");
             setStep(3);
             return;
         }
@@ -334,24 +332,18 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                             </div>
                             <div className="mt-6">
                                 <label className="block text-base font-medium text-gray-700">
-                                    Roles<span className="text-red-500"> *</span>
+                                    Roles
                                 </label>
                                 <p className="text-xs text-gray-500 italic mb-2">
-                                    Select at least one role allowed for this client
+                                    select roles that are permitted to use this client
                                 </p>
 
                                 <MultiSelect
-                                    options={rolesData.map(r => ({
-                                        id: r.id,
-                                        role_name: r.role_name
-                                    }))}
+                                    options={roleOptions}
                                     selectedValues={roles}
                                     onChange={(ids) => setRoles(ids)}
                                     placeholder="Select roles"
                                 />
-                                {attemptedSubmit && roles.length === 0 && (
-                                    <p className="text-xs text-[#ff637d] mt-2">At least one role is required.</p>
-                                )}
                             </div>
                         </>
                     )}
