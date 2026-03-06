@@ -367,6 +367,7 @@ export function useAppClients() {
   });
 
   const offset = (page - 1) * ITEMS_PER_PAGE;
+  const keyword = search.trim();
 
   const upsertRoleCache = useCallback((clientId, rolePayload = {}) => {
     const normalizedClientId = typeof clientId === "string" ? clientId.trim() : "";
@@ -413,7 +414,11 @@ export function useAppClients() {
   // =========================
   const fetchClients = useCallback(async () => {
     try {
-      const { items, total } = await clientService.getClients(ITEMS_PER_PAGE, offset);
+      const { items, total } = await clientService.getClients(
+        ITEMS_PER_PAGE,
+        offset,
+        keyword,
+      );
       const mapped = items.map(mapClientSummary);
 
       mapped.forEach((client) => {
@@ -429,11 +434,17 @@ export function useAppClients() {
       setClients([]);
       setTotalResults(0);
     }
-  }, [offset, upsertRoleCache]);
+  }, [keyword, offset, upsertRoleCache]);
 
   useEffect(() => {
     fetchClients();
   }, [fetchClients]);
+
+  const setSearchKeyword = useCallback((value) => {
+    const nextValue = typeof value === "string" ? value : "";
+    setPage(1);
+    setSearch(nextValue);
+  }, []);
 
   // =========================
   // CREATE
@@ -563,7 +574,7 @@ export function useAppClients() {
 
   return {
     search,
-    setSearch,
+    setSearch: setSearchKeyword,
     page,
     setPage,
     paginatedClients: hydratedClients,

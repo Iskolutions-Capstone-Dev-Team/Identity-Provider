@@ -37,9 +37,16 @@ const normalizeRotateSecretPayload = (payload, fallbackClientId) => {
 };
 
 export const clientService = {
-  async getClients(limit = 10, offset = 0) {
+  async getClients(limit = 10, offset = 0, keyword = "") {
+    const normalizedKeyword =
+      typeof keyword === "string" ? keyword.trim() : "";
+
     const response = await axiosInstance.get(`/admin/clients`, {
-      params: { limit, offset },
+      params: {
+        limit,
+        offset,
+        ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
+      },
     });
     const payload = response.data;
     const items = Array.isArray(payload)

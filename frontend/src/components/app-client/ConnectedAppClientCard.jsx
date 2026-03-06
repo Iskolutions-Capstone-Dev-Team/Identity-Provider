@@ -16,7 +16,7 @@ export default function ConnectedAppClientCard({ clients, totalResults, itemsPer
                                 <path d="m21 21-4.3-4.3"></path>
                             </g>
                         </svg>
-                        <input type="search" value={search} placeholder="Search by name or client ID..." className="grow bg-transparent" onChange={(e) => setSearch(e.target.value)} />
+                        <input type="search" value={search} placeholder="Search by name..." className="grow bg-transparent" onChange={(e) => setSearch(e.target.value)} />
                     </label>
                 </div>
                 <div className="flex justify-end w-full lg:w-auto">
