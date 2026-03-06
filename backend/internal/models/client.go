@@ -29,6 +29,7 @@ type Client struct {
 	LogoutUri     string    `db:"logout_uri"`
 	Description   string    `db:"description"`
 	ImageLocation string    `db:"image_location"`
+	CreatedAt     time.Time `db:"created_at"`
 	UpdatedAt     time.Time `db:"updated_at"`
 
 	Grants       []string
