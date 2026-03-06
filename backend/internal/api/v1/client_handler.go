@@ -78,7 +78,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 
 	grants := c.PostFormArray("grants")
 	roles := c.PostFormArray("roles")
-	roleIDs := make([]int, len(roles))
+	roleIDs := make([]int, 0, len(roles))
 	for _, roleStr := range roles {
 		id, err := strconv.Atoi(roleStr)
 		if err != nil {
@@ -88,7 +88,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 		}
 		roleIDs = append(roleIDs, id)
 	}
-
+	log.Print(roleIDs)
 	if err := h.Repo.CreateClient(clientModel, grants, roleIDs); err != nil {
 		log.Printf("[PostClient] Creation failed: %v", err)
 		c.JSON(
