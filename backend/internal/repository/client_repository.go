@@ -63,19 +63,18 @@ func (r *ClientRepository) ListClients(limit,
 	offset int, keyword string,
 ) ([]models.Client, error) {
 	var clients []models.Client
+	searchKeyword := "%" + keyword + "%"
 	query := `
         SELECT 
 			id, client_name, tag, 
 			description, image_location, 
 			base_url, redirect_uri, logout_uri
         FROM clients 
-        WHERE deleted_at IS NULL 
-        LIMIT ? OFFSET ?`
+        WHERE deleted_at IS NULL AND client_name LIKE ?
+        LIMIT ? OFFSET ?
+	`
 
-	if keyword != "" {
-		query += ``
-	}
-	err := r.db.Select(&clients, query, limit, offset)
+	err := r.db.Select(&clients, query, searchKeyword, limit, offset)
 	return clients, err
 }
 
