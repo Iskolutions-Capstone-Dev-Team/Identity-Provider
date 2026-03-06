@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/auth"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
+	"github.com/minio/minio-go/v7"
 )
 
 // ProcessAndUploadIcon handles validation, seeking, and the S3 transfer
@@ -53,4 +56,48 @@ func ProcessAndUploadIcon(
 	}
 
 	return finalPath, nil
+}
+
+// GetPresignedURL generates a temporary link for the frontend
+func GetPresignedURL(ctx context.Context,
+	object string, storage *storage.S3Provider,
+) (string, error) {
+	// Clean path for S3 standards
+	object = strings.TrimPrefix(object, "/")
+	expiry := time.Second * 3600
+
+	presignedURL, err := storage.Client.PresignedGetObject(
+		ctx,
+		storage.BucketName,
+		object,
+		expiry,
+		nil,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	urlStr := presignedURL.String()
+	internalHost := storage.Client.EndpointURL().Host
+
+	if storage.PublicEndpoint != "" && storage.PublicEndpoint != internalHost {
+		urlStr = strings.Replace(urlStr, internalHost,
+			storage.PublicEndpoint, 1)
+	}
+
+	return urlStr, nil
+}
+
+func DeleteImage(ctx context.Context, object string,
+	storage *storage.S3Provider,
+) error {
+	// RemoveObject options can be used for versioning or governance bypass
+	opts := minio.RemoveObjectOptions{}
+
+	err := storage.Client.RemoveObject(ctx, storage.BucketName, object, opts)
+	if err != nil {
+		return fmt.Errorf("[DeleteClientImage] MinIO RemoveObject: %v", err)
+	}
+
+	return nil
 }

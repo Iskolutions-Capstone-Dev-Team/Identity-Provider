@@ -3,7 +3,7 @@ import { useRoles } from "../hooks/useRoles";
 import RolesListCard from "../components/role/RolesListCard";
 import RoleModal from "../components/role/RoleModal";
 import SuccessAlert from "../components/SuccessAlert";
-import DeleteConfirmModal from "../components/DeleteConfirmAlert";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
 
 const ITEMS_PER_PAGE = 10;

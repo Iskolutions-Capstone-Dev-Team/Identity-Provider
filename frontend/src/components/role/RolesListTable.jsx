@@ -2,8 +2,9 @@ import TableRowFade from "../TableRowFade";
 
 export default function RolesListTable({ roles, onView, onEdit, onDelete }) {
     return (
-        <div className="overflow-x-auto">
-            <table className="table w-full border rounded-2xl border-gray-200">
+        <div className="rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+            <table className="table w-full">
                 {/* head */}
                 <thead>
                     <tr className="bg-[#991b1b]">
@@ -50,6 +51,7 @@ export default function RolesListTable({ roles, onView, onEdit, onDelete }) {
                     ))}
                 </tbody>
             </table>
+            </div>
         </div>
     );
 }

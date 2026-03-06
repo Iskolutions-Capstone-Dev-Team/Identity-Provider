@@ -35,5 +35,12 @@ var ClientsMigration = migrations.TableMigration{
 				ADD COLUMN image_location VARCHAR(255);
 			`,
 		},
+		{
+			ID: "add-old-secret-column",
+			SQL: `
+				ALTER TABLE clients
+				ADD COLUMN old_secret VARCHAR(255);
+			`,
+		},
 	},
 }

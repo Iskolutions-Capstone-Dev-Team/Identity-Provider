@@ -40,6 +40,8 @@ func MigrateAndSeed() {
 		"refresh_tokens",
 		"user_roles",
 		"idp_sessions",
+		"client_grant_types",
+		"client_allowed_roles",
 	}
 
 	for _, tableName := range privelegedTables {
@@ -88,7 +90,12 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 
 	parsedID, _ := uuid.Parse(cID)
 	hashedClientSecret, _ := auth.HashSecret(cSecret)
-	grants := []string{"authorization_code", "refresh_token"}
+	grants := []string{
+		"authorization_code", 
+		"refresh_token", 
+		"client_credentials",
+	}
+	roleIDs := []int{1, 2}
 
 	// Initialize the struct to avoid nil pointer
 	client := &models.Client{
@@ -104,7 +111,7 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 	}
 
 	clientRepo := repository.NewClientRepository(adminDatabase)
-	err := clientRepo.CreateClient(client, grants)
+	err := clientRepo.CreateClient(client, grants, roleIDs)
 	if err != nil {
 		return fmt.Errorf("[Migrate] Client seeding failed: %v", err)
 	} else {
