@@ -30,6 +30,8 @@ type Client struct {
 	Description   string    `db:"description"`
 	ImageLocation string    `db:"image_location"`
 	UpdatedAt     time.Time `db:"updated_at"`
+
+	Grants []string
 }
 
 type ClientGrantTypes struct {
