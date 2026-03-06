@@ -102,27 +102,7 @@ export const clientService = {
   },
 
   async rotateClientSecret(id) {
-    const candidateEndpoints = [
-      `/admin/clients/${id}/rotate-secret`,
-      `/admin/clients/${id}/secret/rotate`,
-      `/admin/clients/${id}/rotate-secret/`,
-    ];
-
-    let lastError = null;
-
-    for (const endpoint of candidateEndpoints) {
-      try {
-        const response = await axiosInstance.post(endpoint);
-        return normalizeRotateSecretPayload(response?.data, id);
-      } catch (err) {
-        const status = err?.response?.status;
-        if (status && status !== 404 && status !== 405) {
-          throw err;
-        }
-        lastError = err;
-      }
-    }
-
-    throw lastError || new Error("Rotate secret endpoint not available.");
+    const response = await axiosInstance.patch(`/admin/clients/${id}/secret`);
+    return normalizeRotateSecretPayload(response?.data, id);
   },
 };
