@@ -16,7 +16,7 @@ export function useAppClients() {
     secret: "",
     title: "",
     loading: false,
-    error: "",
+    hasError: false,
   });
 
   const offset = (page - 1) * ITEMS_PER_PAGE;
@@ -100,7 +100,7 @@ export function useAppClients() {
         secret: "",
         title: "Unable to rotate client secret",
         loading: false,
-        error: "Missing client ID.",
+        hasError: true,
       });
       return;
     }
@@ -112,7 +112,7 @@ export function useAppClients() {
       secret: "",
       title: "Rotating client secret...",
       loading: true,
-      error: "",
+      hasError: false,
     });
 
     try {
@@ -126,15 +126,9 @@ export function useAppClients() {
         secret: rotatedSecret,
         title: "Client secret rotated",
         loading: false,
-        error: rotatedSecret ? "" : "Rotate request succeeded but no secret was returned.",
+        hasError: !rotatedSecret,
       });
     } catch (err) {
-      const message =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message ||
-        "Rotate request failed.";
-
       setSecretModal({
         open: true,
         clientId: id,
@@ -142,7 +136,7 @@ export function useAppClients() {
         secret: "",
         title: "Unable to rotate client secret",
         loading: false,
-        error: message,
+        hasError: true,
       });
     }
   };

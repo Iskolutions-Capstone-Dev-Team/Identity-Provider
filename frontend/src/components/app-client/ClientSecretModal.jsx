@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function ClientSecretModal({ open, clientName, clientId, secret, loading = false, error = "", onClose }) {
+export default function ClientSecretModal({ open, clientName, clientId, secret, loading = false, hasError = false, onClose }) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
 
   if (!open) return null;
 
-  const isError = Boolean(error);
+  const isError = Boolean(hasError);
   const displayName = clientName || clientId || "this client";
 
   return (
@@ -44,8 +44,8 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
           )}
 
           {!loading && isError && (
-            <div className="alert alert-error text-sm">
-              <span>{error}</span>
+            <div className="alert alert-error text-sm shadow-lg hover:shadow-xl hover:scale-102 transition-all">
+              <span>Request failed, try again later.</span>
             </div>
           )}
 

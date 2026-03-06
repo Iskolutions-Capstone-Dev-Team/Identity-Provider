@@ -37,7 +37,7 @@ export default function AppClient() {
             clientName: payload?.name || "",
             secret: res?.client_secret || "",
             loading: false,
-            error: "",
+            hasError: false,
         });
     };
 
@@ -91,7 +91,7 @@ export default function AppClient() {
             secret: "",
             title: "",
             loading: false,
-            error: "",
+            hasError: false,
         });
     };
 
@@ -142,7 +142,7 @@ export default function AppClient() {
                 clientId={secretModal.clientId}
                 secret={secretModal.secret}
                 loading={secretModal.loading}
-                error={secretModal.error}
+                hasError={secretModal.hasError}
                 onClose={resetSecretModal}
             />
 
