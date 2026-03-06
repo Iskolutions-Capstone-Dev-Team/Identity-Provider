@@ -40,6 +40,7 @@ func MigrateAndSeed() {
 		"refresh_tokens",
 		"user_roles",
 		"idp_sessions",
+		"client_grant_types",
 	}
 
 	for _, tableName := range privelegedTables {
