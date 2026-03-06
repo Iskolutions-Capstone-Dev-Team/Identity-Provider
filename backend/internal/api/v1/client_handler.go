@@ -86,11 +86,10 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"client_id":     clientID.String(),
-		"client_secret": rawSecret,
-		"image_url":     imagePath,
-		"message":       "Copy secret now. It is stored as a hash.",
+	c.JSON(http.StatusCreated, dto.ClientSecretResponse{
+		ID:           clientID.String(),
+		ClientSecret: rawSecret,
+		Message:      "Here's your client secret. Keep it.",
 	})
 }
 
@@ -314,4 +313,53 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 		http.StatusOK,
 		dto.SuccessResponse{Message: "client deactivated successfully"},
 	)
+}
+
+func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
+	clientIDString := c.Param("id")
+	clientID, err := uuid.Parse(clientIDString)
+	if err != nil {
+		log.Printf("[PatchClientSecret] failed to parse id: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "failed to parse client id"},
+		)
+		return
+	}
+
+	newSecret, err := auth.GenerateRandomString(32)
+	if err != nil {
+		log.Printf("[PatchClientSecret] failed to generate new secret: %v", err)
+		c.JSON(
+			http.StatusInternalServerError, 
+			dto.ErrorResponse{Error: "secret generation failed"},
+		)
+		return
+	}
+
+	newSecretHash, err := auth.HashSecret(newSecret)
+	if err != nil {
+		log.Printf("[PatchClientSecret] failed to hash new secret: %v", err)
+		c.JSON(
+			http.StatusInternalServerError, 
+			dto.ErrorResponse{Error: "failed to hash secret"},
+		)
+		return
+	}
+
+	err = h.Repo.ChangeSecret(clientID[:], newSecretHash)
+	if err != nil {
+		log.Printf("[PatchClientSecret] failed to change secret: %v", err)
+		c.JSON(
+			http.StatusInternalServerError, 
+			dto.ErrorResponse{Error: "failed to change secret"},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.ClientSecretResponse{
+		ID: clientIDString,
+		ClientSecret: newSecret,
+		Message: "Here's your new client secret, keep it.",
+	})
 }
