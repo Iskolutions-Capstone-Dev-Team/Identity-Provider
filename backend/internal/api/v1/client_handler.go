@@ -163,6 +163,7 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 			BaseURL:       cl.BaseUrl,
 			RedirectURI:   cl.RedirectUri,
 			LogoutURI:     cl.LogoutUri,
+			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
 		})
 	}
 
