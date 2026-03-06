@@ -198,6 +198,14 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 
 	grants, _ := h.Repo.GetGrantTypes(cl.ID)
 	roles, _ := h.Repo.GetClientRoles(cl.Tag)
+	imageLocation, err := service.GetPresignedURL(
+		c.Request.Context(),
+		cl.ImageLocation,
+		h.Storage,
+	)
+	if err != nil {
+		log.Printf("[GetClient] failed to get image url: %v", err)
+	}
 
 	id, _ := uuid.FromBytes(cl.ID)
 	c.JSON(http.StatusOK, gin.H{
@@ -206,13 +214,13 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 			Name:          cl.ClientName,
 			Tag:           cl.Tag,
 			Description:   cl.Description,
-			ImageLocation: cl.ImageLocation,
+			ImageLocation: imageLocation,
 			BaseURL:       cl.BaseUrl,
 			RedirectURI:   cl.RedirectUri,
 			LogoutURI:     cl.LogoutUri,
+			Grants:        grants,
 		},
-		"allowed_grants": grants,
-		"roles":          roles,
+		"roles": roles,
 	})
 }
 
@@ -331,7 +339,7 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PatchClientSecret] failed to generate new secret: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "secret generation failed"},
 		)
 		return
@@ -341,7 +349,7 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PatchClientSecret] failed to hash new secret: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "failed to hash secret"},
 		)
 		return
@@ -351,15 +359,15 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PatchClientSecret] failed to change secret: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "failed to change secret"},
 		)
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.ClientSecretResponse{
-		ID: clientIDString,
+		ID:           clientIDString,
 		ClientSecret: newSecret,
-		Message: "Here's your new client secret, keep it.",
+		Message:      "Here's your new client secret, keep it.",
 	})
 }
