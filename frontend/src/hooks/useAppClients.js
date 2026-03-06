@@ -3,6 +3,37 @@ import { clientService } from "../services/clientService";
 
 const ITEMS_PER_PAGE = 10;
 
+const mapClientSummary = (client = {}) => {
+  const id = client.id ?? client.client_id ?? client.clientId ?? "";
+
+  return {
+    id,
+    clientId: id,
+    name: client.name ?? "",
+    tag: client.tag ?? "",
+    description: client.description || "",
+    created: (client.created_at || client.createdAt || "").slice(0, 10) || "-",
+    image: client.image_location || client.imageLocation || client.image || null,
+    base_url: client.base_url || client.baseURL || "",
+    redirect_uri: client.redirect_uri || client.redirectURI || "",
+    logout_uri: client.logout_uri || client.logoutURI || "",
+    grants: Array.isArray(client.grants) ? client.grants : [],
+    roles: Array.isArray(client.roles) ? client.roles : [],
+  };
+};
+
+const normalizeClientDetailPayload = (payload = {}) => {
+  const client = payload?.client ?? payload?.data?.client ?? payload?.data ?? payload;
+  const grants = payload?.allowed_grants ?? payload?.allowedGrants ?? client?.allowed_grants ?? client?.allowedGrants ?? client?.grants ?? [];
+  const roles = payload?.roles ?? payload?.data?.roles ?? client?.roles ?? [];
+
+  return mapClientSummary({
+    ...(client || {}),
+    grants: Array.isArray(grants) ? grants : [],
+    roles: Array.isArray(roles) ? roles : [],
+  });
+};
+
 export function useAppClients() {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
@@ -27,21 +58,7 @@ export function useAppClients() {
   const fetchClients = useCallback(async () => {
     try {
       const { items, total } = await clientService.getClients(ITEMS_PER_PAGE, offset);
-
-      const mapped = items.map((c) => ({
-        id: c.id ?? c.client_id,
-        clientId: c.id ?? c.client_id,
-        name: c.name,
-        tag: c.tag,
-        description: c.description || "",
-        created: (c.created_at || c.createdAt || "").slice(0, 10) || "-",
-        image: c.image_location || c.image || null,
-        base_url: c.base_url,
-        redirect_uri: c.redirect_uri,
-        logout_uri: c.logout_uri,
-        grants: c.grants || [],
-        roles: c.roles || [],
-      }));
+      const mapped = items.map(mapClientSummary);
 
       setClients(mapped);
       setTotalResults(total);
@@ -87,6 +104,11 @@ export function useAppClients() {
     setSuccessMessage("App client successfully deleted!");
     await fetchClients();
   };
+
+  const getClientDetails = useCallback(async (id) => {
+    const payload = await clientService.getClientById(id);
+    return normalizeClientDetailPayload(payload);
+  }, []);
 
   const rotateClientSecret = async (client) => {
     const id = typeof client === "string" ? client : client?.id;
@@ -154,6 +176,7 @@ export function useAppClients() {
     createClient,
     updateClient,
     deleteClient,
+    getClientDetails,
     rotateClientSecret,
     secretModal,
     setSecretModal,

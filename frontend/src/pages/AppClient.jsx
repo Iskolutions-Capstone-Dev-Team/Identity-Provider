@@ -17,6 +17,7 @@ export default function AppClient() {
         paginatedClients, totalPages, totalResults,
         successMessage, setSuccessMessage,
         createClient, updateClient, deleteClient,
+        getClientDetails,
         rotateClientSecret, secretModal, setSecretModal,
     } = useAppClients();
     const [createOpen, setCreateOpen] = useState(false);
@@ -131,6 +132,7 @@ export default function AppClient() {
                     open={editViewOpen}
                     mode={mode}
                     client={activeClient}
+                    getClientDetails={getClientDetails}
                     onClose={() => setEditViewOpen(false)}
                     onSubmit={updateClient}
                 />

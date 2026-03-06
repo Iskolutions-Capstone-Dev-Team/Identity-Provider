@@ -6,7 +6,7 @@ import MultiSelect from "../MultiSelect";
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
 
-export default function AppClientModal({ open, mode, client, onClose, onSubmit }) {
+export default function AppClientModal({ open, mode, client, getClientDetails, onClose, onSubmit }) {
   const isView = mode === "view";
   const [name, setName] = useState("");
   const [tag, setTag] = useState("");
@@ -24,12 +24,24 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
   const [error, setError] = useState("");
   const [showFullImage, setShowFullImage] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [isViewLoading, setIsViewLoading] = useState(false);
+
+  const roleOptions = [
+    ...rolesData.map((r) => ({ id: r.id, role_name: r.role_name })),
+    ...roles
+      .filter(
+        (value) =>
+          typeof value === "string" &&
+          !rolesData.some((role) => role.id === value),
+      )
+      .map((value) => ({ id: value, role_name: value })),
+  ];
 
   const resolveImageSrc = (img) => {
     if (!img) return null;
     if (img.startsWith("data:")) return img;
     if (img.startsWith("http://") || img.startsWith("https://")) return img;
-    return `${import.meta.env.VITE_BACKEND_URL}${img}`;
+    return `${img}`;
   };
 
   useEffect(() => {
@@ -50,6 +62,46 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
     setImageLocation(img || "");
     setImagePreview(resolveImageSrc(img));
   }, [client, open]);
+
+  useEffect(() => {
+    if (!open || !isView || !client || typeof getClientDetails !== "function") return;
+
+    const clientId = client.id || client.clientId;
+    if (!clientId) return;
+
+    let cancelled = false;
+    setIsViewLoading(true);
+
+    getClientDetails(clientId)
+      .then((details) => {
+        if (cancelled || !details) return;
+
+        setName(details.name || "");
+        setTag(details.tag || "");
+        setDescription(details.description || "");
+        setBaseURL(details.base_url || "");
+        setRedirectURL(details.redirect_uri || "");
+        setLogoutURL(details.logout_uri || "");
+        setSelectedGrants(details.grants || ["authorization_code"]);
+        setRoles(details.roles || []);
+
+        const img = details.image || details.image_location || null;
+        setImageLocation(img || "");
+        setImagePreview(resolveImageSrc(img));
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("Fetch client details error:", err);
+        setError("Unable to load latest app client details.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsViewLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [client, getClientDetails, isView, open]);
 
   const toggleGrant = (grant) => {
     if (selectedGrants.includes(grant)) {
@@ -175,6 +227,9 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
           </div>
           <form id="app-client-form" noValidate className="flex-1 overflow-y-auto p-6 space-y-4 bg-white" onSubmit={handleSubmit}>
             <ErrorAlert message={error} onClose={() => setError("")}/>
+            {isView && isViewLoading && (
+              <p className="text-sm text-gray-500">Loading latest app client details...</p>
+            )}
             <div className="space-y-1.5">
               <label className="block text-sm font-semibold text-gray-700">System Logo{!isView && <span className="text-red-500"> *</span>}</label>
               <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl transition-all duration-200 ${
@@ -213,7 +268,7 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
                   <label className="block text-sm font-semibold text-gray-700">
                     Client Id
                   </label>
-                  <input type="text" value={client?.id || ""} readOnly className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
+                  <input type="text" value={client?.id || client?.clientId || ""} readOnly className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
                 </div>
               
                 <div className="space-y-0.5">
@@ -289,7 +344,7 @@ export default function AppClientModal({ open, mode, client, onClose, onSubmit }
                     Select at least one role allowed for this client
                   </p>
                   <MultiSelect
-                    options={rolesData.map((r) => ({ id: r.id, role_name: r.role_name }))}
+                    options={roleOptions}
                     selectedValues={roles}
                     onChange={(ids) => setRoles(ids)}
                     placeholder="Select roles"
