@@ -42,6 +42,7 @@ func MapRoutes(v1Group *gin.RouterGroup, h Handlers) {
 			clients.POST("", h.ClientHandler.PostClient)
 			clients.GET("", h.ClientHandler.GetClientList)
 			clients.GET("/:id", h.ClientHandler.GetClient)
+			clients.GET("/tags", h.ClientHandler.GetClientTags)
 			clients.PUT("/:id", h.ClientHandler.PutClient)
 			clients.PATCH("/:id/secret", h.ClientHandler.PatchClientSecret)
 			clients.DELETE("/:id", h.ClientHandler.DeleteClient)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/auth"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
+	"github.com/minio/minio-go/v7"
 )
 
 // ProcessAndUploadIcon handles validation, seeking, and the S3 transfer
@@ -85,4 +86,18 @@ func GetPresignedURL(ctx context.Context,
 	}
 
 	return urlStr, nil
+}
+
+func DeleteImage(ctx context.Context, object string,
+	storage *storage.S3Provider,
+) error {
+	// RemoveObject options can be used for versioning or governance bypass
+	opts := minio.RemoveObjectOptions{}
+
+	err := storage.Client.RemoveObject(ctx, storage.BucketName, object, opts)
+	if err != nil {
+		return fmt.Errorf("[DeleteClientImage] MinIO RemoveObject: %v", err)
+	}
+
+	return nil
 }

@@ -203,6 +203,26 @@ func (r *ClientRepository) ChangeSecret(id []byte, newSecretHash string,
 	return nil
 }
 
+func (r *ClientRepository) RetrieveClientTagInformation(limit int,
+	offset int, keyword string,
+) ([]models.Client, error) {
+	var clients []models.Client
+	searchTerm := "%" + keyword + "%"
+
+	query := `
+		SELECT role_name, tag, image_location
+		FROM clients
+		WHERE deleted_at IS NULL AND tag LIKE ?
+		LIMIT ? OFFSET ?
+	`
+
+	err := r.db.Select(&clients, query, searchTerm, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	return clients, nil
+}
+
 func NewClientRepository(db *sqlx.DB) *ClientRepository {
 	return &ClientRepository{db: db}
 }
