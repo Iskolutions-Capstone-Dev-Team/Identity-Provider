@@ -34,6 +34,9 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
       )
       .map((value) => ({ id: value, role_name: value })),
   ];
+  const selectedRoleLabels = roles
+    .map((value) => roleOptions.find((option) => option.id === value)?.role_name || value)
+    .filter((value) => typeof value === "string" && value.trim().length > 0);
 
   const resolveImageSrc = (img) => {
     if (!img) return null;
@@ -280,10 +283,19 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <label className="block text-sm font-semibold text-gray-700">
                         Description
                     </label>
-                    <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows="3" placeholder="Application description"
-                        className={`textarea w-full rounded-lg border border-gray-200 resize-none ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`}
-                        disabled={isView}
-                    />
+                    {isView ? (
+                      <div className="w-full min-h-24 rounded-lg border border-gray-200 bg-gray-100 text-gray-700 px-3 py-2 text-sm whitespace-pre-wrap">
+                        {description?.trim() ? description : <span className="text-gray-500 italic">No content</span>}
+                      </div>
+                    ) : (
+                      <textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        rows="3"
+                        placeholder="Application description"
+                        className="textarea w-full rounded-lg border border-gray-200 resize-none bg-transparent text-gray-700"
+                      />
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -335,13 +347,32 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                   {!isView && <p className="text-xs text-gray-500 italic mb-2">
                     select roles that are permitted to use this client
                   </p>}
-                  <MultiSelect
-                    options={roleOptions}
-                    selectedValues={roles}
-                    onChange={(ids) => setRoles(ids)}
-                    placeholder="Select roles"
-                    disabled={isView}
-                  />
+                  {isView ? (
+                    <div className="w-full min-h-24 rounded-lg border border-gray-200 bg-gray-100 text-gray-700 px-3 py-2 text-sm">
+                      {selectedRoleLabels.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedRoleLabels.map((roleName, index) => (
+                            <span
+                              key={`${roleName}-${index}`}
+                              className="inline-flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
+                            >
+                              {roleName}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 italic">No content</span>
+                      )}
+                    </div>
+                  ) : (
+                    <MultiSelect
+                      options={roleOptions}
+                      selectedValues={roles}
+                      onChange={(ids) => setRoles(ids)}
+                      placeholder="Select roles"
+                      disabled={isView}
+                    />
+                  )}
                 </div>
             </div>
           </form>
