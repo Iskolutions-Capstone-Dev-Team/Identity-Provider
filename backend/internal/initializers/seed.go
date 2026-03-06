@@ -42,7 +42,6 @@ func MigrateAndSeed() {
 		"idp_sessions",
 		"client_grant_types",
 		"client_allowed_roles",
-		"client_allowed_roles",
 	}
 
 	for _, tableName := range privelegedTables {
