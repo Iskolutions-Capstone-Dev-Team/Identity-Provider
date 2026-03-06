@@ -1,10 +1,89 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import ErrorAlert from "../ErrorAlert";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import MultiSelect from "../MultiSelect";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
+
+const toPositiveInt = (value) => {
+  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const normalizeRoleIds = (values = []) =>
+  Array.from(
+    new Set(
+      (Array.isArray(values) ? values : [])
+        .map((value) => toPositiveInt(value))
+        .filter((value) => value !== null),
+    ),
+  );
+
+const normalizeRoleToken = (value) =>
+  typeof value === "string" ? value.trim().toLowerCase() : "";
+
+const getRoleNameCandidates = (name) => {
+  if (typeof name !== "string") return [];
+
+  const full = normalizeRoleToken(name);
+  if (!full) return [];
+
+  const suffix = full.includes(":") ? full.split(":").pop()?.trim() || "" : "";
+  const compactFull = full.replace(/\s+/g, "");
+  const compactSuffix = suffix ? suffix.replace(/\s+/g, "") : "";
+
+  return Array.from(new Set([full, suffix, compactFull, compactSuffix].filter(Boolean)));
+};
+
+const mapRoleNamesToIds = (roleNames = [], roleOptions = []) => {
+  if (!Array.isArray(roleNames) || roleNames.length === 0 || !Array.isArray(roleOptions)) {
+    return [];
+  }
+
+  const roleLookup = new Map();
+  roleOptions.forEach((role) => {
+    const roleId = toPositiveInt(role?.id ?? role?.role_id ?? role?.roleId ?? role?.value);
+    if (roleId === null) return;
+
+    getRoleNameCandidates(role?.role_name ?? role?.roleName ?? role?.name ?? "").forEach((key) => {
+      if (!roleLookup.has(key)) {
+        roleLookup.set(key, roleId);
+      }
+    });
+  });
+
+  const ids = roleNames
+    .flatMap((name) => getRoleNameCandidates(name))
+    .map((key) => roleLookup.get(key))
+    .filter((id) => id !== undefined);
+
+  return normalizeRoleIds(ids);
+};
+
+const mergeRoleOptions = (...collections) => {
+  const roleOptionMap = new Map();
+
+  collections.flat().forEach((role) => {
+    if (!role || typeof role !== "object") return;
+
+    const roleId = toPositiveInt(role.id ?? role.role_id ?? role.roleId ?? role.value);
+    if (roleId === null) return;
+
+    const roleName =
+      typeof role.role_name === "string" && role.role_name.trim().length > 0
+        ? role.role_name.trim()
+        : typeof role.roleName === "string" && role.roleName.trim().length > 0
+          ? role.roleName.trim()
+          : `${roleId}`;
+
+    if (!roleOptionMap.has(roleId)) {
+      roleOptionMap.set(roleId, { id: roleId, role_name: roleName });
+    }
+  });
+
+  return Array.from(roleOptionMap.values());
+};
 
 export default function AppClientModal({ open, mode, client, getClientDetails, onClose, onSubmit }) {
   const isView = mode === "view";
@@ -17,6 +96,9 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [selectedGrants, setSelectedGrants] = useState(["authorization_code"]);
   const rolesData = useAllRoles();
   const [roles, setRoles] = useState([]);
+  const [detailRoleOptions, setDetailRoleOptions] = useState([]);
+  const [detailRoleNames, setDetailRoleNames] = useState([]);
+  const [hasRoleSelectionChanged, setHasRoleSelectionChanged] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageLocation, setImageLocation] = useState(null);
@@ -24,19 +106,25 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [error, setError] = useState("");
   const [showFullImage, setShowFullImage] = useState(false);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
-  const roleOptions = [
-    ...rolesData.map((r) => ({ id: r.id, role_name: r.role_name })),
-    ...roles
-      .filter(
-        (value) =>
-          typeof value === "string" &&
-          !rolesData.some((role) => role.id === value),
-      )
-      .map((value) => ({ id: value, role_name: value })),
-  ];
-  const selectedRoleLabels = roles
-    .map((value) => roleOptions.find((option) => option.id === value)?.role_name || value)
-    .filter((value) => typeof value === "string" && value.trim().length > 0);
+  const detailsRequestRef = useRef({ clientId: "", inFlight: false });
+  const roleOptions = useMemo(
+    () =>
+      mergeRoleOptions(
+        rolesData.map((role) => ({ id: role.id, role_name: role.role_name })),
+        detailRoleOptions,
+      ),
+    [detailRoleOptions, rolesData],
+  );
+
+  const selectedRoleLabels = useMemo(
+    () =>
+      roles
+        .map((value) => roleOptions.find((option) => option.id === value)?.role_name || `${value}`)
+        .filter((value) => typeof value === "string" && value.trim().length > 0),
+    [roleOptions, roles],
+  );
+
+  const displayedRoleLabels = selectedRoleLabels.length > 0 ? selectedRoleLabels : detailRoleNames;
 
   const resolveImageSrc = (img) => {
     if (!img) return null;
@@ -54,7 +142,10 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setRedirectURL(client.redirect_uri || "");
     setLogoutURL(client.logout_uri || "");
     setSelectedGrants(client.grants || ["authorization_code"]);
-    setRoles(client.roles || []);
+    setRoles(normalizeRoleIds(client.roles || []));
+    setDetailRoleOptions(Array.isArray(client.roleOptions) ? client.roleOptions : []);
+    setDetailRoleNames(Array.isArray(client.roleNames) ? client.roleNames : []);
+    setHasRoleSelectionChanged(false);
     setImageFile(null);
     setIsDragging(false);
     setError("");
@@ -64,12 +155,25 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   }, [client, open]);
 
   useEffect(() => {
+    if (!open) {
+      detailsRequestRef.current = { clientId: "", inFlight: false };
+    }
+  }, [open]);
+
+  useEffect(() => {
     if (!open || !client || typeof getClientDetails !== "function") return;
 
     const clientId = client.id || client.clientId;
     if (!clientId) return;
+    if (
+      detailsRequestRef.current.inFlight &&
+      detailsRequestRef.current.clientId === clientId
+    ) {
+      return;
+    }
 
     let cancelled = false;
+    detailsRequestRef.current = { clientId, inFlight: true };
     setIsDetailsLoading(true);
     setError("");
 
@@ -84,7 +188,10 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         setRedirectURL(details.redirect_uri || "");
         setLogoutURL(details.logout_uri || "");
         setSelectedGrants(details.grants || ["authorization_code"]);
-        setRoles(details.roles || []);
+        setRoles(normalizeRoleIds(details.roles || []));
+        setDetailRoleOptions(Array.isArray(details.roleOptions) ? details.roleOptions : []);
+        setDetailRoleNames(Array.isArray(details.roleNames) ? details.roleNames : []);
+        setHasRoleSelectionChanged(false);
 
         const img = details.image || details.image_location || null;
         setImageLocation(img || "");
@@ -96,6 +203,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         setError("Unable to load latest app client details.");
       })
       .finally(() => {
+        detailsRequestRef.current = { clientId, inFlight: false };
         if (!cancelled) setIsDetailsLoading(false);
       });
 
@@ -103,6 +211,16 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
       cancelled = true;
     };
   }, [client, getClientDetails, open]);
+
+  useEffect(() => {
+    if (roles.length > 0 || detailRoleNames.length === 0 || rolesData.length === 0) return;
+
+    const matchedRoleIds = mapRoleNamesToIds(detailRoleNames, rolesData);
+
+    if (matchedRoleIds.length > 0) {
+      setRoles(Array.from(new Set(matchedRoleIds)));
+    }
+  }, [detailRoleNames, roles, rolesData]);
 
   const toggleGrant = (grant) => {
     if (selectedGrants.includes(grant)) {
@@ -178,21 +296,55 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     }
 
     setError("");
+    let roleIds = normalizeRoleIds(roles);
+    if (!hasRoleSelectionChanged && roleIds.length === 0) {
+      const fallbackFromNames = mapRoleNamesToIds(detailRoleNames, roleOptions);
+      const fallbackFromDetails = normalizeRoleIds(detailRoleOptions.map((role) => role?.id));
+      roleIds = normalizeRoleIds([...fallbackFromNames, ...fallbackFromDetails]);
+    }
 
-    await onSubmit({
-      id: client?.id || client?.clientId,
-      name,
-      description,
-      base_url: baseURL,
-      redirect_uri: redirectURL,
-      logout_uri: logoutURL,
-      grants: selectedGrants,
-      roles,
-      imageFile,
-      image_location: imageLocation ?? "",
-    });
+    const selectedRoleOptions = roleIds
+      .map((roleId) =>
+        roleOptions.find((role) => role.id === roleId) ||
+        detailRoleOptions.find((role) => toPositiveInt(role?.id) === roleId),
+      )
+      .filter(Boolean)
+      .map((role) => ({
+        id: toPositiveInt(role?.id ?? role?.role_id ?? role?.roleId ?? role?.value),
+        role_name:
+          (typeof role?.role_name === "string" && role.role_name.trim()) ||
+          (typeof role?.roleName === "string" && role.roleName.trim()) ||
+          `${toPositiveInt(role?.id ?? role?.role_id ?? role?.roleId ?? role?.value)}`,
+      }))
+      .filter((role) => role.id !== null);
+    const selectedRoleNames = Array.from(
+      new Set([
+        ...selectedRoleOptions.map((role) => role.role_name).filter(Boolean),
+        ...detailRoleNames,
+      ]),
+    );
 
-    onClose();
+    try {
+      await onSubmit({
+        id: client?.id || client?.clientId,
+        name,
+        description,
+        base_url: baseURL,
+        redirect_uri: redirectURL,
+        logout_uri: logoutURL,
+        grants: selectedGrants,
+        roles: roleIds,
+        roleNames: selectedRoleNames,
+        roleOptions: selectedRoleOptions,
+        imageFile,
+        image_location: imageLocation ?? "",
+      });
+
+      onClose();
+    } catch (submitError) {
+      console.error("Submit app client error:", submitError);
+      setError("Unable to save app client. Please check selected roles and try again.");
+    }
   };
 
   if (!open) return null;
@@ -349,9 +501,9 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                   </p>}
                   {isView ? (
                     <div className="w-full min-h-24 rounded-lg border border-gray-200 bg-gray-100 text-gray-700 px-3 py-2 text-sm">
-                      {selectedRoleLabels.length > 0 ? (
+                      {displayedRoleLabels.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">
-                          {selectedRoleLabels.map((roleName, index) => (
+                          {displayedRoleLabels.map((roleName, index) => (
                             <span
                               key={`${roleName}-${index}`}
                               className="inline-flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
@@ -368,7 +520,10 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <MultiSelect
                       options={roleOptions}
                       selectedValues={roles}
-                      onChange={(ids) => setRoles(ids)}
+                      onChange={(ids) => {
+                        setHasRoleSelectionChanged(true);
+                        setRoles(normalizeRoleIds(ids));
+                      }}
                       placeholder="Select roles"
                       disabled={isView}
                     />

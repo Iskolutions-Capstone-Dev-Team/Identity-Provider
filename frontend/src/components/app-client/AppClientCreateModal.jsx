@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import MultiSelect from "../MultiSelect";
 import ModalSteps from "../ModalSteps";
@@ -6,6 +6,20 @@ import ErrorAlert from "../ErrorAlert";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
+
+const toPositiveInt = (value) => {
+    const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const normalizeRoleIds = (values = []) =>
+    Array.from(
+        new Set(
+            (Array.isArray(values) ? values : [])
+                .map((value) => toPositiveInt(value))
+                .filter((value) => value !== null),
+        ),
+    );
 
 export default function AppClientCreateModal({ open, onClose, onSubmit }) {
     const [step, setStep] = useState(1);
@@ -23,16 +37,17 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
     const [isDragging, setIsDragging] = useState(false);
     const [showFullImage, setShowFullImage] = useState(false);
     const [error, setError] = useState("");
-    const roleOptions = [
-        ...rolesData.map((r) => ({ id: r.id, role_name: r.role_name })),
-        ...roles
-            .filter(
-                (value) =>
-                    typeof value === "string" &&
-                    !rolesData.some((role) => role.id === value),
-            )
-            .map((value) => ({ id: value, role_name: value })),
-    ];
+    const roleOptions = useMemo(
+        () =>
+            rolesData
+                .map((role) => {
+                    const roleId = toPositiveInt(role?.id);
+                    if (roleId === null || !role?.role_name) return null;
+                    return { id: roleId, role_name: role.role_name };
+                })
+                .filter(Boolean),
+        [rolesData],
+    );
 
     useEffect(() => {
         if (!open) {
@@ -136,7 +151,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
         setStep(step + 1);
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!imageFile) {
             setError("System logo is required.");
             setStep(1);
@@ -164,19 +179,33 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
         }
 
         setError("");
+        const roleIds = normalizeRoleIds(roles);
+        const selectedRoleOptions = roleIds
+            .map((roleId) => roleOptions.find((role) => role.id === roleId))
+            .filter(Boolean);
+        const selectedRoleNames = Array.from(
+            new Set(selectedRoleOptions.map((role) => role.role_name).filter(Boolean)),
+        );
 
-        onSubmit({
-            name,
-            tag,
-            description,
-            base_url: baseURL,
-            redirect_uri: redirectURL,
-            logout_uri: logoutURL,
-            grants,
-            roles,
-            imageFile,
+        try {
+            await onSubmit({
+                name,
+                tag,
+                description,
+                base_url: baseURL,
+                redirect_uri: redirectURL,
+                logout_uri: logoutURL,
+                grants,
+                roles: roleIds,
+                roleNames: selectedRoleNames,
+                roleOptions: selectedRoleOptions,
+                imageFile,
             });
-        onClose();
+            onClose();
+        } catch (submitError) {
+            console.error("Create app client error:", submitError);
+            setError("Unable to create app client. Please check selected roles and try again.");
+        }
     };
 
   if (!open) return null;
@@ -341,7 +370,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                                 <MultiSelect
                                     options={roleOptions}
                                     selectedValues={roles}
-                                    onChange={(ids) => setRoles(ids)}
+                                    onChange={(ids) => setRoles(normalizeRoleIds(ids))}
                                     placeholder="Select roles"
                                 />
                             </div>

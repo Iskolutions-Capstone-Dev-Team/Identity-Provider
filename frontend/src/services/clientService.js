@@ -1,5 +1,19 @@
 import axiosInstance from "../services/axiosInstance";
 
+const toPositiveInt = (value) => {
+  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const normalizeRoleIds = (roles = []) =>
+  Array.from(
+    new Set(
+      (Array.isArray(roles) ? roles : [])
+        .map((role) => toPositiveInt(role))
+        .filter((roleId) => roleId !== null),
+    ),
+  );
+
 const normalizeRotateSecretPayload = (payload, fallbackClientId) => {
   const data = payload?.data ?? payload?.result ?? payload ?? {};
 
@@ -58,7 +72,9 @@ export const clientService = {
     formData.append("logout_uri", data.logout_uri);
 
     data.grants.forEach((g) => formData.append("grants", g));
-    data.roles.forEach((r) => formData.append("roles", r));
+    normalizeRoleIds(data.roles).forEach((roleId) =>
+      formData.append("roles", String(roleId)),
+    );
 
     if (data.imageFile) {
       formData.append("image", data.imageFile);
@@ -81,7 +97,9 @@ export const clientService = {
     formData.append("logout_uri", data.logout_uri);
 
     (data.grants || []).forEach((g) => formData.append("grants", g));
-    (data.roles || []).forEach((r) => formData.append("roles", r));
+    normalizeRoleIds(data.roles).forEach((roleId) =>
+      formData.append("roles", String(roleId)),
+    );
 
     if (data.imageFile) {
       formData.append("image", data.imageFile);
