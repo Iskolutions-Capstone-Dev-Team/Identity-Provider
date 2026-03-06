@@ -39,6 +39,17 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 		return nil, err
 	}
 
+	roleQuery := `
+		SELECT r.id, r.role_name
+		FROM roles r
+		JOIN client_allowed_roles c ON c.role_id = r.id
+		WHERE c.client_id = ?
+	`
+	err = r.db.Select(&client.AllowedRoles, roleQuery, id)
+	if err != nil {
+		return nil, err
+	}
+
 	return &client, nil
 }
 
@@ -74,6 +85,7 @@ func (r *ClientRepository) ListClients(limit,
 func (r *ClientRepository) CreateClient(
 	client *models.Client,
 	grants []string,
+	roleIDs []int,
 ) error {
 	tx, err := r.db.Beginx()
 	if err != nil {
@@ -100,6 +112,17 @@ func (r *ClientRepository) CreateClient(
 		}
 	}
 
+	// 3. Insert Client-allowed Roles
+	q3 := `
+		INSERT INTO client_allowed_roles_table (client_id, role_id) 
+		VALUES (?, ?)
+	`
+	for _, roleID := range roleIDs {
+		if _, err = tx.Exec(q3, client.ID, roleID); err != nil {
+			return err
+		}
+	}
+
 	return tx.Commit()
 }
 
@@ -107,7 +130,7 @@ func (r *ClientRepository) CreateClient(
 // @Summary Update Client
 // @ID update-client
 func (r *ClientRepository) UpdateClient(c *models.Client,
-	grants []string,
+	grants []string, roleIDs []int,
 ) error {
 	query := `
         UPDATE clients 
@@ -131,38 +154,20 @@ func (r *ClientRepository) UpdateClient(c *models.Client,
 		return err
 	}
 
-	// Delete all and insert new grants
-	tx, err := r.db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-	
-	deleteQuery := `DELETE from client_grant_types WHERE client_id = ?`
-	_, err = tx.Exec(deleteQuery, c.ID)
+	err = r.DeleteAndInsertGrants(c, grants)
 	if err != nil {
 		return err
 	}
 
-	insertQuery := `
-		INSERT INTO client_grant_types (client_id, grant_type)
-		VALUES (?, ?)
-	`
-	for _, grant := range grants {
-		_, err = tx.Exec(insertQuery, c.ID, grant)
-		if err != nil {
-			return err
-		}
-	}
-	
-	if err = tx.Commit(); err != nil {
+	err = r.UpdateAllowedRoles(c, roleIDs)
+	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
-// SoftDelete marks a client as deleted without removing the audit trail.
+// SoftDelete marks a client as deleted withkey stringout removing the audit trail.
 // @Summary Soft Delete Client
 // @ID delete-client
 func (r *ClientRepository) SoftDelete(id []byte) error {
@@ -255,6 +260,82 @@ func (r *ClientRepository) RetrieveClientTagInformation(limit int,
 		return nil, err
 	}
 	return clients, nil
+}
+
+func (r *ClientRepository) DeleteAndInsertGrants(c *models.Client,
+	grants []string,
+) error {
+	// Delete all and insert new grants
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	deleteQuery := `DELETE from client_grant_types WHERE client_id = ?`
+	_, err = tx.Exec(deleteQuery, c.ID)
+	if err != nil {
+		return err
+	}
+
+	insertQuery := `
+		INSERT INTO client_grant_types (client_id, grant_type)
+		VALUES (?, ?)
+	`
+	for _, grant := range grants {
+		_, err = tx.Exec(insertQuery, c.ID, grant)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ClientRepository) UpdateAllowedRoles(client *models.Client,
+	roleIDs []int,
+) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	deleteQuery := `
+		DELETE FROM client_allowed_roles 
+		WHERE client_id = ? AND role_id NOT IN (?)
+	`
+	if len(roleIDs) > 0 {
+		deleteQuery, args, _ := sqlx.In(
+			deleteQuery,
+			client.ID,
+			roleIDs,
+		)
+		if _, err := tx.Exec(tx.Rebind(deleteQuery), args...); err != nil {
+			return fmt.Errorf("failed to delete client allowed roles: %w", err)
+		}
+	} else {
+		deleteAll := "DELETE FROM client_allowed_roles WHERE client_id = ?"
+		if _, err := tx.Exec(deleteAll, client.ID); err != nil {
+			return fmt.Errorf("failed to delete all roles from user: %w", err)
+		}
+	}
+
+	insertQuery := `
+        INSERT INTO client_allowed_roles (client_id, role_id) 
+        VALUES (?, ?) 
+        ON DUPLICATE KEY UPDATE role_id = role_id`
+
+	for _, rid := range roleIDs {
+		if _, err := tx.Exec(insertQuery, client.ID, rid); err != nil {
+			return fmt.Errorf("upsert error: %w", err)
+		}
+	}
+
+	return tx.Commit()
 }
 
 func NewClientRepository(db *sqlx.DB) *ClientRepository {
