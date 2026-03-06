@@ -32,7 +32,7 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 	}
 
 	grantQuery := `
-		SELECT grant_type FROM client_grant_types WHERE ID = ?
+		SELECT grant_type FROM client_grant_types WHERE id = ?
 	`
 	err = r.db.Select(&client.Grants, grantQuery, id)
 	if err != nil {
