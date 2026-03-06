@@ -254,27 +254,29 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
               </div>
             </div>
             <div className="space-y-4 flex-1">
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 mb-5">
                   <label className="block text-sm font-semibold text-gray-700">
                     Client Id
                   </label>
                   <input type="text" value={client?.id || client?.clientId || ""} readOnly className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
                 </div>
               
-                <div className="space-y-0.5">
-                  <label className="block text-sm font-semibold text-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-0.5">
+                    <label className="block text-sm font-semibold text-gray-700">
                       Name{!isView && <span className="text-red-500"> *</span>}
                     </label>
-                  <input type="text" required minLength={5} maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="(e.g., Identity Provider System)" className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} disabled={isView}/>
-                  {!isView && <div className="validator-hint">Must be 5–100 characters</div>}
+                    <input type="text" required minLength={5} maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="(e.g., Identity Provider System)" className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} disabled={isView}/>
+                    {!isView && <div className="validator-hint">Must be 5-100 characters</div>}
+                  </div>
+                  <div className="space-y-0.5">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Tag
+                    </label>
+                    <input type="text" readOnly value={tag} className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
+                  </div>
                 </div>
-                <div className="space-y-0.5">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Tag
-                  </label>
-                  <input type="text" readOnly value={tag} className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
-                </div>
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 mb-5">
                     <label className="block text-sm font-semibold text-gray-700">
                         Description
                     </label>
