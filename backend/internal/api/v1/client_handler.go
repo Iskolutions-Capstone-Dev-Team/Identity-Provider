@@ -280,7 +280,8 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		ImageLocation: imagePath,
 	}
 
-	if err := h.Repo.UpdateClient(client); err != nil {
+	grants := c.PostFormArray("grants")
+	if err := h.Repo.UpdateClient(client, grants); err != nil {
 		log.Printf("[PutClient] Update failed: %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
