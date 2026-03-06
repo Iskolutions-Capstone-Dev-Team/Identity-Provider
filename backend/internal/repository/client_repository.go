@@ -30,6 +30,15 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get client: %w", err)
 	}
+
+	grantQuery := `
+		SELECT grant_type FROM client_grant_types WHERE ID = ?
+	`
+	err = r.db.Select(&client.Grants, grantQuery, id)
+	if err != nil {
+		return nil, err
+	}
+
 	return &client, nil
 }
 
