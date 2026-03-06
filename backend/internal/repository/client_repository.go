@@ -68,7 +68,7 @@ func (r *ClientRepository) ListClients(limit,
         SELECT 
 			id, client_name, tag, 
 			description, image_location, 
-			base_url, redirect_uri, logout_uri
+			base_url, redirect_uri, logout_uri, created_at
         FROM clients 
         WHERE deleted_at IS NULL AND client_name LIKE ?
         LIMIT ? OFFSET ?
