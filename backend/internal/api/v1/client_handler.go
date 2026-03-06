@@ -79,6 +79,16 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	grants := c.PostFormArray("grants")
 	roles := c.PostFormArray("roles")
 	roleIDs := make([]int, len(roles))
+	for _, roleStr := range roles {
+		id, err := strconv.Atoi(roleStr)
+		if err != nil {
+			log.Print("[PostRole] Parse Int: failed to convert role string")
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role"})
+			return
+		}
+		roleIDs = append(roleIDs, id)
+	}
+
 	if err := h.Repo.CreateClient(clientModel, grants, roleIDs); err != nil {
 		log.Printf("[PostClient] Creation failed: %v", err)
 		c.JSON(
@@ -284,7 +294,17 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 
 	grants := c.PostFormArray("grants")
 	roles := c.PostFormArray("roles")
-	roleIDs := make([]int, len(roles))
+	roleIDs := make([]int, 0, len(roles))
+
+	for _, roleStr := range roles {
+		id, err := strconv.Atoi(roleStr)
+		if err != nil {
+			log.Print("[PostRole] Parse Int: failed to convert role string")
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role"})
+			return
+		}
+		roleIDs = append(roleIDs, id)
+	}
 	if err := h.Repo.UpdateClient(client, grants, roleIDs); err != nil {
 		log.Printf("[PutClient] Update failed: %v", err)
 		c.JSON(
@@ -335,7 +355,7 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 	if err != nil {
 		log.Printf("[DeleteClient] Image deletion failed: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "failed to delete image"},
 		)
 	}
