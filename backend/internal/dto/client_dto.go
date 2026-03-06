@@ -1,16 +1,17 @@
 package dto
 
 type ClientResponse struct {
-	ID            string   `json:"id"`
-	Name          string   `json:"name"`
-	Tag           string   `json:"tag"`
-	Description   string   `json:"description"`
-	ImageLocation string   `json:"image_location"`
-	BaseURL       string   `json:"base_url"`
-	RedirectURI   string   `json:"redirect_uri"`
-	LogoutURI     string   `json:"logout_uri"`
-	CreatedAt     string   `json:"created_at"`
-	Grants        []string `json:"grants"`
+	ID            string         `json:"id"`
+	Name          string         `json:"name"`
+	Tag           string         `json:"tag"`
+	Description   string         `json:"description"`
+	ImageLocation string         `json:"image_location"`
+	BaseURL       string         `json:"base_url"`
+	RedirectURI   string         `json:"redirect_uri"`
+	LogoutURI     string         `json:"logout_uri"`
+	CreatedAt     string         `json:"created_at"`
+	Grants        []string       `json:"grants"`
+	AllowedRoles  []RoleResponse `json:"allowed_roles"`
 }
 
 type ClientListResponse struct {
