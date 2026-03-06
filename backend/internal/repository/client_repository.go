@@ -109,8 +109,8 @@ func (r *ClientRepository) UpdateClient(c *models.Client) error {
 		query,
 		c.ClientName,
 		c.Description,
-		c.ImageLocation, 
-		c.ImageLocation, 
+		c.ImageLocation,
+		c.ImageLocation,
 		c.BaseUrl,
 		c.RedirectUri,
 		c.LogoutUri,
@@ -161,6 +161,37 @@ func (r *ClientRepository) CountClients() (int, error) {
 		return 0, err
 	}
 	return count, nil
+}
+
+func (r *ClientRepository) RotateSecret(id []byte, oldSecretHash string,
+	newSecretHash string,
+) error {
+	query := `
+		UPDATE clients
+		SET client_secret = ?, old_secret = ?
+		WHERE id = ?
+	`
+
+	_, err := r.db.Exec(query, newSecretHash, oldSecretHash, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ClientRepository) ChangeSecret(id []byte, newSecretHash string,
+) error {
+	query := `
+		UPDATE clients
+		SET client_secret = ?
+		WHERE id = ?
+	`
+
+	_, err := r.db.Exec(query, newSecretHash, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func NewClientRepository(db *sqlx.DB) *ClientRepository {
