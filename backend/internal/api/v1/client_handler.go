@@ -371,3 +371,69 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 		Message:      "Here's your new client secret, keep it.",
 	})
 }
+
+func (h *ClientHandler) GetClientTags(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	keyword := c.Query("keyword")
+
+	if page < 1 {
+		page = 1
+	}
+	offset := (page - 1) * PAGE_LIMIT
+
+	total, err := h.Repo.CountClients()
+	if err != nil {
+		log.Printf("[GetClientTags] Count failed: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "count error"},
+		)
+		return
+	}
+
+	clients, err := h.Repo.RetrieveClientTagInformation(limit, offset, keyword)
+	if err != nil {
+		log.Printf("[GetClientTags] Fetching list failed: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "fetch error"},
+		)
+		return
+	}
+
+	var res []dto.ClientResponse
+	for _, cl := range clients {
+		id, _ := uuid.FromBytes(cl.ID)
+		imageLocation, err := service.GetPresignedURL(
+			c.Request.Context(),
+			cl.ImageLocation,
+			h.Storage,
+		)
+		if err != nil {
+			log.Printf("[GetClientTags] failed to get image url: %v", err)
+		}
+		res = append(res, dto.ClientResponse{
+			ID:            id.String(),
+			Name:          cl.ClientName,
+			Tag:           cl.Tag,
+			Description:   cl.Description,
+			ImageLocation: imageLocation,
+			BaseURL:       cl.BaseUrl,
+			RedirectURI:   cl.RedirectUri,
+			LogoutURI:     cl.LogoutUri,
+		})
+	}
+
+	lastPage := (total + PAGE_LIMIT - 1) / PAGE_LIMIT
+	if lastPage == 0 {
+		lastPage = 1
+	}
+
+	c.JSON(http.StatusOK, dto.ClientListResponse{
+		Clients:     res,
+		CurrentPage: page,
+		LastPage:    lastPage,
+		TotalCount:  total,
+	})
+}
