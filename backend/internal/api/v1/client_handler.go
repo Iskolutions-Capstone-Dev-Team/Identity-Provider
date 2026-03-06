@@ -77,7 +77,9 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	}
 
 	grants := c.PostFormArray("grants")
-	if err := h.Repo.CreateClient(clientModel, grants); err != nil {
+	roles := c.PostFormArray("roles")
+	roleIDs := make([]int, len(roles))
+	if err := h.Repo.CreateClient(clientModel, grants, roleIDs); err != nil {
 		log.Printf("[PostClient] Creation failed: %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
@@ -281,7 +283,9 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 	}
 
 	grants := c.PostFormArray("grants")
-	if err := h.Repo.UpdateClient(client, grants); err != nil {
+	roles := c.PostFormArray("roles")
+	roleIDs := make([]int, len(roles))
+	if err := h.Repo.UpdateClient(client, grants, roleIDs); err != nil {
 		log.Printf("[PutClient] Update failed: %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
