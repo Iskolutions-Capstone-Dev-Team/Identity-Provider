@@ -161,7 +161,9 @@ export default function MultiSelect({
               </div>
             ))
           ) : (
-            searchTerm && <div className="p-3 text-sm text-gray-400 text-center">No results found</div>
+            <div className="p-3 text-sm text-gray-400 text-center">
+              {searchTerm ? "No results found" : "No tags available"}
+            </div>
           )}
         </div>
       )}
