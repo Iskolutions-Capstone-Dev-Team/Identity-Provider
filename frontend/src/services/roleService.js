@@ -1,5 +1,22 @@
 import axiosInstance from "./axiosInstance";
 
+const normalizeClientTagOption = (client = {}) => {
+  const rawTag = typeof client.tag === "string" ? client.tag.trim() : "";
+  if (!rawTag) return null;
+
+  const image =
+    client.image_location ??
+    client.imageLocation ??
+    client.image ??
+    "";
+
+  return {
+    id: rawTag,
+    tag: rawTag,
+    image: typeof image === "string" ? image : "",
+  };
+};
+
 export const roleService = {
   // =========================
   // GET PAGINATED ROLES
@@ -29,6 +46,56 @@ export const roleService = {
   async getRoleById(id) {
     const response = await axiosInstance.get(`/admin/roles/${id}`);
     return response.data;
+  },
+
+  // =========================
+  // GET CLIENT TAGS + LOGOS
+  // =========================
+  async getClientTags({ limit = 50, keyword = "" } = {}) {
+    const uniqueTags = new Map();
+    let currentPage = 1;
+    let lastPage = 1;
+
+    do {
+      const response = await axiosInstance.get(`/admin/clients/tags`, {
+        params: {
+          limit,
+          page: currentPage,
+          ...(typeof keyword === "string" && keyword.trim()
+            ? { keyword: keyword.trim() }
+            : {}),
+        },
+      });
+
+      const payload = response.data ?? {};
+      const clients = Array.isArray(payload.clients)
+        ? payload.clients
+        : Array.isArray(payload.data?.clients)
+          ? payload.data.clients
+          : [];
+
+      clients.forEach((client) => {
+        const normalizedTag = normalizeClientTagOption(client);
+        if (normalizedTag && !uniqueTags.has(normalizedTag.id)) {
+          uniqueTags.set(normalizedTag.id, normalizedTag);
+        }
+      });
+
+      const parsedLastPage = Number.parseInt(
+        payload.last_page ?? payload.lastPage ?? currentPage,
+        10,
+      );
+      lastPage =
+        Number.isInteger(parsedLastPage) && parsedLastPage > 0
+          ? parsedLastPage
+          : currentPage;
+
+      currentPage += 1;
+    } while (currentPage <= lastPage);
+
+    return Array.from(uniqueTags.values()).sort((a, b) =>
+      a.tag.localeCompare(b.tag),
+    );
   },
 
   // =========================

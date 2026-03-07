@@ -1,6 +1,33 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-export default function MultiSelect({
+function TagIcon({ tag, image, sizeClass = "h-5 w-5" }) {
+  const [hasImageError, setHasImageError] = useState(false);
+  const initials =
+    typeof tag === "string" && tag.trim().length > 0
+      ? tag.trim().charAt(0).toUpperCase()
+      : "?";
+
+  if (image && !hasImageError) {
+    return (
+      <img
+        src={image}
+        alt={`${tag || "Tag"} logo`}
+        className={`${sizeClass} rounded-full object-cover border border-gray-200 shrink-0`}
+        onError={() => setHasImageError(true)}
+      />
+    );
+  }
+
+  return (
+    <span
+      className={`${sizeClass} rounded-full bg-gray-200 text-gray-600 text-xs font-semibold flex items-center justify-center shrink-0`}
+    >
+      {initials}
+    </span>
+  );
+}
+
+export default function TagMultiSelect({
   options,
   selectedValues,
   onChange,
@@ -17,6 +44,7 @@ export default function MultiSelect({
         setIsOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -25,38 +53,43 @@ export default function MultiSelect({
     if (disabled) setIsOpen(false);
   }, [disabled]);
 
-  const toggleOption = (id) => {
+  const toggleOption = (value) => {
     if (disabled) return;
-    const newSelection = selectedValues.includes(id)
-      ? selectedValues.filter((val) => val !== id)
-      : [...selectedValues, id];
-    onChange(newSelection);
+
+    const nextSelection = selectedValues.includes(value)
+      ? selectedValues.filter((entry) => entry !== value)
+      : [...selectedValues, value];
+
+    onChange(nextSelection);
   };
 
-  const removeTag = (e, id) => {
+  const removeTag = (event, value) => {
     if (disabled) return;
-    e.stopPropagation();
-    onChange(selectedValues.filter((val) => val !== id));
+    event.stopPropagation();
+    onChange(selectedValues.filter((entry) => entry !== value));
   };
 
-  const clearAll = (e) => {
+  const clearAll = (event) => {
     if (disabled) return;
-    e.stopPropagation();
+    event.stopPropagation();
     onChange([]);
   };
 
-  const selectedItems = options.filter((opt) => selectedValues.includes(opt.id));
+  const selectedItems = options.filter((option) =>
+    selectedValues.includes(option.id),
+  );
+
   const unselectedItems = options.filter(
-    (opt) =>
-      !selectedValues.includes(opt.id) &&
-      opt.role_name.toLowerCase().includes(searchTerm.toLowerCase()),
+    (option) =>
+      !selectedValues.includes(option.id) &&
+      (option.tag || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div
         onClick={() => {
-          if (!disabled) setIsOpen(!isOpen);
+          if (!disabled) setIsOpen((prev) => !prev);
         }}
         className={`flex items-center justify-between p-2 border border-gray-200 rounded-lg min-h-10.5 ${
           disabled
@@ -74,10 +107,11 @@ export default function MultiSelect({
               key={item.id}
               className="flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
             >
-              {item.role_name}
+              <TagIcon tag={item.tag} image={item.image} sizeClass="h-4 w-4" />
+              <span>{item.tag}</span>
               {!disabled && (
                 <button
-                  onClick={(e) => removeTag(e, item.id)}
+                  onClick={(event) => removeTag(event, item.id)}
                   className="hover:text-red-900 font-bold ml-1"
                 >
                   x
@@ -89,13 +123,13 @@ export default function MultiSelect({
           <input
             className="outline-none bg-transparent ml-1 text-sm flex-1 min-w-12.5"
             value={searchTerm}
-            onChange={(e) => {
+            onChange={(event) => {
               if (disabled) return;
-              setSearchTerm(e.target.value);
+              setSearchTerm(event.target.value);
               if (!isOpen) setIsOpen(true);
             }}
-            onClick={(e) => {
-              if (!disabled) e.stopPropagation();
+            onClick={(event) => {
+              if (!disabled) event.stopPropagation();
             }}
             readOnly={disabled}
             disabled={disabled}
@@ -104,7 +138,10 @@ export default function MultiSelect({
 
         <div className="flex items-center gap-2 px-1 border-l ml-2 border-gray-200">
           {!disabled && selectedValues.length > 0 && (
-            <button onClick={clearAll} className="text-gray-400 hover:text-[#991b1b] text-lg">
+            <button
+              onClick={clearAll}
+              className="text-gray-400 hover:text-[#991b1b] text-lg"
+            >
               x
             </button>
           )}
@@ -137,7 +174,16 @@ export default function MultiSelect({
                     readOnly
                     className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"
                   />
-                  <span className="text-sm text-gray-700 font-medium">{option.role_name}</span>
+                  <div className="flex items-center gap-2">
+                    <TagIcon
+                      tag={option.tag}
+                      image={option.image}
+                      sizeClass="h-5 w-5"
+                    />
+                    <span className="text-sm text-gray-700 font-medium">
+                      {option.tag}
+                    </span>
+                  </div>
                 </div>
               ))}
               <div className="border-b border-gray-100 my-1 mx-2" />
@@ -157,7 +203,14 @@ export default function MultiSelect({
                   readOnly
                   className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"
                 />
-                <span className="text-sm text-gray-600">{option.role_name}</span>
+                <div className="flex items-center gap-2">
+                  <TagIcon
+                    tag={option.tag}
+                    image={option.image}
+                    sizeClass="h-5 w-5"
+                  />
+                  <span className="text-sm text-gray-600">{option.tag}</span>
+                </div>
               </div>
             ))
           ) : (
@@ -170,4 +223,3 @@ export default function MultiSelect({
     </div>
   );
 }
-
