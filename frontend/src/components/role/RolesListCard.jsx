@@ -9,7 +9,7 @@ export default function RolesListCard({ roles, totalResults, itemsPerPage, searc
             <div className="flex flex-col gap-3 mb-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="w-full">
                     <label className="block font-semibold mb-1 text-black text-base">What role are you looking for?</label>
-                    <label className="input max-w-xl rounded-xl flex items-center gap-2 bg-transparent border border-gray-300 text-gray-700 w-full focus-within:ring-1 focus-within:ring-red-500 focus-within:border-red-500">
+                    <label className="input max-w-xl rounded-xl flex items-center gap-2 bg-transparent border border-gray-300 text-gray-700 w-full focus-within:ring-1 focus-within:ring-[#991b1b] focus-within:border-[#991b1b]">
                         <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                             <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor" className="w-6">
                             <circle cx="11" cy="11" r="8"></circle>
