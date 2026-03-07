@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRoles } from "../hooks/useRoles";
 import RolesListCard from "../components/role/RolesListCard";
 import RoleModal from "../components/role/RoleModal";
 import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
+import { roleService } from "../services/roleService";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -29,6 +30,25 @@ export default function Roles() {
     const [activeRole, setActiveRole] = useState(null);
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [tagOptions, setTagOptions] = useState([]);
+    const [isTagOptionsLoading, setIsTagOptionsLoading] = useState(false);
+
+    const fetchTagOptions = useCallback(async () => {
+        try {
+            setIsTagOptionsLoading(true);
+            const tags = await roleService.getClientTags({ limit: 50 });
+            setTagOptions(tags);
+        } catch (error) {
+            console.error("Failed to fetch client tags:", error);
+            setTagOptions([]);
+        } finally {
+            setIsTagOptionsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchTagOptions();
+    }, [fetchTagOptions]);
     
     const openCreate = () => {
         setMode("create");
@@ -99,6 +119,8 @@ export default function Roles() {
                     open={modalOpen}
                     mode={mode}
                     role={activeRole}
+                    tagOptions={tagOptions}
+                    isTagOptionsLoading={isTagOptionsLoading}
                     onClose={() => setModalOpen(false)}
                     onSubmit={handleSubmit}
                 />
