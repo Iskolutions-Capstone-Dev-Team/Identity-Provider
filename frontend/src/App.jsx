@@ -5,6 +5,7 @@ import Unauthorized from "./auth/pages/Unauthorized";
 import ProtectedRoute from "./auth/components/ProtectedRoute";
 import Roles from "./pages/Roles";
 import AppClient from "./pages/AppClient";
+import AuditLogs from "./pages/AuditLogs";
 import IdpLayout from "./layouts/IdpLayout";
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
           }
         >
           <Route path="/roles" element={<Roles />} />
+          <Route path="/audit-logs" element={<AuditLogs />} />
           <Route path="/app-client" element={<AppClient />} />
         </Route>
       </Routes>
