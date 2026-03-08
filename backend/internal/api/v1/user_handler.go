@@ -157,7 +157,13 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 			)
 			return
 		}
-		userUUID, _ := uuid.ParseBytes(user.ID)
+		userUUID, err := uuid.FromBytes(user.ID)
+		if err != nil {
+			log.Printf("[GetUserList] parse error: %v", err)
+			c.JSON(http.StatusInternalServerError, 
+				dto.ErrorResponse{Error: "parse error"})
+			return
+		}
 		userResponses = append(userResponses, dto.UserResponse{
 			ID:         userUUID.String(),
 			Username:   user.Username,
