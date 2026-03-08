@@ -31,6 +31,7 @@ func InitializeHandlers(db *sqlx.DB) *v1.Handlers {
 		},
 		RoleHandler: &v1.RoleHandler{
 			Repo: roleRepo,
+			ClientRepo: clientRepo,
 		},
 		UserHandler: &v1.UserHandler{
 			Repo: userRepo,
