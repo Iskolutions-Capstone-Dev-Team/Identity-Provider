@@ -8,7 +8,6 @@ export default function UserPoolTable({ users = [], onView, onEdit, onDisable })
                 <thead>
                     <tr className="bg-[#991b1b]">
                         <th className="text-white text-center">ID</th>
-                        <th className="text-white text-center w-16">Picture</th>
                         <th className="text-white text-center">Username</th>
                         <th className="text-white text-center">Email</th>
                         <th className="text-white text-center">Name</th>
@@ -21,7 +20,7 @@ export default function UserPoolTable({ users = [], onView, onEdit, onDisable })
                 <tbody>
                     {users.length === 0 && (
                         <tr>
-                            <td colSpan={9} className="text-center py-10 text-gray-500">No users found</td>
+                            <td colSpan={8} className="text-center py-10 text-gray-500">No users found</td>
                         </tr>
                     )}
                     {users.map((u) => (
@@ -29,17 +28,6 @@ export default function UserPoolTable({ users = [], onView, onEdit, onDisable })
                             <td className="text-[#991b1b] text-center border-gray-200">
                                 <div className="tooltip tooltip-right" data-tip={u.id}>
                                     <span className="cursor-pointer font-medium">{shortenId(u.id)}</span>
-                                </div>
-                            </td>
-                            <td className="text-center border-gray-200">
-                                <div className="avatar">
-                                    <div className="mask mask-squircle w-10 h-10 bg-gray-100 border border-gray-200">
-                                        {u.image ? (
-                                            <img src={u.image.startsWith("data:") ? u.image : `${import.meta.env.VITE_BACKEND_URL}${u.image}`} alt={u.username} className="object-cover"/>
-                                        ) : (
-                                            <div className="flex items-center justify-center h-full text-[#991b1b] font-bold text-xs">{u.username.substring(0, 2).toUpperCase()}</div>
-                                        )}
-                                    </div>
                                 </div>
                             </td>
                             <td className="text-[#991b1b] text-center border-gray-200">{u.username}</td>

@@ -17,10 +17,6 @@ export const userService = {
     formData.append("status", data.status);
     data.roles.forEach(role => formData.append("roles", role));
 
-    if (data.imageFile) {
-      formData.append("image", data.imageFile);
-    }
-
     const res = await axiosInstance.post("/admin/users", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });

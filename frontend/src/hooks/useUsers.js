@@ -49,7 +49,6 @@ export function useUsers() {
         status: u.status,
         createdAt: u.created_at,
         roles: Array.isArray(u.roles) ? u.roles : [],
-        image: u.image_location || null,
       }));
 
       setUsers(mappedUsers);
@@ -74,7 +73,6 @@ export function useUsers() {
         password: newUser.tempPassword || "TempPass123!",
         roles: newUser.roles,
         status: newUser.status,
-        imageFile: newUser.imageFile,
       };
 
       await userService.createUser(payload);

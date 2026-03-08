@@ -7,74 +7,29 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("active");
   const [selectedUser, setSelectedUser] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [showFullImage, setShowFullImage] = useState(false);
   const roles = useAllRoles();
 
-  const processFile = (file) => {
-    if (file && file.type.startsWith("image/")) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleImageChange = (e) => {
-    processFile(e.target.files[0]);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    if (mode !== "view") setIsDragging(true);;
-  };
-
-  const handleDragLeave = () => setIsDragging(false);
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    if (mode !== "view") {
-      processFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const removeImage = () => {
-    setImagePreview(null);
-    setImageFile(null);
-  };
-
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setSelectedUser(null);
+      setUsername("");
+      setEmail("");
+      setStatus("active");
+      return;
+    }
 
     setSelectedUser({
       ...user,
       roleIds:
         user.roleIds ??
         roles
-        .filter(r => user.roles?.includes(r.role_name))
-        .map(r => r.id),
+          .filter((role) => user.roles?.includes(role.role_name))
+          .map((role) => role.id),
     });
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-
     setUsername(user.username || "");
     setEmail(user.email || "");
     setStatus((user.status || "active").toLowerCase());
-    if (user.image) {
-      setImagePreview(user.image.startsWith("data:")
-          ? user.image
-          : `${import.meta.env.VITE_BACKEND_URL}${user.image}`
-      );
-    } else {
-      setImagePreview(null);
-    }
-  }, [user]);
+  }, [user, roles]);
 
   if (!open) return null;
 
@@ -107,37 +62,6 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
               <input type="text" value={selectedUser?.id || ""} placeholder="User ID" readOnly className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
             </div>
           )}
-          <div className="space-y-1.5 mb-4">
-            <label className="block text-base font-semibold text-gray-700">User Picture</label>
-            <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
-                className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl transition-all duration-200 ${
-                isDragging ? "border-[#991b1b] bg-red-50" : "border-gray-300 bg-gray-50"
-                } ${mode === "view" ? "border-gray-200 cursor-default" : "hover:bg-gray-100 cursor-pointer"}`}
-            >
-              {!imagePreview ? (
-                <label className={`flex flex-col items-center justify-center w-full h-full ${ mode === "view" ? "cursor-default" : "cursor-pointer"}`}>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">
-                          <span className="font-semibold text-[#991b1b]">Click to upload</span>{" "}or drag and drop
-                      </p>
-                      <p className="text-[10px] text-gray-400 uppercase mt-1">PNG or JPG</p>
-                    </div>
-                    <input type="file" className="hidden" accept="image/png, image/jpeg" onChange={handleImageChange} disabled={mode === "view"}/>
-                </label>
-              ) : (
-                <div className="relative w-full h-full p-2 flex items-center justify-center">
-                  <img src={imagePreview} alt="Preview" className="max-h-full max-w-full object-contain rounded-lg cursor-zoom-in" onClick={() => setShowFullImage(true)}/>
-                  {mode !== "view" && (
-                    <button type="button" onClick={removeImage} className="absolute top-2 right-2 btn btn-circle btn-xs bg-white border-[#991b1b]">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#991b1b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
           <div className="space-y-0.5">
             <label className="block text-sm font-semibold text-gray-700">
               Username
