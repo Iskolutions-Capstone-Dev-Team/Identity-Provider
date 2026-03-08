@@ -12,7 +12,7 @@ export default function UserPoolFilters({ search, setSearch, status, setStatus, 
                                 <path d="m21 21-4.3-4.3"></path>
                                 </g>
                             </svg>
-                            <input type="search" value={search} placeholder="Search by username, email, or name..." className="grow bg-transparent" onChange={(e) => setSearch(e.target.value)} />
+                            <input type="search" value={search} placeholder="Search by email, or name..." className="grow bg-transparent" onChange={(e) => setSearch(e.target.value)} />
                         </label>
                     </div>
                     
