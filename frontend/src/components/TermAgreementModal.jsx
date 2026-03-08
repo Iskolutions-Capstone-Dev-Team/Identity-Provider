@@ -58,14 +58,26 @@ export default function TermsAgreementModal({ open, onClose, onContinue }) {
                         </a>{" "}
                         and in compliance with the <span className="font-semibold">Data Privacy Act of 2012</span>.
                     </p>
-                    <div className="flex items-center gap-3 pt-2">
-                        <input type="checkbox" className="checkbox border-gray-400 checked:border-[#991b1b] checked:bg-[#991b1b]" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}/>
-                        <span className="text-sm">
-                        I Agree and acknowledge the{" "}
-                        <a href="https://www.pup.edu.ph/terms/" className="no-underline hover:opacity-80" target="_blank" rel="noreferrer">
-                            Terms and Conditions
-                        </a>
-                        </span>
+                    <div className="grid gap-3 pt-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-6">
+                        <label className="flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                className="checkbox w-5 h-5 border-gray-400 checked:border-[#991b1b] checked:bg-[#991b1b]"
+                                checked={agreed}
+                                onChange={(e) => setAgreed(e.target.checked)}
+                            />
+                            <span className="text-sm leading-6">
+                                I Agree and acknowledge the{" "}
+                                <a href="https://www.pup.edu.ph/terms/" className="no-underline hover:opacity-80" target="_blank" rel="noreferrer">
+                                    Terms and Conditions
+                                </a>
+                            </span>
+                        </label>
+
+                        <label className="flex items-center gap-3 md:justify-self-end">
+                            <input type="checkbox" className="checkbox w-5 h-5 border-gray-400 checked:border-[#991b1b] checked:bg-[#991b1b]" />
+                            <span className="text-sm leading-6">Never show again today</span>
+                        </label>
                     </div>
                 </div>
 
