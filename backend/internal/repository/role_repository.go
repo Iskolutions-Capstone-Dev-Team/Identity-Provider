@@ -1,8 +1,9 @@
 package repository
 
 import (
+	"database/sql"
 	"fmt"
-    
+
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/jmoiron/sqlx"
 )
@@ -14,17 +15,17 @@ type RoleRepository struct {
 // CreateRole adds a new role to the system.
 // @Summary Create Role
 // @ID create-role
-func (r *RoleRepository) CreateRole(role models.Role) error {
+func (r *RoleRepository) CreateRole(role models.Role) (sql.Result, error) {
 	query := `
         INSERT INTO roles (role_name, description)
         VALUES (?, ?)
     `
 	// Auto-commits immediately if not called within a transaction
-	_, err := r.db.Exec(query, role.RoleName, role.Description)
+	result, err := r.db.Exec(query, role.RoleName, role.Description)
 	if err != nil {
-		return fmt.Errorf("failed to create role: %w", err)
+		return nil, fmt.Errorf("failed to create role: %w", err)
 	}
-	return nil
+	return result, nil
 }
 
 // GetByID retrieves a single role by its integer ID.
