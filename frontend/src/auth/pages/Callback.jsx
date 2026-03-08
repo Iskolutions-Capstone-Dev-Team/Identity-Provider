@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "../services/authService";
+import { storeTokenResponse } from "../utils/authCookies";
 
 export default function Callback() {
   const [searchParams] = useSearchParams();
@@ -21,8 +22,12 @@ export default function Callback() {
 
       try {
         const tokenResponse = await authService.exchangeCode(code);
-        document.cookie = `access_token=${tokenResponse.access_token}; path=/`;
-        document.cookie = `refresh_token=${tokenResponse.refresh_token}; path=/`;
+
+        if (!tokenResponse?.access_token || !tokenResponse?.refresh_token) {
+          throw new Error("Token exchange did not return both tokens.");
+        }
+
+        storeTokenResponse(tokenResponse);
         sessionStorage.removeItem("termsAccepted");
         setTimeout(() => navigate("/user-pool"), 2000);
       } catch (err) {

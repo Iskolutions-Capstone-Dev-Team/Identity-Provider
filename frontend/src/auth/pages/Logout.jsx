@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
+import { clearAuthState } from "../utils/authCookies";
 
 export default function Logout() {
     const navigate = useNavigate();
@@ -16,10 +17,7 @@ export default function Logout() {
             } catch (err) {
                 console.error("Logout failed", err);
             } finally {
-                document.cookie = "access_token=; Max-Age=0; path=/";
-                document.cookie = "refresh_token=; Max-Age=0; path=/";
-                document.cookie = "token=; Max-Age=0; path=/";
-                sessionStorage.removeItem("termsAccepted");
+                clearAuthState();
                 setTimeout(() => navigate("/", { replace: true }), 2000);
             }
         };
