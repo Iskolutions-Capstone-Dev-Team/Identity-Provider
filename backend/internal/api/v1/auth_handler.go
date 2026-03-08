@@ -25,6 +25,15 @@ type AuthHandler struct {
 	PublicKey   *rsa.PublicKey
 }
 
+// GetAuthorize initiates the authorization flow for the user.
+// @Summary Authorize user
+// @Description Validates the authorization request for the user.
+// @Tags Authentication
+// @Success 302 
+// @Failure 400 {object} dto.ErrorResponse 
+// @Failure 404 {object} dto.ErrorResponse 
+// @Failure 500 {object} dto.ErrorResponse 
+// @Router /auth/authorize [get]
 func (h *AuthHandler) Authorize(c *gin.Context) {
 	loginUIPath := os.Getenv("LOGIN_UI_PATH")
 	clientID := c.Query("client_id")
@@ -89,11 +98,11 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param login body dto.LoginRequest true "Login Credentials"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/auth/login [post]
 func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	var req dto.LoginRequest
@@ -155,7 +164,10 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	registeredURI, err := h.Repo.GetClientRedirectURI(clientIDBytes[:])
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] Client Registry Lookup Error: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid_client"})
+		c.JSON(
+			http.StatusBadRequest, 
+			dto.ErrorResponse{Error: "invalid_client"},
+		)
 		return
 	}
 
@@ -213,13 +225,16 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 // @Description Clear session cookie and revoke all issued tokens for the user
 // @Tags Authentication
 // @Produce json
-// @Success 200 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	sessionID, err := c.Cookie("idp_session")
 	if err != nil {
-		c.JSON(http.StatusOK, dto.SuccessResponse{Message: "already logged out"})
+		c.JSON(
+			http.StatusOK, 
+			dto.SuccessResponse{Message: "already logged out"},
+		)
 		return
 	}
 
@@ -240,7 +255,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	c.SetCookie("idp_session", "", -1, "/", "", true, true)
-	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "global logout successful"})
+	c.JSON(
+		http.StatusOK, 
+		dto.SuccessResponse{Message: "global logout successful"},
+	)
 }
 
 // CheckSession verifies if the current session cookie is valid
@@ -248,8 +266,8 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // @Description Validate the idp_session cookie against the database
 // @Tags Authentication
 // @Produce json
-// @Success 200 {object} map[string]bool
-// @Failure 401 {object} map[string]bool
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 401 {object} dto.ErrorResponse
 // @Router /api/v1/auth/session [get]
 func (h *AuthHandler) CheckSession(c *gin.Context) {
 	sessionID, err := c.Cookie("idp_session")

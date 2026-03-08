@@ -25,7 +25,7 @@ type ClientHandler struct {
 // PostClient handles POST /v1/admin/clients
 // @Summary Register a new Service Provider with Icon
 // @Description Creates client, saves icon, hashes secret, and maps roles
-// @Tags ServiceProviders
+// @Tags Clients
 // @Accept multipart/form-data
 // @Produce json
 // @Param name formData string true "Client Name"
@@ -37,7 +37,9 @@ type ClientHandler struct {
 // @Param grants formData []string true "Grants (e.g. authorization_code)"
 // @Param roles formData []string false "Initial Roles"
 // @Param image formData file true "Client Icon"
-// @Success 201 {object} dto.MessageResponse
+// @Success 201 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients [post]
 func (h *ClientHandler) PostClient(c *gin.Context) {
 	file, _ := c.FormFile("image")
@@ -108,10 +110,10 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 // GetClientList handles GET /v1/admin/clients
 // @Summary List Service Providers
 // @Description Fetch active clients with pagination
-// @Tags ServiceProviders
+// @Tags Clients
 // @Param limit query int false "Pagination Limit" default(10)
-// @Param page query int default(1)
 // @Success 200 {array} dto.ClientResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients [get]
 func (h *ClientHandler) GetClientList(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
@@ -183,9 +185,12 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 // GetClient handles GET /v1/admin/clients/:id
 // @Summary Get Client Details
 // @Description Fetch full details including grants and roles
-// @Tags ServiceProviders
+// @Tags Clients
 // @Param id path string true "Client UUID"
 // @Success 200 {object} dto.ClientResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients/{id} [get]
 func (h *ClientHandler) GetClient(c *gin.Context) {
 	idParam := c.Param("id")
@@ -222,8 +227,10 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	roles, err := h.Repo.GetClientAllowedRoles(cl.ID)
 	if err != nil {
 		log.Printf("[GetClient] failed to fetch allowed roles: %v", err)
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "fetch failed"})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "fetch failed"},
+		)
 		return
 	}
 
@@ -258,11 +265,13 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 // PutClient handles PUT /v1/admin/clients/:id
 // @Summary Update Client Info
 // @Description Update safe fields (Name, Description, URLs, Image)
-// @Tags ServiceProviders
+// @Tags Clients
 // @Accept json
 // @Produce json
 // @Param id path string true "Client UUID"
-// @Success 200 {object} dto.MessageResponse
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients/{id} [put]
 func (h *ClientHandler) PutClient(c *gin.Context) {
 	idParam := c.Param("id")
@@ -337,8 +346,12 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 
 // DeleteClient handles DELETE /v1/admin/clients/:id
 // @Summary Soft Delete Client
-// @Tags ServiceProviders
+// @Tags Clients
 // @Param id path string true "Client UUID"
+// @Failure 200 {object} dto.ErrorResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients/{id} [delete]
 func (h *ClientHandler) DeleteClient(c *gin.Context) {
 	idParam := c.Param("id")
@@ -397,6 +410,16 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 	)
 }
 
+// PatchClientSecret rotates or updates the client secret for an application.
+// @Summary Update client secret
+// @Description Updates the secret key associated with a specific client ID.
+// @Tags Clients
+// @Accept json
+// @Produce json
+// @Param id path string true "Client ID"
+// @Success 200 {object} dto.ClientSecretResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /clients/{id}/secret [patch]
 func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 	clientIDString := c.Param("id")
 	clientID, err := uuid.Parse(clientIDString)
@@ -446,6 +469,18 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 	})
 }
 
+// GetClientTags retrieves a paginated list of client tags.
+// @Summary Get client tags
+// @Description Fetches tags based on limit, page, and keyword filters.
+// @Tags Clients
+// @Accept json
+// @Produce json
+// @Param limit query int false "Items per page" default(10)
+// @Param page query int false "Page number" default(1)
+// @Param keyword query string false "Search keyword"
+// @Success 200 {object} dto.ClientListResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /clients/tags [get]
 func (h *ClientHandler) GetClientTags(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))

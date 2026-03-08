@@ -8,8 +8,12 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 # Copy the source code
 COPY . .
+
+RUN swag init -g cmd/main.go
 
 # Build using BuildKit cache mounts for compiled objects
 # CGO_ENABLED=0 ensures a static binary that runs on any Linux distro
@@ -28,7 +32,7 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /app/main /app/backend
-
+COPY --from=builder /app/docs ./docs
 # Expose Gin port
 EXPOSE 8080
 

@@ -14,6 +14,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/initializers"
+	_ "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/docs"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"

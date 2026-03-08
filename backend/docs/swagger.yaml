@@ -1,0 +1,1072 @@
+basePath: /api/v1
+definitions:
+  dto.ClientListResponse:
+    properties:
+      clients:
+        items:
+          $ref: '#/definitions/dto.ClientResponse'
+        type: array
+      current_page:
+        type: integer
+      last_page:
+        type: integer
+      total_count:
+        type: integer
+    type: object
+  dto.ClientResponse:
+    properties:
+      allowed_roles:
+        items:
+          $ref: '#/definitions/dto.RoleResponse'
+        type: array
+      base_url:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      grants:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      image_location:
+        type: string
+      logout_uri:
+        type: string
+      name:
+        type: string
+      redirect_uri:
+        type: string
+      tag:
+        type: string
+    type: object
+  dto.ClientSecretResponse:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      message:
+        type: string
+    type: object
+  dto.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  dto.LoginRequest:
+    properties:
+      client_id:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      redirect_uri:
+        type: string
+    required:
+    - client_id
+    - email
+    - password
+    type: object
+  dto.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  dto.RoleListResponse:
+    properties:
+      current_page:
+        type: integer
+      last_page:
+        type: integer
+      roles:
+        items:
+          $ref: '#/definitions/dto.RoleResponse'
+        type: array
+      total_count:
+        type: integer
+    type: object
+  dto.RoleRequest:
+    properties:
+      description:
+        type: string
+      role_name:
+        type: string
+    type: object
+  dto.RoleResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      role_name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.SuccessResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.TokenExchangeRequest:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      code:
+        type: string
+    required:
+    - client_id
+    - client_secret
+    - code
+    type: object
+  dto.TokenResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      scope:
+        type: string
+      token_type:
+        type: string
+    type: object
+  dto.UpdatePasswordRequest:
+    properties:
+      new_password:
+        type: string
+    required:
+    - new_password
+    type: object
+  dto.UpdateStatusRequest:
+    properties:
+      new_status:
+        type: string
+    required:
+    - new_status
+    type: object
+  dto.UpdateUserRoleRequest:
+    properties:
+      role_ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - role_ids
+    type: object
+  dto.UserRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      user_name:
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    - roles
+    - status
+    type: object
+  dto.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/dto.UserRoleRepsonse'
+        type: array
+      status:
+        type: string
+      updated_at:
+        type: string
+      user_name:
+        type: string
+    type: object
+  dto.UserResponseList:
+    properties:
+      current_page:
+        type: integer
+      last_page:
+        type: integer
+      total_count:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/dto.UserResponse'
+        type: array
+    type: object
+  dto.UserRoleRepsonse:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      role_name:
+        type: string
+    type: object
+  models.Client:
+    properties:
+      allowedRoles:
+        items:
+          $ref: '#/definitions/models.Role'
+        type: array
+      baseUrl:
+        type: string
+      clientName:
+        type: string
+      clientSecret:
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      grants:
+        items:
+          type: string
+        type: array
+      id:
+        items:
+          type: integer
+        type: array
+      imageLocation:
+        type: string
+      logoutUri:
+        type: string
+      oldSecret:
+        type: string
+      redirectUri:
+        type: string
+      tag:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  models.Role:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      roleName:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: causonmikolorenz@gmail.com
+    name: Miko Lorenz Causon
+  description: Identity Provider for the Unified School System Capstone.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Unified Access Identity Provider API
+  version: "1.0"
+paths:
+  /api/roles:
+    get:
+      consumes:
+      - application/json
+      description: Searches for roles matching the provided query parameter.
+      parameters:
+      - description: Search term for role names
+        in: query
+        name: keyword
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/dto.RoleListResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Search roles by keyword
+      tags:
+      - roles
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return a redirect URL with auth code
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Login and Authorize
+      tags:
+      - Authentication
+  /api/v1/auth/logout:
+    post:
+      description: Clear session cookie and revoke all issued tokens for the user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Global Logout
+      tags:
+      - Authentication
+  /api/v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Invalidates old refresh token and issues a new pair
+      parameters:
+      - description: Refresh Request
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Rotate Refresh Token
+      tags:
+      - Authentication
+  /api/v1/auth/session:
+    get:
+      description: Validate the idp_session cookie against the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Check Session
+      tags:
+      - Authentication
+  /api/v1/auth/token:
+    post:
+      consumes:
+      - application/json
+      description: Validates the code and client secret to issue JWT and Refresh
+      parameters:
+      - description: Exchange Request
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TokenExchangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Exchange Auth Code
+      tags:
+      - Authentication
+  /api/v1/users:
+    get:
+      description: Get a paginated list of all users
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponseList'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List Users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with roles and encrypted password
+      parameters:
+      - description: User Data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Create User
+      tags:
+      - Users
+  /api/v1/users/{id}:
+    delete:
+      description: Mark a user as deleted by ID
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Delete User
+      tags:
+      - Users
+    get:
+      description: Fetch user details using their unique ID
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "440":
+          description: ""
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get User
+      tags:
+      - Users
+  /api/v1/users/{id}/password:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the password for a specific user identified by ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Password Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update user password
+      tags:
+      - users
+  /api/v1/users/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Modifies the status (e.g., active, disabled) of a user by ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update user status
+      tags:
+      - users
+  /auth/authorize:
+    get:
+      description: Validates the authorization request for the user.
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Authorize user
+      tags:
+      - auth
+  /clients/{id}/secret:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the secret key associated with a specific client ID.
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientSecretResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update client secret
+      tags:
+      - clients
+  /clients/tags:
+    get:
+      consumes:
+      - application/json
+      description: Fetches tags based on limit, page, and keyword filters.
+      parameters:
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Search keyword
+        in: query
+        name: keyword
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get client tags
+      tags:
+      - clients
+  /users/{id}/roles:
+    patch:
+      consumes:
+      - application/json
+      description: Partially updates a user's role set based on the request body.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update user roles
+      tags:
+      - users
+  /v1/admin/clients:
+    get:
+      description: Fetch active clients with pagination
+      parameters:
+      - default: 10
+        description: Pagination Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ClientResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List Service Providers
+      tags:
+      - ServiceProviders
+    post:
+      consumes:
+      - multipart/form-data
+      description: Creates client, saves icon, hashes secret, and maps roles
+      parameters:
+      - description: Client Name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Tag
+        in: formData
+        name: Tag
+        required: true
+        type: string
+      - description: Description
+        in: formData
+        name: description
+        type: string
+      - description: Base URL
+        in: formData
+        name: base_url
+        required: true
+        type: string
+      - description: Redirect URI
+        in: formData
+        name: redirect_uri
+        required: true
+        type: string
+      - description: Logout URI
+        in: formData
+        name: logout_uri
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: Grants (e.g. authorization_code)
+        in: formData
+        items:
+          type: string
+        name: grants
+        required: true
+        type: array
+      - collectionFormat: csv
+        description: Initial Roles
+        in: formData
+        items:
+          type: string
+        name: roles
+        type: array
+      - description: Client Icon
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Register a new Service Provider with Icon
+      tags:
+      - ServiceProviders
+  /v1/admin/clients/{id}:
+    delete:
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Soft Delete Client
+      tags:
+      - ServiceProviders
+    get:
+      description: Fetch full details including grants and roles
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get Client Details
+      tags:
+      - ServiceProviders
+    put:
+      consumes:
+      - application/json
+      description: Update safe fields (Name, Description, URLs, Image)
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update Client Info
+      tags:
+      - ServiceProviders
+  /v1/admin/roles:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of non-deleted roles
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RoleListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List all roles
+      tags:
+      - Roles
+    post:
+      consumes:
+      - application/json
+      description: Adds a new global or SP-prefixed role to the system
+      parameters:
+      - description: Role details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Create a new role
+      tags:
+      - Roles
+  /v1/admin/roles/{id}:
+    delete:
+      description: Marks a role as deleted in the audit trail
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Soft delete a role
+      tags:
+      - Roles
+    get:
+      consumes:
+      - application/json
+      description: Fetches full details of a specific role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RoleResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get role by ID
+      tags:
+      - Roles
+    put:
+      consumes:
+      - application/json
+      description: Modifies role name or description
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated role data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update an existing role
+      tags:
+      - Roles
+swagger: "2.0"

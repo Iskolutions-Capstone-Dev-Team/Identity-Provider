@@ -26,9 +26,9 @@ type UserHandler struct {
 // @Accept json
 // @Produce json
 // @Param user body dto.UserRequest true "User Data"
-// @Success 201 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 201 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/users [post]
 func (h *UserHandler) PostUser(c *gin.Context) {
 	var req dto.UserRequest
@@ -56,7 +56,10 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 	err := h.Repo.CreateUser(&user)
 	if err != nil {
 		log.Printf("[PostUser] Database Create Error: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "database error"})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "database error"},
+		)
 		return
 	}
 
@@ -71,8 +74,8 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 // @Produce json
 // @Param id path string true "User ID (UUID)"
 // @Success 200 {object} dto.UserResponse
-// @Failure 400 {object} map[string]string
-// @Failure 440 {object} map[string]string
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 440 {object} dto.ErrorResponse
 // @Router /api/v1/users/{id} [get]
 func (h *UserHandler) GetUser(c *gin.Context) {
 	id := c.Param("id")
@@ -149,8 +152,8 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	var userResponses []dto.UserResponse
 	for _, user := range users {
 		roleList, err := service.GetUserRoles(user.Roles)
-			if err != nil {
-				log.Printf("[GetUserList] Get roles error: %v", err)
+		if err != nil {
+			log.Printf("[GetUserList] Get roles error: %v", err)
 			c.JSON(
 				http.StatusInternalServerError,
 				dto.ErrorResponse{Error: "Failed to get roles"},
@@ -160,7 +163,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		userUUID, err := uuid.FromBytes(user.ID)
 		if err != nil {
 			log.Printf("[GetUserList] parse error: %v", err)
-			c.JSON(http.StatusInternalServerError, 
+			c.JSON(http.StatusInternalServerError,
 				dto.ErrorResponse{Error: "parse error"})
 			return
 		}
@@ -189,11 +192,11 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 // PatchUserPassword updates a user's password.
 // @Summary Update user password
 // @Description Updates the password for a specific user identified by ID.
-// @Tags users
+// @Tags Users
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Param request body dto.UpdateUserRequest true "Password Update Data"
+// @Param request body dto.UpdatePasswordRequest true "Password Update Data"
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 501 {object} dto.ErrorResponse
@@ -245,14 +248,14 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 // PatchUserStatus updates the operational status of a user.
 // @Summary Update user status
 // @Description Modifies the status (e.g., active, disabled) of a user by ID.
-// @Tags users
+// @Tags Users
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Param request body dto.UpdateUserRequest true "Status Update Data"
-// @Success 200 {object} dto.
-// @Failure 400 {object} map[string]interface{} "Bad Request"
-// @Failure 501 {object} map[string]interface{} "Internal Server Error"
+// @Param request body dto.UpdateStatusRequest true "Status Update Data"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 501 {object} dto.ErrorResponse
 // @Router /api/v1/users/{id}/status [patch]
 func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 	id := c.Param("id")
@@ -260,20 +263,29 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 	userId, err := uuid.Parse(id)
 	if err != nil {
 		log.Printf("[PatchUserStatus] UUID Parse Error: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid ID Format"})
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalid ID Format"},
+		)
 		return
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchUserStatus] Bind JSON Error: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalaid input"})
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalaid input"},
+		)
 		return
 	}
 
 	status, err := models.MapStatus(req.NewStatus)
 	if err != nil {
 		log.Printf("[PatchUserStatus] Invalid status: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid status request"})
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid status request"},
+		)
 		return
 	}
 
@@ -285,37 +297,67 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 	err = h.Repo.UpdateStatus(&user)
 	if err != nil {
 		log.Printf("[PatchUserStatus] Update failed: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Update failed"})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Update failed"},
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Status Updated Successfuly!"})
+	c.JSON(
+		http.StatusOK,
+		dto.SuccessResponse{Message: "Status Updated Successfuly!"},
+	)
 }
 
+// PatchUserRoles updates the roles assigned to a specific user.
+// @Summary Update user roles
+// @Description Partially updates a user's role set based on the request body.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param request body dto.UpdateUserRoleRequest true "Role update data"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /users/{id}/roles [patch]
 func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 	id := c.Param("id")
 	var req dto.UpdateUserRoleRequest
 	userId, err := uuid.Parse(id)
 	if err != nil {
 		log.Printf("[PatchUserRoles] UUID Parse Error: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid ID Format"})
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalid ID Format"},
+		)
 		return
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchUserRoles] Bind JSON Error: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalaid input"})
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalaid input"},
+		)
 		return
 	}
 
 	err = h.Repo.UpdateUserRoles(userId[:], req.RoleIDs)
 	if err != nil {
 		log.Printf("[PatchUserRoles] Update failed: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Update failed"})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Update failed"},
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "roles updated successfully!"})
+	c.JSON(
+		http.StatusOK,
+		dto.SuccessResponse{Message: "roles updated successfully!"},
+	)
 }
 
 // DeleteUser performs a soft delete on a user record
@@ -323,9 +365,9 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 // @Description Mark a user as deleted by ID
 // @Tags Users
 // @Param id path string true "User ID (UUID)"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
@@ -338,10 +380,15 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	if err := h.Repo.SoftDelete(userID[:]); err != nil {
 		log.Printf("[DeleteUser] Database SoftDelete Error: %v", err)
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Deletion Failed"})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Deletion Failed"},
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "User deleted successfully"})
+	c.JSON(
+		http.StatusOK,
+		dto.SuccessResponse{Message: "User deleted successfully"},
+	)
 }
