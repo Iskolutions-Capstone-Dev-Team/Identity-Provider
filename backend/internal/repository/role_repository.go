@@ -82,11 +82,11 @@ func (r *RoleRepository) UpdateRole(role models.Role) error {
 	return err
 }
 
-// SoftDelete ensures audit integrity by hiding the role instead of purging it.
+// Delete purges the role.
 // @Summary Soft Delete Role
 // @ID delete-role
-func (r *RoleRepository) SoftDelete(id int) error {
-	query := `UPDATE roles SET deleted_at = NOW() WHERE id = ?`
+func (r *RoleRepository) Delete(id int) error {
+	query := `DELETE FROM roles WHERE id = ?`
 	_, err := r.db.Exec(query, id)
 	return err
 }
