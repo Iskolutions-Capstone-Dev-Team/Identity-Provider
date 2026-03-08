@@ -359,6 +359,19 @@ func (r *ClientRepository) AddClientAllowedRole(roleID int, tag string) error {
 	return nil
 }
 
+func (r *ClientRepository) DeleteConnectedRoles(client *models.Client) error {
+	query := `DELETE FROM client_allowed_roles WHERE client_id = ?`
+	_, err := r.db.Exec(query, client.ID)
+	if err != nil {
+		return err
+	}
+
+	abbreviation := client.Tag + ":%"
+	deleteRoleQuery := `DELETE FROM roles WHERE role_name LIKE ?`
+	_, err = r.db.Exec(deleteRoleQuery, abbreviation)
+	return err
+}
+
 func NewClientRepository(db *sqlx.DB) *ClientRepository {
 	return &ClientRepository{db: db}
 }

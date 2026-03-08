@@ -222,7 +222,7 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	roles, err := h.Repo.GetClientAllowedRoles(cl.ID)
 	if err != nil {
 		log.Printf("[GetClient] failed to fetch allowed roles: %v", err)
-		c.JSON(http.StatusInternalServerError, 
+		c.JSON(http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "fetch failed"})
 		return
 	}
@@ -351,12 +351,23 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 		)
 		return
 	}
+
 	cl, err := h.Repo.GetByID(clientUUID[:])
 	if err != nil {
 		log.Printf("[GetClient] Client not found %v", err)
 		c.JSON(
 			http.StatusNotFound,
 			dto.ErrorResponse{Error: "client not found"},
+		)
+		return
+	}
+
+	err = service.DeleteImage(c.Request.Context(), cl.ImageLocation, h.Storage)
+	if err != nil {
+		log.Printf("[DeleteClient] Image deletion failed: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "failed to delete image"},
 		)
 		return
 	}
@@ -370,13 +381,14 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 		return
 	}
 
-	err = service.DeleteImage(c.Request.Context(), cl.ImageLocation, h.Storage)
+	err = h.Repo.DeleteConnectedRoles(cl)
 	if err != nil {
-		log.Printf("[DeleteClient] Image deletion failed: %v", err)
+		log.Printf("[DeleteClient] roles deletion failed: %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to delete image"},
+			dto.ErrorResponse{Error: "failed to delete roles"},
 		)
+		return
 	}
 
 	c.JSON(
