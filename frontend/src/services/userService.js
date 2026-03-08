@@ -26,8 +26,15 @@ export const userService = {
   },
 
   async updateUserStatus(id, status) {
+    const normalizedStatus =
+      typeof status === "string" ? status.trim().toLowerCase() : "";
+
+    if (!normalizedStatus) {
+      throw new Error("Status is required.");
+    }
+
     const payload = {
-      new_status: status,
+      new_status: normalizedStatus,
     };
 
     const res = await axiosInstance.patch(`/admin/users/${id}/status`, payload, {

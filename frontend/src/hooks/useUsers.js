@@ -2,20 +2,26 @@ import { useState, useEffect } from "react";
 import { userService } from "../services/userService";
 import { roleService } from "../services/roleService";
 
+const EDITABLE_STATUS_VALUES = new Set(["active", "inactive", "suspended"]);
+
 function normalizeRoleNames(roles) {
   if (!Array.isArray(roles)) {
     return [];
   }
 
-  return roles
-    .map((role) => {
-      if (typeof role === "string") {
-        return role;
-      }
+  return Array.from(
+    new Set(
+      roles
+        .map((role) => {
+          if (typeof role === "string") {
+            return role.trim();
+          }
 
-      return role?.role_name || "";
-    })
-    .filter(Boolean);
+          return role?.role_name?.trim() || "";
+        })
+        .filter(Boolean),
+    ),
+  );
 }
 
 function normalizeRoleIds(roleIds) {
@@ -29,7 +35,16 @@ function normalizeRoleIds(roleIds) {
 }
 
 function normalizeStatus(status) {
-  return typeof status === "string" ? status.trim().toLowerCase() : "";
+  if (typeof status !== "string") {
+    return "";
+  }
+
+  const normalizedStatus = status.trim().toLowerCase();
+  return EDITABLE_STATUS_VALUES.has(normalizedStatus) ? normalizedStatus : "";
+}
+
+function isStatusRequestError(error) {
+  return error?.response?.data?.error === "invalid status request";
 }
 
 function areSameStringArrays(first = [], second = []) {
@@ -154,23 +169,37 @@ export function useUsers() {
     const nextRoles = normalizeRoleNames(updatedUser?.roles);
     const previousRoles = normalizeRoleNames(originalUser?.roles);
     const nextRoleIds = normalizeRoleIds(updatedUser?.roleIds);
+    const shouldUpdateStatus = Boolean(nextStatus) && nextStatus !== previousStatus;
+    const shouldUpdateRoles = !areSameStringArrays(nextRoles, previousRoles);
+    let rolesWereUpdated = false;
 
     try {
-      if (nextStatus && nextStatus !== previousStatus) {
-        await userService.updateUserStatus(updatedUser.id, nextStatus);
-      }
-
-      if (!areSameStringArrays(nextRoles, previousRoles)) {
-        await userService.updateUserRoles(updatedUser.id, nextRoleIds);
-      }
-
-      if (nextStatus === previousStatus && areSameStringArrays(nextRoles, previousRoles)) {
+      if (!shouldUpdateStatus && !shouldUpdateRoles) {
         return;
+      }
+
+      if (shouldUpdateRoles) {
+        await userService.updateUserRoles(updatedUser.id, nextRoleIds);
+        rolesWereUpdated = true;
+      }
+
+      if (shouldUpdateStatus) {
+        await userService.updateUserStatus(updatedUser.id, nextStatus);
       }
 
       setSuccessMessage("User successfully updated!");
       fetchUsers(page);
     } catch (error) {
+      if (rolesWereUpdated) {
+        fetchUsers(page);
+      }
+
+      if (rolesWereUpdated && isStatusRequestError(error)) {
+        throw new Error(
+          "Roles were updated, but the backend rejected the status update request.",
+        );
+      }
+
       console.error("Update user error:", error);
       throw error;
     }

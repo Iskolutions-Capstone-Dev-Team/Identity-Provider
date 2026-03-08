@@ -20,8 +20,15 @@ const STATUS_OPTIONS = [
   { value: "suspended", label: "Suspended" },
 ];
 
+const STATUS_VALUES = new Set(STATUS_OPTIONS.map((option) => option.value));
+
 const normalizeText = (value) =>
   typeof value === "string" ? value.trim() : "";
+
+const normalizeStatus = (value) => {
+  const normalizedValue = normalizeText(value).toLowerCase();
+  return STATUS_VALUES.has(normalizedValue) ? normalizedValue : "active";
+};
 
 const normalizeRoleNames = (roles) =>
   Array.from(
@@ -78,7 +85,7 @@ const createFormData = (user) => ({
   givenName: user?.givenName || "",
   middleName: user?.middleName || "",
   surname: user?.surname || "",
-  status: normalizeText(user?.status).toLowerCase() || "active",
+  status: normalizeStatus(user?.status),
   roles: normalizeRoleNames(user?.roles),
   roleIds: normalizeRoleIds(user?.roleIds),
 });
@@ -174,7 +181,7 @@ export default function UserPoolModal({
   const handleFieldChange = (field, value) => {
     setFormData((current) => ({
       ...current,
-      [field]: value,
+      [field]: field === "status" ? normalizeStatus(value) : value,
     }));
 
     if (error) {
@@ -206,6 +213,11 @@ export default function UserPoolModal({
 
     if (selectedRoleIds.length === 0) {
       setError("At least one role must be selected.");
+      return;
+    }
+
+    if (!STATUS_VALUES.has(formData.status)) {
+      setError("Select a valid status.");
       return;
     }
 
