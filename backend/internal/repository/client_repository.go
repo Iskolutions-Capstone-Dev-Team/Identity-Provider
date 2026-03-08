@@ -248,7 +248,7 @@ func (r *ClientRepository) RetrieveClientTagInformation(limit int,
 	searchTerm := "%" + keyword + "%"
 
 	query := `
-		SELECT role_name, tag, image_location
+		SELECT id, tag, image_location
 		FROM clients
 		WHERE deleted_at IS NULL AND tag LIKE ?
 		LIMIT ? OFFSET ?
