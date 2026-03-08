@@ -11,7 +11,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
       items: [
         {
           name: "User Pool",
-          path: "/idp/user-pool",
+          path: "/user-pool",
           iconPath:
             "M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z",
         },
@@ -57,89 +57,90 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
 
   return (
     <>  
-      <div className={`hidden lg:flex flex-col bg-[#991b1b] border-red-900 transition-[width] duration-300 ease-in-out ${isOpen ? "w-64" : "w-20"}`}>
-        <div className="h-24 flex items-center border-b border-red-900 px-3">
-          <button onClick={toggleSidebar} className="flex items-center gap-2 w-full transition-all duration-300 ease-in-out">
-            <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className={`object-contain transition-all duration-300 ease-in-out hover:scale-110 ${isOpen ? "h-16 w-16" : "h-14 w-14"}`}/>
-            <div className={`flex flex-col transition-all duration-300 ease-in-out${isOpen ? "opacity-100 translate-x-0 ml-2" : "opacity-0 -translate-x-2 w-0 overflow-hidden"}`}>
-              <h1 className="text-white text-3xl font-bold leading-tight">PUPTIDP</h1>
-              <span className="inline-flex bg-[#ffd700] font-extrabold text-black px-2 rounded-md text-xs w-fit">ver.2026</span>
-            </div>
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 space-y-5">
-          {menuSections.map((section) => (
-            <div key={section.title}>
-              <div className="h-6 mb-2 px-3 overflow-hidden">
-                <p className={`text-xs font-extrabold tracking-widest text-red-200/80 uppercase whitespace-nowrap transition-opacity duration-200 ${
-                  isOpen ? "opacity-100" : "opacity-0" }`}
-                >
-                  {section.title}
-                </p>
+      <div className={`hidden lg:block shrink-0 transition-[width] duration-300 ease-in-out ${isOpen ? "w-64" : "w-20"}`}>
+        <div className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-[#991b1b] border-red-900 transition-[width] duration-300 ease-in-out ${isOpen ? "w-64" : "w-20"}`}>
+          <div className="h-24 flex items-center border-b border-red-900 px-3">
+            <button onClick={toggleSidebar} className="flex items-center gap-2 w-full transition-all duration-300 ease-in-out">
+              <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className={`object-contain transition-all duration-300 ease-in-out hover:scale-110 ${isOpen ? "h-16 w-16" : "h-14 w-14"}`}/>
+              <div className={`flex flex-col transition-all duration-300 ease-in-out${isOpen ? "opacity-100 translate-x-0 ml-2" : "opacity-0 -translate-x-2 w-0 overflow-hidden"}`}>
+                <h1 className="text-white text-3xl font-bold leading-tight">PUPTIDP</h1>
+                <span className="inline-flex bg-[#ffd700] font-extrabold text-black px-2 rounded-md text-xs w-fit">ver.2026</span>
               </div>
-              <ul className="space-y-2">                                                                                                                                                                                                                                                                                                                                                       
-                {section.items.map((item, idx) => {
-                  const isActive = location.pathname === item.path;
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 space-y-5">
+            {menuSections.map((section) => (
+              <div key={section.title}>
+                <div className="h-6 mb-2 px-3 overflow-hidden">
+                  <p className={`text-xs font-extrabold tracking-widest text-red-200/80 uppercase whitespace-nowrap transition-opacity duration-200 ${
+                    isOpen ? "opacity-100" : "opacity-0" }`}
+                  >
+                    {section.title}
+                  </p>
+                </div>
+                <ul className="space-y-2">                                                                                                                                                                                                                                                                                                                                                       
+                  {section.items.map((item, idx) => {
+                    const isActive = location.pathname === item.path;
 
-                  return (
-                    <li key={`${section.title}-${idx}`} className="relative group">
-                      <button onClick={() => {
-                          navigate(item.path);
-                          if (window.innerWidth < 1024) toggleSidebar();
-                        }}
-                        className={`flex items-center h-12 w-full rounded-2xl transition-all duration-300 ease-in-out overflow-hidden
-                          ${isOpen ? "justify-start px-2" : "justify-center px-0"}
-                          ${isActive ? "bg-[#ffd700] text-[#991b1b] shadow-lg" : "text-white hover:bg-[#7f1d1d]"}
-                        `}
-                      >
-                        <div className="w-10 h-10 shrink-0 flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-6 h-6 transition-colors duration-300 ${isActive ? "text-[#991b1b]" : "text-white"}`}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath}/>
-                          </svg>
-                        </div>
-
-                        <span className={`overflow-hidden whitespace-nowrap font-semibold transition-all duration-300 ease-in-out ${
-                            isOpen ? "max-w-40 opacity-100 ml-3" : "w-0 opacity-0 ml-0"
-                          } ${isActive ? "text-[#991b1b]" : ""}`}
+                    return (
+                      <li key={`${section.title}-${idx}`} className="relative group">
+                        <button onClick={() => {
+                            navigate(item.path);
+                            if (window.innerWidth < 1024) toggleSidebar();
+                          }}
+                          className={`flex items-center h-12 w-full rounded-2xl transition-all duration-300 ease-in-out overflow-hidden
+                            ${isOpen ? "justify-start px-2" : "justify-center px-0"}
+                            ${isActive ? "bg-[#ffd700] text-[#991b1b] shadow-lg" : "text-white hover:bg-[#7f1d1d]"}
+                          `}
                         >
-                          {item.name}
-                        </span>
-                      </button>
+                          <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-6 h-6 transition-colors duration-300 ${isActive ? "text-[#991b1b]" : "text-white"}`}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath}/>
+                            </svg>
+                          </div>
 
-                      {!isOpen && (
-                        <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md text-sm bg-[#991b1b] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">
-                          {item.name}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </div>
+                          <span className={`overflow-hidden whitespace-nowrap font-semibold transition-all duration-300 ease-in-out ${
+                              isOpen ? "max-w-40 opacity-100 ml-3" : "w-0 opacity-0 ml-0"
+                            } ${isActive ? "text-[#991b1b]" : ""}`}
+                          >
+                            {item.name}
+                          </span>
+                        </button>
 
-        <div className="mt-10"/>
-        <div className="p-2 border-t border-red-900">
-          <button onClick={handleLogout} className={`flex items-center h-11 w-full rounded-2xl transition-all duration-300 ease-in-out overflow-hidden hover:bg-red-900
-            ${isOpen ? "justify-start px-2" : "px-0 justify-center"}`}
-          >
-            <div className="w-10 h-10 shrink-0 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-white transition-all duration-300 ease-in-out">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
-              </svg>
-            </div>
-            <span className={`min-w-0 overflow-hidden whitespace-nowrap font-semibold text-white transition-all duration-300 ease-in-out
-                ${isOpen
-                  ? "max-w-30 opacity-100 ml-3"
-                  : "max-w-0 opacity-0 ml-0"
-                }
-              `}
-            >Logout</span>
-          </button>
-          {!isOpen && (
-            <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md text-sm bg-[#991b1b] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">Logout</span>
-          )}
+                        {!isOpen && (
+                          <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md text-sm bg-[#991b1b] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">
+                            {item.name}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-red-900 px-2 pb-2 pt-12">
+            <button onClick={handleLogout} className={`flex items-center h-11 w-full rounded-2xl transition-all duration-300 ease-in-out overflow-hidden hover:bg-red-900
+              ${isOpen ? "justify-start px-2" : "px-0 justify-center"}`}
+            >
+              <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-white transition-all duration-300 ease-in-out">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+                </svg>
+              </div>
+              <span className={`min-w-0 overflow-hidden whitespace-nowrap font-semibold text-white transition-all duration-300 ease-in-out
+                  ${isOpen
+                    ? "max-w-30 opacity-100 ml-3"
+                    : "max-w-0 opacity-0 ml-0"
+                  }
+                `}
+              >Logout</span>
+            </button>
+            {!isOpen && (
+              <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md text-sm bg-[#991b1b] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">Logout</span>
+            )}
+          </div>
         </div>
       </div>
       {/* Mobile Bottom Navigation */}

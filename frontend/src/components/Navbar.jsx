@@ -1,10 +1,13 @@
 import { useNavigate } from "react-router-dom";
 
-export default function Navbar() {
+export default function Navbar({ sidebarOpen }) {
   const navigate = useNavigate();
+  const desktopOffset = sidebarOpen ? "lg:left-64" : "lg:left-20";
 
   return (
-    <nav className="h-16 sm:h-24 bg-[#991b1b] shadow flex items-center px-3 sm:px-6 justify-between transition-all duration-300">
+    <nav
+      className={`fixed top-0 left-0 right-0 z-20 h-16 sm:h-24 bg-[#991b1b] shadow flex items-center px-3 sm:px-6 justify-between transition-all duration-300 ${desktopOffset}`}
+    >
       <div className="flex items-center">
         <div className="flex flex-col items-start text-white leading-tight">
           <div className="font-bold text-[0.6rem] sm:text-[1.1em] tracking-[0.5px] sm:tracking-[1px]">

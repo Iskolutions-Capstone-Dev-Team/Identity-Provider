@@ -3,6 +3,7 @@ import Login from "./auth/pages/Login";
 import Callback from "./auth/pages/Callback";
 import Unauthorized from "./auth/pages/Unauthorized";
 import ProtectedRoute from "./auth/components/ProtectedRoute";
+import UserPool from "./pages/UserPool";
 import Roles from "./pages/Roles";
 import AppClient from "./pages/AppClient";
 import AuditLogs from "./pages/AuditLogs";
@@ -25,6 +26,7 @@ export default function App() {
             </ProtectedRoute>
           }
         >
+          <Route path="/user-pool" element={<UserPool />} />
           <Route path="/roles" element={<Roles />} />
           <Route path="/audit-logs" element={<AuditLogs />} />
           <Route path="/app-client" element={<AppClient />} />

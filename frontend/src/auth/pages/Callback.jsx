@@ -23,7 +23,7 @@ export default function Callback() {
         const tokenResponse = await authService.exchangeCode(code);
         document.cookie = `access_token=${tokenResponse.access_token}; path=/`;
         document.cookie = `refresh_token=${tokenResponse.refresh_token}; path=/`;
-        navigate("/roles");
+        navigate("/user-pool");
       } catch (err) {
         console.error(err);
         navigate("/401");

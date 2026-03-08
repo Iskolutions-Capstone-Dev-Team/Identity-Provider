@@ -10,6 +10,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -79,7 +80,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	if err != nil {
 		log.Printf("[GetUser] UUID Parse Error: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "Invalid ID Format"},
 		)
 		return
@@ -93,7 +94,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.UserResponse{
-		ID:         string(user.ID),
+		ID:         userID.String(),
 		Username:   user.Username,
 		FirstName:  user.FirstName,
 		MiddleName: user.MiddleName,
@@ -147,8 +148,24 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 
 	var userResponses []dto.UserResponse
 	for _, user := range users {
+		roleList, err := service.GetUserRoles(user.Roles)
+			if err != nil {
+				log.Printf("[GetUserList] Get roles error: %v", err)
+			c.JSON(
+				http.StatusInternalServerError,
+				dto.ErrorResponse{Error: "Failed to get roles"},
+			)
+			return
+		}
+		userUUID, err := uuid.FromBytes(user.ID)
+		if err != nil {
+			log.Printf("[GetUserList] parse error: %v", err)
+			c.JSON(http.StatusInternalServerError, 
+				dto.ErrorResponse{Error: "parse error"})
+			return
+		}
 		userResponses = append(userResponses, dto.UserResponse{
-			ID:         string(user.ID),
+			ID:         userUUID.String(),
 			Username:   user.Username,
 			FirstName:  user.FirstName,
 			MiddleName: user.MiddleName,
@@ -157,6 +174,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 			Status:     string(user.Status),
 			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
 			UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+			Roles:      roleList,
 		})
 	}
 
@@ -187,7 +205,7 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PatchUserPassword] UUID Parse Error: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "Invalid ID Format"},
 		)
 		return
@@ -197,7 +215,7 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PatchUpdatePassword] Hashing failed: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Hashing failed"},
 		)
 		return
@@ -212,14 +230,14 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PatchUpdatePassword] Update failed: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Update failed"},
 		)
 		return
 	}
 
 	c.JSON(
-		http.StatusOK, 
+		http.StatusOK,
 		dto.SuccessResponse{Message: "Password Updated Successfuly!"},
 	)
 }
@@ -243,6 +261,12 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PatchUserStatus] UUID Parse Error: %v", err)
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid ID Format"})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PatchUserStatus] Bind JSON Error: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalaid input"})
 		return
 	}
 
