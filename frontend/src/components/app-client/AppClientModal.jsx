@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import ErrorAlert from "../ErrorAlert";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import MultiSelect from "../MultiSelect";
@@ -99,6 +99,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [detailRoleOptions, setDetailRoleOptions] = useState([]);
   const [detailRoleNames, setDetailRoleNames] = useState([]);
   const [hasRoleSelectionChanged, setHasRoleSelectionChanged] = useState(false);
+  const [hasLoadedLatestRoles, setHasLoadedLatestRoles] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageLocation, setImageLocation] = useState(null);
@@ -142,10 +143,11 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setRedirectURL(client.redirect_uri || "");
     setLogoutURL(client.logout_uri || "");
     setSelectedGrants(client.grants || ["authorization_code"]);
-    setRoles(normalizeRoleIds(client.roles || []));
-    setDetailRoleOptions(Array.isArray(client.roleOptions) ? client.roleOptions : []);
-    setDetailRoleNames(Array.isArray(client.roleNames) ? client.roleNames : []);
+    setRoles([]);
+    setDetailRoleOptions([]);
+    setDetailRoleNames([]);
     setHasRoleSelectionChanged(false);
+    setHasLoadedLatestRoles(false);
     setImageFile(null);
     setIsDragging(false);
     setError("");
@@ -157,6 +159,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   useEffect(() => {
     if (!open) {
       detailsRequestRef.current = { clientId: "", inFlight: false };
+      setHasLoadedLatestRoles(false);
     }
   }, [open]);
 
@@ -175,6 +178,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     let cancelled = false;
     detailsRequestRef.current = { clientId, inFlight: true };
     setIsDetailsLoading(true);
+    setHasLoadedLatestRoles(false);
     setError("");
 
     getClientDetails(clientId)
@@ -192,6 +196,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         setDetailRoleOptions(Array.isArray(details.roleOptions) ? details.roleOptions : []);
         setDetailRoleNames(Array.isArray(details.roleNames) ? details.roleNames : []);
         setHasRoleSelectionChanged(false);
+        setHasLoadedLatestRoles(true);
 
         const img = details.image || details.image_location || null;
         setImageLocation(img || "");
@@ -276,6 +281,10 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isView) return onClose();
+    if (!hasLoadedLatestRoles) {
+      setError("Load the latest app client roles before saving changes.");
+      return;
+    }
 
     const hasLogo = Boolean(imageFile) || Boolean(imageLocation);
     if (!hasLogo) {
@@ -501,7 +510,9 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                   </p>}
                   {isView ? (
                     <div className="w-full min-h-24 rounded-lg border border-gray-200 bg-gray-100 text-gray-700 px-3 py-2 text-sm">
-                      {displayedRoleLabels.length > 0 ? (
+                      {isDetailsLoading && !hasLoadedLatestRoles ? (
+                        <span className="text-gray-500 italic">Loading latest roles...</span>
+                      ) : displayedRoleLabels.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">
                           {displayedRoleLabels.map((roleName, index) => (
                             <span
@@ -525,7 +536,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                         setRoles(normalizeRoleIds(ids));
                       }}
                       placeholder="Select roles"
-                      disabled={isView}
+                      disabled={isView || isDetailsLoading || !hasLoadedLatestRoles}
                     />
                   )}
                 </div>
@@ -539,7 +550,12 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
               Cancel
             </button>
             {mode !== "view" && (
-              <button form="app-client-form" type="submit" className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]">
+              <button
+                form="app-client-form"
+                type="submit"
+                disabled={isDetailsLoading || !hasLoadedLatestRoles}
+                className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]"
+              >
                 {mode === "create" ? "Create" : "Save"}
               </button>
             )}
