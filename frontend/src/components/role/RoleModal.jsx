@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ErrorAlert from "../ErrorAlert";
 import TagMultiSelect from "./TagMultiSelect";
 
@@ -19,6 +19,9 @@ const splitRoleName = (value = "") => {
 
 const normalizeTagValue = (value) =>
   typeof value === "string" ? value.replace(/:+$/, "").trim() : "";
+
+const normalizeRoleNameValue = (value) =>
+  typeof value === "string" ? value.toLowerCase() : "";
 
 export default function RoleModal({
   open,
@@ -51,7 +54,7 @@ export default function RoleModal({
         } else {
             const parsedRoleName = splitRoleName(role?.role_name || "");
             setSelectedTags(parsedRoleName.tag ? [parsedRoleName.tag] : []);
-            setRoleName(parsedRoleName.name);
+            setRoleName(normalizeRoleNameValue(parsedRoleName.name));
             setDescription(role?.description || "");
         }
 
@@ -124,7 +127,7 @@ export default function RoleModal({
     };
 
     const handleRoleNameChange = (value) => {
-      setRoleName(value);
+      setRoleName(normalizeRoleNameValue(value));
       clearAlertError();
     };
 
@@ -146,7 +149,7 @@ export default function RoleModal({
         if (!validateForm()) return;
 
         const selectedTag = selectedTags[0];
-        const normalizedName = roleName.trim();
+        const normalizedName = normalizeRoleNameValue(roleName).trim();
 
         onSubmit({
             id: role?.id || Date.now(),
@@ -217,6 +220,7 @@ export default function RoleModal({
                                   }
                                   onBlur={() => setFieldTouched("name")}
                                   placeholder="(e.g., superadmin)"
+                                  autoCapitalize="none"
                                   className={`input validator w-full rounded-lg ${
                                     isViewMode
                                       ? "bg-gray-100 border-gray-300 text-gray-700"
