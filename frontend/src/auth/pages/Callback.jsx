@@ -29,7 +29,7 @@ export default function Callback() {
 
         storeTokenResponse(tokenResponse);
         sessionStorage.removeItem("termsAccepted");
-        setTimeout(() => navigate("/user-pool"), 2000);
+        setTimeout(() => navigate("/user-pool"), 500);
       } catch (err) {
         console.error(err);
         navigate("/401");

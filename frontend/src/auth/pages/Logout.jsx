@@ -18,7 +18,7 @@ export default function Logout() {
                 console.error("Logout failed", err);
             } finally {
                 clearAuthState();
-                setTimeout(() => navigate("/", { replace: true }), 2000);
+                setTimeout(() => navigate("/", { replace: true }), 500);
             }
         };
 
