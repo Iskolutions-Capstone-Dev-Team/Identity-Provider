@@ -2,7 +2,7 @@ package dto
 
 // UserRequest handles the incoming data for creating or updating a user.
 type UserRequest struct {
-	Username   string   `json:"user_name" binding:"required,min=4"`
+	Username   string   `json:"user_name"`
 	FirstName  string   `json:"first_name" binding:"required"`
 	MiddleName string   `json:"middle_name"`
 	LastName   string   `json:"last_name" binding:"required"`
