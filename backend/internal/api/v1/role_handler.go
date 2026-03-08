@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -12,7 +13,8 @@ import (
 )
 
 type RoleHandler struct {
-	Repo *repository.RoleRepository
+	Repo       *repository.RoleRepository
+	ClientRepo *repository.ClientRepository
 }
 
 // PostRole handles POST /v1/admin/roles
@@ -38,10 +40,29 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 		Description: req.Description,
 	}
 
-	if err := h.Repo.CreateRole(role); err != nil {
+	result, err := h.Repo.CreateRole(role)
+	if err != nil {
 		log.Printf("[PostRole] DB Error: %v", err)
 		c.JSON(http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Failed to create role"})
+		return
+	}
+
+	roleID, err := result.LastInsertId()
+	if err != nil {
+		log.Printf("[Postrole] failed to get roleID: %v", err)
+		c.JSON(http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "RoleID fetch failed"})
+		return
+	}
+
+	tag := strings.Split(req.RoleName, ":")[0]
+	err = h.ClientRepo.AddClientAllowedRole(int(roleID), tag)
+	if err != nil {
+		log.Printf("[Postrole] failed to bind role %s to client: %v",
+			req.RoleName, err)
+		c.JSON(http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Role binding failed"})
 		return
 	}
 
