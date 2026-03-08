@@ -94,7 +94,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.UserResponse{
-		ID:         string(user.ID),
+		ID:         userID.String(),
 		Username:   user.Username,
 		FirstName:  user.FirstName,
 		MiddleName: user.MiddleName,
@@ -157,8 +157,9 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 			)
 			return
 		}
+		userUUID, _ := uuid.ParseBytes(user.ID)
 		userResponses = append(userResponses, dto.UserResponse{
-			ID:         string(user.ID),
+			ID:         userUUID.String(),
 			Username:   user.Username,
 			FirstName:  user.FirstName,
 			MiddleName: user.MiddleName,
