@@ -337,6 +337,25 @@ func (r *ClientRepository) UpdateAllowedRoles(client *models.Client,
 	return tx.Commit()
 }
 
+func (r *ClientRepository) AddClientAllowedRole(roleID int, tag string) error {
+	var client models.Client
+	clientQuery := `SELECT id FROM clients WHERE tag = ?`
+	err := r.db.Get(&client, clientQuery, tag)
+	if err != nil {
+		return err
+	}
+
+	query := `
+		INSERT INTO client_allowed_roles (client_id, role_id)
+		VALUES (?, ?)	
+	`
+	_, err = r.db.Exec(query, client.ID, roleID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func NewClientRepository(db *sqlx.DB) *ClientRepository {
 	return &ClientRepository{db: db}
 }
