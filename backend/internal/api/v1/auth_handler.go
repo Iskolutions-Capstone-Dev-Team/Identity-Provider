@@ -12,6 +12,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -79,7 +80,6 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 	log.Print("[Authorize] Token found, redirecting...")
 	redirectURL := fmt.Sprintf("%s?code=%s", client.RedirectUri, code)
 	c.Redirect(http.StatusFound, redirectURL)
-
 }
 
 // LoginAndAuthorize verifies credentials and issues an authorization code
@@ -268,4 +268,16 @@ func (h *AuthHandler) CheckSession(c *gin.Context) {
 		"authenticated": true,
 		"user_id":       session.UserId,
 	})
+}
+
+// GetJWKS handles the retrieval of public keys for token verification
+func (h *AuthHandler) GetJWKS(c *gin.Context) {
+	keyID := os.Getenv("KEY_ID")
+	jwk := service.PublicKeyToJWK(h.PublicKey, keyID)
+
+	jwks := service.JWKS{
+		Keys: []service.JWK{jwk},
+	}
+
+	c.JSON(http.StatusOK, jwks)
 }
