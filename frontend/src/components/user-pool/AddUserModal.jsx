@@ -10,7 +10,7 @@ const initialFormData = {
   givenName: "",
   middleName: "",
   surname: "",
-  inviteMode: "invite",
+  inviteMode: "temp",
   delivery: "email",
   tempPassword: "",
   roleIds: [],
