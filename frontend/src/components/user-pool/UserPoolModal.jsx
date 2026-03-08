@@ -110,30 +110,32 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
           </div>
 
           <div className="space-y-0.5">
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-semibold text-gray-700">
-                Middle Name
-              </label>
-              <span className="badge badge-neutral badge-xs">Optional</span>
-            </div>
-            <input
-              type="text"
-              name="middleName"
-              value={selectedUser?.middleName || ""}
-              onChange={(e) =>
-                setSelectedUser({
-                  ...selectedUser,
-                  middleName: e.target.value,
-                })
-              }
-              placeholder="Middle Name"
-              disabled={isView}
-              className={`input w-full rounded-lg ${
+            <label className="block text-sm font-semibold text-gray-700">
+              Middle Name
+            </label>
+            <label
+              className={`input flex w-full items-center gap-2 rounded-lg ${
                 isView
                   ? "border border-gray-300 bg-gray-100 text-gray-700"
                   : "border border-gray-200 bg-transparent text-gray-700"
               }`}
-            />
+            >
+              <input
+                type="text"
+                name="middleName"
+                value={selectedUser?.middleName || ""}
+                onChange={(e) =>
+                  setSelectedUser({
+                    ...selectedUser,
+                    middleName: e.target.value,
+                  })
+                }
+                placeholder="Middle Name"
+                disabled={isView}
+                className="grow bg-transparent disabled:bg-transparent"
+              />
+              <span className="badge badge-neutral badge-xs shrink-0">Optional</span>
+            </label>
           </div>
 
           <div className="space-y-0.5">
