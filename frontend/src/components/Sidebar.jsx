@@ -44,15 +44,8 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
 
   const mobileMenuItems = menuSections.flatMap((section) => section.items);
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } catch (err) {
-      console.error("Logout failed", err);
-    } finally {
-      localStorage.removeItem("access_token");
-      navigate("/", { replace: true });
-    }
+  const handleLogout = () => {
+    navigate("/logout", { replace: true });
   };
 
   return (
