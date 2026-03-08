@@ -182,11 +182,14 @@ func (r *ClientRepository) GetGrantTypes(clientID []byte) ([]string, error) {
 	return grants, err
 }
 
-func (r *ClientRepository) GetClientRoles(abbr string) ([]string, error) {
-	var roles []string
-	// Using LIKE to find all roles prefixed with the tag
-	query := `SELECT role_name FROM roles WHERE role_name LIKE ?`
-	err := r.db.Select(&roles, query, abbr+":%")
+func (r *ClientRepository) GetClientAllowedRoles(clientID []byte) ([]models.Role, error) {
+	var roles []models.Role
+	query := `
+		SELECT role_name FROM roles 
+		JOIN client_allowed_roles c
+		ON c.role_id = roles.id
+		WHERE client_id = ?`
+	err := r.db.Select(&roles, query, clientID)
 	return roles, err
 }
 
