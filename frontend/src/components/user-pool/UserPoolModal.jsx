@@ -92,6 +92,7 @@ export default function UserPoolModal({
 }) {
   const availableRoles = useAllRoles();
   const isViewMode = mode === "view";
+  const isEditMode = mode === "edit";
 
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
@@ -167,9 +168,8 @@ export default function UserPoolModal({
       .filter(Boolean);
   }, [availableRoles, formData.roles, selectedRoleIds]);
 
-  const editableInputClassName = `input w-full rounded-lg border border-gray-200 bg-transparent text-gray-700 ${
-    isViewMode ? "bg-gray-100 border-gray-300 text-gray-700" : ""
-  }`;
+  const readOnlyInputClassName =
+    "w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-700";
 
   const handleFieldChange = (field, value) => {
     setFormData((current) => ({
@@ -203,19 +203,6 @@ export default function UserPoolModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isViewMode) return onClose();
-
-    const hasIdentityChanges =
-      normalizeText(formData.email) !== normalizeText(originalUser.email) ||
-      normalizeText(formData.givenName) !== normalizeText(originalUser.givenName) ||
-      normalizeText(formData.middleName) !== normalizeText(originalUser.middleName) ||
-      normalizeText(formData.surname) !== normalizeText(originalUser.surname);
-
-    if (hasIdentityChanges) {
-      setError(
-        "Email and name updates are not available from the current backend user endpoints.",
-      );
-      return;
-    }
 
     if (selectedRoleIds.length === 0) {
       setError("At least one role must be selected.");
@@ -254,7 +241,7 @@ export default function UserPoolModal({
               <p className="text-white/90 mt-1">
                 {isViewMode
                   ? "View the user's account information."
-                  : "Update the user's account details."}
+                  : "Update the user's roles and account status."}
               </p>
             </div>
             <button
@@ -287,89 +274,78 @@ export default function UserPoolModal({
         >
           <ErrorAlert message={error} onClose={() => setError("")} />
 
-          <div className="space-y-0.5">
-            <label className="block text-base font-semibold text-gray-700">
-              User ID
-            </label>
-            <input
-              type="text"
-              value={formData.id}
-              readOnly
-              className="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-700"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-0.5">
-              <label className="block text-base font-semibold text-gray-700">
-                Email {!isViewMode && <span className="text-red-500">*</span>}
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleFieldChange("email", e.target.value)}
-                disabled={isViewMode}
-                className={editableInputClassName}
-                placeholder="Email"
-                required
-              />
-            </div>
-
-            <div className="space-y-0.5">
-              <label className="block text-base font-semibold text-gray-700">
-                First Name {!isViewMode && <span className="text-red-500">*</span>}
-              </label>
-              <input
-                type="text"
-                value={formData.givenName}
-                onChange={(e) => handleFieldChange("givenName", e.target.value)}
-                disabled={isViewMode}
-                className={editableInputClassName}
-                placeholder="First Name"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-0.5">
-              <label className="block text-base font-semibold text-gray-700">
-                Middle Name
-              </label>
-              <label
-                className={`input flex w-full items-center gap-2 rounded-lg ${
-                  isViewMode
-                    ? "border border-gray-300 bg-gray-100 text-gray-700"
-                    : "border border-gray-200 bg-transparent text-gray-700"
-                }`}
-              >
+          {!isEditMode && (
+            <>
+              <div className="space-y-0.5">
+                <label className="block text-base font-semibold text-gray-700">
+                  User ID
+                </label>
                 <input
                   type="text"
-                  value={formData.middleName}
-                  onChange={(e) => handleFieldChange("middleName", e.target.value)}
-                  placeholder="Middle Name"
-                  disabled={isViewMode}
-                  className="grow bg-transparent disabled:bg-transparent"
+                  value={formData.id}
+                  readOnly
+                  className={readOnlyInputClassName}
                 />
-                <span className="badge badge-neutral badge-xs shrink-0">Optional</span>
-              </label>
-            </div>
+              </div>
 
-            <div className="space-y-0.5">
-              <label className="block text-base font-semibold text-gray-700">
-                Last Name {!isViewMode && <span className="text-red-500">*</span>}
-              </label>
-              <input
-                type="text"
-                value={formData.surname}
-                onChange={(e) => handleFieldChange("surname", e.target.value)}
-                disabled={isViewMode}
-                className={editableInputClassName}
-                placeholder="Last Name"
-                required
-              />
-            </div>
-          </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-0.5">
+                  <label className="block text-base font-semibold text-gray-700">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    readOnly
+                    className={readOnlyInputClassName}
+                  />
+                </div>
+
+                <div className="space-y-0.5">
+                  <label className="block text-base font-semibold text-gray-700">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.givenName}
+                    readOnly
+                    className={readOnlyInputClassName}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-0.5">
+                  <label className="block text-base font-semibold text-gray-700">
+                    Middle Name
+                  </label>
+                  <label className="flex w-full items-center gap-2 rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-700">
+                    <input
+                      type="text"
+                      value={formData.middleName}
+                      readOnly
+                      className="grow bg-transparent outline-none"
+                    />
+                    <span className="badge badge-neutral badge-xs shrink-0">
+                      Optional
+                    </span>
+                  </label>
+                </div>
+
+                <div className="space-y-0.5">
+                  <label className="block text-base font-semibold text-gray-700">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.surname}
+                    readOnly
+                    className={readOnlyInputClassName}
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="space-y-0.5">
             <label className="block text-base font-semibold text-gray-700">
