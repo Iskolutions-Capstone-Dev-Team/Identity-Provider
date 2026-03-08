@@ -96,7 +96,15 @@ export default function LoginForm() {
                 </div>
               </div>
               <div>
-                <label className="block font-medium mb-2 text-white text-base">Password <span className="text-red-500">*</span></label>
+                <div className="flex justify-between items-center">
+                  <label className="block font-medium mb-2 text-white text-base">Password <span className="text-red-500">*</span></label>
+                  <a href="#" className="link link-hover text-white text-[.8rem]" onClick={(e) => {
+                    e.preventDefault();
+                    setForgotOpen(true);
+                  }}>
+                    Forgot your password?
+                  </a>
+                </div>
                 <div className="relative w-full">
                   <label className="input validator flex items-center rounded-lg gap-2 bg-white border border-gray-200 text-gray-700 w-full">
                     <span className="pr-3 border-r border-gray-300 text-gray-500">
@@ -136,12 +144,6 @@ export default function LoginForm() {
                   <input type="checkbox" className="checkbox w-5 h-5 border-gray-300 bg-transparent checked:bg-[#ffd700] checked:border-[#ffd700] checked:text-white mr-1" />
                   <span className="text-white text-[.8rem]">Remember me</span>
                 </label>
-                <a href="#" className="link link-hover text-white text-[.8rem]" onClick={(e) => {
-                  e.preventDefault();
-                  setForgotOpen(true);
-                }}>
-                  Forgot your password?
-                </a>
               </div>
               <button className="btn w-full font-bold text-base rounded-xl bg-[#ffd700] text-[#991b1b] border-[#ffd700] hover:bg-[#991b1b] hover:border-[#991b1b] hover:text-[#ffd700]">LOGIN</button>
             </form>
