@@ -25,6 +25,30 @@ export const userService = {
     return res.data;
   },
 
+  async updateUserStatus(id, status) {
+    const payload = {
+      new_status: status,
+    };
+
+    const res = await axiosInstance.patch(`/admin/users/${id}/status`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    return res.data;
+  },
+
+  async updateUserRoles(id, roleIds = []) {
+    const payload = {
+      role_ids: roleIds,
+    };
+
+    const res = await axiosInstance.patch(`/admin/users/${id}/roles`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    return res.data;
+  },
+
   async deleteUser(id) {
     const res = await axiosInstance.delete(`/admin/users/${id}`);
     return res.data;

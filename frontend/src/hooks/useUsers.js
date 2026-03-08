@@ -18,6 +18,31 @@ function normalizeRoleNames(roles) {
     .filter(Boolean);
 }
 
+function normalizeRoleIds(roleIds) {
+  return Array.from(
+    new Set(
+      (Array.isArray(roleIds) ? roleIds : [])
+        .map((roleId) => Number.parseInt(roleId, 10))
+        .filter((roleId) => Number.isInteger(roleId) && roleId > 0),
+    ),
+  );
+}
+
+function normalizeStatus(status) {
+  return typeof status === "string" ? status.trim().toLowerCase() : "";
+}
+
+function areSameStringArrays(first = [], second = []) {
+  const normalizedFirst = [...first].sort();
+  const normalizedSecond = [...second].sort();
+
+  if (normalizedFirst.length !== normalizedSecond.length) {
+    return false;
+  }
+
+  return normalizedFirst.every((value, index) => value === normalizedSecond[index]);
+}
+
 export function useUsers() {
   const [users, setUsers] = useState([]);
   const [allRoles, setAllRoles] = useState([]);
@@ -121,6 +146,37 @@ export function useUsers() {
   };
 
   // =========================
+  // UPDATE USER
+  // =========================
+  const updateUser = async (updatedUser, originalUser = {}) => {
+    const nextStatus = normalizeStatus(updatedUser?.status);
+    const previousStatus = normalizeStatus(originalUser?.status);
+    const nextRoles = normalizeRoleNames(updatedUser?.roles);
+    const previousRoles = normalizeRoleNames(originalUser?.roles);
+    const nextRoleIds = normalizeRoleIds(updatedUser?.roleIds);
+
+    try {
+      if (nextStatus && nextStatus !== previousStatus) {
+        await userService.updateUserStatus(updatedUser.id, nextStatus);
+      }
+
+      if (!areSameStringArrays(nextRoles, previousRoles)) {
+        await userService.updateUserRoles(updatedUser.id, nextRoleIds);
+      }
+
+      if (nextStatus === previousStatus && areSameStringArrays(nextRoles, previousRoles)) {
+        return;
+      }
+
+      setSuccessMessage("User successfully updated!");
+      fetchUsers(page);
+    } catch (error) {
+      console.error("Update user error:", error);
+      throw error;
+    }
+  };
+
+  // =========================
   // FILTER USERS
   // =========================
   const filteredUsers = users.map((u) => ({
@@ -159,6 +215,7 @@ export function useUsers() {
     fetchError,
     setFetchError,
     createUser,
+    updateUser,
     deleteUser,
   };
 }
