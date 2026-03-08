@@ -16,11 +16,10 @@ const initialFormData = {
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
   { value: "suspended", label: "Suspended" },
 ];
 
-const STATUS_VALUES = new Set(STATUS_OPTIONS.map((option) => option.value));
+const STATUS_VALUES = new Set(["active", "suspended"]);
 
 const normalizeText = (value) =>
   typeof value === "string" ? value.trim() : "";

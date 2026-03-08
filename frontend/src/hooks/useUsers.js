@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { userService } from "../services/userService";
 import { roleService } from "../services/roleService";
 
-const EDITABLE_STATUS_VALUES = new Set(["active", "inactive", "suspended"]);
+const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
 
 function normalizeRoleNames(roles) {
   if (!Array.isArray(roles)) {

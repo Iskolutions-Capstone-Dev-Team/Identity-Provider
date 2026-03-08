@@ -14,11 +14,7 @@ const initialFormData = {
   delivery: "email",
   tempPassword: "",
   roleIds: [],
-  status: "",
 };
-
-const ALLOWED_STATUS = ["active", "inactive"];
-
 
 export default function AddUserModal({ open, onClose, onSubmit }) {
     const [step, setStep] = useState(1);
@@ -82,16 +78,6 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                 }
             }
         }
-        if (step === 3) {
-            if (!data.status) {
-                setError("Account status is required.");
-                return;
-            }
-            if (!ALLOWED_STATUS.includes(data.status)) {
-                setError("Invalid account status selected.");
-                return;
-            }
-        }
         setError("");
         setStep(step + 1);
     };
@@ -110,11 +96,6 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
             setStep(2);
             return;
         }
-        if (!ALLOWED_STATUS.includes(data.status)) {
-            setError("Invalid account status.");
-            setStep(3);
-            return;
-        }
         if (data.inviteMode === "temp" && data.tempPassword.length < 8) {
             setError("Temporary password must be at least 8 characters.");
             setStep(2);
@@ -122,10 +103,10 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
         }
         setError("");
         const selectedRoles = roles
-            .filter(r => data.roleIds.includes(r.id))
-            .map(r => r.role_name);
+            .filter((r) => data.roleIds.includes(r.id))
+            .map((r) => r.role_name);
 
-        const fullName = `${data.givenName} ${data.middleName ? data.middleName + " " : ""}${data.surname}`;
+        const fullName = `${data.givenName}${data.middleName ? ` ${data.middleName}` : ""} ${data.surname}`;
 
         onSubmit({
             email: data.email,
@@ -138,7 +119,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
             inviteMode: data.inviteMode,
             delivery: data.delivery,
             tempPassword: data.tempPassword,
-            status: data.status,
+            status: "active",
         });
 
         onClose();
@@ -169,28 +150,21 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
 
                 <div className="flex-1 overflow-y-auto p-6 bg-white space-y-3">
                     <ModalSteps currentStep={step}
-                        steps={[
-                            <>
-                                <span className="step-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                                        <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
-                                    </svg>
-                                </span>Basic Info
-                            </>,
-                            <>
-                                <span className="step-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                                        <path fillRule="evenodd" d="M14.5 1A4.5 4.5 0 0 0 10 5.5V9H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1.5V5.5a3 3 0 1 1 6 0v2.75a.75.75 0 0 0 1.5 0V5.5A4.5 4.5 0 0 0 14.5 1Z" clipRule="evenodd" />
-                                    </svg>
-                                </span>Access
-                            </>,
-                            <>
-                                <span className="step-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                                        <path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5ZM10 8a.75.75 0 0 1 .75.75v1.5h1.5a.75.75 0 0 1 0 1.5h-1.5v1.5a.75.75 0 0 1-1.5 0v-1.5h-1.5a.75.75 0 0 1 0-1.5h1.5v-1.5A.75.75 0 0 1 10 8Z" clipRule="evenodd" />
-                                    </svg>
-                                </span>Account Status
-                            </>,
+                      steps={[
+                          <>
+                              <span className="step-icon">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                      <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
+                                  </svg>
+                              </span>Basic Info
+                          </>,
+                          <>
+                              <span className="step-icon">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                      <path fillRule="evenodd" d="M14.5 1A4.5 4.5 0 0 0 10 5.5V9H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1.5V5.5a3 3 0 1 1 6 0v2.75a.75.75 0 0 0 1.5 0V5.5A4.5 4.5 0 0 0 14.5 1Z" clipRule="evenodd" />
+                                  </svg>
+                              </span>Access
+                          </>,
                         ]}
                     />
                     <ErrorAlert message={error} onClose={() => setError("")} />
@@ -315,22 +289,6 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                             </div>
                         </form>
                     </FadeWrapper>
-                    <FadeWrapper isVisible={step === 3}>
-                        <form id="step3-form" noValidate onSubmit={(e) => {e.preventDefault(); handleSubmit();}}>
-                            <div className="mb-5">
-                                <label className="font-medium text-black text-base">Account Status <span className="text-red-500">*</span></label>
-                                <p className="text-xs text-gray-500 italic mb-2">Set the user's account state</p>
-                                <div className="validator w-full">
-                                    <select name="status" value={data.status || ""} onChange={handleChange} required className="select validator bg-white border rounded-lg border-gray-300 text-gray-700 w-full">
-                                        <option disabled value="">Select status</option>
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                    </select>
-                                    <p className="validator-hint">Status is required</p>
-                                </div>
-                            </div>
-                        </form>
-                    </FadeWrapper>
                 </div>
                 <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
                     {step === 1 && (
@@ -345,12 +303,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                         </button>
                     )}
                     {step === 2 && (
-                        <button type="submit" form="step2-form" className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]">
-                            Next
-                        </button>
-                    )}
-                    {step === 3 && (
-                        <button type="submit" form="step3-form"className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]">Create User</button>
+                        <button type="button" onClick={handleSubmit} className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]">Create User</button>
                     )}
                 </div>
             </div>
