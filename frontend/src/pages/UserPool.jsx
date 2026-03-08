@@ -16,7 +16,7 @@ const ITEMS_PER_PAGE = 10;
 export default function UserPool() {
     const { search, setSearch, status, setStatus, page,
         setPage, paginatedUsers, totalPages, totalResults,
-        successMessage, setSuccessMessage, createUser, deleteUser
+        successMessage, setSuccessMessage, fetchError, createUser, deleteUser
     } = useUsers();
     const [openViewEditModal, setOpenViewEditModal] = useState(false);
     const [modalMode, setModalMode] = useState("view");
@@ -68,6 +68,11 @@ export default function UserPool() {
                         setStatus={setStatus} 
                         onCreate={() => setOpenAddModal(true)}
                     />
+                    {fetchError && (
+                        <div className="alert alert-error mb-2">
+                            <span>{fetchError}</span>
+                        </div>
+                    )}
                     <UserPoolTable 
                         users={paginatedUsers} 
                         onView={handleView}

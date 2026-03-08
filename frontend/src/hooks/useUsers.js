@@ -2,6 +2,22 @@ import { useState, useEffect } from "react";
 import { userService } from "../services/userService";
 import { roleService } from "../services/roleService";
 
+function normalizeRoleNames(roles) {
+  if (!Array.isArray(roles)) {
+    return [];
+  }
+
+  return roles
+    .map((role) => {
+      if (typeof role === "string") {
+        return role;
+      }
+
+      return role?.role_name || "";
+    })
+    .filter(Boolean);
+}
+
 export function useUsers() {
   const [users, setUsers] = useState([]);
   const [allRoles, setAllRoles] = useState([]);
@@ -11,6 +27,7 @@ export function useUsers() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
+  const [fetchError, setFetchError] = useState("");
 
   // =========================
   // FETCH ROLES
@@ -48,14 +65,19 @@ export function useUsers() {
         surname: u.last_name,
         status: u.status,
         createdAt: u.created_at,
-        roles: Array.isArray(u.roles) ? u.roles : [],
+        roles: normalizeRoleNames(u.roles),
       }));
 
       setUsers(mappedUsers);
-      setTotalPages(data.last_page);
-      setTotalResults(data.total_count);
+      setTotalPages(data.last_page || 1);
+      setTotalResults(data.total_count || 0);
+      setFetchError("");
     } catch (error) {
       console.error("Fetch users error:", error);
+      setUsers([]);
+      setTotalPages(1);
+      setTotalResults(0);
+      setFetchError("Failed to load users. Check the backend connection.");
     }
   };
 
@@ -134,6 +156,8 @@ export function useUsers() {
     totalResults,
     successMessage,
     setSuccessMessage,
+    fetchError,
+    setFetchError,
     createUser,
     deleteUser,
   };
