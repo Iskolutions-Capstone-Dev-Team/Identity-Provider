@@ -264,6 +264,12 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 		return
 	}
 
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PatchUserStatus] Bind JSON Error: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalaid input"})
+		return
+	}
+
 	status, err := models.MapStatus(req.NewStatus)
 	if err != nil {
 		log.Printf("[PatchUserStatus] Invalid status: %v", err)
