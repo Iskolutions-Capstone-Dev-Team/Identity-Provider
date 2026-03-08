@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	v1 "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/initializers"
 	"github.com/gin-gonic/gin"
@@ -65,8 +65,7 @@ func main() {
 	// Register Swagger UI route
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	v1Group := r.Group("/api/v1")
-	v1.MapRoutes(v1Group, *h)
+	api.SetupRoutes(r, *h)
 
 	srv := &http.Server{
 		Addr:    ":8080",
