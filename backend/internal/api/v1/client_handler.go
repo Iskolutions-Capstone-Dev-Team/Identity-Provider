@@ -210,7 +210,6 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	}
 
 	grants, _ := h.Repo.GetGrantTypes(cl.ID)
-	roles, _ := h.Repo.GetClientRoles(cl.Tag)
 	imageLocation, err := service.GetPresignedURL(
 		c.Request.Context(),
 		cl.ImageLocation,
@@ -218,6 +217,25 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetClient] failed to get image url: %v", err)
+	}
+
+	roles, err := h.Repo.GetClientAllowedRoles(cl.ID)
+	if err != nil {
+		log.Printf("[GetClient] failed to fetch allowed roles: %v", err)
+		c.JSON(http.StatusInternalServerError, 
+			dto.ErrorResponse{Error: "fetch failed"})
+		return
+	}
+
+	var roleResponses []dto.RoleResponse
+	for _, r := range roles {
+		roleResponses = append(roleResponses, dto.RoleResponse{
+			ID:          r.ID,
+			RoleName:    r.RoleName,
+			Description: r.Description,
+			CreatedAt:   r.CreatedAt.Format(TIME_LAYOUT),
+			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
+		})
 	}
 
 	id, _ := uuid.FromBytes(cl.ID)
@@ -232,8 +250,8 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 			RedirectURI:   cl.RedirectUri,
 			LogoutURI:     cl.LogoutUri,
 			Grants:        grants,
+			AllowedRoles:  roleResponses,
 		},
-		"roles": roles,
 	})
 }
 
