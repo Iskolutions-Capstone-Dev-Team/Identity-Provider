@@ -22,6 +22,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
     const [data, setData] = useState(initialFormData);
     const [rolesError, setRolesError] = useState(false);
     const [error, setError] = useState("");
+    const [showTempPassword, setShowTempPassword] = useState(false);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -36,6 +37,10 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
             pwd += chars[Math.floor(Math.random() * chars.length)];
         }
         setData({ ...data, tempPassword: pwd });
+    };
+
+    const toggleShowTempPassword = () => {
+        setShowTempPassword((prev) => !prev);
     };
 
     const nextStep = () => {
@@ -86,6 +91,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
         if (!open) {
             setData(initialFormData);
             setStep(1);
+            setShowTempPassword(false);
         }
     }, [open]);
 
@@ -268,14 +274,34 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                                             Temporary password
                                         </label>
                                         <div className="flex gap-2">
-                                            <input
-                                                type="password"
-                                                name="tempPassword"
-                                                value={data.tempPassword}
-                                                onChange={handleChange}
-                                                placeholder="Temporary password"
-                                                className="input bg-transparent border rounded-lg border-gray-300 text-gray-700 w-full focus:ring-0 focus:border-blue-200"
-                                            />
+                                            <div className="relative w-full">
+                                                <input
+                                                    type={showTempPassword ? "text" : "password"}
+                                                    name="tempPassword"
+                                                    value={data.tempPassword}
+                                                    onChange={handleChange}
+                                                    placeholder="Temporary password"
+                                                    className="input bg-transparent border rounded-lg border-gray-300 text-gray-700 w-full pr-10 focus:ring-0 focus:border-blue-200"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={toggleShowTempPassword}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-gray-700"
+                                                    aria-label={showTempPassword ? "Hide temporary password" : "Show temporary password"}
+                                                >
+                                                    {showTempPassword ? (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 012.293-3.607M6.72 6.72A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 01-4.563 5.956M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18" />
+                                                        </svg>
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    )}
+                                                </button>
+                                            </div>
                                             <button type="button" onClick={generatePassword} className="btn bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]">
                                                     Generate
                                             </button>
