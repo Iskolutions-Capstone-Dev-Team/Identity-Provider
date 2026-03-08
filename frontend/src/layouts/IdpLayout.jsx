@@ -21,7 +21,9 @@ export default function IdpLayout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col transition-all duration-300">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        <main className="flex-1 p-4 sm:p-6 pb-28 lg:pb-6"><Outlet /></main>
+        <main className="flex-1 p-4 pt-20 sm:p-6 sm:pt-28 pb-28 lg:pb-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
