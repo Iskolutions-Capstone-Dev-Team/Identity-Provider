@@ -25,7 +25,7 @@ type ClientHandler struct {
 // PostClient handles POST /v1/admin/clients
 // @Summary Register a new Service Provider with Icon
 // @Description Creates client, saves icon, hashes secret, and maps roles
-// @Tags ServiceProviders
+// @Tags Clients
 // @Accept multipart/form-data
 // @Produce json
 // @Param name formData string true "Client Name"
@@ -110,7 +110,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 // GetClientList handles GET /v1/admin/clients
 // @Summary List Service Providers
 // @Description Fetch active clients with pagination
-// @Tags ServiceProviders
+// @Tags Clients
 // @Param limit query int false "Pagination Limit" default(10)
 // @Success 200 {array} dto.ClientResponse
 // @Failure 500 {object} dto.ErrorResponse
@@ -185,7 +185,7 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 // GetClient handles GET /v1/admin/clients/:id
 // @Summary Get Client Details
 // @Description Fetch full details including grants and roles
-// @Tags ServiceProviders
+// @Tags Clients
 // @Param id path string true "Client UUID"
 // @Success 200 {object} dto.ClientResponse
 // @Failure 400 {object} dto.ErrorResponse
@@ -265,7 +265,7 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 // PutClient handles PUT /v1/admin/clients/:id
 // @Summary Update Client Info
 // @Description Update safe fields (Name, Description, URLs, Image)
-// @Tags ServiceProviders
+// @Tags Clients
 // @Accept json
 // @Produce json
 // @Param id path string true "Client UUID"
@@ -346,7 +346,7 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 
 // DeleteClient handles DELETE /v1/admin/clients/:id
 // @Summary Soft Delete Client
-// @Tags ServiceProviders
+// @Tags Clients
 // @Param id path string true "Client UUID"
 // @Failure 200 {object} dto.ErrorResponse
 // @Failure 400 {object} dto.ErrorResponse
@@ -413,7 +413,7 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 // PatchClientSecret rotates or updates the client secret for an application.
 // @Summary Update client secret
 // @Description Updates the secret key associated with a specific client ID.
-// @Tags clients
+// @Tags Clients
 // @Accept json
 // @Produce json
 // @Param id path string true "Client ID"
@@ -472,7 +472,7 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 // GetClientTags retrieves a paginated list of client tags.
 // @Summary Get client tags
 // @Description Fetches tags based on limit, page, and keyword filters.
-// @Tags clients
+// @Tags Clients
 // @Accept json
 // @Produce json
 // @Param limit query int false "Items per page" default(10)

@@ -176,7 +176,7 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 // GetRolesBySearch retrieves a filtered list of roles by keyword.
 // @Summary Search roles by keyword
 // @Description Searches for roles matching the provided query parameter.
-// @Tags roles
+// @Tags Roles
 // @Accept json
 // @Produce json
 // @Param keyword query string true "Search term for role names"

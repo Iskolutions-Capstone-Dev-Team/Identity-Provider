@@ -28,7 +28,7 @@ type AuthHandler struct {
 // GetAuthorize initiates the authorization flow for the user.
 // @Summary Authorize user
 // @Description Validates the authorization request for the user.
-// @Tags auth
+// @Tags Authentication
 // @Success 302 
 // @Failure 400 {object} dto.ErrorResponse 
 // @Failure 404 {object} dto.ErrorResponse 

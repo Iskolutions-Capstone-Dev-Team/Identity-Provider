@@ -192,7 +192,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 // PatchUserPassword updates a user's password.
 // @Summary Update user password
 // @Description Updates the password for a specific user identified by ID.
-// @Tags users
+// @Tags Users
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
@@ -248,7 +248,7 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 // PatchUserStatus updates the operational status of a user.
 // @Summary Update user status
 // @Description Modifies the status (e.g., active, disabled) of a user by ID.
-// @Tags users
+// @Tags Users
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
@@ -313,7 +313,7 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 // PatchUserRoles updates the roles assigned to a specific user.
 // @Summary Update user roles
 // @Description Partially updates a user's role set based on the request body.
-// @Tags users
+// @Tags Users
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
