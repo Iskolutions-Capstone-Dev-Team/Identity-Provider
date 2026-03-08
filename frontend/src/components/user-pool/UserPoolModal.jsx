@@ -57,17 +57,28 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
               <label className="block text-sm font-semibold text-gray-700">
                 User ID
               </label>
-              <input type="text" value={selectedUser?.id || ""} placeholder="User ID" readOnly className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
+              <input
+                type="text"
+                value={selectedUser?.id || ""}
+                placeholder="User ID"
+                readOnly
+                className="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-700"
+              />
             </div>
           )}
           <div className="space-y-0.5">
             <label className="block text-sm font-semibold text-gray-700">
               Email {!isView && <span className="text-red-500">*</span>}
             </label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               disabled={isView}
-              className={`w-full px-3 py-2 rounded-lg border ${
-                isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
+              className={`input w-full rounded-lg ${
+                isView
+                  ? "border border-gray-300 bg-gray-100 text-gray-700"
+                  : "border border-gray-200 bg-transparent text-gray-700"
               }`}
               placeholder="Email"
               required
@@ -78,10 +89,20 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
             <label className="block text-sm font-semibold text-gray-700">
               First Name {!isView && <span className="text-red-500">*</span>}
             </label>
-            <input type="text" value={selectedUser?.givenName || ""} onChange={(e) => setSelectedUser({...selectedUser, givenName: e.target.value})}
+            <input
+              type="text"
+              value={selectedUser?.givenName || ""}
+              onChange={(e) =>
+                setSelectedUser({
+                  ...selectedUser,
+                  givenName: e.target.value,
+                })
+              }
               disabled={isView}
-              className={`w-full px-3 py-2 rounded-lg border ${
-                isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
+              className={`input w-full rounded-lg ${
+                isView
+                  ? "border border-gray-300 bg-gray-100 text-gray-700"
+                  : "border border-gray-200 bg-transparent text-gray-700"
               }`}
               placeholder="First Name"
               required
@@ -89,30 +110,50 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
           </div>
 
           <div className="space-y-0.5">
-            <label className="block font-medium mb-1 text-black text-base">
-              Middle Name
-            </label>
-            <label className={`input flex items-center rounded-lg border gap-2 w-full ${
-              isView
-              ? "bg-gray-100 text-gray-700 border-gray-700" 
-              : "bg-transparent border-gray-700 text-gray-700 focus-within:ring-1 focus-within:ring-[#991b1b] focus-within:border-[#991b1b]"}`}>
-              <input type="text" name="middleName" value={selectedUser?.middleName || ""} onChange={(e) => setSelectedUser({...selectedUser, middleName: e.target.value})}
-                placeholder="Enter middle name"
-                disabled={isView}
-                className="grow bg-transparent"
-              />
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-semibold text-gray-700">
+                Middle Name
+              </label>
               <span className="badge badge-neutral badge-xs">Optional</span>
-            </label>
+            </div>
+            <input
+              type="text"
+              name="middleName"
+              value={selectedUser?.middleName || ""}
+              onChange={(e) =>
+                setSelectedUser({
+                  ...selectedUser,
+                  middleName: e.target.value,
+                })
+              }
+              placeholder="Middle Name"
+              disabled={isView}
+              className={`input w-full rounded-lg ${
+                isView
+                  ? "border border-gray-300 bg-gray-100 text-gray-700"
+                  : "border border-gray-200 bg-transparent text-gray-700"
+              }`}
+            />
           </div>
 
           <div className="space-y-0.5">
             <label className="block text-sm font-semibold text-gray-700">
               Last Name {!isView && <span className="text-red-500">*</span>}
             </label>
-            <input type="text" value={selectedUser?.surname || ""} onChange={(e) => setSelectedUser({...selectedUser, surname: e.target.value})}
+            <input
+              type="text"
+              value={selectedUser?.surname || ""}
+              onChange={(e) =>
+                setSelectedUser({
+                  ...selectedUser,
+                  surname: e.target.value,
+                })
+              }
               disabled={isView}
-              className={`w-full px-3 py-2 rounded-lg border ${
-                isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
+              className={`input w-full rounded-lg ${
+                isView
+                  ? "border border-gray-300 bg-gray-100 text-gray-700"
+                  : "border border-gray-200 bg-transparent text-gray-700"
               }`}
               placeholder="Last Name"
               required
@@ -123,52 +164,58 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
             <label className="block text-sm font-semibold text-gray-700">
               Role {!isView && <span className="text-red-500">*</span>}
             </label>
-
-            <div className={`rounded-lg border ${
-                isView
-                  ? "bg-gray-100 text-gray-700 p-2 min-h-10.5" 
-                  : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
-              }`}>
-              
-              {isView ? (
-                <div className="flex flex-wrap gap-1">
-                  {selectedUser?.roles.map((role, i) => (
-                    <span
-                      key={i}
-                      className="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
-                    >
-                      {role}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <MultiSelect
-                  options={roles}
-                  selectedValues={selectedUser?.roleIds || []}
-                  onChange={(ids) =>
-                    setSelectedUser({
-                      ...selectedUser,
-                      roleIds: ids,
-                      roles: roles
-                        .filter(r => ids.includes(r.id))
-                        .map(r => r.role_name),
-                    })
-                  }
-                  placeholder="Select roles"
-                  required
-                />
-              )}
-            </div>
+            {isView ? (
+              <div className="w-full min-h-24 rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-700">
+                {selectedUser?.roles?.length ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedUser.roles.map((role, index) => (
+                      <span
+                        key={`${role}-${index}`}
+                        className="inline-flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-gray-500 italic">No content</span>
+                )}
+              </div>
+            ) : (
+              <MultiSelect
+                options={roles}
+                selectedValues={selectedUser?.roleIds || []}
+                onChange={(ids) =>
+                  setSelectedUser((current) =>
+                    current
+                      ? {
+                          ...current,
+                          roleIds: ids,
+                          roles: roles
+                            .filter((role) => ids.includes(role.id))
+                            .map((role) => role.role_name),
+                        }
+                      : current,
+                  )
+                }
+                placeholder="Select roles"
+                required
+              />
+            )}
           </div>
           
           <div className="space-y-0.5">
             <label className="block text-sm font-semibold text-gray-700">
               Status {!isView && <span className="text-red-500">*</span>}
             </label>
-            <select value={status} onChange={(e) => setStatus(e.target.value)}
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
               disabled={isView}
-              className={`select border rounded-lg w-full border-gray-700 text-gray-700 ${
-                isView ? "bg-gray-100 cursor-not-allowed" : "bg-white focus:ring-2 focus:ring-[#991b1b]"
+              className={`select w-full rounded-lg ${
+                isView
+                  ? "border border-gray-300 bg-gray-100 text-gray-700 cursor-not-allowed"
+                  : "border border-gray-200 bg-white text-gray-700"
               }`}
             >
               <option value="active">Active</option>
