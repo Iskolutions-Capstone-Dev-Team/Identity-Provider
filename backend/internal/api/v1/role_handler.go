@@ -266,7 +266,7 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 		return
 	}
 
-	if err := h.Repo.SoftDelete(id); err != nil {
+	if err := h.Repo.Delete(id); err != nil {
 		log.Printf("[DeleteRole] Deletion failed for ID %d: %v", id, err)
 		c.JSON(http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Deletion failed"})
