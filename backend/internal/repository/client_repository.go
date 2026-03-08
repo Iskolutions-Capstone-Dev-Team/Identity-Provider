@@ -182,11 +182,14 @@ func (r *ClientRepository) GetGrantTypes(clientID []byte) ([]string, error) {
 	return grants, err
 }
 
-func (r *ClientRepository) GetClientRoles(abbr string) ([]string, error) {
-	var roles []string
-	// Using LIKE to find all roles prefixed with the tag
-	query := `SELECT role_name FROM roles WHERE role_name LIKE ?`
-	err := r.db.Select(&roles, query, abbr+":%")
+func (r *ClientRepository) GetClientAllowedRoles(clientID []byte) ([]models.Role, error) {
+	var roles []models.Role
+	query := `
+		SELECT role_name FROM roles 
+		JOIN client_allowed_roles c
+		ON c.role_id = roles.id
+		WHERE client_id = ?`
+	err := r.db.Select(&roles, query, clientID)
 	return roles, err
 }
 
@@ -248,7 +251,7 @@ func (r *ClientRepository) RetrieveClientTagInformation(limit int,
 	searchTerm := "%" + keyword + "%"
 
 	query := `
-		SELECT role_name, tag, image_location
+		SELECT id, tag, image_location
 		FROM clients
 		WHERE deleted_at IS NULL AND tag LIKE ?
 		LIMIT ? OFFSET ?
@@ -335,6 +338,38 @@ func (r *ClientRepository) UpdateAllowedRoles(client *models.Client,
 	}
 
 	return tx.Commit()
+}
+
+func (r *ClientRepository) AddClientAllowedRole(roleID int, tag string) error {
+	var client models.Client
+	clientQuery := `SELECT id FROM clients WHERE tag = ?`
+	err := r.db.Get(&client, clientQuery, tag)
+	if err != nil {
+		return err
+	}
+
+	query := `
+		INSERT INTO client_allowed_roles (client_id, role_id)
+		VALUES (?, ?)	
+	`
+	_, err = r.db.Exec(query, client.ID, roleID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ClientRepository) DeleteConnectedRoles(client *models.Client) error {
+	query := `DELETE FROM client_allowed_roles WHERE client_id = ?`
+	_, err := r.db.Exec(query, client.ID)
+	if err != nil {
+		return err
+	}
+
+	abbreviation := client.Tag + ":%"
+	deleteRoleQuery := `DELETE FROM roles WHERE role_name LIKE ?`
+	_, err = r.db.Exec(deleteRoleQuery, abbreviation)
+	return err
 }
 
 func NewClientRepository(db *sqlx.DB) *ClientRepository {

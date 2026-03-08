@@ -1,43 +1,159 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ErrorAlert from "../ErrorAlert";
+import TagMultiSelect from "./TagMultiSelect";
 
-export default function RoleModal({ open, mode, role, onClose, onSubmit }) {
+const splitRoleName = (value = "") => {
+  const trimmed = typeof value === "string" ? value.trim() : "";
+  if (!trimmed) return { tag: "", name: "" };
+
+  const separatorIndex = trimmed.indexOf(":");
+  if (separatorIndex === -1) {
+    return { tag: "", name: trimmed };
+  }
+
+  return {
+    tag: trimmed.slice(0, separatorIndex).trim(),
+    name: trimmed.slice(separatorIndex + 1).trim(),
+  };
+};
+
+const normalizeTagValue = (value) =>
+  typeof value === "string" ? value.replace(/:+$/, "").trim() : "";
+
+const normalizeRoleNameValue = (value) =>
+  typeof value === "string" ? value.toLowerCase() : "";
+
+export default function RoleModal({
+  open,
+  mode,
+  role,
+  tagOptions = [],
+  isTagOptionsLoading = false,
+  onClose,
+  onSubmit,
+}) {
+    const isViewMode = mode === "view";
+
+    const [selectedTags, setSelectedTags] = useState([]);
     const [roleName, setRoleName] = useState("");
     const [description, setDescription] = useState("");
     const [error, setError] = useState("");
-    const [touched, setTouched] = useState(false);
+    const [touched, setTouched] = useState({
+      tags: false,
+      name: false,
+      description: false,
+    });
 
     useEffect(() => {
         if (!open) return;
 
         if (mode === "create") {
+            setSelectedTags([]);
             setRoleName("");
             setDescription("");
         } else {
-            setRoleName(role?.role_name || "");
+            const parsedRoleName = splitRoleName(role?.role_name || "");
+            setSelectedTags(parsedRoleName.tag ? [parsedRoleName.tag] : []);
+            setRoleName(normalizeRoleNameValue(parsedRoleName.name));
             setDescription(role?.description || "");
         }
 
         setError("");
-        setTouched(false);
+        setTouched({
+          tags: false,
+          name: false,
+          description: false,
+        });
     }, [mode, role, open]);
+
+    const mergedTagOptions = useMemo(() => {
+      const optionMap = new Map(
+        (Array.isArray(tagOptions) ? tagOptions : [])
+          .filter((option) => option?.id)
+          .map((option) => [option.id, option]),
+      );
+
+      selectedTags.forEach((tag) => {
+        if (!optionMap.has(tag)) {
+          optionMap.set(tag, { id: tag, tag, image: "" });
+        }
+      });
+
+      return Array.from(optionMap.values());
+    }, [selectedTags, tagOptions]);
+
+    const fieldErrors = useMemo(
+      () => ({
+        tags: selectedTags.length === 0 ? "Tag is required." : "",
+        name: !roleName.trim() ? "Name is required." : "",
+        description: !description.trim() ? "Description is required." : "",
+      }),
+      [description, roleName, selectedTags],
+    );
+
+    const setFieldTouched = (field) => {
+      setTouched((previous) => ({ ...previous, [field]: true }));
+    };
+
+    const clearAlertError = () => {
+      if (error) {
+        setError("");
+      }
+    };
+
+    const validateForm = () => {
+      const firstError =
+        fieldErrors.tags || fieldErrors.name || fieldErrors.description;
+
+      if (!firstError) {
+        setError("");
+        return true;
+      }
+
+      setError(firstError);
+      return false;
+    };
+
+    const handleTagChange = (values) => {
+      const normalized = (Array.isArray(values) ? values : [])
+        .map((value) => normalizeTagValue(value))
+        .filter(Boolean);
+
+      // The role payload supports a single role name, so keep one selected tag.
+      const latestTag = normalized[normalized.length - 1] || "";
+      setSelectedTags(latestTag ? [latestTag] : []);
+      setFieldTouched("tags");
+      clearAlertError();
+    };
+
+    const handleRoleNameChange = (value) => {
+      setRoleName(normalizeRoleNameValue(value));
+      clearAlertError();
+    };
+
+    const handleDescriptionChange = (value) => {
+      setDescription(value);
+      clearAlertError();
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (mode === "view") return onClose();
+        if (isViewMode) return onClose();
 
-        setTouched(true);
+        setTouched({
+          tags: true,
+          name: true,
+          description: true,
+        });
 
-        if (!roleName.trim() || !description.trim()) {
-            setError("Role name and description are required.");
-            return;
-        }
+        if (!validateForm()) return;
 
-        setError("");
+        const selectedTag = selectedTags[0];
+        const normalizedName = normalizeRoleNameValue(roleName).trim();
 
         onSubmit({
             id: role?.id || Date.now(),
-            role_name: roleName.trim(),
+            role_name: `${selectedTag}:${normalizedName}`,
             description: description.trim(),
             created_at: role?.created_at || new Date().toISOString().slice(0, 10),
         });
@@ -46,9 +162,6 @@ export default function RoleModal({ open, mode, role, onClose, onSubmit }) {
     };
 
     if (!open) return null;
-
-    const isRoleNameInvalid = touched && !roleName.trim();
-    const isDescriptionInvalid = touched && !description.trim();
     
     return (
         <dialog className="modal modal-open">
@@ -73,33 +186,86 @@ export default function RoleModal({ open, mode, role, onClose, onSubmit }) {
                 <form id="role-form" noValidate className="flex-1 overflow-y-auto p-6 space-y-4 bg-white" onSubmit={handleSubmit}>
                     <ErrorAlert message={error} onClose={() => setError("")} />
                     <div className="space-y-4 flex-1">
-                        {(mode === "view" || mode === "edit") && (
-                            <div className="space-y-0.5">
-                                <label className="block text-sm font-semibold text-gray-700">
-                                    Role Id
-                                </label>
-                                <input type="text" value={role?.id} placeholder="Role ID" readOnly className="input w-full rounded-lg border bg-gray-100 text-gray-700 border-gray-300"/>
-                            </div>
-                        )}
-
                         <div className="space-y-0.5">
-                            <label className="block text-sm font-semibold text-gray-700">
+                            <label className="block text-base font-semibold text-gray-700">
                                 Role Name<span className="text-red-500"> *</span>
                             </label>
-                            <input type="text" required={mode !== "view"} value={roleName} onChange={(e) => setRoleName(e.target.value)} placeholder="(e.g., idp:superadmin)" className={`input validator w-full rounded-lg ${ mode === "view" ? "bg-gray-100 border-gray-300 text-gray-700" : "bg-transparent border-gray-200 text-gray-700" }`} disabled={mode === "view"}/>
-                            {mode !== "view" && (
-                                <div className="validator-hint">Role name is required</div>
-                            )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-0.5">
+                                <TagMultiSelect
+                                  options={mergedTagOptions}
+                                  selectedValues={selectedTags}
+                                  onChange={handleTagChange}
+                                  placeholder={
+                                    isTagOptionsLoading
+                                      ? "Loading tags..."
+                                      : "Select tag"
+                                  }
+                                  disabled={isViewMode}
+                                />
+                                {!isViewMode && touched.tags && fieldErrors.tags && (
+                                  <p className="text-xs text-[#ff637d]">
+                                    {fieldErrors.tags}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="space-y-0.5">
+                                <input
+                                  type="text"
+                                  required={!isViewMode}
+                                  value={roleName}
+                                  onChange={(e) =>
+                                    handleRoleNameChange(e.target.value)
+                                  }
+                                  onBlur={() => setFieldTouched("name")}
+                                  placeholder="(e.g., superadmin)"
+                                  autoCapitalize="none"
+                                  className={`input validator w-full rounded-lg ${
+                                    isViewMode
+                                      ? "bg-gray-100 border-gray-300 text-gray-700"
+                                      : "bg-transparent border-gray-200 text-gray-700"
+                                  }`}
+                                  disabled={isViewMode}
+                                />
+                                {!isViewMode &&
+                                  touched.name &&
+                                  fieldErrors.name && (
+                                    <p className="text-xs text-[#ff637d]">
+                                      {fieldErrors.name}
+                                    </p>
+                                  )}
+                              </div>
+                            </div>
                         </div>
 
                         <div className="space-y-0.5">
-                            <label className="block text-sm font-semibold text-gray-700">
+                            <label className="block text-base font-semibold text-gray-700">
                                 Role Description<span className="text-red-500"> *</span>
                             </label>
-                            <textarea required={mode !== "view"} value={description} onChange={(e) => setDescription(e.target.value)} rows="3" placeholder="Role description" className={`textarea validator w-full rounded-lg resize-none ${ mode === "view" ? "bg-gray-100 border-gray-300 text-gray-700" : "bg-transparent border-gray-200 text-gray-700" }`} disabled={mode === "view"}/>
-                            {mode !== "view" && (
-                                <div className="validator-hint">Role description is required</div>
-                            )}
+                            <textarea
+                              required={!isViewMode}
+                              value={description}
+                              onChange={(e) =>
+                                handleDescriptionChange(e.target.value)
+                              }
+                              onBlur={() => setFieldTouched("description")}
+                              rows="3"
+                              placeholder="Role description"
+                              className={`textarea validator w-full rounded-lg resize-none ${
+                                isViewMode
+                                  ? "bg-gray-100 border-gray-300 text-gray-700"
+                                  : "bg-transparent border-gray-200 text-gray-700"
+                              }`}
+                              disabled={isViewMode}
+                            />
+                            {!isViewMode &&
+                              touched.description &&
+                              fieldErrors.description && (
+                                <p className="text-xs text-[#ff637d]">
+                                  {fieldErrors.description}
+                                </p>
+                              )}
                         </div>
                     </div>
                 </form>
@@ -110,7 +276,7 @@ export default function RoleModal({ open, mode, role, onClose, onSubmit }) {
                         <button type="button" className="btn h-12 rounded-lg btn-outline text-[#991b1b] border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]" onClick={onClose}>
                             Cancel
                         </button>
-                        {mode !== "view" && (
+                        {!isViewMode && (
                             <button form="role-form" type="submit" className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]">
                                 {mode === "create" ? "Create" : "Save"}
                             </button>

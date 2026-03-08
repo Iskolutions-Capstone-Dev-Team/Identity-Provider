@@ -41,7 +41,7 @@ func ProcessAndUploadIcon(
 	}
 
 	// 4. Construct Final Path
-	finalPath := fmt.Sprintf("icons/%s-%s", tag, fileName)
+	finalPath := fmt.Sprintf("icons/%s", tag)
 
 	// 5. Execute Upload (S3Provider handles the 'Replace' logic naturally)
 	err := storage.UploadOrReplace(

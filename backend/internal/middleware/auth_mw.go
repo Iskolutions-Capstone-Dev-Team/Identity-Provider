@@ -3,6 +3,7 @@ package middleware
 import (
 	"crypto/rsa"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -19,7 +20,7 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 		// 1. Extract the token from the Cookie Jar
 		tokenString, err := c.Cookie("access_token")
 		if err != nil {
-			// [AuthMiddleware] Cookie Retrieval: access_token not found
+			log.Print("[AuthMiddleware] Access_token not found")
 			c.JSON(http.StatusUnauthorized,
 				gin.H{"error": "Authentication session not found"},
 			)
@@ -40,7 +41,7 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 			})
 
 		if err != nil || !token.Valid {
-			// [AuthMiddleware] Token Validation: invalid or expired
+			log.Print("[AuthMiddleware] expired session")
 			c.JSON(http.StatusUnauthorized,
 				gin.H{"error": "Invalid or expired session"},
 			)
@@ -64,6 +65,7 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 			}
 
 			if !authorized {
+				log.Print("Insufficient Permissions")
 				c.JSON(http.StatusForbidden,
 					gin.H{"error": "Insufficient permissions"},
 				)

@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { clientService } from "../services/clientService";
 
 const ITEMS_PER_PAGE = 10;
-const ROLE_CACHE_KEY = "idp_app_client_role_cache_v1";
 
 const toPositiveInt = (value) => {
   const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
@@ -175,85 +174,6 @@ const normalizeRolePayload = (payload = {}) => {
   };
 };
 
-const hasRoleData = (payload = {}) =>
-  (Array.isArray(payload.roles) && payload.roles.length > 0) ||
-  (Array.isArray(payload.roleNames) && payload.roleNames.length > 0) ||
-  (Array.isArray(payload.roleOptions) && payload.roleOptions.length > 0);
-
-const mergeRoleData = (primary = {}, fallback = {}) => {
-  const normalizedPrimary = normalizeRolePayload(primary);
-  const normalizedFallback = normalizeRolePayload(fallback);
-
-  const roles =
-    normalizedPrimary.roles.length > 0 ? normalizedPrimary.roles : normalizedFallback.roles;
-  const roleNames =
-    normalizedPrimary.roleNames.length > 0
-      ? normalizedPrimary.roleNames
-      : normalizedFallback.roleNames;
-  const roleOptions = mergeRoleOptions(
-    normalizedPrimary.roleOptions,
-    normalizedFallback.roleOptions,
-    roles.map((id) => ({ id, role_name: `${id}` })),
-  );
-
-  return { roles, roleNames, roleOptions };
-};
-
-const normalizeRoleDataForCompare = (payload = {}) => {
-  const normalized = normalizeRolePayload(payload);
-
-  return {
-    roles: [...normalized.roles].sort((a, b) => a - b),
-    roleNames: [...normalized.roleNames].sort((a, b) => a.localeCompare(b)),
-    roleOptions: [...normalized.roleOptions]
-      .map((role) => ({
-        id: getRoleId(role),
-        role_name: getRoleName(role) || `${getRoleId(role) ?? ""}`,
-      }))
-      .filter((role) => role.id !== null)
-      .sort((a, b) => (a.id === b.id ? a.role_name.localeCompare(b.role_name) : a.id - b.id)),
-  };
-};
-
-const areRoleDataEqual = (left = {}, right = {}) => {
-  const normalizedLeft = normalizeRoleDataForCompare(left);
-  const normalizedRight = normalizeRoleDataForCompare(right);
-
-  return JSON.stringify(normalizedLeft) === JSON.stringify(normalizedRight);
-};
-
-const readRoleCache = () => {
-  if (typeof window === "undefined") return {};
-
-  try {
-    const rawCache = window.localStorage.getItem(ROLE_CACHE_KEY);
-    if (!rawCache) return {};
-
-    const parsed = JSON.parse(rawCache);
-    if (!parsed || typeof parsed !== "object") return {};
-
-    return Object.entries(parsed).reduce((acc, [clientId, roleData]) => {
-      const normalized = normalizeRolePayload(roleData || {});
-      if (hasRoleData(normalized)) {
-        acc[clientId] = normalized;
-      }
-      return acc;
-    }, {});
-  } catch {
-    return {};
-  }
-};
-
-const writeRoleCache = (roleCache) => {
-  if (typeof window === "undefined") return;
-
-  try {
-    window.localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(roleCache));
-  } catch {
-    // Ignore localStorage write failures (private mode, quota, etc.).
-  }
-};
-
 const mapClientSummary = (client = {}) => {
   const id = client.id ?? client.client_id ?? client.clientId ?? "";
   const rawRoleValues = flattenRoleSources(
@@ -350,8 +270,6 @@ const normalizeClientDetailPayload = (payload = {}) => {
 
 export function useAppClients() {
   const [clients, setClients] = useState([]);
-  const [roleCache, setRoleCache] = useState(() => readRoleCache());
-  const roleCacheRef = useRef(roleCache);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
@@ -369,46 +287,6 @@ export function useAppClients() {
   const offset = (page - 1) * ITEMS_PER_PAGE;
   const keyword = search.trim();
 
-  const upsertRoleCache = useCallback((clientId, rolePayload = {}) => {
-    const normalizedClientId = typeof clientId === "string" ? clientId.trim() : "";
-    if (!normalizedClientId) return;
-
-    const normalizedRoleData = normalizeRolePayload(rolePayload);
-    if (!hasRoleData(normalizedRoleData)) return;
-
-    setRoleCache((previous) => {
-      const existingRoleData = previous[normalizedClientId] || {};
-      const mergedRoleData = mergeRoleData(normalizedRoleData, existingRoleData);
-
-      if (areRoleDataEqual(existingRoleData, mergedRoleData)) {
-        return previous;
-      }
-
-      return {
-        ...previous,
-        [normalizedClientId]: mergedRoleData,
-      };
-    });
-  }, []);
-
-  const removeRoleCacheEntry = useCallback((clientId) => {
-    const normalizedClientId = typeof clientId === "string" ? clientId.trim() : "";
-    if (!normalizedClientId) return;
-
-    setRoleCache((previous) => {
-      if (!previous[normalizedClientId]) return previous;
-
-      const next = { ...previous };
-      delete next[normalizedClientId];
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    roleCacheRef.current = roleCache;
-    writeRoleCache(roleCache);
-  }, [roleCache]);
-
   // =========================
   // FETCH CLIENTS
   // =========================
@@ -419,22 +297,14 @@ export function useAppClients() {
         offset,
         keyword,
       );
-      const mapped = items.map(mapClientSummary);
-
-      mapped.forEach((client) => {
-        if (hasRoleData(client)) {
-          upsertRoleCache(client.id, client);
-        }
-      });
-
-      setClients(mapped);
+      setClients(items.map(mapClientSummary));
       setTotalResults(total);
     } catch (err) {
       console.error("Fetch clients error:", err);
       setClients([]);
       setTotalResults(0);
     }
-  }, [keyword, offset, upsertRoleCache]);
+  }, [keyword, offset]);
 
   useEffect(() => {
     fetchClients();
@@ -451,11 +321,6 @@ export function useAppClients() {
   // =========================
   const createClient = async (payload) => {
     const res = await clientService.createClient(payload);
-    const createdClientId = res?.client_id ?? res?.clientId ?? "";
-    if (createdClientId) {
-      upsertRoleCache(createdClientId, payload);
-    }
-
     setSuccessMessage("App client successfully created!");
     await fetchClients();
     return res;
@@ -467,10 +332,6 @@ export function useAppClients() {
   const updateClient = async (payload) => {
     try {
       await clientService.updateClient(payload.id, payload);
-      if (payload?.id) {
-        upsertRoleCache(payload.id, payload);
-      }
-
       setSuccessMessage("App client successfully updated!");
       await fetchClients();
     } catch (err) {
@@ -484,31 +345,14 @@ export function useAppClients() {
   // =========================
   const deleteClient = async (id) => {
     await clientService.deleteClient(id);
-    removeRoleCacheEntry(id);
     setSuccessMessage("App client successfully deleted!");
     await fetchClients();
   };
 
-  const getClientDetails = useCallback(
-    async (id) => {
-      const payload = await clientService.getClientById(id);
-      const normalized = normalizeClientDetailPayload(payload);
-      const mergedRoleData = mergeRoleData(
-        normalized,
-        roleCacheRef.current?.[id] || {},
-      );
-
-      if (hasRoleData(mergedRoleData)) {
-        upsertRoleCache(id, mergedRoleData);
-      }
-
-      return {
-        ...normalized,
-        ...mergedRoleData,
-      };
-    },
-    [upsertRoleCache],
-  );
+  const getClientDetails = useCallback(async (id) => {
+    const payload = await clientService.getClientById(id);
+    return normalizeClientDetailPayload(payload);
+  }, []);
 
   const rotateClientSecret = async (client) => {
     const id = typeof client === "string" ? client : client?.id;
@@ -563,21 +407,12 @@ export function useAppClients() {
     }
   };
 
-  const hydratedClients = useMemo(
-    () =>
-      clients.map((client) => ({
-        ...client,
-        ...mergeRoleData(client, roleCache[client.id] || {}),
-      })),
-    [clients, roleCache],
-  );
-
   return {
     search,
     setSearch: setSearchKeyword,
     page,
     setPage,
-    paginatedClients: hydratedClients,
+    paginatedClients: clients,
     totalPages: Math.ceil(totalResults / ITEMS_PER_PAGE),
     totalResults,
     successMessage,
