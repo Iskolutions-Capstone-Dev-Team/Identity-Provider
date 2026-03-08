@@ -7,20 +7,21 @@ export const userService = {
   },
 
   async createUser(data) {
-    const formData = new FormData();
-    formData.append("email", data.email);
-    formData.append("first_name", data.first_name);
-    formData.append("middle_name", data.middle_name || "");
-    formData.append("last_name", data.last_name);
-    formData.append("user_name", data.user_name);
-    formData.append("password", data.password);
-    formData.append("status", data.status);
-    data.roles.forEach(role => formData.append("roles", role));
+    const payload = {
+      email: data.email,
+      first_name: data.first_name,
+      middle_name: data.middle_name || "",
+      last_name: data.last_name,
+      user_name: data.user_name,
+      password: data.password,
+      status: data.status,
+      roles: data.roles || [],
+    };
 
-    const res = await axiosInstance.post("/admin/users", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+    const res = await axiosInstance.post("/admin/users", payload, {
+      headers: { "Content-Type": "application/json" },
     });
-    
+
     return res.data;
   },
 
