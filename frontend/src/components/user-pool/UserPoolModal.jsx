@@ -7,6 +7,7 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
   const [status, setStatus] = useState("active");
   const [selectedUser, setSelectedUser] = useState(null);
   const roles = useAllRoles();
+  const isView = mode === "view";
 
   useEffect(() => {
     if (!user) {
@@ -51,7 +52,7 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
           </div>
         </div>
         <form id="user-pool-form" className="flex-1 overflow-y-auto p-6 bg-white space-y-4">
-          {(mode === "view" || mode === "edit") && (
+          {(isView || mode === "edit") && (
             <div className="space-y-0.5">
               <label className="block text-sm font-semibold text-gray-700">
                 User ID
@@ -61,12 +62,12 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
           )}
           <div className="space-y-0.5">
             <label className="block text-sm font-semibold text-gray-700">
-              Email <span className="text-red-500">*</span>
+              Email {!isView && <span className="text-red-500">*</span>}
             </label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              disabled={mode === "view"}
+              disabled={isView}
               className={`w-full px-3 py-2 rounded-lg border ${
-                mode === "view" ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
+                isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
               }`}
               placeholder="Email"
               required
@@ -75,12 +76,12 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
 
           <div className="space-y-0.5">
             <label className="block text-sm font-semibold text-gray-700">
-              First Name <span className="text-red-500">*</span>
+              First Name {!isView && <span className="text-red-500">*</span>}
             </label>
             <input type="text" value={selectedUser?.givenName || ""} onChange={(e) => setSelectedUser({...selectedUser, givenName: e.target.value})}
-              disabled={mode === "view"}
+              disabled={isView}
               className={`w-full px-3 py-2 rounded-lg border ${
-                mode === "view" ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
+                isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
               }`}
               placeholder="First Name"
               required
@@ -92,12 +93,12 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
               Middle Name
             </label>
             <label className={`input flex items-center rounded-lg border gap-2 w-full ${
-              mode === "view"  
+              isView
               ? "bg-gray-100 text-gray-700 border-gray-700" 
               : "bg-transparent border-gray-700 text-gray-700 focus-within:ring-1 focus-within:ring-[#991b1b] focus-within:border-[#991b1b]"}`}>
               <input type="text" name="middleName" value={selectedUser?.middleName || ""} onChange={(e) => setSelectedUser({...selectedUser, middleName: e.target.value})}
                 placeholder="Enter middle name"
-                disabled={mode === "view"}
+                disabled={isView}
                 className="grow bg-transparent"
               />
               <span className="badge badge-neutral badge-xs">Optional</span>
@@ -106,12 +107,12 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
 
           <div className="space-y-0.5">
             <label className="block text-sm font-semibold text-gray-700">
-              Last Name <span className="text-red-500">*</span>
+              Last Name {!isView && <span className="text-red-500">*</span>}
             </label>
             <input type="text" value={selectedUser?.surname || ""} onChange={(e) => setSelectedUser({...selectedUser, surname: e.target.value})}
-              disabled={mode === "view"}
+              disabled={isView}
               className={`w-full px-3 py-2 rounded-lg border ${
-                mode === "view" ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
+                isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
               }`}
               placeholder="Last Name"
               required
@@ -120,16 +121,16 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
 
           <div className="space-y-0.5">
             <label className="block text-sm font-semibold text-gray-700">
-              Role <span className="text-red-500">*</span>
+              Role {!isView && <span className="text-red-500">*</span>}
             </label>
 
             <div className={`rounded-lg border ${
-                mode === "view" 
+                isView
                   ? "bg-gray-100 text-gray-700 p-2 min-h-10.5" 
                   : "bg-transparent text-gray-700 focus:ring-2 focus:ring-[#991b1b]"
               }`}>
               
-              {mode === "view" ? (
+              {isView ? (
                 <div className="flex flex-wrap gap-1">
                   {selectedUser?.roles.map((role, i) => (
                     <span
@@ -162,12 +163,12 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
           
           <div className="space-y-0.5">
             <label className="block text-sm font-semibold text-gray-700">
-              Status <span className="text-red-500">*</span>
+              Status {!isView && <span className="text-red-500">*</span>}
             </label>
             <select value={status} onChange={(e) => setStatus(e.target.value)}
-              disabled={mode === "view"}
+              disabled={isView}
               className={`select border rounded-lg w-full border-gray-700 text-gray-700 ${
-                mode === "view" ? "bg-gray-100 cursor-not-allowed" : "bg-white focus:ring-2 focus:ring-[#991b1b]"
+                isView ? "bg-gray-100 cursor-not-allowed" : "bg-white focus:ring-2 focus:ring-[#991b1b]"
               }`}
             >
               <option value="active">Active</option>
