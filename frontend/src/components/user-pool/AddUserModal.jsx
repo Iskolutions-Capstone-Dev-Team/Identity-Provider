@@ -6,7 +6,6 @@ import ErrorAlert from "../ErrorAlert";
 import { useAllRoles } from "../../hooks/useAllRoles";
 
 const initialFormData = {
-  username: "",
   email: "",
   givenName: "",
   middleName: "",
@@ -45,10 +44,6 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
 
     const nextStep = () => {
         if (step === 1) {
-            if (!data.username.trim() || data.username.length < 4) {
-                setError("Username must be at least 4 characters.");
-                return;
-            }
             if (!data.email.trim()) {
                 setError("Email is required.");
                 return;
@@ -133,7 +128,6 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
         const fullName = `${data.givenName} ${data.middleName ? data.middleName + " " : ""}${data.surname}`;
 
         onSubmit({
-            username: data.username,
             email: data.email,
             name: fullName,
             givenName: data.givenName,
@@ -202,20 +196,6 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                     <ErrorAlert message={error} onClose={() => setError("")} />
                     <FadeWrapper isVisible={step === 1}>
                           <form id="step1-form" onSubmit={(e) => e.preventDefault()}>
-                            <div className="space-y-1 mb-1">
-                                <label className="block font-medium mb-1 text-black text-base">Username <span className="text-red-500">*</span></label>
-                                <div className="validator w-full">
-                                    <label className="input validator rounded-lg flex items-center gap-2 bg-transparent border border-gray-200 text-gray-700 w-full">
-                                        <span className="pr-3 border-r border-gray-300 text-gray-500">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
-                                                <path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clipRule="evenodd" />
-                                            </svg>
-                                        </span>
-                                        <input type="text" name="username" value={data.username} onChange={handleChange} required minLength={4} placeholder="Enter username" className="grow bg-transparent"/>
-                                    </label>
-                                    <div className="validator-hint">Username is required (minimum 4 characters)</div>
-                                </div>
-                            </div>
                             <div className="space-y-1 mb-1">
                                 <label className="block font-medium mb-1 text-black text-base">Email Address <span className="text-red-500">*</span></label>
                                 <div className="validator w-full">

@@ -3,7 +3,6 @@ import MultiSelect from "../MultiSelect";
 import { useAllRoles } from "../../hooks/useAllRoles";
 
 export default function UserPoolModal({ open, mode, user, onClose }) {
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("active");
   const [selectedUser, setSelectedUser] = useState(null);
@@ -12,7 +11,6 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
   useEffect(() => {
     if (!user) {
       setSelectedUser(null);
-      setUsername("");
       setEmail("");
       setStatus("active");
       return;
@@ -26,7 +24,6 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
           .filter((role) => user.roles?.includes(role.role_name))
           .map((role) => role.id),
     });
-    setUsername(user.username || "");
     setEmail(user.email || "");
     setStatus((user.status || "active").toLowerCase());
   }, [user, roles]);
@@ -62,23 +59,6 @@ export default function UserPoolModal({ open, mode, user, onClose }) {
               <input type="text" value={selectedUser?.id || ""} placeholder="User ID" readOnly className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
             </div>
           )}
-          <div className="space-y-0.5">
-            <label className="block text-sm font-semibold text-gray-700">
-              Username
-            </label>
-            <label className={`input flex items-center rounded-lg border gap-2 w-full ${
-              mode === "view"  
-              ? "bg-gray-100 text-gray-700 border-gray-700" 
-              : "bg-transparent border-gray-700 text-gray-700 focus-within:ring-1 focus-within:ring-[#991b1b] focus-within:border-[#991b1b]"}`}>
-              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username"
-                disabled={mode === "view"}
-                className="grow bg-transparent"
-              />
-              <span className="badge badge-neutral badge-xs">Optional</span>
-            </label>
-          </div>
-
           <div className="space-y-0.5">
             <label className="block text-sm font-semibold text-gray-700">
               Email <span className="text-red-500">*</span>

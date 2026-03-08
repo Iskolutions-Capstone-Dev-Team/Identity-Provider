@@ -64,12 +64,13 @@ export function useUsers() {
   // =========================
   const createUser = async (newUser) => {
     try {
+      const userName = (newUser.username || newUser.email || "").trim();
       const payload = {
         email: newUser.email,
         first_name: newUser.givenName,
         middle_name: newUser.middleName,
         last_name: newUser.surname,
-        user_name: newUser.username,
+        user_name: userName,
         password: newUser.tempPassword || "TempPass123!",
         roles: newUser.roles,
         status: newUser.status,
@@ -133,5 +134,7 @@ export function useUsers() {
     totalResults,
     successMessage,
     setSuccessMessage,
+    createUser,
+    deleteUser,
   };
 }
