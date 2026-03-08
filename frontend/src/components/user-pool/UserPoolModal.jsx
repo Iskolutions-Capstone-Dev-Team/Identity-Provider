@@ -371,59 +371,57 @@ export default function UserPoolModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-0.5">
-              <label className="block text-base font-semibold text-gray-700">
-                Role {!isViewMode && <span className="text-red-500">*</span>}
-              </label>
-              {isViewMode ? (
-                <div className="w-full min-h-24 rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-700">
-                  {displayedRoles.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {displayedRoles.map((role, index) => (
-                        <span
-                          key={`${role}-${index}`}
-                          className="inline-flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
-                        >
-                          {role}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-gray-500 italic">No content</span>
-                  )}
-                </div>
-              ) : (
-                <MultiSelect
-                  options={availableRoles}
-                  selectedValues={selectedRoleIds}
-                  onChange={handleRoleChange}
-                  placeholder="Select roles"
-                />
-              )}
-            </div>
+          <div className="space-y-0.5">
+            <label className="block text-base font-semibold text-gray-700">
+              Role {!isViewMode && <span className="text-red-500">*</span>}
+            </label>
+            {isViewMode ? (
+              <div className="w-full min-h-24 rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-700">
+                {displayedRoles.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {displayedRoles.map((role, index) => (
+                      <span
+                        key={`${role}-${index}`}
+                        className="inline-flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-gray-500 italic">No content</span>
+                )}
+              </div>
+            ) : (
+              <MultiSelect
+                options={availableRoles}
+                selectedValues={selectedRoleIds}
+                onChange={handleRoleChange}
+                placeholder="Select roles"
+              />
+            )}
+          </div>
 
-            <div className="space-y-0.5">
-              <label className="block text-base font-semibold text-gray-700">
-                Status {!isViewMode && <span className="text-red-500">*</span>}
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => handleFieldChange("status", e.target.value)}
-                disabled={isViewMode}
-                className={`select w-full rounded-lg ${
-                  isViewMode
-                    ? "border border-gray-300 bg-gray-100 text-gray-700 cursor-not-allowed"
-                    : "border border-gray-200 bg-white text-gray-700"
-                }`}
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="space-y-0.5">
+            <label className="block text-base font-semibold text-gray-700">
+              Status {!isViewMode && <span className="text-red-500">*</span>}
+            </label>
+            <select
+              value={formData.status}
+              onChange={(e) => handleFieldChange("status", e.target.value)}
+              disabled={isViewMode}
+              className={`select w-full rounded-lg ${
+                isViewMode
+                  ? "border border-gray-300 bg-gray-100 text-gray-700 cursor-not-allowed"
+                  : "border border-gray-200 bg-white text-gray-700"
+              }`}
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
         </form>
 
