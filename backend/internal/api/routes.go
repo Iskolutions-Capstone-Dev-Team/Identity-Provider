@@ -1,9 +1,10 @@
-package v1
+package api
 
 import (
 	"crypto/rsa"
 	"net/http"
 
+	v1 "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
@@ -14,15 +15,21 @@ var (
 )
 
 type Handlers struct {
-	AuthHandler   *AuthHandler
-	ClientHandler *ClientHandler
-	RoleHandler   *RoleHandler
-	UserHandler   *UserHandler
+	AuthHandler   *v1.AuthHandler
+	ClientHandler *v1.ClientHandler
+	RoleHandler   *v1.RoleHandler
+	UserHandler   *v1.UserHandler
 	PubKey        *rsa.PublicKey
 	CORS          gin.HandlerFunc
 }
 
-func MapRoutes(v1Group *gin.RouterGroup, h Handlers) {
+func SetupRoutes(r *gin.Engine, h Handlers) {
+	wellKnown := r.Group("/.well-known")
+	{
+		wellKnown.GET("/jwks.json", h.AuthHandler.GetJWKS)
+	}
+
+	v1Group := r.Group("api/v1")
 	auth := v1Group.Group("/auth")
 	{
 		auth.GET("/authorize", h.AuthHandler.Authorize)
