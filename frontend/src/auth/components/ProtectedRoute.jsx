@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { authService } from "../services/authService";
+import { ensureValidAccessToken } from "../utils/tokenRefresh";
 
 export default function ProtectedRoute({ children }) {
   const [authState, setAuthState] = useState("loading");
@@ -9,7 +10,8 @@ export default function ProtectedRoute({ children }) {
     const validate = async () => {
       try {
         await authService.checkSession();
-        setAuthState("allowed");
+        const accessToken = await ensureValidAccessToken();
+        setAuthState(accessToken ? "allowed" : "denied");
       } catch {
         setAuthState("denied");
       }
