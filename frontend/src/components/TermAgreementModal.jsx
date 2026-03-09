@@ -53,7 +53,7 @@ export default function TermsAgreementModal({ open, onClose, onContinue }) {
                     </p>
                     <p className="leading-relaxed">
                         Your information will be handled in accordance with our{" "}
-                        <a href="https://www.pup.edu.ph/privacy/" className="font-semibold no-underline hover:opacity-80" target="_blank" rel="noreferrer">
+                        <a href="https://www.pup.edu.ph/privacy/" className="font-semibold text-[#991b1b] no-underline hover:opacity-80" target="_blank" rel="noreferrer">
                         Privacy Policy
                         </a>{" "}
                         and in compliance with the <span className="font-semibold">Data Privacy Act of 2012</span>.
@@ -68,7 +68,7 @@ export default function TermsAgreementModal({ open, onClose, onContinue }) {
                             />
                             <span className="text-sm leading-6">
                                 I Agree and acknowledge the{" "}
-                                <a href="https://www.pup.edu.ph/terms/" className="no-underline hover:opacity-80" target="_blank" rel="noreferrer">
+                                <a href="https://www.pup.edu.ph/terms/" className="font-semibold text-[#991b1b] no-underline hover:opacity-80" target="_blank" rel="noreferrer">
                                     Terms and Conditions
                                 </a>
                             </span>
