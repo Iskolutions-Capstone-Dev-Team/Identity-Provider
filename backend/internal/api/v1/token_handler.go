@@ -5,8 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/auth"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -30,7 +31,7 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostTokenExchange] Bind JSON Error: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "invalid_request"},
 		)
 		return
@@ -40,7 +41,7 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PostTokenExchange] Client ID Parse Error: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "invalid_client"},
 		)
 		return
@@ -51,7 +52,7 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	if err != nil || !valid {
 		log.Printf("[PostTokenExchange] Client Verification Failed: %v", err)
 		c.JSON(
-			http.StatusUnauthorized, 
+			http.StatusUnauthorized,
 			dto.ErrorResponse{Error: "unauthorized"},
 		)
 		return
@@ -61,7 +62,7 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PostTokenExchange] Code Exchange Error: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "invalid_grant"},
 		)
 		return
@@ -70,7 +71,7 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	if !bytes.Equal(authCode.ClientId, clientIDBin) {
 		log.Printf("[PostTokenExchange] Client ID Mismatch Error")
 		c.JSON(
-			http.StatusForbidden, 
+			http.StatusForbidden,
 			dto.ErrorResponse{Error: "invalid_grant"},
 		)
 		return
@@ -80,15 +81,25 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PostTokenExchange] Claims Retrieval Error: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "server_error"},
 		)
 		return
 	}
 
-	accessToken, err := auth.GenerateToken(h.PrivateKey, clientIDBin, *claims)
-	refreshStr, err := auth.GenerateRandomString(64)
-	_ = h.Repo.StoreRefreshToken(refreshStr, claims.UserID, clientIDBin)
+	client, err := h.ClientRepo.GetByID(clientIDBin)
+	if err != nil {
+		log.Printf("[PostTokenExchange] Client Retrieval Error: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "server_error"},
+		)
+		return
+	}
+
+	accessToken, err := service.GenerateToken(h.PrivateKey, client, *claims)
+	refreshStr, err := utils.GenerateRandomString(64)
+	_ = h.Repo.StoreRefreshToken(refreshStr, authCode.UserId, clientIDBin)
 
 	c.JSON(http.StatusOK, dto.TokenResponse{
 		AccessToken:  accessToken,
@@ -115,7 +126,7 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostTokenRotate] Bind JSON Error: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "invalid_request"},
 		)
 		return
@@ -125,17 +136,17 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PostTokenRotate] Token Lookup Error: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "invalid_token"},
 		)
 		return
 	}
 
-	newToken, err := auth.GenerateRandomString(64)
+	newToken, err := utils.GenerateRandomString(64)
 	if err != nil {
 		log.Printf("[PostTokenRotate] Token Generation Error: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "token_error"},
 		)
 		return
@@ -144,7 +155,7 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 	if err := h.Repo.RotateRefreshToken(req.RefreshToken, newToken); err != nil {
 		log.Printf("[PostTokenRotate] Token Rotation Error: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "rotate_fail"},
 		)
 		return
@@ -154,13 +165,23 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PostTokenRotate] Claims Retrieval Error: %v", err)
 		c.JSON(
-			http.StatusInternalServerError, 
+			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "server_error"},
 		)
 		return
 	}
 
-	accessToken, _ := auth.GenerateToken(h.PrivateKey, cID, *claims)
+	client, err := h.ClientRepo.GetByID(cID)
+	if err != nil {
+		log.Printf("[PostTokenExchange] Client Retrieval Error: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "server_error"},
+		)
+		return
+	}
+
+	accessToken, _ := service.GenerateToken(h.PrivateKey, client, *claims)
 
 	c.JSON(http.StatusOK, dto.TokenResponse{
 		AccessToken:  accessToken,

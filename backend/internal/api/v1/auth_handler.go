@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/auth"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -29,10 +29,10 @@ type AuthHandler struct {
 // @Summary Authorize user
 // @Description Validates the authorization request for the user.
 // @Tags Authentication
-// @Success 302 
-// @Failure 400 {object} dto.ErrorResponse 
-// @Failure 404 {object} dto.ErrorResponse 
-// @Failure 500 {object} dto.ErrorResponse 
+// @Success 302
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /auth/authorize [get]
 func (h *AuthHandler) Authorize(c *gin.Context) {
 	loginUIPath := os.Getenv("LOGIN_UI_PATH")
@@ -62,14 +62,14 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 		return
 	}
 
-	isValid, err := auth.ValidateToken(accessTokenString, h.PublicKey)
+	isValid, err := service.ValidateToken(accessTokenString, h.PublicKey)
 	if !isValid || err != nil {
 		log.Printf("[Authorize] Validation Error: %v", err)
 		c.Redirect(http.StatusFound, loginUIPath)
 		return
 	}
 
-	code, err := auth.GenerateAuthorizationCode()
+	code, err := utils.GenerateAuthorizationCode()
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] Code Generation Error: %v", err)
 		c.JSON(
@@ -126,7 +126,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		return
 	}
 
-	if err := auth.CompareSecret(storedHash, req.Password); err != nil {
+	if err := utils.CompareSecret(storedHash, req.Password); err != nil {
 		log.Printf(
 			"[LoginAndAuthorize] Password Verification Failed: %s",
 			req.Email,
@@ -138,7 +138,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		return
 	}
 
-	code, err := auth.GenerateAuthorizationCode()
+	code, err := utils.GenerateAuthorizationCode()
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] Code Generation Error: %v", err)
 		c.JSON(
@@ -165,7 +165,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] Client Registry Lookup Error: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "invalid_client"},
 		)
 		return
@@ -181,7 +181,17 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		return
 	}
 
-	err = h.Repo.StoreCode(code, claims.UserID, clientIDBytes[:],
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		log.Printf("[LoginAndAuthorize] parse error: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid user_Id"},
+		)
+		return
+	}
+
+	err = h.Repo.StoreCode(code, userID[:], clientIDBytes[:],
 		req.RedirectURI)
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] Database Store Code Error: %v", err)
@@ -192,12 +202,12 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		return
 	}
 
-	sessionID, _ := auth.GenerateRandomString(32)
+	sessionID, _ := utils.GenerateRandomString(32)
 	expiry := time.Now().AddDate(SESSION_YEARS, SESSION_MONTHS, SESSION_DAYS)
 
 	newSession := &models.IdPSession{
 		SessionId: sessionID,
-		UserId:    claims.UserID,
+		UserId:    userID[:],
 		IpAddress: c.ClientIP(),
 		UserAgent: c.Request.UserAgent(),
 		ExpiresAt: expiry,
@@ -232,7 +242,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	sessionID, err := c.Cookie("idp_session")
 	if err != nil {
 		c.JSON(
-			http.StatusOK, 
+			http.StatusOK,
 			dto.SuccessResponse{Message: "already logged out"},
 		)
 		return
@@ -256,7 +266,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 	c.SetCookie("idp_session", "", -1, "/", "", true, true)
 	c.JSON(
-		http.StatusOK, 
+		http.StatusOK,
 		dto.SuccessResponse{Message: "global logout successful"},
 	)
 }

@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/auth"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -63,8 +63,8 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	}
 
 	clientID := uuid.New()
-	rawSecret, _ := auth.GenerateRandomString(32)
-	hashedSecret, _ := auth.HashSecret(rawSecret)
+	rawSecret, _ := utils.GenerateRandomString(32)
+	hashedSecret, _ := utils.HashSecret(rawSecret)
 
 	clientModel := &models.Client{
 		ID:            clientID[:],
@@ -432,7 +432,7 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 		return
 	}
 
-	newSecret, err := auth.GenerateRandomString(32)
+	newSecret, err := utils.GenerateRandomString(32)
 	if err != nil {
 		log.Printf("[PatchClientSecret] failed to generate new secret: %v", err)
 		c.JSON(
@@ -442,7 +442,7 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 		return
 	}
 
-	newSecretHash, err := auth.HashSecret(newSecret)
+	newSecretHash, err := utils.HashSecret(newSecret)
 	if err != nil {
 		log.Printf("[PatchClientSecret] failed to hash new secret: %v", err)
 		c.JSON(
