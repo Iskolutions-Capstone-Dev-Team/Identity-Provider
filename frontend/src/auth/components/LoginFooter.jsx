@@ -24,7 +24,7 @@ export default function LoginFooter() {
               href="https://www.facebook.com/PUPTaguig"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition duration-300 hover:-translate-y-1 hover:border-[#f8d24e]/50 hover:bg-white/20 hover:text-[#f8d24e]"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition duration-300 hover:-translate-y-1 hover:border-[#f8d24e]/50 hover:bg-white/20 hover:text-[#ffd700]"
               aria-label="Visit PUP Taguig on Facebook"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -35,7 +35,7 @@ export default function LoginFooter() {
               href="https://www.youtube.com/@PUPTaguigOfficial"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition duration-300 hover:-translate-y-1 hover:border-[#f8d24e]/50 hover:bg-white/20 hover:text-[#f8d24e]"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition duration-300 hover:-translate-y-1 hover:border-[#f8d24e]/50 hover:bg-white/20 hover:text-[#ffd700]"
               aria-label="Visit PUP Taguig on YouTube"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">

@@ -38,12 +38,12 @@ export default function Login() {
       <div className="grid w-full items-center gap-10 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,28rem)] xl:gap-14">
         <section className="hidden xl:flex xl:flex-col xl:gap-8 xl:pr-8">
           <div className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium uppercase tracking-[0.18em] text-white/90 backdrop-blur-xl">
-            Single Sign On
+            Unified Access
           </div>
 
           <div className="max-w-xl space-y-4">
             <h1 className="text-5xl font-semibold leading-tight text-white 2xl:text-6xl">
-              Unified Access
+              Identity Provider
             </h1>
             <p className="max-w-lg text-lg leading-8 text-white/70">
               A cleaner way to enter connected PUPT systems through one secure sign-in.
@@ -56,7 +56,7 @@ export default function Login() {
                 key={card.title}
                 className="group rounded-[1.75rem] border border-white/20 bg-white/10 p-5 shadow-[0_24px_55px_-35px_rgba(0,0,0,0.9)] backdrop-blur-xl transition duration-300 hover:-translate-y-1.5 hover:border-[#f8d24e]/40 hover:bg-white/20"
               >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f8d24e]/20 text-[#f8d24e] transition duration-300 group-hover:scale-105 group-hover:bg-[#f8d24e]/25">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f8d24e]/20 text-[#ffd700] transition duration-300 group-hover:scale-105 group-hover:bg-[#f8d24e]/25">
                   {card.icon}
                 </div>
                 <h2 className="text-xl font-semibold text-white">{card.title}</h2>

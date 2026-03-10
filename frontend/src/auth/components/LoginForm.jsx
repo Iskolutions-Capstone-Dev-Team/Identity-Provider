@@ -2,12 +2,6 @@ import { useState } from "react";
 import { authService } from "../services/authService";
 import ErrorAlert from "../../components/ErrorAlert";
 
-const inputClassName =
-  "validator h-14 w-full rounded-2xl border border-white/20 bg-white/95 pl-14 pr-4 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#f8d24e] focus:ring-4 focus:ring-[#f8d24e]/20";
-
-const iconClassName =
-  "pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60";
-
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,8 +52,8 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-[28rem] px-1 sm:px-0">
-      <div className="rounded-[2rem] border border-white/20 bg-white/10 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+    <div className="w-full max-w-md px-1 sm:px-0">
+      <div className="rounded-4xl border border-white/20 bg-white/10 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
         <div className="rounded-[calc(2rem-4px)] bg-[linear-gradient(180deg,rgba(120,12,22,0.72),rgba(60,7,12,0.86))] px-6 py-7 sm:px-8 sm:py-8">
           <div className="space-y-6">
             <div className="space-y-4 text-center">
@@ -91,7 +85,7 @@ export default function LoginForm() {
                   Email Address <span className="text-red-300">*</span>
                 </label>
                 <div className="relative">
-                  <span className={iconClassName}>
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
                       <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
                       <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
@@ -103,7 +97,7 @@ export default function LoginForm() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     placeholder="Enter your email address"
-                    className={inputClassName}
+                    className="validator h-14 w-full rounded-2xl border border-white/20 bg-white/95 pl-14 pr-4 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#ffd700] focus:ring-4 focus:ring-[#ffd700]/20"
                   />
                 </div>
                 <div className="validator-hint pl-1 text-xs text-red-100/95">
@@ -118,7 +112,7 @@ export default function LoginForm() {
                   </label>
                   <a
                     href="#"
-                    className="text-xs font-medium text-white/70 transition duration-300 hover:text-[#f8d24e]"
+                    className="text-xs font-medium text-white/70 transition duration-300 hover:text-[#ffd700]"
                     onClick={(e) => {
                       e.preventDefault();
                       setForgotOpen(true);
@@ -129,7 +123,7 @@ export default function LoginForm() {
                 </div>
 
                 <div className="relative w-full">
-                  <span className={iconClassName}>
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
                       <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
                     </svg>
@@ -140,7 +134,7 @@ export default function LoginForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder="Enter your password"
-                    className={`${inputClassName} pr-12`}
+                    className="validator h-14 w-full rounded-2xl border border-white/20 bg-white/95 pl-14 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#ffd700] focus:ring-4 focus:ring-[#ffd700]/20 pr-12"
                   />
                   <button
                     type="button"
@@ -176,7 +170,7 @@ export default function LoginForm() {
                 </label>
               </div>
 
-              <button type="submit" className="w-full rounded-2xl bg-[#f8d24e] px-4 py-3 text-sm font-bold tracking-[0.24em] text-[#6c0a13] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#ffe27a]">
+              <button type="submit" className="w-full rounded-2xl bg-[#ffd700] px-4 py-3 text-sm font-bold tracking-[0.24em] text-[#6c0a13] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#ffe27a]">
                 LOGIN
               </button>
             </form>
