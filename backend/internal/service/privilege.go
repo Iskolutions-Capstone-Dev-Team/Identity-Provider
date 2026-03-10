@@ -23,8 +23,8 @@ type PrivilegeService struct {
 	UserRepo *repository.UserRepository
 }
 
-func (s *PrivilegeService) CheckUserPrivelege(c *gin.Context) (int, error) {
-	accessToken, err := c.Cookie("access_cookie")
+func (s *PrivilegeService) CheckUserPrivilege(c *gin.Context) (int, error) {
+	accessToken, err := c.Cookie("access_token")
 
 	token, err := GetParsedToken(accessToken, s.PubKey)
 	claims := token.Claims.(*models.UserClaims)
@@ -49,5 +49,5 @@ func (s *PrivilegeService) CheckUserPrivelege(c *gin.Context) (int, error) {
 		}
 	}
 
-	return ErrorLevel, fmt.Errorf("Unauthorized user",)
+	return ErrorLevel, fmt.Errorf("Unauthorized user")
 }
