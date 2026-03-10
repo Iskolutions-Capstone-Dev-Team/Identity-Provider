@@ -49,7 +49,8 @@ func main() {
 	}
 	defer appDB.Close()
 
-	h := initializers.InitializeHandlers(appDB)
+	s := initializers.InitializeServices(appDB)
+	h := initializers.InitializeHandlers(appDB, &s)
 
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
