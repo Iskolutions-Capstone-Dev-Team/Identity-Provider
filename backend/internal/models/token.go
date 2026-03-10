@@ -26,13 +26,7 @@ type RefreshToken struct {
 }
 
 type UserClaims struct {
+	AuthorizedParty string `json:"azp,omitempty"`
+	UserID string `json:"userId"`
 	jwt.RegisteredClaims
-	UserID     []byte   `json:"userId"`
-	Username   string   `json:"userName"`
-	FirstName  string   `json:"firstName"`
-	MiddleName string   `json:"middleName"`
-	LastName   string   `json:"lastName"`
-	Email      string   `json:"email"`
-	Roles      []string `json:"roles"`
-	Scopes     []string `json:"scopes"`
 }
