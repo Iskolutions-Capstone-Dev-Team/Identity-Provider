@@ -10,4 +10,5 @@ const (
 	ACCESS_TOKEN_NAME  = "access_token"
 	REFRESH_TOKEN_NAME = "refresh_token"
 	SECRET_ENTROPY     = 32
+	DEFAULT_PAGE       = 1
 )
