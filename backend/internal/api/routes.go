@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,7 +24,7 @@ type Handlers struct {
 	CORS          gin.HandlerFunc
 }
 
-func SetupRoutes(r *gin.Engine, h Handlers) {
+func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 	wellKnown := r.Group("/.well-known")
 	{
 		wellKnown.GET("/jwks.json", h.AuthHandler.GetJWKS)
@@ -47,7 +48,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
-	admin.Use(middleware.AuthorizeRBAC(h.PubKey, h.UserHandler.Repo, role1, role2))
+	admin.Use(middleware.AuthorizeRBAC(h.PubKey, s.UserService.Repo, role1, role2))
 	{
 		admin.GET("/status", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "IdP is operational"})

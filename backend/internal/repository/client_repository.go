@@ -372,6 +372,28 @@ func (r *ClientRepository) DeleteConnectedRoles(client *models.Client) error {
 	return err
 }
 
+func (r *ClientRepository) AdminiClientBind(userID []byte,
+	clientID []byte,
+) error {
+	query := `
+		INSERT INTO admin_alllowed_lients (user_id, client_id)
+		VALUES (?, ?)
+	`
+
+	_, err := r.db.Exec(query, userID, clientID)
+	return err
+}
+
+func (r *ClientRepository) RemoveAdminClientBind(clientID []byte) error {
+	query := `
+		DELETE FROM admin_allowed_clients
+		WHERE client_id = ?
+	`
+
+	_, err := r.db.Exec(query, clientID)
+	return err
+}
+
 func NewClientRepository(db *sqlx.DB) *ClientRepository {
 	return &ClientRepository{db: db}
 }

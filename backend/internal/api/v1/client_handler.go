@@ -1,25 +1,19 @@
 package v1
 
 import (
-	"crypto/rsa"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type ClientHandler struct {
-	Repo       *repository.ClientRepository
-	PrivateKey *rsa.PrivateKey
-	Storage    *storage.S3Provider
+	Service *service.ClientService
 }
 
 // PostClient handles POST /v1/admin/clients
@@ -42,69 +36,45 @@ type ClientHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients [post]
 func (h *ClientHandler) PostClient(c *gin.Context) {
-	file, _ := c.FormFile("image")
-	f, _ := file.Open()
-	defer f.Close()
-
-	imagePath, err := service.ProcessAndUploadIcon(
-		c.Request.Context(),
-		c.PostForm("tag"),
-		file.Filename,
-		f,
-		file.Size,
-		h.Storage,
-	)
+	file, header, err := c.Request.FormFile("image")
 	if err != nil {
-		log.Printf("[PostClient] Failed to process image: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "upload failed"},
-		)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "no image"})
+		return
 	}
+	defer file.Close()
 
-	clientID := uuid.New()
-	rawSecret, _ := utils.GenerateRandomString(32)
-	hashedSecret, _ := utils.HashSecret(rawSecret)
-
-	clientModel := &models.Client{
-		ID:            clientID[:],
-		ClientName:    c.PostForm("name"),
-		Tag:           c.PostForm("tag"),
-		ClientSecret:  hashedSecret,
-		BaseUrl:       c.PostForm("base_url"),
-		RedirectUri:   c.PostForm("redirect_uri"),
-		LogoutUri:     c.PostForm("logout_uri"),
-		Description:   c.PostForm("description"),
-		ImageLocation: imagePath,
-	}
-
-	grants := c.PostFormArray("grants")
 	roles := c.PostFormArray("roles")
 	roleIDs := make([]int, 0, len(roles))
-	for _, roleStr := range roles {
-		id, err := strconv.Atoi(roleStr)
-		if err != nil {
-			log.Print("[PostRole] Parse Int: failed to convert role string")
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role"})
-			return
-		}
+	for _, r := range roles {
+		id, _ := strconv.Atoi(r)
 		roleIDs = append(roleIDs, id)
 	}
-	log.Print(roleIDs)
-	if err := h.Repo.CreateClient(clientModel, grants, roleIDs); err != nil {
-		log.Printf("[PostClient] Creation failed: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "db error"},
-		)
+
+	req := dto.CreateClientRequest{
+		Name:        c.PostForm("name"),
+		Tag:         c.PostForm("tag"),
+		BaseURL:     c.PostForm("base_url"),
+		RedirectURI: c.PostForm("redirect_uri"),
+		LogoutURI:   c.PostForm("logout_uri"),
+		Description: c.PostForm("description"),
+		Grants:      c.PostFormArray("grants"),
+		RoleIDs:     roleIDs,
+	}
+
+	resp, err := h.Service.CreateClient(
+		c.Request.Context(),
+		req,
+		file,
+		header,
+	)
+	if err != nil {
+		log.Printf("[PostClient] %v", err)
+		c.JSON(http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "creation failed"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, dto.ClientSecretResponse{
-		ID:           clientID.String(),
-		ClientSecret: rawSecret,
-		Message:      "Here's your client secret. Keep it.",
-	})
+	c.JSON(http.StatusCreated, resp)
 }
 
 // GetClientList handles GET /v1/admin/clients
@@ -123,63 +93,23 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	offset := (page - 1) * PAGE_LIMIT
 
-	total, err := h.Repo.CountClients()
+	resp, err := h.Service.GetClientList(
+		c.Request.Context(),
+		limit,
+		page,
+		keyword,
+	)
 	if err != nil {
-		log.Printf("[GetClientList] Count failed: %v", err)
+		log.Printf("[GetClientList] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "count error"},
+			dto.ErrorResponse{Error: "Failed to retrieve clients"},
 		)
 		return
 	}
 
-	clients, err := h.Repo.ListClients(limit, offset, keyword)
-	if err != nil {
-		log.Printf("[GetClientList] Fetching list failed: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "fetch error"},
-		)
-		return
-	}
-
-	var res []dto.ClientResponse
-	for _, cl := range clients {
-		id, _ := uuid.FromBytes(cl.ID)
-		imageLocation, err := service.GetPresignedURL(
-			c.Request.Context(),
-			cl.ImageLocation,
-			h.Storage,
-		)
-		if err != nil {
-			log.Printf("[GetClientList] failed to get image url: %v", err)
-		}
-		res = append(res, dto.ClientResponse{
-			ID:            id.String(),
-			Name:          cl.ClientName,
-			Tag:           cl.Tag,
-			Description:   cl.Description,
-			ImageLocation: imageLocation,
-			BaseURL:       cl.BaseUrl,
-			RedirectURI:   cl.RedirectUri,
-			LogoutURI:     cl.LogoutUri,
-			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
-		})
-	}
-
-	lastPage := (total + PAGE_LIMIT - 1) / PAGE_LIMIT
-	if lastPage == 0 {
-		lastPage = 1
-	}
-
-	c.JSON(http.StatusOK, dto.ClientListResponse{
-		Clients:     res,
-		CurrentPage: page,
-		LastPage:    lastPage,
-		TotalCount:  total,
-	})
+	c.JSON(http.StatusOK, resp)
 }
 
 // GetClient handles GET /v1/admin/clients/:id
@@ -196,7 +126,7 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	idParam := c.Param("id")
 	clientUUID, err := uuid.Parse(idParam)
 	if err != nil {
-		log.Printf("[GetClient] Invalid uuid %v", err)
+		log.Printf("[GetClient] %v", err)
 		c.JSON(
 			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "invalid uuid format"},
@@ -204,170 +134,13 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 		return
 	}
 
-	cl, err := h.Repo.GetByID(clientUUID[:])
-	if err != nil {
-		log.Printf("[GetClient] Client not found %v", err)
-		c.JSON(
-			http.StatusNotFound,
-			dto.ErrorResponse{Error: "client not found"},
-		)
-		return
-	}
-
-	grants, _ := h.Repo.GetGrantTypes(cl.ID)
-	imageLocation, err := service.GetPresignedURL(
+	client, err := h.Service.GetClientByID(
 		c.Request.Context(),
-		cl.ImageLocation,
-		h.Storage,
+		clientUUID,
 	)
 	if err != nil {
-		log.Printf("[GetClient] failed to get image url: %v", err)
-	}
-
-	roles, err := h.Repo.GetClientAllowedRoles(cl.ID)
-	if err != nil {
-		log.Printf("[GetClient] failed to fetch allowed roles: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "fetch failed"},
-		)
-		return
-	}
-
-	var roleResponses []dto.RoleResponse
-	for _, r := range roles {
-		roleResponses = append(roleResponses, dto.RoleResponse{
-			ID:          r.ID,
-			RoleName:    r.RoleName,
-			Description: r.Description,
-			CreatedAt:   r.CreatedAt.Format(TIME_LAYOUT),
-			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
-		})
-	}
-
-	id, _ := uuid.FromBytes(cl.ID)
-	c.JSON(http.StatusOK, gin.H{
-		"client": dto.ClientResponse{
-			ID:            id.String(),
-			Name:          cl.ClientName,
-			Tag:           cl.Tag,
-			Description:   cl.Description,
-			ImageLocation: imageLocation,
-			BaseURL:       cl.BaseUrl,
-			RedirectURI:   cl.RedirectUri,
-			LogoutURI:     cl.LogoutUri,
-			Grants:        grants,
-			AllowedRoles:  roleResponses,
-		},
-	})
-}
-
-// PutClient handles PUT /v1/admin/clients/:id
-// @Summary Update Client Info
-// @Description Update safe fields (Name, Description, URLs, Image)
-// @Tags Clients
-// @Accept json
-// @Produce json
-// @Param id path string true "Client UUID"
-// @Success 200 {object} dto.SuccessResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/clients/{id} [put]
-func (h *ClientHandler) PutClient(c *gin.Context) {
-	idParam := c.Param("id")
-	clientUUID, _ := uuid.Parse(idParam)
-
-	existingClient, err := h.Repo.GetByID(clientUUID[:])
-	if err != nil {
-		log.Printf("[PutClient] Client search failed: %v", err)
-		c.JSON(
-			http.StatusNotFound,
-			dto.ErrorResponse{Error: "client not found"},
-		)
-	}
-
-	file, err := c.FormFile("image")
-	imagePath := existingClient.ImageLocation
-	if err == nil {
-		f, _ := file.Open()
-		defer f.Close()
-
-		imagePath, err = service.ProcessAndUploadIcon(
-			c.Request.Context(),
-			existingClient.Tag,
-			file.Filename,
-			f,
-			file.Size,
-			h.Storage,
-		)
-		if err != nil {
-			log.Printf("[PutClient] Failed to process image: %v", err)
-			c.JSON(
-				http.StatusInternalServerError,
-				dto.ErrorResponse{Error: "upload failed"},
-			)
-			return
-		}
-	}
-
-	client := &models.Client{
-		ID:            clientUUID[:],
-		ClientName:    c.PostForm("name"),
-		BaseUrl:       c.PostForm("base_url"),
-		RedirectUri:   c.PostForm("redirect_uri"),
-		LogoutUri:     c.PostForm("logout_uri"),
-		Description:   c.PostForm("description"),
-		ImageLocation: imagePath,
-	}
-
-	grants := c.PostFormArray("grants")
-	roles := c.PostFormArray("roles")
-	roleIDs := make([]int, 0, len(roles))
-
-	for _, roleStr := range roles {
-		id, err := strconv.Atoi(roleStr)
-		if err != nil {
-			log.Print("[PostRole] Parse Int: failed to convert role string")
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role"})
-			return
-		}
-		roleIDs = append(roleIDs, id)
-	}
-	if err := h.Repo.UpdateClient(client, grants, roleIDs); err != nil {
-		log.Printf("[PutClient] Update failed: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "update fail"},
-		)
-		return
-	}
-	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "client updated"})
-}
-
-// DeleteClient handles DELETE /v1/admin/clients/:id
-// @Summary Soft Delete Client
-// @Tags Clients
-// @Param id path string true "Client UUID"
-// @Failure 200 {object} dto.ErrorResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 404 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/clients/{id} [delete]
-func (h *ClientHandler) DeleteClient(c *gin.Context) {
-	idParam := c.Param("id")
-	clientUUID, err := uuid.Parse(idParam)
-	if err != nil {
-		log.Printf("[DeleteClient] Invalid uuid %v", err)
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid uuid"},
-		)
-		return
-	}
-
-	cl, err := h.Repo.GetByID(clientUUID[:])
-	if err != nil {
-		log.Printf("[GetClient] Client not found %v", err)
+		log.Printf("[GetClient] %v", err)
+		// Specific error handling for Not Found could be added here
 		c.JSON(
 			http.StatusNotFound,
 			dto.ErrorResponse{Error: "client not found"},
@@ -375,98 +148,7 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 		return
 	}
 
-	err = service.DeleteImage(c.Request.Context(), cl.ImageLocation, h.Storage)
-	if err != nil {
-		log.Printf("[DeleteClient] Image deletion failed: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to delete image"},
-		)
-		return
-	}
-
-	if err := h.Repo.SoftDelete(clientUUID[:]); err != nil {
-		log.Printf("[DeleteClient] Deletion failed: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "delete fail"},
-		)
-		return
-	}
-
-	err = h.Repo.DeleteConnectedRoles(cl)
-	if err != nil {
-		log.Printf("[DeleteClient] roles deletion failed: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to delete roles"},
-		)
-		return
-	}
-
-	c.JSON(
-		http.StatusOK,
-		dto.SuccessResponse{Message: "client deactivated successfully"},
-	)
-}
-
-// PatchClientSecret rotates or updates the client secret for an application.
-// @Summary Update client secret
-// @Description Updates the secret key associated with a specific client ID.
-// @Tags Clients
-// @Accept json
-// @Produce json
-// @Param id path string true "Client ID"
-// @Success 200 {object} dto.ClientSecretResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Router /clients/{id}/secret [patch]
-func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
-	clientIDString := c.Param("id")
-	clientID, err := uuid.Parse(clientIDString)
-	if err != nil {
-		log.Printf("[PatchClientSecret] failed to parse id: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to parse client id"},
-		)
-		return
-	}
-
-	newSecret, err := utils.GenerateRandomString(32)
-	if err != nil {
-		log.Printf("[PatchClientSecret] failed to generate new secret: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "secret generation failed"},
-		)
-		return
-	}
-
-	newSecretHash, err := utils.HashSecret(newSecret)
-	if err != nil {
-		log.Printf("[PatchClientSecret] failed to hash new secret: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to hash secret"},
-		)
-		return
-	}
-
-	err = h.Repo.ChangeSecret(clientID[:], newSecretHash)
-	if err != nil {
-		log.Printf("[PatchClientSecret] failed to change secret: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to change secret"},
-		)
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.ClientSecretResponse{
-		ID:           clientIDString,
-		ClientSecret: newSecret,
-		Message:      "Here's your new client secret, keep it.",
-	})
+	c.JSON(http.StatusOK, gin.H{"client": client})
 }
 
 // GetClientTags retrieves a paginated list of client tags.
@@ -489,60 +171,158 @@ func (h *ClientHandler) GetClientTags(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	offset := (page - 1) * PAGE_LIMIT
 
-	total, err := h.Repo.CountClients()
+	resp, err := h.Service.GetClientTags(
+		c.Request.Context(),
+		limit,
+		page,
+		keyword,
+	)
 	if err != nil {
-		log.Printf("[GetClientTags] Count failed: %v", err)
+		log.Printf("[GetClientTags] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "count error"},
+			dto.ErrorResponse{Error: "Failed to retrieve tags"},
 		)
 		return
 	}
 
-	clients, err := h.Repo.RetrieveClientTagInformation(limit, offset, keyword)
+	c.JSON(http.StatusOK, resp)
+}
+
+// PutClient handles PUT /v1/admin/clients/:id
+// @Summary Update Client Info
+// @Description Update safe fields (Name, Description, URLs, Image)
+// @Tags Clients
+// @Accept json
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /v1/admin/clients/{id} [put]
+func (h *ClientHandler) PutClient(c *gin.Context) {
+	idParam := c.Param("id")
+	clientUUID, err := uuid.Parse(idParam)
 	if err != nil {
-		log.Printf("[GetClientTags] Fetching list failed: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid id"})
+		return
+	}
+
+	// Optional file handling
+	var file multipart.File
+	var header *multipart.FileHeader
+	f, hder, err := c.Request.FormFile("image")
+	if err == nil {
+		file = f
+		header = hder
+		defer file.Close()
+	}
+
+	roles := c.PostFormArray("roles")
+	roleIDs := make([]int, 0, len(roles))
+	for _, r := range roles {
+		id, _ := strconv.Atoi(r)
+		roleIDs = append(roleIDs, id)
+	}
+
+	req := dto.CreateClientRequest{
+		Name:        c.PostForm("name"),
+		BaseURL:     c.PostForm("base_url"),
+		RedirectURI: c.PostForm("redirect_uri"),
+		LogoutURI:   c.PostForm("logout_uri"),
+		Description: c.PostForm("description"),
+		Grants:      c.PostFormArray("grants"),
+		RoleIDs:     roleIDs,
+	}
+
+	err = h.Service.UpdateClient(
+		c.Request.Context(),
+		clientUUID,
+		req,
+		file,
+		header,
+	)
+	if err != nil {
+		log.Printf("[PutClient] %v", err)
+		c.JSON(http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "update failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "client updated"})
+}
+
+// PatchClientSecret rotates or updates the client secret for an application.
+// @Summary Update client secret
+// @Description Updates the secret key associated with a specific client ID.
+// @Tags Clients
+// @Accept json
+// @Produce json
+// @Param id path string true "Client ID"
+// @Success 200 {object} dto.ClientSecretResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /clients/{id}/secret [patch]
+func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
+	clientIDString := c.Param("id")
+	clientID, err := uuid.Parse(clientIDString)
+	if err != nil {
+		log.Printf("[PatchClientSecret] %v", err)
 		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "fetch error"},
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid client id format"},
 		)
 		return
 	}
 
-	var res []dto.ClientResponse
-	for _, cl := range clients {
-		id, _ := uuid.FromBytes(cl.ID)
-		imageLocation, err := service.GetPresignedURL(
-			c.Request.Context(),
-			cl.ImageLocation,
-			h.Storage,
+	resp, err := h.Service.RotateClientSecret(
+		c.Request.Context(),
+		clientID,
+	)
+	if err != nil {
+		log.Printf("[PatchClientSecret] %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "failed to rotate secret"},
 		)
-		if err != nil {
-			log.Printf("[GetClientTags] failed to get image url: %v", err)
-		}
-		res = append(res, dto.ClientResponse{
-			ID:            id.String(),
-			Name:          cl.ClientName,
-			Tag:           cl.Tag,
-			Description:   cl.Description,
-			ImageLocation: imageLocation,
-			BaseURL:       cl.BaseUrl,
-			RedirectURI:   cl.RedirectUri,
-			LogoutURI:     cl.LogoutUri,
-		})
+		return
 	}
 
-	lastPage := (total + PAGE_LIMIT - 1) / PAGE_LIMIT
-	if lastPage == 0 {
-		lastPage = 1
+	c.JSON(http.StatusOK, resp)
+}
+
+// DeleteClient handles DELETE /v1/admin/clients/:id
+// @Summary Soft Delete Client
+// @Tags Clients
+// @Param id path string true "Client UUID"
+// @Failure 200 {object} dto.ErrorResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /v1/admin/clients/{id} [delete]
+func (h *ClientHandler) DeleteClient(c *gin.Context) {
+	idParam := c.Param("id")
+	clientUUID, err := uuid.Parse(idParam)
+	if err != nil {
+		log.Printf("[DeleteClient] %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid uuid"},
+		)
+		return
 	}
 
-	c.JSON(http.StatusOK, dto.ClientListResponse{
-		Clients:     res,
-		CurrentPage: page,
-		LastPage:    lastPage,
-		TotalCount:  total,
+	err = h.Service.DeleteClient(c.Request.Context(), clientUUID)
+	if err != nil {
+		log.Printf("[DeleteClient] %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "failed to deactivate client"},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "client deactivated successfully",
 	})
 }

@@ -289,6 +289,16 @@ func (r *UserRepository) groupRows(rows []userRow, ids [][]byte) []models.User {
 	return result
 }
 
+func (r *UserRepository) RemoveClientAdminBind(userID []byte) error {
+	query := `
+		DELETE FROM admin_allowed_clients
+		WHERE client_id = ?
+	`
+
+	_, err := r.db.Exec(query, userID)
+	return err
+}
+
 func NewUserRepository(db *sqlx.DB) *UserRepository {
 	return &UserRepository{db: db}
 }

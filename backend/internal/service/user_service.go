@@ -1,0 +1,273 @@
+package service
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
+	"github.com/google/uuid"
+)
+
+type UserService struct {
+	Repo       *repository.UserRepository
+	ClientRepo *repository.ClientRepository
+}
+
+/**
+ * CreateUser handles the business logic for new user
+ * registration, including ID generation and password security.
+ */
+func (s *UserService) CreateUser(
+	ctx context.Context,
+	req dto.UserRequest,
+) (uuid.UUID, error) {
+	userID := uuid.New()
+
+	// Securely hash the plain-text password
+	passwordHash, err := utils.HashSecret(req.Password)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("Secret Hashing: %w", err)
+	}
+
+	user := models.User{
+		ID:           userID[:],
+		Username:     req.Username,
+		FirstName:    req.FirstName,
+		MiddleName:   req.MiddleName,
+		LastName:     req.LastName,
+		Email:        req.Email,
+		PasswordHash: passwordHash,
+		Status:       models.StatusActive,
+		RoleString:   req.Roles,
+	}
+
+	err = s.Repo.CreateUser(&user)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("Database Query (CreateUser): %w", err)
+	}
+
+	return userID, nil
+}
+
+/**
+ * GetUserByID retrieves a single user by their UUID and
+ * formats the record into a response DTO.
+ */
+func (s *UserService) GetUserByID(
+	ctx context.Context,
+	id uuid.UUID,
+) (*dto.UserResponse, error) {
+	user, err := s.Repo.GetUserById(id[:])
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (GetUserById): %w", err)
+	}
+
+	return &dto.UserResponse{
+		ID:         id.String(),
+		Username:   user.Username,
+		FirstName:  user.FirstName,
+		MiddleName: user.MiddleName,
+		LastName:   user.LastName,
+		Email:      user.Email,
+		Status:     string(user.Status),
+		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
+		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+	}, nil
+}
+
+/**
+ * GetMe retrieves profile information for the authenticated
+ * user, filtered by the roles allowed for the specific client.
+ */
+func (s *UserService) GetMe(
+	ctx context.Context,
+	userID,
+	clientID uuid.UUID,
+) (*dto.UserInfoResponse, error) {
+	user, err := s.Repo.GetUserById(userID[:])
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (GetUser): %w", err)
+	}
+
+	allowedRoles, err := s.ClientRepo.GetClientAllowedRoles(clientID[:])
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (GetAllowedRoles): %w", err)
+	}
+
+	// Create a map for O(1) role lookup
+	allowedMap := make(map[int]bool)
+	for _, r := range allowedRoles {
+		allowedMap[r.ID] = true
+	}
+
+	var roleStrings []string
+	for _, r := range user.Roles {
+		if allowedMap[r.ID] {
+			roleStrings = append(roleStrings, r.RoleName)
+		}
+	}
+
+	return &dto.UserInfoResponse{
+		ID:         userID.String(),
+		FirstName:  user.FirstName,
+		MiddleName: user.MiddleName,
+		LastName:   user.LastName,
+		Email:      user.Email,
+		Roles:      roleStrings,
+	}, nil
+}
+
+/**
+ * GetUserList retrieves a paginated list of users, including 
+ * their associated roles and calculated metadata.
+ */
+func (s *UserService) GetUserList(
+	ctx context.Context,
+	limit,
+	page int,
+) (*dto.UserResponseList, error) {
+	offset := (page - 1) * limit
+
+	users, err := s.Repo.GetUserList(limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (GetUserList): %w", err)
+	}
+
+	total, err := s.Repo.CountUsers()
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (CountUsers): %w", err)
+	}
+
+	var userResponses []dto.UserResponse
+	for _, user := range users {
+		roleList, err := GetUserRoles(user.Roles)
+		if err != nil {
+			return nil, fmt.Errorf("Role Parsing: %w", err)
+		}
+
+		userUUID, _ := uuid.FromBytes(user.ID)
+		userResponses = append(userResponses, dto.UserResponse{
+			ID:         userUUID.String(),
+			Username:   user.Username,
+			FirstName:  user.FirstName,
+			MiddleName: user.MiddleName,
+			LastName:   user.LastName,
+			Email:      user.Email,
+			Status:     string(user.Status),
+			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
+			UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+			Roles:      roleList,
+		})
+	}
+
+	lastPage := (total + limit - 1) / limit
+	if lastPage == 0 {
+		lastPage = 1
+	}
+
+	return &dto.UserResponseList{
+		Users:       userResponses,
+		TotalCount:  total,
+		CurrentPage: page,
+		LastPage:    lastPage,
+	}, nil
+}
+
+func GetUserRoles(roles []models.Role) ([]dto.UserRoleRepsonse, error) {
+	var roleList []dto.UserRoleRepsonse
+	for _, role := range roles {
+		roleList = append(roleList, dto.UserRoleRepsonse{
+			ID:       role.ID,
+			RoleName: role.RoleName,
+		})
+	}
+	return roleList, nil
+}
+
+/**
+ * UpdateUserPassword handles the secure hashing and persistence of 
+ * a user's new password.
+ */
+func (s *UserService) UpdateUserPassword(
+	ctx context.Context,
+	id uuid.UUID,
+	newPassword string,
+) error {
+	// 1. Secure Hashing
+	passwordHash, err := utils.HashSecret(newPassword)
+	if err != nil {
+		return fmt.Errorf("Secret Hashing: %w", err)
+	}
+
+	user := models.User{
+		ID:           id[:],
+		PasswordHash: passwordHash,
+	}
+
+	// 2. Persistence
+	err = s.Repo.UpdateUserPassword(&user)
+	if err != nil {
+		return fmt.Errorf("Database Query (UpdatePassword): %w", err)
+	}
+
+	return nil
+}
+
+/**
+ * UpdateUserStatus modifies the operational status of a user 
+ * after validating the state transition.
+ */
+func (s *UserService) UpdateUserStatus(
+	ctx context.Context,
+	id uuid.UUID,
+	newStatus string,
+) error {
+	status, err := models.MapStatus(newStatus)
+	if err != nil {
+		return fmt.Errorf("Status Validation: %w", err)
+	}
+
+	user := models.User{
+		ID:     id[:],
+		Status: status,
+	}
+
+	err = s.Repo.UpdateStatus(&user)
+	if err != nil {
+		return fmt.Errorf("Database Query (UpdateStatus): %w", err)
+	}
+
+	return nil
+}
+
+/**
+ * UpdateUserRoles modifies the associations between a user 
+ * and their assigned roles in the system.
+ */
+func (s *UserService) UpdateUserRoles(
+	ctx context.Context,
+	id uuid.UUID,
+	roleIDs []int,
+) error {
+	err := s.Repo.UpdateUserRoles(id[:], roleIDs)
+	if err != nil {
+		return fmt.Errorf("Database Query (UpdateUserRoles): %w", err)
+	}
+
+	return nil
+}
+
+/**
+ * DeleteUser performs a soft-delete on a user record, marking 
+ * them as inactive without removing the data from the database.
+ */
+func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
+	if err := s.Repo.SoftDelete(id[:]); err != nil {
+		return fmt.Errorf("Database Query (SoftDelete): %w", err)
+	}
+
+	return nil
+}
