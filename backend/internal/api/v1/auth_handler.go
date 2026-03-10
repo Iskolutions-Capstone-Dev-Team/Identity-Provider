@@ -1,28 +1,20 @@
 package v1
 
 import (
-	"crypto/rsa"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
-	Repo        *repository.AuthCodeRepository
-	SessionRepo *repository.SessionRepository
-	ClientRepo  *repository.ClientRepository
-	PrivateKey  *rsa.PrivateKey
-	PublicKey   *rsa.PublicKey
+	Service *service.AuthService
 }
 
 // GetAuthorize initiates the authorization flow for the user.
@@ -35,59 +27,45 @@ type AuthHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /auth/authorize [get]
 func (h *AuthHandler) Authorize(c *gin.Context) {
-	loginUIPath := os.Getenv("LOGIN_UI_PATH")
+	loginUI := os.Getenv("LOGIN_UI_PATH")
 	clientID := c.Query("client_id")
+
 	if clientID == "" {
-		log.Print("[Authorize] No client_id given")
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "no client id given"},
-		)
+		log.Print("[Authorize] Parameter Extraction: no client_id")
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "no client id given",
+		})
+		return
 	}
 
-	clientIDBytes, err := uuid.Parse(clientID)
+	// Extract session from cookie
+	token, err := c.Cookie(service.ACCESS_TOKEN_NAME)
 	if err != nil {
-		log.Printf("[Authorize] failed to parse client id: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "parse failed"},
-		)
+		log.Print("[Authorize] Cookie Extraction: no session found")
+		c.Redirect(http.StatusFound, loginUI)
 		return
 	}
 
-	accessTokenString, err := c.Cookie(ACCESS_TOKEN_NAME)
+	redirectURL, err := h.Service.Authorize(
+		c.Request.Context(),
+		clientID,
+		token,
+	)
 	if err != nil {
-		log.Print("[Authorize] No cookie found, redirecting to login")
-		c.Redirect(http.StatusFound, loginUIPath)
+		log.Printf("[Authorize] %v", err)
+
+		// If session is invalid, send to login
+		if strings.Contains(err.Error(), "session invalid") {
+			c.Redirect(http.StatusFound, loginUI)
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "authorization failed",
+		})
 		return
 	}
 
-	isValid, err := service.ValidateToken(accessTokenString, h.PublicKey)
-	if !isValid || err != nil {
-		log.Printf("[Authorize] Validation Error: %v", err)
-		c.Redirect(http.StatusFound, loginUIPath)
-		return
-	}
-
-	code, err := utils.GenerateAuthorizationCode()
-	if err != nil {
-		log.Printf("[LoginAndAuthorize] Code Generation Error: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "internal error"},
-		)
-		return
-	}
-
-	client, err := h.ClientRepo.GetByID(clientIDBytes[:])
-	if err != nil {
-		log.Printf("[Authorize] client with id %s not found: %v", clientID, err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "id not found"})
-		return
-	}
-
-	log.Print("[Authorize] Token found, redirecting...")
-	redirectURL := fmt.Sprintf("%s?code=%s", client.RedirectUri, code)
 	c.Redirect(http.StatusFound, redirectURL)
 }
 
@@ -106,128 +84,51 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 // @Router /api/v1/auth/login [post]
 func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	var req dto.LoginRequest
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("[LoginAndAuthorize] Bind JSON Error: %v", err)
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid request format"},
-		)
+		log.Printf("[LoginAndAuthorize] Bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "Invalid request format",
+		})
 		return
 	}
 
-	claims, storedHash, err := h.Repo.GetUserForAuth(req.Email)
+	redirect, sessionID, err := h.Service.LoginAndAuthorize(
+		c.Request.Context(),
+		req,
+		c.ClientIP(),
+		c.Request.UserAgent(),
+	)
 	if err != nil {
-		log.Printf("[LoginAndAuthorize] User Lookup Error: %s", req.Email)
-		c.JSON(
-			http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "invalid credentials"},
-		)
+		log.Printf("[LoginAndAuthorize] %v", err)
+		status := http.StatusInternalServerError
+		msg := "internal error"
+
+		if strings.Contains(err.Error(), "Verification") ||
+			strings.Contains(err.Error(), "UserLookup") {
+			status = http.StatusUnauthorized
+			msg = "invalid credentials"
+		} else if strings.Contains(err.Error(), "Validation") {
+			status = http.StatusForbidden
+			msg = "unauthorized redirect uri"
+		}
+
+		c.JSON(status, dto.ErrorResponse{Error: msg})
 		return
 	}
 
-	if err := utils.CompareSecret(storedHash, req.Password); err != nil {
-		log.Printf(
-			"[LoginAndAuthorize] Password Verification Failed: %s",
-			req.Email,
-		)
-		c.JSON(
-			http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "invalid credentials"},
-		)
-		return
-	}
+	// Set session cookie
+	maxAge := int(time.Hour.Seconds() * 24 * service.SESSION_DAYS)
+	c.SetCookie(
+		service.SESSION_COOKIE_NAME,
+		sessionID,
+		maxAge,
+		"/",
+		"",
+		true,
+		true,
+	)
 
-	code, err := utils.GenerateAuthorizationCode()
-	if err != nil {
-		log.Printf("[LoginAndAuthorize] Code Generation Error: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "internal error"},
-		)
-		return
-	}
-
-	clientUUID, err := uuid.Parse(req.ClientID)
-	if err != nil {
-		log.Printf("[LoginAndAuthorize] Client ID Parse Error: %v", err)
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid client_id"},
-		)
-		return
-	}
-
-	var clientIDBytes [16]byte
-	copy(clientIDBytes[:], clientUUID[:])
-
-	registeredURI, err := h.Repo.GetClientRedirectURI(clientIDBytes[:])
-	if err != nil {
-		log.Printf("[LoginAndAuthorize] Client Registry Lookup Error: %v", err)
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid_client"},
-		)
-		return
-	}
-
-	if req.RedirectURI != registeredURI {
-		log.Printf("[LoginAndAuthorize] Redirect URI Mismatch Error: %s",
-			req.Email)
-		c.JSON(
-			http.StatusForbidden,
-			dto.ErrorResponse{Error: "unauthorized_redirect_uri"},
-		)
-		return
-	}
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		log.Printf("[LoginAndAuthorize] parse error: %v", err)
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid user_Id"},
-		)
-		return
-	}
-
-	err = h.Repo.StoreCode(code, userID[:], clientIDBytes[:],
-		req.RedirectURI)
-	if err != nil {
-		log.Printf("[LoginAndAuthorize] Database Store Code Error: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "database error"},
-		)
-		return
-	}
-
-	sessionID, _ := utils.GenerateRandomString(32)
-	expiry := time.Now().AddDate(SESSION_YEARS, SESSION_MONTHS, SESSION_DAYS)
-
-	newSession := &models.IdPSession{
-		SessionId: sessionID,
-		UserId:    userID[:],
-		IpAddress: c.ClientIP(),
-		UserAgent: c.Request.UserAgent(),
-		ExpiresAt: expiry,
-	}
-
-	if err := h.SessionRepo.Create(newSession); err != nil {
-		log.Printf("[LoginAndAuthorize] Database Session Create Error: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "session error"},
-		)
-		return
-	}
-
-	maxAge := int(time.Hour.Seconds() * 24 * SESSION_DAYS)
-	c.SetCookie("idp_session", sessionID, maxAge, "/", "", true, true)
-
-	c.JSON(http.StatusOK, gin.H{
-		"redirect_to": req.RedirectURI + "?code=" + code,
-	})
+	c.JSON(http.StatusOK, gin.H{"redirect_to": redirect})
 }
 
 // Logout terminates the user session and revokes all tokens
@@ -239,36 +140,47 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	sessionID, err := c.Cookie("idp_session")
+	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
 	if err != nil {
-		c.JSON(
-			http.StatusOK,
-			dto.SuccessResponse{Message: "already logged out"},
-		)
+		c.JSON(http.StatusOK, dto.SuccessResponse{
+			Message: "already logged out",
+		})
 		return
 	}
 
-	session, err := h.SessionRepo.GetByID(sessionID)
+	err = h.Service.Logout(c.Request.Context(), sessionID)
 	if err != nil {
-		c.SetCookie("idp_session", "", -1, "/", "", true, true)
-		c.JSON(http.StatusOK, dto.SuccessResponse{Message: "session cleared"})
+		log.Printf("[Logout] %v", err)
+
+		// If session isn't found in DB, just clear the cookie anyway
+		if strings.Contains(err.Error(), "GetSession") {
+			c.SetCookie(
+				service.SESSION_COOKIE_NAME,
+				"",
+				-1,
+				"/",
+				"",
+				true,
+				true,
+			)
+			c.JSON(http.StatusOK, dto.SuccessResponse{
+				Message: "session cleared",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "logout failed",
+		})
 		return
 	}
 
-	if err := h.Repo.RevokeTokens(session.UserId); err != nil {
-		log.Printf("[Logout] Token Revocation Error: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "logout failed"},
-		)
-		return
-	}
+	// Clear the session cookie on successful logout
+	c.SetCookie(service.SESSION_COOKIE_NAME, "", -1, "/", "", true, true)
 
-	c.SetCookie("idp_session", "", -1, "/", "", true, true)
-	c.JSON(
-		http.StatusOK,
-		dto.SuccessResponse{Message: "global logout successful"},
-	)
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "global logout successful",
+	})
 }
 
 // CheckSession verifies if the current session cookie is valid
@@ -280,32 +192,138 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // @Failure 401 {object} dto.ErrorResponse
 // @Router /api/v1/auth/session [get]
 func (h *AuthHandler) CheckSession(c *gin.Context) {
-	sessionID, err := c.Cookie("idp_session")
+	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"authenticated": false})
 		return
 	}
 
-	session, err := h.SessionRepo.GetByID(sessionID)
-	if err != nil || time.Now().After(session.ExpiresAt) {
+	session, err := h.Service.ValidateSession(
+		c.Request.Context(),
+		sessionID,
+	)
+	if err != nil {
+		// Log specific reason for failure
+		log.Printf("[CheckSession] %v", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"authenticated": false})
 		return
 	}
 
+	// Format UUID for response if necessary
+	uID, _ := uuid.FromBytes(session.UserId)
+
 	c.JSON(http.StatusOK, gin.H{
 		"authenticated": true,
-		"user_id":       session.UserId,
+		"user_id":       uID.String(),
 	})
 }
 
 // GetJWKS handles the retrieval of public keys for token verification
 func (h *AuthHandler) GetJWKS(c *gin.Context) {
-	keyID := os.Getenv("KEY_ID")
-	jwk := service.PublicKeyToJWK(h.PublicKey, keyID)
-
-	jwks := service.JWKS{
-		Keys: []service.JWK{jwk},
+	jwks, err := h.Service.GetJWKS(c.Request.Context())
+	if err != nil {
+		// Even for simple transformations, follow the logging standard
+		log.Printf("[GetJWKS] Key Transformation: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "failed to generate jwks"},
+		)
+		return
 	}
 
 	c.JSON(http.StatusOK, jwks)
+}
+
+// PostTokenExchange handles the exchange of an auth code for access tokens
+// @Summary Exchange Auth Code
+// @Description Validates the code and client secret to issue JWT and Refresh
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param req body dto.TokenExchangeRequest true "Exchange Request"
+// @Success 200 {object} dto.TokenResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/v1/auth/token [post]
+func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
+	var req dto.TokenExchangeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PostTokenExchange] Bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid_request",
+		})
+		return
+	}
+
+	resp, err := h.Service.ExchangeCodeForToken(
+		c.Request.Context(),
+		req,
+	)
+	if err != nil {
+		log.Printf("[PostTokenExchange] %v", err)
+
+		status := http.StatusInternalServerError
+		errorMsg := "server_error"
+
+		// OAuth2 Specific Error Mapping
+		if strings.Contains(err.Error(), "Verification") {
+			status, errorMsg = http.StatusUnauthorized, "unauthorized"
+		} else if strings.Contains(err.Error(), "Code Exchange") {
+			status, errorMsg = http.StatusBadRequest, "invalid_grant"
+		} else if strings.Contains(err.Error(), "UUID Parse") {
+			status, errorMsg = http.StatusBadRequest, "invalid_client"
+		}
+
+		c.JSON(status, dto.ErrorResponse{Error: errorMsg})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+// PostTokenRotate handles refreshing an access token using a refresh token
+// @Summary Rotate Refresh Token
+// @Description Invalidates old refresh token and issues a new pair
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param req body dto.RefreshRequest true "Refresh Request"
+// @Success 200 {object} dto.TokenResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/v1/auth/refresh [post]
+func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
+	var req dto.RefreshRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PostTokenRotate] Bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid_request",
+		})
+		return
+	}
+
+	resp, err := h.Service.RotateRefreshToken(
+		c.Request.Context(),
+		req.RefreshToken,
+	)
+	if err != nil {
+		log.Printf("[PostTokenRotate] %v", err)
+
+		status := http.StatusInternalServerError
+		errorMsg := "server_error"
+
+		// Specific error mapping for refresh failures
+		if strings.Contains(err.Error(), "TokenLookup") {
+			status, errorMsg = http.StatusUnauthorized, "invalid_token"
+		} else if strings.Contains(err.Error(), "RotateToken") {
+			status, errorMsg = http.StatusInternalServerError, "rotate_fail"
+		}
+
+		c.JSON(status, dto.ErrorResponse{Error: errorMsg})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
