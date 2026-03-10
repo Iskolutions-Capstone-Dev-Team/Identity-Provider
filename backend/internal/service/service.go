@@ -3,7 +3,7 @@ package service
 type ServiceContainer struct {
 	ClientService *ClientService
 	RoleService *RoleService
-	// UserService *UserService
+	UserService *UserService
 	// AuthService *AuthService
 	// TokenService *TokenService	
 }
