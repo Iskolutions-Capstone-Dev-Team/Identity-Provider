@@ -215,7 +215,7 @@ func (h *RoleHandler) GetAllRoles(c *gin.Context) {
 		page = 1
 	}
 
-	resp, err := h.Service.GetRoleList(
+	resp, err := h.Service.GetAllExceptIDP(
 		c.Request.Context(),
 		service.PAGE_LIMIT,
 		page,
