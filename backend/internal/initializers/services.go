@@ -7,8 +7,8 @@ import (
 )
 
 func InitializeServices(db *sqlx.DB) service.ServiceContainer {
-	// authRepo := repository.NewAuthCodeRepository(db)
-	// sessionRepo := repository.NewSessionRepository(db)
+	authRepo := repository.NewAuthCodeRepository(db)
+	sessionRepo := repository.NewSessionRepository(db)
 	clientRepo := repository.NewClientRepository(db)
 	roleRepo := repository.NewRoleRepository(db)
 	userRepo := repository.NewUserRepository(db)
@@ -23,8 +23,15 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 			ClientRepo: clientRepo,
 		},
 		UserService: &service.UserService{
-			Repo: userRepo,
+			Repo:       userRepo,
 			ClientRepo: clientRepo,
+		},
+		AuthService: &service.AuthService{
+			Repo:        authRepo,
+			SessionRepo: sessionRepo,
+			ClientRepo:  clientRepo,
+			PublicKey:   PubKey,
+			PrivateKey:  PrivKey,
 		},
 	}
 }
