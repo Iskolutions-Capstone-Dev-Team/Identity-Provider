@@ -79,6 +79,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 				}
 			})
 			roles.GET("/:id", h.RoleHandler.GetRole)
+			roles.GET("/all", h.RoleHandler.GetAllRoles)
 			roles.PUT("/:id", h.RoleHandler.PutRole)
 			roles.DELETE("/:id", h.RoleHandler.DeleteRole)
 		}
