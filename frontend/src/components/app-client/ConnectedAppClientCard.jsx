@@ -27,7 +27,12 @@ export default function ConnectedAppClientCard({ clients, totalResults, itemsPer
             </div>
             <ConnectedAppClientTable clients={clients} onView={onView} onEdit={onEdit} onDelete={onDelete} onRotateSecret={onRotateSecret} />
             <div className="flex justify-center mt-6">
-                <ResultsCount page={page} itemsPerPage={itemsPerPage} totalResults={totalResults} />
+                <ResultsCount
+                    page={page}
+                    itemsPerPage={itemsPerPage}
+                    totalResults={totalResults}
+                    currentResultsCount={clients.length}
+                />
             </div>
             <Pagination currentPage={page} totalPages={totalPages} onPageChange={onPageChange} />
         </AppClientCard>

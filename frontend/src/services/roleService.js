@@ -29,6 +29,46 @@ export const roleService = {
     return response.data;
   },
 
+  async searchRoles(keyword = "") {
+    const normalizedKeyword =
+      typeof keyword === "string" ? keyword.trim() : "";
+
+    if (!normalizedKeyword) {
+      return {
+        roles: [],
+        current_page: 1,
+        last_page: 1,
+        total_count: 0,
+      };
+    }
+
+    try {
+      const response = await axiosInstance.get(`/admin/roles`, {
+        params: { keyword: normalizedKeyword },
+      });
+      const roles = Array.isArray(response.data?.roles) ? response.data.roles : [];
+
+      return {
+        ...response.data,
+        roles,
+        current_page: 1,
+        last_page: 1,
+        total_count: roles.length,
+      };
+    } catch (error) {
+      if (error?.response?.status === 404) {
+        return {
+          roles: [],
+          current_page: 1,
+          last_page: 1,
+          total_count: 0,
+        };
+      }
+
+      throw error;
+    }
+  },
+
   // =========================
   // GET ALL ROLES FOR USERPOOL
   // =========================

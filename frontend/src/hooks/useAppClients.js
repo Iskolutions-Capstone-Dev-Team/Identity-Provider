@@ -268,6 +268,33 @@ const normalizeClientDetailPayload = (payload = {}) => {
   });
 };
 
+const getMatchingClients = async (keyword) => {
+  const matchedClients = [];
+  let nextPage = 1;
+
+  while (true) {
+    const { items } = await clientService.getClients({
+      limit: ITEMS_PER_PAGE,
+      page: nextPage,
+      keyword,
+    });
+
+    if (!Array.isArray(items) || items.length === 0) {
+      break;
+    }
+
+    matchedClients.push(...items);
+
+    if (items.length < ITEMS_PER_PAGE) {
+      break;
+    }
+
+    nextPage += 1;
+  }
+
+  return matchedClients;
+};
+
 export function useAppClients() {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
@@ -284,31 +311,69 @@ export function useAppClients() {
     hasError: false,
   });
 
-  const offset = (page - 1) * ITEMS_PER_PAGE;
-  const keyword = search.trim();
+  const searchKeyword = search.trim();
 
   // =========================
-  // FETCH CLIENTS
+  // FETCH CURRENT PAGE
   // =========================
-  const fetchClients = useCallback(async () => {
+  const fetchPageClients = useCallback(async () => {
     try {
-      const { items, total } = await clientService.getClients(
-        ITEMS_PER_PAGE,
-        offset,
-        keyword,
-      );
-      setClients(items.map(mapClientSummary));
-      setTotalResults(total);
+      const { items, total, lastPage } = await clientService.getClients({
+        limit: ITEMS_PER_PAGE,
+        page,
+      });
+      const nextClients = items.map(mapClientSummary);
+      const nextTotalResults =
+        Number.isInteger(total) && total >= 0 ? total : nextClients.length;
+      const nextTotalPages =
+        Number.isInteger(lastPage) && lastPage > 0
+          ? lastPage
+          : Math.max(1, Math.ceil(nextTotalResults / ITEMS_PER_PAGE));
+
+      if (page > nextTotalPages) {
+        setPage(nextTotalPages);
+        return;
+      }
+
+      setClients(nextClients);
+      setTotalResults(nextTotalResults);
     } catch (err) {
       console.error("Fetch clients error:", err);
       setClients([]);
       setTotalResults(0);
     }
-  }, [keyword, offset]);
+  }, [page]);
+
+  // =========================
+  // FETCH SEARCH RESULTS
+  // =========================
+  const fetchMatchingClients = useCallback(async () => {
+    try {
+      const matchedClients = await getMatchingClients(searchKeyword);
+      setClients(matchedClients.map(mapClientSummary));
+      setTotalResults(matchedClients.length);
+    } catch (err) {
+      console.error("Fetch clients error:", err);
+      setClients([]);
+      setTotalResults(0);
+    }
+  }, [searchKeyword]);
 
   useEffect(() => {
-    fetchClients();
-  }, [fetchClients]);
+    if (searchKeyword) {
+      return;
+    }
+
+    fetchPageClients();
+  }, [fetchPageClients, searchKeyword]);
+
+  useEffect(() => {
+    if (!searchKeyword) {
+      return;
+    }
+
+    fetchMatchingClients();
+  }, [fetchMatchingClients, searchKeyword]);
 
   const setSearchKeyword = useCallback((value) => {
     const nextValue = typeof value === "string" ? value : "";
@@ -316,13 +381,38 @@ export function useAppClients() {
     setSearch(nextValue);
   }, []);
 
+  const totalPages = Math.max(1, Math.ceil(totalResults / ITEMS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+
+  useEffect(() => {
+    if (page !== currentPage) {
+      setPage(currentPage);
+    }
+  }, [currentPage, page]);
+
+  const paginatedClients = searchKeyword
+    ? clients.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE,
+      )
+    : clients;
+
+  const refreshClients = async () => {
+    if (searchKeyword) {
+      await fetchMatchingClients();
+      return;
+    }
+
+    await fetchPageClients();
+  };
+
   // =========================
   // CREATE
   // =========================
   const createClient = async (payload) => {
     const res = await clientService.createClient(payload);
     setSuccessMessage("App client successfully created!");
-    await fetchClients();
+    await refreshClients();
     return res;
   };
 
@@ -333,7 +423,7 @@ export function useAppClients() {
     try {
       await clientService.updateClient(payload.id, payload);
       setSuccessMessage("App client successfully updated!");
-      await fetchClients();
+      await refreshClients();
     } catch (err) {
       console.error("Update failed:", err);
       throw err;
@@ -346,7 +436,7 @@ export function useAppClients() {
   const deleteClient = async (id) => {
     await clientService.deleteClient(id);
     setSuccessMessage("App client successfully deleted!");
-    await fetchClients();
+    await refreshClients();
   };
 
   const getClientDetails = useCallback(async (id) => {
@@ -410,10 +500,10 @@ export function useAppClients() {
   return {
     search,
     setSearch: setSearchKeyword,
-    page,
+    page: currentPage,
     setPage,
-    paginatedClients: clients,
-    totalPages: Math.ceil(totalResults / ITEMS_PER_PAGE),
+    paginatedClients,
+    totalPages,
     totalResults,
     successMessage,
     setSuccessMessage,
