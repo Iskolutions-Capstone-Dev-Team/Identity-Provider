@@ -67,7 +67,7 @@ func main() {
 	// Register Swagger UI route
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	api.SetupRoutes(r, *h)
+	api.SetupRoutes(r, *h, s)
 
 	srv := &http.Server{
 		Addr:    ":8080",
