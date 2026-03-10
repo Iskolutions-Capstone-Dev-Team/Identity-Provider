@@ -2,59 +2,82 @@ package middleware
 
 import (
 	"crypto/rsa"
-	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
-// AuthorizeRBAC validates an RS256 JWT and checks for required roles.
-// It takes the pre-loaded publicKey from main.go to avoid disk I/O on every request.
+// AuthMiddleware validates the RSA JWT from the Authorization Header.
+func AuthMiddleware(publicKey *rsa.PublicKey) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		parts := strings.Split(authHeader, " ")
+
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			log.Printf("[AuthMiddleware] Token Extraction: invalid format")
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		token, err := service.GetParsedToken(parts[1], publicKey)
+		if err != nil {
+			log.Printf("[AuthMiddleware] Token Validation: %v", err)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		claims := token.Claims.(*models.UserClaims)
+
+		c.Set("user_id", claims.UserID)
+		c.Set("client_id", claims.AuthorizedParty)
+		c.Next()
+	}
+}
+
+// AuthorizeRBAC validates a JWT from a Cookie and checks required roles.
 func AuthorizeRBAC(publicKey *rsa.PublicKey,
-	requiredRoles ...string,
+	userRepo *repository.UserRepository, authorizedRoles ...string,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 1. Extract the token from the Cookie Jar
-		tokenString, err := c.Cookie("access_token")
+		tokenStr, err := c.Cookie("access_token")
 		if err != nil {
-			log.Print("[AuthMiddleware] Access_token not found")
-			c.JSON(http.StatusUnauthorized,
-				gin.H{"error": "Authentication session not found"},
-			)
-			c.Abort()
+			log.Printf("[AuthorizeRBAC] Token Extraction: cookie missing")
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-		// 2. Parse and Validate the Token using the RSA Public Key
-		claims := &models.UserClaims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims,
-			func(token *jwt.Token) (interface{}, error) {
-				// Ensure the signing method is RSA
-				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-					return nil, fmt.Errorf("unexpected signing method: %v",
-						token.Header["alg"])
-				}
-				return publicKey, nil
-			})
-
-		if err != nil || !token.Valid {
-			log.Print("[AuthMiddleware] expired session")
-			c.JSON(http.StatusUnauthorized,
-				gin.H{"error": "Invalid or expired session"},
-			)
-			c.Abort()
+		token, err := service.GetParsedToken(tokenStr, publicKey)
+		if err != nil {
+			log.Printf("[AuthorizeRBAC] Token Validation: %v", err)
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-		// 3. Role-Based Access Control (RBAC) Check
-		if len(requiredRoles) > 0 {
-			authorized := false
-			for _, userRole := range claims.Roles {
-				for _, reqRole := range requiredRoles {
-					if userRole == reqRole {
+		claims := token.Claims.(*models.UserClaims)
+		userID, err := uuid.Parse(string(claims.UserID))
+		if err != nil {
+			log.Printf("[GetMe] UUID Parse Error: %v", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+
+		roles, err := userRepo.GetRoles(userID[:])
+		if err != nil {
+			log.Printf("[GetMe] Fetch Roles Failed: %v", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+
+		roleNames := service.GetRoleNames(roles)
+		authorized := false
+		if len (authorizedRoles) > 0 {
+			for _, authorizedRole := range authorizedRoles {
+				for _, role := range roleNames {
+					if role == authorizedRole {
 						authorized = true
 						break
 					}
@@ -74,10 +97,8 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 			}
 		}
 
-		// 4. Context Injection for subsequent handlers
 		c.Set("user_id", claims.UserID)
-		c.Set("user_claims", claims)
-
+		c.Set("client_id", claims.AuthorizedParty)
 		c.Next()
 	}
 }
