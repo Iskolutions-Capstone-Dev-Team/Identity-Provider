@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -101,11 +102,11 @@ func (r *ClientRepository) ListBoundClients(
 	`
 
 	err := r.db.Select(
-		&clients, 
-		query, 
-		userID, 
-		searchKeyword, 
-		limit, 
+		&clients,
+		query,
+		userID,
+		searchKeyword,
+		limit,
 		offset,
 	)
 	return clients, err
@@ -118,6 +119,7 @@ func (r *ClientRepository) CreateClient(
 	client *models.Client,
 	grants []string,
 	roleIDs []int,
+	userID []byte,
 ) error {
 	tx, err := r.db.Beginx()
 	if err != nil {
@@ -154,6 +156,12 @@ func (r *ClientRepository) CreateClient(
 			return err
 		}
 	}
+
+	q4 := `
+		INSERT INTO admin_allowed_clients (client_id, user_id)
+		VALUES (?, ?)
+	`
+	_, err = tx.Exec(q4, client.ID, userID)
 
 	return tx.Commit()
 }
@@ -252,7 +260,9 @@ func (r *ClientRepository) CountClients(keyword string) (int, error) {
 	return count, nil
 }
 
-func (r *ClientRepository) CountBoundClients(keyword string) (int, error) {
+func (r *ClientRepository) CountBoundClients(keyword string,
+	userID []byte,
+) (int, error) {
 	var count int
 	searchKeyword := "%" + keyword + "%"
 
@@ -265,7 +275,7 @@ func (r *ClientRepository) CountBoundClients(keyword string) (int, error) {
 			AND c.client_name LIKE ?
 	`
 
-	err := r.db.Get(&count, query, searchKeyword)
+	err := r.db.Get(&count, query, userID, searchKeyword)
 
 	return count, err
 }
@@ -318,6 +328,46 @@ func (r *ClientRepository) RetrieveClientTagInformation(limit int,
 	if err != nil {
 		return nil, err
 	}
+	return clients, nil
+}
+
+func (r *ClientRepository) GetBoundClientTagList(
+	ctx context.Context,
+	userID []byte,
+	limit,
+	offset int,
+	keyword string,
+) ([]models.Client, error) {
+	var clients []models.Client
+	searchTerm := "%" + keyword + "%"
+
+	// Constants to avoid magic strings and keep lines under 80 chars
+	const query = `
+		SELECT DISTINCT c.id, c.tag, c.image_location
+		FROM clients c
+		JOIN admin_allowed_clients aac ON c.id = aac.client_id
+		WHERE aac.user_id = ? 
+			AND c.deleted_at IS NULL 
+			AND c.tag LIKE ?
+		LIMIT ? OFFSET ?
+	`
+
+	err := r.db.SelectContext(
+		ctx,
+		&clients,
+		query,
+		userID,
+		searchTerm,
+		limit,
+		offset,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"[ClientRepository] Database Query (SelectContext): %w",
+			err,
+		)
+	}
+
 	return clients, nil
 }
 
