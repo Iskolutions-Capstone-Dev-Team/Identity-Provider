@@ -13,7 +13,8 @@ import (
 )
 
 type ClientHandler struct {
-	Service *service.ClientService
+	Service          *service.ClientService
+	PrivilegeService *service.PrivilegeService
 }
 
 // PostClient handles POST /v1/admin/clients
@@ -88,24 +89,46 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 func (h *ClientHandler) GetClientList(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	keyword := c.Query("keyword")
-
 	if page < 1 {
 		page = 1
 	}
+	keyword := c.Query("keyword")
 
-	resp, err := h.Service.GetClientList(
+	// 1. Check Privilege Level
+	level, err := h.PrivilegeService.CheckUserPrivelege(c)
+	if err != nil {
+		log.Printf("[GetClientList] Privilege Validation: %v", err)
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "Unauthorized",
+		})
+		return
+	}
+
+	// 2. Parse User Identity
+	uIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(uIDStr)
+	if err != nil {
+		log.Printf("[GetClientList] UUID Parse: %v", err)
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "identity parse error",
+		})
+		return
+	}
+
+	// 3. Delegate to Service
+	resp, err := h.Service.GetFilteredClientList(
 		c.Request.Context(),
+		level,
+		userID,
 		limit,
 		page,
 		keyword,
 	)
 	if err != nil {
 		log.Printf("[GetClientList] %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to retrieve clients"},
-		)
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "failed to retrieve clients",
+		})
 		return
 	}
 
