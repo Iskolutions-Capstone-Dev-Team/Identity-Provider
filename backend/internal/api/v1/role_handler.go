@@ -7,12 +7,13 @@ import (
 	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
 type RoleHandler struct {
+	Service    *service.RoleService
 	Repo       *repository.RoleRepository
 	ClientRepo *repository.ClientRepository
 }
@@ -31,47 +32,26 @@ type RoleHandler struct {
 func (h *RoleHandler) PostRole(c *gin.Context) {
 	var req dto.RoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	role := models.Role{
-		RoleName:    req.RoleName,
-		Description: req.Description,
-	}
-
-	result, err := h.Repo.CreateRole(role)
-	if err != nil {
-		log.Printf("[PostRole] DB Error: %v", err)
+		log.Printf("[PostRole] Bind JSON: %v", err)
 		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to create role"},
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalid request payload"},
 		)
 		return
 	}
 
-	roleID, err := result.LastInsertId()
+	err := h.Service.CreateRole(c.Request.Context(), req)
 	if err != nil {
-		log.Printf("[Postrole] failed to get roleID: %v", err)
+		log.Printf("[PostRole] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "RoleID fetch failed"},
+			dto.ErrorResponse{Error: "Role creation failed"},
 		)
-		return
-	}
-
-	tag := strings.Split(req.RoleName, ":")[0]
-	err = h.ClientRepo.AddClientAllowedRole(int(roleID), tag)
-	if err != nil {
-		log.Printf("[Postrole] failed to bind role %s to client: %v",
-			req.RoleName, err)
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Role binding failed"})
 		return
 	}
 
 	c.JSON(
-		http.StatusCreated, 
+		http.StatusCreated,
 		dto.SuccessResponse{Message: "Role created successfully"},
 	)
 }
@@ -91,11 +71,14 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	offset := (page - 1) * PAGE_LIMIT
 
-	roles, err := h.Repo.ListRoles(PAGE_LIMIT, offset)
+	resp, err := h.Service.GetRoleList(
+		c.Request.Context(),
+		service.PAGE_LIMIT,
+		page,
+	)
 	if err != nil {
-		log.Printf("[GetRoleList] Fetch failed: %v", err)
+		log.Printf("[GetRoleList] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Failed to fetch roles"},
@@ -103,38 +86,7 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		return
 	}
 
-	total, err := h.Repo.CountRoles()
-	if err != nil {
-		log.Printf("[GetRoleList] Count failed: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to determine total pages"},
-		)
-		return
-	}
-
-	lastPage := (total + PAGE_LIMIT - 1) / PAGE_LIMIT
-	if lastPage == 0 {
-		lastPage = 1
-	}
-
-	var roleResponses []dto.RoleResponse
-	for _, r := range roles {
-		roleResponses = append(roleResponses, dto.RoleResponse{
-			ID:          r.ID,
-			RoleName:    r.RoleName,
-			Description: r.Description,
-			CreatedAt:   r.CreatedAt.Format(TIME_LAYOUT),
-			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
-		})
-	}
-
-	c.JSON(http.StatusOK, dto.RoleListResponse{
-		Roles:       roleResponses,
-		CurrentPage: page,
-		LastPage:    lastPage,
-		TotalCount:  total,
-	})
+	c.JSON(http.StatusOK, resp)
 }
 
 // GetRole handles GET /v1/admin/roles/:id
@@ -150,27 +102,25 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 func (h *RoleHandler) GetRole(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		log.Printf("[GetRole] Parse ID: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "Invalid ID format"},
 		)
 		return
 	}
 
-	role, err := h.Repo.GetByID(id)
+	resp, err := h.Service.GetRoleByID(c.Request.Context(), id)
 	if err != nil {
-		log.Printf("[GetRole] Not found ID %d: %v", id, err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "Role not found"})
+		log.Printf("[GetRole] %v", err)
+		c.JSON(
+			http.StatusNotFound,
+			dto.ErrorResponse{Error: "Role not found"},
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.RoleResponse{
-		ID:          role.ID,
-		RoleName:    role.RoleName,
-		Description: role.Description,
-		CreatedAt:   role.CreatedAt.Format(TIME_LAYOUT),
-		UpdatedAt:   role.UpdatedAt.Format(TIME_LAYOUT),
-	})
+	c.JSON(http.StatusOK, resp)
 }
 
 // GetRolesBySearch retrieves a filtered list of roles by keyword.
@@ -186,47 +136,25 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 // @Router /api/roles [get]
 func (h *RoleHandler) GetRolesBySearch(c *gin.Context) {
 	keyword := c.Query("keyword")
-	roles, err := h.Repo.SearchRoles(keyword)
+
+	resp, err := h.Service.SearchRoles(c.Request.Context(), keyword)
 	if err != nil {
-		log.Printf("[GetRolesBySearch] Fetch failed: %v", err)
-		c.JSON(
-			http.StatusInternalServerError, 
-			dto.ErrorResponse{Error: "fetching error"},
-		)
+		log.Printf("[GetRolesBySearch] %v", err)
+
+		// Determine if error is "not found" or a system failure
+		status := http.StatusInternalServerError
+		msg := "fetching error"
+
+		if strings.Contains(err.Error(), "no records") {
+			status = http.StatusNotFound
+			msg = "role not found using keyword"
+		}
+
+		c.JSON(status, dto.ErrorResponse{Error: msg})
+		return
 	}
 
-	if len(roles) == 0 {
-		log.Printf(
-			"[GetRolesBySearch] No role found with keyword %s: %v",
-			keyword,
-			err,
-		)
-		c.JSON(
-			http.StatusNotFound,
-			dto.ErrorResponse{Error: "role not found using keyword"},
-		)
-	}
-
-	var roleResponses []dto.RoleResponse
-	for _, r := range roles {
-		roleResponses = append(roleResponses, dto.RoleResponse{
-			ID:          r.ID,
-			RoleName:    r.RoleName,
-			Description: r.Description,
-			CreatedAt:   r.CreatedAt.Format(TIME_LAYOUT),
-			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
-		})
-	}
-
-	const currentPage = 1
-	const lastPage = 1
-	const total = 10
-	c.JSON(http.StatusOK, dto.RoleListResponse{
-		Roles:       roleResponses,
-		CurrentPage: currentPage,
-		LastPage:    lastPage,
-		TotalCount:  total,
-	})
+	c.JSON(http.StatusOK, resp)
 }
 
 // PutRole handles PUT /v1/admin/roles/:id
@@ -243,8 +171,9 @@ func (h *RoleHandler) GetRolesBySearch(c *gin.Context) {
 func (h *RoleHandler) PutRole(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		log.Printf("[PutRole] Parse ID: %v", err)
 		c.JSON(
-			http.StatusBadRequest, 
+			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "Invalid ID format"},
 		)
 		return
@@ -252,18 +181,14 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 
 	var req dto.RoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PutRole] Bind JSON: %v", err)
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	role := models.Role{
-		ID:          id,
-		RoleName:    req.RoleName,
-		Description: req.Description,
-	}
-
-	if err := h.Repo.UpdateRole(role); err != nil {
-		log.Printf("[PutRole] Update failed for ID %d: %v", id, err)
+	err = h.Service.UpdateRole(c.Request.Context(), id, req)
+	if err != nil {
+		log.Printf("[PutRole] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Update failed"},
@@ -285,12 +210,17 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid ID"})
+		log.Printf("[DeleteRole] Parse ID: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalid ID format"},
+		)
 		return
 	}
 
-	if err := h.Repo.Delete(id); err != nil {
-		log.Printf("[DeleteRole] Deletion failed for ID %d: %v", id, err)
+	err = h.Service.DeleteRole(c.Request.Context(), id)
+	if err != nil {
+		log.Printf("[DeleteRole] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Deletion failed"},
@@ -299,7 +229,7 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	}
 
 	c.JSON(
-		http.StatusOK, 
+		http.StatusOK,
 		dto.SuccessResponse{Message: "Role deleted successfully"},
 	)
 }
