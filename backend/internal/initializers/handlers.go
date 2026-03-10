@@ -15,7 +15,6 @@ func InitializeHandlers(db *sqlx.DB,
 	authRepo := repository.NewAuthCodeRepository(db)
 	sessionRepo := repository.NewSessionRepository(db)
 	clientRepo := repository.NewClientRepository(db)
-	userRepo := repository.NewUserRepository(db)
 
 	mw := &middleware.Middleware{ClientRepo: clientRepo}
 
@@ -28,13 +27,13 @@ func InitializeHandlers(db *sqlx.DB,
 			PublicKey:   PubKey,
 		},
 		ClientHandler: &v1.ClientHandler{
-			Service:    service.ClientService,
+			Service: service.ClientService,
 		},
 		RoleHandler: &v1.RoleHandler{
 			Service: service.RoleService,
 		},
 		UserHandler: &v1.UserHandler{
-			Repo: userRepo,
+			Service: service.UserService,
 		},
 		PubKey: PubKey,
 		CORS:   mw.CORSMiddleware(),
