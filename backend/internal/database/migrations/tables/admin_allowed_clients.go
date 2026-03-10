@@ -9,12 +9,13 @@ var AdminAllowedClientsMigration = migrations.TableMigration{
 			ID: "create-admin-allowed-clients-table",
 			SQL: `CREATE TABLE IF NOT EXISTS admin_allowed_clients (
 				client_id BINARY(16),
-				user_id INT,
+				user_id BINARY(16),
 				assigned_at TIMESTAMP DEFAULT NOW(),
 				PRIMARY KEY (client_id, user_id),
 				FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
 				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-				INDEX idx_role_lookup (role_id)
+				INDEX idx_client_lookup (client_id),
+				INDEX idx_user_lookup (user_id)
 			);`,
 		},
 	},
