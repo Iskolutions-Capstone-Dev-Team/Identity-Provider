@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/auth"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/minio/minio-go/v7"
 )
 
@@ -28,7 +28,7 @@ func ProcessAndUploadIcon(
 		return "", fmt.Errorf("[MediaService] Header Read: %v", err)
 	}
 
-	if err := auth.ValidateImage(header, fileName); err != nil {
+	if err := utils.ValidateImage(header, fileName); err != nil {
 		return "", err
 	}
 

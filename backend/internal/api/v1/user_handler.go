@@ -6,17 +6,18 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/auth"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type UserHandler struct {
-	Repo *repository.UserRepository
+	Repo       *repository.UserRepository
+	ClientRepo *repository.ClientRepository
 }
 
 // PostUser creates a new user in the system
@@ -39,7 +40,7 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 	}
 
 	userID := uuid.New()
-	passwordHash, _ := auth.HashSecret(req.Password)
+	passwordHash, _ := utils.HashSecret(req.Password)
 
 	user := models.User{
 		ID:           userID[:],
@@ -106,6 +107,94 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		Status:     string(user.Status),
 		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
 		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+	})
+}
+
+func (h *UserHandler) GetMe(c *gin.Context) {
+	val, exists := c.Get("user_id")
+	if !exists {
+		log.Print("[GetMe] userID doesn't exist")
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "request error"},
+		)
+	}
+	userIDStr := val.(string)
+
+	val, exists = c.Get("client_id")
+	if !exists {
+		log.Print("[GetMe] userID doesn't exist")
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "request error"},
+		)
+	}
+	clientIDStr := val.(string)
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf("[GetMe] UUID Parse Error: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalid ID Format"},
+		)
+		return
+	}
+
+	clientID, err := uuid.Parse(clientIDStr)
+	if err != nil {
+		log.Printf("[GetMe] UUID Parse Error: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalid ID Format"},
+		)
+		return
+	}
+
+	user, err := h.Repo.GetUserById(userID[:])
+	if err != nil {
+		log.Printf("[GetMe] Database Query Error: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "User not found"})
+		return
+	}
+
+	roles, err := h.ClientRepo.GetClientAllowedRoles(clientID[:])
+	if err != nil {
+		log.Printf("[GetMe] Database Query Error: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "User not found"})
+		return
+	}
+	allowedRoleIDs := make([]int, len(roles))
+
+	for i, role := range roles {
+		allowedRoleIDs[i] = role.ID
+	}
+
+	siftedRoles := make([]models.Role, 0, len(user.Roles))
+
+	allowedMap := make(map[int]bool)
+	for _, id := range allowedRoleIDs {
+		allowedMap[id] = true
+	}
+
+	for _, role := range user.Roles {
+		if allowedMap[role.ID] {
+			siftedRoles = append(siftedRoles, role)
+		}
+	}
+
+	roleStrings := make([]string, 0, len(siftedRoles))
+	for _, role := range siftedRoles {
+		roleStrings = append(roleStrings, role.RoleName)
+	}
+
+	c.JSON(http.StatusOK, dto.UserInfoResponse{
+		ID:         userIDStr,
+		FirstName:  user.FirstName,
+		MiddleName: user.MiddleName,
+		LastName:   user.LastName,
+		Email:      user.Email,
+		Roles:      roleStrings,
 	})
 }
 
@@ -214,7 +303,7 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 		return
 	}
 
-	passwordHash, err := auth.HashSecret(req.NewPassword)
+	passwordHash, err := utils.HashSecret(req.NewPassword)
 	if err != nil {
 		log.Printf("[PatchUpdatePassword] Hashing failed: %v", err)
 		c.JSON(

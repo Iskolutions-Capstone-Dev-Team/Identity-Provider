@@ -1,8 +1,7 @@
-package auth
+package service
 
 import (
 	"crypto/rsa"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -10,27 +9,32 @@ import (
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 // GenerateToken creates a signed OIDC JWT using RS256.
 // It accepts the pre-loaded privateKey object for maximum performance.
 func GenerateToken(privateKey *rsa.PrivateKey,
-	clientID []byte, claims models.UserClaims,
+	client *models.Client, claims models.UserClaims,
 ) (string, error) {
 	now := time.Now()
 
-	clientIDStr := hex.EncodeToString(clientID)
+	clientIDStr, err := uuid.FromBytes(client.ID)
+	if err != nil {
+		return "", fmt.Errorf("Failed to get uuid from client bytes: %v", err)
+	}
+
+	claims.AuthorizedParty = clientIDStr.String()
 
 	claims.RegisteredClaims = jwt.RegisteredClaims{
 		Subject:   claims.ID,
-		Issuer:    "pupt-idp",
-		Audience:  jwt.ClaimStrings{clientIDStr},
+		Issuer:    os.Getenv("CLIENT_BASE_URL"),
+		Audience:  jwt.ClaimStrings{client.BaseUrl},
 		ExpiresAt: jwt.NewNumericDate(now.Add(1 * time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(now),
 		NotBefore: jwt.NewNumericDate(now),
 		ID:        fmt.Sprintf("%d", now.UnixNano()),
 	}
-	
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
@@ -44,7 +48,17 @@ func GenerateToken(privateKey *rsa.PrivateKey,
 	return signedToken, nil
 }
 
-func ValidateToken(token string, pubKey *rsa.PublicKey,) (bool, error) {
+func ValidateToken(token string, publicKey *rsa.PublicKey) (bool, error) {
+	parsedToken, err := GetParsedToken(token, publicKey)
+	if err != nil {
+		log.Printf("[ValidateToken] Validation failed: %v", err)
+		return false, err
+	}
+
+	return parsedToken.Valid, nil
+}
+
+func GetParsedToken(token string, publicKey *rsa.PublicKey) (jwt.Token, error) {
 	parsedToken, err := jwt.ParseWithClaims(
 		token,
 		&models.UserClaims{},
@@ -52,14 +66,12 @@ func ValidateToken(token string, pubKey *rsa.PublicKey,) (bool, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 				return nil, fmt.Errorf("unexpected signing method")
 			}
-			return pubKey, nil
+			return publicKey, nil
 		},
 	)
 
 	if err != nil {
-		log.Printf("[ValidateToken] Validation failed: %v", err)
-		return false, err
+		return jwt.Token{}, err
 	}
-
-	return parsedToken.Valid, nil
+	return *parsedToken, err
 }
