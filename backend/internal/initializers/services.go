@@ -33,5 +33,9 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 			PublicKey:   PubKey,
 			PrivateKey:  PrivKey,
 		},
+		PrivilegeService: &service.PrivilegeService{
+			PubKey:   PubKey,
+			UserRepo: userRepo,
+		},
 	}
 }

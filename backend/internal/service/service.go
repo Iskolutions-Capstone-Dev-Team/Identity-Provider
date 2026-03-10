@@ -1,8 +1,9 @@
 package service
 
 type ServiceContainer struct {
-	ClientService *ClientService
-	RoleService *RoleService
-	UserService *UserService
-	AuthService *AuthService
+	ClientService    *ClientService
+	RoleService      *RoleService
+	UserService      *UserService
+	AuthService      *AuthService
+	PrivilegeService *PrivilegeService
 }

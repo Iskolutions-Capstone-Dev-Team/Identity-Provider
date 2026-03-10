@@ -7,15 +7,14 @@ import (
 	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type RoleHandler struct {
-	Service    *service.RoleService
-	Repo       *repository.RoleRepository
-	ClientRepo *repository.ClientRepository
+	Service          *service.RoleService
+	PrivilegeService *service.PrivilegeService
 }
 
 // PostRole handles POST /v1/admin/roles
@@ -67,22 +66,49 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/roles [get]
 func (h *RoleHandler) GetRoleList(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	keyword := c.DefaultQuery("keyword", "")
+
 	if page < 1 {
 		page = 1
 	}
 
-	resp, err := h.Service.GetRoleList(
+	// 1. Privilege Check
+	level, err := h.PrivilegeService.CheckUserPrivilege(c)
+	if err != nil {
+		log.Printf("[GetRoleList] Privilege Validation: %v", err)
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "unauthorized access",
+		})
+		return
+	}
+
+	// 2. Identity Extraction
+	uIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(uIDStr)
+	if err != nil {
+		log.Printf("[GetRoleList] UUID Parse: %v", err)
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "identity parse error",
+		})
+		return
+	}
+
+	// 3. Service Execution
+	resp, err := h.Service.GetFilteredRoleList(
 		c.Request.Context(),
-		service.PAGE_LIMIT,
+		level,
+		userID,
+		limit,
 		page,
+		keyword,
 	)
 	if err != nil {
 		log.Printf("[GetRoleList] %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to fetch roles"},
-		)
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "failed to retrieve roles",
+		})
 		return
 	}
 

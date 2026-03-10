@@ -61,6 +61,95 @@ func (r *UserRepository) GetUserList(limit, offset int) ([]models.User, error) {
 	return r.groupRows(rows, ids), nil
 }
 
+/**
+ * GetBoundUserList retrieves a paginated list of users, always 
+ * including the requesting admin. Roles are strictly filtered 
+ * to only those permitted by the admin's client scope.
+ */
+func (r *UserRepository) GetBoundUserList(
+	limit,
+	offset int,
+	adminID []byte,
+) ([]models.User, error) {
+	var ids [][]byte
+
+	// 1. Fetch user IDs (bound users + the admin themselves)
+	const idQuery = `
+		SELECT id FROM (
+			SELECT u.id 
+			FROM users u
+			JOIN user_roles ur ON u.id = ur.user_id
+			JOIN client_allowed_roles car ON ur.role_id = car.role_id
+			JOIN admin_allowed_clients aac 
+				ON car.client_id = aac.client_id
+			WHERE aac.user_id = ? AND u.deleted_at IS NULL
+			UNION
+			SELECT id FROM users 
+			WHERE id = ? AND deleted_at IS NULL
+		) AS bound_users
+		LIMIT ? OFFSET ?
+	`
+
+	err := r.db.Select(
+		&ids, 
+		idQuery, 
+		adminID, 
+		adminID, 
+		limit, 
+		offset,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("[GetBoundUserList] {ID Fetch}: %w", err)
+	}
+
+	if len(ids) == 0 {
+		return []models.User{}, nil
+	}
+
+	// 2. Fetch full data using LEFT JOIN on a filtered roles subquery.
+	// This ensures users without allowed roles (like the admin) still 
+	// appear, but any unauthorized roles are completely stripped out.
+	const baseQuery = `
+		SELECT u.id, u.username, u.first_name, u.middle_name, 
+		       u.last_name, u.email, u.status, u.created_at, 
+		       u.updated_at, ar.id AS role_id, 
+		       ar.role_name AS role_name, 
+		       ar.description AS role_description
+		FROM users u
+		LEFT JOIN (
+			SELECT ur.user_id, r.id, r.role_name, r.description
+			FROM user_roles ur
+			JOIN roles r ON ur.role_id = r.id
+			JOIN client_allowed_roles car ON r.id = car.role_id
+			JOIN admin_allowed_clients aac 
+				ON car.client_id = aac.client_id
+			WHERE aac.user_id = ?
+		) ar ON ar.user_id = u.id
+		WHERE u.id IN (?) AND u.deleted_at IS NULL
+		ORDER BY u.created_at DESC
+	`
+
+	// Note: adminID maps to the first '?' in the subquery, 
+	// ids maps to the '?' in the outer WHERE IN clause.
+	fullQuery, args, err := sqlx.In(baseQuery, adminID, ids)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"[GetBoundUserList] {Query Expansion}: %w",
+			err,
+		)
+	}
+
+	fullQuery = r.db.Rebind(fullQuery)
+
+	var rows []userRow
+	err = r.db.Select(&rows, fullQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("[GetBoundUserList] {Database Join}: %w", err)
+	}
+
+	return r.groupRows(rows, ids), nil
+}
+
 // GetUserByEmail finds a user by email, including the hash and roles.
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
     var rows []userRow
@@ -226,6 +315,40 @@ func (r *UserRepository) CountUsers() (int, error) {
 	query := `SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`
 	err := r.db.Get(&count, query)
 	return count, err
+}
+
+/**
+ * CountBoundUsers returns the total number of distinct users, 
+ * explicitly including the admin themselves even without roles.
+ */
+func (r *UserRepository) CountBoundUsers(adminID []byte) (int, error) {
+	var total int
+
+	// UNION combines bound users and the admin, removing duplicates
+	const countQuery = `
+		SELECT COUNT(id) FROM (
+			SELECT u.id 
+			FROM users u
+			JOIN user_roles ur ON u.id = ur.user_id
+			JOIN client_allowed_roles car ON ur.role_id = car.role_id
+			JOIN admin_allowed_clients aac 
+				ON car.client_id = aac.client_id
+			WHERE aac.user_id = ? AND u.deleted_at IS NULL
+			UNION
+			SELECT id FROM users 
+			WHERE id = ? AND deleted_at IS NULL
+		) AS bound_users
+	`
+
+	err := r.db.Get(&total, countQuery, adminID, adminID)
+	if err != nil {
+		return 0, fmt.Errorf(
+			"[CountBoundUsers] {Database Query}: %w",
+			err,
+		)
+	}
+
+	return total, nil
 }
 
 func (r *UserRepository) mapSingleUser(rows []userRow) *models.User {

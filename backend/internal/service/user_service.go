@@ -121,8 +121,42 @@ func (s *UserService) GetMe(
 }
 
 /**
- * GetUserList retrieves a paginated list of users, including 
- * their associated roles and calculated metadata.
+ * GetFilteredUserList routes the request to fetch either all 
+ * users or bound users based on the admin's privilege level.
+ * @param ctx Request context
+ * @param level Admin's privilege level
+ * @param userID Admin's UUID
+ * @param limit Items per page
+ * @param page Current page number
+ * @return Paginated user list response or error
+ */
+func (s *UserService) GetFilteredUserList(
+	ctx context.Context,
+	level int,
+	userID uuid.UUID,
+	limit,
+	page int,
+) (*dto.UserResponseList, error) {
+	// SuperAdmin sees all users
+	if level == LevelSuperAdmin {
+		return s.GetUserList(ctx, limit, page)
+	}
+
+	// Regular Admin only sees users bound to their allowed clients
+	if level == LevelAdmin {
+		return s.GetBoundUserList(ctx, limit, page, userID)
+	}
+
+	return nil, fmt.Errorf("Privilege Validation: unauthorized level")
+}
+
+/**
+ * GetUserList retrieves a paginated list of all users and their 
+ * assigned roles, calculating metadata for the response.
+ * @param ctx Request context
+ * @param limit Items per page
+ * @param page Current page number
+ * @return Paginated user list response or error
  */
 func (s *UserService) GetUserList(
 	ctx context.Context,
@@ -139,6 +173,68 @@ func (s *UserService) GetUserList(
 	total, err := s.Repo.CountUsers()
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (CountUsers): %w", err)
+	}
+
+	var userResponses []dto.UserResponse
+	for _, user := range users {
+		roleList, err := GetUserRoles(user.Roles)
+		if err != nil {
+			return nil, fmt.Errorf("Role Parsing: %w", err)
+		}
+
+		userUUID, _ := uuid.FromBytes(user.ID)
+		userResponses = append(userResponses, dto.UserResponse{
+			ID:         userUUID.String(),
+			Username:   user.Username,
+			FirstName:  user.FirstName,
+			MiddleName: user.MiddleName,
+			LastName:   user.LastName,
+			Email:      user.Email,
+			Status:     string(user.Status),
+			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
+			UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+			Roles:      roleList,
+		})
+	}
+
+	lastPage := (total + limit - 1) / limit
+	if lastPage == 0 {
+		lastPage = 1
+	}
+
+	return &dto.UserResponseList{
+		Users:       userResponses,
+		TotalCount:  total,
+		CurrentPage: page,
+		LastPage:    lastPage,
+	}, nil
+}
+
+/**
+ * GetBoundUserList retrieves a paginated list of users that 
+ * share allowed client roles with the specified admin.
+ * @param ctx Request context
+ * @param limit Items per page
+ * @param page Current page number
+ * @param userID The ID of the admin making the request
+ * @return Paginated user list response or error
+ */
+func (s *UserService) GetBoundUserList(
+	ctx context.Context,
+	limit,
+	page int,
+	userID uuid.UUID,
+) (*dto.UserResponseList, error) {
+	offset := (page - 1) * limit
+
+	users, err := s.Repo.GetBoundUserList(limit, offset, userID[:])
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (GetBound): %w", err)
+	}
+	
+	total, err := s.Repo.CountBoundUsers(userID[:])
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (CountBound): %w", err)
 	}
 
 	var userResponses []dto.UserResponse

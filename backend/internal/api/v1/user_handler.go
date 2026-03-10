@@ -14,7 +14,8 @@ import (
 )
 
 type UserHandler struct {
-	Service *service.UserService
+	Service          *service.UserService
+	PrivilegeService *service.PrivilegeService
 }
 
 // PostUser creates a new user in the system
@@ -62,23 +63,58 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 // @Success 200 {object} dto.UserResponseList
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/users [get]
+/**
+ * GetUserList retrieves a paginated list of users, routing the 
+ * request to fetch either all users or bound users based on the 
+ * admin's privilege level.
+ */
 func (h *UserHandler) GetUserList(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	const defaultLimit = "10"
+	const defaultPage = "1"
+
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", defaultLimit))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", defaultPage))
+	
 	if page < 1 {
 		page = 1
 	}
 
-	// Constants are used for global configuration values
-	resp, err := h.Service.GetUserList(
+	// 1. Check Privilege Level
+	level, err := h.PrivilegeService.CheckUserPrivilege(c)
+	if err != nil {
+		log.Printf("[GetUserList] {Privilege Validation}: %v", err)
+		c.JSON(
+			http.StatusUnauthorized,
+			dto.ErrorResponse{Error: "Unauthorized"},
+		)
+		return
+	}
+
+	// 2. Parse User Identity
+	uIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(uIDStr)
+	if err != nil {
+		log.Printf("[GetUserList] {UUID Parsing}: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Identity parse error"},
+		)
+		return
+	}
+
+	// 3. Delegate to Service
+	resp, err := h.Service.GetFilteredUserList(
 		c.Request.Context(),
-		service.PAGE_LIMIT,
+		level,
+		userID,
+		limit,
 		page,
 	)
 	if err != nil {
-		log.Printf("[GetUserList] %v", err)
+		log.Printf("[GetUserList] {Service Execution}: %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to retrieve user list"},
+			dto.ErrorResponse{Error: "Failed to retrieve user list"},
 		)
 		return
 	}
