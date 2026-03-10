@@ -39,10 +39,15 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		auth.POST("/logout", h.AuthHandler.Logout)
 		auth.GET("/session", h.AuthHandler.CheckSession)
 	}
-
+	
+	// Endpoint for getting user information
+	me := v1Group.Group("/me")
+	me.Use(middleware.AuthMiddleware(h.PubKey))
+	me.GET("", h.UserHandler.GetMe)
+	
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
-	admin.Use(middleware.AuthorizeRBAC(h.PubKey, role1, role2))
+	admin.Use(middleware.AuthorizeRBAC(h.PubKey, h.UserHandler.Repo, role1, role2))
 	{
 		admin.GET("/status", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "IdP is operational"})

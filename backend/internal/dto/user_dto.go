@@ -17,12 +17,12 @@ type UpdatePasswordRequest struct {
 	NewPassword string `json:"new_password" binding:"required"`
 }
 
-//UpdateStatusRequest handles patch data for updating user status
+// UpdateStatusRequest handles patch data for updating user status
 type UpdateStatusRequest struct {
 	NewStatus string `json:"new_status" binding:"required"`
 }
 
-//UpdateUserRoleRequest handles patch data for updating user roles
+// UpdateUserRoleRequest handles patch data for updating user roles
 type UpdateUserRoleRequest struct {
 	RoleIDs []int `json:"role_ids" binding:"required" validate:"required"`
 }
@@ -52,4 +52,13 @@ type UserResponseList struct {
 // UserStatusUpdate handles administrative status changes (Active/Inactive).
 type UserStatusUpdate struct {
 	Status string `json:"status" binding:"required,oneof=active inactive"`
+}
+
+type UserInfoResponse struct {
+	ID         string   `json:"id"`
+	FirstName  string   `json:"first_name"`
+	MiddleName string   `json:"middle_name"`
+	LastName   string   `json:"last_name"`
+	Email      string   `json:"email"`
+	Roles      []string `json:"roles"`
 }
