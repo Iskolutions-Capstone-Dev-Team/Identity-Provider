@@ -8,23 +8,85 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [, setForgotOpen] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({
+    email: "",
+    password: "",
+  });
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const toggleShowPassword = () => {
     setShowPassword((prev) => !prev);
   };
 
+  const getEmailError = (value) => {
+    if (!value.trim()) {
+      return "Email is required.";
+    }
+
+    if (!emailRegex.test(value)) {
+      return "Enter a valid email address.";
+    }
+
+    return "";
+  };
+
+  const getPasswordError = (value) => {
+    if (!value.trim()) {
+      return "Password is required.";
+    }
+
+    return "";
+  };
+
+  const validateFields = () => {
+    const nextErrors = {
+      email: getEmailError(email),
+      password: getPasswordError(password),
+    };
+
+    setFieldErrors(nextErrors);
+    return !nextErrors.email && !nextErrors.password;
+  };
+
+  const handleEmailChange = (e) => {
+    const nextEmail = e.target.value;
+    setEmail(nextEmail);
+
+    setFieldErrors((prev) => ({
+      ...prev,
+      email: "",
+    }));
+  };
+
+  const handleEmailBlur = () => {
+    setFieldErrors((prev) => ({
+      ...prev,
+      email: getEmailError(email),
+    }));
+  };
+
+  const handlePasswordChange = (e) => {
+    const nextPassword = e.target.value;
+    setPassword(nextPassword);
+
+    setFieldErrors((prev) => ({
+      ...prev,
+      password: "",
+    }));
+  };
+
+  const handlePasswordBlur = () => {
+    setFieldErrors((prev) => ({
+      ...prev,
+      password: getPasswordError(password),
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    if (!email.trim() || !password.trim()) {
-      setError("Email and password are required.");
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address.");
+    if (!validateFields()) {
       return;
     }
 
@@ -94,15 +156,22 @@ export default function LoginForm() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={handleEmailChange}
+                    onBlur={handleEmailBlur}
                     required
                     placeholder="Enter your email address"
-                    className="validator h-14 w-full rounded-2xl border border-white/20 bg-white/95 pl-14 pr-4 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#ffd700] focus:ring-4 focus:ring-[#ffd700]/20"
+                    className={`h-14 w-full rounded-2xl border bg-white/95 pl-14 pr-4 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
+                      fieldErrors.email
+                        ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
+                        : "border-white/20 focus:border-[#ffd700] focus:ring-[#ffd700]/20"
+                    }`}
                   />
                 </div>
-                <div className="validator-hint pl-1 text-xs text-red-100/95">
-                  Enter a valid email address
-                </div>
+                {fieldErrors.email ? (
+                  <p className="pl-1 pt-2 text-xs text-red-100/95">
+                    {fieldErrors.email}
+                  </p>
+                ) : null}
               </div>
 
               <div>
@@ -131,10 +200,15 @@ export default function LoginForm() {
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={handlePasswordChange}
+                    onBlur={handlePasswordBlur}
                     required
                     placeholder="Enter your password"
-                    className="validator h-14 w-full rounded-2xl border border-white/20 bg-white/95 pl-14 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#ffd700] focus:ring-4 focus:ring-[#ffd700]/20 pr-12"
+                    className={`h-14 w-full rounded-2xl border bg-white/95 pl-14 pr-12 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
+                      fieldErrors.password
+                        ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
+                        : "border-white/20 focus:border-[#ffd700] focus:ring-[#ffd700]/20"
+                    }`}
                   />
                   <button
                     type="button"
@@ -155,22 +229,27 @@ export default function LoginForm() {
                     )}
                   </button>
                 </div>
-                <div className="validator-hint pl-1 text-xs text-red-100/95">
-                  Password is required
-                </div>
+                {fieldErrors.password ? (
+                  <p className="pl-1 pt-2 text-xs text-red-100/95">
+                    {fieldErrors.password}
+                  </p>
+                ) : null}
               </div>
 
               <div className="flex items-center justify-between font-medium">
                 <label className="flex items-center gap-2 text-sm text-white/80">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-white/30 bg-transparent accent-[#f8d24e]"
+                    className="checkbox h-6 rounded-md border-gray-300 bg-transparent checked:border-yellow-900 checked:bg-[#ffd700] checked:text-white"
                   />
                   <span>Remember me</span>
                 </label>
               </div>
 
-              <button type="submit" className="w-full rounded-2xl bg-[#ffd700] px-4 py-3 text-sm font-bold tracking-[0.24em] text-[#6c0a13] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#ffe27a]">
+              <button
+                type="submit"
+                className="btn h-12 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white"
+              >
                 LOGIN
               </button>
             </form>
