@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/auth"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -27,26 +27,30 @@ func MigrateAndSeed() {
 	database.RunAllMigrations(adminDatabase)
 	fmt.Println("Database migration completed successfully.")
 
-	err = seedAdminUser(adminDatabase); if err != nil {
+	err = seedAdminUser(adminDatabase)
+	if err != nil {
 		log.Print(err)
 	}
 
-	err = seedAppClient(adminDatabase); if err != nil {
+	err = seedAppClient(adminDatabase)
+	if err != nil {
 		log.Print(err)
 	}
 
 	privelegedTables := [...]string{
-		"authorization_codes", 
+		"authorization_codes",
 		"refresh_tokens",
 		"user_roles",
 		"idp_sessions",
 		"client_grant_types",
 		"client_allowed_roles",
 		"roles",
+		"admin_allowed_clients",
 	}
 
 	for _, tableName := range privelegedTables {
-		err = grantDeleteOnTable(tableName, adminDatabase); if err != nil {
+		err = grantDeleteOnTable(tableName, adminDatabase)
+		if err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -62,7 +66,7 @@ func seedAdminUser(adminDatabase *sqlx.DB) error {
 	adminDatabase.Exec("DELETE FROM users WHERE email = ?", adminEmail)
 
 	newAdminID := uuid.New()
-	hashedPassword, _ := auth.HashSecret(adminPass)
+	hashedPassword, _ := utils.HashSecret(adminPass)
 
 	user := &models.User{
 		ID:           newAdminID[:],
@@ -90,10 +94,10 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 	ctag := os.Getenv("CLIENT_TAG")
 
 	parsedID, _ := uuid.Parse(cID)
-	hashedClientSecret, _ := auth.HashSecret(cSecret)
+	hashedClientSecret, _ := utils.HashSecret(cSecret)
 	grants := []string{
-		"authorization_code", 
-		"refresh_token", 
+		"authorization_code",
+		"refresh_token",
 		"client_credentials",
 	}
 	roleIDs := []int{1, 2}
@@ -124,7 +128,7 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 func grantDeleteOnTable(tableName string, db *sqlx.DB) error {
 	databaseName := os.Getenv("MYSQL_DB_NAME")
 	appUser := os.Getenv("APP_USER")
-	
+
 	query := fmt.Sprintf(
 		"GRANT DELETE ON `%s`.`%s` TO '%s'@'%%'; FLUSH PRIVILEGES;",
 		databaseName,
