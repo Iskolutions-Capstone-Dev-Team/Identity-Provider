@@ -74,6 +74,31 @@ func (s *ClientService) CreateClient(
 }
 
 /**
+ * GetFilteredClientList routes the request to either a full 
+ * list or a bound list based on the user's privilege level.
+ */
+func (s *ClientService) GetFilteredClientList(
+	ctx context.Context,
+	level int,
+	userID uuid.UUID,
+	limit, 
+	page int,
+	keyword string,
+) (*dto.ClientListResponse, error) {
+	// SuperAdmin sees everything
+	if level == LevelSuperAdmin {
+		return s.GetClientList(ctx, limit, page, keyword)
+	}
+
+	// Regular Admin only sees bound clients
+	if level == LevelAdmin {
+		return s.GetBoundClients(ctx, userID, limit, page, keyword)
+	}
+
+	return nil, fmt.Errorf("Privilege Validation: unauthorized level")
+}
+
+/**
  * GetClientList retrieves a paginated list of clients,
  * calculates metadata, and generates presigned URLs for icons.
  */
@@ -85,7 +110,7 @@ func (s *ClientService) GetClientList(
 ) (*dto.ClientListResponse, error) {
 	offset := (page - 1) * limit
 
-	total, err := s.Repo.CountClients()
+	total, err := s.Repo.CountClients(keyword)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (Count): %w", err)
 	}
@@ -131,6 +156,58 @@ func (s *ClientService) GetClientList(
 		Clients:     res,
 		CurrentPage: page,
 		LastPage:    lastPage,
+		TotalCount:  total,
+	}, nil
+}
+
+/**
+ * GetBoundClients retrieves clients associated with a specific 
+ * administrator, supporting keyword search and pagination.
+ */
+func (s *ClientService) GetBoundClients(
+	ctx context.Context,
+	userID uuid.UUID,
+	limit, 
+	page int,
+	keyword string,
+) (*dto.ClientListResponse, error) {
+	offset := (page - 1) * limit
+
+	clients, err := s.Repo.ListBoundClients(
+		limit, 
+		offset, 
+		keyword, 
+		userID[:],
+	)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (ListBound): %w", err)
+	}
+
+	total, err := s.Repo.CountBoundClients(keyword)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (CountBound): %v",err)
+	}
+
+	var res []dto.ClientResponse
+	for _, cl := range clients {
+		id, _ := uuid.FromBytes(cl.ID)
+		imgURL, _ := GetPresignedURL(ctx, cl.ImageLocation, s.Storage)
+
+		res = append(res, dto.ClientResponse{
+			ID:            id.String(),
+			Name:          cl.ClientName,
+			Tag:           cl.Tag,
+			Description:   cl.Description,
+			ImageLocation: imgURL,
+			BaseURL:       cl.BaseUrl,
+			RedirectURI:   cl.RedirectUri,
+			LogoutURI:     cl.LogoutUri,
+		})
+	}
+
+	return &dto.ClientListResponse{
+		Clients:     res,
+		CurrentPage: page,
 		TotalCount:  total,
 	}, nil
 }
@@ -200,7 +277,7 @@ func (s *ClientService) GetClientTags(
 ) (*dto.ClientListResponse, error) {
 	offset := (page - 1) * limit
 
-	total, err := s.Repo.CountClients()
+	total, err := s.Repo.CountClients(keyword)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (Count): %w", err)
 	}
