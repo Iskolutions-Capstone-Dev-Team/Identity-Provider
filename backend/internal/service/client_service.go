@@ -75,14 +75,14 @@ func (s *ClientService) CreateClient(
 }
 
 /**
- * GetFilteredClientList routes the request to either a full 
+ * GetFilteredClientList routes the request to either a full
  * list or a bound list based on the user's privilege level.
  */
 func (s *ClientService) GetFilteredClientList(
 	ctx context.Context,
 	level int,
 	userID uuid.UUID,
-	limit, 
+	limit,
 	page int,
 	keyword string,
 ) (*dto.ClientListResponse, error) {
@@ -162,22 +162,22 @@ func (s *ClientService) GetClientList(
 }
 
 /**
- * GetBoundClients retrieves clients associated with a specific 
+ * GetBoundClients retrieves clients associated with a specific
  * administrator, supporting keyword search and pagination.
  */
 func (s *ClientService) GetBoundClients(
 	ctx context.Context,
 	userID uuid.UUID,
-	limit, 
+	limit,
 	page int,
 	keyword string,
 ) (*dto.ClientListResponse, error) {
 	offset := (page - 1) * limit
 
 	clients, err := s.Repo.ListBoundClients(
-		limit, 
-		offset, 
-		keyword, 
+		limit,
+		offset,
+		keyword,
 		userID[:],
 	)
 	if err != nil {
@@ -186,7 +186,7 @@ func (s *ClientService) GetBoundClients(
 
 	total, err := s.Repo.CountBoundClients(keyword, userID[:])
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (CountBound): %v",err)
+		return nil, fmt.Errorf("Database Query (CountBound): %v", err)
 	}
 
 	var res []dto.ClientResponse
@@ -203,6 +203,7 @@ func (s *ClientService) GetBoundClients(
 			BaseURL:       cl.BaseUrl,
 			RedirectURI:   cl.RedirectUri,
 			LogoutURI:     cl.LogoutUri,
+			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
 		})
 	}
 
@@ -267,7 +268,7 @@ func (s *ClientService) GetClientByID(
 }
 
 /**
- * GetFilteredClientTagList routes the request to either a full 
+ * GetFilteredClientTagList routes the request to either a full
  * tag list or a bound tag list based on the user's privilege.
  */
 func (s *ClientService) GetFilteredClientTagList(
@@ -286,10 +287,10 @@ func (s *ClientService) GetFilteredClientTagList(
 	// Regular Admin only sees tags for bound clients
 	if level == LevelAdmin {
 		return s.GetBoundClientTagList(
-			ctx, 
-			limit, 
-			page, 
-			keyword, 
+			ctx,
+			limit,
+			page,
+			keyword,
 			userID,
 		)
 	}
@@ -298,7 +299,7 @@ func (s *ClientService) GetFilteredClientTagList(
 }
 
 /**
- * GetClientTags retrieves a paginated list of all client tag 
+ * GetClientTags retrieves a paginated list of all client tag
  * information with calculated metadata.
  */
 func (s *ClientService) GetClientTags(
@@ -359,7 +360,7 @@ func (s *ClientService) GetClientTags(
 }
 
 /**
- * GetBoundClientTagList retrieves tag information for clients 
+ * GetBoundClientTagList retrieves tag information for clients
  * bound to a specific user, with calculated metadata.
  */
 func (s *ClientService) GetBoundClientTagList(
@@ -423,7 +424,7 @@ func (s *ClientService) GetBoundClientTagList(
 }
 
 /**
- * UpdateClient handles the business logic for modifying an 
+ * UpdateClient handles the business logic for modifying an
  * existing client, including optional image replacement.
  */
 func (s *ClientService) UpdateClient(
@@ -473,11 +474,11 @@ func (s *ClientService) UpdateClient(
 }
 
 /**
- * RotateClientSecret generates a new 32-character secret, 
+ * RotateClientSecret generates a new 32-character secret,
  * hashes it, and updates the client record.
  */
 func (s *ClientService) RotateClientSecret(
-	ctx context.Context, 
+	ctx context.Context,
 	id uuid.UUID,
 ) (*dto.ClientSecretResponse, error) {
 	// 1. Generate High-Entropy Secret
@@ -506,11 +507,11 @@ func (s *ClientService) RotateClientSecret(
 }
 
 /**
- * DeleteClient deactivates a client by removing its storage 
+ * DeleteClient deactivates a client by removing its storage
  * assets and soft-deleting its database records.
  */
 func (s *ClientService) DeleteClient(
-	ctx context.Context, 
+	ctx context.Context,
 	id uuid.UUID,
 ) error {
 	cl, err := s.Repo.GetByID(id[:])
@@ -537,5 +538,3 @@ func (s *ClientService) DeleteClient(
 
 	return nil
 }
-
-
