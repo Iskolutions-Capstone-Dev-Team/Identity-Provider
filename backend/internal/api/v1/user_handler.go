@@ -5,17 +5,17 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type UserHandler struct {
+	Service    *service.UserService
 	Repo       *repository.UserRepository
 	ClientRepo *repository.ClientRepository
 }
@@ -34,168 +34,26 @@ type UserHandler struct {
 func (h *UserHandler) PostUser(c *gin.Context) {
 	var req dto.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("[PostUser] Bind JSON Error: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		log.Printf("[PostUser] Bind JSON: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid request payload"},
+		)
 		return
 	}
 
-	userID := uuid.New()
-	passwordHash, _ := utils.HashSecret(req.Password)
-
-	user := models.User{
-		ID:           userID[:],
-		Username:     req.Username,
-		FirstName:    req.FirstName,
-		MiddleName:   req.MiddleName,
-		LastName:     req.LastName,
-		Email:        req.Email,
-		PasswordHash: passwordHash,
-		Status:       models.StatusActive,
-		RoleString:   req.Roles,
-	}
-
-	err := h.Repo.CreateUser(&user)
+	userID, err := h.Service.CreateUser(c.Request.Context(), req)
 	if err != nil {
-		log.Printf("[PostUser] Database Create Error: %v", err)
+		log.Printf("[PostUser] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "database error"},
+			dto.ErrorResponse{Error: "failed to create user"},
 		)
 		return
 	}
 
 	message := fmt.Sprintf("Created user with the id %s", userID)
 	c.JSON(http.StatusCreated, dto.SuccessResponse{Message: message})
-}
-
-// GetUser retrieves a single user by their UUID string
-// @Summary Get User
-// @Description Fetch user details using their unique ID
-// @Tags Users
-// @Produce json
-// @Param id path string true "User ID (UUID)"
-// @Success 200 {object} dto.UserResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 440 {object} dto.ErrorResponse
-// @Router /api/v1/users/{id} [get]
-func (h *UserHandler) GetUser(c *gin.Context) {
-	id := c.Param("id")
-	userID, err := uuid.Parse(id)
-	if err != nil {
-		log.Printf("[GetUser] UUID Parse Error: %v", err)
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID Format"},
-		)
-		return
-	}
-
-	user, err := h.Repo.GetUserById(userID[:])
-	if err != nil {
-		log.Printf("[GetUser] Database Query Error: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "User not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.UserResponse{
-		ID:         userID.String(),
-		Username:   user.Username,
-		FirstName:  user.FirstName,
-		MiddleName: user.MiddleName,
-		LastName:   user.LastName,
-		Email:      user.Email,
-		Status:     string(user.Status),
-		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-	})
-}
-
-func (h *UserHandler) GetMe(c *gin.Context) {
-	val, exists := c.Get("user_id")
-	if !exists {
-		log.Print("[GetMe] userID doesn't exist")
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "request error"},
-		)
-	}
-	userIDStr := val.(string)
-
-	val, exists = c.Get("client_id")
-	if !exists {
-		log.Print("[GetMe] userID doesn't exist")
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "request error"},
-		)
-	}
-	clientIDStr := val.(string)
-
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		log.Printf("[GetMe] UUID Parse Error: %v", err)
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID Format"},
-		)
-		return
-	}
-
-	clientID, err := uuid.Parse(clientIDStr)
-	if err != nil {
-		log.Printf("[GetMe] UUID Parse Error: %v", err)
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID Format"},
-		)
-		return
-	}
-
-	user, err := h.Repo.GetUserById(userID[:])
-	if err != nil {
-		log.Printf("[GetMe] Database Query Error: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "User not found"})
-		return
-	}
-
-	roles, err := h.ClientRepo.GetClientAllowedRoles(clientID[:])
-	if err != nil {
-		log.Printf("[GetMe] Database Query Error: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "User not found"})
-		return
-	}
-	allowedRoleIDs := make([]int, len(roles))
-
-	for i, role := range roles {
-		allowedRoleIDs[i] = role.ID
-	}
-
-	siftedRoles := make([]models.Role, 0, len(user.Roles))
-
-	allowedMap := make(map[int]bool)
-	for _, id := range allowedRoleIDs {
-		allowedMap[id] = true
-	}
-
-	for _, role := range user.Roles {
-		if allowedMap[role.ID] {
-			siftedRoles = append(siftedRoles, role)
-		}
-	}
-
-	roleStrings := make([]string, 0, len(siftedRoles))
-	for _, role := range siftedRoles {
-		roleStrings = append(roleStrings, role.RoleName)
-	}
-
-	c.JSON(http.StatusOK, dto.UserInfoResponse{
-		ID:         userIDStr,
-		FirstName:  user.FirstName,
-		MiddleName: user.MiddleName,
-		LastName:   user.LastName,
-		Email:      user.Email,
-		Roles:      roleStrings,
-	})
 }
 
 // GetUserList retrieves a paginated list of users
@@ -212,70 +70,103 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	offset := (page - 1) * PAGE_LIMIT
-	users, err := h.Repo.GetUserList(PAGE_LIMIT, offset)
+
+	// Constants are used for global configuration values
+	resp, err := h.Service.GetUserList(
+		c.Request.Context(),
+		service.PAGE_LIMIT,
+		page,
+	)
 	if err != nil {
-		log.Printf("[GetUserList] Fetch List Error: %v", err)
+		log.Printf("[GetUserList] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to fetch user list"},
+			dto.ErrorResponse{Error: "failed to retrieve user list"},
 		)
 		return
 	}
 
-	total, err := h.Repo.CountUsers()
+	c.JSON(http.StatusOK, resp)
+}
+
+// GetUser retrieves a single user by their UUID string
+// @Summary Get User
+// @Description Fetch user details using their unique ID
+// @Tags Users
+// @Produce json
+// @Param id path string true "User ID (UUID)"
+// @Success 200 {object} dto.UserResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 440 {object} dto.ErrorResponse
+// @Router /api/v1/users/{id} [get]
+func (h *UserHandler) GetUser(c *gin.Context) {
+	id := c.Param("id")
+	userID, err := uuid.Parse(id)
 	if err != nil {
-		log.Printf("[GetUserList] Database Count Error: %v", err)
+		log.Printf("[GetUser] UUID Parse: %v", err)
 		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to fetch user count"},
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalid ID Format"},
 		)
 		return
 	}
 
-	lastPage := (total + PAGE_LIMIT - 1) / PAGE_LIMIT
-	if lastPage == 0 {
-		lastPage = 1
+	resp, err := h.Service.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		log.Printf("[GetUser] %v", err)
+		c.JSON(
+			http.StatusNotFound,
+			dto.ErrorResponse{Error: "User not found"},
+		)
+		return
 	}
 
-	var userResponses []dto.UserResponse
-	for _, user := range users {
-		roleList, err := service.GetUserRoles(user.Roles)
-		if err != nil {
-			log.Printf("[GetUserList] Get roles error: %v", err)
-			c.JSON(
-				http.StatusInternalServerError,
-				dto.ErrorResponse{Error: "Failed to get roles"},
-			)
-			return
-		}
-		userUUID, err := uuid.FromBytes(user.ID)
-		if err != nil {
-			log.Printf("[GetUserList] parse error: %v", err)
-			c.JSON(http.StatusInternalServerError,
-				dto.ErrorResponse{Error: "parse error"})
-			return
-		}
-		userResponses = append(userResponses, dto.UserResponse{
-			ID:         userUUID.String(),
-			Username:   user.Username,
-			FirstName:  user.FirstName,
-			MiddleName: user.MiddleName,
-			LastName:   user.LastName,
-			Email:      user.Email,
-			Status:     string(user.Status),
-			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-			UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-			Roles:      roleList,
+	c.JSON(http.StatusOK, resp)
+}
+
+// GetMe retrieves user information based on the access token bearer auth
+// @Summary      Get authenticated user info
+// @Description  Returns user profile filtered by client allowed roles
+// @Tags         User
+// @Produce      json
+// @Success      200  {object}  dto.UserInfoResponse
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Router       /me [get]
+// @Security     BearerAuth
+func (h *UserHandler) GetMe(c *gin.Context) {
+	uVal, uExists := c.Get("user_id")
+	cVal, cExists := c.Get("client_id")
+
+	if !uExists || !cExists {
+		log.Print("[GetMe] Context Extraction: missing identifiers")
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "missing session context",
 		})
+		return
 	}
 
-	c.JSON(http.StatusOK, dto.UserResponseList{
-		Users:       userResponses,
-		TotalCount:  total,
-		CurrentPage: page,
-		LastPage:    lastPage,
-	})
+	uID, uErr := uuid.Parse(uVal.(string))
+	cID, cErr := uuid.Parse(cVal.(string))
+
+	if uErr != nil || cErr != nil {
+		log.Printf("[GetMe] Token Generation: invalid uuid format")
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid identification format",
+		})
+		return
+	}
+
+	resp, err := h.Service.GetMe(c.Request.Context(), uID, cID)
+	if err != nil {
+		log.Printf("[GetMe] %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "user information not found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 // PatchUserPassword updates a user's password.
@@ -292,10 +183,9 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 // @Router /api/v1/users/{id}/password [patch]
 func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 	id := c.Param("id")
-	var req dto.UpdatePasswordRequest
-	userId, err := uuid.Parse(id)
+	userID, err := uuid.Parse(id)
 	if err != nil {
-		log.Printf("[PatchUserPassword] UUID Parse Error: %v", err)
+		log.Printf("[PatchUserPassword] UUID Parse: %v", err)
 		c.JSON(
 			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "Invalid ID Format"},
@@ -303,24 +193,23 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 		return
 	}
 
-	passwordHash, err := utils.HashSecret(req.NewPassword)
-	if err != nil {
-		log.Printf("[PatchUpdatePassword] Hashing failed: %v", err)
+	var req dto.UpdatePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PatchUserPassword] Bind JSON: %v", err)
 		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Hashing failed"},
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid request body"},
 		)
 		return
 	}
 
-	user := models.User{
-		ID:           userId[:],
-		PasswordHash: passwordHash,
-	}
-
-	err = h.Repo.UpdateUserPassword(&user)
+	err = h.Service.UpdateUserPassword(
+		c.Request.Context(),
+		userID,
+		req.NewPassword,
+	)
 	if err != nil {
-		log.Printf("[PatchUpdatePassword] Update failed: %v", err)
+		log.Printf("[PatchUserPassword] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Update failed"},
@@ -328,10 +217,9 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(
-		http.StatusOK,
-		dto.SuccessResponse{Message: "Password Updated Successfuly!"},
-	)
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Password Updated Successfully!",
+	})
 }
 
 // PatchUserStatus updates the operational status of a user.
@@ -348,10 +236,9 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 // @Router /api/v1/users/{id}/status [patch]
 func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 	id := c.Param("id")
-	var req dto.UpdateStatusRequest
-	userId, err := uuid.Parse(id)
+	userID, err := uuid.Parse(id)
 	if err != nil {
-		log.Printf("[PatchUserStatus] UUID Parse Error: %v", err)
+		log.Printf("[PatchUserStatus] UUID Parse: %v", err)
 		c.JSON(
 			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "Invalid ID Format"},
@@ -359,33 +246,33 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 		return
 	}
 
+	var req dto.UpdateStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("[PatchUserStatus] Bind JSON Error: %v", err)
+		log.Printf("[PatchUserStatus] Bind JSON: %v", err)
 		c.JSON(
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalaid input"},
+			dto.ErrorResponse{Error: "Invalid input"},
 		)
 		return
 	}
 
-	status, err := models.MapStatus(req.NewStatus)
+	err = h.Service.UpdateUserStatus(
+		c.Request.Context(),
+		userID,
+		req.NewStatus,
+	)
 	if err != nil {
-		log.Printf("[PatchUserStatus] Invalid status: %v", err)
-		c.JSON(
-			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid status request"},
-		)
-		return
-	}
+		log.Printf("[PatchUserStatus] %v", err)
 
-	user := models.User{
-		ID:     userId[:],
-		Status: status,
-	}
+		// Differentiate between validation errors and server errors
+		if strings.Contains(err.Error(), "Status Validation") {
+			c.JSON(
+				http.StatusBadRequest,
+				dto.ErrorResponse{Error: "Invalid status provided"},
+			)
+			return
+		}
 
-	err = h.Repo.UpdateStatus(&user)
-	if err != nil {
-		log.Printf("[PatchUserStatus] Update failed: %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Update failed"},
@@ -393,10 +280,9 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 		return
 	}
 
-	c.JSON(
-		http.StatusOK,
-		dto.SuccessResponse{Message: "Status Updated Successfuly!"},
-	)
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Status Updated Successfully!",
+	})
 }
 
 // PatchUserRoles updates the roles assigned to a specific user.
@@ -413,10 +299,9 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 // @Router /users/{id}/roles [patch]
 func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 	id := c.Param("id")
-	var req dto.UpdateUserRoleRequest
-	userId, err := uuid.Parse(id)
+	userID, err := uuid.Parse(id)
 	if err != nil {
-		log.Printf("[PatchUserRoles] UUID Parse Error: %v", err)
+		log.Printf("[PatchUserRoles] UUID Parse: %v", err)
 		c.JSON(
 			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "Invalid ID Format"},
@@ -424,18 +309,23 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 		return
 	}
 
+	var req dto.UpdateUserRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("[PatchUserRoles] Bind JSON Error: %v", err)
+		log.Printf("[PatchUserRoles] Bind JSON: %v", err)
 		c.JSON(
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalaid input"},
+			dto.ErrorResponse{Error: "Invalid input"},
 		)
 		return
 	}
 
-	err = h.Repo.UpdateUserRoles(userId[:], req.RoleIDs)
+	err = h.Service.UpdateUserRoles(
+		c.Request.Context(),
+		userID,
+		req.RoleIDs,
+	)
 	if err != nil {
-		log.Printf("[PatchUserRoles] Update failed: %v", err)
+		log.Printf("[PatchUserRoles] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Update failed"},
@@ -443,10 +333,9 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 		return
 	}
 
-	c.JSON(
-		http.StatusOK,
-		dto.SuccessResponse{Message: "roles updated successfully!"},
-	)
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "roles updated successfully!",
+	})
 }
 
 // DeleteUser performs a soft delete on a user record
@@ -462,13 +351,17 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	userID, err := uuid.Parse(id)
 	if err != nil {
-		log.Printf("[DeleteUser] UUID Parse Error: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid ID"})
+		log.Printf("[DeleteUser] UUID Parse: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalid ID Format"},
+		)
 		return
 	}
 
-	if err := h.Repo.SoftDelete(userID[:]); err != nil {
-		log.Printf("[DeleteUser] Database SoftDelete Error: %v", err)
+	err = h.Service.DeleteUser(c.Request.Context(), userID)
+	if err != nil {
+		log.Printf("[DeleteUser] %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Deletion Failed"},
@@ -476,8 +369,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(
-		http.StatusOK,
-		dto.SuccessResponse{Message: "User deleted successfully"},
-	)
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "User deleted successfully",
+	})
 }
