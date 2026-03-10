@@ -39,6 +39,12 @@ export default function LoginForm() {
     return "";
   };
 
+  const getValidationAlertMessage = (errors) => {
+    const messages = Object.values(errors).filter(Boolean);
+
+    return messages.join(" ");
+  };
+
   const validateFields = () => {
     const nextErrors = {
       email: getEmailError(email),
@@ -46,12 +52,17 @@ export default function LoginForm() {
     };
 
     setFieldErrors(nextErrors);
-    return !nextErrors.email && !nextErrors.password;
+
+    const validationMessage = getValidationAlertMessage(nextErrors);
+    setError(validationMessage);
+
+    return !validationMessage;
   };
 
   const handleEmailChange = (e) => {
     const nextEmail = e.target.value;
     setEmail(nextEmail);
+    setError("");
 
     setFieldErrors((prev) => ({
       ...prev,
@@ -60,15 +71,20 @@ export default function LoginForm() {
   };
 
   const handleEmailBlur = () => {
+    const emailError = getEmailError(email);
+
     setFieldErrors((prev) => ({
       ...prev,
-      email: getEmailError(email),
+      email: emailError,
     }));
+
+    setError(emailError);
   };
 
   const handlePasswordChange = (e) => {
     const nextPassword = e.target.value;
     setPassword(nextPassword);
+    setError("");
 
     setFieldErrors((prev) => ({
       ...prev,
@@ -77,10 +93,14 @@ export default function LoginForm() {
   };
 
   const handlePasswordBlur = () => {
+    const passwordError = getPasswordError(password);
+
     setFieldErrors((prev) => ({
       ...prev,
-      password: getPasswordError(password),
+      password: passwordError,
     }));
+
+    setError(passwordError);
   };
 
   const handleSubmit = async (e) => {
@@ -240,7 +260,7 @@ export default function LoginForm() {
                 <label className="flex items-center gap-2 text-sm text-white/80">
                   <input
                     type="checkbox"
-                    className="checkbox h-6 rounded-md border-gray-300 bg-transparent checked:border-yellow-900 checked:bg-[#ffd700] checked:text-white"
+                    className="checkbox rounded-md border-gray-300 bg-transparent checked:border-yellow-900 checked:bg-[#ffd700] checked:text-white"
                   />
                   <span>Remember me</span>
                 </label>
