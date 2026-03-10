@@ -10,13 +10,17 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 	// authRepo := repository.NewAuthCodeRepository(db)
 	// sessionRepo := repository.NewSessionRepository(db)
 	clientRepo := repository.NewClientRepository(db)
-	// roleRepo := repository.NewRoleRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
 	// userRepo := repository.NewUserRepository(db)
 
 	return service.ServiceContainer{
 		ClientService: &service.ClientService{
-			Repo: clientRepo,
+			Repo:    clientRepo,
 			Storage: Storage,
+		},
+		RoleService: &service.RoleService{
+			RoleRepo:   roleRepo,
+			ClientRepo: clientRepo,
 		},
 	}
 }
