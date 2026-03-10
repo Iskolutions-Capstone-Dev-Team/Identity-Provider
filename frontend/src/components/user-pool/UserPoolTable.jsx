@@ -31,7 +31,7 @@ export default function UserPoolTable({ users = [], onView, onEdit, onDisable })
                                     </div>
                                 </td>
                                 <td className="text-[#991b1b] text-center border-gray-200">{u.email}</td>
-                                <td className="text-[#991b1b] text-center border-gray-200">{`${u.givenName} ${u.middleName ? `${u.middleName} ` : ""}${u.surname}`}</td>
+                                <td className="text-[#991b1b] text-center border-gray-200 whitespace-nowrap">{`${u.givenName} ${u.middleName ? `${u.middleName} ` : ""}${u.surname}`}</td>
                                 <td className="text-[#991b1b] text-center border-gray-200">
                                     {u.roles?.map((role, idx) => (
                                         <span key={idx} className="badge badge-outline bg-[#991b1b] text-white badge-sm mr-1">
