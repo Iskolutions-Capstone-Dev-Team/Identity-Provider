@@ -78,6 +78,39 @@ func (r *ClientRepository) ListClients(limit,
 	return clients, err
 }
 
+func (r *ClientRepository) ListBoundClients(
+	limit int,
+	offset int,
+	keyword string,
+	userID []byte,
+) ([]models.Client, error) {
+	var clients []models.Client
+	searchKeyword := "%" + keyword + "%"
+
+	query := `
+		SELECT 
+			c.id, c.client_name, c.tag, 
+			c.description, c.image_location, 
+			c.base_url, c.redirect_uri, c.logout_uri, c.created_at
+		FROM clients c
+		JOIN admin_allowed_clients a ON c.id = a.client_id
+		WHERE a.user_id = ? 
+			AND c.deleted_at IS NULL 
+			AND c.client_name LIKE ?
+		LIMIT ? OFFSET ?
+	`
+
+	err := r.db.Select(
+		&clients, 
+		query, 
+		userID, 
+		searchKeyword, 
+		limit, 
+		offset,
+	)
+	return clients, err
+}
+
 // CreateClient handles atomic insertion of client, grants, and prefixed roles.
 // @Summary Create Client
 // @ID create-client
@@ -203,14 +236,38 @@ func (r *ClientRepository) ListClientBaseURLS() ([]string, error) {
 	return baseURLS, nil
 }
 
-func (r *ClientRepository) CountClients() (int, error) {
+func (r *ClientRepository) CountClients(keyword string) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL`
-	err := r.db.Get(&count, query)
+	searchKeyword := "%" + keyword + "%"
+
+	query := `
+		SELECT COUNT(*) FROM clients 
+		WHERE deleted_at IS NULL
+		AND client_name LIKE ?
+	`
+	err := r.db.Get(&count, query, searchKeyword)
 	if err != nil {
 		return 0, err
 	}
 	return count, nil
+}
+
+func (r *ClientRepository) CountBoundClients(keyword string) (int, error) {
+	var count int
+	searchKeyword := "%" + keyword + "%"
+
+	query := `
+		SELECT COUNT(*)
+		FROM clients c
+		JOIN admin_allowed_clients a ON c.id = a.client_id
+		WHERE a.user_id = ? 
+			AND c.deleted_at IS NULL 
+			AND c.client_name LIKE ?
+	`
+
+	err := r.db.Get(&count, query, searchKeyword)
+
+	return count, err
 }
 
 func (r *ClientRepository) RotateSecret(id []byte, oldSecretHash string,
