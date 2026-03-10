@@ -8,16 +8,13 @@ import (
 	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type UserHandler struct {
-	Service    *service.UserService
-	Repo       *repository.UserRepository
-	ClientRepo *repository.ClientRepository
+	Service *service.UserService
 }
 
 // PostUser creates a new user in the system
