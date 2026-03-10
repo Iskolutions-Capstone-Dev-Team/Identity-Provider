@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { roleService } from "../services/roleService";
 
-export function useAllRoles() {
+export function useAllRoles({ endpoint = "default" } = {}) {
   const [roles, setRoles] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
+    const fetchRolePage =
+      endpoint === "all" ? roleService.getAllRolesPage : roleService.getRoles;
 
     const fetchAll = async () => {
       try {
-        const firstPage = await roleService.getRoles(1);
+        const firstPage = await fetchRolePage(1);
         const collectedRoles = Array.isArray(firstPage?.roles) ? [...firstPage.roles] : [];
         const lastPage =
           Number.isInteger(firstPage?.last_page) && firstPage.last_page > 1
@@ -19,7 +21,7 @@ export function useAllRoles() {
         if (lastPage > 1) {
           const pageRequests = [];
           for (let page = 2; page <= lastPage; page += 1) {
-            pageRequests.push(roleService.getRoles(page));
+            pageRequests.push(fetchRolePage(page));
           }
 
           const pageResults = await Promise.all(pageRequests);
@@ -49,7 +51,7 @@ export function useAllRoles() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [endpoint]);
 
   return roles;
 }
