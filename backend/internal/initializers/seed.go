@@ -37,7 +37,7 @@ func MigrateAndSeed() {
 		log.Print(err)
 	}
 
-	privelegedTables := [...]string{
+	privilegedTables := [...]string{
 		"authorization_codes",
 		"refresh_tokens",
 		"user_roles",
@@ -48,7 +48,7 @@ func MigrateAndSeed() {
 		"admin_allowed_clients",
 	}
 
-	for _, tableName := range privelegedTables {
+	for _, tableName := range privilegedTables {
 		err = grantDeleteOnTable(tableName, adminDatabase)
 		if err != nil {
 			log.Fatal(err)
@@ -116,7 +116,8 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 	}
 
 	clientRepo := repository.NewClientRepository(adminDatabase)
-	err := clientRepo.CreateClient(client, grants, roleIDs)
+	uuid := uuid.New()
+	err := clientRepo.CreateClient(client, grants, roleIDs, uuid[:])
 	if err != nil {
 		return fmt.Errorf("[Migrate] Client seeding failed: %v", err)
 	} else {
