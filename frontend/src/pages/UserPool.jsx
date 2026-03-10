@@ -106,6 +106,7 @@ export default function UserPool() {
               page={page}
               itemsPerPage={ITEMS_PER_PAGE}
               totalResults={totalResults}
+              currentResultsCount={paginatedUsers.length}
             />
           </div>
           <Pagination

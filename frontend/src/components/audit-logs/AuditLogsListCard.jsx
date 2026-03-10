@@ -51,7 +51,12 @@ export default function AuditLogsListCard({ activeTab, logs, totalResults, items
             {!loading && !error && (
                 <>
                     <div className="flex justify-center mt-6">
-                        <ResultsCount page={page} itemsPerPage={itemsPerPage} totalResults={totalResults}/>
+                        <ResultsCount
+                            page={page}
+                            itemsPerPage={itemsPerPage}
+                            totalResults={totalResults}
+                            currentResultsCount={logs.length}
+                        />
                     </div>
 
                     <Pagination currentPage={page} totalPages={totalPages} onPageChange={onPageChange}/>

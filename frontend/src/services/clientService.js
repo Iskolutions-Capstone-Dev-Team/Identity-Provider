@@ -37,14 +37,16 @@ const normalizeRotateSecretPayload = (payload, fallbackClientId) => {
 };
 
 export const clientService = {
-  async getClients(limit = 10, offset = 0, keyword = "") {
+  async getClients({ limit = 10, page = 1, keyword = "" } = {}) {
     const normalizedKeyword =
       typeof keyword === "string" ? keyword.trim() : "";
+    const normalizedPage =
+      Number.isInteger(page) && page > 0 ? page : 1;
 
     const response = await axiosInstance.get(`/admin/clients`, {
       params: {
         limit,
-        offset,
+        page: normalizedPage,
         ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
       },
     });
@@ -59,8 +61,12 @@ export const clientService = {
       payload?.count ??
       payload?.totalResults ??
       items.length;
+    const lastPage =
+      Number.isInteger(payload?.last_page) && payload.last_page > 0
+        ? payload.last_page
+        : 1;
 
-    return { items, total };
+    return { items, total, lastPage };
   },
 
   async getClientById(id) {

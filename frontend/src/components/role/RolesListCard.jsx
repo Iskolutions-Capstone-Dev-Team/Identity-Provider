@@ -27,7 +27,12 @@ export default function RolesListCard({ roles, totalResults, itemsPerPage, searc
             </div>
             <RolesListTable roles={roles} onView={onView} onEdit={onEdit} onDelete={onDelete} />
             <div className="flex justify-center mt-6">
-                <ResultsCount page={page} itemsPerPage={itemsPerPage} totalResults={totalResults} />
+                <ResultsCount
+                    page={page}
+                    itemsPerPage={itemsPerPage}
+                    totalResults={totalResults}
+                    currentResultsCount={roles.length}
+                />
             </div>
             <Pagination currentPage={page} totalPages={totalPages} onPageChange={onPageChange} />
         </RoleCard>

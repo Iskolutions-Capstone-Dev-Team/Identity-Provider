@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { userService } from "../services/userService";
-import { roleService } from "../services/roleService";
+import { useAllRoles } from "./useAllRoles";
 
 const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
+const ITEMS_PER_PAGE = 10;
 
 function normalizeRoleNames(roles) {
   if (!Array.isArray(roles)) {
@@ -58,67 +59,114 @@ function areSameStringArrays(first = [], second = []) {
   return normalizedFirst.every((value, index) => value === normalizedSecond[index]);
 }
 
+function mapUserResponse(user = {}) {
+  return {
+    id: user.id,
+    username: user.user_name,
+    email: user.email,
+    givenName: user.first_name,
+    middleName: user.middle_name,
+    surname: user.last_name,
+    status: user.status,
+    createdAt: user.created_at,
+    roles: normalizeRoleNames(user.roles),
+  };
+}
+
+function matchesUserSearch(user, searchValue) {
+  const normalizedSearch =
+    typeof searchValue === "string" ? searchValue.trim().toLowerCase() : "";
+
+  if (!normalizedSearch) {
+    return true;
+  }
+
+  const fullName = [user.givenName, user.middleName, user.surname]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    user.username?.toLowerCase().includes(normalizedSearch) ||
+    user.email?.toLowerCase().includes(normalizedSearch) ||
+    fullName.includes(normalizedSearch)
+  );
+}
+
+function normalizeVisibleRoles(userRoles, allRoles) {
+  if (allRoles.length === 0) {
+    return userRoles;
+  }
+
+  return userRoles.filter((roleName) =>
+    allRoles.some((role) => role.role_name === roleName),
+  );
+}
+
+async function getAllUsers() {
+  const firstPage = await userService.getUsers(1);
+  const collectedUsers = Array.isArray(firstPage?.users) ? [...firstPage.users] : [];
+  const lastPage =
+    Number.isInteger(firstPage?.last_page) && firstPage.last_page > 1
+      ? firstPage.last_page
+      : 1;
+
+  if (lastPage > 1) {
+    const pageRequests = [];
+
+    for (let nextPage = 2; nextPage <= lastPage; nextPage += 1) {
+      pageRequests.push(userService.getUsers(nextPage));
+    }
+
+    const pageResults = await Promise.all(pageRequests);
+    pageResults.forEach((pagePayload) => {
+      if (Array.isArray(pagePayload?.users)) {
+        collectedUsers.push(...pagePayload.users);
+      }
+    });
+  }
+
+  return collectedUsers.map(mapUserResponse);
+}
+
 export function useUsers() {
   const [users, setUsers] = useState([]);
-  const [allRoles, setAllRoles] = useState([]);
+  const allRoles = useAllRoles();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalResults, setTotalResults] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
   const [fetchError, setFetchError] = useState("");
 
   // =========================
-  // FETCH ROLES
-  // =========================
-  useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const data = await roleService.getRoles(1);
-        setAllRoles(data.roles || []);
-      } catch (error) {
-        console.error("Fetch roles error:", error);
-      }
-    };
-
-    fetchRoles();
-  }, []);
-
-  // =========================
   // FETCH USERS
   // =========================
-  useEffect(() => {
-    fetchUsers(page);
-  }, [page]);
-
-  const fetchUsers = async (pageNumber) => {
+  const fetchUsers = async () => {
     try {
-      const data = await userService.getUsers(pageNumber);
-
-      const mappedUsers = (data.users || []).map((u) => ({
-        id: u.id,
-        username: u.user_name,
-        email: u.email,
-        givenName: u.first_name,
-        middleName: u.middle_name,
-        surname: u.last_name,
-        status: u.status,
-        createdAt: u.created_at,
-        roles: normalizeRoleNames(u.roles),
-      }));
-
-      setUsers(mappedUsers);
-      setTotalPages(data.last_page || 1);
-      setTotalResults(data.total_count || 0);
+      const allUsers = await getAllUsers();
+      setUsers(allUsers);
       setFetchError("");
     } catch (error) {
       console.error("Fetch users error:", error);
       setUsers([]);
-      setTotalPages(1);
-      setTotalResults(0);
       setFetchError("Failed to load users. Check the backend connection.");
     }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const setSearchKeyword = (value) => {
+    const nextValue = typeof value === "string" ? value : "";
+    setPage(1);
+    setSearch(nextValue);
+  };
+
+  const setStatusFilter = (value) => {
+    const nextValue = typeof value === "string" ? value : "";
+    setPage(1);
+    setStatus(nextValue);
   };
 
   // =========================
@@ -141,7 +189,7 @@ export function useUsers() {
       await userService.createUser(payload);
 
       setSuccessMessage("User successfully created!");
-      fetchUsers(page);
+      await fetchUsers();
     } catch (error) {
       console.error("Create user error:", error);
     }
@@ -154,7 +202,7 @@ export function useUsers() {
     try {
       await userService.deleteUser(userId);
       setSuccessMessage(`User ${username} deleted successfully`);
-      fetchUsers(page);
+      await fetchUsers();
     } catch (error) {
       console.error("Delete error:", error);
     }
@@ -188,10 +236,10 @@ export function useUsers() {
       }
 
       setSuccessMessage("User successfully updated!");
-      fetchUsers(page);
+      await fetchUsers();
     } catch (error) {
       if (rolesWereUpdated) {
-        fetchUsers(page);
+        await fetchUsers();
       }
 
       if (rolesWereUpdated && isStatusRequestError(error)) {
@@ -208,35 +256,40 @@ export function useUsers() {
   // =========================
   // FILTER USERS
   // =========================
-  const filteredUsers = users.map((u) => ({
-    ...u,
-    roles:
-      allRoles.length > 0
-        ? u.roles.filter((roleName) =>
-            allRoles.some((r) => r.role_name === roleName)
-          )
-        : u.roles,
-  })).filter((u) => {
-    const matchesSearch =
-      u.username?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(search.toLowerCase()) ||
-      `${u.givenName} ${u.surname}`
-        .toLowerCase()
-        .includes(search.toLowerCase());
+  const filteredUsers = users
+    .map((user) => ({
+      ...user,
+      roles: normalizeVisibleRoles(user.roles, allRoles),
+    }))
+    .filter((user) => {
+      const matchesSearch = matchesUserSearch(user, search);
+      const matchesStatus = status ? user.status === status : true;
 
-    const matchesStatus = status ? u.status === status : true;
+      return matchesSearch && matchesStatus;
+    });
 
-    return matchesSearch && matchesStatus;
-  });
+  const totalResults = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalResults / ITEMS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+
+  useEffect(() => {
+    if (page !== currentPage) {
+      setPage(currentPage);
+    }
+  }, [currentPage, page]);
 
   return {
     search,
-    setSearch,
+    setSearch: setSearchKeyword,
     status,
-    setStatus,
-    page,
+    setStatus: setStatusFilter,
+    page: currentPage,
     setPage,
-    paginatedUsers: filteredUsers,
+    paginatedUsers,
     totalPages,
     totalResults,
     successMessage,

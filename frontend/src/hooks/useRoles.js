@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { roleService } from "../services/roleService";
 
 export function useRoles() {
@@ -9,28 +9,63 @@ export function useRoles() {
   const [totalResults, setTotalResults] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const searchKeyword = search.trim();
 
   // =========================
   // FETCH ROLES
   // =========================
-  const fetchRoles = async () => {
+  const fetchRoles = async (pageNumber = page) => {
     try {
       setLoading(true);
-      const data = await roleService.getRoles(page);
 
-      setRoles(data.roles);
-      setTotalPages(data.last_page);
-      setTotalResults(data.total_count);
+      if (searchKeyword) {
+        const data = await roleService.searchRoles(searchKeyword);
+        const nextRoles = Array.isArray(data?.roles) ? data.roles : [];
+
+        setRoles(nextRoles);
+        setTotalPages(1);
+        setTotalResults(nextRoles.length);
+        return;
+      }
+
+      const data = await roleService.getRoles(pageNumber);
+      const nextRoles = Array.isArray(data?.roles) ? data.roles : [];
+      const nextTotalPages =
+        Number.isInteger(data?.last_page) && data.last_page > 0
+          ? data.last_page
+          : 1;
+      const nextTotalResults =
+        Number.isInteger(data?.total_count) && data.total_count >= 0
+          ? data.total_count
+          : nextRoles.length;
+
+      if (pageNumber > nextTotalPages) {
+        setPage(nextTotalPages);
+        return;
+      }
+
+      setRoles(nextRoles);
+      setTotalPages(nextTotalPages);
+      setTotalResults(nextTotalResults);
     } catch (error) {
       console.error("Failed to fetch roles:", error);
+      setRoles([]);
+      setTotalPages(1);
+      setTotalResults(0);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRoles();
-  }, [page]);
+    fetchRoles(page);
+  }, [page, searchKeyword]);
+
+  const setSearchKeyword = (value) => {
+    const nextValue = typeof value === "string" ? value : "";
+    setPage(1);
+    setSearch(nextValue);
+  };
 
   // =========================
   // CREATE
@@ -39,7 +74,7 @@ export function useRoles() {
     try {
       await roleService.createRole(data);
       setSuccessMessage("Role successfully created!");
-      fetchRoles();
+      fetchRoles(page);
     } catch (error) {
       console.error("Create failed:", error);
     }
@@ -52,7 +87,7 @@ export function useRoles() {
     try {
       await roleService.updateRole(data.id, data);
       setSuccessMessage("Role successfully updated!");
-      fetchRoles();
+      fetchRoles(page);
     } catch (error) {
       console.error("Update failed:", error);
     }
@@ -65,18 +100,11 @@ export function useRoles() {
     try {
       await roleService.deleteRole(id);
       setSuccessMessage("Role successfully deleted!");
-      fetchRoles();
+      fetchRoles(page);
     } catch (error) {
       console.error("Delete failed:", error);
     }
   };
-
-  // =========================
-  // SEARCH (frontend only)
-  // =========================
-  const filteredRoles = roles.filter((r) =>
-    r.role_name.toLowerCase().includes(search.toLowerCase())
-  );
 
   useEffect(() => {
     if (!successMessage) return;
@@ -86,12 +114,12 @@ export function useRoles() {
 
   return {
     search,
-    setSearch,
+    setSearch: setSearchKeyword,
     page,
     setPage,
     totalPages,
     totalResults,
-    paginatedRoles: filteredRoles,
+    paginatedRoles: roles,
     successMessage,
     setSuccessMessage,
     createRole,
