@@ -83,10 +83,14 @@ func (r *RoleRepository) ListAllExceptIdP(limit, offset int,
 	searchKeyword := "%" + keyword + "%"
 	notLike := "IDP:%"
 	query := `
-        SELECT id, role_name, description, created_at, updated_at FROM roles 
-        WHERE deleted_at IS NULL AND role_name LIKE ? AND NOT LIKE ?
-        ORDER BY id DESC 
-        LIMIT ? OFFSET ?`
+        SELECT id, role_name, description, created_at, updated_at 
+		FROM roles 
+		WHERE deleted_at IS NULL 
+		AND role_name LIKE ? 
+		AND role_name NOT LIKE ?
+		ORDER BY id DESC 
+		LIMIT ? OFFSET ?
+	`
 	err := r.db.Select(&roles, query, searchKeyword, notLike, limit, offset)
 	return roles, err
 }
