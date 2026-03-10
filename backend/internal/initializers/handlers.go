@@ -12,19 +12,13 @@ import (
 func InitializeHandlers(db *sqlx.DB,
 	service *service.ServiceContainer,
 ) *api.Handlers {
-	authRepo := repository.NewAuthCodeRepository(db)
-	sessionRepo := repository.NewSessionRepository(db)
 	clientRepo := repository.NewClientRepository(db)
 
 	mw := &middleware.Middleware{ClientRepo: clientRepo}
 
 	return &api.Handlers{
 		AuthHandler: &v1.AuthHandler{
-			Repo:        authRepo,
-			SessionRepo: sessionRepo,
-			ClientRepo:  clientRepo,
-			PrivateKey:  PrivKey,
-			PublicKey:   PubKey,
+			Service: service.AuthService,
 		},
 		ClientHandler: &v1.ClientHandler{
 			Service: service.ClientService,
