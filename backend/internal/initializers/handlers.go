@@ -5,10 +5,13 @@ import (
 	v1 "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/jmoiron/sqlx"
 )
 
-func InitializeHandlers(db *sqlx.DB) *api.Handlers {
+func InitializeHandlers(db *sqlx.DB,
+	service *service.ServiceContainer,
+) *api.Handlers {
 	authRepo := repository.NewAuthCodeRepository(db)
 	sessionRepo := repository.NewSessionRepository(db)
 	clientRepo := repository.NewClientRepository(db)
@@ -26,9 +29,7 @@ func InitializeHandlers(db *sqlx.DB) *api.Handlers {
 			PublicKey:   PubKey,
 		},
 		ClientHandler: &v1.ClientHandler{
-			Repo:       clientRepo,
-			PrivateKey: PrivKey,
-			Storage:    Storage,
+			Service:    service.ClientService,
 		},
 		RoleHandler: &v1.RoleHandler{
 			Repo:       roleRepo,
