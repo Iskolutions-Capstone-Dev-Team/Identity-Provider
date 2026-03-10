@@ -198,6 +198,41 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// GetAllRoles handles GET /v1/admin/roles/all
+// @Summary List all roles
+// @Description Retrieves a paginated list of non-deleted roles
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Success 200 {object} dto.RoleListResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /v1/admin/roles [get]
+func (h *RoleHandler) GetAllRoles(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	keyword := c.DefaultQuery("keyword", "")
+	if page < 1 {
+		page = 1
+	}
+
+	resp, err := h.Service.GetRoleList(
+		c.Request.Context(),
+		service.PAGE_LIMIT,
+		page,
+		keyword,
+	)
+	if err != nil {
+		log.Printf("[GetRoleList] %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Failed to fetch roles"},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 // GetRole handles GET /v1/admin/roles/:id
 // @Summary Get role by ID
 // @Description Fetches full details of a specific role
