@@ -2,6 +2,7 @@ package service
 
 import (
 	"crypto/rsa"
+	"fmt"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
@@ -48,5 +49,5 @@ func (s *PrivilegeService) CheckUserPrivelege(c *gin.Context) (int, error) {
 		}
 	}
 
-	return ErrorLevel, nil
+	return ErrorLevel, fmt.Errorf("Unauthorized user",)
 }
