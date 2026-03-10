@@ -7,15 +7,13 @@ import (
 	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
 type RoleHandler struct {
-	Service    *service.RoleService
-	Repo       *repository.RoleRepository
-	ClientRepo *repository.ClientRepository
+	Service     *service.RoleService
+	PrivelegeService *service.PrivilegeService
 }
 
 // PostRole handles POST /v1/admin/roles
