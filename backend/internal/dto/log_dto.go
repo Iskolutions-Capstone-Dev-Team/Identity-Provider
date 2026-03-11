@@ -17,13 +17,13 @@ type PostAuditLogRequest struct {
 	Action   string          `json:"action" validate:"required"`
 	Target   string          `json:"target" validate:"required"`
 	Status   string          `json:"status" validate:"oneof=success fail"`
-	Metadata json.RawMessage `json:"metadata"`
+	Metadata json.RawMessage `json:"metadata" swaggertype:"object"`
 }
 
 // GetAuditLogListRequest defines the structure for querying a list of logs.
-type GetAuditLogListRequest struct {
-	AuditLogs   []GetAuditLogRequest
-	TotalCount  int
+type GetAuditLogListResponse struct {
+	AuditLogs   []PostAuditLogRequest
+	TotalCount  int64
 	CurrentPage int
 	LastPage    int
 }

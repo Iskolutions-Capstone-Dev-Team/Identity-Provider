@@ -117,3 +117,52 @@ func (s *LogService) ResolveClientName(clientID string) string {
 func (s *LogService) GetUserEmail(userID []byte) (string, error) {
 	return s.Repo.GetUserEmailbyID(userID)
 }
+
+// GetLogByID retrieves a single audit log by its ID and converts it to DTO.
+func (s *LogService) GetLogByID(id int64) (*dto.PostAuditLogRequest, error) {
+	log, err := s.Repo.GetLogByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("[LogService] GetLogByID: %w", err)
+	}
+	return &dto.PostAuditLogRequest{
+		Actor:    log.Actor,
+		Action:   log.Action,
+		Target:   log.Target,
+		Status:   log.Status,
+		Metadata: json.RawMessage(log.Metadata),
+	}, nil
+}
+
+// GetLogListWithFilters retrieves a paginated list of logs matching the filters.
+// It returns the list and total count.
+func (s *LogService) GetLogListWithFilters(
+	filters map[string]interface{},
+	limit, page int,
+) ([]dto.PostAuditLogRequest, int64, int, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	if page < 1 {
+		page = 1
+	}
+	offset := (page - 1) * limit
+
+	logs, total, err := s.Repo.GetLogListWithFilters(filters, limit, offset)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("[LogService] GetLogListWithFilters: %w", err)
+	}
+
+	dtos := make([]dto.PostAuditLogRequest, len(logs))
+	for i, log := range logs {
+		dtos[i] = dto.PostAuditLogRequest{
+			Actor:    log.Actor,
+			Action:   log.Action,
+			Target:   log.Target,
+			Status:   log.Status,
+			Metadata: json.RawMessage(log.Metadata),
+		}
+	}
+
+	lastPage := int((total + int64(limit) - 1) / int64(limit))
+	return dtos, total, lastPage, nil
+}
