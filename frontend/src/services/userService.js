@@ -1,6 +1,11 @@
 import axiosInstance from "./axiosInstance";
 
 export const userService = {
+  async getMe() {
+    const res = await axiosInstance.get("/me");
+    return res.data;
+  },
+
   async getUsers(page = 1) {
     const res = await axiosInstance.get(`/admin/users?page=${page}`);
     return res.data;
