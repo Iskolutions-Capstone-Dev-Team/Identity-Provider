@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { useUsers } from "../hooks/useUsers";
 import UserPoolCard from "../components/user-pool/UserPoolCard";
 import UserPoolFilters from "../components/user-pool/UserPoolFilters";
@@ -10,11 +11,16 @@ import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ResultsCount from "../components/ResultsCount";
 import PageHeader from "../components/PageHeader";
+import { EMPTY_CURRENT_USER, hasCurrentUserRole } from "../hooks/useCurrentUser";
 
 const ITEMS_PER_PAGE = 10;
+const SUPERADMIN_ROLE = "idp:superadmin";
 
 export default function UserPool() {
+  const outletContext = useOutletContext();
+  const currentUser = outletContext?.currentUser || EMPTY_CURRENT_USER;
   const {
+    users,
     search,
     setSearch,
     status,
@@ -37,6 +43,13 @@ export default function UserPool() {
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const currentUserFromList =
+    users.find((user) => currentUser.id && user.id === currentUser.id) ||
+    users.find((user) => currentUser.email && user.email === currentUser.email) ||
+    EMPTY_CURRENT_USER;
+  const canDeleteUsers =
+    hasCurrentUserRole(currentUser, SUPERADMIN_ROLE) ||
+    hasCurrentUserRole(currentUserFromList, SUPERADMIN_ROLE);
 
   const handleView = (user) => {
     setSelectedUser(user);
@@ -51,11 +64,19 @@ export default function UserPool() {
   };
 
   const handleDeleteClick = (user) => {
+    if (!canDeleteUsers) {
+      return;
+    }
+
     setUserToDelete(user);
     setOpenDelete(true);
   };
 
   const handleConfirmDelete = () => {
+    if (!userToDelete) {
+      return;
+    }
+
     deleteUser(userToDelete.id, userToDelete.username);
     setOpenDelete(false);
     setUserToDelete(null);
@@ -99,7 +120,8 @@ export default function UserPool() {
             users={paginatedUsers}
             onView={handleView}
             onEdit={handleEdit}
-            onDisable={handleDeleteClick}
+            onDelete={handleDeleteClick}
+            showDeleteAction={canDeleteUsers}
           />
           <div className="flex justify-center mt-6">
             <ResultsCount

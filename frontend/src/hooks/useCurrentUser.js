@@ -10,6 +10,32 @@ export const EMPTY_CURRENT_USER = {
   roles: [],
 };
 
+function normalizeRoleNames(roles) {
+  if (!Array.isArray(roles)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      roles
+        .map((role) => {
+          if (typeof role === "string") {
+            return role.trim();
+          }
+
+          return (
+            role?.role_name?.trim() ||
+            role?.roleName?.trim() ||
+            role?.name?.trim() ||
+            role?.label?.trim() ||
+            ""
+          );
+        })
+        .filter(Boolean),
+    ),
+  );
+}
+
 function mapCurrentUser(user = {}) {
   return {
     id: user.id || "",
@@ -17,7 +43,7 @@ function mapCurrentUser(user = {}) {
     middleName: user.middle_name || "",
     lastName: user.last_name || "",
     email: user.email || "",
-    roles: Array.isArray(user.roles) ? user.roles : [],
+    roles: normalizeRoleNames(user.roles),
   };
 }
 
@@ -32,6 +58,22 @@ export function formatCurrentUserName(currentUser = EMPTY_CURRENT_USER) {
     .trim();
 
   return fullName || "Profile";
+}
+
+export function hasCurrentUserRole(
+  currentUser = EMPTY_CURRENT_USER,
+  requiredRole = "",
+) {
+  const normalizedRequiredRole =
+    typeof requiredRole === "string" ? requiredRole.trim().toLowerCase() : "";
+
+  if (!normalizedRequiredRole) {
+    return false;
+  }
+
+  return currentUser.roles.some(
+    (role) => role.toLowerCase() === normalizedRequiredRole,
+  );
 }
 
 export function useCurrentUser() {
