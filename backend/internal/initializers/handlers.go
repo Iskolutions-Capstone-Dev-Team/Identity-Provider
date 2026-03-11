@@ -29,6 +29,7 @@ func InitializeHandlers(db *sqlx.DB,
 		RoleHandler: &v1.RoleHandler{
 			Service:          service.RoleService,
 			PrivilegeService: service.PrivilegeService,
+			LogService:       service.LogService,
 		},
 		UserHandler: &v1.UserHandler{
 			Service:          service.UserService,
