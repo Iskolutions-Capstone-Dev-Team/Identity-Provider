@@ -6,18 +6,6 @@ export default function ProfileDetails({ profile }) {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    Username
-                </label>
-                <div className="input input-bordered border-gray-300 h-12 rounded-lg text-base w-full bg-gray-50 flex items-center">
-                    <span className="text-gray-800" id="usernameValue">{profile.username}</span>
-                </div>
-            </div>
-
-            <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-500 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
                     First Name
                 </label>
                 <div className="input input-bordered border-gray-300 h-12 rounded-lg text-base w-full bg-gray-50 flex items-center">
