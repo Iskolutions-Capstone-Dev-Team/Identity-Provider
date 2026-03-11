@@ -74,10 +74,6 @@ export default function TermsAgreementModal({ open, onClose, onContinue }) {
                             </span>
                         </label>
 
-                        <label className="flex items-center gap-3 md:justify-self-end">
-                            <input type="checkbox" className="checkbox w-5 h-5 border-gray-400 checked:border-[#991b1b] checked:bg-[#991b1b]" />
-                            <span className="text-sm leading-6">Never show again today</span>
-                        </label>
                     </div>
                 </div>
 
