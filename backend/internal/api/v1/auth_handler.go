@@ -129,7 +129,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		true,
 	)
 
-	c.Redirect(http.StatusFound, redirectLink)
+	c.JSON(http.StatusOK, redirectLink)
 }
 
 // Logout terminates the user session and revokes all tokens
