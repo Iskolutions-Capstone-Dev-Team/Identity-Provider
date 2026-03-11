@@ -1,8 +1,17 @@
 import { useNavigate } from "react-router-dom";
+import { formatCurrentUserName } from "../hooks/useCurrentUser";
 
-export default function Navbar({ sidebarOpen }) {
+export default function Navbar({
+  sidebarOpen,
+  currentUser,
+  isLoadingCurrentUser,
+}) {
   const navigate = useNavigate();
   const desktopOffset = sidebarOpen ? "lg:left-64" : "lg:left-20";
+  const profileName = isLoadingCurrentUser
+    ? "Loading..."
+    : formatCurrentUserName(currentUser);
+  const primaryRole = currentUser?.roles?.[0] || "User";
 
   return (
     <nav
@@ -24,8 +33,8 @@ export default function Navbar({ sidebarOpen }) {
             <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd" />
           </svg>
           <div className="flex flex-col text-left">
-            <span className="text-white font-semibold transition-colors text-xs sm:text-sm md:text-base duration-300 group-hover:text-yellow-300">John Doe</span>
-            <span className="text-[10px] sm:text-xs text-yellow-300 transition-all duration-300 group-hover:text-white group-hover:tracking-wide">SuperAdmin</span>
+            <span className="text-white font-semibold transition-colors text-xs sm:text-sm md:text-base duration-300 group-hover:text-yellow-300">{profileName}</span>
+            <span className="text-[10px] sm:text-xs text-yellow-300 transition-all duration-300 group-hover:text-white group-hover:tracking-wide">{primaryRole}</span>
           </div>
         </button>
       </div>

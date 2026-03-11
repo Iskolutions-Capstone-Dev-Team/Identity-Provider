@@ -4,10 +4,12 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useSidebarState from "../hooks/useSidebarState";
 import TermsAgreementModal from "../components/TermAgreementModal";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 
 export default function IdpLayout() {
   const { sidebarOpen, toggleSidebar, closeSidebar } = useSidebarState();
   const [openTerms, setOpenTerms] = useState(false);
+  const { currentUser, isLoadingCurrentUser } = useCurrentUser();
 
   useEffect(() => {
     const accepted = sessionStorage.getItem("termsAccepted") === "true";
@@ -44,9 +46,14 @@ export default function IdpLayout() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col transition-all duration-300">
-        <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+        <Navbar
+          sidebarOpen={sidebarOpen}
+          toggleSidebar={toggleSidebar}
+          currentUser={currentUser}
+          isLoadingCurrentUser={isLoadingCurrentUser}
+        />
         <main className="flex-1 p-4 pt-20 sm:p-6 sm:pt-28 pb-28 lg:pb-6">
-          <Outlet />
+          <Outlet context={{ currentUser, isLoadingCurrentUser }} />
         </main>
       </div>
     </div>

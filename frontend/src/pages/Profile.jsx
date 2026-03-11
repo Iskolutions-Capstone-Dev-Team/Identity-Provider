@@ -1,14 +1,9 @@
 import { useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import ProfileCard from "../components/profile/ProfileCard";
 import ProfileAuditLogs from "../components/profile/AuditLogs";
-
-const INITIAL_PROFILE = {
-  firstName: "Juan",
-  middleName: "Miguel",
-  lastName: "Dela Cruz",
-  email: "juan.delacruz@iskolarngbayan.pup.edu.ph",
-};
+import { EMPTY_CURRENT_USER } from "../hooks/useCurrentUser";
 
 const INITIAL_AUDIT_LOGS = [
   {
@@ -44,6 +39,8 @@ const INITIAL_AUDIT_LOGS = [
 ];
 
 export default function Profile() {
+  const outletContext = useOutletContext();
+  const profile = outletContext?.currentUser || EMPTY_CURRENT_USER;
   const [logs, setLogs] = useState(INITIAL_AUDIT_LOGS);
 
   const handleAddAuditLog = (log) => {
@@ -73,7 +70,7 @@ export default function Profile() {
 
       <div className="w-full max-w-[85vw] sm:max-w-xl lg:max-w-7xl space-y-6">
         <ProfileCard
-          profile={INITIAL_PROFILE}
+          profile={profile}
           addAuditLog={handleAddAuditLog}
           allowEmailEdit={false}
         />

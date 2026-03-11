@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import EditProfileModal from "./EditProfileModal";
 import ChangePasswordModal from "../ChangePasswordModal";
 import ProfileDetails from "./ProfileDetails";
@@ -11,6 +11,10 @@ export default function ProfileCard({ profile, addAuditLog, allowEmailEdit = fal
     const [isPasswordOpen, setPasswordOpen] = useState(false);
     const [currentProfile, setCurrentProfile] = useState(profile);
     const [toastMessage, setToastMessage] = useState("");
+
+    useEffect(() => {
+        setCurrentProfile(profile);
+    }, [profile]);
 
     const handleProfileUpdate = (updatedProfile) => {
         setCurrentProfile(updatedProfile);
