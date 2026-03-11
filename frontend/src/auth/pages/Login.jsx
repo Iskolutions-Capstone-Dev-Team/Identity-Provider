@@ -1,5 +1,7 @@
+import { Navigate, useSearchParams } from "react-router-dom";
 import AuthLayout from "../layouts/AuthLayout";
 import LoginForm from "../components/LoginForm";
+import { buildLoginPath, getLoginClientId } from "../utils/loginRoute";
 
 const infoCards = [
   {
@@ -33,6 +35,13 @@ const infoCards = [
 ];
 
 export default function Login() {
+  const [searchParams] = useSearchParams();
+  const clientId = getLoginClientId(searchParams);
+
+  if (!searchParams.get("client_id") && clientId) {
+    return <Navigate to={buildLoginPath(clientId)} replace />;
+  }
+
   return (
     <AuthLayout>
       <div className="grid w-full items-center gap-10 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,28rem)] xl:gap-14">
@@ -69,7 +78,7 @@ export default function Login() {
         </section>
 
         <section className="flex w-full justify-center xl:justify-end">
-          <LoginForm />
+          <LoginForm clientId={clientId} />
         </section>
       </div>
     </AuthLayout>

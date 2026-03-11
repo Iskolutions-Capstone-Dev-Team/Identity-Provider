@@ -1,6 +1,7 @@
 import axios from "axios";
 import { clearAuthState, getAccessToken } from "../auth/utils/authCookies";
 import { refreshAccessToken } from "../auth/utils/tokenRefresh";
+import { buildLoginPath } from "../auth/utils/loginRoute";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -49,10 +50,10 @@ axiosInstance.interceptors.response.use(
       clearAuthState();
 
       if (typeof window !== "undefined") {
-        const publicPaths = new Set(["/", "/callback", "/401"]);
+        const publicPaths = new Set(["/", "/login", "/callback", "/401"]);
 
         if (!publicPaths.has(window.location.pathname)) {
-          window.location.replace("/");
+          window.location.replace(buildLoginPath());
         }
       }
 

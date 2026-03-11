@@ -2,7 +2,7 @@ import { useState } from "react";
 import { authService } from "../services/authService";
 import ErrorAlert from "../../components/ErrorAlert";
 
-export default function LoginForm() {
+export default function LoginForm({ clientId }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -106,17 +106,25 @@ export default function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     if (!validateFields()) {
       return;
     }
 
+    if (!clientId) {
+      setError("Login client is missing.");
+      return;
+    }
+
     try {
-      const loginResponse = await authService.login(email, password);
-      if (!loginResponse?.redirect_to) {
+      const redirectUrl = await authService.login(email, password, clientId);
+
+      if (!redirectUrl) {
         setError("Invalid server response. Please contact support.");
         return;
       }
-      window.location.href = loginResponse.redirect_to;
+
+      window.location.href = redirectUrl;
     } catch (err) {
       const status = err.response?.status;
       if (status === 400) {
