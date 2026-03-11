@@ -34,17 +34,6 @@ var LogoutUserProcedure = migrations.MigrationPart{
             SET expires_at = NOW()
             WHERE user_id = p_userId AND expires_at > NOW();
 
-            -- 4. Audit Log
-            INSERT INTO audit_logs (user_id, action, details)
-            VALUES (
-                p_userId, 
-                'logout', 
-                CONCAT(
-					'User ', BIN_TO_UUID(p_userId), 
-					' performed a global logout.'
-				)
-            );
-
             COMMIT;
         END;`,
 }

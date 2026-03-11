@@ -41,17 +41,6 @@ var UpdateUserPasswordProcedure = migrations.MigrationPart{
             UPDATE authorization_codes
             SET expires_at = NOW()
             WHERE user_id = p_userId AND expires_at > NOW();
-
-            -- 3. Audit Log
-            INSERT INTO audit_logs (user_id, action, details)
-            VALUES (
-                p_userId, 
-                'password_change', 
-                CONCAT(
-                    'Password updated and all sessions revoked for user ', 
-                    BIN_TO_UUID(p_userId)
-                )
-            );
             COMMIT;
         END;
     `,
