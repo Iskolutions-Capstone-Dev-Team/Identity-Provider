@@ -53,18 +53,25 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 	redirectURI := c.Query("redirect_uri")
 	loginLink := loginUI + "/login?client_id=" + clientID
 
-	// Prepare metadata for audit log
+	// Resolve client name for audit logging
+	clientName := h.LogService.ResolveClientName(clientID)
+
+	// Prepare metadata with IP and User-Agent
 	metadata := buildMetadata(map[string]interface{}{
 		"client_id":    clientID,
+		"client_name":  clientName,
 		"redirect_uri": redirectURI,
+		"ip":           c.ClientIP(),
+		"user_agent":   c.Request.UserAgent(),
 	})
 
 	if clientID == "" {
 		log.Print("[Authorize] Parameter Extraction: no client_id")
+		// Log failure with no actor
 		_ = h.LogService.PostAuditLogWithActorString("",
 			&dto.PostAuditLogRequest{
 				Action:   actionAuthorize,
-				Target:   clientID,
+				Target:   loginUI,
 				Status:   models.StatusFail,
 				Metadata: metadata,
 			})
@@ -78,10 +85,11 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 	sessionToken, err := c.Cookie(service.SESSION_COOKIE_NAME)
 	if err != nil {
 		log.Print("[Authorize] Cookie Extraction: no session found")
+		// Log redirect to login
 		_ = h.LogService.PostAuditLogWithActorString("",
 			&dto.PostAuditLogRequest{
 				Action:   actionAuthorize,
-				Target:   clientID,
+				Target:   loginLink,
 				Status:   models.StatusFail,
 				Metadata: metadata,
 			})
@@ -97,19 +105,24 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 	if err != nil {
 		log.Printf("[Authorize] %v", err)
 
+		// Add error to metadata
 		metadataWithErr := buildMetadata(map[string]interface{}{
 			"client_id":    clientID,
+			"client_name":  clientName,
 			"redirect_uri": redirectURI,
+			"ip":           c.ClientIP(),
+			"user_agent":   c.Request.UserAgent(),
 			"error":        err.Error(),
 		})
 		_ = h.LogService.PostAuditLogWithActorString(sessionToken,
 			&dto.PostAuditLogRequest{
 				Action:   actionAuthorize,
-				Target:   clientID,
+				Target:   loginUI,
 				Status:   models.StatusFail,
 				Metadata: metadataWithErr,
 			})
 
+		// If session is invalid, send to login
 		if strings.Contains(err.Error(), "session invalid") {
 			c.Redirect(http.StatusFound, loginUI)
 			return
@@ -121,10 +134,11 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 		return
 	}
 
+	// Log success
 	_ = h.LogService.PostAuditLogWithActorString(sessionToken,
 		&dto.PostAuditLogRequest{
 			Action:   actionAuthorize,
-			Target:   clientID,
+			Target:   loginUI,
 			Status:   models.StatusSuccess,
 			Metadata: metadata,
 		})
@@ -155,10 +169,15 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		return
 	}
 
+	// Resolve client name
+	clientName := h.LogService.ResolveClientName(req.ClientID)
+
+	// Prepare metadata
 	metadata := buildMetadata(map[string]interface{}{
-		"client_id":  req.ClientID,
-		"ip":         c.ClientIP(),
-		"user_agent": c.Request.UserAgent(),
+		"client_id":   req.ClientID,
+		"client_name": clientName,
+		"ip":          c.ClientIP(),
+		"user_agent":  c.Request.UserAgent(),
 	})
 
 	redirectLink, sessionID, err := h.AuthService.LoginAndAuthorize(
@@ -170,12 +189,15 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] %v", err)
 
+		// Add error to metadata
 		metadataWithErr := buildMetadata(map[string]interface{}{
-			"client_id":  req.ClientID,
-			"ip":         c.ClientIP(),
-			"user_agent": c.Request.UserAgent(),
-			"error":      err.Error(),
+			"client_id":   req.ClientID,
+			"client_name": clientName,
+			"ip":          c.ClientIP(),
+			"user_agent":  c.Request.UserAgent(),
+			"error":       err.Error(),
 		})
+		// Log failure with attempted email as actor
 		_ = h.LogService.PostAuditLogWithActorString(req.Email,
 			&dto.PostAuditLogRequest{
 				Action:   actionLogin,
@@ -200,6 +222,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		return
 	}
 
+	// Log success with the email that just logged in
 	_ = h.LogService.PostAuditLogWithActorString(req.Email,
 		&dto.PostAuditLogRequest{
 			Action:   actionLogin,
@@ -208,6 +231,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 			Metadata: metadata,
 		})
 
+	// Set session cookie
 	maxAge := int(time.Hour.Seconds() * 24 * service.SESSION_DAYS)
 	c.SetCookie(
 		service.SESSION_COOKIE_NAME,
@@ -239,21 +263,26 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
+	// First get the session to know the user ID for audit logging
 	session, err := h.AuthService.ValidateSession(
 		c.Request.Context(),
 		sessionID,
 	)
 	if err != nil {
 		log.Printf("[Logout] ValidateSession: %v", err)
+		// Log failure with session ID as actor
 		_ = h.LogService.PostAuditLogWithActorString(sessionID,
 			&dto.PostAuditLogRequest{
 				Action: actionLogout,
 				Target: "global",
 				Status: models.StatusFail,
 				Metadata: buildMetadata(map[string]interface{}{
-					"error": err.Error(),
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
 				}),
 			})
+		// Even if session not found, clear cookie
 		c.SetCookie(
 			service.SESSION_COOKIE_NAME,
 			"",
@@ -269,6 +298,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
+	// Perform logout
 	err = h.AuthService.Logout(c.Request.Context(), sessionID)
 	if err != nil {
 		log.Printf("[Logout] %v", err)
@@ -278,7 +308,9 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 				Target: "global",
 				Status: models.StatusFail,
 				Metadata: buildMetadata(map[string]interface{}{
-					"error": err.Error(),
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
 				}),
 			})
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
@@ -287,14 +319,26 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
-	_ = h.LogService.PostAuditLog(session.UserId,
+	// Log success (resolve user email for better readability)
+	userEmail, _ := h.LogService.GetUserEmail(session.UserId)
+	actorName := userEmail
+	if actorName == "" {
+		// fallback to UUID string
+		uID, _ := uuid.FromBytes(session.UserId)
+		actorName = uID.String()
+	}
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
 		&dto.PostAuditLogRequest{
-			Action:   actionLogout,
-			Target:   "global",
-			Status:   models.StatusSuccess,
-			Metadata: json.RawMessage{},
+			Action: actionLogout,
+			Target: "global",
+			Status: models.StatusSuccess,
+			Metadata: buildMetadata(map[string]interface{}{
+				"ip":         c.ClientIP(),
+				"user_agent": c.Request.UserAgent(),
+			}),
 		})
 
+	// Clear the session cookie
 	c.SetCookie(
 		service.SESSION_COOKIE_NAME,
 		"",
@@ -331,25 +375,38 @@ func (h *AuthHandler) CheckSession(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[CheckSession] %v", err)
+		// Log failure with session ID as actor
 		_ = h.LogService.PostAuditLogWithActorString(sessionID,
 			&dto.PostAuditLogRequest{
 				Action: actionSessionCheck,
 				Target: "session",
 				Status: models.StatusFail,
 				Metadata: buildMetadata(map[string]interface{}{
-					"error": err.Error(),
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
 				}),
 			})
 		c.JSON(http.StatusUnauthorized, gin.H{"authenticated": false})
 		return
 	}
 
-	_ = h.LogService.PostAuditLog(session.UserId,
+	// Log success with user email if possible
+	userEmail, _ := h.LogService.GetUserEmail(session.UserId)
+	actorName := userEmail
+	if actorName == "" {
+		uID, _ := uuid.FromBytes(session.UserId)
+		actorName = uID.String()
+	}
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
 		&dto.PostAuditLogRequest{
-			Action:   actionSessionCheck,
-			Target:   "session",
-			Status:   models.StatusSuccess,
-			Metadata: json.RawMessage{},
+			Action: actionSessionCheck,
+			Target: "session",
+			Status: models.StatusSuccess,
+			Metadata: buildMetadata(map[string]interface{}{
+				"ip":         c.ClientIP(),
+				"user_agent": c.Request.UserAgent(),
+			}),
 		})
 
 	uID, _ := uuid.FromBytes(session.UserId)
@@ -370,7 +427,9 @@ func (h *AuthHandler) GetJWKS(c *gin.Context) {
 				Target: "public_keys",
 				Status: models.StatusFail,
 				Metadata: buildMetadata(map[string]interface{}{
-					"error": err.Error(),
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
 				}),
 			})
 		c.JSON(
@@ -380,12 +439,16 @@ func (h *AuthHandler) GetJWKS(c *gin.Context) {
 		return
 	}
 
+	// Log success
 	_ = h.LogService.PostAuditLogWithActorString("",
 		&dto.PostAuditLogRequest{
 			Action:   actionJWKS,
 			Target:   "public_keys",
 			Status:   models.StatusSuccess,
-			Metadata: json.RawMessage{},
+			Metadata: buildMetadata(map[string]interface{}{
+				"ip":         c.ClientIP(),
+				"user_agent": c.Request.UserAgent(),
+			}),
 		})
 
 	c.JSON(http.StatusOK, jwks)
@@ -414,8 +477,14 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		return
 	}
 
+	// Resolve client name
+	clientName := h.LogService.ResolveClientName(req.ClientID)
+
 	metadata := buildMetadata(map[string]interface{}{
-		"client_id": req.ClientID,
+		"client_id":   req.ClientID,
+		"client_name": clientName,
+		"ip":          c.ClientIP(),
+		"user_agent":  c.Request.UserAgent(),
 	})
 
 	resp, err := h.AuthService.ExchangeCodeForToken(
@@ -426,10 +495,14 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		log.Printf("[PostTokenExchange] %v", err)
 
 		metadataWithErr := buildMetadata(map[string]interface{}{
-			"client_id": req.ClientID,
-			"error":     err.Error(),
+			"client_id":   req.ClientID,
+			"client_name": clientName,
+			"ip":          c.ClientIP(),
+			"user_agent":  c.Request.UserAgent(),
+			"error":       err.Error(),
 		})
-		_ = h.LogService.PostAuditLogWithActorString(req.ClientID,
+		// Log failure with client name as actor
+		_ = h.LogService.PostAuditLogWithActorString(clientName,
 			&dto.PostAuditLogRequest{
 				Action:   actionTokenExchange,
 				Target:   req.ClientID,
@@ -452,7 +525,8 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		return
 	}
 
-	_ = h.LogService.PostAuditLogWithActorString(req.ClientID,
+	// Log success
+	_ = h.LogService.PostAuditLogWithActorString(clientName,
 		&dto.PostAuditLogRequest{
 			Action:   actionTokenExchange,
 			Target:   req.ClientID,
@@ -500,8 +574,11 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 		return
 	}
 
+	// For refresh, we don't have a clear actor; use refresh token hint in metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"refresh_token_hint": req.RefreshToken[:min(8, len(req.RefreshToken))],
+		"ip":                  c.ClientIP(),
+		"user_agent":          c.Request.UserAgent(),
 	})
 
 	resp, err := h.AuthService.RotateRefreshToken(
@@ -513,7 +590,9 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 
 		metadataWithErr := buildMetadata(map[string]interface{}{
 			"refresh_token_hint": req.RefreshToken[:min(8, len(req.RefreshToken))],
-			"error":              err.Error(),
+			"ip":                  c.ClientIP(),
+			"user_agent":          c.Request.UserAgent(),
+			"error":               err.Error(),
 		})
 		_ = h.LogService.PostAuditLogWithActorString("",
 			&dto.PostAuditLogRequest{
@@ -536,6 +615,7 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 		return
 	}
 
+	// Log success
 	_ = h.LogService.PostAuditLogWithActorString("",
 		&dto.PostAuditLogRequest{
 			Action:   actionTokenRotate,

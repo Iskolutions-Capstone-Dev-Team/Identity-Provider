@@ -7,6 +7,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/google/uuid"
 )
 
 type LogService struct {
@@ -86,14 +87,33 @@ func (s *LogService) resolveActor(id []byte) string {
 
 // PostAuditLogWithActorString creates an audit log with the actor as a direct string.
 func (s *LogService) PostAuditLogWithActorString(actor string, req *dto.PostAuditLogRequest) error {
+	log := &models.AuditLog{
+		Actor:    &actor,
+		Action:   req.Action,
+		Target:   req.Target,
+		Status:   req.Status,
+		Metadata: req.Metadata,
+	}
+	return s.Repo.CreateLog(log)
+}
 
-	
-    log := &models.AuditLog{
-        Actor:    &actor,
-        Action:   req.Action,
-        Target:   req.Target,
-        Status:   req.Status,
-        Metadata: req.Metadata,
-    }
-    return s.Repo.CreateLog(log)
+// ResolveClientName returns a human-readable client name from a client ID string.
+// If the ID is not a valid UUID or the lookup fails, it returns the original ID.
+func (s *LogService) ResolveClientName(clientID string) string {
+	idBytes, err := uuid.Parse(clientID)
+	if err != nil {
+		// Not a UUID – assume it's already a name or URL
+		return clientID
+	}
+	name, err := s.Repo.GetClientNameByID(idBytes[:])
+	if err != nil || name == "" {
+		return clientID
+	}
+	return name
+}
+
+// GetUserEmail returns the email for a user ID (as []byte).
+// If lookup fails, it returns an empty string.
+func (s *LogService) GetUserEmail(userID []byte) (string, error) {
+	return s.Repo.GetUserEmailbyID(userID)
 }
