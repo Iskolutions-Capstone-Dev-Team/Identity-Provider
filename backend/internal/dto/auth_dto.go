@@ -4,7 +4,6 @@ type LoginRequest struct {
 	Email       string `json:"email" binding:"required"`
 	Password    string `json:"password" binding:"required"`
 	ClientID    string `json:"client_id" binding:"required"`
-	RedirectURI string `json:"redirect_uri"`
 }
 
 type TokenExchangeRequest struct {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import { ensureValidAccessToken } from "../utils/tokenRefresh";
+import { buildLoginPath } from "../utils/loginRoute";
 
 export default function ProtectedRoute({ children }) {
   const [authState, setAuthState] = useState("loading");
@@ -29,7 +30,7 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (authState === "denied") {
-    return <Navigate to="/" replace />;
+    return <Navigate to={buildLoginPath()} replace />;
   }
 
   return children;

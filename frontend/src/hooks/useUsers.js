@@ -283,6 +283,7 @@ export function useUsers() {
   }, [currentPage, page]);
 
   return {
+    users,
     search,
     setSearch: setSearchKeyword,
     status,

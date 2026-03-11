@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "../services/authService";
 import { storeTokenResponse } from "../utils/authCookies";
+import { buildLoginPath } from "../utils/loginRoute";
 
 export default function Callback() {
   const [searchParams] = useSearchParams();
@@ -16,7 +17,7 @@ export default function Callback() {
       const code = searchParams.get("code");
 
       if (!code) {
-        navigate("/");
+        navigate(buildLoginPath(), { replace: true });
         return;
       }
 
