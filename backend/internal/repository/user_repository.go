@@ -181,7 +181,7 @@ func (r *UserRepository) GetUserById(id []byte) (*models.User, error) {
     query := `
         SELECT u.id, u.username, u.first_name, u.middle_name, u.last_name,
                u.email, u.status, u.created_at, u.updated_at, 
-               r.id AS role_id, r.name AS role_name, 
+               r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
         FROM users u
         LEFT JOIN user_roles ur ON ur.user_id = u.id
