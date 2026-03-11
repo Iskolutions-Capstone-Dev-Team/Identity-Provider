@@ -27,8 +27,9 @@ type AuthHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /auth/authorize [get]
 func (h *AuthHandler) Authorize(c *gin.Context) {
-	loginUI := os.Getenv("LOGIN_UI_PATH")
+	loginUI := os.Getenv("CLIENT_BASE_URL")
 	clientID := c.Query("client_id")
+	loginLink := loginUI + "/login?client_id=" + clientID
 
 	if clientID == "" {
 		log.Print("[Authorize] Parameter Extraction: no client_id")
@@ -39,13 +40,13 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 	}
 
 	// Extract session from cookie
-	token, err := c.Cookie(service.ACCESS_TOKEN_NAME)
+	token, err := c.Cookie(service.SESSION_COOKIE_NAME)
 	if err != nil {
 		log.Print("[Authorize] Cookie Extraction: no session found")
-		c.Redirect(http.StatusFound, loginUI)
+		c.Redirect(http.StatusFound, loginLink)
 		return
 	}
-
+	
 	redirectURL, err := h.Service.Authorize(
 		c.Request.Context(),
 		clientID,
@@ -92,7 +93,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		return
 	}
 
-	redirect, sessionID, err := h.Service.LoginAndAuthorize(
+	redirectLink, sessionID, err := h.Service.LoginAndAuthorize(
 		c.Request.Context(),
 		req,
 		c.ClientIP(),
@@ -128,7 +129,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		true,
 	)
 
-	c.JSON(http.StatusOK, gin.H{"redirect_to": redirect})
+	c.Redirect(http.StatusFound, redirectLink)
 }
 
 // Logout terminates the user session and revokes all tokens
@@ -279,6 +280,22 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		c.JSON(status, dto.ErrorResponse{Error: errorMsg})
 		return
 	}
+
+	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
+	if err != nil {
+		log.Print("[PostTokenExchange] No session found.")
+	}
+	
+	maxAge := int(time.Hour.Seconds() * 24 * service.SESSION_DAYS)
+	c.SetCookie(
+		service.SESSION_COOKIE_NAME,
+		sessionID,
+		maxAge,
+		"/",
+		"",
+		true,
+		true,
+	)
 
 	c.JSON(http.StatusOK, resp)
 }
