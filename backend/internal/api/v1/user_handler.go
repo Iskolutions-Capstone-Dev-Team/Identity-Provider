@@ -8,14 +8,29 @@ import (
 	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
+// Action constants for audit logging
+const (
+	actionCreateUser   = "create_user"
+	actionListUsers    = "list_users"
+	actionGetUser      = "get_user"
+	actionGetMe        = "get_me"
+	actionUpdatePass   = "update_password"
+	actionUpdateStatus = "update_status"
+	actionUpdateRoles  = "update_roles"
+	actionDeleteUser   = "delete_user"
+)
+
+// UserHandler handles user management HTTP requests.
 type UserHandler struct {
 	Service          *service.UserService
 	PrivilegeService *service.PrivilegeService
+	LogService       *service.LogService
 }
 
 // PostUser creates a new user in the system
@@ -40,9 +55,37 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 		return
 	}
 
-	userID, err := h.Service.CreateUser(c.Request.Context(), req)
+	// Get actor from context
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	if actorName == "" {
+		actorName = userIDStr
+	}
+
+	// Prepare metadata
+	metadata := buildMetadata(map[string]interface{}{
+		"target_email": req.Email,
+		"ip":           c.ClientIP(),
+		"user_agent":   c.Request.UserAgent(),
+	})
+
+	createdID, err := h.Service.CreateUser(c.Request.Context(), req)
 	if err != nil {
 		log.Printf("[PostUser] %v", err)
+		// Log failure
+		_ = h.LogService.PostAuditLogWithActorString(actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionCreateUser,
+				Target: req.Email,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_email": req.Email,
+					"ip":           c.ClientIP(),
+					"user_agent":   c.Request.UserAgent(),
+					"error":        err.Error(),
+				}),
+			})
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "failed to create user"},
@@ -50,7 +93,16 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 		return
 	}
 
-	message := fmt.Sprintf("Created user with the id %s", userID)
+	// Log success
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionCreateUser,
+			Target:   req.Email,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
+
+	message := fmt.Sprintf("Created user with the id %s", createdID)
 	c.JSON(http.StatusCreated, dto.SuccessResponse{Message: message})
 }
 
@@ -63,18 +115,13 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 // @Success 200 {object} dto.UserResponseList
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/users [get]
-/**
- * GetUserList retrieves a paginated list of users, routing the 
- * request to fetch either all users or bound users based on the 
- * admin's privilege level.
- */
 func (h *UserHandler) GetUserList(c *gin.Context) {
 	const defaultLimit = "10"
 	const defaultPage = "1"
 
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", defaultLimit))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", defaultPage))
-	
+
 	if page < 1 {
 		page = 1
 	}
@@ -82,7 +129,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	// 1. Check Privilege Level
 	level, err := h.PrivilegeService.CheckUserPrivilege(c)
 	if err != nil {
-		log.Printf("[GetUserList] {Privilege Validation}: %v", err)
+		log.Printf("[GetUserList] Privilege Validation: %v", err)
 		c.JSON(
 			http.StatusUnauthorized,
 			dto.ErrorResponse{Error: "Unauthorized"},
@@ -94,13 +141,28 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	uIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
-		log.Printf("[GetUserList] {UUID Parsing}: %v", err)
+		log.Printf("[GetUserList] UUID Parsing: %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Identity parse error"},
 		)
 		return
 	}
+
+	// Resolve actor name
+	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	if actorName == "" {
+		actorName = uIDStr
+	}
+
+	// Prepare metadata
+	metadata := buildMetadata(map[string]interface{}{
+		"limit":      limit,
+		"page":       page,
+		"privilege":  level,
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
+	})
 
 	// 3. Delegate to Service
 	resp, err := h.Service.GetFilteredUserList(
@@ -111,13 +173,37 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		page,
 	)
 	if err != nil {
-		log.Printf("[GetUserList] {Service Execution}: %v", err)
+		log.Printf("[GetUserList] Service Execution: %v", err)
+		// Log failure
+		_ = h.LogService.PostAuditLogWithActorString(actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionListUsers,
+				Target: "user_list",
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"limit":      limit,
+					"page":       page,
+					"privilege":  level,
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
+				}),
+			})
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Failed to retrieve user list"},
 		)
 		return
 	}
+
+	// Log success
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionListUsers,
+			Target:   "user_list",
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -144,15 +230,56 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
+	// Get actor
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	actorName, _ := h.LogService.GetUserEmail(actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	// Prepare metadata (target ID known, name will be added after fetch)
+	metadata := buildMetadata(map[string]interface{}{
+		"target_id":  id,
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
+	})
+
 	resp, err := h.Service.GetUserByID(c.Request.Context(), userID)
 	if err != nil {
 		log.Printf("[GetUser] %v", err)
+		// Log failure
+		_ = h.LogService.PostAuditLogWithActorString(actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionGetUser,
+				Target: id,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_id":  id,
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
+				}),
+			})
 		c.JSON(
 			http.StatusNotFound,
 			dto.ErrorResponse{Error: "User not found"},
 		)
 		return
 	}
+
+	// Log success with user email
+	targetName := resp.Email
+	if targetName == "" {
+		targetName = id
+	}
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionGetUser,
+			Target:   targetName,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -190,14 +317,49 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 		return
 	}
 
+	// Resolve actor name
+	actorName, _ := h.LogService.GetUserEmail(uID[:])
+	if actorName == "" {
+		actorName = uVal.(string)
+	}
+
+	// Prepare metadata
+	metadata := buildMetadata(map[string]interface{}{
+		"client_id":  cID.String(),
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
+	})
+
 	resp, err := h.Service.GetMe(c.Request.Context(), uID, cID)
 	if err != nil {
 		log.Printf("[GetMe] %v", err)
+		// Log failure
+		_ = h.LogService.PostAuditLogWithActorString(actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionGetMe,
+				Target: "self",
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"client_id":  cID.String(),
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
+				}),
+			})
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{
 			Error: "user information not found",
 		})
 		return
 	}
+
+	// Log success
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionGetMe,
+			Target:   "self",
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -236,6 +398,21 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 		return
 	}
 
+	// Get actor
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	actorName, _ := h.LogService.GetUserEmail(actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	// Prepare metadata
+	metadata := buildMetadata(map[string]interface{}{
+		"target_id":  id,
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
+	})
+
 	err = h.Service.UpdateUserPassword(
 		c.Request.Context(),
 		userID,
@@ -243,12 +420,34 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PatchUserPassword] %v", err)
+		// Log failure
+		_ = h.LogService.PostAuditLogWithActorString(actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionUpdatePass,
+				Target: id,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_id":  id,
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
+				}),
+			})
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Update failed"},
 		)
 		return
 	}
+
+	// Log success
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionUpdatePass,
+			Target:   id,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Password Updated Successfully!",
@@ -289,6 +488,22 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 		return
 	}
 
+	// Get actor
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	actorName, _ := h.LogService.GetUserEmail(actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	// Prepare metadata
+	metadata := buildMetadata(map[string]interface{}{
+		"target_id":  id,
+		"new_status": req.NewStatus,
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
+	})
+
 	err = h.Service.UpdateUserStatus(
 		c.Request.Context(),
 		userID,
@@ -296,6 +511,21 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PatchUserStatus] %v", err)
+
+		// Log failure
+		_ = h.LogService.PostAuditLogWithActorString(actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionUpdateStatus,
+				Target: id,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_id":  id,
+					"new_status": req.NewStatus,
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
+				}),
+			})
 
 		// Differentiate between validation errors and server errors
 		if strings.Contains(err.Error(), "Status Validation") {
@@ -312,6 +542,15 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 		)
 		return
 	}
+
+	// Log success
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionUpdateStatus,
+			Target:   id,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Status Updated Successfully!",
@@ -352,6 +591,22 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 		return
 	}
 
+	// Get actor
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	actorName, _ := h.LogService.GetUserEmail(actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	// Prepare metadata
+	metadata := buildMetadata(map[string]interface{}{
+		"target_id":  id,
+		"role_ids":   req.RoleIDs,
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
+	})
+
 	err = h.Service.UpdateUserRoles(
 		c.Request.Context(),
 		userID,
@@ -359,12 +614,35 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PatchUserRoles] %v", err)
+		// Log failure
+		_ = h.LogService.PostAuditLogWithActorString(actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionUpdateRoles,
+				Target: id,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_id":  id,
+					"role_ids":   req.RoleIDs,
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
+				}),
+			})
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Update failed"},
 		)
 		return
 	}
+
+	// Log success
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionUpdateRoles,
+			Target:   id,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "roles updated successfully!",
@@ -392,15 +670,52 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
+	// Get actor
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	actorName, _ := h.LogService.GetUserEmail(actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	// Prepare metadata
+	metadata := buildMetadata(map[string]interface{}{
+		"target_id":  id,
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
+	})
+
 	err = h.Service.DeleteUser(c.Request.Context(), userID)
 	if err != nil {
 		log.Printf("[DeleteUser] %v", err)
+		// Log failure
+		_ = h.LogService.PostAuditLogWithActorString(actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionDeleteUser,
+				Target: id,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_id":  id,
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
+				}),
+			})
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Deletion Failed"},
 		)
 		return
 	}
+
+	// Log success
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionDeleteUser,
+			Target:   id,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "User deleted successfully",
