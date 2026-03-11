@@ -30,7 +30,7 @@ type AuthService struct {
 func (s *AuthService) Authorize(
 	ctx context.Context,
 	clientIDStr string,
-	accessToken string,
+	sessionToken string,
 ) (string, error) {
 	clientID, err := uuid.Parse(clientIDStr)
 	if err != nil {
@@ -38,9 +38,10 @@ func (s *AuthService) Authorize(
 	}
 
 	// 1. Session Validation
-	isValid, err := ValidateToken(accessToken, s.PublicKey)
-	if !isValid || err != nil {
-		return "", fmt.Errorf("Token Validation: session invalid")
+	session, err := s.SessionRepo.GetByID(sessionToken)
+	currentTime := time.Now()
+	if currentTime.After(session.ExpiresAt) {
+		return "", fmt.Errorf("Expired session")
 	}
 
 	// 2. Client Verification
@@ -78,46 +79,25 @@ func (s *AuthService) LoginAndAuthorize(
 		return "", "", fmt.Errorf("Secret Verification: invalid credentials")
 	}
 
-	// 2. Client & Redirect Validation
+	// 2. Client Validation
 	clientUUID, _ := uuid.Parse(req.ClientID)
 	regURI, err := s.Repo.GetClientRedirectURI(clientUUID[:])
 	if err != nil {
 		return "", "", fmt.Errorf("Database Query (ClientLookup): %w", err)
 	}
 
-	if req.RedirectURI != regURI {
-		return "", "", fmt.Errorf("Redirect Validation: mismatch")
-	}
-
 	// 3. Authorization Code Logic
 	code, _ := utils.GenerateAuthorizationCode()
 	userID, _ := uuid.Parse(claims.UserID)
-	err = s.Repo.StoreCode(code, userID[:], clientUUID[:], req.RedirectURI)
+	err = s.Repo.StoreCode(code, userID[:], clientUUID[:], regURI)
 	if err != nil {
 		return "", "", fmt.Errorf("Database Query (StoreCode): %w", err)
 	}
 
 	// 4. Session Management
-	sessionID, _ := utils.GenerateRandomString(32)
-	expiry := time.Now().AddDate(
-		SESSION_YEARS,
-		SESSION_MONTHS,
-		SESSION_DAYS,
-	)
+	sessionID, err := s.GetSessionToken(userID, ipAddress, userAgent)
 
-	session := &models.IdPSession{
-		SessionId: sessionID,
-		UserId:    userID[:],
-		IpAddress: ipAddress,
-		UserAgent: userAgent,
-		ExpiresAt: expiry,
-	}
-
-	if err := s.SessionRepo.Create(session); err != nil {
-		return "", "", fmt.Errorf("Database Query (CreateSession): %w", err)
-	}
-
-	redirectURL := fmt.Sprintf("%s?code=%s", req.RedirectURI, code)
+	redirectURL := fmt.Sprintf("%s?code=%s", regURI, code)
 	return redirectURL, sessionID, nil
 }
 
@@ -250,7 +230,7 @@ func (s *AuthService) ExchangeCodeForToken(
 }
 
 /**
- * RotateRefreshToken validates an existing refresh token, 
+ * RotateRefreshToken validates an existing refresh token,
  * invalidates it, and issues a new pair of access and refresh tokens.
  */
 func (s *AuthService) RotateRefreshToken(
@@ -297,4 +277,29 @@ func (s *AuthService) RotateRefreshToken(
 		ExpiresIn:    ACCESS_TOKEN_EXPIRY,
 		TokenType:    "Bearer",
 	}, nil
+}
+
+func (s *AuthService) GetSessionToken(userID uuid.UUID,
+	ipAddress, userAgent string,
+) (string, error) {
+	sessionID, _ := utils.GenerateRandomString(32)
+	expiry := time.Now().AddDate(
+		SESSION_YEARS,
+		SESSION_MONTHS,
+		SESSION_DAYS,
+	)
+
+	session := &models.IdPSession{
+		SessionId: sessionID,
+		UserId:    userID[:],
+		IpAddress: ipAddress,
+		UserAgent: userAgent,
+		ExpiresAt: expiry,
+	}
+
+	if err := s.SessionRepo.Create(session); err != nil {
+		return "", fmt.Errorf("Database Query (CreateSession): %w", err)
+	}
+
+	return sessionID, nil
 }
