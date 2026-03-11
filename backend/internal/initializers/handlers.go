@@ -18,7 +18,8 @@ func InitializeHandlers(db *sqlx.DB,
 
 	return &api.Handlers{
 		AuthHandler: &v1.AuthHandler{
-			Service: service.AuthService,
+			AuthService: service.AuthService,
+			LogService:  service.LogService,
 		},
 		ClientHandler: &v1.ClientHandler{
 			Service:          service.ClientService,

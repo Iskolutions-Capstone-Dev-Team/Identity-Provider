@@ -6,4 +6,5 @@ type ServiceContainer struct {
 	UserService      *UserService
 	AuthService      *AuthService
 	PrivilegeService *PrivilegeService
+	LogService       *LogService
 }
