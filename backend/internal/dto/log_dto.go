@@ -1,6 +1,9 @@
 package dto
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // GetAuditLogRequest defines the data for querying audit logs.
 type GetAuditLogRequest struct {
@@ -13,11 +16,12 @@ type GetAuditLogRequest struct {
 
 // PostAuditLogRequest defines the data for creating a new audit log.
 type PostAuditLogRequest struct {
-	Actor    *string         `json:"actor"`
-	Action   string          `json:"action" validate:"required"`
-	Target   string          `json:"target" validate:"required"`
-	Status   string          `json:"status" validate:"oneof=success fail"`
-	Metadata json.RawMessage `json:"metadata" swaggertype:"object"`
+	Actor     *string         `json:"actor"`
+	Action    string          `json:"action" validate:"required"`
+	Target    string          `json:"target" validate:"required"`
+	Status    string          `json:"status" validate:"oneof=success fail"`
+	Metadata  json.RawMessage `json:"metadata" swaggertype:"object"`
+	CreatedAt time.Time       `json:"timestamp"`
 }
 
 // GetAuditLogListRequest defines the structure for querying a list of logs.
