@@ -155,11 +155,12 @@ func (s *LogService) GetLogListWithFilters(
 	dtos := make([]dto.PostAuditLogRequest, len(logs))
 	for i, log := range logs {
 		dtos[i] = dto.PostAuditLogRequest{
-			Actor:    log.Actor,
-			Action:   log.Action,
-			Target:   log.Target,
-			Status:   log.Status,
-			Metadata: json.RawMessage(log.Metadata),
+			Actor:     log.Actor,
+			Action:    log.Action,
+			Target:    log.Target,
+			Status:    log.Status,
+			Metadata:  json.RawMessage(log.Metadata),
+			CreatedAt: log.CreatedAt,
 		}
 	}
 
