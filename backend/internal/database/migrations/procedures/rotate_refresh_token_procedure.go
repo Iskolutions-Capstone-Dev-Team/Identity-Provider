@@ -45,11 +45,6 @@ var RotateRefreshTokenProcedure = migrations.MigrationPart{
                 SET revoked_at = NOW() 
                 WHERE user_id = v_userId AND client_id = v_clientId AND revoked_at IS NULL;
                 
-                INSERT INTO audit_logs (user_id, action, details)
-                VALUES (v_userId, 'token_replay_attack', 
-                        CONCAT('Replay detected for token replaced by ', IFNULL(p_newToken, 'unknown')));
-                
-                -- COMMIT the punishment so it isn't rolled back
                 COMMIT; 
                 
                 SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Security Breach: Token reuse detected.';
@@ -71,10 +66,6 @@ var RotateRefreshTokenProcedure = migrations.MigrationPart{
             -- Insert the new token
             INSERT INTO refresh_tokens (token, client_id, user_id, expires_at)
             VALUES (p_newToken, v_clientId, v_userId, p_newExpiresAt);
-
-            -- 5. Audit the rotation
-            INSERT INTO audit_logs (user_id, action, details)
-            VALUES (v_userId, 'token_rotation', 'Token rotated successfully.');
 
             COMMIT;
         END;`,

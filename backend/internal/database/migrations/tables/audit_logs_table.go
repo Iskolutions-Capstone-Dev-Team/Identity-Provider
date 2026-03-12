@@ -8,14 +8,14 @@ var AuditLogsMigration = migrations.TableMigration{
 		{
 			ID: "create-audit-logs-table",
 			SQL: `
-			CREATE TABLE IF NOT EXISTS audit_logs (
+			 CREATE TABLE IF NOT EXISTS audit_logs (
 				id BIGINT AUTO_INCREMENT PRIMARY KEY,
-				user_id BINARY(16),
+				actor VARCHAR(100),
 				action VARCHAR(100) NOT NULL,
-				timestamp TIMESTAMP DEFAULT NOW(),
-				details TEXT,
-				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-				INDEX idx_user_action (user_id, action)
+				target VARCHAR(100) NOT NULL,
+				metadata JSON,
+				status ENUM('success', 'fail') NOT NULL,
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			);`,
 		},
 	},

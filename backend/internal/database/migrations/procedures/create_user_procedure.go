@@ -52,14 +52,6 @@ var CreateUserProcedure = migrations.MigrationPart{
                     ) AS jt
                 );
 
-                -- 3. Audit Log
-                INSERT INTO audit_logs (user_id, action, details)
-                VALUES (
-                    p_userId, 
-                    'USER_CREATION', 
-                    CONCAT('Account ', p_username, ' created.')
-                );
-
                 COMMIT;
             ELSE
                 ROLLBACK;

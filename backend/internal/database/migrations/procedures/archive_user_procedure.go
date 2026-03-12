@@ -39,17 +39,6 @@ var ArchiveUserProcedure = migrations.MigrationPart{
 				SET expires_at = NOW()
 				WHERE user_id = userId AND expires_at > NOW();
 				
-				-- 3. Log the action
-				INSERT INTO audit_logs (user_id, action, details)
-				VALUES (
-					userId, 
-					'archive_user', 
-					CONCAT(
-						'User ', 
-						BIN_TO_UUID(user_id), 
-						' was successfully archived.'
-					)
-				);
 			ELSE
 				-- Optional: Throw an error if user doesn't exist
 				SIGNAL SQLSTATE '45000' 

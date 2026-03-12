@@ -16,6 +16,7 @@ var (
 )
 
 type Handlers struct {
+	LogHandler    *v1.LogHandler
 	AuthHandler   *v1.AuthHandler
 	ClientHandler *v1.ClientHandler
 	RoleHandler   *v1.RoleHandler
@@ -40,12 +41,12 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 		auth.POST("/logout", h.AuthHandler.Logout)
 		auth.GET("/session", h.AuthHandler.CheckSession)
 	}
-	
+
 	// Endpoint for getting user information
 	me := v1Group.Group("/me")
 	me.Use(middleware.AuthMiddleware(h.PubKey))
 	me.GET("", h.UserHandler.GetMe)
-	
+
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
 	admin.Use(middleware.AuthorizeRBAC(h.PubKey, s.UserService.Repo, role1, role2))
@@ -92,6 +93,13 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 			users.PATCH("/:id/password", h.UserHandler.PatchUserPassword)
 			users.PATCH("/:id/roles", h.UserHandler.PatchUserRoles)
 			users.DELETE("/:id", h.UserHandler.DeleteUser)
+		}
+
+		
+		logs := admin.Group("/logs")
+		{
+			logs.GET("", h.LogHandler.GetLogList)
+			logs.GET("/:id", h.LogHandler.GetLog)
 		}
 	}
 }

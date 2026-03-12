@@ -6,6 +6,10 @@ import {
   hasRefreshToken,
   storeTokenResponse,
 } from "./authCookies";
+import {
+  isIdpProtectedPath,
+  redirectToIdpErrorPage,
+} from "./idpErrorPage";
 
 const TOKEN_EXPIRY_LEEWAY_SECONDS = 30;
 
@@ -70,6 +74,14 @@ export async function refreshAccessToken() {
       })
       .catch((error) => {
         clearAuthState();
+
+        if (
+          typeof window !== "undefined" &&
+          isIdpProtectedPath(window.location.pathname)
+        ) {
+          redirectToIdpErrorPage();
+        }
+
         throw error;
       })
       .finally(() => {
