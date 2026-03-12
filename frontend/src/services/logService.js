@@ -1,9 +1,8 @@
 import axiosInstance from "./axiosInstance";
 
 const configuredBaseUrl = `${import.meta.env.VITE_API_BASE_URL ?? ""}`.toLowerCase();
-const logsBasePath = configuredBaseUrl.includes("/api/v1")
-  ? "/logs"
-  : "/api/v1/logs";
+const logsBasePath = configuredBaseUrl.concat("/admin/logs")
+
 
 export const logService = {
   async getLogs({ page = 1, limit = 10, actor = "" } = {}) {
