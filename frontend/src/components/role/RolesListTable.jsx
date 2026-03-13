@@ -1,6 +1,20 @@
 import TableRowFade from "../TableRowFade";
+import DataTableSkeleton from "../DataTableSkeleton";
 
-export default function RolesListTable({ roles, onView, onEdit, onDelete }) {
+export default function RolesListTable({ loading = false, roles, onView, onEdit, onDelete }) {
+    if (loading) {
+        return (
+            <DataTableSkeleton
+                columns={[
+                    { header: "Role Name", type: "text", width: "w-28" },
+                    { header: "Description", type: "text", width: "w-36" },
+                    { header: "Created", type: "text", width: "w-24" },
+                    { header: "Actions", type: "actions" },
+                ]}
+            />
+        );
+    }
+
     return (
         <div className="rounded-2xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
