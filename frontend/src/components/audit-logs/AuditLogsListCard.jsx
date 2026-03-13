@@ -2,6 +2,7 @@ import AuditLogsCard from "./AuditLogsCard";
 import ResultsCount from "../ResultsCount";
 import Pagination from "../Pagination";
 import TransactionLogsTable from "./TransactionLogsTable";
+import DataTableSkeleton from "../DataTableSkeleton";
 
 export default function AuditLogsListCard({
   logs,
@@ -18,10 +19,21 @@ export default function AuditLogsListCard({
 }) {
   let content = <TransactionLogsTable logs={logs} onView={onView} />;
 
-  if (error) {
+  if (loading) {
+    content = (
+      <DataTableSkeleton
+        columns={[
+          { header: "Timestamp", type: "text", width: "w-28" },
+          { header: "Actor", type: "text", width: "w-24" },
+          { header: "Target", type: "text", width: "w-24" },
+          { header: "Status", type: "badge", width: "w-20" },
+          { header: "Action", type: "text", width: "w-24" },
+          { header: "View", type: "button" },
+        ]}
+      />
+    );
+  } else if (error) {
     content = <div className="py-10 text-center text-red-600">{error}</div>;
-  } else if (loading) {
-    content = <div className="py-10 text-center text-gray-500">Loading logs...</div>;
   }
 
   return (
