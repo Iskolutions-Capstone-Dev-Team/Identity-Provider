@@ -12,6 +12,7 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ResultsCount from "../components/ResultsCount";
 import PageHeader from "../components/PageHeader";
 import { EMPTY_CURRENT_USER, hasCurrentUserRole } from "../hooks/useCurrentUser";
+import { useDelayedLoading } from "../hooks/useDelayedLoading";
 
 const ITEMS_PER_PAGE = 10;
 const SUPERADMIN_ROLE = "idp:superadmin";
@@ -32,6 +33,7 @@ export default function UserPool() {
     totalResults,
     successMessage,
     setSuccessMessage,
+    loading,
     fetchError,
     createUser,
     updateUser,
@@ -43,6 +45,7 @@ export default function UserPool() {
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const showLoading = useDelayedLoading(loading);
   const currentUserFromList =
     users.find((user) => currentUser.id && user.id === currentUser.id) ||
     users.find((user) => currentUser.email && user.email === currentUser.email) ||
@@ -111,31 +114,36 @@ export default function UserPool() {
             setStatus={setStatus}
             onCreate={() => setOpenAddModal(true)}
           />
-          {fetchError && (
+          {!showLoading && fetchError && (
             <div className="alert alert-error mb-2">
               <span>{fetchError}</span>
             </div>
           )}
           <UserPoolTable
+            loading={showLoading}
             users={paginatedUsers}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
             showDeleteAction={canDeleteUsers}
           />
-          <div className="flex justify-center mt-6">
-            <ResultsCount
-              page={page}
-              itemsPerPage={ITEMS_PER_PAGE}
-              totalResults={totalResults}
-              currentResultsCount={paginatedUsers.length}
-            />
-          </div>
-          <Pagination
-            totalPages={totalPages}
-            currentPage={page}
-            onPageChange={setPage}
-          />
+          {!showLoading && (
+            <>
+              <div className="flex justify-center mt-6">
+                <ResultsCount
+                  page={page}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  totalResults={totalResults}
+                  currentResultsCount={paginatedUsers.length}
+                />
+              </div>
+              <Pagination
+                totalPages={totalPages}
+                currentPage={page}
+                onPageChange={setPage}
+              />
+            </>
+          )}
           <UserPoolModal
             open={openViewEditModal}
             mode={modalMode}
