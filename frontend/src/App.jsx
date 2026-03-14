@@ -22,7 +22,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/callback" element={<Callback />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/401" element={<Unauthorized />} />
+        <Route path="/403" element={<Unauthorized />} />
         <Route path="/error" element={<ErrorPage />} />
 
         {/* Protected Route */}

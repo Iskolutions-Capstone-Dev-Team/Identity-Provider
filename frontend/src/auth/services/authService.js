@@ -17,7 +17,6 @@ function getLoginRedirectUrl(data) {
 }
 
 export const authService = {
-
   async login(email, password, clientId) {
     const response = await axiosInstance.post("/auth/login", {
       email,
@@ -52,6 +51,12 @@ export const authService = {
     return axiosInstance.get("/auth/session", {
       skipAuthRefresh: true,
     });
-  }
+  },
 
+  async checkAdminAccess() {
+    return axiosInstance.get("/admin/users", {
+      params: { page: 1 },
+      skipForbiddenRedirect: true,
+    });
+  },
 };
