@@ -1,13 +1,31 @@
 import TableRowFade from "../TableRowFade";
 import { shortenId } from "../../utils/shortenId";
+import DataTableSkeleton from "../DataTableSkeleton";
 
 export default function UserPoolTable({
+    loading = false,
     users = [],
     onView,
     onEdit,
     onDelete,
     showDeleteAction = false,
 }) {
+    if (loading) {
+        return (
+            <DataTableSkeleton
+                columns={[
+                    { header: "ID", type: "text", width: "w-16" },
+                    { header: "Email", type: "text", width: "w-32" },
+                    { header: "Name", type: "stackedText" },
+                    { header: "Roles", type: "badges" },
+                    { header: "Status", type: "badge", width: "w-20" },
+                    { header: "Created", type: "text", width: "w-24" },
+                    { header: "Actions", type: "actions" },
+                ]}
+            />
+        );
+    }
+
     return (
         <div className="rounded-2xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">

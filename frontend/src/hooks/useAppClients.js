@@ -301,6 +301,7 @@ export function useAppClients() {
   const [page, setPage] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(true);
   const [secretModal, setSecretModal] = useState({
     open: false,
     clientId: "",
@@ -316,8 +317,12 @@ export function useAppClients() {
   // =========================
   // FETCH CURRENT PAGE
   // =========================
-  const fetchPageClients = useCallback(async () => {
+  const fetchPageClients = useCallback(async ({ showLoading = true } = {}) => {
     try {
+      if (showLoading) {
+        setLoading(true);
+      }
+
       const { items, total, lastPage } = await clientService.getClients({
         limit: ITEMS_PER_PAGE,
         page,
@@ -341,14 +346,22 @@ export function useAppClients() {
       console.error("Fetch clients error:", err);
       setClients([]);
       setTotalResults(0);
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, [page]);
 
   // =========================
   // FETCH SEARCH RESULTS
   // =========================
-  const fetchMatchingClients = useCallback(async () => {
+  const fetchMatchingClients = useCallback(async ({ showLoading = true } = {}) => {
     try {
+      if (showLoading) {
+        setLoading(true);
+      }
+
       const matchedClients = await getMatchingClients(searchKeyword);
       setClients(matchedClients.map(mapClientSummary));
       setTotalResults(matchedClients.length);
@@ -356,6 +369,10 @@ export function useAppClients() {
       console.error("Fetch clients error:", err);
       setClients([]);
       setTotalResults(0);
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, [searchKeyword]);
 
@@ -397,13 +414,13 @@ export function useAppClients() {
       )
     : clients;
 
-  const refreshClients = async () => {
+  const refreshClients = async ({ showLoading = true } = {}) => {
     if (searchKeyword) {
-      await fetchMatchingClients();
+      await fetchMatchingClients({ showLoading });
       return;
     }
 
-    await fetchPageClients();
+    await fetchPageClients({ showLoading });
   };
 
   // =========================
@@ -412,7 +429,7 @@ export function useAppClients() {
   const createClient = async (payload) => {
     const res = await clientService.createClient(payload);
     setSuccessMessage("App client successfully created!");
-    await refreshClients();
+    await refreshClients({ showLoading: false });
     return res;
   };
 
@@ -423,7 +440,7 @@ export function useAppClients() {
     try {
       await clientService.updateClient(payload.id, payload);
       setSuccessMessage("App client successfully updated!");
-      await refreshClients();
+      await refreshClients({ showLoading: false });
     } catch (err) {
       console.error("Update failed:", err);
       throw err;
@@ -436,7 +453,7 @@ export function useAppClients() {
   const deleteClient = async (id) => {
     await clientService.deleteClient(id);
     setSuccessMessage("App client successfully deleted!");
-    await refreshClients();
+    await refreshClients({ showLoading: false });
   };
 
   const getClientDetails = useCallback(async (id) => {
@@ -505,6 +522,7 @@ export function useAppClients() {
     paginatedClients,
     totalPages,
     totalResults,
+    loading,
     successMessage,
     setSuccessMessage,
     createClient,

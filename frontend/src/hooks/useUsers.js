@@ -137,12 +137,17 @@ export function useUsers() {
   const [page, setPage] = useState(1);
   const [successMessage, setSuccessMessage] = useState("");
   const [fetchError, setFetchError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   // =========================
   // FETCH USERS
   // =========================
-  const fetchUsers = async () => {
+  const fetchUsers = async ({ showLoading = true } = {}) => {
     try {
+      if (showLoading) {
+        setLoading(true);
+      }
+
       const allUsers = await getAllUsers();
       setUsers(allUsers);
       setFetchError("");
@@ -150,6 +155,10 @@ export function useUsers() {
       console.error("Fetch users error:", error);
       setUsers([]);
       setFetchError("Failed to load users. Check the backend connection.");
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -189,7 +198,7 @@ export function useUsers() {
       await userService.createUser(payload);
 
       setSuccessMessage("User successfully created!");
-      await fetchUsers();
+      await fetchUsers({ showLoading: false });
     } catch (error) {
       console.error("Create user error:", error);
     }
@@ -202,7 +211,7 @@ export function useUsers() {
     try {
       await userService.deleteUser(userId);
       setSuccessMessage(`User ${username} deleted successfully`);
-      await fetchUsers();
+      await fetchUsers({ showLoading: false });
     } catch (error) {
       console.error("Delete error:", error);
     }
@@ -236,10 +245,10 @@ export function useUsers() {
       }
 
       setSuccessMessage("User successfully updated!");
-      await fetchUsers();
+      await fetchUsers({ showLoading: false });
     } catch (error) {
       if (rolesWereUpdated) {
-        await fetchUsers();
+        await fetchUsers({ showLoading: false });
       }
 
       if (rolesWereUpdated && isStatusRequestError(error)) {
@@ -295,6 +304,7 @@ export function useUsers() {
     totalResults,
     successMessage,
     setSuccessMessage,
+    loading,
     fetchError,
     setFetchError,
     createUser,

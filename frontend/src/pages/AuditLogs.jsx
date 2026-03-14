@@ -4,6 +4,7 @@ import AuditLogsListCard from "../components/audit-logs/AuditLogsListCard";
 import LogMetadataModal from "../components/audit-logs/LogMetadataModal";
 import { logService } from "../services/logService";
 import { formatTimestamp } from "../utils/formatTimestamp";
+import { useDelayedLoading } from "../hooks/useDelayedLoading";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -122,12 +123,13 @@ export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [totalResults, setTotalResults] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedLog, setSelectedLog] = useState(null);
   const [isMetadataOpen, setIsMetadataOpen] = useState(false);
   const [isMetadataLoading, setIsMetadataLoading] = useState(false);
   const [metadataError, setMetadataError] = useState("");
+  const showLoading = useDelayedLoading(loading);
 
   useEffect(() => {
     let ignore = false;
@@ -252,7 +254,7 @@ export default function AuditLogs() {
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          loading={loading}
+          loading={showLoading}
           error={error}
           onView={handleViewLog}
         />

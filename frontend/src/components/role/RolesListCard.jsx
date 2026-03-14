@@ -3,7 +3,7 @@ import Pagination from "../Pagination";
 import RolesListTable from "./RolesListTable";
 import ResultsCount from "../ResultsCount";
 
-export default function RolesListCard({ roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate }) {
+export default function RolesListCard({ loading = false, roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate }) {
     return (
         <RoleCard title="Roles">
             <div className="flex flex-col gap-3 mb-4 lg:flex-row lg:items-end lg:justify-between">
@@ -25,16 +25,20 @@ export default function RolesListCard({ roles, totalResults, itemsPerPage, searc
                     </button>
                 </div>
             </div>
-            <RolesListTable roles={roles} onView={onView} onEdit={onEdit} onDelete={onDelete} />
-            <div className="flex justify-center mt-6">
-                <ResultsCount
-                    page={page}
-                    itemsPerPage={itemsPerPage}
-                    totalResults={totalResults}
-                    currentResultsCount={roles.length}
-                />
-            </div>
-            <Pagination currentPage={page} totalPages={totalPages} onPageChange={onPageChange} />
+            <RolesListTable loading={loading} roles={roles} onView={onView} onEdit={onEdit} onDelete={onDelete} />
+            {!loading && (
+                <>
+                    <div className="flex justify-center mt-6">
+                        <ResultsCount
+                            page={page}
+                            itemsPerPage={itemsPerPage}
+                            totalResults={totalResults}
+                            currentResultsCount={roles.length}
+                        />
+                    </div>
+                    <Pagination currentPage={page} totalPages={totalPages} onPageChange={onPageChange} />
+                </>
+            )}
         </RoleCard>
     );
 }

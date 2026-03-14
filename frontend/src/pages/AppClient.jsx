@@ -8,6 +8,7 @@ import SecretConfirmModal from "../components/app-client/SecretConfirmModal";
 import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
+import { useDelayedLoading } from "../hooks/useDelayedLoading";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -15,6 +16,7 @@ export default function AppClient() {
     const {
         search, setSearch, page, setPage,
         paginatedClients, totalPages, totalResults,
+        loading,
         successMessage, setSuccessMessage,
         createClient, updateClient, deleteClient,
         getClientDetails,
@@ -28,6 +30,7 @@ export default function AppClient() {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [showSecretConfirm, setShowSecretConfirm] = useState(false);
     const [secretTarget, setSecretTarget] = useState(null);
+    const showLoading = useDelayedLoading(loading);
 
     const handleCreateClient = async (payload) => {
         const res = await createClient(payload);
@@ -109,6 +112,7 @@ export default function AppClient() {
                     }
                 />
                 <ConnectedAppClientCard
+                    loading={showLoading}
                     clients={paginatedClients}
                     totalResults={totalResults}
                     itemsPerPage={ITEMS_PER_PAGE}

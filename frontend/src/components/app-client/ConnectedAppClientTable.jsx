@@ -1,8 +1,24 @@
 import TableRowFade from "../TableRowFade";
+import DataTableSkeleton from "../DataTableSkeleton";
 
 const getClientId = (client) => client?.id ?? client?.clientId ?? "";
 
-export default function ConnectedAppClientTable({ clients, onView, onEdit, onDelete, onRotateSecret }) {
+export default function ConnectedAppClientTable({ loading = false, clients, onView, onEdit, onDelete, onRotateSecret }) {
+    if (loading) {
+        return (
+            <DataTableSkeleton
+                columns={[
+                    { header: "Logo", type: "avatar" },
+                    { header: "Name", type: "stackedText" },
+                    { header: "Client ID", type: "text", width: "w-32" },
+                    { header: "Created", type: "text", width: "w-24" },
+                    { header: "Secret", type: "iconButton" },
+                    { header: "Actions", type: "actions" },
+                ]}
+            />
+        );
+    }
+
     return (
         <div className="rounded-2xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">

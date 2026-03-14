@@ -6,6 +6,7 @@ import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
 import { roleService } from "../services/roleService";
+import { useDelayedLoading } from "../hooks/useDelayedLoading";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -18,6 +19,7 @@ export default function Roles() {
         paginatedRoles,
         totalPages,
         totalResults,
+        loading,
         successMessage,
         setSuccessMessage,
         createRole,
@@ -32,6 +34,7 @@ export default function Roles() {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [tagOptions, setTagOptions] = useState([]);
     const [isTagOptionsLoading, setIsTagOptionsLoading] = useState(false);
+    const showLoading = useDelayedLoading(loading);
 
     const fetchTagOptions = useCallback(async () => {
         try {
@@ -102,6 +105,7 @@ export default function Roles() {
                     }
                 />
                 <RolesListCard 
+                    loading={showLoading}
                     roles={paginatedRoles}
                     totalResults={totalResults}
                     itemsPerPage={ITEMS_PER_PAGE}
