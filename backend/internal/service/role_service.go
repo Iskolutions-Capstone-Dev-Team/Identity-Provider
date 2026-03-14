@@ -102,6 +102,30 @@ func (s *RoleService) GetRoleList(
 }
 
 /**
+ * GetRoleList retrieves a paginated list of roles.
+ */
+func (s *RoleService) GetAllExceptIDP(
+	ctx context.Context,
+	limit,
+	page int,
+	keyword string,
+) (*dto.RoleListResponse, error) {
+	offset := (page - 1) * limit
+
+	roles, err := s.RoleRepo.ListAllExceptIdP(limit, offset, keyword)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (ListRoles): %w", err)
+	}
+
+	total, err := s.RoleRepo.CountRoles(keyword)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (CountRoles): %w", err)
+	}
+
+	return s.formatRoleListResponse(roles, total, limit, page), nil
+}
+
+/**
  * GetAuthorizedRoles retrieves a distinct list of roles for an 
  * admin, including pagination metadata.
  */

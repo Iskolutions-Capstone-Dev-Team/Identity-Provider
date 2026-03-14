@@ -73,6 +73,28 @@ func (r *RoleRepository) ListRoles(limit, offset int,
 	return roles, err
 }
 
+// ListRoles returns a paginated list of active roles.
+// @Summary List Roles
+// @ID list-roles
+func (r *RoleRepository) ListAllExceptIdP(limit, offset int,
+	keyword string,
+) ([]models.Role, error) {
+	var roles []models.Role
+	searchKeyword := "%" + keyword + "%"
+	notLike := "IDP:%"
+	query := `
+        SELECT id, role_name, description, created_at, updated_at 
+		FROM roles 
+		WHERE deleted_at IS NULL 
+		AND role_name LIKE ? 
+		AND role_name NOT LIKE ?
+		ORDER BY id DESC 
+		LIMIT ? OFFSET ?
+	`
+	err := r.db.Select(&roles, query, searchKeyword, notLike, limit, offset)
+	return roles, err
+}
+
 func (r *RoleRepository) ListDistinctBoundRoles(
 	limit int,
 	offset int,

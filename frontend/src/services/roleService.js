@@ -29,6 +29,14 @@ export const roleService = {
     return response.data;
   },
 
+  async getAllRolesPage(page = 1) {
+    const response = await axiosInstance.get(`/admin/roles/all`, {
+      params: { page },
+    });
+
+    return response.data;
+  },
+
   async searchRoles(keyword = "") {
     const normalizedKeyword =
       typeof keyword === "string" ? keyword.trim() : "";

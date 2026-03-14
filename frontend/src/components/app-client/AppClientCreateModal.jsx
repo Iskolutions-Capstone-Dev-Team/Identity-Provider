@@ -32,7 +32,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
     const [grants, setGrants] = useState(["authorization_code"]);
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
-    const rolesData = useAllRoles();
+    const rolesData = useAllRoles({ endpoint: "all" });
     const [roles, setRoles] = useState([]);
     const [isDragging, setIsDragging] = useState(false);
     const [showFullImage, setShowFullImage] = useState(false);
