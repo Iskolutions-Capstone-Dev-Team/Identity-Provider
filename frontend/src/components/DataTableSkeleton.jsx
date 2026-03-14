@@ -1,6 +1,6 @@
 const DEFAULT_ROWS = 5;
 const DEFAULT_TEXT_WIDTH = "w-24";
-const SKELETON_TONE_CLASS = "bg-gray-100";
+const SKELETON_TONE_CLASS = "bg-gray-300";
 const SKELETON_STYLE = { animation: "none" };
 
 function renderCellContent(type, width) {
