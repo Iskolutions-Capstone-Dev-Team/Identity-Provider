@@ -13,6 +13,24 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
+const UNAUTHORIZED_PAGE_PATH = "/403";
+
+function isAdminRequest(url = "") {
+  return typeof url === "string" && url.includes("/admin");
+}
+
+function redirectToUnauthorizedPage() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (window.location.pathname === UNAUTHORIZED_PAGE_PATH) {
+    return;
+  }
+
+  window.location.replace(UNAUTHORIZED_PAGE_PATH);
+}
+
 function redirectAfterUnauthorized() {
   if (typeof window === "undefined") {
     return;
@@ -27,13 +45,27 @@ function redirectAfterUnauthorized() {
     "/",
     "/login",
     "/callback",
-    "/401",
+    UNAUTHORIZED_PAGE_PATH,
     IDP_ERROR_PAGE_PATH,
   ]);
 
   if (!publicPaths.has(window.location.pathname)) {
     window.location.replace(buildLoginPath());
   }
+}
+
+function redirectAfterForbidden(error) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const requestUrl = error.config?.url ?? "";
+
+  if (!isIdpProtectedPath(window.location.pathname) || !isAdminRequest(requestUrl)) {
+    return;
+  }
+
+  redirectToUnauthorizedPage();
 }
 
 axiosInstance.interceptors.request.use((config) => {
@@ -52,6 +84,14 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const status = error.response?.status;
     const originalRequest = error.config;
+
+    if (status === 403) {
+      if (!originalRequest?.skipForbiddenRedirect) {
+        redirectAfterForbidden(error);
+      }
+
+      return Promise.reject(error);
+    }
 
     if (status !== 401) {
       return Promise.reject(error);

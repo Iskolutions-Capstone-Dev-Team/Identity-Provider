@@ -1,7 +1,6 @@
 import axiosInstance from "./axiosInstance";
 
-const configuredBaseUrl = `${import.meta.env.VITE_API_BASE_URL ?? ""}`.toLowerCase();
-const logsBasePath = configuredBaseUrl.concat("/admin/logs")
+const LOGS_BASE_PATH = "/admin/logs";
 
 
 export const logService = {
@@ -13,12 +12,12 @@ export const logService = {
       params.actor = normalizedActor;
     }
 
-    const response = await axiosInstance.get(logsBasePath, { params });
+    const response = await axiosInstance.get(LOGS_BASE_PATH, { params });
     return response.data;
   },
 
   async getLogById(id) {
-    const response = await axiosInstance.get(`${logsBasePath}/${id}`);
+    const response = await axiosInstance.get(`${LOGS_BASE_PATH}/${id}`);
     return response.data;
   },
 };

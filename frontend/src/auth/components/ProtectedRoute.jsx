@@ -12,8 +12,20 @@ export default function ProtectedRoute({ children }) {
       try {
         await authService.checkSession();
         const accessToken = await ensureValidAccessToken();
-        setAuthState(accessToken ? "allowed" : "denied");
-      } catch {
+
+        if (!accessToken) {
+          setAuthState("denied");
+          return;
+        }
+
+        await authService.checkAdminAccess();
+        setAuthState("allowed");
+      } catch (error) {
+        if (error.response?.status === 403) {
+          setAuthState("forbidden");
+          return;
+        }
+
         setAuthState("denied");
       }
     };
@@ -31,6 +43,10 @@ export default function ProtectedRoute({ children }) {
 
   if (authState === "denied") {
     return <Navigate to={buildLoginPath()} replace />;
+  }
+
+  if (authState === "forbidden") {
+    return <Navigate to="/403" replace />;
   }
 
   return children;

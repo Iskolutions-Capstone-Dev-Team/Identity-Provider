@@ -33,7 +33,7 @@ export default function Callback() {
         setTimeout(() => navigate("/user-pool"), 500);
       } catch (err) {
         console.error(err);
-        navigate("/401");
+        navigate("/403");
       }
     };
 
