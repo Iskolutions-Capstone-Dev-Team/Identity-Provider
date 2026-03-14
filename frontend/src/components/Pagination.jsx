@@ -3,36 +3,35 @@ function getVisiblePages(totalPages, currentPage) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
 
-  const showFirstAndLastPages =
-    currentPage <= 2 || currentPage >= totalPages - 1;
-  const showLastFourPages = currentPage >= totalPages - 3;
+  const maxVisiblePages = 4;
+  let startPage = 1;
 
-  let pageNumbers = [currentPage, currentPage + 1, totalPages - 1, totalPages];
-
-  if (showFirstAndLastPages) {
-    pageNumbers = [1, 2, totalPages - 1, totalPages];
-  } else if (showLastFourPages) {
-    pageNumbers = [totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  if (currentPage <= 2) {
+    startPage = 1;
+  } else if (currentPage >= totalPages - (maxVisiblePages - 1)) {
+    startPage = totalPages - (maxVisiblePages - 1);
+  } else {
+    startPage = currentPage;
   }
 
-  const uniquePages = [...new Set(pageNumbers)]
-    .filter((page) => page >= 1 && page <= totalPages)
-    .sort((firstPage, secondPage) => firstPage - secondPage);
+  const endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
+  const pageNumbers = Array.from(
+    { length: endPage - startPage + 1 },
+    (_, index) => startPage + index,
+  );
   const visiblePages = [];
 
-  if (uniquePages[0] > 1) {
+  if (startPage > 1) {
     visiblePages.push("...");
   }
 
-  uniquePages.forEach((page, index) => {
-    const previousPage = uniquePages[index - 1];
-
-    if (index > 0 && page - previousPage > 1) {
-      visiblePages.push("...");
-    }
-
+  pageNumbers.forEach((page) => {
     visiblePages.push(page);
   });
+
+  if (endPage < totalPages) {
+    visiblePages.push("...");
+  }
 
   return visiblePages;
 }
