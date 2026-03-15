@@ -9,6 +9,11 @@ body,
   overflow-x: hidden;
 }
 
+body {
+  min-height: 100%;
+  background: #fff8f3;
+}
+
 .steps .step-primary {
   color: #991b1b !important;
 }
@@ -49,4 +54,39 @@ body,
 
 .float-logo {
   animation: floatLogo 2.5s ease-in-out infinite;
+}
+
+@keyframes driftGlow {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -18px, 0) scale(1.06);
+  }
+}
+
+.drift-glow {
+  animation: driftGlow 14s ease-in-out infinite;
+}
+
+.drift-glow-delayed {
+  animation-delay: -7s;
+}
+
+.idp-sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(248, 210, 78, 0.35) transparent;
+}
+
+.idp-sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.idp-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.idp-sidebar-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(248, 210, 78, 0.35);
 }
