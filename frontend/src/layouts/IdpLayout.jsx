@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -7,7 +7,7 @@ import TermsAgreementModal from "../components/TermAgreementModal";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 
 export default function IdpLayout() {
-  const { sidebarOpen, toggleSidebar, closeSidebar } = useSidebarState();
+  const { sidebarOpen, toggleSidebar } = useSidebarState();
   const [openTerms, setOpenTerms] = useState(false);
   const { currentUser, isLoadingCurrentUser } = useCurrentUser();
 
@@ -26,7 +26,13 @@ export default function IdpLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-200 text-gray-800 font-[Poppins]">
+    <div className="relative min-h-screen overflow-hidden bg-[#fff8f3] font-[Poppins] text-slate-800">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(123,13,21,0.14),transparent_33%),radial-gradient(circle_at_bottom_right,rgba(248,210,78,0.18),transparent_28%),linear-gradient(180deg,#fffaf6_0%,#f8efe8_48%,#f1e4de_100%)]" />
+        <div className="drift-glow absolute left-[-5rem] top-16 h-64 w-64 rounded-full bg-[#f8d24e]/16 blur-3xl" />
+        <div className="drift-glow drift-glow-delayed absolute bottom-6 right-[-6rem] h-72 w-72 rounded-full bg-[#7b0d15]/12 blur-3xl" />
+      </div>
+
       <TermsAgreementModal
         open={openTerms}
         onClose={handleClose}
@@ -34,27 +40,21 @@ export default function IdpLayout() {
         privacyHref="/privacy"
         termsHref="/terms"
       />
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-          onClick={closeSidebar}
-        />
-      )}
 
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+      <div className="relative flex min-h-screen">
+        <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col transition-all duration-300">
-        <Navbar
-          sidebarOpen={sidebarOpen}
-          toggleSidebar={toggleSidebar}
-          currentUser={currentUser}
-          isLoadingCurrentUser={isLoadingCurrentUser}
-        />
-        <main className="flex-1 p-4 pt-20 sm:p-6 sm:pt-28 pb-28 lg:pb-6">
-          <Outlet context={{ currentUser, isLoadingCurrentUser }} />
-        </main>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Navbar
+            sidebarOpen={sidebarOpen}
+            currentUser={currentUser}
+            isLoadingCurrentUser={isLoadingCurrentUser}
+          />
+
+          <main className="flex-1 px-4 pb-32 pt-28 sm:px-6 sm:pb-32 sm:pt-32 lg:px-6 lg:pb-8 lg:pt-36">
+            <Outlet context={{ currentUser, isLoadingCurrentUser }} />
+          </main>
+        </div>
       </div>
     </div>
   );

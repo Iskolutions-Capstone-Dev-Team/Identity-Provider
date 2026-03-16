@@ -31,13 +31,13 @@ function redirectToUnauthorizedPage() {
   window.location.replace(UNAUTHORIZED_PAGE_PATH);
 }
 
-function redirectAfterUnauthorized() {
+function redirectAfterUnauthorized(error) {
   if (typeof window === "undefined") {
     return;
   }
 
   if (isIdpProtectedPath(window.location.pathname)) {
-    redirectToIdpErrorPage();
+    redirectToIdpErrorPage(error);
     return;
   }
 
@@ -98,7 +98,7 @@ axiosInstance.interceptors.response.use(
     }
 
     if (!originalRequest || originalRequest.skipAuthRefresh || originalRequest._retry) {
-      redirectAfterUnauthorized();
+      redirectAfterUnauthorized(error);
       return Promise.reject(error);
     }
 
@@ -109,7 +109,7 @@ axiosInstance.interceptors.response.use(
 
       if (!accessToken) {
         clearAuthState();
-        redirectAfterUnauthorized();
+        redirectAfterUnauthorized(error);
         return Promise.reject(error);
       }
 
@@ -119,7 +119,7 @@ axiosInstance.interceptors.response.use(
       return axiosInstance(originalRequest);
     } catch (refreshError) {
       clearAuthState();
-      redirectAfterUnauthorized();
+      redirectAfterUnauthorized(refreshError);
       return Promise.reject(refreshError);
     }
   },

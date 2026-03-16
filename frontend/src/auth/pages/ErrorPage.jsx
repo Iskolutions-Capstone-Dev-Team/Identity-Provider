@@ -1,26 +1,36 @@
 import { useNavigate } from "react-router-dom";
-import StatusPage from "../components/StatusPage";
-import {
-  clearIdpErrorReturnPath,
-  getIdpErrorReturnPath,
-} from "../utils/idpErrorPage";
+import { clearIdpErrorMessage, clearIdpErrorReturnPath, getIdpErrorMessage, getIdpErrorReturnPath } from "../utils/idpErrorPage";
 
 export default function ErrorPage() {
   const navigate = useNavigate();
+  const errorMessage = getIdpErrorMessage();
 
   const handleGoBack = () => {
     const returnPath = getIdpErrorReturnPath();
 
+    clearIdpErrorMessage();
     clearIdpErrorReturnPath();
     navigate(returnPath, { replace: true });
   };
 
   return (
-    <StatusPage
-      code="401"
-      message="Unauthorized Access"
-      buttonLabel="Go Back"
-      onButtonClick={handleGoBack}
-    />
+    <div className="relative min-h-screen overflow-hidden bg-[#250508] font-[Poppins] text-white">
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url(/assets/images/pup_bg.png)" }}/>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2b0307]/90 via-[#7b0d15]/80 to-[#180204]/90" />
+        <div className="absolute left-[-10rem] top-[-8rem] h-72 w-72 rounded-full bg-[#f8d24e]/20 blur-3xl" />
+        <div className="absolute bottom-[-10rem] right-[-6rem] h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+      </div>
+
+      <div className="relative flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+        <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="w-28 sm:w-32 float-logo"/>
+        <p className="text-xs font-medium uppercase tracking-[0.28em] text-white/75 sm:text-sm">
+          {errorMessage}
+        </p>
+        <button onClick={handleGoBack} className="btn btn-lg mt-6 rounded-xl border-[#ffd700] bg-[#ffd700] font-bold text-[#991b1b] transition-all hover:border-[#ffd700] hover:bg-white hover:text-[#991b1b]">
+          Go Back
+        </button>
+      </div>
+    </div>
   );
 }
