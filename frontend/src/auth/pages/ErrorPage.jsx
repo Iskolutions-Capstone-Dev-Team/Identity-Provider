@@ -1,15 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import {
-  clearIdpErrorReturnPath,
-  getIdpErrorReturnPath,
-} from "../utils/idpErrorPage";
+import { clearIdpErrorMessage, clearIdpErrorReturnPath, getIdpErrorMessage, getIdpErrorReturnPath } from "../utils/idpErrorPage";
 
 export default function ErrorPage() {
   const navigate = useNavigate();
+  const errorMessage = getIdpErrorMessage();
 
   const handleGoBack = () => {
     const returnPath = getIdpErrorReturnPath();
 
+    clearIdpErrorMessage();
     clearIdpErrorReturnPath();
     navigate(returnPath, { replace: true });
   };
@@ -26,7 +25,7 @@ export default function ErrorPage() {
       <div className="relative flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
         <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="w-28 sm:w-32 float-logo"/>
         <p className="text-xs font-medium uppercase tracking-[0.28em] text-white/75 sm:text-sm">
-          Unauthorized Access
+          {errorMessage}
         </p>
         <button onClick={handleGoBack} className="btn btn-lg mt-6 rounded-xl border-[#ffd700] bg-[#ffd700] font-bold text-[#991b1b] transition-all hover:border-[#ffd700] hover:bg-white hover:text-[#991b1b]">
           Go Back

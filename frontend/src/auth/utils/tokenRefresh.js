@@ -79,7 +79,7 @@ export async function refreshAccessToken() {
           typeof window !== "undefined" &&
           isIdpProtectedPath(window.location.pathname)
         ) {
-          redirectToIdpErrorPage();
+          redirectToIdpErrorPage(error);
         }
 
         throw error;
