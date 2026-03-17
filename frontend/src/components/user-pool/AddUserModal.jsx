@@ -55,10 +55,8 @@ const initialFieldErrors = {
   tempPassword: "",
 };
 
-const passwordUtilityButtonClassName =
-  "btn h-12 rounded-[1rem] border border-[#f8d24e]/55 bg-[#fff4dc] px-5 text-[#7b0d15] shadow-none transition hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white";
-const passwordVisibilityButtonClassName =
-  "absolute right-4 top-[46%] -translate-y-1/2 text-[#8f6f76] transition hover:text-[#5a0b12]";
+const passwordUtilityButtonClassName = "btn h-12 rounded-[1rem] border border-[#f8d24e]/55 bg-[#fff4dc] px-5 text-[#7b0d15] shadow-none transition hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white";
+const passwordVisibilityButtonClassName = "absolute right-4 top-[46%] -translate-y-1/2 text-[#8f6f76] transition hover:text-[#5a0b12]";
 
 export default function AddUserModal({ open, onClose, onSubmit }) {
   const [step, setStep] = useState(1);
@@ -257,24 +255,9 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
               </p>
             </div>
 
-            <button
-              type="button"
-              className={userPoolModalCloseButtonClassName}
-              onClick={onClose}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
+            <button type="button" className={userPoolModalCloseButtonClassName} onClick={onClose}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
@@ -288,12 +271,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                 steps={[
                   <>
                     <span className="step-icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        className="h-4 w-4"
-                      >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                         <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
                       </svg>
                     </span>
@@ -301,17 +279,8 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                   </>,
                   <>
                     <span className="step-icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        className="h-4 w-4"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M14.5 1A4.5 4.5 0 0 0 10 5.5V9H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1.5V5.5a3 3 0 1 1 6 0v2.75a.75.75 0 0 0 1.5 0V5.5A4.5 4.5 0 0 0 14.5 1Z"
-                          clipRule="evenodd"
-                        />
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path fillRule="evenodd" d="M14.5 1A4.5 4.5 0 0 0 10 5.5V9H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1.5V5.5a3 3 0 1 1 6 0v2.75a.75.75 0 0 0 1.5 0V5.5A4.5 4.5 0 0 0 14.5 1Z" clipRule="evenodd"/>
                       </svg>
                     </span>
                     Access
@@ -323,39 +292,20 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
             <ErrorAlert message={error} onClose={() => setError("")} />
 
             <FadeWrapper isVisible={step === 1}>
-              <form
-                id="step1-form"
-                onSubmit={(e) => e.preventDefault()}
-                className="space-y-5"
-              >
+              <form id="step1-form" onSubmit={(e) => e.preventDefault()} className="space-y-5">
                 <section className={userPoolModalSectionClassName}>
                   <label className={userPoolModalLabelClassName}>
                     Email Address <span className="text-red-500">*</span>
                   </label>
                   <div className="validator w-full">
-                    <label
-                      className={`${getInputClassName("email")} flex items-center gap-3 px-4`}
-                    >
+                    <label className={`${getInputClassName("email")} flex items-center gap-3 px-4`}>
                       <span className="border-r border-[#7b0d15]/10 pr-3 text-[#8f6f76]">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          className="size-5"
-                        >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
                           <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
                           <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
                         </svg>
                       </span>
-                      <input
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        onChange={handleChange}
-                        required
-                        placeholder="Enter email"
-                        className="grow bg-transparent"
-                      />
+                      <input type="email" name="email" value={data.email} onChange={handleChange} required placeholder="Enter email" className="grow bg-transparent"/>
                     </label>
                     {fieldErrors.email && (
                       <p className="mt-2 text-xs text-red-500">
@@ -372,15 +322,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                         First Name <span className="text-red-500">*</span>
                       </label>
                       <div className="validator w-full">
-                        <input
-                          type="text"
-                          name="givenName"
-                          value={data.givenName}
-                          onChange={handleChange}
-                          required
-                          placeholder="Enter firstname"
-                          className={`${getInputClassName("givenName")} validator`}
-                        />
+                        <input type="text" name="givenName" value={data.givenName} onChange={handleChange} required placeholder="Enter firstname" className={`${getInputClassName("givenName")} validator`}/>
                         {fieldErrors.givenName && (
                           <p className="mt-2 text-xs text-red-500">
                             {fieldErrors.givenName}
@@ -396,14 +338,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                       <label
                         className={`${userPoolModalInputClassName} flex items-center gap-2 px-4`}
                       >
-                        <input
-                          type="text"
-                          name="middleName"
-                          value={data.middleName}
-                          onChange={handleChange}
-                          placeholder="Enter middlename"
-                          className="grow bg-transparent"
-                        />
+                        <input type="text" name="middleName" value={data.middleName} onChange={handleChange} placeholder="Enter middlename" className="grow bg-transparent"/>
                         <span className={userPoolModalOptionalBadgeClassName}>
                           Optional
                         </span>
@@ -415,15 +350,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                         Last Name <span className="text-red-500">*</span>
                       </label>
                       <div className="validator w-full">
-                        <input
-                          type="text"
-                          name="surname"
-                          value={data.surname}
-                          onChange={handleChange}
-                          required
-                          placeholder="Enter lastname"
-                          className={`${getInputClassName("surname")} validator`}
-                        />
+                        <input type="text" name="surname" value={data.surname} onChange={handleChange} required placeholder="Enter lastname" className={`${getInputClassName("surname")} validator`}/>
                         {fieldErrors.surname && (
                           <p className="mt-2 text-xs text-red-500">
                             {fieldErrors.surname}
@@ -437,8 +364,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
             </FadeWrapper>
 
             <FadeWrapper isVisible={step === 2}>
-              <form
-                id="step2-form"
+              <form id="step2-form"
                 onSubmit={(e) => {
                   e.preventDefault();
                   nextStep();
@@ -453,8 +379,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                     Choose a role for the user
                   </p>
                   <div className="w-full">
-                    <div
-                      className={`rounded-[1rem] ${
+                    <div className={`rounded-[1rem] ${
                         rolesError ? "ring-2 ring-red-500" : ""
                       }`}
                     >
@@ -505,8 +430,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                     </div>
 
                     <div className="relative overflow-hidden">
-                      <div
-                        className={
+                      <div className={
                           data.inviteMode === "invite"
                             ? "relative"
                             : "pointer-events-none absolute left-0 top-0 w-full opacity-0"
@@ -548,18 +472,8 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                             </label>
                             <div className="flex flex-col gap-3 sm:flex-row">
                               <div className="relative w-full">
-                                <input
-                                  type={showTempPassword ? "text" : "password"}
-                                  name="tempPassword"
-                                  value={data.tempPassword}
-                                  onChange={handleChange}
-                                  placeholder="Temporary password"
-                                  className={`${getInputClassName("tempPassword")} pr-12`}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={toggleShowTempPassword}
-                                  className={passwordVisibilityButtonClassName}
+                                <input type={showTempPassword ? "text" : "password"} name="tempPassword" value={data.tempPassword} onChange={handleChange} placeholder="Temporary password" className={`${getInputClassName("tempPassword")} pr-12`}/>
+                                <button type="button" onClick={toggleShowTempPassword} className={passwordVisibilityButtonClassName}
                                   aria-label={
                                     showTempPassword
                                       ? "Hide temporary password"
@@ -567,56 +481,20 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                                   }
                                 >
                                   {showTempPassword ? (
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      className="h-5 w-5"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 012.293-3.607M6.72 6.72A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 01-4.563 5.956M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                      />
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M3 3l18 18"
-                                      />
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 012.293-3.607M6.72 6.72A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 01-4.563 5.956M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18"/>
                                     </svg>
                                   ) : (
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      className="h-5 w-5"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 0 1 6 0z"
-                                      />
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                      />
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 0 1 6 0z"/>
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
                                   )}
                                 </button>
                               </div>
 
-                              <button
-                                type="button"
-                                onClick={generatePassword}
-                                className={passwordUtilityButtonClassName}
-                              >
+                              <button type="button" onClick={generatePassword} className={passwordUtilityButtonClassName}>
                                 Generate
                               </button>
                             </div>
@@ -642,41 +520,25 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
         <div className={userPoolModalFooterClassName}>
           <div className={userPoolModalFooterActionsClassName}>
             {step === 1 && (
-              <button
-                type="button"
-                onClick={onClose}
-                className={userPoolModalSecondaryButtonClassName}
-              >
+              <button type="button" onClick={onClose} className={userPoolModalSecondaryButtonClassName}>
                 Close
               </button>
             )}
 
             {step > 1 && (
-              <button
-                type="button"
-                onClick={() => setStep(step - 1)}
-                className={userPoolModalSecondaryButtonClassName}
-              >
+              <button type="button" onClick={() => setStep(step - 1)} className={userPoolModalSecondaryButtonClassName}>
                 Back
               </button>
             )}
 
             {step === 1 && (
-              <button
-                type="button"
-                onClick={nextStep}
-                className={userPoolModalPrimaryButtonClassName}
-              >
+              <button type="button" onClick={nextStep} className={userPoolModalPrimaryButtonClassName}>
                 Next
               </button>
             )}
 
             {step === 2 && (
-              <button
-                type="button"
-                onClick={handleSubmit}
-                className={userPoolModalPrimaryButtonClassName}
-              >
+              <button type="button" onClick={handleSubmit} className={userPoolModalPrimaryButtonClassName}>
                 Create User
               </button>
             )}

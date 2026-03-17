@@ -114,13 +114,7 @@ const createFormData = (user) => ({
 const roleBadgeClassName =
   "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
 
-export default function UserPoolModal({
-  open,
-  mode,
-  user,
-  onClose,
-  onSubmit,
-}) {
+export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
   const availableRoles = useAllRoles();
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
@@ -278,35 +272,15 @@ export default function UserPoolModal({
               </p>
             </div>
 
-            <button
-              type="button"
-              className={userPoolModalCloseButtonClassName}
-              onClick={onClose}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
+            <button type="button" className={userPoolModalCloseButtonClassName} onClick={onClose}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
         </div>
 
-        <form
-          id="user-pool-form"
-          noValidate
-          className={userPoolModalBodyClassName}
-          onSubmit={handleSubmit}
-        >
+        <form id="user-pool-form" noValidate className={userPoolModalBodyClassName} onSubmit={handleSubmit}>
           <div className={userPoolModalBodyStackClassName}>
             <ErrorAlert message={error} onClose={() => setError("")} />
 
@@ -315,35 +289,20 @@ export default function UserPoolModal({
                 <div className="space-y-5">
                   <div>
                     <label className={userPoolModalLabelClassName}>User ID</label>
-                    <input
-                      type="text"
-                      value={formData.id}
-                      readOnly
-                      className={userPoolModalReadOnlyInputClassName}
-                    />
+                    <input type="text" value={formData.id} readOnly className={userPoolModalReadOnlyInputClassName}/>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <label className={userPoolModalLabelClassName}>Email</label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        readOnly
-                        className={userPoolModalReadOnlyInputClassName}
-                      />
+                      <input type="email" value={formData.email} readOnly className={userPoolModalReadOnlyInputClassName}/>
                     </div>
 
                     <div>
                       <label className={userPoolModalLabelClassName}>
                         First Name
                       </label>
-                      <input
-                        type="text"
-                        value={formData.givenName}
-                        readOnly
-                        className={userPoolModalReadOnlyInputClassName}
-                      />
+                      <input type="text" value={formData.givenName} readOnly className={userPoolModalReadOnlyInputClassName}/>
                     </div>
                   </div>
 
@@ -352,15 +311,8 @@ export default function UserPoolModal({
                       <label className={userPoolModalLabelClassName}>
                         Middle Name
                       </label>
-                      <label
-                        className={`${userPoolModalReadOnlyInputClassName} flex items-center gap-2`}
-                      >
-                        <input
-                          type="text"
-                          value={formData.middleName}
-                          readOnly
-                          className="grow bg-transparent outline-none"
-                        />
+                      <label className={`${userPoolModalReadOnlyInputClassName} flex items-center gap-2`}>
+                        <input type="text" value={formData.middleName} readOnly className="grow bg-transparent outline-none"/>
                         <span className={userPoolModalOptionalBadgeClassName}>
                           Optional
                         </span>
@@ -369,12 +321,7 @@ export default function UserPoolModal({
 
                     <div>
                       <label className={userPoolModalLabelClassName}>Last Name</label>
-                      <input
-                        type="text"
-                        value={formData.surname}
-                        readOnly
-                        className={userPoolModalReadOnlyInputClassName}
-                      />
+                      <input type="text" value={formData.surname} readOnly className={userPoolModalReadOnlyInputClassName}/>
                     </div>
                   </div>
                 </div>
@@ -393,10 +340,7 @@ export default function UserPoolModal({
                       {displayedRoles.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {displayedRoles.map((role, index) => (
-                            <span
-                              key={`${role}-${index}`}
-                              className={roleBadgeClassName}
-                            >
+                            <span key={`${role}-${index}`} className={roleBadgeClassName}>
                               {role}
                             </span>
                           ))}
@@ -426,12 +370,7 @@ export default function UserPoolModal({
                     Status {!isViewMode && <span className="text-red-500">*</span>}
                   </label>
                   {isViewMode ? (
-                    <select
-                      value={formData.status}
-                      onChange={(e) => handleFieldChange("status", e.target.value)}
-                      disabled
-                      className={`${userPoolModalReadOnlyInputClassName} cursor-not-allowed appearance-none`}
-                    >
+                    <select value={formData.status} onChange={(e) => handleFieldChange("status", e.target.value)} disabled className={`${userPoolModalReadOnlyInputClassName} cursor-not-allowed appearance-none`}>
                       {STATUS_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
@@ -454,20 +393,12 @@ export default function UserPoolModal({
 
         <div className={userPoolModalFooterClassName}>
           <div className={userPoolModalFooterActionsClassName}>
-            <button
-              type="button"
-              className={userPoolModalSecondaryButtonClassName}
-              onClick={onClose}
-            >
+            <button type="button" className={userPoolModalSecondaryButtonClassName} onClick={onClose}>
               {isViewMode ? "Close" : "Cancel"}
             </button>
 
             {!isViewMode && (
-              <button
-                form="user-pool-form"
-                type="submit"
-                className={userPoolModalPrimaryButtonClassName}
-              >
+              <button form="user-pool-form" type="submit" className={userPoolModalPrimaryButtonClassName}>
                 Save
               </button>
             )}
