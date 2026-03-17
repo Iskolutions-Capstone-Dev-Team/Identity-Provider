@@ -226,7 +226,7 @@ func (r *ClientRepository) GetGrantTypes(clientID []byte) ([]string, error) {
 func (r *ClientRepository) GetClientAllowedRoles(clientID []byte) ([]models.Role, error) {
 	var roles []models.Role
 	query := `
-		SELECT role_name FROM roles 
+		SELECT role_name, id FROM roles 
 		JOIN client_allowed_roles c
 		ON c.role_id = roles.id
 		WHERE client_id = ?`

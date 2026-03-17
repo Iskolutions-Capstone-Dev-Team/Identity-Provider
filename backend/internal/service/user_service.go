@@ -103,7 +103,7 @@ func (s *UserService) GetMe(
 		allowedMap[r.ID] = true
 	}
 
-	var roleStrings []string
+	roleStrings := make([]string, 0)
 	for _, r := range user.Roles {
 		if allowedMap[r.ID] {
 			roleStrings = append(roleStrings, r.RoleName)
@@ -121,7 +121,7 @@ func (s *UserService) GetMe(
 }
 
 /**
- * GetFilteredUserList routes the request to fetch either all 
+ * GetFilteredUserList routes the request to fetch either all
  * users or bound users based on the admin's privilege level.
  * @param ctx Request context
  * @param level Admin's privilege level
@@ -151,7 +151,7 @@ func (s *UserService) GetFilteredUserList(
 }
 
 /**
- * GetUserList retrieves a paginated list of all users and their 
+ * GetUserList retrieves a paginated list of all users and their
  * assigned roles, calculating metadata for the response.
  * @param ctx Request context
  * @param limit Items per page
@@ -211,7 +211,7 @@ func (s *UserService) GetUserList(
 }
 
 /**
- * GetBoundUserList retrieves a paginated list of users that 
+ * GetBoundUserList retrieves a paginated list of users that
  * share allowed client roles with the specified admin.
  * @param ctx Request context
  * @param limit Items per page
@@ -231,7 +231,7 @@ func (s *UserService) GetBoundUserList(
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetBound): %w", err)
 	}
-	
+
 	total, err := s.Repo.CountBoundUsers(userID[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (CountBound): %w", err)
@@ -284,7 +284,7 @@ func GetUserRoles(roles []models.Role) ([]dto.UserRoleRepsonse, error) {
 }
 
 /**
- * UpdateUserPassword handles the secure hashing and persistence of 
+ * UpdateUserPassword handles the secure hashing and persistence of
  * a user's new password.
  */
 func (s *UserService) UpdateUserPassword(
@@ -313,7 +313,7 @@ func (s *UserService) UpdateUserPassword(
 }
 
 /**
- * UpdateUserStatus modifies the operational status of a user 
+ * UpdateUserStatus modifies the operational status of a user
  * after validating the state transition.
  */
 func (s *UserService) UpdateUserStatus(
@@ -340,7 +340,7 @@ func (s *UserService) UpdateUserStatus(
 }
 
 /**
- * UpdateUserRoles modifies the associations between a user 
+ * UpdateUserRoles modifies the associations between a user
  * and their assigned roles in the system.
  */
 func (s *UserService) UpdateUserRoles(
@@ -357,7 +357,7 @@ func (s *UserService) UpdateUserRoles(
 }
 
 /**
- * DeleteUser performs a soft-delete on a user record, marking 
+ * DeleteUser performs a soft-delete on a user record, marking
  * them as inactive without removing the data from the database.
  */
 func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
