@@ -36,7 +36,37 @@ function getVisiblePages(totalPages, currentPage) {
   return visiblePages;
 }
 
-export default function Pagination({ totalPages, currentPage, onPageChange }) {
+const PAGINATION_VARIANTS = {
+  default: {
+    containerClassName: "join mt-5 flex justify-center sm:mb-10 lg:mb-0",
+    baseButtonClassName:
+      "join-item btn btn-square h-12 w-12 border-[#b22222] shadow-none !focus:outline-none !active:bg-transparent !focus:bg-transparent !focus-visible:bg-transparent",
+    inactiveButtonClassName:
+      "bg-white text-[#b22222] hover:bg-[#ffd700] hover:text-[#991b1b]",
+    activeButtonClassName: "pointer-events-none bg-[#b22222] text-white",
+    disabledButtonClassName:
+      "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-400 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-400",
+  },
+  glass: {
+    containerClassName:
+      "mt-1 flex flex-wrap justify-center gap-2 lg:justify-end",
+    baseButtonClassName:
+      "flex h-11 min-w-[2.75rem] items-center justify-center rounded-2xl border px-4 text-sm font-semibold outline-none transition duration-300",
+    inactiveButtonClassName:
+      "border-[#7b0d15]/10 bg-white/75 text-[#7b0d15] shadow-[0_18px_40px_-34px_rgba(43,3,7,0.45)] hover:border-[#f8d24e]/70 hover:bg-[#fff6dc] hover:text-[#5a0b12]",
+    activeButtonClassName:
+      "pointer-events-none border-transparent bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-white shadow-[0_20px_45px_-28px_rgba(43,3,7,0.85)]",
+    disabledButtonClassName:
+      "cursor-not-allowed border-[#7b0d15]/8 bg-white/45 text-[#c8afb4] shadow-none hover:border-[#7b0d15]/8 hover:bg-white/45 hover:text-[#c8afb4]",
+  },
+};
+
+export default function Pagination({
+  totalPages,
+  currentPage,
+  onPageChange,
+  variant = "default",
+}) {
   if (totalPages <= 0) {
     return null;
   }
@@ -45,36 +75,24 @@ export default function Pagination({ totalPages, currentPage, onPageChange }) {
   const showNavigationButtons = totalPages > 5;
   const canGoToPreviousPage = currentPage > 1;
   const canGoToNextPage = currentPage < totalPages;
-  const baseButtonClassName =
-    "join-item btn btn-square h-12 w-12 border-[#b22222] shadow-none !focus:outline-none !active:bg-transparent !focus:bg-transparent !focus-visible:bg-transparent";
-  const inactiveButtonClassName =
-    "bg-white text-[#b22222] hover:bg-[#ffd700] hover:text-[#991b1b]";
-  const activeButtonClassName = "bg-[#b22222] text-white pointer-events-none";
-  const disabledButtonClassName =
-    "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-400 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-400";
+  const styles = PAGINATION_VARIANTS[variant] || PAGINATION_VARIANTS.default;
 
   const getButtonClassName = ({ isActive = false, isDisabled = false } = {}) => {
     if (isDisabled) {
-      return `${baseButtonClassName} ${disabledButtonClassName}`;
+      return `${styles.baseButtonClassName} ${styles.disabledButtonClassName}`;
     }
 
     if (isActive) {
-      return `${baseButtonClassName} ${activeButtonClassName}`;
+      return `${styles.baseButtonClassName} ${styles.activeButtonClassName}`;
     }
 
-    return `${baseButtonClassName} ${inactiveButtonClassName}`;
+    return `${styles.baseButtonClassName} ${styles.inactiveButtonClassName}`;
   };
 
   return (
-    <div className="join mt-5 flex justify-center sm:mb-10 lg:mb-0">
+    <div className={styles.containerClassName}>
       {showNavigationButtons && (
-        <button
-          type="button"
-          aria-label="Previous page"
-          disabled={!canGoToPreviousPage}
-          onClick={() => onPageChange(currentPage - 1)}
-          className={getButtonClassName({ isDisabled: !canGoToPreviousPage })}
-        >
+        <button type="button" aria-label="Previous page" disabled={!canGoToPreviousPage} onClick={() => onPageChange(currentPage - 1)} className={getButtonClassName({ isDisabled: !canGoToPreviousPage })}>
           {"<<"}
         </button>
       )}
@@ -82,10 +100,7 @@ export default function Pagination({ totalPages, currentPage, onPageChange }) {
       {visiblePages.map((page, index) => {
         if (page === "...") {
           return (
-            <span
-              key={`pagination-ellipsis-${index}`}
-              className={getButtonClassName({ isDisabled: true })}
-            >
+            <span key={`pagination-ellipsis-${index}`} className={getButtonClassName({ isDisabled: true })}>
               ...
             </span>
           );
@@ -94,26 +109,14 @@ export default function Pagination({ totalPages, currentPage, onPageChange }) {
         const isActive = currentPage === page;
 
         return (
-          <button
-            key={page}
-            type="button"
-            aria-current={isActive ? "page" : undefined}
-            onClick={() => onPageChange(page)}
-            className={getButtonClassName({ isActive })}
-          >
+          <button key={page} type="button" aria-current={isActive ? "page" : undefined} onClick={() => onPageChange(page)} className={getButtonClassName({ isActive })}>
             {page}
           </button>
         );
       })}
 
       {showNavigationButtons && (
-        <button
-          type="button"
-          aria-label="Next page"
-          disabled={!canGoToNextPage}
-          onClick={() => onPageChange(currentPage + 1)}
-          className={getButtonClassName({ isDisabled: !canGoToNextPage })}
-        >
+        <button type="button" aria-label="Next page" disabled={!canGoToNextPage} onClick={() => onPageChange(currentPage + 1)} className={getButtonClassName({ isDisabled: !canGoToNextPage })}>
           {">>"}
         </button>
       )}
