@@ -1,7 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
 import MultiSelect from "../MultiSelect";
 import { useAllRoles } from "../../hooks/useAllRoles";
+import UserPoolModalSelect from "./UserPoolModalSelect";
+import {
+  userPoolModalBodyClassName,
+  userPoolModalBodyStackClassName,
+  userPoolModalBoxClassName,
+  userPoolModalCloseButtonClassName,
+  userPoolModalFooterActionsClassName,
+  userPoolModalFooterClassName,
+  userPoolModalHeaderClassName,
+  userPoolModalHeaderDescriptionClassName,
+  userPoolModalHeaderTitleClassName,
+  userPoolModalHelperTextClassName,
+  userPoolModalInputClassName,
+  userPoolModalLabelClassName,
+  userPoolModalOptionalBadgeClassName,
+  userPoolModalOverlayClassName,
+  userPoolModalPrimaryButtonClassName,
+  userPoolModalReadOnlyInputClassName,
+  userPoolModalSecondaryButtonClassName,
+  userPoolModalSectionClassName,
+} from "./modalTheme";
 
 const initialFormData = {
   id: "",
@@ -16,7 +38,7 @@ const initialFormData = {
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
-  { value: "suspended", label: "Suspended" },
+  { value: "suspended", label: "Suspend" },
 ];
 
 const STATUS_VALUES = new Set(["active", "suspended"]);
@@ -88,6 +110,9 @@ const createFormData = (user) => ({
   roles: normalizeRoleNames(user?.roles),
   roleIds: normalizeRoleIds(user?.roleIds),
 });
+
+const roleBadgeClassName =
+  "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
 
 export default function UserPoolModal({
   open,
@@ -174,9 +199,6 @@ export default function UserPoolModal({
       .filter(Boolean);
   }, [availableRoles, formData.roles, selectedRoleIds]);
 
-  const readOnlyInputClassName =
-    "w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-700";
-
   const handleFieldChange = (field, value) => {
     setFormData((current) => ({
       ...current,
@@ -240,28 +262,30 @@ export default function UserPoolModal({
 
   if (!open) return null;
 
-  return (
-    <dialog className="modal modal-open">
-      <div className="modal-box max-w-2xl max-h-[85vh] p-0 overflow-hidden flex flex-col">
-        <div className="bg-linear-to-r from-[#991b1b] to-red-600 p-6 text-white shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold">
+  return createPortal(
+    <dialog open className={userPoolModalOverlayClassName}>
+      <div className={userPoolModalBoxClassName}>
+        <div className={userPoolModalHeaderClassName}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="max-w-2xl">
+              <h3 className={userPoolModalHeaderTitleClassName}>
                 {isViewMode ? "View User" : "Edit User"}
               </h3>
-              <p className="text-white/90 mt-1">
+              <p className={userPoolModalHeaderDescriptionClassName}>
                 {isViewMode
                   ? "View the user's account information."
                   : "Update the user's roles and account status."}
               </p>
             </div>
+
             <button
-              className="btn btn-sm btn-circle btn-ghost text-white hover:bg-white/20"
+              type="button"
+              className={userPoolModalCloseButtonClassName}
               onClick={onClose}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
+                className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -280,152 +304,169 @@ export default function UserPoolModal({
         <form
           id="user-pool-form"
           noValidate
-          className="flex-1 overflow-y-auto p-6 space-y-4 bg-white"
+          className={userPoolModalBodyClassName}
           onSubmit={handleSubmit}
         >
-          <ErrorAlert message={error} onClose={() => setError("")} />
+          <div className={userPoolModalBodyStackClassName}>
+            <ErrorAlert message={error} onClose={() => setError("")} />
 
-          {!isEditMode && (
-            <>
-              <div className="space-y-0.5">
-                <label className="block text-base font-semibold text-gray-700">
-                  User ID
-                </label>
-                <input
-                  type="text"
-                  value={formData.id}
-                  readOnly
-                  className={readOnlyInputClassName}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-0.5">
-                  <label className="block text-base font-semibold text-gray-700">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    readOnly
-                    className={readOnlyInputClassName}
-                  />
-                </div>
-
-                <div className="space-y-0.5">
-                  <label className="block text-base font-semibold text-gray-700">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.givenName}
-                    readOnly
-                    className={readOnlyInputClassName}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-0.5">
-                  <label className="block text-base font-semibold text-gray-700">
-                    Middle Name
-                  </label>
-                  <label className="flex w-full items-center gap-2 rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-700">
+            {!isEditMode && (
+              <section className={userPoolModalSectionClassName}>
+                <div className="space-y-5">
+                  <div>
+                    <label className={userPoolModalLabelClassName}>User ID</label>
                     <input
                       type="text"
-                      value={formData.middleName}
+                      value={formData.id}
                       readOnly
-                      className="grow bg-transparent outline-none"
+                      className={userPoolModalReadOnlyInputClassName}
                     />
-                    <span className="badge badge-neutral badge-xs shrink-0">
-                      Optional
-                    </span>
-                  </label>
-                </div>
-
-                <div className="space-y-0.5">
-                  <label className="block text-base font-semibold text-gray-700">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.surname}
-                    readOnly
-                    className={readOnlyInputClassName}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="space-y-0.5">
-            <label className="block text-base font-semibold text-gray-700">
-              Role {!isViewMode && <span className="text-red-500">*</span>}
-            </label>
-            {isViewMode ? (
-              <div className="w-full min-h-24 rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-700">
-                {displayedRoles.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {displayedRoles.map((role, index) => (
-                      <span
-                        key={`${role}-${index}`}
-                        className="inline-flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
-                      >
-                        {role}
-                      </span>
-                    ))}
                   </div>
-                ) : (
-                  <span className="text-gray-500 italic">No content</span>
-                )}
-              </div>
-            ) : (
-              <MultiSelect
-                options={availableRoles}
-                selectedValues={selectedRoleIds}
-                onChange={handleRoleChange}
-                placeholder="Select roles"
-              />
-            )}
-          </div>
 
-          <div className="space-y-0.5">
-            <label className="block text-base font-semibold text-gray-700">
-              Status {!isViewMode && <span className="text-red-500">*</span>}
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) => handleFieldChange("status", e.target.value)}
-              disabled={isViewMode}
-              className={`select w-full rounded-lg ${
-                isViewMode
-                  ? "border border-gray-300 bg-gray-100 text-gray-700 cursor-not-allowed"
-                  : "border border-gray-200 bg-white text-gray-700"
-              }`}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className={userPoolModalLabelClassName}>Email</label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        readOnly
+                        className={userPoolModalReadOnlyInputClassName}
+                      />
+                    </div>
+
+                    <div>
+                      <label className={userPoolModalLabelClassName}>
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.givenName}
+                        readOnly
+                        className={userPoolModalReadOnlyInputClassName}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className={userPoolModalLabelClassName}>
+                        Middle Name
+                      </label>
+                      <label
+                        className={`${userPoolModalReadOnlyInputClassName} flex items-center gap-2`}
+                      >
+                        <input
+                          type="text"
+                          value={formData.middleName}
+                          readOnly
+                          className="grow bg-transparent outline-none"
+                        />
+                        <span className={userPoolModalOptionalBadgeClassName}>
+                          Optional
+                        </span>
+                      </label>
+                    </div>
+
+                    <div>
+                      <label className={userPoolModalLabelClassName}>Last Name</label>
+                      <input
+                        type="text"
+                        value={formData.surname}
+                        readOnly
+                        className={userPoolModalReadOnlyInputClassName}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <section className={userPoolModalSectionClassName}>
+              <div className="space-y-5">
+                <div>
+                  <label className={userPoolModalLabelClassName}>
+                    Role {!isViewMode && <span className="text-red-500">*</span>}
+                  </label>
+
+                  {isViewMode ? (
+                    <div className="min-h-24 w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-4 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+                      {displayedRoles.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {displayedRoles.map((role, index) => (
+                            <span
+                              key={`${role}-${index}`}
+                              className={roleBadgeClassName}
+                            >
+                              {role}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="italic text-[#8f6f76]">No content</span>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <p className={userPoolModalHelperTextClassName}>
+                        Update the roles assigned to this user.
+                      </p>
+                      <MultiSelect
+                        options={availableRoles}
+                        selectedValues={selectedRoleIds}
+                        onChange={handleRoleChange}
+                        placeholder="Select roles"
+                        variant="userpoolModal"
+                      />
+                    </>
+                  )}
+                </div>
+
+                <div>
+                  <label className={userPoolModalLabelClassName}>
+                    Status {!isViewMode && <span className="text-red-500">*</span>}
+                  </label>
+                  {isViewMode ? (
+                    <select
+                      value={formData.status}
+                      onChange={(e) => handleFieldChange("status", e.target.value)}
+                      disabled
+                      className={`${userPoolModalReadOnlyInputClassName} cursor-not-allowed appearance-none`}
+                    >
+                      {STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <UserPoolModalSelect
+                      value={formData.status}
+                      onChange={(value) => handleFieldChange("status", value)}
+                      options={STATUS_OPTIONS}
+                      ariaLabel="Status"
+                    />
+                  )}
+                </div>
+              </div>
+            </section>
           </div>
         </form>
 
-        <div className="p-6 bg-gray-50 border-t border-gray-200 shrink-0">
-          <div className="flex justify-end gap-3">
+        <div className={userPoolModalFooterClassName}>
+          <div className={userPoolModalFooterActionsClassName}>
             <button
               type="button"
-              className="btn h-12 rounded-lg btn-outline text-[#991b1b] border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]"
+              className={userPoolModalSecondaryButtonClassName}
               onClick={onClose}
             >
               {isViewMode ? "Close" : "Cancel"}
             </button>
+
             {!isViewMode && (
               <button
                 form="user-pool-form"
                 type="submit"
-                className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]"
+                className={userPoolModalPrimaryButtonClassName}
               >
                 Save
               </button>
@@ -433,6 +474,7 @@ export default function UserPoolModal({
           </div>
         </div>
       </div>
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }

@@ -6,6 +6,7 @@ export default function MultiSelect({
   onChange,
   placeholder,
   disabled = false,
+  variant = "default",
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -51,6 +52,69 @@ export default function MultiSelect({
       !selectedValues.includes(opt.id) &&
       opt.role_name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+  const isUserPoolModalVariant = variant === "userpoolModal";
+
+  const triggerClassName = `flex items-center justify-between min-h-10.5 rounded-lg border p-2 ${
+    isUserPoolModalVariant
+      ? disabled
+        ? "border-[#7b0d15]/10 bg-[#fff7ef]/90 text-[#8f6f76] cursor-default"
+        : "border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] cursor-pointer"
+      : disabled
+        ? "border-gray-200 bg-gray-100 text-gray-600 cursor-default"
+        : "border-gray-200 bg-transparent text-gray-700 cursor-pointer"
+  }`;
+
+  const placeholderClassName = isUserPoolModalVariant
+    ? "ml-1 text-sm text-[#9b7d84]"
+    : "ml-1 text-sm text-gray-400";
+
+  const selectedTagClassName = isUserPoolModalVariant
+    ? "flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]"
+    : "flex items-center gap-1 rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600";
+
+  const inputClassName = isUserPoolModalVariant
+    ? "ml-1 min-w-12.5 flex-1 bg-transparent text-sm text-[#4a1921] outline-none placeholder:text-[#9b7d84]"
+    : "ml-1 min-w-12.5 flex-1 bg-transparent text-sm outline-none";
+
+  const toolsClassName = isUserPoolModalVariant
+    ? "ml-3 flex items-center gap-2 border-l border-[#7b0d15]/10 pl-3"
+    : "ml-2 flex items-center gap-2 border-l border-gray-200 px-1";
+
+  const clearButtonClassName = isUserPoolModalVariant
+    ? "text-[#a38189] transition hover:text-[#7b0d15]"
+    : "text-lg text-gray-400 hover:text-[#991b1b]";
+
+  const chevronWrapClassName = isUserPoolModalVariant
+    ? "inline-flex size-9 items-center justify-center rounded-full bg-[#fff4dc] text-[#7b0d15]"
+    : "text-gray-400";
+
+  const dropdownClassName = isUserPoolModalVariant
+    ? "absolute z-50 mt-2 max-h-72 w-full overflow-y-auto rounded-[1.25rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,248,243,0.96))] py-2 shadow-[0_26px_60px_-34px_rgba(43,3,7,0.62)]"
+    : "absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-xl";
+
+  const groupLabelClassName = isUserPoolModalVariant
+    ? "px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-[#9b7d84]"
+    : "px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-gray-400";
+
+  const dividerClassName = isUserPoolModalVariant
+    ? "mx-3 my-1 border-b border-[#7b0d15]/10"
+    : "mx-2 my-1 border-b border-gray-100";
+
+  const optionClassName = isUserPoolModalVariant
+    ? "group flex cursor-pointer items-center px-4 py-3 hover:bg-[#fff7ef]"
+    : "group flex cursor-pointer items-center px-3 py-2 hover:bg-gray-50";
+
+  const optionTextClassName = isUserPoolModalVariant
+    ? "text-sm text-[#4a1921]"
+    : "text-sm text-gray-600";
+
+  const selectedOptionTextClassName = isUserPoolModalVariant
+    ? "text-sm font-medium text-[#4a1921]"
+    : "text-sm font-medium text-gray-700";
+
+  const emptyStateClassName = isUserPoolModalVariant
+    ? "p-4 text-center text-sm text-[#9b7d84]"
+    : "p-3 text-center text-sm text-gray-400";
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
@@ -58,27 +122,23 @@ export default function MultiSelect({
         onClick={() => {
           if (!disabled) setIsOpen(!isOpen);
         }}
-        className={`flex items-center justify-between p-2 border border-gray-200 rounded-lg min-h-10.5 ${
-          disabled
-            ? "bg-gray-100 text-gray-600 cursor-default"
-            : "bg-transparent text-gray-700 cursor-pointer"
-        }`}
+        className={triggerClassName}
       >
         <div className="flex flex-wrap gap-1.5 items-center flex-1">
           {selectedItems.length === 0 && !searchTerm && (
-            <span className="text-gray-400 ml-1 text-sm">{placeholder}</span>
+            <span className={placeholderClassName}>{placeholder}</span>
           )}
 
           {selectedItems.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
+              className={selectedTagClassName}
             >
               {item.role_name}
               {!disabled && (
                 <button
                   onClick={(e) => removeTag(e, item.id)}
-                  className="hover:text-red-900 font-bold ml-1"
+                  className="ml-1 font-bold transition hover:text-[#5a0b12]"
                 >
                   x
                 </button>
@@ -87,7 +147,7 @@ export default function MultiSelect({
           ))}
 
           <input
-            className="outline-none bg-transparent ml-1 text-sm flex-1 min-w-12.5"
+            className={inputClassName}
             value={searchTerm}
             onChange={(e) => {
               if (disabled) return;
@@ -102,34 +162,43 @@ export default function MultiSelect({
           />
         </div>
 
-        <div className="flex items-center gap-2 px-1 border-l ml-2 border-gray-200">
+        <div className={toolsClassName}>
           {!disabled && selectedValues.length > 0 && (
-            <button onClick={clearAll} className="text-gray-400 hover:text-[#991b1b] text-lg">
+            <button onClick={clearAll} className={clearButtonClassName}>
               x
             </button>
           )}
-          <span
-            className={`text-gray-400 transition-transform text-xs ${
-              !disabled && isOpen ? "rotate-180" : ""
-            }`}
-          >
-            {isOpen ? "^" : "v"}
+          <span className={chevronWrapClassName}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className={`size-4 transition-transform duration-200 ${
+                !disabled && isOpen ? "rotate-180" : ""
+              }`}
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
           </span>
         </div>
       </div>
 
       {!disabled && isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-72 overflow-y-auto py-1">
+        <div className={dropdownClassName}>
           {selectedItems.length > 0 && (
             <div className="pb-2">
-              <div className="px-3 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <div className={groupLabelClassName}>
                 Selected
               </div>
               {selectedItems.map((option) => (
                 <div
                   key={option.id}
                   onClick={() => toggleOption(option.id)}
-                  className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer group"
+                  className={optionClassName}
                 >
                   <input
                     type="checkbox"
@@ -137,10 +206,12 @@ export default function MultiSelect({
                     readOnly
                     className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"
                   />
-                  <span className="text-sm text-gray-700 font-medium">{option.role_name}</span>
+                  <span className={selectedOptionTextClassName}>
+                    {option.role_name}
+                  </span>
                 </div>
               ))}
-              <div className="border-b border-gray-100 my-1 mx-2" />
+              <div className={dividerClassName} />
             </div>
           )}
 
@@ -149,7 +220,7 @@ export default function MultiSelect({
               <div
                 key={option.id}
                 onClick={() => toggleOption(option.id)}
-                className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer group"
+                className={optionClassName}
               >
                 <input
                   type="checkbox"
@@ -157,11 +228,11 @@ export default function MultiSelect({
                   readOnly
                   className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"
                 />
-                <span className="text-sm text-gray-600">{option.role_name}</span>
+                <span className={optionTextClassName}>{option.role_name}</span>
               </div>
             ))
           ) : (
-            <div className="p-3 text-sm text-gray-400 text-center">
+            <div className={emptyStateClassName}>
               {searchTerm ? "No results found" : "No tags available"}
             </div>
           )}

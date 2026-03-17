@@ -156,6 +156,7 @@ export default function UserPool() {
       <DeleteConfirmModal
         open={openDelete}
         message={`Delete user ${userToDelete?.username}?`}
+        variant="userpool"
         onCancel={() => {
           setOpenDelete(false);
           setUserToDelete(null);
