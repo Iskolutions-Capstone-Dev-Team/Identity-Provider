@@ -39,6 +39,10 @@ func (s *AuthService) Authorize(
 
 	// 1. Session Validation
 	session, err := s.SessionRepo.GetByID(sessionToken)
+	if session == nil {
+		return "", fmt.Errorf("No session Found")
+	}
+
 	currentTime := time.Now()
 	if currentTime.After(session.ExpiresAt) {
 		return "", fmt.Errorf("Expired session")
