@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function TableRowFade({ children, keyId, isVisible = true }) {
+export default function TableRowFade({ children, keyId, isVisible = true, className = "hover:bg-gray-200" }) {
   const variants = {
     enter: { opacity: 0 },
     center: { opacity: 1 },
@@ -17,7 +17,7 @@ export default function TableRowFade({ children, keyId, isVisible = true }) {
           animate="center"
           exit="exit"
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="hover:bg-gray-200"
+          className={className}
         >
           {children}
         </motion.tr>
