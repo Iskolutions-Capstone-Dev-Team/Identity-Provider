@@ -6,10 +6,10 @@ const headerCellClassName = "border-b  border-white/10 px-4 py-4 text-center tex
 const bodyCellClassName = "border-b border-[#7b0d15]/10 px-4 py-4 align-top text-center text-sm text-[#4a1921] xl:px-6";
 const emailHeaderCellClassName = `${headerCellClassName} lg:pl-10 xl:pl-12`;
 const emailBodyCellClassName = `${bodyCellClassName} font-medium text-[#5a0b12] lg:pl-10 xl:pl-12`;
-const statusHeaderCellClassName = `${headerCellClassName} text-center lg:px-5 xl:px-7`;
-const statusBodyCellClassName = `${bodyCellClassName} text-center lg:px-5 xl:px-7`;
-const actionsHeaderCellClassName = `${headerCellClassName} text-center lg:pr-12 xl:pr-14`;
-const actionsBodyCellClassName = `${bodyCellClassName} text-center lg:pr-12 xl:pr-14`;
+const statusHeaderCellClassName = `${headerCellClassName} text-center lg:pr-8 xl:pr-10`;
+const statusBodyCellClassName = `${bodyCellClassName} text-center lg:pr-8 xl:pr-10`;
+const actionsHeaderCellClassName = `${headerCellClassName} text-center lg:pl-4 lg:pr-9 xl:pl-5 xl:pr-11`;
+const actionsBodyCellClassName = `${bodyCellClassName} text-center lg:pl-4 lg:pr-9 xl:pl-5 xl:pr-11`;
 
 function getStatusClassName(status) {
   if (status === "active") {
@@ -48,7 +48,7 @@ function getRoleItemClassName(role) {
 
 function renderActionButton({ label, onClick, children }) {
   return (
-    <button type="button" className="justify-items- inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]" onClick={onClick} aria-label={label}>
+    <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]" onClick={onClick} aria-label={label}>
       {children}
     </button>
   );
@@ -73,15 +73,15 @@ export default function UserPoolTable({ loading = false, users = [], onView, onE
 
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-[#7b0d15]/10 bg-white/65 shadow-[0_22px_55px_-38px_rgba(43,3,7,0.55)]">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto lg:overflow-x-hidden">
         <table className="table w-full min-w-[62rem] lg:min-w-0 lg:table-fixed">
           <colgroup>
-            <col className="w-[8rem] lg:w-[10%]" />
-            <col className="w-[14rem] lg:w-[22%]" />
+            <col className="w-[8rem] lg:w-[9%]" />
+            <col className="w-[14rem] lg:w-[20%]" />
             <col className="w-[11rem] lg:w-[18%]" />
-            <col className="w-[13rem] lg:w-[26%]" />
+            <col className="w-[13rem] lg:w-[24%]" />
             <col className="w-[9rem] lg:w-[13%]" />
-            <col className="w-[9.5rem] lg:w-[11%]" />
+            <col className="w-[9.5rem] lg:w-[12%]" />
           </colgroup>
 
           <thead>
