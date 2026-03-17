@@ -87,76 +87,71 @@ export default function UserPool() {
 
   return (
     <>
-      <div className="flex flex-col items-center gap-6 px-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-1 sm:px-0">
         <PageHeader
           title="Users"
           description="Manage and view user accounts in the user pool"
           icon={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-28 h-28 text-[#991b1b]"
-            >
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z"
-                clipRule="evenodd"
-              />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-20 w-20 sm:h-24 sm:w-24">
+              <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd"/>
             </svg>
           }
+          variant="hero"
         />
-        <UserPoolCard>
-          <UserPoolFilters
-            search={search}
-            setSearch={setSearch}
-            status={status}
-            setStatus={setStatus}
-            onCreate={() => setOpenAddModal(true)}
-          />
-          {!showLoading && fetchError && (
-            <div className="alert alert-error mb-2">
-              <span>{fetchError}</span>
-            </div>
-          )}
-          <UserPoolTable
-            loading={showLoading}
-            users={paginatedUsers}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDeleteClick}
-            showDeleteAction={canDeleteUsers}
-          />
-          {!showLoading && (
-            <>
-              <div className="flex justify-center mt-6">
+
+        <div className="relative">
+          <UserPoolCard>
+            <UserPoolFilters
+              search={search}
+              setSearch={setSearch}
+              status={status}
+              setStatus={setStatus}
+              onCreate={() => setOpenAddModal(true)}
+            />
+            {!showLoading && fetchError && (
+              <div className="alert alert-error mb-2">
+                <span>{fetchError}</span>
+              </div>
+            )}
+            <UserPoolTable
+              loading={showLoading}
+              users={paginatedUsers}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+              showDeleteAction={canDeleteUsers}
+            />
+            {!showLoading && (
+              <div className="flex flex-col gap-4 border-t border-[#7b0d15]/10 pt-5 lg:flex-row lg:items-center lg:justify-between">
                 <ResultsCount
                   page={page}
                   itemsPerPage={ITEMS_PER_PAGE}
                   totalResults={totalResults}
                   currentResultsCount={paginatedUsers.length}
+                  variant="glass"
+                />
+                <Pagination
+                  totalPages={totalPages}
+                  currentPage={page}
+                  onPageChange={setPage}
+                  variant="glass"
                 />
               </div>
-              <Pagination
-                totalPages={totalPages}
-                currentPage={page}
-                onPageChange={setPage}
-              />
-            </>
-          )}
-          <UserPoolModal
-            open={openViewEditModal}
-            mode={modalMode}
-            user={selectedUser}
-            onSubmit={updateUser}
-            onClose={() => setOpenViewEditModal(false)}
-          />
-          <AddUserModal
-            open={openAddModal}
-            onClose={() => setOpenAddModal(false)}
-            onSubmit={createUser}
-          />
-        </UserPoolCard>
+            )}
+            <UserPoolModal
+              open={openViewEditModal}
+              mode={modalMode}
+              user={selectedUser}
+              onSubmit={updateUser}
+              onClose={() => setOpenViewEditModal(false)}
+            />
+            <AddUserModal
+              open={openAddModal}
+              onClose={() => setOpenAddModal(false)}
+              onSubmit={createUser}
+            />
+          </UserPoolCard>
+        </div>
       </div>
       <DeleteConfirmModal
         open={openDelete}
