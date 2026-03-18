@@ -261,7 +261,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
       <div className={userPoolModalBoxClassName}>
         <div className={userPoolModalHeaderClassName}>
           <div className="flex items-start justify-between gap-4">
-            <div className="max-w-2xl">
+            <div className={`max-w-2xl ${isViewMode ? "pb-5 sm:pb-10" : ""}`}>
               <h3 className={userPoolModalHeaderTitleClassName}>
                 {isViewMode ? "View User" : "Edit User"}
               </h3>
