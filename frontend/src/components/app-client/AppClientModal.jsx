@@ -30,6 +30,14 @@ const GRANT_OPTIONS = [
   "refresh_token",
   "client_credentials",
 ];
+const initialFieldErrors = {
+  imageFile: "",
+  name: "",
+  baseURL: "",
+  redirectURL: "",
+  logoutURL: "",
+};
+const inlineErrorClassName = "mt-2 text-xs text-red-500";
 const dropzoneBaseClassName =
   "relative flex min-h-56 w-full flex-col items-center justify-center overflow-hidden rounded-[1.5rem] border border-dashed bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-6 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] transition duration-300";
 const imagePreviewCloseButtonClassName =
@@ -123,9 +131,20 @@ const mapRoleNamesToLabels = (roleNames = [], roleOptions = []) => {
   );
 };
 
-const getDropzoneClassName = ({ isDragging, isView }) =>
+const isValidHttpUrl = (value) => {
+  try {
+    const parsedUrl = new URL(value);
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const getDropzoneClassName = ({ hasError, isDragging, isView }) =>
   `${dropzoneBaseClassName} ${
-    isDragging && !isView
+    hasError && !isView
+      ? "border-red-400 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,244,244,0.94))]"
+      : isDragging && !isView
       ? "border-[#f8d24e] bg-[linear-gradient(180deg,rgba(255,247,220,0.92),rgba(255,244,220,0.84))]"
       : isView
         ? "border-[#7b0d15]/10"
@@ -158,6 +177,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [imageLocation, setImageLocation] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
   const [showFullImage, setShowFullImage] = useState(false);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
   const detailsRequestRef = useRef({ clientId: "", inFlight: false });
@@ -223,6 +243,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setImageFile(null);
     setIsDragging(false);
     setError("");
+    setFieldErrors(initialFieldErrors);
 
     const image = client.image || client.image_location || null;
     setImageLocation(image || "");
@@ -233,6 +254,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     if (!open) {
       detailsRequestRef.current = { clientId: "", inFlight: false };
       setHasLoadedLatestRoles(false);
+      setFieldErrors(initialFieldErrors);
     }
   }, [open]);
 
@@ -269,6 +291,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         setDetailRoleNames(Array.isArray(details.roleNames) ? details.roleNames : []);
         setHasRoleSelectionChanged(false);
         setHasLoadedLatestRoles(true);
+        setFieldErrors(initialFieldErrors);
 
         const image = details.image || details.image_location || null;
         setImageLocation(image || "");
@@ -309,28 +332,120 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     roles,
   ]);
 
+  const clearFieldError = (fieldName) => {
+    setFieldErrors((current) =>
+      current[fieldName]
+        ? {
+            ...current,
+            [fieldName]: "",
+          }
+        : current,
+    );
+  };
+
+  const updateFieldValue = (fieldName, value, setter) => {
+    setter(value);
+    clearFieldError(fieldName);
+
+    if (error) {
+      setError("");
+    }
+  };
+
+  const getEditableInputClassName = (fieldName) =>
+    `${modalInputClassName} ${
+      fieldErrors[fieldName] ? "border-red-400 focus:border-red-500" : ""
+    }`;
+
+  const validateEditableFields = () => {
+    const trimmedName = name.trim();
+    const trimmedBaseURL = baseURL.trim();
+    const trimmedRedirectURL = redirectURL.trim();
+    const trimmedLogoutURL = logoutURL.trim();
+    const nextFieldErrors = { ...initialFieldErrors };
+    const hasLogo = Boolean(imageFile) || Boolean(imageLocation);
+
+    if (!hasLogo) {
+      nextFieldErrors.imageFile = "System logo is required.";
+    }
+
+    if (!trimmedName) {
+      nextFieldErrors.name = "Client name is required.";
+    } else if (trimmedName.length < 5 || trimmedName.length > 100) {
+      nextFieldErrors.name = "Client name must be between 5 and 100 characters.";
+    }
+
+    if (!trimmedBaseURL) {
+      nextFieldErrors.baseURL = "Base URL is required.";
+    } else if (!isValidHttpUrl(trimmedBaseURL)) {
+      nextFieldErrors.baseURL = "Base URL must be a valid URL.";
+    }
+
+    if (!trimmedRedirectURL) {
+      nextFieldErrors.redirectURL = "Redirect URL is required.";
+    } else if (!isValidHttpUrl(trimmedRedirectURL)) {
+      nextFieldErrors.redirectURL = "Redirect URL must be a valid URL.";
+    }
+
+    if (!trimmedLogoutURL) {
+      nextFieldErrors.logoutURL = "Logout URL is required.";
+    } else if (!isValidHttpUrl(trimmedLogoutURL)) {
+      nextFieldErrors.logoutURL = "Logout URL must be a valid URL.";
+    }
+
+    setFieldErrors(nextFieldErrors);
+
+    const firstError =
+      nextFieldErrors.imageFile ||
+      nextFieldErrors.name ||
+      nextFieldErrors.baseURL ||
+      nextFieldErrors.redirectURL ||
+      nextFieldErrors.logoutURL;
+
+    if (firstError) {
+      setError(firstError);
+      return false;
+    }
+
+    return true;
+  };
+
   const toggleGrant = (grant) => {
     if (selectedGrants.includes(grant)) {
       setSelectedGrants(selectedGrants.filter((value) => value !== grant));
-      return;
+    } else {
+      setSelectedGrants([...selectedGrants, grant]);
     }
 
-    setSelectedGrants([...selectedGrants, grant]);
+    if (error) {
+      setError("");
+    }
   };
 
   const validateAndProcessFile = (file) => {
     if (!file) return;
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      setError("System logo must be a PNG or JPG file.");
+      const message = "System logo must be a PNG or JPG file.";
+      setFieldErrors((current) => ({
+        ...current,
+        imageFile: message,
+      }));
+      setError(message);
       return;
     }
 
     if (file.size > MAX_LOGO_BYTES) {
-      setError("System logo must be 5MB max.");
+      const message = "System logo must be 5MB max.";
+      setFieldErrors((current) => ({
+        ...current,
+        imageFile: message,
+      }));
+      setError(message);
       return;
     }
 
+    clearFieldError("imageFile");
     setError("");
     setImageFile(file);
 
@@ -366,6 +481,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setImagePreview(null);
     setImageFile(null);
     setImageLocation("");
+    clearFieldError("imageFile");
   };
 
   const handleSubmit = async (event) => {
@@ -380,19 +496,10 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
       return;
     }
 
-    const hasLogo = Boolean(imageFile) || Boolean(imageLocation);
-    if (!hasLogo) {
-      setError("System logo is required.");
+    if (!validateEditableFields()) {
       return;
     }
-    if (!name.trim() || name.length < 5 || name.length > 100) {
-      setError("Client name must be between 5 and 100 characters.");
-      return;
-    }
-    if (!baseURL.trim() || !redirectURL.trim() || !logoutURL.trim()) {
-      setError("All URL fields are required.");
-      return;
-    }
+
     if (!selectedGrants || selectedGrants.length === 0) {
       setError("At least one grant must be selected.");
       return;
@@ -483,7 +590,16 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                 <label className={modalLabelClassName}>
                   System Logo {!isView && <span className="text-red-500">*</span>}
                 </label>
-                <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={getDropzoneClassName({ isDragging, isView })}>
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={getDropzoneClassName({
+                    hasError: Boolean(fieldErrors.imageFile),
+                    isDragging,
+                    isView,
+                  })}
+                >
                   {!imagePreview ? (
                     <label htmlFor="dropzone-file" className={`flex h-full w-full flex-col items-center justify-center ${
                         isView ? "cursor-default" : "cursor-pointer"
@@ -521,6 +637,11 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     </div>
                   )}
                 </div>
+                {!isView && fieldErrors.imageFile && (
+                  <p className={inlineErrorClassName}>
+                    {fieldErrors.imageFile}
+                  </p>
+                )}
               </section>
 
               <section className={modalSectionClassName}>
@@ -535,14 +656,19 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                       <label className={modalLabelClassName}>
                         Name {!isView && <span className="text-red-500">*</span>}
                       </label>
-                      <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} placeholder="(e.g., Identity Provider System)"
+                      <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} placeholder="(e.g., Identity Provider System)"
                         className={
                           isView
                             ? modalReadOnlyInputClassName
-                            : modalInputClassName
+                            : getEditableInputClassName("name")
                         }
                         disabled={isView}
                       />
+                      {!isView && fieldErrors.name && (
+                        <p className={inlineErrorClassName}>
+                          {fieldErrors.name}
+                        </p>
+                      )}
                       {!isView && (
                         <p className={`${modalHelperTextClassName} mt-2`}>
                           Must be 5-100 characters
@@ -579,14 +705,19 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <label className={modalLabelClassName}>
                       Base URLs {!isView && <span className="text-red-500">*</span>}
                     </label>
-                    <input type="url" required value={baseURL} onChange={(event) => setBaseURL(event.target.value)} placeholder="https://app.example.com"
+                    <input type="url" required value={baseURL} onChange={(event) => updateFieldValue("baseURL", event.target.value, setBaseURL)} placeholder="https://app.example.com"
                       className={
                         isView
                           ? modalReadOnlyInputClassName
-                          : modalInputClassName
+                          : getEditableInputClassName("baseURL")
                       }
                       pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}
                     />
+                    {!isView && fieldErrors.baseURL && (
+                      <p className={inlineErrorClassName}>
+                        {fieldErrors.baseURL}
+                      </p>
+                    )}
                     {!isView && (
                       <p className={`${modalHelperTextClassName} mt-2`}>
                         Must be valid URL
@@ -598,14 +729,19 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <label className={modalLabelClassName}>
                       Redirect URLs {!isView && <span className="text-red-500">*</span>}
                     </label>
-                    <input type="url" required value={redirectURL} onChange={(event) => setRedirectURL(event.target.value)} placeholder="https://app.example.com/callback"
+                    <input type="url" required value={redirectURL} onChange={(event) => updateFieldValue("redirectURL", event.target.value, setRedirectURL)} placeholder="https://app.example.com/callback"
                       className={
                         isView
                           ? modalReadOnlyInputClassName
-                          : modalInputClassName
+                          : getEditableInputClassName("redirectURL")
                       }
                       pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}
                     />
+                    {!isView && fieldErrors.redirectURL && (
+                      <p className={inlineErrorClassName}>
+                        {fieldErrors.redirectURL}
+                      </p>
+                    )}
                     {!isView && (
                       <p className={`${modalHelperTextClassName} mt-2`}>
                         Must be valid URL
@@ -617,14 +753,19 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <label className={modalLabelClassName}>
                       Logout URLs {!isView && <span className="text-red-500">*</span>}
                     </label>
-                    <input type="url" required value={logoutURL} onChange={(event) => setLogoutURL(event.target.value)} placeholder="https://app.example.com/logout"
+                    <input type="url" required value={logoutURL} onChange={(event) => updateFieldValue("logoutURL", event.target.value, setLogoutURL)} placeholder="https://app.example.com/logout"
                       className={
                         isView
                           ? modalReadOnlyInputClassName
-                          : modalInputClassName
+                          : getEditableInputClassName("logoutURL")
                       }
                       pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}
                     />
+                    {!isView && fieldErrors.logoutURL && (
+                      <p className={inlineErrorClassName}>
+                        {fieldErrors.logoutURL}
+                      </p>
+                    )}
                     {!isView && (
                       <p className={`${modalHelperTextClassName} mt-2`}>
                         Must be valid URL

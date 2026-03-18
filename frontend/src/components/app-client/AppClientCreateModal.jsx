@@ -31,6 +31,15 @@ const GRANT_OPTIONS = [
   "refresh_token",
   "client_credentials",
 ];
+const initialFieldErrors = {
+  imageFile: "",
+  name: "",
+  tag: "",
+  baseURL: "",
+  redirectURL: "",
+  logoutURL: "",
+};
+const inlineErrorClassName = "mt-2 text-xs text-red-500";
 
 const dropzoneBaseClassName =
   "relative flex min-h-56 w-full flex-col items-center justify-center overflow-hidden rounded-[1.5rem] border border-dashed bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-6 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] transition duration-300";
@@ -51,9 +60,20 @@ const normalizeRoleIds = (values = []) =>
     ),
   );
 
-const getDropzoneClassName = (isDragging) =>
+const isValidHttpUrl = (value) => {
+  try {
+    const parsedUrl = new URL(value);
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const getDropzoneClassName = ({ isDragging, hasError }) =>
   `${dropzoneBaseClassName} ${
-    isDragging
+    hasError
+      ? "border-red-400 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,244,244,0.94))]"
+      : isDragging
       ? "border-[#f8d24e] bg-[linear-gradient(180deg,rgba(255,247,220,0.92),rgba(255,244,220,0.84))]"
       : "border-[#7b0d15]/12 hover:border-[#f8d24e]/65 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,249,238,0.94))]"
   }`;
@@ -81,6 +101,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
   const [isDragging, setIsDragging] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
 
   const roleOptions = useMemo(
     () =>
@@ -110,31 +131,154 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
       setIsDragging(false);
       setShowFullImage(false);
       setError("");
+      setFieldErrors(initialFieldErrors);
     }
   }, [open]);
+
+  const clearFieldError = (fieldName) => {
+    setFieldErrors((current) =>
+      current[fieldName]
+        ? {
+            ...current,
+            [fieldName]: "",
+          }
+        : current,
+    );
+  };
+
+  const updateFieldValue = (fieldName, value, setter) => {
+    setter(value);
+    clearFieldError(fieldName);
+
+    if (error) {
+      setError("");
+    }
+  };
+
+  const getInputClassName = (fieldName) =>
+    `${modalInputClassName} ${
+      fieldErrors[fieldName] ? "border-red-400 focus:border-red-500" : ""
+    }`;
+
+  const validateBasicInfo = () => {
+    const trimmedName = name.trim();
+    const trimmedTag = tag.trim();
+    const nextFieldErrors = {
+      ...initialFieldErrors,
+      baseURL: fieldErrors.baseURL,
+      redirectURL: fieldErrors.redirectURL,
+      logoutURL: fieldErrors.logoutURL,
+    };
+
+    if (!imageFile) {
+      nextFieldErrors.imageFile = "System logo is required.";
+    }
+
+    if (!trimmedName) {
+      nextFieldErrors.name = "Client name is required.";
+    } else if (trimmedName.length < 5 || trimmedName.length > 100) {
+      nextFieldErrors.name = "Client name must be between 5 and 100 characters.";
+    }
+
+    if (!trimmedTag) {
+      nextFieldErrors.tag = "Tag is required.";
+    } else if (trimmedTag.length > 10) {
+      nextFieldErrors.tag = "Tag must be 10 characters or fewer.";
+    }
+
+    setFieldErrors(nextFieldErrors);
+
+    const firstError =
+      nextFieldErrors.imageFile || nextFieldErrors.name || nextFieldErrors.tag;
+
+    if (firstError) {
+      setError(firstError);
+      return false;
+    }
+
+    return true;
+  };
+
+  const validateUrls = () => {
+    const trimmedBaseURL = baseURL.trim();
+    const trimmedRedirectURL = redirectURL.trim();
+    const trimmedLogoutURL = logoutURL.trim();
+    const nextFieldErrors = {
+      ...initialFieldErrors,
+      imageFile: fieldErrors.imageFile,
+      name: fieldErrors.name,
+      tag: fieldErrors.tag,
+    };
+
+    if (!trimmedBaseURL) {
+      nextFieldErrors.baseURL = "Base URL is required.";
+    } else if (!isValidHttpUrl(trimmedBaseURL)) {
+      nextFieldErrors.baseURL = "Base URL must be a valid URL.";
+    }
+
+    if (!trimmedRedirectURL) {
+      nextFieldErrors.redirectURL = "Redirect URL is required.";
+    } else if (!isValidHttpUrl(trimmedRedirectURL)) {
+      nextFieldErrors.redirectURL = "Redirect URL must be a valid URL.";
+    }
+
+    if (!trimmedLogoutURL) {
+      nextFieldErrors.logoutURL = "Logout URL is required.";
+    } else if (!isValidHttpUrl(trimmedLogoutURL)) {
+      nextFieldErrors.logoutURL = "Logout URL must be a valid URL.";
+    }
+
+    setFieldErrors(nextFieldErrors);
+
+    const firstError =
+      nextFieldErrors.baseURL ||
+      nextFieldErrors.redirectURL ||
+      nextFieldErrors.logoutURL;
+
+    if (firstError) {
+      setError(firstError);
+      return false;
+    }
+
+    return true;
+  };
 
   const toggleGrant = (grant) => {
     if (grants.includes(grant)) {
       setGrants(grants.filter((value) => value !== grant));
-      return;
+    } else {
+      setGrants([...grants, grant]);
     }
 
-    setGrants([...grants, grant]);
+    if (error) {
+      setError("");
+    }
   };
 
   const validateAndProcessFile = (file) => {
     if (!file) return;
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      setError("System logo must be a PNG or JPG file.");
+      const message = "System logo must be a PNG or JPG file.";
+      setFieldErrors((current) => ({
+        ...current,
+        imageFile: message,
+      }));
+      setError(message);
       return;
     }
 
     if (file.size > MAX_LOGO_BYTES) {
-      setError("System logo must be 5MB max.");
+      const message = "System logo must be 5MB max.";
+      setFieldErrors((current) => ({
+        ...current,
+        imageFile: message,
+      }));
+      setError(message);
       return;
     }
 
+    clearFieldError("imageFile");
     setError("");
     setImageFile(file);
 
@@ -163,6 +307,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
   const removeImage = () => {
     setImagePreview(null);
     setImageFile(null);
+    clearFieldError("imageFile");
 
     const input = document.getElementById("dropzone-file-create");
     if (input) {
@@ -171,26 +316,12 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
   };
 
   const nextStep = () => {
-    if (step === 1) {
-      if (!imageFile) {
-        setError("System logo is required.");
-        return;
-      }
-      if (!name.trim() || name.length < 5 || name.length > 100) {
-        setError("Client name must be between 5 and 100 characters.");
-        return;
-      }
-      if (!tag.trim() || tag.length > 10) {
-        setError("Tag is required (max 10 characters).");
-        return;
-      }
+    if (step === 1 && !validateBasicInfo()) {
+      return;
     }
 
-    if (step === 2) {
-      if (!baseURL.trim() || !redirectURL.trim() || !logoutURL.trim()) {
-        setError("All URL fields are required.");
-        return;
-      }
+    if (step === 2 && !validateUrls()) {
+      return;
     }
 
     if (step === 3 && grants.length === 0) {
@@ -203,23 +334,12 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
   };
 
   const handleSubmit = async () => {
-    if (!imageFile) {
-      setError("System logo is required.");
+    if (!validateBasicInfo()) {
       setStep(1);
       return;
     }
-    if (!name.trim() || name.length < 5 || name.length > 100) {
-      setError("Client name must be between 5 and 100 characters.");
-      setStep(1);
-      return;
-    }
-    if (!tag.trim() || tag.length > 10) {
-      setError("Tag is required (max 10 characters).");
-      setStep(1);
-      return;
-    }
-    if (!baseURL.trim() || !redirectURL.trim() || !logoutURL.trim()) {
-      setError("All URL fields are required.");
+
+    if (!validateUrls()) {
       setStep(2);
       return;
     }
@@ -328,7 +448,15 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                     <label className={modalLabelClassName}>
                       System Logo <span className="text-red-500">*</span>
                     </label>
-                    <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={getDropzoneClassName(isDragging)}>
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={getDropzoneClassName({
+                        isDragging,
+                        hasError: Boolean(fieldErrors.imageFile),
+                      })}
+                    >
                       {!imagePreview ? (
                         <label htmlFor="dropzone-file-create" className="flex h-full w-full cursor-pointer flex-col items-center justify-center">
                           <div className="space-y-3">
@@ -362,6 +490,11 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                         </div>
                       )}
                     </div>
+                    {fieldErrors.imageFile && (
+                      <p className={inlineErrorClassName}>
+                        {fieldErrors.imageFile}
+                      </p>
+                    )}
                   </section>
 
                   <section className={modalSectionClassName}>
@@ -370,7 +503,23 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                         <label className={modalLabelClassName}>
                           Name <span className="text-red-500">*</span>
                         </label>
-                        <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} placeholder="(e.g., Identity Provider System)" className={modalInputClassName}/>
+                        <input
+                          type="text"
+                          required
+                          minLength={5}
+                          maxLength={100}
+                          value={name}
+                          onChange={(event) =>
+                            updateFieldValue("name", event.target.value, setName)
+                          }
+                          placeholder="(e.g., Identity Provider System)"
+                          className={getInputClassName("name")}
+                        />
+                        {fieldErrors.name && (
+                          <p className={inlineErrorClassName}>
+                            {fieldErrors.name}
+                          </p>
+                        )}
                         <p className={`${modalHelperTextClassName} mt-2`}>
                           Must be 5-100 characters
                         </p>
@@ -380,11 +529,26 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                         <label className={modalLabelClassName}>
                           Tag <span className="text-red-500">*</span>
                         </label>
-                        <input type="text" required maxLength={10} value={tag}
+                        <input
+                          type="text"
+                          required
+                          maxLength={10}
+                          value={tag}
                           onChange={(event) =>
-                            setTag(event.target.value.toUpperCase())
+                            updateFieldValue(
+                              "tag",
+                              event.target.value.toUpperCase(),
+                              setTag,
+                            )
                           }
-                          placeholder="(e.g., IdP)" className={modalInputClassName}/>
+                          placeholder="(e.g., IdP)"
+                          className={getInputClassName("tag")}
+                        />
+                        {fieldErrors.tag && (
+                          <p className={inlineErrorClassName}>
+                            {fieldErrors.tag}
+                          </p>
+                        )}
                         <p className={`${modalHelperTextClassName} mt-2`}>
                           Maximum 10 characters
                         </p>
@@ -403,12 +567,32 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
 
               {step === 2 && (
                 <section className={modalSectionClassName}>
-                  <div className="space-y-5">
-                    <div>
-                      <label className={modalLabelClassName}>
-                        Base URL <span className="text-red-500">*</span>
-                      </label>
-                      <input type="url" required value={baseURL} onChange={(event) => setBaseURL(event.target.value)} placeholder="https://app.example.com" className={modalInputClassName} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL"/>
+                    <div className="space-y-5">
+                      <div>
+                        <label className={modalLabelClassName}>
+                          Base URL <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="url"
+                          required
+                          value={baseURL}
+                          onChange={(event) =>
+                            updateFieldValue(
+                              "baseURL",
+                              event.target.value,
+                              setBaseURL,
+                            )
+                          }
+                          placeholder="https://app.example.com"
+                          className={getInputClassName("baseURL")}
+                          pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$"
+                          title="Must be valid URL"
+                        />
+                        {fieldErrors.baseURL && (
+                          <p className={inlineErrorClassName}>
+                            {fieldErrors.baseURL}
+                          </p>
+                        )}
                       <p className={`${modalHelperTextClassName} mt-2`}>
                         Must be valid URL
                       </p>
@@ -418,7 +602,27 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                       <label className={modalLabelClassName}>
                         Redirect URL <span className="text-red-500">*</span>
                       </label>
-                      <input type="url" required value={redirectURL} onChange={(event) => setRedirectURL(event.target.value)} placeholder="https://app.example.com/callback" className={modalInputClassName} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL"/>
+                      <input
+                        type="url"
+                        required
+                        value={redirectURL}
+                        onChange={(event) =>
+                          updateFieldValue(
+                            "redirectURL",
+                            event.target.value,
+                            setRedirectURL,
+                          )
+                        }
+                        placeholder="https://app.example.com/callback"
+                        className={getInputClassName("redirectURL")}
+                        pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$"
+                        title="Must be valid URL"
+                      />
+                      {fieldErrors.redirectURL && (
+                        <p className={inlineErrorClassName}>
+                          {fieldErrors.redirectURL}
+                        </p>
+                      )}
                       <p className={`${modalHelperTextClassName} mt-2`}>
                         Must be valid URL
                       </p>
@@ -428,7 +632,27 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                       <label className={modalLabelClassName}>
                         Logout URL <span className="text-red-500">*</span>
                       </label>
-                      <input type="url" required value={logoutURL} onChange={(event) => setLogoutURL(event.target.value)} placeholder="https://app.example.com/logout" className={modalInputClassName} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL"/>
+                      <input
+                        type="url"
+                        required
+                        value={logoutURL}
+                        onChange={(event) =>
+                          updateFieldValue(
+                            "logoutURL",
+                            event.target.value,
+                            setLogoutURL,
+                          )
+                        }
+                        placeholder="https://app.example.com/logout"
+                        className={getInputClassName("logoutURL")}
+                        pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$"
+                        title="Must be valid URL"
+                      />
+                      {fieldErrors.logoutURL && (
+                        <p className={inlineErrorClassName}>
+                          {fieldErrors.logoutURL}
+                        </p>
+                      )}
                       <p className={`${modalHelperTextClassName} mt-2`}>
                         Must be valid URL
                       </p>
