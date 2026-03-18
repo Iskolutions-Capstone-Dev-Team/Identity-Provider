@@ -94,7 +94,7 @@ export default function ConnectedAppClientTable({ loading = false, clients, onVi
                   {client.name}
                 </td>
 
-                <td className={`${bodyCellClassName} font-mono text-[#7b0d15]`}>
+                <td className={`${bodyCellClassName} text-[#7b0d15]`}>
                   {client.id || client.clientId}
                 </td>
 
