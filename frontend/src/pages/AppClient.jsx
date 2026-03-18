@@ -165,7 +165,7 @@ export default function AppClient() {
             <DeleteConfirmModal
                 open={showDeleteAlert}
                 message="Delete this app client?"
-                variant="userpool"
+                theme="glass"
                 onCancel={() => {
                     setShowDeleteAlert(false);
                     setDeleteTarget(null);
