@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 export default function PageHeader({ title, description, icon, variant = "default" }) {
   if (variant === "hero") {
     return (
-      <div className="mx-auto w-full max-w-7xl">
+      <div className="mx-auto w-full max-w-[96rem] min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem]">
         <div className="relative overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_32px_90px_-48px_rgba(43,3,7,0.95)]">
           <div
             className="absolute inset-0 bg-cover bg-center"
