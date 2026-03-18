@@ -46,11 +46,13 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
     <dialog open className={modalOverlayClassName}>
       <div className={modalBoxClassName}>
         <div className={modalHeaderClassName}>
-          <h3 className={modalHeaderTitleClassName}>Client Secret</h3>
-          <p className={modalHeaderDescriptionClassName}>
-            Here is the client secret for{" "}
-            <span className="font-semibold text-white">{displayName}</span>.
-          </p>
+          <div className="max-w-2xl pb-5 sm:pb-10">
+            <h3 className={modalHeaderTitleClassName}>Client Secret</h3>
+            <p className={modalHeaderDescriptionClassName}>
+              Here is the client secret for{" "}
+              <span className="font-semibold text-white">{displayName}</span>.
+            </p>
+          </div>
         </div>
 
         <div className={modalBodyClassName}>

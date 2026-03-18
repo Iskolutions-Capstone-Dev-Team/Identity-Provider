@@ -448,9 +448,9 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     <>
       <dialog open className={modalOverlayClassName}>
         <div className={modalBoxClassName}>
-          <div className={modalHeaderClassName}>
+          <div className={`${modalHeaderClassName} !pb-11 sm:!pb-16`}>
             <div className="flex items-start justify-between gap-4">
-              <div className={`max-w-2xl ${isView ? "pb-5 sm:pb-10" : ""}`}>
+              <div className="max-w-2xl">
                 <h3 className={modalHeaderTitleClassName}>
                   {isView ? "View App Client" : "Edit App Client"}
                 </h3>

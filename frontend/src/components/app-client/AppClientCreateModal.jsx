@@ -269,7 +269,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
         <div className={modalBoxClassName}>
           <div className={modalHeaderClassName}>
             <div className="flex items-start justify-between gap-4">
-              <div className="max-w-2xl">
+              <div className="max-w-2xl pb-5 sm:pb-10">
                 <h3 className={modalHeaderTitleClassName}>
                   Create App Client
                 </h3>
