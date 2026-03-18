@@ -1,13 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 
-export default function MultiSelect({
-  options,
-  selectedValues,
-  onChange,
-  placeholder,
-  disabled = false,
-  variant = "default",
-}) {
+export default function MultiSelect({ options, selectedValues, onChange, placeholder, disabled = false, variant = "default", hasError = false }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef(null);
@@ -58,7 +51,9 @@ export default function MultiSelect({
     isUserPoolModalVariant
       ? disabled
         ? "border-[#7b0d15]/10 bg-[#fff7ef]/90 text-[#8f6f76] cursor-default"
-        : "border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] cursor-pointer"
+        : `${
+            hasError ? "border-red-400" : "border-[#7b0d15]/10"
+          } bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] cursor-pointer`
       : disabled
         ? "border-gray-200 bg-gray-100 text-gray-600 cursor-default"
         : "border-gray-200 bg-transparent text-gray-700 cursor-pointer"
@@ -130,10 +125,7 @@ export default function MultiSelect({
           )}
 
           {selectedItems.map((item) => (
-            <div
-              key={item.id}
-              className={selectedTagClassName}
-            >
+            <div key={item.id} className={selectedTagClassName}>
               {item.role_name}
               {!disabled && (
                 <button
@@ -146,9 +138,7 @@ export default function MultiSelect({
             </div>
           ))}
 
-          <input
-            className={inputClassName}
-            value={searchTerm}
+          <input className={inputClassName} value={searchTerm}
             onChange={(e) => {
               if (disabled) return;
               setSearchTerm(e.target.value);
@@ -169,19 +159,12 @@ export default function MultiSelect({
             </button>
           )}
           <span className={chevronWrapClassName}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
               className={`size-4 transition-transform duration-200 ${
                 !disabled && isOpen ? "rotate-180" : ""
               }`}
             >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
-                clipRule="evenodd"
-              />
+              <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd"/>
             </svg>
           </span>
         </div>
@@ -195,17 +178,8 @@ export default function MultiSelect({
                 Selected
               </div>
               {selectedItems.map((option) => (
-                <div
-                  key={option.id}
-                  onClick={() => toggleOption(option.id)}
-                  className={optionClassName}
-                >
-                  <input
-                    type="checkbox"
-                    checked={true}
-                    readOnly
-                    className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"
-                  />
+                <div key={option.id} onClick={() => toggleOption(option.id)} className={optionClassName}>
+                  <input type="checkbox" checked={true} readOnly className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"/>
                   <span className={selectedOptionTextClassName}>
                     {option.role_name}
                   </span>
@@ -217,17 +191,8 @@ export default function MultiSelect({
 
           {unselectedItems.length > 0 ? (
             unselectedItems.map((option) => (
-              <div
-                key={option.id}
-                onClick={() => toggleOption(option.id)}
-                className={optionClassName}
-              >
-                <input
-                  type="checkbox"
-                  checked={false}
-                  readOnly
-                  className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"
-                />
+              <div key={option.id} onClick={() => toggleOption(option.id)} className={optionClassName}>
+                <input type="checkbox" checked={false} readOnly className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"/>
                 <span className={optionTextClassName}>{option.role_name}</span>
               </div>
             ))
@@ -241,4 +206,3 @@ export default function MultiSelect({
     </div>
   );
 }
-

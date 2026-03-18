@@ -152,15 +152,9 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
       surname: "",
       tempPassword: "",
     };
+    const hasRolesError = !data.roleIds || data.roleIds.length === 0;
 
-    if (!data.roleIds || data.roleIds.length === 0) {
-      setRolesError(true);
-      setError("At least one role must be selected.");
-      setFieldErrors(nextFieldErrors);
-      return false;
-    }
-
-    setRolesError(false);
+    setRolesError(hasRolesError);
 
     if (data.inviteMode === "temp") {
       if (!data.tempPassword.trim()) {
@@ -173,8 +167,12 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
 
     setFieldErrors(nextFieldErrors);
 
-    if (nextFieldErrors.tempPassword) {
-      setError(nextFieldErrors.tempPassword);
+    if (hasRolesError || nextFieldErrors.tempPassword) {
+      setError(
+        hasRolesError
+          ? "At least one role must be selected."
+          : nextFieldErrors.tempPassword,
+      );
       return false;
     }
 
@@ -379,27 +377,23 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                     Choose a role for the user
                   </p>
                   <div className="w-full">
-                    <div className={`rounded-[1rem] ${
-                        rolesError ? "ring-2 ring-red-500" : ""
-                      }`}
-                    >
-                      <MultiSelect
-                        options={roles.map((role) => ({
-                          id: role.id,
-                          role_name: role.role_name,
-                        }))}
-                        selectedValues={data.roleIds || []}
-                        onChange={(ids) => {
-                          setData((prev) => ({ ...prev, roleIds: ids }));
-                          if (ids.length > 0) {
-                            setRolesError(false);
-                            setError("");
-                          }
-                        }}
-                        placeholder="Select entity groups"
-                        variant="userpoolModal"
-                      />
-                    </div>
+                    <MultiSelect
+                      options={roles.map((role) => ({
+                        id: role.id,
+                        role_name: role.role_name,
+                      }))}
+                      selectedValues={data.roleIds || []}
+                      onChange={(ids) => {
+                        setData((prev) => ({ ...prev, roleIds: ids }));
+                        if (ids.length > 0) {
+                          setRolesError(false);
+                          setError(fieldErrors.tempPassword || "");
+                        }
+                      }}
+                      placeholder="Select entity groups"
+                      variant="userpoolModal"
+                      hasError={rolesError}
+                    />
                     {rolesError && (
                       <p className="mt-2 text-xs text-red-500">
                         At least one role is required
@@ -498,14 +492,14 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                                 Generate
                               </button>
                             </div>
-                            <p className="mt-3 text-xs text-[#8f6f76]">
-                              User will be required to set a new password at first sign-in.
-                            </p>
                             {fieldErrors.tempPassword && (
                               <p className="mt-2 text-xs text-red-500">
                                 {fieldErrors.tempPassword}
                               </p>
                             )}
+                            <p className="mt-3 text-xs text-[#8f6f76]">
+                              User will be required to set a new password at first sign-in.
+                            </p>
                           </div>
                         </FadeWrapper>
                       </div>
