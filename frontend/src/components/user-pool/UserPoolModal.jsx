@@ -122,6 +122,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
   const [error, setError] = useState("");
+  const [rolesError, setRolesError] = useState(false);
   const [hasRoleSelectionChanged, setHasRoleSelectionChanged] = useState(false);
 
   useEffect(() => {
@@ -131,6 +132,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
     setFormData(nextFormData);
     setOriginalUser(nextFormData);
     setError("");
+    setRolesError(false);
     setHasRoleSelectionChanged(false);
   }, [open, user]);
 
@@ -217,6 +219,10 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
       roles: selectedRoles,
     }));
 
+    if (normalizedRoleIds.length > 0) {
+      setRolesError(false);
+    }
+
     if (error) {
       setError("");
     }
@@ -227,9 +233,12 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
     if (isViewMode) return onClose();
 
     if (selectedRoleIds.length === 0) {
+      setRolesError(true);
       setError("At least one role must be selected.");
       return;
     }
+
+    setRolesError(false);
 
     if (!STATUS_VALUES.has(formData.status)) {
       setError("Select a valid status.");
@@ -360,7 +369,13 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
                         onChange={handleRoleChange}
                         placeholder="Select roles"
                         variant="userpoolModal"
+                        hasError={rolesError}
                       />
+                      {rolesError && (
+                        <p className="mt-2 text-xs text-red-500">
+                          At least one role is required
+                        </p>
+                      )}
                     </>
                   )}
                 </div>
