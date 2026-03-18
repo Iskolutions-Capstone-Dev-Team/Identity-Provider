@@ -5,24 +5,24 @@ import MultiSelect from "../MultiSelect";
 import ModalSteps from "../ModalSteps";
 import ErrorAlert from "../ErrorAlert";
 import {
-  userPoolModalBodyClassName,
-  userPoolModalBodyStackClassName,
-  userPoolModalBoxClassName,
-  userPoolModalCloseButtonClassName,
-  userPoolModalFooterActionsClassName,
-  userPoolModalFooterClassName,
-  userPoolModalHeaderClassName,
-  userPoolModalHeaderDescriptionClassName,
-  userPoolModalHeaderTitleClassName,
-  userPoolModalHelperTextClassName,
-  userPoolModalInputClassName,
-  userPoolModalLabelClassName,
-  userPoolModalOverlayClassName,
-  userPoolModalPrimaryButtonClassName,
-  userPoolModalSecondaryButtonClassName,
-  userPoolModalSectionClassName,
-  userPoolModalStepsWrapClassName,
-} from "../user-pool/modalTheme";
+  modalBodyClassName,
+  modalBodyStackClassName,
+  modalBoxClassName,
+  modalCloseButtonClassName,
+  modalFooterActionsClassName,
+  modalFooterClassName,
+  modalHeaderClassName,
+  modalHeaderDescriptionClassName,
+  modalHeaderTitleClassName,
+  modalHelperTextClassName,
+  modalInputClassName,
+  modalLabelClassName,
+  modalOverlayClassName,
+  modalPrimaryButtonClassName,
+  modalSecondaryButtonClassName,
+  modalSectionClassName,
+  modalStepsWrapClassName,
+} from "../modalTheme";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
@@ -265,20 +265,20 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
 
   return createPortal(
     <>
-      <dialog open className={userPoolModalOverlayClassName}>
-        <div className={userPoolModalBoxClassName}>
-          <div className={userPoolModalHeaderClassName}>
+      <dialog open className={modalOverlayClassName}>
+        <div className={modalBoxClassName}>
+          <div className={modalHeaderClassName}>
             <div className="flex items-start justify-between gap-4">
               <div className="max-w-2xl">
-                <h3 className={userPoolModalHeaderTitleClassName}>
+                <h3 className={modalHeaderTitleClassName}>
                   Create App Client
                 </h3>
-                <p className={userPoolModalHeaderDescriptionClassName}>
+                <p className={modalHeaderDescriptionClassName}>
                   Register a new application for integration.
                 </p>
               </div>
 
-              <button type="button" className={userPoolModalCloseButtonClassName} onClick={onClose}>
+              <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -286,9 +286,9 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
             </div>
           </div>
 
-          <div className={userPoolModalBodyClassName}>
-            <div className={userPoolModalBodyStackClassName}>
-              <div className={userPoolModalStepsWrapClassName}>
+          <div className={modalBodyClassName}>
+            <div className={modalBodyStackClassName}>
+              <div className={modalStepsWrapClassName}>
                 <ModalSteps currentStep={step}
                   steps={[
                     <>
@@ -324,8 +324,8 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
 
               {step === 1 && (
                 <>
-                  <section className={userPoolModalSectionClassName}>
-                    <label className={userPoolModalLabelClassName}>
+                  <section className={modalSectionClassName}>
+                    <label className={modalLabelClassName}>
                       System Logo <span className="text-red-500">*</span>
                     </label>
                     <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={getDropzoneClassName(isDragging)}>
@@ -364,35 +364,35 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                     </div>
                   </section>
 
-                  <section className={userPoolModalSectionClassName}>
+                  <section className={modalSectionClassName}>
                     <div className="grid gap-5 md:grid-cols-2">
                       <div>
-                        <label className={userPoolModalLabelClassName}>
+                        <label className={modalLabelClassName}>
                           Name <span className="text-red-500">*</span>
                         </label>
-                        <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} placeholder="(e.g., Identity Provider System)" className={userPoolModalInputClassName}/>
-                        <p className={`${userPoolModalHelperTextClassName} mt-2`}>
+                        <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} placeholder="(e.g., Identity Provider System)" className={modalInputClassName}/>
+                        <p className={`${modalHelperTextClassName} mt-2`}>
                           Must be 5-100 characters
                         </p>
                       </div>
 
                       <div>
-                        <label className={userPoolModalLabelClassName}>
+                        <label className={modalLabelClassName}>
                           Tag <span className="text-red-500">*</span>
                         </label>
                         <input type="text" required maxLength={10} value={tag}
                           onChange={(event) =>
                             setTag(event.target.value.toUpperCase())
                           }
-                          placeholder="(e.g., IdP)" className={userPoolModalInputClassName}/>
-                        <p className={`${userPoolModalHelperTextClassName} mt-2`}>
+                          placeholder="(e.g., IdP)" className={modalInputClassName}/>
+                        <p className={`${modalHelperTextClassName} mt-2`}>
                           Maximum 10 characters
                         </p>
                       </div>
                     </div>
 
                     <div className="mt-5">
-                      <label className={userPoolModalLabelClassName}>
+                      <label className={modalLabelClassName}>
                         Description
                       </label>
                       <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows="3" placeholder="Short description of the application (optional)" className="w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 py-3 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition focus:border-[#d4a017] resize-none"/>
@@ -402,34 +402,34 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
               )}
 
               {step === 2 && (
-                <section className={userPoolModalSectionClassName}>
+                <section className={modalSectionClassName}>
                   <div className="space-y-5">
                     <div>
-                      <label className={userPoolModalLabelClassName}>
+                      <label className={modalLabelClassName}>
                         Base URL <span className="text-red-500">*</span>
                       </label>
-                      <input type="url" required value={baseURL} onChange={(event) => setBaseURL(event.target.value)} placeholder="https://app.example.com" className={userPoolModalInputClassName} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL"/>
-                      <p className={`${userPoolModalHelperTextClassName} mt-2`}>
+                      <input type="url" required value={baseURL} onChange={(event) => setBaseURL(event.target.value)} placeholder="https://app.example.com" className={modalInputClassName} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL"/>
+                      <p className={`${modalHelperTextClassName} mt-2`}>
                         Must be valid URL
                       </p>
                     </div>
 
                     <div>
-                      <label className={userPoolModalLabelClassName}>
+                      <label className={modalLabelClassName}>
                         Redirect URL <span className="text-red-500">*</span>
                       </label>
-                      <input type="url" required value={redirectURL} onChange={(event) => setRedirectURL(event.target.value)} placeholder="https://app.example.com/callback" className={userPoolModalInputClassName} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL"/>
-                      <p className={`${userPoolModalHelperTextClassName} mt-2`}>
+                      <input type="url" required value={redirectURL} onChange={(event) => setRedirectURL(event.target.value)} placeholder="https://app.example.com/callback" className={modalInputClassName} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL"/>
+                      <p className={`${modalHelperTextClassName} mt-2`}>
                         Must be valid URL
                       </p>
                     </div>
 
                     <div>
-                      <label className={userPoolModalLabelClassName}>
+                      <label className={modalLabelClassName}>
                         Logout URL <span className="text-red-500">*</span>
                       </label>
-                      <input type="url" required value={logoutURL} onChange={(event) => setLogoutURL(event.target.value)} placeholder="https://app.example.com/logout" className={userPoolModalInputClassName} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL"/>
-                      <p className={`${userPoolModalHelperTextClassName} mt-2`}>
+                      <input type="url" required value={logoutURL} onChange={(event) => setLogoutURL(event.target.value)} placeholder="https://app.example.com/logout" className={modalInputClassName} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL"/>
+                      <p className={`${modalHelperTextClassName} mt-2`}>
                         Must be valid URL
                       </p>
                     </div>
@@ -439,8 +439,8 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
 
               {step === 3 && (
                 <>
-                  <section className={userPoolModalSectionClassName}>
-                    <label className={userPoolModalLabelClassName}>
+                  <section className={modalSectionClassName}>
+                    <label className={modalLabelClassName}>
                       Grants <span className="text-red-500">*</span>
                     </label>
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -462,9 +462,9 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                     )}
                   </section>
 
-                  <section className={userPoolModalSectionClassName}>
-                    <label className={userPoolModalLabelClassName}>Roles</label>
-                    <p className={userPoolModalHelperTextClassName}>
+                  <section className={modalSectionClassName}>
+                    <label className={modalLabelClassName}>Roles</label>
+                    <p className={modalHelperTextClassName}>
                       select roles that are permitted to use this client
                     </p>
                     <MultiSelect
@@ -480,24 +480,24 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
             </div>
           </div>
 
-          <div className={userPoolModalFooterClassName}>
-            <div className={userPoolModalFooterActionsClassName}>
+          <div className={modalFooterClassName}>
+            <div className={modalFooterActionsClassName}>
               {step === 1 ? (
-                <button type="button" onClick={onClose} className={userPoolModalSecondaryButtonClassName}>
+                <button type="button" onClick={onClose} className={modalSecondaryButtonClassName}>
                   Close
                 </button>
               ) : (
-                <button type="button" onClick={() => setStep(step - 1)} className={userPoolModalSecondaryButtonClassName}>
+                <button type="button" onClick={() => setStep(step - 1)} className={modalSecondaryButtonClassName}>
                   Back
                 </button>
               )}
 
               {step < 3 ? (
-                <button type="button" onClick={nextStep} className={userPoolModalPrimaryButtonClassName}>
+                <button type="button" onClick={nextStep} className={modalPrimaryButtonClassName}>
                   Next
                 </button>
               ) : (
-                <button type="button" onClick={handleSubmit} className={userPoolModalPrimaryButtonClassName}>
+                <button type="button" onClick={handleSubmit} className={modalPrimaryButtonClassName}>
                   Create Client
                 </button>
               )}

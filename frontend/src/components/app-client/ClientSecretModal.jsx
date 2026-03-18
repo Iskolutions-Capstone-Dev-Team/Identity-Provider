@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  userPoolModalBodyClassName,
-  userPoolModalBodyStackClassName,
-  userPoolModalBoxClassName,
-  userPoolModalFooterActionsClassName,
-  userPoolModalFooterClassName,
-  userPoolModalHeaderClassName,
-  userPoolModalHeaderDescriptionClassName,
-  userPoolModalHeaderTitleClassName,
-  userPoolModalOverlayClassName,
-  userPoolModalPrimaryButtonClassName,
-  userPoolModalReadOnlyInputClassName,
-  userPoolModalSectionClassName,
-} from "../user-pool/modalTheme";
+  modalBodyClassName,
+  modalBodyStackClassName,
+  modalBoxClassName,
+  modalFooterActionsClassName,
+  modalFooterClassName,
+  modalHeaderClassName,
+  modalHeaderDescriptionClassName,
+  modalHeaderTitleClassName,
+  modalOverlayClassName,
+  modalPrimaryButtonClassName,
+  modalReadOnlyInputClassName,
+  modalSectionClassName,
+} from "../modalTheme";
 
 export default function ClientSecretModal({ open, clientName, clientId, secret, loading = false, hasError = false, onClose }) {
   const [copied, setCopied] = useState(false);
@@ -43,20 +43,20 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
   const displayName = clientName || clientId || "this client";
 
   return createPortal(
-    <dialog open className={userPoolModalOverlayClassName}>
-      <div className={userPoolModalBoxClassName}>
-        <div className={userPoolModalHeaderClassName}>
-          <h3 className={userPoolModalHeaderTitleClassName}>Client Secret</h3>
-          <p className={userPoolModalHeaderDescriptionClassName}>
+    <dialog open className={modalOverlayClassName}>
+      <div className={modalBoxClassName}>
+        <div className={modalHeaderClassName}>
+          <h3 className={modalHeaderTitleClassName}>Client Secret</h3>
+          <p className={modalHeaderDescriptionClassName}>
             Here is the client secret for{" "}
             <span className="font-semibold text-white">{displayName}</span>.
           </p>
         </div>
 
-        <div className={userPoolModalBodyClassName}>
-          <div className={userPoolModalBodyStackClassName}>
+        <div className={modalBodyClassName}>
+          <div className={modalBodyStackClassName}>
             {loading && (
-              <section className={userPoolModalSectionClassName}>
+              <section className={modalSectionClassName}>
                 <div className="flex items-center gap-3 text-sm text-[#5d3a41]">
                   <span className="loading loading-spinner loading-sm text-[#7b0d15]" aria-hidden="true" />
                   <span>Rotating secret. Please wait...</span>
@@ -65,7 +65,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
             )}
 
             {!loading && hasError && (
-              <section className={userPoolModalSectionClassName}>
+              <section className={modalSectionClassName}>
                 <p className="text-sm text-red-600">Request failed, try again later.</p>
               </section>
             )}
@@ -79,10 +79,10 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
                   </p>
                 </section>
 
-                <section className={userPoolModalSectionClassName}>
+                <section className={modalSectionClassName}>
                   <div className="flex gap-3">
                     <div className="relative grow">
-                      <input type={showSecret ? "text" : "password"} readOnly value={secret || ""} className={`${userPoolModalReadOnlyInputClassName} w-full pr-12 font-mono`}/>
+                      <input type={showSecret ? "text" : "password"} readOnly value={secret || ""} className={`${modalReadOnlyInputClassName} w-full pr-12 font-mono`}/>
                       <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8f6f76] transition hover:text-[#5a0b12] disabled:cursor-not-allowed disabled:text-[#c8afb4]" onClick={() => setShowSecret((current) => !current)} disabled={!secret} aria-label={showSecret ? "Hide secret" : "Show secret"} title={showSecret ? "Hide secret" : "Show secret"}>
                         {showSecret ? (
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
@@ -121,9 +121,9 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
           </div>
         </div>
 
-        <div className={userPoolModalFooterClassName}>
-          <div className={userPoolModalFooterActionsClassName}>
-            <button type="button" className={userPoolModalPrimaryButtonClassName} onClick={() => onClose?.()}>
+        <div className={modalFooterClassName}>
+          <div className={modalFooterActionsClassName}>
+            <button type="button" className={modalPrimaryButtonClassName} onClick={() => onClose?.()}>
               Close
             </button>
           </div>

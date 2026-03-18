@@ -1,18 +1,18 @@
 import { createPortal } from "react-dom";
 import {
-  userPoolModalBoxClassName,
-  userPoolModalFooterClassName,
-  userPoolModalOverlayClassName,
-  userPoolModalPrimaryButtonClassName,
-  userPoolModalSecondaryButtonClassName,
-} from "../user-pool/modalTheme";
+  modalBoxClassName,
+  modalFooterClassName,
+  modalOverlayClassName,
+  modalPrimaryButtonClassName,
+  modalSecondaryButtonClassName,
+} from "../modalTheme";
 
 export default function SecretConfirmModal({ open, message = "Generate a new client secret?", onCancel, onConfirm }) {
   if (!open) return null;
 
   return createPortal(
-    <dialog open className={userPoolModalOverlayClassName}>
-      <form method="dialog" className={`${userPoolModalBoxClassName} max-w-lg text-center`}>
+    <dialog open className={modalOverlayClassName}>
+      <form method="dialog" className={`${modalBoxClassName} max-w-lg text-center`}>
         <div className="px-6 py-8 sm:px-8">
           <div className="mb-6 flex justify-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-[#f8d24e]/30 bg-[radial-gradient(circle_at_top,rgba(248,210,78,0.22),transparent_45%),linear-gradient(135deg,#7b0d15_0%,#3d0910_58%,#1f0205_100%)] shadow-[0_24px_50px_-28px_rgba(43,3,7,0.72)]">
@@ -30,12 +30,12 @@ export default function SecretConfirmModal({ open, message = "Generate a new cli
           </p>
         </div>
 
-        <div className={userPoolModalFooterClassName}>
+        <div className={modalFooterClassName}>
           <div className="flex flex-col-reverse justify-center gap-3 sm:flex-row sm:justify-center">
-            <button type="button" className={userPoolModalSecondaryButtonClassName} onClick={onCancel}>
+            <button type="button" className={modalSecondaryButtonClassName} onClick={onCancel}>
               Cancel
             </button>
-            <button type="button" className={userPoolModalPrimaryButtonClassName} onClick={onConfirm}>
+            <button type="button" className={modalPrimaryButtonClassName} onClick={onConfirm}>
               Generate
             </button>
           </div>
