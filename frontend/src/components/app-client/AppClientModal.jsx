@@ -1,10 +1,39 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import MultiSelect from "../MultiSelect";
+import {
+  userPoolModalBodyClassName,
+  userPoolModalBodyStackClassName,
+  userPoolModalBoxClassName,
+  userPoolModalCloseButtonClassName,
+  userPoolModalFooterActionsClassName,
+  userPoolModalFooterClassName,
+  userPoolModalHeaderClassName,
+  userPoolModalHeaderDescriptionClassName,
+  userPoolModalHeaderTitleClassName,
+  userPoolModalHelperTextClassName,
+  userPoolModalInputClassName,
+  userPoolModalLabelClassName,
+  userPoolModalOverlayClassName,
+  userPoolModalPrimaryButtonClassName,
+  userPoolModalReadOnlyInputClassName,
+  userPoolModalSecondaryButtonClassName,
+  userPoolModalSectionClassName,
+} from "../user-pool/modalTheme";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
+const GRANT_OPTIONS = [
+  "authorization_code",
+  "refresh_token",
+  "client_credentials",
+];
+const dropzoneBaseClassName =
+  "relative flex min-h-56 w-full flex-col items-center justify-center overflow-hidden rounded-[1.5rem] border border-dashed bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-6 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] transition duration-300";
+const imagePreviewCloseButtonClassName =
+  "btn btn-circle btn-sm absolute -right-3 -top-3 border border-[#7b0d15]/10 bg-white text-[#7b0d15] shadow-[0_18px_40px_-24px_rgba(43,3,7,0.55)] transition hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
 
 const toPositiveInt = (value) => {
   const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
@@ -29,7 +58,9 @@ const getRoleName = (role) => {
 };
 
 const toRoleOption = (role) => {
-  const roleId = toPositiveInt(role?.id ?? role?.role_id ?? role?.roleId ?? role?.value);
+  const roleId = toPositiveInt(
+    role?.id ?? role?.role_id ?? role?.roleId ?? role?.value,
+  );
   const roleName = getRoleName(role);
 
   if (roleId === null || !roleName) {
@@ -44,7 +75,9 @@ const createRoleLookup = (roleOptions = []) => {
 
   roleOptions.forEach((role) => {
     const normalizedName = normalizeRoleName(role?.role_name);
-    if (!normalizedName || roleLookup.has(normalizedName)) return;
+    if (!normalizedName || roleLookup.has(normalizedName)) {
+      return;
+    }
 
     roleLookup.set(normalizedName, role);
   });
@@ -53,7 +86,11 @@ const createRoleLookup = (roleOptions = []) => {
 };
 
 const mapRoleNamesToIds = (roleNames = [], roleOptions = []) => {
-  if (!Array.isArray(roleNames) || roleNames.length === 0 || !Array.isArray(roleOptions)) {
+  if (
+    !Array.isArray(roleNames) ||
+    roleNames.length === 0 ||
+    !Array.isArray(roleOptions)
+  ) {
     return [];
   }
 
@@ -67,7 +104,11 @@ const mapRoleNamesToIds = (roleNames = [], roleOptions = []) => {
 };
 
 const mapRoleNamesToLabels = (roleNames = [], roleOptions = []) => {
-  if (!Array.isArray(roleNames) || roleNames.length === 0 || !Array.isArray(roleOptions)) {
+  if (
+    !Array.isArray(roleNames) ||
+    roleNames.length === 0 ||
+    !Array.isArray(roleOptions)
+  ) {
     return [];
   }
 
@@ -81,6 +122,22 @@ const mapRoleNamesToLabels = (roleNames = [], roleOptions = []) => {
     ),
   );
 };
+
+const getDropzoneClassName = ({ isDragging, isView }) =>
+  `${dropzoneBaseClassName} ${
+    isDragging && !isView
+      ? "border-[#f8d24e] bg-[linear-gradient(180deg,rgba(255,247,220,0.92),rgba(255,244,220,0.84))]"
+      : isView
+        ? "border-[#7b0d15]/10"
+        : "border-[#7b0d15]/12 hover:border-[#f8d24e]/65 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,249,238,0.94))]"
+  }`;
+
+const getGrantClassName = (isSelected, isView) =>
+  `flex items-center gap-3 rounded-[1rem] border px-4 py-3 text-sm font-medium transition duration-300 ${
+    isSelected
+      ? "border-[#f8d24e]/70 bg-[#fff4dc] text-[#7b0d15]"
+      : "border-[#7b0d15]/10 bg-white/78 text-[#5d3a41]"
+  } ${isView ? "cursor-default" : "hover:border-[#f8d24e]/45 hover:bg-[#fffaf2]"}`;
 
 export default function AppClientModal({ open, mode, client, getClientDetails, onClose, onSubmit }) {
   const isView = mode === "view";
@@ -140,15 +197,18 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const isWaitingForRoleOptions =
     hasLoadedLatestRoles && hasInitialRoleData && roleOptions.length === 0;
 
-  const resolveImageSrc = (img) => {
-    if (!img) return null;
-    if (img.startsWith("data:")) return img;
-    if (img.startsWith("http://") || img.startsWith("https://")) return img;
-    return `${img}`;
+  const resolveImageSrc = (image) => {
+    if (!image) return null;
+    if (image.startsWith("data:")) return image;
+    if (image.startsWith("http://") || image.startsWith("https://")) {
+      return image;
+    }
+    return `${image}`;
   };
 
   useEffect(() => {
     if (!open || !client) return;
+
     setName(client.name || "");
     setTag(client.tag || "");
     setDescription(client.description || "");
@@ -163,9 +223,10 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setImageFile(null);
     setIsDragging(false);
     setError("");
-    const img = client.image || client.image_location || null;
-    setImageLocation(img || "");
-    setImagePreview(resolveImageSrc(img));
+
+    const image = client.image || client.image_location || null;
+    setImageLocation(image || "");
+    setImagePreview(resolveImageSrc(image));
   }, [client, open]);
 
   useEffect(() => {
@@ -209,18 +270,20 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         setHasRoleSelectionChanged(false);
         setHasLoadedLatestRoles(true);
 
-        const img = details.image || details.image_location || null;
-        setImageLocation(img || "");
-        setImagePreview(resolveImageSrc(img));
+        const image = details.image || details.image_location || null;
+        setImageLocation(image || "");
+        setImagePreview(resolveImageSrc(image));
       })
-      .catch((err) => {
+      .catch((fetchError) => {
         if (cancelled) return;
-        console.error("Fetch client details error:", err);
+        console.error("Fetch client details error:", fetchError);
         setError("Unable to load latest app client details.");
       })
       .finally(() => {
         detailsRequestRef.current = { clientId, inFlight: false };
-        if (!cancelled) setIsDetailsLoading(false);
+        if (!cancelled) {
+          setIsDetailsLoading(false);
+        }
       });
 
     return () => {
@@ -239,14 +302,20 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     }
 
     setRoles(resolvedDetailRoleIds);
-  }, [detailRoleNames, hasRoleSelectionChanged, resolvedDetailRoleIds, roles]);
+  }, [
+    detailRoleNames,
+    hasRoleSelectionChanged,
+    resolvedDetailRoleIds,
+    roles,
+  ]);
 
   const toggleGrant = (grant) => {
     if (selectedGrants.includes(grant)) {
-      setSelectedGrants(selectedGrants.filter((g) => g !== grant));
-    } else {
-      setSelectedGrants([...selectedGrants, grant]);
+      setSelectedGrants(selectedGrants.filter((value) => value !== grant));
+      return;
     }
+
+    setSelectedGrants([...selectedGrants, grant]);
   };
 
   const validateAndProcessFile = (file) => {
@@ -270,31 +339,42 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     reader.readAsDataURL(file);
   };
 
-  const handleImageChange = (e) => validateAndProcessFile(e.target.files?.[0]);
+  const handleImageChange = (event) => {
+    validateAndProcessFile(event.target.files?.[0]);
+  };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    if (!isView) setIsDragging(true);
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    if (!isView) {
+      setIsDragging(true);
+    }
   };
 
   const handleDragLeave = () => setIsDragging(false);
 
-  const handleDrop = (e) => {
-    e.preventDefault();
+  const handleDrop = (event) => {
+    event.preventDefault();
     setIsDragging(false);
-    if (!isView) validateAndProcessFile(e.dataTransfer.files?.[0]);
+
+    if (!isView) {
+      validateAndProcessFile(event.dataTransfer.files?.[0]);
+    }
   };
 
-  const removeImage = (e) => {
-    e.stopPropagation();
+  const removeImage = (event) => {
+    event.stopPropagation();
     setImagePreview(null);
     setImageFile(null);
     setImageLocation("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (isView) return onClose();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (isView) {
+      onClose();
+      return;
+    }
+
     if (!hasLoadedLatestRoles || isWaitingForRoleOptions) {
       setError("Load the latest app client roles before saving changes.");
       return;
@@ -334,7 +414,9 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
       .filter(Boolean);
 
     const selectedRoleNames = Array.from(
-      new Set(selectedRoleOptions.map((role) => role.role_name).filter(Boolean)),
+      new Set(
+        selectedRoleOptions.map((role) => role.role_name).filter(Boolean),
+      ),
     );
 
     try {
@@ -362,224 +444,307 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <>
-      <dialog className={`modal ${open ? "modal-open" : ""} z-998`}>
-        <div className="modal-box max-w-2xl max-h-[85vh] p-0 overflow-hidden flex flex-col">
-          <div className="bg-linear-to-r from-[#991b1b] to-red-600 p-6 text-white shrink-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-bold">
+      <dialog open className={userPoolModalOverlayClassName}>
+        <div className={userPoolModalBoxClassName}>
+          <div className={userPoolModalHeaderClassName}>
+            <div className="flex items-start justify-between gap-4">
+              <div className={`max-w-2xl ${isView ? "pb-5 sm:pb-10" : ""}`}>
+                <h3 className={userPoolModalHeaderTitleClassName}>
                   {isView ? "View App Client" : "Edit App Client"}
                 </h3>
-                <p className="text-white/90 mt-1">
-                  {isView ? "Application client's configuration details." : "Update the application client's configuration and settings."}
+                <p className={userPoolModalHeaderDescriptionClassName}>
+                  {isView
+                    ? "Application client's configuration details."
+                    : "Update the application client's configuration and settings."}
                 </p>
               </div>
-              <button className="btn btn-sm btn-circle btn-ghost text-white hover:bg-white/20" onClick={onClose}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+
+              <button type="button" className={userPoolModalCloseButtonClassName} onClick={onClose}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
               </button>
             </div>
           </div>
-          <form id="app-client-form" noValidate className="flex-1 overflow-y-auto p-6 space-y-4 bg-white" onSubmit={handleSubmit}>
-            <ErrorAlert message={error} onClose={() => setError("")}/>
-            {isDetailsLoading && (
-              <p className="text-sm text-gray-500">Loading latest app client details...</p>
-            )}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-gray-700">System Logo{!isView && <span className="text-red-500"> *</span>}</label>
-              <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl transition-all duration-200 ${
-                  isDragging ? "border-[#991b1b] bg-red-50" : "border-gray-300 bg-gray-50"
-                } ${mode === "view" ? "border-gray-200 cursor-default" : "hover:bg-gray-100 cursor-pointer"}`}
-              >
-                {!imagePreview ? (
-                  <label htmlFor="dropzone-file" className={`flex flex-col items-center justify-center w-full h-full ${isView ? "cursor-default" : "cursor-pointer"}`}>
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                      <svg className={`w-8 h-8 mb-2 transition-colors ${isDragging ? "text-[#991b1b]" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-xs text-gray-500">
-                        <span className="font-semibold text-[#991b1b]">Click to upload</span> or drag and drop
-                      </p>
-                      <p className="text-[10px] text-gray-400 uppercase mt-1">PNG or JPG • Max 5MB</p>
-                    </div>
-                    <input id="dropzone-file" type="file" className="hidden" accept="image/png, image/jpeg" onChange={handleImageChange} disabled={mode === "view"} />
-                  </label>
-                ) : (
-                  <div className="relative w-full h-full p-2 flex items-center justify-center">
-                    <img src={imagePreview} alt="Preview" className="max-h-full max-w-full object-contain rounded-lg cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setShowFullImage(true)} />
-                    {!isView && (
-                      <button type="button" onClick={removeImage} className="absolute top-2 right-2 btn btn-circle btn-xs bg-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] shadow-lg z-10">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#991b1b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="space-y-4 flex-1">
-                <div className="space-y-0.5 mb-5">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Client Id
-                  </label>
-                  <input type="text" value={client?.id || client?.clientId || ""} readOnly className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
-                </div>
-              
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-0.5">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Name{!isView && <span className="text-red-500"> *</span>}
-                    </label>
-                    <input type="text" required minLength={5} maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="(e.g., Identity Provider System)" className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} disabled={isView}/>
-                    {!isView && <div className="validator-hint">Must be 5-100 characters</div>}
-                  </div>
-                  <div className="space-y-0.5">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Tag
-                    </label>
-                    <input type="text" readOnly value={tag} className="w-full px-3 py-2 rounded-md border bg-gray-100 text-gray-700 border-gray-300"/>
-                  </div>
-                </div>
-                <div className="space-y-0.5 mb-5">
-                    <label className="block text-sm font-semibold text-gray-700">
-                        Description
-                    </label>
-                    {isView ? (
-                      <div className="w-full min-h-24 rounded-lg border border-gray-200 bg-gray-100 text-gray-700 px-3 py-2 text-sm whitespace-pre-wrap">
-                        {description?.trim() ? description : <span className="text-gray-500 italic">No content</span>}
-                      </div>
-                    ) : (
-                      <textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        rows="3"
-                        placeholder="Application description"
-                        className="textarea w-full rounded-lg border border-gray-200 resize-none bg-transparent text-gray-700"
-                      />
-                    )}
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-0.5">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Base URLs{!isView && <span className="text-red-500"> *</span>}
-                    </label>
-                    <input type="url" required value={baseURL} onChange={(e) => setBaseURL(e.target.value)} placeholder="https://app.example.com" className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}/>
-                    {!isView && <p className="validator-hint">Must be valid URL</p>}
-                  </div>
-                  <div className="space-y-0.5">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Redirect URLs{!isView && <span className="text-red-500"> *</span>}
-                    </label>
-                    <input type="url" required value={redirectURL} onChange={(e) => setRedirectURL(e.target.value)} placeholder="https://app.example.com/callback" className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}/>
-                    {!isView && <p className="validator-hint">Must be valid URL</p>}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2 flex justify-center">
-                    <div className="w-full md:w-1/2 space-y-0.5">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Logout URLs{!isView && <span className="text-red-500"> *</span>}
-                      </label>
-                      <input type="url" required value={logoutURL} onChange={(e) => setLogoutURL(e.target.value)} placeholder="https://app.example.com/logout" className={`input validator w-full rounded-lg border border-gray-200 ${isView ? "bg-gray-100 text-gray-700" : "bg-transparent text-gray-700"}`} pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}/>
-                      {!isView && <p className="validator-hint">Must be valid URL</p>}
-                    </div>
-                  </div>
-                </div>
+          <form id="app-client-form" noValidate className={userPoolModalBodyClassName} onSubmit={handleSubmit}>
+            <div className={userPoolModalBodyStackClassName}>
+              <ErrorAlert message={error} onClose={() => setError("")} />
 
-                <div className="mb-5">
-                  <span className="block text-sm font-medium text-gray-700">Grants{!isView && <span className="text-red-500"> *</span>}</span>
-                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-5">
-                    {["authorization_code", "refresh_token", "client_credentials"].map((grant) => (
-                      <label key={grant} className="flex items-center gap-2 text-gray-700">
-                        <input type="checkbox" name="grants" value={grant} className="checkbox border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white mr-1" checked={selectedGrants.includes(grant)} onChange={() => toggleGrant(grant)} disabled={isView} required={!isView && selectedGrants.length === 0} title="Required" />
-                        <span className="text-[#991b1b] text-[.7rem] sm:text-sm">{grant}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {!isView && selectedGrants.length === 0 && (
-                    <p className="text-xs text-[#ff637d] mt-2">At least one grant is required.</p>
-                  )}
+              {isDetailsLoading && (
+                <div className="rounded-[1rem] border border-[#f8d24e]/45 bg-[#fff4dc] px-4 py-3 text-sm text-[#7b0d15]">
+                  Loading latest app client details...
                 </div>
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Roles
-                  </label>
-                  {!isView && <p className="text-xs text-gray-500 italic mb-2">
-                    select roles that are permitted to use this client
-                  </p>}
-                  {isView ? (
-                    <div className="w-full min-h-24 rounded-lg border border-gray-200 bg-gray-100 text-gray-700 px-3 py-2 text-sm">
-                      {isDetailsLoading || isWaitingForRoleOptions ? (
-                        <span className="text-gray-500 italic">Loading latest roles...</span>
-                      ) : displayedRoleLabels.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {displayedRoleLabels.map((roleName, index) => (
-                            <span
-                              key={`${roleName}-${index}`}
-                              className="inline-flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
-                            >
-                              {roleName}
-                            </span>
-                          ))}
+              )}
+
+              <section className={userPoolModalSectionClassName}>
+                <label className={userPoolModalLabelClassName}>
+                  System Logo {!isView && <span className="text-red-500">*</span>}
+                </label>
+                <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={getDropzoneClassName({ isDragging, isView })}>
+                  {!imagePreview ? (
+                    <label htmlFor="dropzone-file" className={`flex h-full w-full flex-col items-center justify-center ${
+                        isView ? "cursor-default" : "cursor-pointer"
+                      }`}>
+                      <div className="space-y-3">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#fff4dc] text-[#7b0d15]">
+                          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 0 1 2.828 0L16 16m-2-2l1.586-1.586a2 2 0 0 1 2.828 0L20 14m-6-6h.01M6 20h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"/>
+                          </svg>
                         </div>
-                      ) : (
-                        <span className="text-gray-500 italic">No content</span>
+                        <div>
+                          <p className="text-sm font-semibold text-[#7b0d15]">
+                            Click to upload
+                          </p>
+                          <p className="mt-1 text-sm text-[#8f6f76]">
+                            or drag and drop
+                          </p>
+                          <p className="mt-2 text-xs uppercase tracking-[0.16em] text-[#9b7d84]">
+                            PNG or JPG | Max 5MB
+                          </p>
+                        </div>
+                      </div>
+                      <input id="dropzone-file" type="file" className="hidden" accept="image/png, image/jpeg" onChange={handleImageChange} disabled={isView}/>
+                    </label>
+                  ) : (
+                    <div className="relative flex h-full w-full items-center justify-center">
+                      <img src={imagePreview} alt="Preview" className="max-h-52 max-w-full rounded-[1.25rem] object-contain shadow-[0_24px_45px_-30px_rgba(43,3,7,0.45)] transition hover:opacity-90" onClick={() => setShowFullImage(true)}/>
+                      {!isView && (
+                        <button type="button" onClick={removeImage} className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#7b0d15]/10 bg-white/95 text-[#7b0d15] shadow-[0_18px_40px_-24px_rgba(43,3,7,0.55)] transition hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
                       )}
                     </div>
-                  ) : (
-                    <MultiSelect
-                      options={roleOptions}
-                      selectedValues={roles}
-                      onChange={(ids) => {
-                        setHasRoleSelectionChanged(true);
-                        setRoles(normalizeRoleIds(ids));
-                      }}
-                      placeholder="Select roles"
-                      disabled={isView || isDetailsLoading || !hasLoadedLatestRoles || isWaitingForRoleOptions}
-                    />
                   )}
                 </div>
+              </section>
+
+              <section className={userPoolModalSectionClassName}>
+                <div className="space-y-5">
+                  <div>
+                    <label className={userPoolModalLabelClassName}>Client Id</label>
+                    <input type="text" value={client?.id || client?.clientId || ""} readOnly className={userPoolModalReadOnlyInputClassName}/>
+                  </div>
+
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <div>
+                      <label className={userPoolModalLabelClassName}>
+                        Name {!isView && <span className="text-red-500">*</span>}
+                      </label>
+                      <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} placeholder="(e.g., Identity Provider System)"
+                        className={
+                          isView
+                            ? userPoolModalReadOnlyInputClassName
+                            : userPoolModalInputClassName
+                        }
+                        disabled={isView}
+                      />
+                      {!isView && (
+                        <p className={`${userPoolModalHelperTextClassName} mt-2`}>
+                          Must be 5-100 characters
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className={userPoolModalLabelClassName}>Tag</label>
+                      <input type="text" readOnly value={tag} className={userPoolModalReadOnlyInputClassName}/>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={userPoolModalLabelClassName}>Description</label>
+                    {isView ? (
+                      <div className="min-h-24 w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-3 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+                        {description?.trim() ? (
+                          description
+                        ) : (
+                          <span className="italic text-[#8f6f76]">No content</span>
+                        )}
+                      </div>
+                    ) : (
+                      <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows="3" placeholder="Application description" className="w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 py-3 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition focus:border-[#d4a017] resize-none"/>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              <section className={userPoolModalSectionClassName}>
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div>
+                    <label className={userPoolModalLabelClassName}>
+                      Base URLs {!isView && <span className="text-red-500">*</span>}
+                    </label>
+                    <input type="url" required value={baseURL} onChange={(event) => setBaseURL(event.target.value)} placeholder="https://app.example.com"
+                      className={
+                        isView
+                          ? userPoolModalReadOnlyInputClassName
+                          : userPoolModalInputClassName
+                      }
+                      pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}
+                    />
+                    {!isView && (
+                      <p className={`${userPoolModalHelperTextClassName} mt-2`}>
+                        Must be valid URL
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className={userPoolModalLabelClassName}>
+                      Redirect URLs {!isView && <span className="text-red-500">*</span>}
+                    </label>
+                    <input type="url" required value={redirectURL} onChange={(event) => setRedirectURL(event.target.value)} placeholder="https://app.example.com/callback"
+                      className={
+                        isView
+                          ? userPoolModalReadOnlyInputClassName
+                          : userPoolModalInputClassName
+                      }
+                      pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}
+                    />
+                    {!isView && (
+                      <p className={`${userPoolModalHelperTextClassName} mt-2`}>
+                        Must be valid URL
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-2 md:mx-auto md:w-1/2">
+                    <label className={userPoolModalLabelClassName}>
+                      Logout URLs {!isView && <span className="text-red-500">*</span>}
+                    </label>
+                    <input type="url" required value={logoutURL} onChange={(event) => setLogoutURL(event.target.value)} placeholder="https://app.example.com/logout"
+                      className={
+                        isView
+                          ? userPoolModalReadOnlyInputClassName
+                          : userPoolModalInputClassName
+                      }
+                      pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}
+                    />
+                    {!isView && (
+                      <p className={`${userPoolModalHelperTextClassName} mt-2`}>
+                        Must be valid URL
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              <section className={userPoolModalSectionClassName}>
+                <div className="space-y-5">
+                  <div>
+                    <label className={userPoolModalLabelClassName}>
+                      Grants {!isView && <span className="text-red-500">*</span>}
+                    </label>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      {GRANT_OPTIONS.map((grant) => {
+                        const isSelected = selectedGrants.includes(grant);
+
+                        return (
+                          <label key={grant} className={getGrantClassName(isSelected, isView)}>
+                            <input type="checkbox" name="grants" value={grant} className="checkbox h-5 w-5 rounded border-[#7b0d15]/20 bg-transparent checked:border-[#7b0d15] checked:bg-[#7b0d15] checked:text-white" checked={isSelected} onChange={() => toggleGrant(grant)} disabled={isView} required={!isView && selectedGrants.length === 0} title="Required"/>
+                            <span className="break-all">{grant}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {!isView && selectedGrants.length === 0 && (
+                      <p className="mt-3 text-xs text-red-500">
+                        At least one grant is required.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className={userPoolModalLabelClassName}>Roles</label>
+                    {!isView && (
+                      <p className={userPoolModalHelperTextClassName}>
+                        select roles that are permitted to use this client
+                      </p>
+                    )}
+                    {isView ? (
+                      <div className="min-h-24 w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-3 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+                        {isDetailsLoading || isWaitingForRoleOptions ? (
+                          <span className="italic text-[#8f6f76]">
+                            Loading latest roles...
+                          </span>
+                        ) : displayedRoleLabels.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {displayedRoleLabels.map((roleName, index) => (
+                              <span key={`${roleName}-${index}`} className="inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]">
+                                {roleName}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="italic text-[#8f6f76]">No content</span>
+                        )}
+                      </div>
+                    ) : (
+                      <MultiSelect
+                        options={roleOptions}
+                        selectedValues={roles}
+                        onChange={(ids) => {
+                          setHasRoleSelectionChanged(true);
+                          setRoles(normalizeRoleIds(ids));
+                        }}
+                        placeholder="Select roles"
+                        disabled={
+                          isView ||
+                          isDetailsLoading ||
+                          !hasLoadedLatestRoles ||
+                          isWaitingForRoleOptions
+                        }
+                        variant="userpoolModal"
+                      />
+                    )}
+                  </div>
+                </div>
+              </section>
             </div>
           </form>
 
-          {/* Action buttons */}
-        <div className="p-6 bg-gray-50 border-t border-gray-200 shrink-0">
-          <div className="flex justify-end gap-3">
-            <button type="button" className="btn h-12 rounded-lg btn-outline text-[#991b1b] border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]" onClick={onClose}>
-              Cancel
-            </button>
-            {mode !== "view" && (
-              <button
-                form="app-client-form"
-                type="submit"
-                disabled={isDetailsLoading || !hasLoadedLatestRoles || isWaitingForRoleOptions}
-                className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]"
-              >
-                {mode === "create" ? "Create" : "Save"}
+          <div className={userPoolModalFooterClassName}>
+            <div className={userPoolModalFooterActionsClassName}>
+              <button type="button" className={userPoolModalSecondaryButtonClassName} onClick={onClose}>
+                Cancel
               </button>
-            )}
+
+              {!isView && (
+                <button form="app-client-form" type="submit"
+                  disabled={
+                    isDetailsLoading ||
+                    !hasLoadedLatestRoles ||
+                    isWaitingForRoleOptions
+                  }
+                  className={userPoolModalPrimaryButtonClassName}
+                >
+                  {mode === "create" ? "Create" : "Save"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
-        </div>
       </dialog>
+
       {showFullImage && (
-        <div className="fixed inset-0 flex items-center justify-center z-9999" onClick={() => setShowFullImage(false)}>
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
-          <div className="relative max-w-4xl p-4 flex flex-col items-center justify-center pointer-events-none">
-            <button className="btn btn-circle btn-sm absolute -top-4 -right-4 bg-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] text- pointer-events-auto" onClick={() => setShowFullImage(false)}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#991b1b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+        <div className="fixed inset-0 z-[130] flex items-center justify-center px-4 py-6" onClick={() => setShowFullImage(false)}>
+          <div className="absolute inset-0 bg-[rgba(43,3,7,0.72)] backdrop-blur-sm" />
+          <div className="relative pointer-events-none flex max-w-4xl items-center justify-center">
+            <button type="button" className={`${imagePreviewCloseButtonClassName} pointer-events-auto`} onClick={() => setShowFullImage(false)}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
-            <img src={imagePreview} className="max-w-full max-h-[90vh] rounded-xl shadow-2xl pointer-events-auto" alt="Full Preview" />
+            <img src={imagePreview} className="pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-white/90 object-contain shadow-[0_36px_90px_-40px_rgba(43,3,7,0.72)]" alt="Full Preview"/>
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body,
   );
 }
