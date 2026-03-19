@@ -80,19 +80,19 @@ func (s *ClientService) CreateClient(
  */
 func (s *ClientService) GetFilteredClientList(
 	ctx context.Context,
-	level int,
+	role string,
 	userID uuid.UUID,
 	limit,
 	page int,
 	keyword string,
 ) (*dto.ClientListResponse, error) {
 	// SuperAdmin sees everything
-	if level == LevelSuperAdmin {
+	if role == SUPERADMIN {
 		return s.GetClientList(ctx, limit, page, keyword)
 	}
 
 	// Regular Admin only sees bound clients
-	if level == LevelAdmin {
+	if role == ADMIN {
 		return s.GetBoundClients(ctx, userID, limit, page, keyword)
 	}
 
@@ -273,19 +273,19 @@ func (s *ClientService) GetClientByID(
  */
 func (s *ClientService) GetFilteredClientTagList(
 	ctx context.Context,
-	level int,
+	role string,
 	userID uuid.UUID,
 	limit,
 	page int,
 	keyword string,
 ) (*dto.ClientListResponse, error) {
 	// SuperAdmin sees all tags
-	if level == LevelSuperAdmin {
+	if role == SUPERADMIN {
 		return s.GetClientTags(ctx, limit, page, keyword)
 	}
 
 	// Regular Admin only sees tags for bound clients
-	if level == LevelAdmin {
+	if role == ADMIN {
 		return s.GetBoundClientTagList(
 			ctx,
 			limit,
