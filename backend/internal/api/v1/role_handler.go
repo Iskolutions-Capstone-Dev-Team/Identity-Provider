@@ -26,7 +26,6 @@ const (
 // RoleHandler handles role management HTTP requests.
 type RoleHandler struct {
 	Service          *service.RoleService
-	PrivilegeService *service.PrivilegeService
 	LogService       *service.LogService
 }
 
@@ -124,15 +123,8 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		page = 1
 	}
 
-	// 1. Privilege Check
-	level, err := h.PrivilegeService.CheckUserPrivilege(c)
-	if err != nil {
-		log.Printf("[GetRoleList] Privilege Validation: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "unauthorized access",
-		})
-		return
-	}
+	// 1. Fetch Role
+	role := c.GetString("role")
 
 	// 2. Identity Extraction
 	uIDStr := c.GetString("user_id")
@@ -156,7 +148,7 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		"limit":      limit,
 		"page":       page,
 		"keyword":    keyword,
-		"privilege":  level,
+		"privilege":  role,
 		"ip":         c.ClientIP(),
 		"user_agent": c.Request.UserAgent(),
 	})
@@ -164,7 +156,7 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	// 3. Service Execution
 	resp, err := h.Service.GetFilteredRoleList(
 		c.Request.Context(),
-		level,
+		role,
 		userID,
 		limit,
 		page,
@@ -182,7 +174,7 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 					"limit":      limit,
 					"page":       page,
 					"keyword":    keyword,
-					"privilege":  level,
+					"privilege":  role,
 					"ip":         c.ClientIP(),
 					"user_agent": c.Request.UserAgent(),
 					"error":      err.Error(),

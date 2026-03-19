@@ -29,7 +29,6 @@ const (
 // UserHandler handles user management HTTP requests.
 type UserHandler struct {
 	Service          *service.UserService
-	PrivilegeService *service.PrivilegeService
 	LogService       *service.LogService
 }
 
@@ -126,16 +125,8 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		page = 1
 	}
 
-	// 1. Check Privilege Level
-	level, err := h.PrivilegeService.CheckUserPrivilege(c)
-	if err != nil {
-		log.Printf("[GetUserList] Privilege Validation: %v", err)
-		c.JSON(
-			http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "Unauthorized"},
-		)
-		return
-	}
+	// 1. Fetch Admin role
+	role := c.GetString("role")
 
 	// 2. Parse User Identity
 	uIDStr := c.GetString("user_id")
@@ -159,7 +150,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	metadata := buildMetadata(map[string]interface{}{
 		"limit":      limit,
 		"page":       page,
-		"privilege":  level,
+		"privilege":  role,
 		"ip":         c.ClientIP(),
 		"user_agent": c.Request.UserAgent(),
 	})
@@ -167,7 +158,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	// 3. Delegate to Service
 	resp, err := h.Service.GetFilteredUserList(
 		c.Request.Context(),
-		level,
+		role,
 		userID,
 		limit,
 		page,
@@ -183,7 +174,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 				Metadata: buildMetadata(map[string]interface{}{
 					"limit":      limit,
 					"page":       page,
-					"privilege":  level,
+					"privilege":  role,
 					"ip":         c.ClientIP(),
 					"user_agent": c.Request.UserAgent(),
 					"error":      err.Error(),

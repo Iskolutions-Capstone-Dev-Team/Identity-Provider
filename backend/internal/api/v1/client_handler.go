@@ -27,7 +27,6 @@ const (
 // ClientHandler handles client management HTTP requests.
 type ClientHandler struct {
 	Service          *service.ClientService
-	PrivilegeService *service.PrivilegeService
 	LogService       *service.LogService
 }
 
@@ -156,17 +155,10 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	}
 	keyword := c.Query("keyword")
 
-	// 1. Check Privilege Level
-	level, err := h.PrivilegeService.CheckUserPrivilege(c)
-	if err != nil {
-		log.Printf("[GetClientList] Privilege Validation: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
-		})
-		return
-	}
+	// Get Admin Role
+	role := c.GetString("role")
 
-	// 2. Parse User Identity
+	// Parse User Identity
 	uIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
@@ -188,15 +180,15 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 		"limit":      limit,
 		"page":       page,
 		"keyword":    keyword,
-		"privilege":  level,
+		"privilege":  role,
 		"ip":         c.ClientIP(),
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	// 3. Delegate to Service
+	// Delegate to Service
 	resp, err := h.Service.GetFilteredClientList(
 		c.Request.Context(),
-		level,
+		role,
 		userID,
 		limit,
 		page,
@@ -214,7 +206,7 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 					"limit":      limit,
 					"page":       page,
 					"keyword":    keyword,
-					"privilege":  level,
+					"privilege":  role,
 					"ip":         c.ClientIP(),
 					"user_agent": c.Request.UserAgent(),
 					"error":      err.Error(),
@@ -342,16 +334,8 @@ func (h *ClientHandler) GetClientTags(c *gin.Context) {
 		page = 1
 	}
 
-	// 1. Check Privilege Level
-	level, err := h.PrivilegeService.CheckUserPrivilege(c)
-	if err != nil {
-		log.Printf("[GetClientTags] Privilege Validation: %v", err)
-		c.JSON(
-			http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "Unauthorized"},
-		)
-		return
-	}
+	// 1. Get User Role
+	role := c.GetString("role")
 
 	// 2. Parse User Identity
 	uIDStr := c.GetString("user_id")
@@ -376,7 +360,7 @@ func (h *ClientHandler) GetClientTags(c *gin.Context) {
 		"limit":      limit,
 		"page":       page,
 		"keyword":    keyword,
-		"privilege":  level,
+		"privilege":  role,
 		"ip":         c.ClientIP(),
 		"user_agent": c.Request.UserAgent(),
 	})
@@ -384,7 +368,7 @@ func (h *ClientHandler) GetClientTags(c *gin.Context) {
 	// 3. Delegate to Service
 	resp, err := h.Service.GetFilteredClientTagList(
 		c.Request.Context(),
-		level,
+		role,
 		userID,
 		limit,
 		page,
@@ -402,7 +386,7 @@ func (h *ClientHandler) GetClientTags(c *gin.Context) {
 					"limit":      limit,
 					"page":       page,
 					"keyword":    keyword,
-					"privilege":  level,
+					"privilege":  role,
 					"ip":         c.ClientIP(),
 					"user_agent": c.Request.UserAgent(),
 					"error":      err.Error(),
