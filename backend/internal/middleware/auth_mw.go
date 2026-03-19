@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"slices"
 	"crypto/rsa"
 	"log"
 	"net/http"
@@ -62,26 +63,25 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 		claims := token.Claims.(*models.UserClaims)
 		userID, err := uuid.Parse(string(claims.UserID))
 		if err != nil {
-			log.Printf("[GetMe] UUID Parse Error: %v", err)
+			log.Printf("[AuthorizeRBAC] UUID Parse Error: %v", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 
-		roles, err := userRepo.GetRoles(userID[:])
+		user, err := userRepo.GetUserById(userID[:])
 		if err != nil {
-			log.Printf("[GetMe] Fetch Roles Failed: %v", err)
+			log.Printf("[AuthorizeRBAC] Fetch user failed: %v", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 
-		roleNames := service.GetRoleNames(roles)
+		roleNames := service.GetRoleNames(user.Roles)
+		role := ""
 		authorized := false
 		if len (authorizedRoles) > 0 {
 			for _, authorizedRole := range authorizedRoles {
-				for _, role := range roleNames {
-					if role == authorizedRole {
+				if slices.Contains(roleNames, authorizedRole) {
 						authorized = true
-						break
+						role = authorizedRole
 					}
-				}
 				if authorized {
 					break
 				}
@@ -98,6 +98,8 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 		}
 
 		c.Set("user_id", claims.UserID)
+		c.Set("role", role)
+		c.Set("email", user.Email)
 		c.Set("client_id", claims.AuthorizedParty)
 		c.Next()
 	}
