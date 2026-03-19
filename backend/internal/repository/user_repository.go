@@ -62,8 +62,8 @@ func (r *UserRepository) GetUserList(limit, offset int) ([]models.User, error) {
 }
 
 /**
- * GetBoundUserList retrieves a paginated list of users, always 
- * including the requesting admin. Roles are strictly filtered 
+ * GetBoundUserList retrieves a paginated list of users, always
+ * including the requesting admin. Roles are strictly filtered
  * to only those permitted by the admin's client scope.
  */
 func (r *UserRepository) GetBoundUserList(
@@ -91,11 +91,11 @@ func (r *UserRepository) GetBoundUserList(
 	`
 
 	err := r.db.Select(
-		&ids, 
-		idQuery, 
-		adminID, 
-		adminID, 
-		limit, 
+		&ids,
+		idQuery,
+		adminID,
+		adminID,
+		limit,
 		offset,
 	)
 	if err != nil {
@@ -107,7 +107,7 @@ func (r *UserRepository) GetBoundUserList(
 	}
 
 	// 2. Fetch full data using LEFT JOIN on a filtered roles subquery.
-	// This ensures users without allowed roles (like the admin) still 
+	// This ensures users without allowed roles (like the admin) still
 	// appear, but any unauthorized roles are completely stripped out.
 	const baseQuery = `
 		SELECT u.id, u.username, u.first_name, u.middle_name, 
@@ -129,7 +129,7 @@ func (r *UserRepository) GetBoundUserList(
 		ORDER BY u.created_at DESC
 	`
 
-	// Note: adminID maps to the first '?' in the subquery, 
+	// Note: adminID maps to the first '?' in the subquery,
 	// ids maps to the '?' in the outer WHERE IN clause.
 	fullQuery, args, err := sqlx.In(baseQuery, adminID, ids)
 	if err != nil {
@@ -152,8 +152,8 @@ func (r *UserRepository) GetBoundUserList(
 
 // GetUserByEmail finds a user by email, including the hash and roles.
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
-    var rows []userRow
-    query := `
+	var rows []userRow
+	query := `
         SELECT u.id, u.username, u.first_name, u.middle_name, u.last_name,
                u.email, u.password_hash, u.status, u.created_at, 
                u.updated_at, r.id AS role_id, r.name AS role_name, 
@@ -163,22 +163,22 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
         LEFT JOIN roles r ON ur.role_id = r.id
         WHERE u.email = ? AND u.deleted_at IS NULL`
 
-    err := r.db.Select(&rows, query, email)
-    if err != nil {
-        return nil, fmt.Errorf("[GetUserByEmail] Database Query: %w", err)
-    }
+	err := r.db.Select(&rows, query, email)
+	if err != nil {
+		return nil, fmt.Errorf("[GetUserByEmail] Database Query: %w", err)
+	}
 
-    if len(rows) == 0 {
-        return nil, nil
-    }
+	if len(rows) == 0 {
+		return nil, nil
+	}
 
-    return r.mapSingleUser(rows), nil
+	return r.mapSingleUser(rows), nil
 }
 
 // GetUserById retrieves a specific user by binary UUID including roles.
 func (r *UserRepository) GetUserById(id []byte) (*models.User, error) {
-    var rows []userRow
-    query := `
+	var rows []userRow
+	query := `
         SELECT u.id, u.username, u.first_name, u.middle_name, u.last_name,
                u.email, u.status, u.created_at, u.updated_at, 
                r.id AS role_id, r.role_name AS role_name, 
@@ -188,16 +188,16 @@ func (r *UserRepository) GetUserById(id []byte) (*models.User, error) {
         LEFT JOIN roles r ON ur.role_id = r.id
         WHERE u.id = ? AND u.deleted_at IS NULL`
 
-    err := r.db.Select(&rows, query, id)
-    if err != nil {
-        return nil, fmt.Errorf("[GetUserById] Database Query: %w", err)
-    }
+	err := r.db.Select(&rows, query, id)
+	if err != nil {
+		return nil, fmt.Errorf("[GetUserById] Database Query: %w", err)
+	}
 
-    if len(rows) == 0 {
-        return nil, nil
-    }
+	if len(rows) == 0 {
+		return nil, nil
+	}
 
-    return r.mapSingleUser(rows), nil
+	return r.mapSingleUser(rows), nil
 }
 
 // CreateUser executes a stored procedure to handle User and Roles atomically.
@@ -245,6 +245,47 @@ func (r *UserRepository) UpdateUserPassword(user *models.User) error {
 		return fmt.Errorf("failed to update password: %w", err)
 	}
 	return nil
+}
+
+func (r *UserRepository) UpdateFilteredRoles(adminID []byte, 
+	userID []byte, roleIDs []int) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	scopeQuery := `
+		SELECT cr.role_id FROM client_allowed_roles cr
+		JOIN admin_allowed_clients aac ON cr.client_id = aac.client_id
+		WHERE aac.user_id = ?`
+
+	deleteQuery := `
+		DELETE FROM user_roles 
+		WHERE user_id = ? 
+		AND role_id IN (` + scopeQuery + `)
+		AND role_id NOT IN (?)`
+
+	deleteQuery, args, err := sqlx.In(deleteQuery, userID, adminID, roleIDs)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(tx.Rebind(deleteQuery), args...); err != nil {
+		return err
+	}
+
+	for _, rid := range roleIDs {
+		ins := `
+			INSERT INTO user_roles (user_id, role_id)
+			SELECT ?, ? WHERE ? IN (` + scopeQuery + `)
+			ON DUPLICATE KEY update role_id = role_id`
+		_, err := tx.Exec(ins, userID, rid, rid, adminID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 // UpdateUserRoles updates the roles of a specific user based on the role IDs
@@ -318,7 +359,7 @@ func (r *UserRepository) CountUsers() (int, error) {
 }
 
 /**
- * CountBoundUsers returns the total number of distinct users, 
+ * CountBoundUsers returns the total number of distinct users,
  * explicitly including the admin themselves even without roles.
  */
 func (r *UserRepository) CountBoundUsers(adminID []byte) (int, error) {
@@ -352,32 +393,32 @@ func (r *UserRepository) CountBoundUsers(adminID []byte) (int, error) {
 }
 
 func (r *UserRepository) mapSingleUser(rows []userRow) *models.User {
-    // Initialize user using the first row's data
-    user := &models.User{
-        ID:           rows[0].ID,
-        Username:     rows[0].Username,
-        FirstName:    rows[0].FirstName,
-        MiddleName:   rows[0].MiddleName,
-        LastName:     rows[0].LastName,
-        Email:        rows[0].Email,
-        PasswordHash: rows[0].PasswordHash,
-        Status:       rows[0].Status,
-        CreatedAt:    rows[0].CreatedAt,
-        UpdatedAt:    rows[0].UpdatedAt,
-        Roles:        []models.Role{},
-    }
+	// Initialize user using the first row's data
+	user := &models.User{
+		ID:           rows[0].ID,
+		Username:     rows[0].Username,
+		FirstName:    rows[0].FirstName,
+		MiddleName:   rows[0].MiddleName,
+		LastName:     rows[0].LastName,
+		Email:        rows[0].Email,
+		PasswordHash: rows[0].PasswordHash,
+		Status:       rows[0].Status,
+		CreatedAt:    rows[0].CreatedAt,
+		UpdatedAt:    rows[0].UpdatedAt,
+		Roles:        []models.Role{},
+	}
 
-    for _, row := range rows {
-        if row.RID != nil {
-            user.Roles = append(user.Roles, models.Role{
-                ID:          *row.RID,
-                RoleName:        *row.RName,
-                Description: *row.RDesc,
-            })
-        }
-    }
+	for _, row := range rows {
+		if row.RID != nil {
+			user.Roles = append(user.Roles, models.Role{
+				ID:          *row.RID,
+				RoleName:    *row.RName,
+				Description: *row.RDesc,
+			})
+		}
+	}
 
-    return user
+	return user
 }
 
 func (r *UserRepository) groupRows(rows []userRow, ids [][]byte) []models.User {
