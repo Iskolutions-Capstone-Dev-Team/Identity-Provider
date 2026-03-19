@@ -132,18 +132,18 @@ func (s *UserService) GetMe(
  */
 func (s *UserService) GetFilteredUserList(
 	ctx context.Context,
-	level int,
+	role string,
 	userID uuid.UUID,
 	limit,
 	page int,
 ) (*dto.UserResponseList, error) {
 	// SuperAdmin sees all users
-	if level == LevelSuperAdmin {
+	if role == SUPERADMIN {
 		return s.GetUserList(ctx, limit, page)
 	}
 
 	// Regular Admin only sees users bound to their allowed clients
-	if level == LevelAdmin {
+	if role == ADMIN {
 		return s.GetBoundUserList(ctx, limit, page, userID)
 	}
 
