@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  userPoolModalSelectButtonClassName,
-  userPoolModalSelectMenuClassName,
-  userPoolModalSelectOptionClassName,
-  userPoolModalSelectOptionSelectedClassName,
-  userPoolModalSelectTriggerClassName,
-} from "./modalTheme";
+  modalSelectButtonClassName,
+  modalSelectMenuClassName,
+  modalSelectOptionClassName,
+  modalSelectOptionSelectedClassName,
+  modalSelectTriggerClassName,
+} from "../modalTheme";
 
 function getSelectedOption(options, value) {
   return options.find((option) => option.value === value) || options[0];
@@ -48,8 +48,8 @@ export default function UserPoolModalSelect({ value, onChange, options, ariaLabe
   };
 
   return (
-    <div ref={dropdownRef} className={userPoolModalSelectTriggerClassName}>
-      <button type="button" className={userPoolModalSelectButtonClassName} onClick={() => setIsOpen((current) => !current)} aria-haspopup="listbox" aria-expanded={isOpen}>
+    <div ref={dropdownRef} className={modalSelectTriggerClassName}>
+      <button type="button" className={modalSelectButtonClassName} onClick={() => setIsOpen((current) => !current)} aria-haspopup="listbox" aria-expanded={isOpen}>
         <span className="truncate text-left text-sm font-medium text-[#4a1921]">
           {selectedOption?.label}
         </span>
@@ -66,14 +66,14 @@ export default function UserPoolModalSelect({ value, onChange, options, ariaLabe
       </button>
 
       {isOpen ? (
-        <div className={userPoolModalSelectMenuClassName} role="listbox" aria-label={ariaLabel}>
+        <div className={modalSelectMenuClassName} role="listbox" aria-label={ariaLabel}>
           {options.map((option) => {
             const isSelected = option.value === value;
 
             return (
               <button key={option.value} type="button" role="option" aria-selected={isSelected} onClick={() => handleSelect(option.value)}
-                className={`${userPoolModalSelectOptionClassName} ${
-                  isSelected ? userPoolModalSelectOptionSelectedClassName : ""
+                className={`${modalSelectOptionClassName} ${
+                  isSelected ? modalSelectOptionSelectedClassName : ""
                 }`}
               >
                 {option.label}

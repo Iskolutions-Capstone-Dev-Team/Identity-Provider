@@ -7,25 +7,25 @@ import ErrorAlert from "../ErrorAlert";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import {
-  userPoolModalBodyClassName,
-  userPoolModalBodyStackClassName,
-  userPoolModalBoxClassName,
-  userPoolModalCloseButtonClassName,
-  userPoolModalFooterActionsClassName,
-  userPoolModalFooterClassName,
-  userPoolModalHeaderClassName,
-  userPoolModalHeaderDescriptionClassName,
-  userPoolModalHeaderTitleClassName,
-  userPoolModalHelperTextClassName,
-  userPoolModalInputClassName,
-  userPoolModalLabelClassName,
-  userPoolModalOptionalBadgeClassName,
-  userPoolModalOverlayClassName,
-  userPoolModalPrimaryButtonClassName,
-  userPoolModalSecondaryButtonClassName,
-  userPoolModalSectionClassName,
-  userPoolModalStepsWrapClassName,
-} from "./modalTheme";
+  modalBodyClassName,
+  modalBodyStackClassName,
+  modalBoxClassName,
+  modalCloseButtonClassName,
+  modalFooterActionsClassName,
+  modalFooterClassName,
+  modalHeaderClassName,
+  modalHeaderDescriptionClassName,
+  modalHeaderTitleClassName,
+  modalHelperTextClassName,
+  modalInputClassName,
+  modalLabelClassName,
+  modalOptionalBadgeClassName,
+  modalOverlayClassName,
+  modalPrimaryButtonClassName,
+  modalSecondaryButtonClassName,
+  modalSectionClassName,
+  modalStepsWrapClassName,
+} from "../modalTheme";
 
 const initialFormData = {
   email: "",
@@ -105,7 +105,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
   };
 
   const getInputClassName = (fieldName) =>
-    `${userPoolModalInputClassName} ${
+    `${modalInputClassName} ${
       fieldErrors[fieldName]
         ? "border-red-400 focus:border-red-500"
         : ""
@@ -152,15 +152,9 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
       surname: "",
       tempPassword: "",
     };
+    const hasRolesError = !data.roleIds || data.roleIds.length === 0;
 
-    if (!data.roleIds || data.roleIds.length === 0) {
-      setRolesError(true);
-      setError("At least one role must be selected.");
-      setFieldErrors(nextFieldErrors);
-      return false;
-    }
-
-    setRolesError(false);
+    setRolesError(hasRolesError);
 
     if (data.inviteMode === "temp") {
       if (!data.tempPassword.trim()) {
@@ -173,8 +167,12 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
 
     setFieldErrors(nextFieldErrors);
 
-    if (nextFieldErrors.tempPassword) {
-      setError(nextFieldErrors.tempPassword);
+    if (hasRolesError || nextFieldErrors.tempPassword) {
+      setError(
+        hasRolesError
+          ? "At least one role must be selected."
+          : nextFieldErrors.tempPassword,
+      );
       return false;
     }
 
@@ -244,18 +242,18 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
   if (!open) return null;
 
   return createPortal(
-    <dialog open className={userPoolModalOverlayClassName}>
-      <div className={userPoolModalBoxClassName}>
-        <div className={userPoolModalHeaderClassName}>
+    <dialog open className={modalOverlayClassName}>
+      <div className={modalBoxClassName}>
+        <div className={modalHeaderClassName}>
           <div className="flex items-start justify-between gap-4">
             <div className="max-w-2xl">
-              <h3 className={userPoolModalHeaderTitleClassName}>Add User</h3>
-              <p className={userPoolModalHeaderDescriptionClassName}>
+              <h3 className={modalHeaderTitleClassName}>Add User</h3>
+              <p className={modalHeaderDescriptionClassName}>
                 Enter user information
               </p>
             </div>
 
-            <button type="button" className={userPoolModalCloseButtonClassName} onClick={onClose}>
+            <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
@@ -263,9 +261,9 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
           </div>
         </div>
 
-        <div className={userPoolModalBodyClassName}>
-          <div className={userPoolModalBodyStackClassName}>
-            <div className={userPoolModalStepsWrapClassName}>
+        <div className={modalBodyClassName}>
+          <div className={modalBodyStackClassName}>
+            <div className={modalStepsWrapClassName}>
               <ModalSteps
                 currentStep={step}
                 steps={[
@@ -293,8 +291,8 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
 
             <FadeWrapper isVisible={step === 1}>
               <form id="step1-form" onSubmit={(e) => e.preventDefault()} className="space-y-5">
-                <section className={userPoolModalSectionClassName}>
-                  <label className={userPoolModalLabelClassName}>
+                <section className={modalSectionClassName}>
+                  <label className={modalLabelClassName}>
                     Email Address <span className="text-red-500">*</span>
                   </label>
                   <div className="validator w-full">
@@ -315,10 +313,10 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                   </div>
                 </section>
 
-                <section className={userPoolModalSectionClassName}>
+                <section className={modalSectionClassName}>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-1">
-                      <label className={userPoolModalLabelClassName}>
+                      <label className={modalLabelClassName}>
                         First Name <span className="text-red-500">*</span>
                       </label>
                       <div className="validator w-full">
@@ -332,21 +330,21 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                     </div>
 
                     <div className="space-y-1">
-                      <label className={userPoolModalLabelClassName}>
+                      <label className={modalLabelClassName}>
                         Middle Name
                       </label>
                       <label
-                        className={`${userPoolModalInputClassName} flex items-center gap-2 px-4`}
+                        className={`${modalInputClassName} flex items-center gap-2 px-4`}
                       >
                         <input type="text" name="middleName" value={data.middleName} onChange={handleChange} placeholder="Enter middlename" className="grow bg-transparent"/>
-                        <span className={userPoolModalOptionalBadgeClassName}>
+                        <span className={modalOptionalBadgeClassName}>
                           Optional
                         </span>
                       </label>
                     </div>
 
                     <div className="space-y-1 md:col-span-2">
-                      <label className={userPoolModalLabelClassName}>
+                      <label className={modalLabelClassName}>
                         Last Name <span className="text-red-500">*</span>
                       </label>
                       <div className="validator w-full">
@@ -371,35 +369,31 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                 }}
                 className="space-y-5"
               >
-                <section className={userPoolModalSectionClassName}>
-                  <label className={userPoolModalLabelClassName}>
+                <section className={modalSectionClassName}>
+                  <label className={modalLabelClassName}>
                     Role <span className="text-red-500">*</span>
                   </label>
-                  <p className={userPoolModalHelperTextClassName}>
+                  <p className={modalHelperTextClassName}>
                     Choose a role for the user
                   </p>
                   <div className="w-full">
-                    <div className={`rounded-[1rem] ${
-                        rolesError ? "ring-2 ring-red-500" : ""
-                      }`}
-                    >
-                      <MultiSelect
-                        options={roles.map((role) => ({
-                          id: role.id,
-                          role_name: role.role_name,
-                        }))}
-                        selectedValues={data.roleIds || []}
-                        onChange={(ids) => {
-                          setData((prev) => ({ ...prev, roleIds: ids }));
-                          if (ids.length > 0) {
-                            setRolesError(false);
-                            setError("");
-                          }
-                        }}
-                        placeholder="Select entity groups"
-                        variant="userpoolModal"
-                      />
-                    </div>
+                    <MultiSelect
+                      options={roles.map((role) => ({
+                        id: role.id,
+                        role_name: role.role_name,
+                      }))}
+                      selectedValues={data.roleIds || []}
+                      onChange={(ids) => {
+                        setData((prev) => ({ ...prev, roleIds: ids }));
+                        if (ids.length > 0) {
+                          setRolesError(false);
+                          setError(fieldErrors.tempPassword || "");
+                        }
+                      }}
+                      placeholder="Select entity groups"
+                      variant="userpoolModal"
+                      hasError={rolesError}
+                    />
                     {rolesError && (
                       <p className="mt-2 text-xs text-red-500">
                         At least one role is required
@@ -408,13 +402,13 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                   </div>
                 </section>
 
-                <section className={userPoolModalSectionClassName}>
+                <section className={modalSectionClassName}>
                   <div className="space-y-5">
                     <div>
-                      <label className={userPoolModalLabelClassName}>
+                      <label className={modalLabelClassName}>
                         Invitation Method
                       </label>
-                      <p className={userPoolModalHelperTextClassName}>
+                      <p className={modalHelperTextClassName}>
                         Choose how the user will get access
                       </p>
                       <UserPoolModalSelect
@@ -438,7 +432,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                       >
                         <FadeWrapper isVisible={data.inviteMode === "invite"} keyId="delivery">
                           <div>
-                            <label className={userPoolModalLabelClassName}>
+                            <label className={modalLabelClassName}>
                               Delivery Method
                             </label>
                             <UserPoolModalSelect
@@ -467,7 +461,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                           keyId="tempPassword"
                         >
                           <div>
-                            <label className={userPoolModalLabelClassName}>
+                            <label className={modalLabelClassName}>
                               Temporary Password
                             </label>
                             <div className="flex flex-col gap-3 sm:flex-row">
@@ -498,14 +492,14 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                                 Generate
                               </button>
                             </div>
-                            <p className="mt-3 text-xs text-[#8f6f76]">
-                              User will be required to set a new password at first sign-in.
-                            </p>
                             {fieldErrors.tempPassword && (
                               <p className="mt-2 text-xs text-red-500">
                                 {fieldErrors.tempPassword}
                               </p>
                             )}
+                            <p className="mt-3 text-xs text-[#8f6f76]">
+                              User will be required to set a new password at first sign-in.
+                            </p>
                           </div>
                         </FadeWrapper>
                       </div>
@@ -517,28 +511,28 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
           </div>
         </div>
 
-        <div className={userPoolModalFooterClassName}>
-          <div className={userPoolModalFooterActionsClassName}>
+        <div className={modalFooterClassName}>
+          <div className={modalFooterActionsClassName}>
             {step === 1 && (
-              <button type="button" onClick={onClose} className={userPoolModalSecondaryButtonClassName}>
+              <button type="button" onClick={onClose} className={modalSecondaryButtonClassName}>
                 Close
               </button>
             )}
 
             {step > 1 && (
-              <button type="button" onClick={() => setStep(step - 1)} className={userPoolModalSecondaryButtonClassName}>
+              <button type="button" onClick={() => setStep(step - 1)} className={modalSecondaryButtonClassName}>
                 Back
               </button>
             )}
 
             {step === 1 && (
-              <button type="button" onClick={nextStep} className={userPoolModalPrimaryButtonClassName}>
+              <button type="button" onClick={nextStep} className={modalPrimaryButtonClassName}>
                 Next
               </button>
             )}
 
             {step === 2 && (
-              <button type="button" onClick={handleSubmit} className={userPoolModalPrimaryButtonClassName}>
+              <button type="button" onClick={handleSubmit} className={modalPrimaryButtonClassName}>
                 Create User
               </button>
             )}

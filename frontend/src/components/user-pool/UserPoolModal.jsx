@@ -5,25 +5,25 @@ import MultiSelect from "../MultiSelect";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import {
-  userPoolModalBodyClassName,
-  userPoolModalBodyStackClassName,
-  userPoolModalBoxClassName,
-  userPoolModalCloseButtonClassName,
-  userPoolModalFooterActionsClassName,
-  userPoolModalFooterClassName,
-  userPoolModalHeaderClassName,
-  userPoolModalHeaderDescriptionClassName,
-  userPoolModalHeaderTitleClassName,
-  userPoolModalHelperTextClassName,
-  userPoolModalInputClassName,
-  userPoolModalLabelClassName,
-  userPoolModalOptionalBadgeClassName,
-  userPoolModalOverlayClassName,
-  userPoolModalPrimaryButtonClassName,
-  userPoolModalReadOnlyInputClassName,
-  userPoolModalSecondaryButtonClassName,
-  userPoolModalSectionClassName,
-} from "./modalTheme";
+  modalBodyClassName,
+  modalBodyStackClassName,
+  modalBoxClassName,
+  modalCloseButtonClassName,
+  modalFooterActionsClassName,
+  modalFooterClassName,
+  modalHeaderClassName,
+  modalHeaderDescriptionClassName,
+  modalHeaderTitleClassName,
+  modalHelperTextClassName,
+  modalInputClassName,
+  modalLabelClassName,
+  modalOptionalBadgeClassName,
+  modalOverlayClassName,
+  modalPrimaryButtonClassName,
+  modalReadOnlyInputClassName,
+  modalSecondaryButtonClassName,
+  modalSectionClassName,
+} from "../modalTheme";
 
 const initialFormData = {
   id: "",
@@ -122,6 +122,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
   const [error, setError] = useState("");
+  const [rolesError, setRolesError] = useState(false);
   const [hasRoleSelectionChanged, setHasRoleSelectionChanged] = useState(false);
 
   useEffect(() => {
@@ -131,6 +132,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
     setFormData(nextFormData);
     setOriginalUser(nextFormData);
     setError("");
+    setRolesError(false);
     setHasRoleSelectionChanged(false);
   }, [open, user]);
 
@@ -217,6 +219,10 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
       roles: selectedRoles,
     }));
 
+    if (normalizedRoleIds.length > 0) {
+      setRolesError(false);
+    }
+
     if (error) {
       setError("");
     }
@@ -227,9 +233,12 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
     if (isViewMode) return onClose();
 
     if (selectedRoleIds.length === 0) {
+      setRolesError(true);
       setError("At least one role must be selected.");
       return;
     }
+
+    setRolesError(false);
 
     if (!STATUS_VALUES.has(formData.status)) {
       setError("Select a valid status.");
@@ -257,22 +266,22 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
   if (!open) return null;
 
   return createPortal(
-    <dialog open className={userPoolModalOverlayClassName}>
-      <div className={userPoolModalBoxClassName}>
-        <div className={userPoolModalHeaderClassName}>
+    <dialog open className={modalOverlayClassName}>
+      <div className={modalBoxClassName}>
+        <div className={modalHeaderClassName}>
           <div className="flex items-start justify-between gap-4">
             <div className={`max-w-2xl ${isViewMode ? "pb-5 sm:pb-10" : ""}`}>
-              <h3 className={userPoolModalHeaderTitleClassName}>
+              <h3 className={modalHeaderTitleClassName}>
                 {isViewMode ? "View User" : "Edit User"}
               </h3>
-              <p className={userPoolModalHeaderDescriptionClassName}>
+              <p className={modalHeaderDescriptionClassName}>
                 {isViewMode
                   ? "View the user's account information."
                   : "Update the user's roles and account status."}
               </p>
             </div>
 
-            <button type="button" className={userPoolModalCloseButtonClassName} onClick={onClose}>
+            <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
@@ -280,58 +289,58 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
           </div>
         </div>
 
-        <form id="user-pool-form" noValidate className={userPoolModalBodyClassName} onSubmit={handleSubmit}>
-          <div className={userPoolModalBodyStackClassName}>
+        <form id="user-pool-form" noValidate className={modalBodyClassName} onSubmit={handleSubmit}>
+          <div className={modalBodyStackClassName}>
             <ErrorAlert message={error} onClose={() => setError("")} />
 
             {!isEditMode && (
-              <section className={userPoolModalSectionClassName}>
+              <section className={modalSectionClassName}>
                 <div className="space-y-5">
                   <div>
-                    <label className={userPoolModalLabelClassName}>User ID</label>
-                    <input type="text" value={formData.id} readOnly className={userPoolModalReadOnlyInputClassName}/>
+                    <label className={modalLabelClassName}>User ID</label>
+                    <input type="text" value={formData.id} readOnly className={modalReadOnlyInputClassName}/>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className={userPoolModalLabelClassName}>Email</label>
-                      <input type="email" value={formData.email} readOnly className={userPoolModalReadOnlyInputClassName}/>
+                      <label className={modalLabelClassName}>Email</label>
+                      <input type="email" value={formData.email} readOnly className={modalReadOnlyInputClassName}/>
                     </div>
 
                     <div>
-                      <label className={userPoolModalLabelClassName}>
+                      <label className={modalLabelClassName}>
                         First Name
                       </label>
-                      <input type="text" value={formData.givenName} readOnly className={userPoolModalReadOnlyInputClassName}/>
+                      <input type="text" value={formData.givenName} readOnly className={modalReadOnlyInputClassName}/>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className={userPoolModalLabelClassName}>
+                      <label className={modalLabelClassName}>
                         Middle Name
                       </label>
-                      <label className={`${userPoolModalReadOnlyInputClassName} flex items-center gap-2`}>
+                      <label className={`${modalReadOnlyInputClassName} flex items-center gap-2`}>
                         <input type="text" value={formData.middleName} readOnly className="grow bg-transparent outline-none"/>
-                        <span className={userPoolModalOptionalBadgeClassName}>
+                        <span className={modalOptionalBadgeClassName}>
                           Optional
                         </span>
                       </label>
                     </div>
 
                     <div>
-                      <label className={userPoolModalLabelClassName}>Last Name</label>
-                      <input type="text" value={formData.surname} readOnly className={userPoolModalReadOnlyInputClassName}/>
+                      <label className={modalLabelClassName}>Last Name</label>
+                      <input type="text" value={formData.surname} readOnly className={modalReadOnlyInputClassName}/>
                     </div>
                   </div>
                 </div>
               </section>
             )}
 
-            <section className={userPoolModalSectionClassName}>
+            <section className={modalSectionClassName}>
               <div className="space-y-5">
                 <div>
-                  <label className={userPoolModalLabelClassName}>
+                  <label className={modalLabelClassName}>
                     Role {!isViewMode && <span className="text-red-500">*</span>}
                   </label>
 
@@ -351,7 +360,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
                     </div>
                   ) : (
                     <>
-                      <p className={userPoolModalHelperTextClassName}>
+                      <p className={modalHelperTextClassName}>
                         Update the roles assigned to this user.
                       </p>
                       <MultiSelect
@@ -360,17 +369,23 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
                         onChange={handleRoleChange}
                         placeholder="Select roles"
                         variant="userpoolModal"
+                        hasError={rolesError}
                       />
+                      {rolesError && (
+                        <p className="mt-2 text-xs text-red-500">
+                          At least one role is required
+                        </p>
+                      )}
                     </>
                   )}
                 </div>
 
                 <div>
-                  <label className={userPoolModalLabelClassName}>
+                  <label className={modalLabelClassName}>
                     Status {!isViewMode && <span className="text-red-500">*</span>}
                   </label>
                   {isViewMode ? (
-                    <select value={formData.status} onChange={(e) => handleFieldChange("status", e.target.value)} disabled className={`${userPoolModalReadOnlyInputClassName} cursor-not-allowed appearance-none`}>
+                    <select value={formData.status} onChange={(e) => handleFieldChange("status", e.target.value)} disabled className={`${modalReadOnlyInputClassName} cursor-not-allowed appearance-none`}>
                       {STATUS_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
@@ -391,14 +406,14 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
           </div>
         </form>
 
-        <div className={userPoolModalFooterClassName}>
-          <div className={userPoolModalFooterActionsClassName}>
-            <button type="button" className={userPoolModalSecondaryButtonClassName} onClick={onClose}>
+        <div className={modalFooterClassName}>
+          <div className={modalFooterActionsClassName}>
+            <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
               {isViewMode ? "Close" : "Cancel"}
             </button>
 
             {!isViewMode && (
-              <button form="user-pool-form" type="submit" className={userPoolModalPrimaryButtonClassName}>
+              <button form="user-pool-form" type="submit" className={modalPrimaryButtonClassName}>
                 Save
               </button>
             )}
