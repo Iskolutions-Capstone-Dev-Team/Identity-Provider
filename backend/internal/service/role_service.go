@@ -58,19 +58,19 @@ func (s *RoleService) CreateRole(
  */
 func (s *RoleService) GetFilteredRoleList(
 	ctx context.Context,
-	level int,
+	role string,
 	userID uuid.UUID,
 	limit int,
 	page int,
 	keyword string,
 ) (*dto.RoleListResponse, error) {
 	// SuperAdmin: Full system visibility
-	if level == LevelSuperAdmin {
+	if role == SUPERADMIN {
 		return s.GetRoleList(ctx, limit, page, keyword)
 	}
 
 	// Admin: Visibility restricted to roles of managed clients
-	if level == LevelAdmin {
+	if role == ADMIN {
 		return s.GetAuthorizedRoles(ctx, userID, limit, page, keyword)
 	}
 
