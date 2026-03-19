@@ -1,4 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  modalHelperTextClassName,
+  modalReadOnlyInputClassName,
+  modalSelectMenuClassName,
+  modalSelectOptionClassName,
+  modalSelectOptionSelectedClassName,
+  modalSelectTriggerClassName,
+} from "../modalTheme";
 
 function TagIcon({ tag, image, sizeClass = "h-5 w-5" }) {
   const [hasImageError, setHasImageError] = useState(false);
@@ -9,31 +17,18 @@ function TagIcon({ tag, image, sizeClass = "h-5 w-5" }) {
 
   if (image && !hasImageError) {
     return (
-      <img
-        src={image}
-        alt={`${tag || "Tag"} logo`}
-        className={`${sizeClass} rounded-full object-cover border border-gray-200 shrink-0`}
-        onError={() => setHasImageError(true)}
-      />
+      <img src={image} alt={`${tag || "Tag"} logo`} className={`${sizeClass} shrink-0 rounded-full border border-[#7b0d15]/10 object-cover`} onError={() => setHasImageError(true)}/>
     );
   }
 
   return (
-    <span
-      className={`${sizeClass} rounded-full bg-gray-200 text-gray-600 text-xs font-semibold flex items-center justify-center shrink-0`}
-    >
+    <span className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full bg-[#fff1d0] text-xs font-semibold text-[#7b0d15]`}>
       {initials}
     </span>
   );
 }
 
-export default function TagMultiSelect({
-  options,
-  selectedValues,
-  onChange,
-  placeholder,
-  disabled = false,
-}) {
+export default function TagMultiSelect({ options, selectedValues, onChange, placeholder, disabled = false }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef(null);
@@ -50,171 +45,153 @@ export default function TagMultiSelect({
   }, []);
 
   useEffect(() => {
-    if (disabled) setIsOpen(false);
+    if (disabled) {
+      setIsOpen(false);
+      setSearchTerm("");
+    }
   }, [disabled]);
 
+  const selectedItems = useMemo(
+    () =>
+      options.filter((option) => selectedValues.includes(option.id)),
+    [options, selectedValues],
+  );
+
+  const unselectedItems = useMemo(() => {
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+
+    return options.filter((option) => {
+      if (selectedValues.includes(option.id)) {
+        return false;
+      }
+
+      if (!normalizedSearchTerm) {
+        return true;
+      }
+
+      return (option.tag || "")
+        .toLowerCase()
+        .includes(normalizedSearchTerm);
+    });
+  }, [options, searchTerm, selectedValues]);
+
   const toggleOption = (value) => {
-    if (disabled) return;
+    if (disabled) {
+      return;
+    }
 
     const nextSelection = selectedValues.includes(value)
       ? selectedValues.filter((entry) => entry !== value)
       : [...selectedValues, value];
 
     onChange(nextSelection);
+    setSearchTerm("");
   };
 
   const removeTag = (event, value) => {
-    if (disabled) return;
     event.stopPropagation();
     onChange(selectedValues.filter((entry) => entry !== value));
   };
 
   const clearAll = (event) => {
-    if (disabled) return;
     event.stopPropagation();
     onChange([]);
+    setSearchTerm("");
   };
 
-  const selectedItems = options.filter((option) =>
-    selectedValues.includes(option.id),
-  );
-
-  const unselectedItems = options.filter(
-    (option) =>
-      !selectedValues.includes(option.id) &&
-      (option.tag || "").toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const triggerClassName = disabled
+    ? `${modalReadOnlyInputClassName} h-14 cursor-default`
+    : `${modalSelectTriggerClassName} h-14`;
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
-      <div
+    <div ref={dropdownRef} className="relative w-full">
+      <div className={triggerClassName}
         onClick={() => {
-          if (!disabled) setIsOpen((prev) => !prev);
+          if (!disabled) {
+            setIsOpen((current) => !current);
+          }
         }}
-        className={`flex items-center justify-between p-2 border border-gray-200 rounded-lg min-h-10.5 ${
-          disabled
-            ? "bg-gray-100 text-gray-600 cursor-default"
-            : "bg-transparent text-gray-700 cursor-pointer"
-        }`}
       >
-        <div className="flex flex-wrap gap-1.5 items-center flex-1">
-          {selectedItems.length === 0 && !searchTerm && (
-            <span className="text-gray-400 ml-1 text-sm">{placeholder}</span>
-          )}
+        <div className="flex h-full items-center justify-between gap-3 px-4 text-left">
+          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+            {selectedItems.map((item) => (
+              <span key={item.id} className="inline-flex max-w-full shrink-0 items-center gap-2 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]">
+                <TagIcon tag={item.tag} image={item.image} sizeClass="h-4 w-4" />
+                <span className="truncate">{item.tag}</span>
+                {!disabled && (
+                  <button type="button" className="text-[#7b0d15]/65 transition hover:text-[#5a0b12]" onClick={(event) => removeTag(event, item.id)} aria-label={`Remove ${item.tag}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path fillRule="evenodd" d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 0 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                )}
+              </span>
+            ))}
 
-          {selectedItems.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-xs font-medium"
-            >
-              <TagIcon tag={item.tag} image={item.image} sizeClass="h-4 w-4" />
-              <span>{item.tag}</span>
-              {!disabled && (
-                <button
-                  onClick={(event) => removeTag(event, item.id)}
-                  className="hover:text-red-900 font-bold ml-1"
-                >
-                  x
-                </button>
-              )}
-            </div>
-          ))}
+            {selectedItems.length === 0 && !searchTerm && (
+              <span className="text-sm text-[#9a7b81]">{placeholder}</span>
+            )}
 
-          <input
-            className="outline-none bg-transparent ml-1 text-sm flex-1 min-w-12.5"
-            value={searchTerm}
-            onChange={(event) => {
-              if (disabled) return;
-              setSearchTerm(event.target.value);
-              if (!isOpen) setIsOpen(true);
-            }}
-            onClick={(event) => {
-              if (!disabled) event.stopPropagation();
-            }}
-            readOnly={disabled}
-            disabled={disabled}
-          />
-        </div>
+            {!disabled && (
+              <input type="text" value={searchTerm}
+                className={`bg-transparent text-sm text-[#4a1921] outline-none ${
+                  selectedItems.length > 0 ? "min-w-0 w-0 flex-1" : "min-w-[6rem] flex-1"
+                }`}
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                  if (!isOpen) {
+                    setIsOpen(true);
+                  }
+                }}
+                onClick={(event) => event.stopPropagation()}
+              />
+            )}
+          </div>
 
-        <div className="flex items-center gap-2 px-1 border-l ml-2 border-gray-200">
-          {!disabled && selectedValues.length > 0 && (
-            <button
-              onClick={clearAll}
-              className="text-gray-400 hover:text-[#991b1b] text-lg"
-            >
-              x
-            </button>
-          )}
-          <span
-            className={`text-gray-400 transition-transform text-xs ${
-              !disabled && isOpen ? "rotate-180" : ""
-            }`}
-          >
-            {isOpen ? "^" : "v"}
-          </span>
+          <div className="flex items-center gap-2 pl-3">
+            {!disabled && selectedValues.length > 0 && (
+              <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#fff4dc] text-[#7b0d15] transition hover:bg-[#ffe7a3] hover:text-[#5a0b12]" onClick={clearAll} aria-label="Clear selected tags">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path fillRule="evenodd" d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 0 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                </svg>
+              </button>
+            )}
+
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff2d2] text-[#7b0d15]">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`h-5 w-5 transition duration-300 ${isOpen ? "rotate-180" : ""}`}>
+                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd" />
+              </svg>
+            </span>
+          </div>
         </div>
       </div>
 
       {!disabled && isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-72 overflow-y-auto py-1">
+        <div className={modalSelectMenuClassName}>
           {selectedItems.length > 0 && (
-            <div className="pb-2">
-              <div className="px-3 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <>
+              <div className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#8f6f76]">
                 Selected
               </div>
               {selectedItems.map((option) => (
-                <div
-                  key={option.id}
-                  onClick={() => toggleOption(option.id)}
-                  className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer group"
-                >
-                  <input
-                    type="checkbox"
-                    checked={true}
-                    readOnly
-                    className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"
-                  />
-                  <div className="flex items-center gap-2">
-                    <TagIcon
-                      tag={option.tag}
-                      image={option.image}
-                      sizeClass="h-5 w-5"
-                    />
-                    <span className="text-sm text-gray-700 font-medium">
-                      {option.tag}
-                    </span>
-                  </div>
-                </div>
+                <button key={option.id} type="button" onClick={() => toggleOption(option.id)} className={`${modalSelectOptionClassName} ${modalSelectOptionSelectedClassName} flex items-center gap-3`}>
+                  <TagIcon tag={option.tag} image={option.image} />
+                  <span>{option.tag}</span>
+                </button>
               ))}
-              <div className="border-b border-gray-100 my-1 mx-2" />
-            </div>
+              <div className="mx-4 border-t border-[#7b0d15]/10" />
+            </>
           )}
 
           {unselectedItems.length > 0 ? (
             unselectedItems.map((option) => (
-              <div
-                key={option.id}
-                onClick={() => toggleOption(option.id)}
-                className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer group"
-              >
-                <input
-                  type="checkbox"
-                  checked={false}
-                  readOnly
-                  className="checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none"
-                />
-                <div className="flex items-center gap-2">
-                  <TagIcon
-                    tag={option.tag}
-                    image={option.image}
-                    sizeClass="h-5 w-5"
-                  />
-                  <span className="text-sm text-gray-600">{option.tag}</span>
-                </div>
-              </div>
+              <button key={option.id} type="button" onClick={() => toggleOption(option.id)} className={`${modalSelectOptionClassName} flex w-full items-center gap-3`}>
+                <TagIcon tag={option.tag} image={option.image} />
+                <span>{option.tag}</span>
+              </button>
             ))
           ) : (
-            <div className="p-3 text-sm text-gray-400 text-center">
+            <div className={`${modalHelperTextClassName} px-4 py-4 text-center`}>
               {searchTerm ? "No results found" : "No tags available"}
             </div>
           )}
