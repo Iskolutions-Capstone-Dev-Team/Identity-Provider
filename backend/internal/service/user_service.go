@@ -347,12 +347,22 @@ func (s *UserService) UpdateUserRoles(
 	ctx context.Context,
 	id uuid.UUID,
 	roleIDs []int,
+	adminID uuid.UUID,
+	role string,
 ) error {
-	err := s.Repo.UpdateUserRoles(id[:], roleIDs)
-	if err != nil {
-		return fmt.Errorf("Database Query (UpdateUserRoles): %w", err)
+	if role == SUPERADMIN {
+		err := s.Repo.UpdateUserRoles(id[:], roleIDs)
+		if err != nil {
+			return fmt.Errorf("Database Query (UpdateUserRoles): %w", err)
+		}
 	}
-
+	if role == ADMIN {
+		err := s.Repo.UpdateFilteredRoles(adminID[:], id[:], roleIDs)
+		if err != nil {
+			return fmt.Errorf("Database Query: (UpdateFilteredRoles): %v", err)
+		}
+	}
+	
 	return nil
 }
 

@@ -590,6 +590,9 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 		actorName = actorIDStr
 	}
 
+	// Get admin role
+	adminRole := c.GetString("role")
+
 	// Prepare metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"target_id":  id,
@@ -602,6 +605,8 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		req.RoleIDs,
+		actorID,
+		adminRole,
 	)
 	if err != nil {
 		log.Printf("[PatchUserRoles] %v", err)
