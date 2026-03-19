@@ -13,4 +13,6 @@ const (
 	SECRET_ENTROPY      = 32
 	DEFAULT_PAGE        = 1
 	ACCESS_TOKEN_EXPIRY = 3600
+	SUPERADMIN          = "IDP:superadmin"
+	ADMIN               = "IDP:admin"
 )
