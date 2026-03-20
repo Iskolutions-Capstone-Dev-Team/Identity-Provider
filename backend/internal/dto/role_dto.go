@@ -11,6 +11,9 @@ type RoleResponse struct {
 	Description string `json:"description"`
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
+
+	CanDelete bool `json:"can_delete"`
+	CanEdit   bool `json:"can_edit"`
 }
 
 type UserRoleRepsonse struct {
