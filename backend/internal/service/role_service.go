@@ -153,7 +153,7 @@ func (s *RoleService) GetAuthorizedRoles(
 		return nil, fmt.Errorf("Database Query (CountBoundRoles): %w", err)
 	}
 
-	return s.formatRoleListResponse(roles, total, limit, page), nil
+	return s.formatRoleWithMetadataListResponse(roles, total, limit, page), nil
 }
 
 /**
@@ -173,6 +173,40 @@ func (s *RoleService) formatRoleListResponse(
 			Description: r.Description,
 			CreatedAt:   r.CreatedAt.Format(TIME_LAYOUT),
 			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
+			CanEdit:     true,
+			CanDelete:   true,
+		})
+	}
+
+	lastPage := (total + limit - 1) / limit
+	if lastPage == 0 {
+		lastPage = 1
+	}
+
+	return &dto.RoleListResponse{
+		Roles:       res,
+		TotalCount:  total,
+		CurrentPage: page,
+		LastPage:    lastPage,
+	}
+}
+
+func (s *RoleService) formatRoleWithMetadataListResponse(
+	roles []models.RoleWithMetaData,
+	total,
+	limit,
+	page int,
+) *dto.RoleListResponse {
+	var res []dto.RoleResponse
+	for _, r := range roles {
+		res = append(res, dto.RoleResponse{
+			ID:          r.ID,
+			RoleName:    r.RoleName,
+			Description: r.Description,
+			CreatedAt:   r.CreatedAt.Format(TIME_LAYOUT),
+			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
+			CanEdit:     r.CanUpdate,
+			CanDelete:   r.CanDelete,
 		})
 	}
 
