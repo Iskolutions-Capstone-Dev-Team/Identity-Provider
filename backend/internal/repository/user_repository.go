@@ -253,7 +253,7 @@ func (r *UserRepository) UpdateFilteredRoles(adminID []byte,
         SELECT r.role_name FROM user_roles ur
 		JOIN roles r ON ur.role_id = r.id
 		WHERE ur.user_id = ? 
-		AND ur.role_id NOT IN (?)
+		AND ur.role_id IN (?)
 		AND NOT EXISTS (
 			SELECT 1 FROM clients c
 			JOIN admin_allowed_clients aac ON c.id = aac.client_id
