@@ -6,6 +6,7 @@ import {
   isIdpProtectedPath,
   redirectToIdpErrorPage,
 } from "../auth/utils/idpErrorPage";
+import { rememberUnauthorizedAlert } from "../auth/utils/authAlert";
 import { buildLoginPath } from "../auth/utils/loginRoute";
 
 const axiosInstance = axios.create({
@@ -13,22 +14,8 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
-const UNAUTHORIZED_PAGE_PATH = "/403";
-
 function isAdminRequest(url = "") {
   return typeof url === "string" && url.includes("/admin");
-}
-
-function redirectToUnauthorizedPage() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  if (window.location.pathname === UNAUTHORIZED_PAGE_PATH) {
-    return;
-  }
-
-  window.location.replace(UNAUTHORIZED_PAGE_PATH);
 }
 
 function redirectAfterUnauthorized(error) {
@@ -45,7 +32,6 @@ function redirectAfterUnauthorized(error) {
     "/",
     "/login",
     "/callback",
-    UNAUTHORIZED_PAGE_PATH,
     IDP_ERROR_PAGE_PATH,
   ]);
 
@@ -65,7 +51,9 @@ function redirectAfterForbidden(error) {
     return;
   }
 
-  redirectToUnauthorizedPage();
+  clearAuthState();
+  rememberUnauthorizedAlert();
+  window.location.replace(buildLoginPath());
 }
 
 axiosInstance.interceptors.request.use((config) => {

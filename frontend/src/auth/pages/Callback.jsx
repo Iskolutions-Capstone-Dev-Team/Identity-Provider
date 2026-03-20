@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "../services/authService";
 import { storeTokenResponse } from "../utils/authCookies";
+import { clearAuthAlert, rememberUnauthorizedAlert } from "../utils/authAlert";
 import { buildLoginPath } from "../utils/loginRoute";
 
 export default function Callback() {
@@ -28,12 +29,14 @@ export default function Callback() {
           throw new Error("Token exchange did not return both tokens.");
         }
 
+        clearAuthAlert();
         storeTokenResponse(tokenResponse);
         sessionStorage.removeItem("termsAccepted");
         setTimeout(() => navigate("/user-pool"), 1000);
       } catch (err) {
         console.error(err);
-        navigate("/403");
+        rememberUnauthorizedAlert();
+        navigate(buildLoginPath(), { replace: true });
       }
     };
 

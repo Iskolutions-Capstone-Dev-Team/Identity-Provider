@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { authService } from "../services/authService";
+import { clearAuthState } from "../utils/authCookies";
 import { ensureValidAccessToken } from "../utils/tokenRefresh";
 import { buildLoginPath } from "../utils/loginRoute";
+import { rememberUnauthorizedAlert } from "../utils/authAlert";
 
 export default function ProtectedRoute({ children }) {
   const [authState, setAuthState] = useState("loading");
@@ -22,8 +24,8 @@ export default function ProtectedRoute({ children }) {
         setAuthState("allowed");
       } catch (error) {
         if (error.response?.status === 403) {
-          setAuthState("forbidden");
-          return;
+          clearAuthState();
+          rememberUnauthorizedAlert();
         }
 
         setAuthState("denied");
@@ -62,10 +64,6 @@ export default function ProtectedRoute({ children }) {
 
   if (authState === "denied") {
     return <Navigate to={buildLoginPath()} replace />;
-  }
-
-  if (authState === "forbidden") {
-    return <Navigate to="/403" replace />;
   }
 
   return children;
