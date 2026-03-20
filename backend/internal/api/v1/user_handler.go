@@ -624,6 +624,17 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
+		if strings.Contains(err.Error(), "permitted") {
+			c.JSON(
+				http.StatusForbidden,
+				dto.ErrorResponse{
+					Error: fmt.Sprint(
+						"You don't have permission to", 
+						" edit/remove some of the roles you selected",
+					),
+				},
+			)
+		}
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Update failed"},
