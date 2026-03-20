@@ -53,7 +53,7 @@ func (s *RoleService) CreateRole(
 }
 
 /**
- * GetFilteredRoleList determines which roles the user can see 
+ * GetFilteredRoleList determines which roles the user can see
  * based on their administrative privilege level.
  */
 func (s *RoleService) GetFilteredRoleList(
@@ -126,7 +126,7 @@ func (s *RoleService) GetAllExceptIDP(
 }
 
 /**
- * GetAuthorizedRoles retrieves a distinct list of roles for an 
+ * GetAuthorizedRoles retrieves a distinct list of roles for an
  * admin, including pagination metadata.
  */
 func (s *RoleService) GetAuthorizedRoles(
@@ -188,6 +188,7 @@ func (s *RoleService) formatRoleListResponse(
 		LastPage:    lastPage,
 	}
 }
+
 /**
  * GetRoleByID retrieves a single role by its integer ID
  * and formats it into a DTO.
