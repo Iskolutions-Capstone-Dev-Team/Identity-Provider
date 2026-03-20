@@ -148,10 +148,28 @@ func (r *RoleRepository) ListDistinctBoundRoles(
 func (r *RoleRepository) UpdateRole(role models.Role) error {
 	query := `
         UPDATE roles 
-        SET role_name = ?, description = ? 
-        WHERE id = ? AND deleted_at IS NULL`
-	_, err := r.db.Exec(query, role.RoleName, role.Description, role.ID)
-	return err
+		SET 
+			role_name = ?, 
+			description = ?,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE id = ? 
+			AND deleted_at IS NULL
+			AND SUBSTRING_INDEX(role_name, ':', 1) = SUBSTRING_INDEX(?, ':', 1)`
+	result, err := r.db.Exec(query, role.RoleName, role.Description, role.ID)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errors.New("Forbidden role_name change.")
+	}
+
+	return nil
 }
 
 // Delete purges the role.
