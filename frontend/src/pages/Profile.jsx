@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import PageHeader from "../components/PageHeader";
 import ProfileCard from "../components/profile/ProfileCard";
 import ProfileAuditLogs from "../components/profile/AuditLogs";
 import { EMPTY_CURRENT_USER } from "../hooks/useCurrentUser";
@@ -48,18 +47,8 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 px-3 sm:px-6">
-      <PageHeader
-        title="Profile"
-        description="View and manage your account details"
-        icon={
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-28 h-28 text-[#991b1b]">
-            <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
-          </svg>
-        }
-      />
-
-      <div className="w-full max-w-[85vw] sm:max-w-xl lg:max-w-7xl space-y-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+      <div className="grid gap-6">
         <ProfileCard
           profile={profile}
           addAuditLog={handleAddAuditLog}
