@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -100,21 +101,44 @@ func (r *RoleRepository) ListDistinctBoundRoles(
 	offset int,
 	userID []byte,
 	keyword string,
-) ([]models.Role, error) {
-	var roles []models.Role
+) ([]models.RoleWithMetaData, error) {
+	var roles []models.RoleWithMetaData
 	searchKeyword := "%" + keyword + "%"
 	query := `
 		SELECT DISTINCT 
-			r.id, r.role_name, r.description, r.created_at, r.updated_at 
-		FROM roles r
-		JOIN client_allowed_roles car ON r.id = car.role_id
-		JOIN admin_allowed_clients aac ON car.client_id = aac.client_id
-		WHERE aac.user_id = ? AND r.deleted_at IS NULL AND role_name LIKE ?
-		ORDER BY r.id DESC
-		LIMIT ? OFFSET ?
+            r.id, r.role_name, r.description, r.created_at, r.updated_at,
+            (SUBSTRING_INDEX(r.role_name, ':', 1) IN (
+        SELECT c.tag 
+			FROM clients c
+			JOIN admin_allowed_clients aac ON c.id = aac.client_id
+			WHERE aac.user_id = ?
+		)) AS can_update,
+		(SUBSTRING_INDEX(r.role_name, ':', 1) IN (
+			SELECT c.tag 
+			FROM clients c
+			JOIN admin_allowed_clients aac ON c.id = aac.client_id
+			WHERE aac.user_id = ?
+		)) AS can_delete
+        FROM roles r
+        JOIN client_allowed_roles car ON r.id = car.role_id
+        JOIN admin_allowed_clients aac ON car.client_id = aac.client_id
+        WHERE aac.user_id = ? 
+            AND r.deleted_at IS NULL 
+            AND r.role_name LIKE ?
+        ORDER BY r.id DESC
+        LIMIT ? OFFSET ?
 	`
 
-	err := r.db.Select(&roles, query, userID, searchKeyword, limit, offset)
+	err := r.db.Select(
+		&roles, 
+		query, 
+		userID, 
+		userID, 
+		userID, 
+		searchKeyword, 
+		limit, 
+		offset,
+	)
 	return roles, err
 }
 
