@@ -37,7 +37,7 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
     },
   ];
 
-  if (role.canUpdate) {
+  if (role.can_edit) {
     actions.push({
       key: "edit",
       label: `Edit ${role.role_name}`,
@@ -50,7 +50,7 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
     });
   }
 
-  if (role.canDelete) {
+  if (role.can_delete) {
     actions.push({
       key: "delete",
       label: `Delete ${role.role_name}`,
