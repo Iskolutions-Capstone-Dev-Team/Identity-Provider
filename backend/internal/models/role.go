@@ -9,3 +9,10 @@ type Role struct {
 	CreatedAt   time.Time `db:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at"`
 }
+
+type RoleWithMetaData struct {
+	Role
+
+	CanUpdate bool `db:"can_update"`
+	CanDelete bool `db:"can_delete"`
+}
