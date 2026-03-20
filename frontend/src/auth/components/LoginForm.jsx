@@ -290,6 +290,13 @@ export default function LoginForm({ clientId }) {
               >
                 LOGIN
               </button>
+
+              <p className="text-center text-sm text-white/80">
+                Don't have an account?{" "}
+                <span className="font-semibold text-[#ffd700] cursor-pointer">
+                  Register here
+                </span>
+              </p>
             </form>
           </div>
         </div>
