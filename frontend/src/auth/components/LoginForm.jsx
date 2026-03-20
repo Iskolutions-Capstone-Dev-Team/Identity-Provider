@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authService } from "../services/authService";
 import ErrorAlert from "../../components/ErrorAlert";
+import { clearAuthAlert, consumeAuthAlert } from "../utils/authAlert";
 
 export default function LoginForm({ clientId }) {
   const [email, setEmail] = useState("");
@@ -14,6 +15,14 @@ export default function LoginForm({ clientId }) {
   });
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  useEffect(() => {
+    const authAlert = consumeAuthAlert();
+
+    if (authAlert) {
+      setError(authAlert);
+    }
+  }, []);
 
   const toggleShowPassword = () => {
     setShowPassword((prev) => !prev);
@@ -105,6 +114,7 @@ export default function LoginForm({ clientId }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    clearAuthAlert();
     setError("");
 
     if (!validateFields()) {
