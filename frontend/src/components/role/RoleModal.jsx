@@ -67,6 +67,7 @@ const getEditableTextAreaClassName = (hasError) =>
   }`;
 
 export default function RoleModal({ open, mode, role, tagOptions = [], isTagOptionsLoading = false, onClose, onSubmit }) {
+  const isCreateMode = mode === "create";
   const isViewMode = mode === "view";
   const modalTitle =
     mode === "create" ? "Create Role" : mode === "edit" ? "Edit Role" : "View Role";
@@ -247,7 +248,7 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
                     Role Name {!isViewMode && <span className="text-red-500">*</span>}
                   </label>
 
-                  {!isViewMode && (
+                  {isCreateMode && (
                     <p className={modalHelperTextClassName}>
                       Select a tag and enter the role name.
                     </p>
@@ -255,7 +256,7 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      {isViewMode ? (
+                      {!isCreateMode ? (
                         <div className={readOnlyTagFieldClassName}>
                           {hasSelectedTag ? (
                             <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]">
@@ -278,7 +279,7 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
                           }
                         />
                       )}
-                      {!isViewMode && touched.tags && fieldErrors.tags && (
+                      {isCreateMode && touched.tags && fieldErrors.tags && (
                         <p className="mt-2 text-xs text-red-500">{fieldErrors.tags}</p>
                       )}
                     </div>
