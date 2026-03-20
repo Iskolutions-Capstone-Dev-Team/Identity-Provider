@@ -1,59 +1,118 @@
-import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
+import ErrorAlert from "../ErrorAlert";
 import { formatTimestamp } from "../../utils/formatTimestamp";
+import {
+  modalBodyClassName,
+  modalBodyStackClassName,
+  modalBoxClassName,
+  modalCloseButtonClassName,
+  modalFooterActionsClassName,
+  modalFooterClassName,
+  modalHeaderClassName,
+  modalHeaderDescriptionClassName,
+  modalHeaderTitleClassName,
+  modalHelperTextClassName,
+  modalInputClassName,
+  modalLabelClassName,
+  modalOverlayClassName,
+  modalPrimaryButtonClassName,
+  modalSecondaryButtonClassName,
+  modalSectionClassName,
+} from "../modalTheme";
 
-export default function EditProfileModal({ open, close, profileData, updateProfile, addAuditLog, allowEmailEdit = false }) {
-  const [profile, setProfile] = useState({
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    email: "",
-  });
-  const [previewImage, setPreviewImage] = useState(""); // separate preview
-  const [errors, setErrors] = useState([]); 
-  const [success, setSuccess] = useState(false);
+const initialFieldErrors = {
+  firstName: "",
+  lastName: "",
+  email: "",
+};
+
+const getInputClassName = (hasError) =>
+  `${modalInputClassName} ${hasError ? "border-red-400 focus:border-red-500" : ""}`;
+
+const createProfileState = (profileData = {}) => ({
+  ...profileData,
+  firstName: profileData.firstName || "",
+  middleName: profileData.middleName || "",
+  lastName: profileData.lastName || "",
+  email: profileData.email || "",
+});
+
+function validateProfile(profile, allowEmailEdit) {
+  const nextFieldErrors = { ...initialFieldErrors };
+
+  if (!profile.firstName.trim()) {
+    nextFieldErrors.firstName = "First name is required.";
+  }
+
+  if (!profile.lastName.trim()) {
+    nextFieldErrors.lastName = "Last name is required.";
+  }
+
+  if (allowEmailEdit && !profile.email.trim()) {
+    nextFieldErrors.email = "Email is required.";
+  }
+
+  return nextFieldErrors;
+}
+
+export default function EditProfileModal({ open, onClose, profileData, updateProfile, addAuditLog, allowEmailEdit = false }) {
+  const [profile, setProfile] = useState(createProfileState());
+  const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (open) {
-      setErrors([]);
-      setSuccess(false);
-      if (profileData) {
-        setProfile(profileData);
-      }
-    }
-  }, [open, profileData]);
-
-  useEffect(() => {
-    return () => {
-      if (previewImage && previewImage.startsWith("blob:")) {
-        URL.revokeObjectURL(previewImage);
-      }
-    };
-  }, [previewImage]);
-
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
-  };
-
-
-  const handleSave = () => {
-    const validationErrors = [];
-    
-    if (!profile.firstName) validationErrors.push("First name is required.");
-    if (!profile.lastName) validationErrors.push("Last name is required.");
-    if (allowEmailEdit && !profile.email) validationErrors.push("Email is required.");
-
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors);
-      setSuccess(false);
+    if (!open) {
       return;
     }
-    setErrors([]);
-    
-    // Update parent state
-    if (updateProfile) updateProfile(profile);
 
-    // Add audit log
+    setFieldErrors(initialFieldErrors);
+    setErrorMessage("");
+    setProfile(createProfileState(profileData));
+  }, [open, profileData]);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setProfile((currentProfile) => ({
+      ...currentProfile,
+      [name]: value,
+    }));
+
+    setFieldErrors((currentErrors) =>
+      currentErrors[name]
+        ? {
+            ...currentErrors,
+            [name]: "",
+          }
+        : currentErrors,
+    );
+
+    if (errorMessage) {
+      setErrorMessage("");
+    }
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    const nextFieldErrors = validateProfile(profile, allowEmailEdit);
+    const firstError =
+      nextFieldErrors.firstName ||
+      nextFieldErrors.lastName ||
+      nextFieldErrors.email;
+
+    setFieldErrors(nextFieldErrors);
+
+    if (firstError) {
+      setErrorMessage(firstError);
+      return;
+    }
+
+    if (updateProfile) {
+      updateProfile(profile);
+    }
+
     if (addAuditLog) {
       addAuditLog({
         timestamp: formatTimestamp(new Date().toISOString()),
@@ -61,113 +120,110 @@ export default function EditProfileModal({ open, close, profileData, updateProfi
         details: "Updated profile information",
         color: "blue",
       });
-    } 
+    }
 
-    setSuccess(true);
-
-    close();
+    onClose();
   };
 
-  if (!open) return null;
+  if (!open) {
+    return null;
+  }
 
-  return (
-    <dialog className="modal modal-open">
-      <div className="modal-box max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
-        <div className="bg-linear-to-r from-[#991b1b] to-red-600 p-6 text-white shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold">Edit Profile</h3>
-              <p className="text-white/90 mt-1">Update your personal information</p>
+  return createPortal(
+    <dialog open className={modalOverlayClassName}>
+      <div className={modalBoxClassName}>
+        <div className={`${modalHeaderClassName} !pb-6 sm:!pb-7`}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="max-w-2xl">
+              <h3 className={modalHeaderTitleClassName}>Edit Profile</h3>
+              <p className={modalHeaderDescriptionClassName}>
+                Update your personal information.
+              </p>
             </div>
-            <button className="btn btn-sm btn-circle btn-ghost text-white hover:bg-white/20" onClick={close}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+
+            <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-white">
-          <form className="space-y-6">
+        <form id="edit-profile-form" noValidate className={modalBodyClassName} onSubmit={handleSubmit}>
+          <div className={modalBodyStackClassName}>
+            <ErrorAlert message={errorMessage} onClose={() => setErrorMessage("")} />
 
-            {/* Personal Information */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* First Name */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  First Name <span className="text-red-500">*</span>
-                </label>
-                <input type="text" name="firstName" placeholder="Enter first name" value={profile.firstName} onChange={handleChange} className="input input-bordered w-full h-12 rounded-lg bg-transparent border-gray-300 text-base" required maxLength={50}/>
-                <p className="text-xs text-gray-500">Max 50 characters</p>
-              </div>
-              {/* Middle Name */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Middle Name
-                </label>
-                <input type="text" name="middleName" placeholder="Enter middle Name" value={profile.middleName} onChange={handleChange} className="input input-bordered w-full h-12 rounded-lg bg-transparent border-gray-300 text-base" maxLength={50}/>
-                <p className="text-xs text-gray-500">Optional</p>
-              </div>
-              {/* Last Name */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Last Name <span className="text-red-500">*</span>
-                </label>
-                <input type="text" name="lastName" placeholder="Enter last Name" value={profile.lastName} onChange={handleChange} className="input input-bordered w-full h-12 rounded-lg bg-transparent border-gray-300 text-base" required maxLength={50}/>
-                <p className="text-xs text-gray-500">Max 50 characters</p>
-              </div>
-            </div>
-            {/* Email*/}
-            {allowEmailEdit && (
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <input type="email" name="email" placeholder="Enter email" value={profile.email} onChange={handleChange} className="input input-bordered w-full h-12 rounded-lg bg-transparent border-gray-300 text-base" required/>
-                <p className="text-xs text-gray-500">Must be an active email account</p>
-              </div>
-            )}
-            {/* Validation Errors */}
-            {errors.length > 0 && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start gap-2 text-red-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                      <p className="font-medium">Please fix the following errors:</p>
-                      <ul className="list-disc list-inside text-sm mt-1">
-                        {errors.map((err, idx) => (
-                          <li key={idx}>{err}</li>
-                        ))}
-                      </ul>
-                    </div>
+            <section className={modalSectionClassName}>
+              <div className="grid gap-5 md:grid-cols-3">
+                <div>
+                  <label className={modalLabelClassName}>
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input type="text" name="firstName" value={profile.firstName} onChange={handleChange} placeholder="Enter first name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.firstName))}/>
+                  {fieldErrors.firstName ? (
+                    <p className="mt-2 text-xs text-red-500">{fieldErrors.firstName}</p>
+                  ) : (
+                    <p className={`${modalHelperTextClassName} mt-2`}>Max 50 characters</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className={modalLabelClassName}>Middle Name</label>
+                  <input type="text" name="middleName" value={profile.middleName} onChange={handleChange} placeholder="Enter middle name" maxLength={50} className={modalInputClassName}/>
+                  <p className={`${modalHelperTextClassName} mt-2`}>Optional</p>
+                </div>
+
+                <div>
+                  <label className={modalLabelClassName}>
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input type="text" name="lastName" value={profile.lastName} onChange={handleChange} placeholder="Enter last name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.lastName))}/>
+                  {fieldErrors.lastName ? (
+                    <p className="mt-2 text-xs text-red-500">{fieldErrors.lastName}</p>
+                  ) : (
+                    <p className={`${modalHelperTextClassName} mt-2`}>Max 50 characters</p>
+                  )}
                 </div>
               </div>
+            </section>
+
+            {allowEmailEdit && (
+              <section className={modalSectionClassName}>
+                <div>
+                  <label className={modalLabelClassName}>
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className={getInputClassName(Boolean(fieldErrors.email))}/>
+                  {fieldErrors.email ? (
+                    <p className="mt-2 text-xs text-red-500">{fieldErrors.email}</p>
+                  ) : (
+                    <p className={`${modalHelperTextClassName} mt-2`}>
+                      Must be an active email account
+                    </p>
+                  )}
+                </div>
+              </section>
             )}
-          </form>
-        </div>
-        {/* Modal Footer - Fixed at Bottom */}
-        <div className="p-6 bg-gray-50 border-t border-gray-200 shrink-0">
-          <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-4">
-            <div className="text-sm text-gray-500">
+
+            <div className="text-sm text-[#8f6f76]">
               Fields marked with <span className="text-red-500">*</span> are required
             </div>
-            <div className="flex flex-wrap gap-3">
-                <button type="button" className="btn h-12 rounded-lg btn-outline text-[#991b1b] border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]" onClick={close}>
-                    Cancel
-                </button>
-                <button type="button" className="btn h-12 rounded-lg bg-[#991b1b] text-white border-[#991b1b] hover:bg-[#ffd700] hover:border-[#ffd700] hover:text-[#991b1b]" onClick={handleSave}>
-                    Save Changes
-                </button>
-            </div>
+          </div>
+        </form>
+
+        <div className={modalFooterClassName}>
+          <div className={modalFooterActionsClassName}>
+            <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
+              Cancel
+            </button>
+
+            <button form="edit-profile-form" type="submit" className={modalPrimaryButtonClassName}>
+              Save Changes
+            </button>
           </div>
         </div>
       </div>
-      {/* DaisyUI modal backdrop */}
-      <form method="dialog" className="modal-backdrop">
-        <button onClick={close}>close</button>
-      </form>
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }
