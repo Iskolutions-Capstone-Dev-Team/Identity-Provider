@@ -155,7 +155,13 @@ func (r *RoleRepository) UpdateRole(role models.Role) error {
 		WHERE id = ? 
 			AND deleted_at IS NULL
 			AND SUBSTRING_INDEX(role_name, ':', 1) = SUBSTRING_INDEX(?, ':', 1)`
-	result, err := r.db.Exec(query, role.RoleName, role.Description, role.ID)
+	result, err := r.db.Exec(
+		query, 
+		role.RoleName, 
+		role.Description, 
+		role.ID,
+		role.RoleName,
+	)
 	if err != nil {
 		return err
 	}
