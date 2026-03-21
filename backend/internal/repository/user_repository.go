@@ -249,6 +249,29 @@ func (r *UserRepository) UpdateUserPassword(user *models.User) error {
 
 func (r *UserRepository) UpdateFilteredRoles(adminID []byte, 
 	userID []byte, roleIDs []int) error {
+	forbiddenQuery, args, _ := sqlx.In(`
+        SELECT r.role_name FROM user_roles ur
+		JOIN roles r ON ur.role_id = r.id
+		WHERE ur.user_id = ? 
+		AND ur.role_id IN (?)
+		AND NOT EXISTS (
+			SELECT 1 FROM clients c
+			JOIN admin_allowed_clients aac ON c.id = aac.client_id
+			WHERE aac.user_id = ? AND r.role_name LIKE CONCAT(c.tag, ':%')
+		)`, userID, roleIDs, adminID)
+
+    var violations []string
+    err := r.db.Select(&violations, forbiddenQuery, args...)
+	if err != nil {
+		return err
+	}
+	if len(violations) > 0 {
+		return fmt.Errorf(
+			"You are not permitted to modify these roles: %s", 
+			violations,
+		)
+	}
+
 	tx, err := r.db.Beginx()
 	if err != nil {
 		return err
@@ -256,9 +279,13 @@ func (r *UserRepository) UpdateFilteredRoles(adminID []byte,
 	defer tx.Rollback()
 
 	scopeQuery := `
-		SELECT cr.role_id FROM client_allowed_roles cr
-		JOIN admin_allowed_clients aac ON cr.client_id = aac.client_id
-		WHERE aac.user_id = ?`
+		SELECT r.id
+		FROM roles r
+		JOIN client_allowed_roles cr ON r.id = cr.role_id
+		JOIN clients c ON cr.client_id = c.id
+		JOIN admin_allowed_clients aac ON c.id = aac.client_id
+		WHERE aac.user_id = ?
+		AND r.role_name LIKE CONCAT(c.tag, ':%')`
 
 	deleteQuery := `
 		DELETE FROM user_roles 
@@ -266,7 +293,7 @@ func (r *UserRepository) UpdateFilteredRoles(adminID []byte,
 		AND role_id IN (` + scopeQuery + `)
 		AND role_id NOT IN (?)`
 
-	deleteQuery, args, err := sqlx.In(deleteQuery, userID, adminID, roleIDs)
+	deleteQuery, args, err = sqlx.In(deleteQuery, userID, adminID, roleIDs)
 	if err != nil {
 		return err
 	}

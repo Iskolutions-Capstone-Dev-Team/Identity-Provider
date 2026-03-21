@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -34,7 +35,7 @@ func (r *RoleRepository) CreateRole(role models.Role) (sql.Result, error) {
 func (r *RoleRepository) GetByID(id int) (*models.Role, error) {
 	var role models.Role
 	query := `
-        SELECT (id, role_name, description, created_at, updated_at) 
+        SELECT id, role_name, description, created_at, updated_at
         FROM roles WHERE id = ? AND deleted_at IS NULL`
 	err := r.db.Get(&role, query, id)
 	return &role, err
@@ -73,26 +74,71 @@ func (r *RoleRepository) ListRoles(limit, offset int,
 	return roles, err
 }
 
+// ListRoles returns a paginated list of active roles.
+// @Summary List Roles
+// @ID list-roles
+func (r *RoleRepository) ListAllExceptIdP(limit, offset int,
+	keyword string,
+) ([]models.Role, error) {
+	var roles []models.Role
+	searchKeyword := "%" + keyword + "%"
+	notLike := "IDP:%"
+	query := `
+        SELECT id, role_name, description, created_at, updated_at 
+		FROM roles 
+		WHERE deleted_at IS NULL 
+		AND role_name LIKE ? 
+		AND role_name NOT LIKE ?
+		ORDER BY id DESC 
+		LIMIT ? OFFSET ?
+	`
+	err := r.db.Select(&roles, query, searchKeyword, notLike, limit, offset)
+	return roles, err
+}
+
 func (r *RoleRepository) ListDistinctBoundRoles(
 	limit int,
 	offset int,
 	userID []byte,
 	keyword string,
-) ([]models.Role, error) {
-	var roles []models.Role
+) ([]models.RoleWithMetaData, error) {
+	var roles []models.RoleWithMetaData
 	searchKeyword := "%" + keyword + "%"
 	query := `
 		SELECT DISTINCT 
-			r.id, r.role_name, r.description, r.created_at, r.updated_at 
-		FROM roles r
-		JOIN client_allowed_roles car ON r.id = car.role_id
-		JOIN admin_allowed_clients aac ON car.client_id = aac.client_id
-		WHERE aac.user_id = ? AND r.deleted_at IS NULL AND role_name LIKE ?
-		ORDER BY r.id DESC
-		LIMIT ? OFFSET ?
+            r.id, r.role_name, r.description, r.created_at, r.updated_at,
+            (SUBSTRING_INDEX(r.role_name, ':', 1) IN (
+        SELECT c.tag 
+			FROM clients c
+			JOIN admin_allowed_clients aac ON c.id = aac.client_id
+			WHERE aac.user_id = ?
+		)) AS can_update,
+		(SUBSTRING_INDEX(r.role_name, ':', 1) IN (
+			SELECT c.tag 
+			FROM clients c
+			JOIN admin_allowed_clients aac ON c.id = aac.client_id
+			WHERE aac.user_id = ?
+		)) AS can_delete
+        FROM roles r
+        JOIN client_allowed_roles car ON r.id = car.role_id
+        JOIN admin_allowed_clients aac ON car.client_id = aac.client_id
+        WHERE aac.user_id = ? 
+            AND r.deleted_at IS NULL 
+            AND r.role_name LIKE ?
+        ORDER BY r.id DESC
+        LIMIT ? OFFSET ?
 	`
 
-	err := r.db.Select(&roles, query, userID, searchKeyword, limit, offset)
+	err := r.db.Select(
+		&roles, 
+		query, 
+		userID, 
+		userID, 
+		userID, 
+		searchKeyword, 
+		limit, 
+		offset,
+	)
 	return roles, err
 }
 
@@ -102,10 +148,34 @@ func (r *RoleRepository) ListDistinctBoundRoles(
 func (r *RoleRepository) UpdateRole(role models.Role) error {
 	query := `
         UPDATE roles 
-        SET role_name = ?, description = ? 
-        WHERE id = ? AND deleted_at IS NULL`
-	_, err := r.db.Exec(query, role.RoleName, role.Description, role.ID)
-	return err
+		SET 
+			role_name = ?, 
+			description = ?,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE id = ? 
+			AND deleted_at IS NULL
+			AND SUBSTRING_INDEX(role_name, ':', 1) = SUBSTRING_INDEX(?, ':', 1)`
+	result, err := r.db.Exec(
+		query, 
+		role.RoleName, 
+		role.Description, 
+		role.ID,
+		role.RoleName,
+	)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errors.New("Forbidden role_name change.")
+	}
+
+	return nil
 }
 
 // Delete purges the role.

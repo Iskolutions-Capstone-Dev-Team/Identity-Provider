@@ -53,7 +53,7 @@ func (s *RoleService) CreateRole(
 }
 
 /**
- * GetFilteredRoleList determines which roles the user can see 
+ * GetFilteredRoleList determines which roles the user can see
  * based on their administrative privilege level.
  */
 func (s *RoleService) GetFilteredRoleList(
@@ -102,7 +102,31 @@ func (s *RoleService) GetRoleList(
 }
 
 /**
- * GetAuthorizedRoles retrieves a distinct list of roles for an 
+ * GetRoleList retrieves a paginated list of roles.
+ */
+func (s *RoleService) GetAllExceptIDP(
+	ctx context.Context,
+	limit,
+	page int,
+	keyword string,
+) (*dto.RoleListResponse, error) {
+	offset := (page - 1) * limit
+
+	roles, err := s.RoleRepo.ListAllExceptIdP(limit, offset, keyword)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (ListRoles): %w", err)
+	}
+
+	total, err := s.RoleRepo.CountRoles(keyword)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (CountRoles): %w", err)
+	}
+
+	return s.formatRoleListResponse(roles, total, limit, page), nil
+}
+
+/**
+ * GetAuthorizedRoles retrieves a distinct list of roles for an
  * admin, including pagination metadata.
  */
 func (s *RoleService) GetAuthorizedRoles(
@@ -129,7 +153,7 @@ func (s *RoleService) GetAuthorizedRoles(
 		return nil, fmt.Errorf("Database Query (CountBoundRoles): %w", err)
 	}
 
-	return s.formatRoleListResponse(roles, total, limit, page), nil
+	return s.formatRoleWithMetadataListResponse(roles, total, limit, page), nil
 }
 
 /**
@@ -149,6 +173,8 @@ func (s *RoleService) formatRoleListResponse(
 			Description: r.Description,
 			CreatedAt:   r.CreatedAt.Format(TIME_LAYOUT),
 			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
+			CanEdit:     true,
+			CanDelete:   true,
 		})
 	}
 
@@ -164,6 +190,39 @@ func (s *RoleService) formatRoleListResponse(
 		LastPage:    lastPage,
 	}
 }
+
+func (s *RoleService) formatRoleWithMetadataListResponse(
+	roles []models.RoleWithMetaData,
+	total,
+	limit,
+	page int,
+) *dto.RoleListResponse {
+	var res []dto.RoleResponse
+	for _, r := range roles {
+		res = append(res, dto.RoleResponse{
+			ID:          r.ID,
+			RoleName:    r.RoleName,
+			Description: r.Description,
+			CreatedAt:   r.CreatedAt.Format(TIME_LAYOUT),
+			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
+			CanEdit:     r.CanUpdate,
+			CanDelete:   r.CanDelete,
+		})
+	}
+
+	lastPage := (total + limit - 1) / limit
+	if lastPage == 0 {
+		lastPage = 1
+	}
+
+	return &dto.RoleListResponse{
+		Roles:       res,
+		TotalCount:  total,
+		CurrentPage: page,
+		LastPage:    lastPage,
+	}
+}
+
 /**
  * GetRoleByID retrieves a single role by its integer ID
  * and formats it into a DTO.

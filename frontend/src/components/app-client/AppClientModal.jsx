@@ -167,7 +167,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [redirectURL, setRedirectURL] = useState("");
   const [logoutURL, setLogoutURL] = useState("");
   const [selectedGrants, setSelectedGrants] = useState(["authorization_code"]);
-  const rolesData = useAllRoles();
+  const rolesData = useAllRoles({endpoint: "all"});
   const [roles, setRoles] = useState([]);
   const [detailRoleNames, setDetailRoleNames] = useState([]);
   const [hasRoleSelectionChanged, setHasRoleSelectionChanged] = useState(false);

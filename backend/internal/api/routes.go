@@ -71,14 +71,9 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 		roles := admin.Group("/roles")
 		{
 			roles.POST("", h.RoleHandler.PostRole)
-			roles.GET("", func(c *gin.Context) {
-				if c.Query("keyword") != "" {
-					h.RoleHandler.GetRolesBySearch(c)
-				} else {
-					h.RoleHandler.GetRoleList(c)
-				}
-			})
+			roles.GET("", h.RoleHandler.GetRoleList)
 			roles.GET("/:id", h.RoleHandler.GetRole)
+			roles.GET("/all", h.RoleHandler.GetAllRoles)
 			roles.PUT("/:id", h.RoleHandler.PutRole)
 			roles.DELETE("/:id", h.RoleHandler.DeleteRole)
 		}

@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -198,6 +197,41 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// GetAllRoles handles GET /v1/admin/roles/all
+// @Summary List all roles
+// @Description Retrieves a paginated list of non-deleted roles
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Success 200 {object} dto.RoleListResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /v1/admin/roles [get]
+func (h *RoleHandler) GetAllRoles(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	keyword := c.DefaultQuery("keyword", "")
+	if page < 1 {
+		page = 1
+	}
+
+	resp, err := h.Service.GetAllExceptIDP(
+		c.Request.Context(),
+		service.PAGE_LIMIT,
+		page,
+		keyword,
+	)
+	if err != nil {
+		log.Printf("[GetRoleList] %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Failed to fetch roles"},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 // GetRole handles GET /v1/admin/roles/:id
 // @Summary Get role by ID
 // @Description Fetches full details of a specific role
@@ -262,76 +296,6 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 		&dto.PostAuditLogRequest{
 			Action:   actionGetRole,
 			Target:   resp.RoleName,
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
-
-	c.JSON(http.StatusOK, resp)
-}
-
-// GetRolesBySearch retrieves a filtered list of roles by keyword.
-// @Summary Search roles by keyword
-// @Description Searches for roles matching the provided query parameter.
-// @Tags Roles
-// @Accept json
-// @Produce json
-// @Param keyword query string true "Search term for role names"
-// @Success 200 {object} dto.RoleListResponse "Success"
-// @Failure 404 {object} dto.ErrorResponse
-// @Failure 501 {object} dto.ErrorResponse
-// @Router /api/roles [get]
-func (h *RoleHandler) GetRolesBySearch(c *gin.Context) {
-	keyword := c.Query("keyword")
-
-	// Get actor
-	userIDStr := c.GetString("user_id")
-	userID, _ := uuid.Parse(userIDStr)
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
-	if actorName == "" {
-		actorName = userIDStr
-	}
-
-	// Prepare metadata
-	metadata := buildMetadata(map[string]interface{}{
-		"keyword":    keyword,
-		"ip":         c.ClientIP(),
-		"user_agent": c.Request.UserAgent(),
-	})
-
-	resp, err := h.Service.SearchRoles(c.Request.Context(), keyword)
-	if err != nil {
-		log.Printf("[GetRolesBySearch] %v", err)
-
-		// Determine if error is "not found" or a system failure
-		status := http.StatusInternalServerError
-		msg := "fetching error"
-		if strings.Contains(err.Error(), "no records") {
-			status = http.StatusNotFound
-			msg = "role not found using keyword"
-		}
-
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionSearchRoles,
-				Target: "role_search",
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"keyword":    keyword,
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
-		c.JSON(status, dto.ErrorResponse{Error: msg})
-		return
-	}
-
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionSearchRoles,
-			Target:   "role_search",
 			Status:   models.StatusSuccess,
 			Metadata: metadata,
 		})

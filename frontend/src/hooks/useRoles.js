@@ -1,6 +1,35 @@
 import { useEffect, useState } from "react";
 import { roleService } from "../services/roleService";
 
+function resolveRolePermissionFlag(...candidates) {
+  const matchedFlag = candidates.find((value) => typeof value === "boolean");
+  return matchedFlag ?? true;
+}
+
+function normalizeRole(role = {}) {
+  return {
+    ...role,
+    canUpdate: resolveRolePermissionFlag(
+      role.can_update,
+      role.canUpdate,
+      role.can_edit,
+      role.canEdit,
+    ),
+    canDelete: resolveRolePermissionFlag(
+      role.can_delete,
+      role.canDelete,
+    ),
+  };
+}
+
+function normalizeRoles(roles = []) {
+  if (!Array.isArray(roles)) {
+    return [];
+  }
+
+  return roles.map((role) => normalizeRole(role));
+}
+
 export function useRoles() {
   const [roles, setRoles] = useState([]);
   const [search, setSearch] = useState("");
@@ -22,7 +51,7 @@ export function useRoles() {
 
       if (searchKeyword) {
         const data = await roleService.searchRoles(searchKeyword);
-        const nextRoles = Array.isArray(data?.roles) ? data.roles : [];
+        const nextRoles = normalizeRoles(data?.roles);
 
         setRoles(nextRoles);
         setTotalPages(1);
@@ -31,7 +60,7 @@ export function useRoles() {
       }
 
       const data = await roleService.getRoles(pageNumber);
-      const nextRoles = Array.isArray(data?.roles) ? data.roles : [];
+      const nextRoles = normalizeRoles(data?.roles);
       const nextTotalPages =
         Number.isInteger(data?.last_page) && data.last_page > 0
           ? data.last_page
