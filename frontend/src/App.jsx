@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./auth/pages/Login";
+import Register from "./auth/pages/Register";
 import Logout from "./auth/pages/Logout";
 import Callback from "./auth/pages/Callback";
 import AuthorizeRedirect from "./auth/pages/AuthorizeRedirect";
@@ -19,6 +20,7 @@ export default function App() {
         {/* Public Routes */}
         <Route path="/" element={<AuthorizeRedirect />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/callback" element={<Callback />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/error" element={<ErrorPage />} />
