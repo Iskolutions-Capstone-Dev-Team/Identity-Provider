@@ -6,17 +6,13 @@ import {
   isIdpProtectedPath,
   redirectToIdpErrorPage,
 } from "../auth/utils/idpErrorPage";
-import { rememberUnauthorizedAlert } from "../auth/utils/authAlert";
 import { buildLoginPath } from "../auth/utils/loginRoute";
+import { showForbiddenAlert } from "../utils/forbiddenAlert";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true,
 });
-
-function isAdminRequest(url = "") {
-  return typeof url === "string" && url.includes("/admin");
-}
 
 function redirectAfterUnauthorized(error) {
   if (typeof window === "undefined") {
@@ -40,20 +36,16 @@ function redirectAfterUnauthorized(error) {
   }
 }
 
-function redirectAfterForbidden(error) {
+function showForbiddenAccessAlert() {
   if (typeof window === "undefined") {
     return;
   }
 
-  const requestUrl = error.config?.url ?? "";
-
-  if (!isIdpProtectedPath(window.location.pathname) || !isAdminRequest(requestUrl)) {
+  if (!isIdpProtectedPath(window.location.pathname)) {
     return;
   }
 
-  clearAuthState();
-  rememberUnauthorizedAlert();
-  window.location.replace(buildLoginPath());
+  showForbiddenAlert();
 }
 
 axiosInstance.interceptors.request.use((config) => {
@@ -74,8 +66,11 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     if (status === 403) {
-      if (!originalRequest?.skipForbiddenRedirect) {
-        redirectAfterForbidden(error);
+      if (
+        !originalRequest?.skipForbiddenRedirect &&
+        !originalRequest?.skipForbiddenAlert
+      ) {
+        showForbiddenAccessAlert();
       }
 
       return Promise.reject(error);
