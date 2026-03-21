@@ -3,7 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
 import { buildLoginPath } from "../utils/loginRoute";
 
-const roleOptions = ["Student", "Guest", "Applicant"];
+const roleOptions = [
+  {
+    label: "Student",
+    Icon: StudentRoleIcon,
+  },
+  {
+    label: "Guest",
+    Icon: GuestRoleIcon,
+  },
+  {
+    label: "Applicant",
+    Icon: ApplicantRoleIcon,
+  },
+];
 const verificationLength = 6;
 const resendDurationSeconds = 45;
 
@@ -56,6 +69,10 @@ function getSelectContainerClassName(hasError) {
 
 function getFirstErrorMessage(errors) {
   return Object.values(errors).find(Boolean) || "";
+}
+
+function getRoleOption(value) {
+  return roleOptions.find((roleOption) => roleOption.label === value) || null;
 }
 
 function maskEmail(email) {
@@ -476,6 +493,8 @@ export default function RegisterForm({ clientId, onComplete }) {
   };
 
   const renderDetailsStep = () => {
+    const selectedRoleOption = getRoleOption(details.role);
+
     return (
       <form onSubmit={handleDetailsSubmit} noValidate className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -544,7 +563,7 @@ export default function RegisterForm({ clientId, onComplete }) {
               >
                 <span className="flex min-w-0 items-center gap-3">
                   <span className="shrink-0 text-[#7b0d15]/60">
-                    <RoleIcon />
+                    {selectedRoleOption ? <selectedRoleOption.Icon /> : <RoleIcon />}
                   </span>
                   <span className={`truncate text-sm ${details.role ? "text-slate-800" : "text-slate-400"}`}>
                     {details.role || "Select your role"}
@@ -563,27 +582,33 @@ export default function RegisterForm({ clientId, onComplete }) {
             {isRoleMenuOpen ? (
               <div className="absolute left-0 right-0 top-[calc(100%-0.15rem)] z-[90] overflow-hidden rounded-[1.35rem] border border-white/20 bg-white/98 shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl" role="listbox" aria-label="Select your role">
                 <button type="button" onClick={() => handleRoleSelect("")}
-                  className={`w-full px-4 py-3 text-left text-sm transition duration-200 ${
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition duration-200 ${
                     details.role
                       ? "text-slate-700 hover:bg-[#fff2d2] hover:text-[#7b0d15]"
                       : "bg-[#fff2d2] font-medium text-[#7b0d15]"
                   }`}
                 >
-                  Select your role
+                  <span className="shrink-0">
+                    <RoleIcon />
+                  </span>
+                  <span className="truncate">Select your role</span>
                 </button>
 
                 {roleOptions.map((roleOption) => {
-                  const isSelected = details.role === roleOption;
+                  const isSelected = details.role === roleOption.label;
 
                   return (
-                    <button key={roleOption} type="button" onClick={() => handleRoleSelect(roleOption)}
-                      className={`w-full px-4 py-3 text-left text-sm transition duration-200 ${
+                    <button key={roleOption.label} type="button" onClick={() => handleRoleSelect(roleOption.label)}
+                      className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition duration-200 ${
                         isSelected
                           ? "bg-[#fff2d2] font-medium text-[#7b0d15]"
                           : "text-slate-700 hover:bg-[#fff2d2] hover:text-[#7b0d15]"
                       }`}
                     >
-                      {roleOption}
+                      <span className="shrink-0">
+                        <roleOption.Icon />
+                      </span>
+                      <span className="truncate">{roleOption.label}</span>
                     </button>
                   );
                 })}
@@ -709,7 +734,7 @@ export default function RegisterForm({ clientId, onComplete }) {
   };
 
   return (
-    <div className="w-full max-w-[25rem] px-1 sm:px-0">
+    <div className="relative z-20 w-full max-w-[25rem] px-1 sm:px-0">
       <div className="rounded-4xl border border-white/20 bg-white/10 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
         <div className="rounded-[calc(2rem-4px)] bg-[linear-gradient(180deg,rgba(120,12,22,0.72),rgba(60,7,12,0.86))] px-6 py-7 sm:px-8 sm:py-8">
           <div className="space-y-6">
@@ -788,6 +813,30 @@ function RoleIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/>
+    </svg>
+  );
+}
+
+function StudentRoleIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+      <path d="M10.75 16.82A7.462 7.462 0 0 1 15 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0 0 18 15.06v-11a.75.75 0 0 0-.546-.721A9.006 9.006 0 0 0 15 3a8.963 8.963 0 0 0-4.25 1.065V16.82ZM9.25 4.065A8.963 8.963 0 0 0 5 3c-.85 0-1.673.118-2.454.339A.75.75 0 0 0 2 4.06v11a.75.75 0 0 0 .954.721A7.506 7.506 0 0 1 5 15.5c1.579 0 3.042.487 4.25 1.32V4.065Z" />
+    </svg>
+  );
+}
+
+function GuestRoleIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+      <path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" />
+    </svg>
+  );
+}
+
+function ApplicantRoleIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+      <path fillRule="evenodd" d="M1 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V6Zm4 1.5a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm2 3a4 4 0 0 0-3.665 2.395.75.75 0 0 0 .416 1A8.98 8.98 0 0 0 7 14.5a8.98 8.98 0 0 0 3.249-.604.75.75 0 0 0 .416-1.001A4.001 4.001 0 0 0 7 10.5Zm5-3.75a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Zm0 6.5a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Zm.75-4a.75.75 0 0 0 0 1.5h2.5a.75.75 0 0 0 0-1.5h-2.5Z" clipRule="evenodd" />
     </svg>
   );
 }
