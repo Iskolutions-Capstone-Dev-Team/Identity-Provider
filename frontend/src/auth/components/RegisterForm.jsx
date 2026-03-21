@@ -734,7 +734,7 @@ export default function RegisterForm({ clientId, onComplete }) {
   };
 
   return (
-    <div className="relative z-20 w-full max-w-[25rem] px-1 sm:px-0">
+    <div className="relative z-20 w-full max-w-[32rem] px-1 sm:px-0">
       <div className="rounded-4xl border border-white/20 bg-white/10 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
         <div className="rounded-[calc(2rem-4px)] bg-[linear-gradient(180deg,rgba(120,12,22,0.72),rgba(60,7,12,0.86))] px-6 py-7 sm:px-8 sm:py-8">
           <div className="space-y-6">

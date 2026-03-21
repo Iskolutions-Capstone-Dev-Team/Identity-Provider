@@ -30,7 +30,7 @@ export default function Register() {
 
   return (
     <AuthLayout>
-      <div className="grid w-full items-center gap-10 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,28rem)] xl:gap-14">
+      <div className="grid w-full items-center gap-10 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,32rem)] xl:gap-14">
         <section className="hidden xl:flex xl:flex-col xl:gap-8 xl:pr-8">
           <div className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium uppercase tracking-[0.18em] text-white/90 backdrop-blur-xl">
             Unified Access
