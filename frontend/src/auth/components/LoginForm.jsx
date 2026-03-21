@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { authService } from "../services/authService";
 import ErrorAlert from "../../components/ErrorAlert";
 import { clearAuthAlert, consumeAuthAlert } from "../utils/authAlert";
@@ -15,6 +16,9 @@ export default function LoginForm({ clientId }) {
   });
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const registerPath = clientId
+    ? `/register?client_id=${encodeURIComponent(clientId)}`
+    : "/register";
 
   useEffect(() => {
     const authAlert = consumeAuthAlert();
@@ -290,6 +294,16 @@ export default function LoginForm({ clientId }) {
               >
                 LOGIN
               </button>
+
+              <p className="text-center text-sm text-white/80">
+                Don't have an account?{" "}
+                <Link
+                  to={registerPath}
+                  className="font-semibold text-[#ffd700] underline decoration-transparent transition duration-300 hover:decoration-[#ffd700]"
+                >
+                  Register here
+                </Link>
+              </p>
             </form>
           </div>
         </div>
