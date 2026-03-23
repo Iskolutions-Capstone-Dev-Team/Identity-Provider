@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
+import AccessibilityWidget from "../components/AccessibilityWidget";
 import ErrorAlert from "../components/ErrorAlert";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -51,6 +52,8 @@ export default function IdpLayout() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#fff8f3] font-[Poppins] text-slate-800">
+      <AccessibilityWidget />
+
       <div className="pointer-events-none fixed inset-x-4 top-24 z-[120] flex justify-center sm:justify-end">
         <div className="pointer-events-auto w-full max-w-sm">
           <ErrorAlert
