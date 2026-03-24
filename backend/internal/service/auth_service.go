@@ -60,6 +60,12 @@ func (s *AuthService) Authorize(
 		return "", fmt.Errorf("Code Generation: %w", err)
 	}
 
+	userID := session.UserId
+	err = s.Repo.StoreCode(code, userID[:], clientID[:], client.RedirectUri)
+	if err != nil {
+		return "", fmt.Errorf("Code Storage: %w", err)
+	}
+
 	return fmt.Sprintf("%s?code=%s", client.RedirectUri, code), nil
 }
 
