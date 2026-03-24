@@ -36,6 +36,9 @@ func InitializeHandlers(db *sqlx.DB,
 		LogHandler: &v1.LogHandler{
 			LogService: service.LogService,
 		},
+		OTPHandler: &v1.OTPHandler{
+			Service: service.OTPService,
+		},
 		PubKey: PubKey,
 		CORS:   mw.CORSMiddleware(),
 	}
