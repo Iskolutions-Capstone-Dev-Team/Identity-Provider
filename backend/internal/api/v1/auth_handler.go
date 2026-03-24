@@ -470,7 +470,7 @@ func (h *AuthHandler) GetJWKS(c *gin.Context) {
 func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	var req dto.TokenExchangeRequest
 	if err := c.ShouldBind(&req); err != nil {
-		log.Printf("[PostTokenExchange] Bind JSON: %v", err)
+		log.Printf("[PostTokenExchange] Bind: %v", err)
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Error: "invalid_request",
 		})
