@@ -4,6 +4,7 @@ import MultiSelect from "../MultiSelect";
 import FadeWrapper from "../FadeWrapper";
 import ModalSteps from "../ModalSteps";
 import ErrorAlert from "../ErrorAlert";
+import { SpeechInputToolbar } from "../SpeechInputButton";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import {
@@ -65,6 +66,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
   const [rolesError, setRolesError] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
+  const [activeVoiceField, setActiveVoiceField] = useState("givenName");
   const [showTempPassword, setShowTempPassword] = useState(false);
 
   const handleChange = (e) => {
@@ -104,12 +106,22 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
     setShowTempPassword((current) => !current);
   };
 
-  const getInputClassName = (fieldName) =>
-    `${modalInputClassName} ${
+  const getInputClassName = (fieldName, hasActionButton = false) =>
+    `${modalInputClassName} ${hasActionButton ? "pr-12" : ""} ${
       fieldErrors[fieldName]
         ? "border-red-400 focus:border-red-500"
         : ""
     }`;
+
+  const handleFieldValueChange = (name, value) => {
+    handleChange({
+      target: {
+        name,
+        value,
+        type: "text",
+      },
+    });
+  };
 
   const validateStepOne = () => {
     const nextFieldErrors = {
@@ -203,10 +215,39 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
       setStep(1);
       setRolesError(false);
       setFieldErrors(initialFieldErrors);
+      setActiveVoiceField("givenName");
       setShowTempPassword(false);
       setError("");
     }
   }, [open]);
+
+  useEffect(() => {
+    if (step === 1) {
+      if (!["email", "givenName", "middleName", "surname"].includes(activeVoiceField)) {
+        setActiveVoiceField("email");
+      }
+      return;
+    }
+
+    if (step === 2 && data.inviteMode === "temp" && activeVoiceField !== "tempPassword") {
+      setActiveVoiceField("tempPassword");
+    }
+  }, [activeVoiceField, data.inviteMode, step]);
+
+  const activeVoiceFieldLabel =
+    activeVoiceField === "email"
+      ? "Email Address"
+      : activeVoiceField === "surname"
+        ? "Last Name"
+        : activeVoiceField === "middleName"
+          ? "Middle Name"
+          : activeVoiceField === "tempPassword"
+            ? "Temporary Password"
+            : "First Name";
+
+  const handleVoiceInput = (transcript) => {
+    handleFieldValueChange(activeVoiceField, transcript);
+  };
 
   const handleSubmit = () => {
     if (!validateStepTwo()) {
@@ -292,6 +333,13 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
             <FadeWrapper isVisible={step === 1}>
               <form id="step1-form" onSubmit={(e) => e.preventDefault()} className="space-y-5">
                 <section className={modalSectionClassName}>
+                  <SpeechInputToolbar
+                    className="mb-5"
+                    activeFieldLabel={activeVoiceFieldLabel}
+                    onError={setError}
+                    onTranscript={handleVoiceInput}
+                  />
+
                   <label className={modalLabelClassName}>
                     Email Address <span className="text-red-500">*</span>
                   </label>
@@ -303,7 +351,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                           <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
                         </svg>
                       </span>
-                      <input type="email" name="email" value={data.email} onChange={handleChange} required placeholder="Enter email" className="grow bg-transparent"/>
+                      <input type="email" name="email" value={data.email} onChange={handleChange} onFocus={() => setActiveVoiceField("email")} required placeholder="Enter email" className="grow bg-transparent"/>
                     </label>
                     {fieldErrors.email && (
                       <p className="mt-2 text-xs text-red-500">
@@ -320,7 +368,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                         First Name <span className="text-red-500">*</span>
                       </label>
                       <div className="validator w-full">
-                        <input type="text" name="givenName" value={data.givenName} onChange={handleChange} required placeholder="Enter firstname" className={`${getInputClassName("givenName")} validator`}/>
+                        <input type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required placeholder="Enter firstname" className={`${getInputClassName("givenName")} validator`}/>
                         {fieldErrors.givenName && (
                           <p className="mt-2 text-xs text-red-500">
                             {fieldErrors.givenName}
@@ -336,7 +384,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                       <label
                         className={`${modalInputClassName} flex items-center gap-2 px-4`}
                       >
-                        <input type="text" name="middleName" value={data.middleName} onChange={handleChange} placeholder="Enter middlename" className="grow bg-transparent"/>
+                        <input type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middlename" className="grow bg-transparent"/>
                         <span className={modalOptionalBadgeClassName}>
                           Optional
                         </span>
@@ -348,7 +396,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                         Last Name <span className="text-red-500">*</span>
                       </label>
                       <div className="validator w-full">
-                        <input type="text" name="surname" value={data.surname} onChange={handleChange} required placeholder="Enter lastname" className={`${getInputClassName("surname")} validator`}/>
+                        <input type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required placeholder="Enter lastname" className={`${getInputClassName("surname")} validator`}/>
                         {fieldErrors.surname && (
                           <p className="mt-2 text-xs text-red-500">
                             {fieldErrors.surname}
@@ -461,12 +509,19 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                           keyId="tempPassword"
                         >
                           <div>
+                            <SpeechInputToolbar
+                              className="mb-4"
+                              activeFieldLabel={activeVoiceFieldLabel}
+                              onError={setError}
+                              onTranscript={handleVoiceInput}
+                            />
+
                             <label className={modalLabelClassName}>
                               Temporary Password
                             </label>
                             <div className="flex flex-col gap-3 sm:flex-row">
                               <div className="relative w-full">
-                                <input type={showTempPassword ? "text" : "password"} name="tempPassword" value={data.tempPassword} onChange={handleChange} placeholder="Temporary password" className={`${getInputClassName("tempPassword")} pr-12`}/>
+                                <input type={showTempPassword ? "text" : "password"} name="tempPassword" value={data.tempPassword} onChange={handleChange} onFocus={() => setActiveVoiceField("tempPassword")} placeholder="Temporary password" className={`${getInputClassName("tempPassword")} pr-12`}/>
                                 <button type="button" onClick={toggleShowTempPassword} className={passwordVisibilityButtonClassName}
                                   aria-label={
                                     showTempPassword

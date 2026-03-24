@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
+import { SpeechInputToolbar } from "../SpeechInputButton";
 import TagMultiSelect from "./TagMultiSelect";
 import {
   modalBodyClassName,
@@ -80,6 +81,7 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
   const [selectedTags, setSelectedTags] = useState([]);
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
+  const [activeVoiceField, setActiveVoiceField] = useState("name");
   const [error, setError] = useState("");
   const [touched, setTouched] = useState({
     tags: false,
@@ -96,11 +98,13 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
       setSelectedTags([]);
       setRoleName("");
       setDescription("");
+      setActiveVoiceField("name");
     } else {
       const parsedRoleName = splitRoleName(role?.role_name || "");
       setSelectedTags(parsedRoleName.tag ? [parsedRoleName.tag] : []);
       setRoleName(normalizeRoleNameValue(parsedRoleName.name));
       setDescription(role?.description || "");
+      setActiveVoiceField("name");
     }
 
     setError("");
@@ -158,6 +162,11 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
     setError(firstError);
     return false;
   };
+
+  const activeVoiceFieldLabel =
+    activeVoiceField === "description"
+      ? "Role Description"
+      : "Role Name";
 
   const handleTagChange = (values) => {
     const normalizedTags = (Array.isArray(values) ? values : [])
@@ -241,6 +250,25 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
           <div className={modalBodyStackClassName}>
             <ErrorAlert message={error} onClose={() => setError("")} />
 
+            {!isViewMode && (
+              <SpeechInputToolbar
+                activeFieldLabel={activeVoiceFieldLabel}
+                onError={setError}
+                onTranscript={(transcript) => {
+                  if (activeVoiceField === "description") {
+                    handleDescriptionChange(
+                      description.trim()
+                        ? `${description.trimEnd()} ${transcript}`
+                        : transcript,
+                    );
+                    return;
+                  }
+
+                  handleRoleNameChange(transcript);
+                }}
+              />
+            )}
+
             <section className={modalSectionClassName}>
               <div className="space-y-5">
                 <div>
@@ -299,6 +327,7 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
                             handleRoleNameChange(event.target.value)
                           }
                           onBlur={() => setFieldTouched("name")}
+                          onFocus={() => setActiveVoiceField("name")}
                           placeholder="(e.g., superadmin)"
                           autoCapitalize="none"
                           className={getEditableInputClassName(
@@ -336,6 +365,7 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
                         handleDescriptionChange(event.target.value)
                       }
                       onBlur={() => setFieldTouched("description")}
+                      onFocus={() => setActiveVoiceField("description")}
                       rows="4"
                       placeholder="Role description"
                       className={getEditableTextAreaClassName(

@@ -4,6 +4,7 @@ import { useAllRoles } from "../../hooks/useAllRoles";
 import MultiSelect from "../MultiSelect";
 import ModalSteps from "../ModalSteps";
 import ErrorAlert from "../ErrorAlert";
+import { SpeechInputToolbar } from "../SpeechInputButton";
 import {
   modalBodyClassName,
   modalBodyStackClassName,
@@ -100,6 +101,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
   const [roles, setRoles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
+  const [activeVoiceField, setActiveVoiceField] = useState("name");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
 
@@ -130,10 +132,24 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
       setImagePreview(null);
       setIsDragging(false);
       setShowFullImage(false);
+      setActiveVoiceField("name");
       setError("");
       setFieldErrors(initialFieldErrors);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (step === 1) {
+      if (!["name", "tag", "description"].includes(activeVoiceField)) {
+        setActiveVoiceField("name");
+      }
+      return;
+    }
+
+    if (step === 2 && !["baseURL", "redirectURL", "logoutURL"].includes(activeVoiceField)) {
+      setActiveVoiceField("baseURL");
+    }
+  }, [activeVoiceField, step]);
 
   const clearFieldError = (fieldName) => {
     setFieldErrors((current) =>
@@ -155,10 +171,57 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
     }
   };
 
-  const getInputClassName = (fieldName) =>
-    `${modalInputClassName} ${
+  const getInputClassName = (fieldName, hasActionButton = false) =>
+    `${modalInputClassName} ${hasActionButton ? "pr-12" : ""} ${
       fieldErrors[fieldName] ? "border-red-400 focus:border-red-500" : ""
     }`;
+
+  const activeVoiceFieldLabel =
+    activeVoiceField === "description"
+      ? "Description"
+      : activeVoiceField === "tag"
+        ? "Tag"
+        : activeVoiceField === "baseURL"
+          ? "Base URL"
+          : activeVoiceField === "redirectURL"
+            ? "Redirect URL"
+            : activeVoiceField === "logoutURL"
+              ? "Logout URL"
+              : "Name";
+
+  const handleVoiceInput = (transcript) => {
+    if (activeVoiceField === "description") {
+      setError("");
+      setDescription((currentDescription) =>
+        currentDescription.trim()
+          ? `${currentDescription.trimEnd()} ${transcript}`
+          : transcript,
+      );
+      return;
+    }
+
+    if (activeVoiceField === "tag") {
+      updateFieldValue("tag", transcript.toUpperCase(), setTag);
+      return;
+    }
+
+    if (activeVoiceField === "baseURL") {
+      updateFieldValue("baseURL", transcript, setBaseURL);
+      return;
+    }
+
+    if (activeVoiceField === "redirectURL") {
+      updateFieldValue("redirectURL", transcript, setRedirectURL);
+      return;
+    }
+
+    if (activeVoiceField === "logoutURL") {
+      updateFieldValue("logoutURL", transcript, setLogoutURL);
+      return;
+    }
+
+    updateFieldValue("name", transcript, setName);
+  };
 
   const validateBasicInfo = () => {
     const trimmedName = name.trim();
@@ -498,6 +561,13 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                   </section>
 
                   <section className={modalSectionClassName}>
+                    <SpeechInputToolbar
+                      className="mb-5"
+                      activeFieldLabel={activeVoiceFieldLabel}
+                      onError={setError}
+                      onTranscript={handleVoiceInput}
+                    />
+
                     <div className="grid gap-5 md:grid-cols-2">
                       <div>
                         <label className={modalLabelClassName}>
@@ -512,6 +582,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                           onChange={(event) =>
                             updateFieldValue("name", event.target.value, setName)
                           }
+                          onFocus={() => setActiveVoiceField("name")}
                           placeholder="(e.g., Identity Provider System)"
                           className={getInputClassName("name")}
                         />
@@ -541,6 +612,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                               setTag,
                             )
                           }
+                          onFocus={() => setActiveVoiceField("tag")}
                           placeholder="(e.g., IdP)"
                           className={getInputClassName("tag")}
                         />
@@ -559,7 +631,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                       <label className={modalLabelClassName}>
                         Description
                       </label>
-                      <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows="3" placeholder="Short description of the application (optional)" className="w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 py-3 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition focus:border-[#d4a017] resize-none"/>
+                      <textarea value={description} onChange={(event) => setDescription(event.target.value)} onFocus={() => setActiveVoiceField("description")} rows="3" placeholder="Short description of the application (optional)" className="w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 py-3 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition focus:border-[#d4a017] resize-none"/>
                     </div>
                   </section>
                 </>
@@ -568,6 +640,13 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
               {step === 2 && (
                 <section className={modalSectionClassName}>
                     <div className="space-y-5">
+                      <SpeechInputToolbar
+                        className="mb-1"
+                        activeFieldLabel={activeVoiceFieldLabel}
+                        onError={setError}
+                        onTranscript={handleVoiceInput}
+                      />
+
                       <div>
                         <label className={modalLabelClassName}>
                           Base URL <span className="text-red-500">*</span>
@@ -583,6 +662,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                               setBaseURL,
                             )
                           }
+                          onFocus={() => setActiveVoiceField("baseURL")}
                           placeholder="https://app.example.com"
                           className={getInputClassName("baseURL")}
                           pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$"
@@ -613,6 +693,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                             setRedirectURL,
                           )
                         }
+                        onFocus={() => setActiveVoiceField("redirectURL")}
                         placeholder="https://app.example.com/callback"
                         className={getInputClassName("redirectURL")}
                         pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$"
@@ -643,6 +724,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit }) {
                             setLogoutURL,
                           )
                         }
+                        onFocus={() => setActiveVoiceField("logoutURL")}
                         placeholder="https://app.example.com/logout"
                         className={getInputClassName("logoutURL")}
                         pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$"
