@@ -19,9 +19,7 @@ var OTPMigration = migrations.TableMigration{
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				expires_at TIMESTAMP NOT NULL,
 				revoked_at TIMESTAMP NULL DEFAULT NULL,
-				INDEX idx_otp_email_status (email, status),
-				INDEX idx_otp_user_id (user_id),
-				INDEX idx_otp_expires (expires_at)
+				INDEX idx_otp_email_lookup (email, status, expires_at)
 			);`,
 		},
 	},
