@@ -15,4 +15,6 @@ const (
 	ACCESS_TOKEN_EXPIRY = 3600
 	SUPERADMIN          = "IDP:superadmin"
 	ADMIN               = "IDP:admin"
+	APPLICANT           = "applicant"
+	APPLICANT_ROLE      = "PUPTAS:applicant"
 )
