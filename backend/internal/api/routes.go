@@ -19,6 +19,7 @@ type Handlers struct {
 	LogHandler    *v1.LogHandler
 	AuthHandler   *v1.AuthHandler
 	ClientHandler *v1.ClientHandler
+	OTPHandler    *v1.OTPHandler
 	RoleHandler   *v1.RoleHandler
 	UserHandler   *v1.UserHandler
 	PubKey        *rsa.PublicKey
@@ -40,6 +41,12 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 		auth.POST("/refresh", h.AuthHandler.PostTokenRotate)
 		auth.POST("/logout", h.AuthHandler.Logout)
 		auth.GET("/session", h.AuthHandler.CheckSession)
+	}
+
+	otp := v1Group.Group("/otp")
+	{
+		otp.POST("", h.OTPHandler.PostOTP)
+		otp.POST("/verify", h.OTPHandler.PostOTPVerify)
 	}
 
 	// Endpoint for getting user information
@@ -90,7 +97,6 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 			users.DELETE("/:id", h.UserHandler.DeleteUser)
 		}
 
-		
 		logs := admin.Group("/logs")
 		{
 			logs.GET("", h.LogHandler.GetLogList)
