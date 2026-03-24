@@ -52,6 +52,41 @@ func (s *UserService) CreateUser(
 	return userID, nil
 }
 
+func (s *UserService) Register(
+	ctx context.Context,
+	req dto.PostRegisterRequest,
+) (uuid.UUID, error) {
+	userID := uuid.New()
+
+	// Securely hash the plain-text password
+	passwordHash, err := utils.HashSecret(req.Password)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("Secret Hashing: %w", err)
+	}
+	roles := make([]string, 0)
+	if req.Role == APPLICANT {
+		roles = append(roles, APPLICANT_ROLE)
+	}
+
+	user := models.User{
+		ID:           userID[:],
+		FirstName:    req.FirstName,
+		MiddleName:   req.MiddleName,
+		LastName:     req.LastName,
+		Email:        req.Email,
+		PasswordHash: passwordHash,
+		Status:       models.StatusActive,
+		RoleString:   roles,
+	}
+
+	err = s.Repo.CreateUser(&user)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("Database Query (CreateUser): %w", err)
+	}
+
+	return userID, nil
+}
+
 /**
  * GetUserByID retrieves a single user by their UUID and
  * formats the record into a response DTO.
@@ -362,7 +397,7 @@ func (s *UserService) UpdateUserRoles(
 			return fmt.Errorf("Database Query: (UpdateFilteredRoles): %v", err)
 		}
 	}
-	
+
 	return nil
 }
 
