@@ -43,6 +43,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 		auth.GET("/session", h.AuthHandler.CheckSession)
 	}
 
+	// OTP endpoint
 	otp := v1Group.Group("/otp")
 	{
 		otp.POST("", h.OTPHandler.PostOTP)
@@ -53,6 +54,11 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 	me := v1Group.Group("/me")
 	me.Use(middleware.AuthMiddleware(h.PubKey))
 	me.GET("", h.UserHandler.GetMe)
+
+	// Endpoint for registration
+	register := v1Group.Group("/register")
+	register.Use(middleware.APIKeyAuth())
+	register.POST("", h.UserHandler.Register)
 
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
