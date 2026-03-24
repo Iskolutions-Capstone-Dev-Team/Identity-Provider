@@ -1,15 +1,15 @@
 package dto
 
 type LoginRequest struct {
-	Email       string `json:"email" binding:"required"`
-	Password    string `json:"password" binding:"required"`
-	ClientID    string `json:"client_id" binding:"required"`
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	ClientID string `json:"client_id" binding:"required"`
 }
 
 type TokenExchangeRequest struct {
-	Code         string `json:"code" binding:"required"`
-	ClientID     string `json:"client_id" binding:"required"`
-	ClientSecret string `json:"client_secret" binding:"required"`
+	Code         string `json:"code" form:"code" binding:"required"`
+	ClientID     string `json:"client_id" form:"client_id" binding:"required"`
+	ClientSecret string `json:"client_secret" form:"client_secret" binding:"required"`
 }
 
 type TokenResponse struct {
@@ -17,7 +17,7 @@ type TokenResponse struct {
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
 	TokenType    string `json:"token_type"`
-	Scope        string `json:"scope,omitempty"` 
+	Scope        string `json:"scope,omitempty"`
 }
 
 type RefreshRequest struct {
