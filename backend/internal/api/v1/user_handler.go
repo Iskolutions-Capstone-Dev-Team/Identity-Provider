@@ -20,6 +20,7 @@ const (
 	actionListUsers    = "list_users"
 	actionGetUser      = "get_user"
 	actionGetMe        = "get_me"
+	actionRegister     = "register"
 	actionUpdatePass   = "update_password"
 	actionUpdateStatus = "update_status"
 	actionUpdateRoles  = "update_roles"
@@ -28,8 +29,8 @@ const (
 
 // UserHandler handles user management HTTP requests.
 type UserHandler struct {
-	Service          *service.UserService
-	LogService       *service.LogService
+	Service    *service.UserService
+	LogService *service.LogService
 }
 
 // PostUser creates a new user in the system
@@ -102,6 +103,68 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 		})
 
 	message := fmt.Sprintf("Created user with the id %s", createdID)
+	c.JSON(http.StatusCreated, dto.SuccessResponse{Message: message})
+}
+
+func (h *UserHandler) Register(c *gin.Context) {
+	var req dto.UserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[Register] Bind JSON: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid request payload"},
+		)
+		return
+	}
+
+	// Get actor from context
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	if actorName == "" {
+		actorName = userIDStr
+	}
+
+	// Prepare metadata
+	metadata := buildMetadata(map[string]interface{}{
+		"target_email": req.Email,
+		"ip":           c.ClientIP(),
+		"user_agent":   c.Request.UserAgent(),
+	})
+
+	createdID, err := h.Service.CreateUser(c.Request.Context(), req)
+	if err != nil {
+		log.Printf("[Register] %v", err)
+		// Log failure
+		_ = h.LogService.PostAuditLogWithActorString(actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionRegister,
+				Target: req.Email,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_email": req.Email,
+					"ip":           c.ClientIP(),
+					"user_agent":   c.Request.UserAgent(),
+					"error":        err.Error(),
+				}),
+			})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "failed to create user"},
+		)
+		return
+	}
+
+	// Log success
+	_ = h.LogService.PostAuditLogWithActorString(actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionCreateUser,
+			Target:   req.Email,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
+
+	message := fmt.Sprintf("Registered user with the id %s", createdID)
 	c.JSON(http.StatusCreated, dto.SuccessResponse{Message: message})
 }
 
@@ -629,7 +692,7 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 				http.StatusForbidden,
 				dto.ErrorResponse{
 					Error: fmt.Sprint(
-						"You don't have permission to", 
+						"You don't have permission to",
 						" edit/remove some of the roles you selected",
 					),
 				},
