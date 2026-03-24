@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/mailer"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
@@ -51,7 +53,33 @@ func (s *OTPService) GenerateOTP(
 		return nil, fmt.Errorf("[OTPService] GenerateOTP (Save): %w", err)
 	}
 
-	//TODO: mail the otp
+	go func(email string, otp string) {
+		subject := "Identity Provider Registration OTP"
+		bgStyle := "background-color: #f4f4f4; padding: 20px;"
+		cardStyle := "background-color: #ffffff; padding: 30px; " +
+			"border-radius: 8px; text-align: center; font-family: sans-serif;"
+		otpStyle := "display: inline-block; padding: 10px 20px; " +
+			"background-color: #991b1b; color: #ffffff; font-size: 24px; " +
+			"font-weight: bold; border-radius: 5px; margin: 20px 0;"
+
+		body := fmt.Sprintf(`
+			<div style="%s">
+				<div style="%s">
+					<h1 style="color: #333;">Email Verification</h1>
+					<p style="color: #666;">Use the code below to verify.</p>
+					<div style="%s">%s</div>
+					<p style="font-size: 12px; color: #999;">
+						This code expires in 3 minutes.
+					</p>
+				</div>
+			</div>`, 
+			bgStyle, cardStyle, otpStyle, otp)
+
+		err := mailer.PostMail(email, subject, body)
+		if err != nil {
+			log.Printf("[PostRegistration] PostMail: %v", err)
+		}
+	}(req.Email, rawCode)
 
 	return &dto.OTPResponse{
 		Message:   "OTP sent successfully",
