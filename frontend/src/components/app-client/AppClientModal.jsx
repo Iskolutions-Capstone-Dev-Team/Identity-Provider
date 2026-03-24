@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
+import { SpeechInputToolbar } from "../SpeechInputButton";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import MultiSelect from "../MultiSelect";
 import {
@@ -176,6 +177,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [imagePreview, setImagePreview] = useState(null);
   const [imageLocation, setImageLocation] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeVoiceField, setActiveVoiceField] = useState("name");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
   const [showFullImage, setShowFullImage] = useState(false);
@@ -242,6 +244,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setHasLoadedLatestRoles(false);
     setImageFile(null);
     setIsDragging(false);
+    setActiveVoiceField("name");
     setError("");
     setFieldErrors(initialFieldErrors);
 
@@ -254,6 +257,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     if (!open) {
       detailsRequestRef.current = { clientId: "", inFlight: false };
       setHasLoadedLatestRoles(false);
+      setActiveVoiceField("name");
       setFieldErrors(initialFieldErrors);
     }
   }, [open]);
@@ -356,6 +360,46 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     `${modalInputClassName} ${
       fieldErrors[fieldName] ? "border-red-400 focus:border-red-500" : ""
     }`;
+
+  const activeVoiceFieldLabel =
+    activeVoiceField === "description"
+      ? "Description"
+      : activeVoiceField === "baseURL"
+        ? "Base URL"
+        : activeVoiceField === "redirectURL"
+          ? "Redirect URL"
+          : activeVoiceField === "logoutURL"
+            ? "Logout URL"
+            : "Name";
+
+  const handleVoiceInput = (transcript) => {
+    if (activeVoiceField === "description") {
+      setError("");
+      setDescription((currentDescription) =>
+        currentDescription.trim()
+          ? `${currentDescription.trimEnd()} ${transcript}`
+          : transcript,
+      );
+      return;
+    }
+
+    if (activeVoiceField === "baseURL") {
+      updateFieldValue("baseURL", transcript, setBaseURL);
+      return;
+    }
+
+    if (activeVoiceField === "redirectURL") {
+      updateFieldValue("redirectURL", transcript, setRedirectURL);
+      return;
+    }
+
+    if (activeVoiceField === "logoutURL") {
+      updateFieldValue("logoutURL", transcript, setLogoutURL);
+      return;
+    }
+
+    updateFieldValue("name", transcript, setName);
+  };
 
   const validateEditableFields = () => {
     const trimmedName = name.trim();
@@ -651,19 +695,30 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <input type="text" value={client?.id || client?.clientId || ""} readOnly className={modalReadOnlyInputClassName}/>
                   </div>
 
+                  {!isView && (
+                    <SpeechInputToolbar
+                      activeFieldLabel={activeVoiceFieldLabel}
+                      onError={setError}
+                      onTranscript={handleVoiceInput}
+                    />
+                  )}
+
                   <div className="grid gap-5 md:grid-cols-2">
                     <div>
                       <label className={modalLabelClassName}>
                         Name {!isView && <span className="text-red-500">*</span>}
                       </label>
-                      <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} placeholder="(e.g., Identity Provider System)"
-                        className={
-                          isView
-                            ? modalReadOnlyInputClassName
-                            : getEditableInputClassName("name")
-                        }
-                        disabled={isView}
-                      />
+                      {isView ? (
+                        <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} placeholder="(e.g., Identity Provider System)"
+                          className={modalReadOnlyInputClassName}
+                          disabled={isView}
+                        />
+                      ) : (
+                        <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)"
+                          className={getEditableInputClassName("name")}
+                          disabled={isView}
+                        />
+                      )}
                       {!isView && fieldErrors.name && (
                         <p className={inlineErrorClassName}>
                           {fieldErrors.name}
@@ -693,7 +748,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                         )}
                       </div>
                     ) : (
-                      <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows="3" placeholder="Application description" className="w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 py-3 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition focus:border-[#d4a017] resize-none"/>
+                      <textarea value={description} onChange={(event) => setDescription(event.target.value)} onFocus={() => setActiveVoiceField("description")} rows="3" placeholder="Application description" className="w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 py-3 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition focus:border-[#d4a017] resize-none"/>
                     )}
                   </div>
                 </div>
@@ -705,7 +760,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <label className={modalLabelClassName}>
                       Base URLs {!isView && <span className="text-red-500">*</span>}
                     </label>
-                    <input type="url" required value={baseURL} onChange={(event) => updateFieldValue("baseURL", event.target.value, setBaseURL)} placeholder="https://app.example.com"
+                    <input type="url" required value={baseURL} onChange={(event) => updateFieldValue("baseURL", event.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com"
                       className={
                         isView
                           ? modalReadOnlyInputClassName
@@ -729,7 +784,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <label className={modalLabelClassName}>
                       Redirect URLs {!isView && <span className="text-red-500">*</span>}
                     </label>
-                    <input type="url" required value={redirectURL} onChange={(event) => updateFieldValue("redirectURL", event.target.value, setRedirectURL)} placeholder="https://app.example.com/callback"
+                    <input type="url" required value={redirectURL} onChange={(event) => updateFieldValue("redirectURL", event.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback"
                       className={
                         isView
                           ? modalReadOnlyInputClassName
@@ -753,7 +808,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <label className={modalLabelClassName}>
                       Logout URLs {!isView && <span className="text-red-500">*</span>}
                     </label>
-                    <input type="url" required value={logoutURL} onChange={(event) => updateFieldValue("logoutURL", event.target.value, setLogoutURL)} placeholder="https://app.example.com/logout"
+                    <input type="url" required value={logoutURL} onChange={(event) => updateFieldValue("logoutURL", event.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout"
                       className={
                         isView
                           ? modalReadOnlyInputClassName
