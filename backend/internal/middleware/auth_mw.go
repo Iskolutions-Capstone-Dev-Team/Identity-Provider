@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"slices"
 	"crypto/rsa"
 	"log"
 	"net/http"
+	"os"
+	"slices"
 	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -13,6 +14,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+const HeaderAPIKey = "X-API-Key"
 
 // AuthMiddleware validates the RSA JWT from the Authorization Header.
 func AuthMiddleware(publicKey *rsa.PublicKey) gin.HandlerFunc {
@@ -101,6 +104,31 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 		c.Set("role", role)
 		c.Set("email", user.Email)
 		c.Set("client_id", claims.AuthorizedParty)
+		c.Next()
+	}
+}
+
+func APIKeyAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		apiKey := c.GetHeader(HeaderAPIKey)
+		validAPIKey := os.Getenv("BACKEND_API_KEY")
+
+		if apiKey == "" {
+			log.Println("[APIKeyAuth] Header Retrieval: missing api key")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "API key is required",
+			})
+			return
+		}
+
+		if apiKey != validAPIKey {
+			log.Println("[APIKeyAuth] Key Validation: invalid api key")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Invalid API key",
+			})
+			return
+		}
+
 		c.Next()
 	}
 }
