@@ -122,15 +122,7 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 				Metadata: metadataWithErr,
 			})
 
-		// If session is invalid, send to login
-		if strings.Contains(err.Error(), "session invalid") {
-			c.Redirect(http.StatusFound, loginUI)
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "authorization failed",
-		})
+		c.Redirect(http.StatusFound, loginUI)
 		return
 	}
 
