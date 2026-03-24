@@ -16,6 +16,28 @@ function getLoginRedirectUrl(data) {
   return "";
 }
 
+async function postToFirstAvailableRoute(routes, payload) {
+  let lastNotFoundError = null;
+
+  for (const route of routes) {
+    try {
+      const response = await axiosInstance.post(route, payload, {
+        skipAuthRefresh: true,
+      });
+
+      return response.data;
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        throw error;
+      }
+
+      lastNotFoundError = error;
+    }
+  }
+
+  throw lastNotFoundError || new Error("The requested endpoint is not available.");
+}
+
 export const authService = {
   async login(email, password, clientId) {
     const response = await axiosInstance.post("/auth/login", {
@@ -58,5 +80,26 @@ export const authService = {
       params: { page: 1 },
       skipForbiddenRedirect: true,
     });
+  },
+
+  async requestOtp(email) {
+    const response = await axiosInstance.post("/otp", {
+      email,
+    }, {
+      skipAuthRefresh: true,
+    });
+
+    return response.data;
+  },
+
+  async validateOtp(email, code) {
+    // Support both route names while the frontend and backend contracts are aligned.
+    return postToFirstAvailableRoute(
+      ["/otp/validate", "/otp/verify"],
+      {
+        email,
+        code,
+      },
+    );
   },
 };

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
+import { authService } from "../services/authService";
 import { buildLoginPath } from "../utils/loginRoute";
 
 const roleOptions = [
@@ -69,6 +70,16 @@ function getSelectContainerClassName(hasError) {
 
 function getFirstErrorMessage(errors) {
   return Object.values(errors).find(Boolean) || "";
+}
+
+function getApiErrorMessage(error, fallbackMessage) {
+  const responseMessage = error?.response?.data?.error || error?.response?.data?.message;
+
+  if (typeof responseMessage === "string" && responseMessage.trim()) {
+    return responseMessage;
+  }
+
+  return fallbackMessage;
 }
 
 function getRoleOption(value) {
@@ -216,6 +227,9 @@ export default function RegisterForm({ clientId, onComplete }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [error, setError] = useState("");
 
   const loginPath = buildLoginPath(clientId);
@@ -327,7 +341,7 @@ export default function RegisterForm({ clientId, onComplete }) {
     return !validationMessage;
   };
 
-  const handleDetailsSubmit = (event) => {
+  const handleDetailsSubmit = async (event) => {
     event.preventDefault();
     setError("");
 
@@ -335,10 +349,31 @@ export default function RegisterForm({ clientId, onComplete }) {
       return;
     }
 
-    setVerificationCode(Array(verificationLength).fill(""));
-    setVerificationError("");
-    setResendTimer(resendDurationSeconds);
-    setStep("verifyEmail");
+    const normalizedEmail = details.email.trim();
+
+    setIsSendingOtp(true);
+
+    try {
+      await authService.requestOtp(normalizedEmail);
+
+      setDetails((currentDetails) => ({
+        ...currentDetails,
+        email: normalizedEmail,
+      }));
+      setVerificationCode(Array(verificationLength).fill(""));
+      setVerificationError("");
+      setResendTimer(resendDurationSeconds);
+      setStep("verifyEmail");
+    } catch (requestError) {
+      setError(
+        getApiErrorMessage(
+          requestError,
+          "Unable to send the verification code. Please try again.",
+        ),
+      );
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
   const handleVerificationChange = (index, value) => {
@@ -403,22 +438,56 @@ export default function RegisterForm({ clientId, onComplete }) {
     return true;
   };
 
-  const handleVerificationSubmit = (event) => {
+  const handleVerificationSubmit = async (event) => {
     event.preventDefault();
 
     if (!validateVerificationStep()) {
       return;
     }
 
-    setStep("createPassword");
+    setIsVerifyingOtp(true);
+
+    try {
+      await authService.validateOtp(details.email.trim(), verificationCode.join(""));
+      setStep("createPassword");
+    } catch (verificationRequestError) {
+      const verificationMessage = getApiErrorMessage(
+        verificationRequestError,
+        "Unable to verify the code. Please try again.",
+      );
+
+      setVerificationError(verificationMessage);
+      setError(verificationMessage);
+    } finally {
+      setIsVerifyingOtp(false);
+    }
   };
 
-  const handleResendCode = () => {
-    setVerificationCode(Array(verificationLength).fill(""));
+  const handleResendCode = async () => {
+    if (resendTimer > 0 || isResendingOtp) {
+      return;
+    }
+
+    setIsResendingOtp(true);
     setVerificationError("");
     setError("");
-    setResendTimer(resendDurationSeconds);
-    verificationInputsRef.current[0]?.focus();
+
+    try {
+      await authService.requestOtp(details.email.trim());
+      setVerificationCode(Array(verificationLength).fill(""));
+      setResendTimer(resendDurationSeconds);
+      verificationInputsRef.current[0]?.focus();
+    } catch (requestError) {
+      const requestMessage = getApiErrorMessage(
+        requestError,
+        "Unable to resend the verification code. Please try again.",
+      );
+
+      setVerificationError(requestMessage);
+      setError(requestMessage);
+    } finally {
+      setIsResendingOtp(false);
+    }
   };
 
   const handlePasswordChange = (field, value) => {
@@ -625,8 +694,8 @@ export default function RegisterForm({ clientId, onComplete }) {
           </Link>
         </p>
 
-        <button type="submit" className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.08em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
-          REGISTER
+        <button type="submit" disabled={isSendingOtp} className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.08em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:border-[#f8d24e]/60 disabled:bg-[#f8d24e]/60 disabled:text-[#991b1b]/70">
+          {isSendingOtp ? "SENDING CODE..." : "SEND VERIFICATION CODE"}
         </button>
       </form>
     );
@@ -646,6 +715,7 @@ export default function RegisterForm({ clientId, onComplete }) {
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
+                disabled={isVerifyingOtp}
                 value={digit}
                 onChange={(event) => handleVerificationChange(index, event.target.value)}
                 onKeyDown={(event) => handleVerificationKeyDown(index, event)}
@@ -662,20 +732,20 @@ export default function RegisterForm({ clientId, onComplete }) {
 
         <p className="text-center text-sm text-white/80">
           Didn't receive a code?{" "}
-          <button type="button" onClick={handleResendCode} disabled={resendTimer > 0}
+          <button type="button" onClick={handleResendCode} disabled={resendTimer > 0 || isResendingOtp || isVerifyingOtp}
             className={`font-semibold underline decoration-transparent transition duration-300 ${
-              resendTimer > 0
+              resendTimer > 0 || isResendingOtp || isVerifyingOtp
                 ? "cursor-not-allowed text-white/45"
                 : "text-[#ffd700] hover:decoration-[#ffd700]"
             }`}
           >
-            Resend
+            {isResendingOtp ? "Resending..." : "Resend"}
           </button>{" "}
           {resendTimer > 0 ? `in ${resendTimer}s` : "now"}
         </p>
 
-        <button type="submit" className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
-          VERIFY &amp; CONTINUE
+        <button type="submit" disabled={isVerifyingOtp || isResendingOtp} className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:border-[#f8d24e]/60 disabled:bg-[#f8d24e]/60 disabled:text-[#991b1b]/70">
+          {isVerifyingOtp ? "VERIFYING..." : "VERIFY & CONTINUE"}
         </button>
       </form>
     );
