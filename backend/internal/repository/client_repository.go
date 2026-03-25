@@ -54,6 +54,41 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 	return &client, nil
 }
 
+func (r *ClientRepository) GetByTag(tag string) (*models.Client, error) {
+	var client models.Client
+	query := `
+        SELECT id, client_name, tag, description, 
+               image_location, base_url, redirect_uri, logout_uri, updated_at
+        FROM clients 
+        WHERE tag = ? AND deleted_at IS NULL`
+
+	err := r.db.Get(&client, query, tag)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client: %w", err)
+	}
+
+	grantQuery := `
+		SELECT grant_type FROM client_grant_types WHERE client_id = ?
+	`
+	err = r.db.Select(&client.Grants, grantQuery, client.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	roleQuery := `
+		SELECT r.id, r.role_name
+		FROM roles r
+		JOIN client_allowed_roles c ON c.role_id = r.id
+		WHERE c.client_id = ?
+	`
+	err = r.db.Select(&client.AllowedRoles, roleQuery, client.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &client, nil
+}
+
 // ListClients returns a paginated list of non-deleted service providers.
 // @Summary List Clients
 // @ID list-clients
