@@ -39,6 +39,7 @@ services:
       VITE_REDIRECT_URI: ${VITE_REDIRECT_URI}
       VITE_CLIENT_SECRET: ${VITE_CLIENT_SECRET}
       VITE_BACKEND_URL: ${VITE_BACKEND_URL}
+      BACKEND_API_KEY: ${BACKEND_API_KEY}
     ports:
       - "5173:5173"
     networks:
