@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -55,17 +56,29 @@ func (s *UserService) CreateUser(
 func (s *UserService) Register(
 	ctx context.Context,
 	req dto.PostRegisterRequest,
-) (uuid.UUID, error) {
+) (dto.RegisterResponse, error) {
 	userID := uuid.New()
+	var response dto.RegisterResponse
+	baseRedirectUrl := os.Getenv("CLIENT_BASE_URL")
 
 	// Securely hash the plain-text password
 	passwordHash, err := utils.HashSecret(req.Password)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("Secret Hashing: %w", err)
+		return response, fmt.Errorf("Secret Hashing: %w", err)
 	}
 	roles := make([]string, 0)
 	if req.Role == APPLICANT {
 		roles = append(roles, APPLICANT_ROLE)
+		client, err := s.ClientRepo.GetByTag("PUPTAS")
+		if err != nil {
+			return response, err
+		}
+		clientID, _ := uuid.ParseBytes(client.ID)
+		response.RedirectURL = fmt.Sprintf(
+			"%s/login?client_id=%s", 
+			baseRedirectUrl,
+			clientID.String(),
+		)
 	}
 
 	user := models.User{
@@ -81,10 +94,12 @@ func (s *UserService) Register(
 
 	err = s.Repo.CreateUser(&user)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("Database Query (CreateUser): %w", err)
+		return response, fmt.Errorf("Database Query (CreateUser): %w", err)
 	}
-
-	return userID, nil
+	response.Email = req.Email
+	response.UserID = userID.String()
+	
+	return response, nil
 }
 
 /**
