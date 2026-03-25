@@ -111,7 +111,7 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 func APIKeyAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey := c.GetHeader(HeaderAPIKey)
-		validAPIKey := os.Getenv("BACKEND_API_KEY")
+		validAPIKey := os.Getenv("VITE_BACKEND_API_KEY")
 
 		if apiKey == "" {
 			log.Println("[APIKeyAuth] Header Retrieval: missing api key")
