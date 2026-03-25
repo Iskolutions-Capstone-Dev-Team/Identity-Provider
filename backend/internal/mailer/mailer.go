@@ -18,10 +18,12 @@ func PostMail(toAddr, subject, body string) error {
 	portStr := os.Getenv("SMTP_PORT")
 	fromAddr := os.Getenv("SMTP_FROM_ADDR")
 	fromName := os.Getenv("SMTP_FROM_NAME")
+	user := os.Getenv("SMTP_USER")
+	pass := os.Getenv("SMTP_PASS")
 
 	policy := mail.NoTLS
 	if host != "mailpit" && host != "localhost" {
-		policy = mail.TLSMandatory // Or TLSMandatory for Production
+		policy = mail.TLSMandatory
 	}
 
 	port, err := strconv.Atoi(portStr)
@@ -29,10 +31,9 @@ func PostMail(toAddr, subject, body string) error {
 		port = DefaultSMTPPort
 	}
 
-	// Create message
 	m := mail.NewMsg()
 	if err := m.FromFormat(fromName, fromAddr); err != nil {
-		log.Printf("[PostMailCustom] From Format: %v", err)
+		log.Printf("[PostMail] From Format: %v", err)
 		return err
 	}
 	if err := m.To(toAddr); err != nil {
@@ -42,9 +43,7 @@ func PostMail(toAddr, subject, body string) error {
 	m.Subject(subject)
 	m.SetBodyString(mail.TypeTextHTML, body)
 
-	// Configure client
-	// For local Mailpit, auth is usually empty.
-	c, err := mail.NewClient(host, 
+	c, err := mail.NewClient(host,
 		mail.WithPort(port),
 		mail.WithTLSPolicy(policy),
 	)
@@ -53,7 +52,10 @@ func PostMail(toAddr, subject, body string) error {
 		return err
 	}
 
-	// Send
+	if user != "" && pass != "" {
+		c.SetSMTPAuth(mail.SMTPAuthPlain)
+	}
+
 	if err := c.DialAndSend(m); err != nil {
 		log.Printf("[PostMail] DialAndSend: %v", err)
 		return err
