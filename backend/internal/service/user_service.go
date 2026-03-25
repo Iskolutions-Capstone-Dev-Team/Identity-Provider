@@ -73,7 +73,7 @@ func (s *UserService) Register(
 		if err != nil {
 			return response, err
 		}
-		clientID, _ := uuid.ParseBytes(client.ID)
+		clientID, _ := uuid.FromBytes(client.ID[:])
 		response.RedirectURL = fmt.Sprintf(
 			"%s/login?client_id=%s", 
 			baseRedirectUrl,
