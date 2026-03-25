@@ -17,7 +17,10 @@ function getLoginRedirectUrl(data) {
 }
 
 function getRegisterRequestConfig() {
-  const apiKey = import.meta.env.BACKEND_API_KEY;
+  const apiKey =
+    import.meta.env.VITE_BACKEND_API_KEY ||
+    import.meta.env.BACKEND_API_KEY ||
+    "";
   const headers = {};
 
   if (apiKey) {
@@ -28,6 +31,14 @@ function getRegisterRequestConfig() {
     headers,
     skipAuthRefresh: true,
   };
+}
+
+function getRegisterRequestUrl() {
+  if (!import.meta.env.DEV || typeof window === "undefined") {
+    return "/register";
+  }
+
+  return `${window.location.origin}/api/v1/register`;
 }
 
 async function postToFirstAvailableRoute(routes, payload) {
@@ -127,7 +138,7 @@ export const authService = {
 
   async register(payload) {
     const response = await axiosInstance.post(
-      "/register",
+      getRegisterRequestUrl(),
       payload,
       getRegisterRequestConfig(),
     );

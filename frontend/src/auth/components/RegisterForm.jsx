@@ -108,19 +108,23 @@ function getRegisterRoleValue(roleLabel) {
 
 function buildRegisterPayload(details, password) {
   const normalizedDetails = trimRegistrationDetails(details);
-  const normalizedRole = getRegisterRoleValue(normalizedDetails.role);
 
   return {
-    user_name: normalizedDetails.email,
     first_name: normalizedDetails.firstName,
     middle_name: normalizedDetails.middleName,
     last_name: normalizedDetails.lastName,
     email: normalizedDetails.email,
     password,
-    status: "active",
-    role: normalizedRole,
-    roles: [normalizedRole],
+    role: getRegisterRoleValue(normalizedDetails.role),
   };
+}
+
+function getRegistrationRedirectUrl(response) {
+  if (typeof response?.redirect_url !== "string") {
+    return "";
+  }
+
+  return response.redirect_url.trim();
 }
 
 function maskEmail(email) {
@@ -594,9 +598,17 @@ export default function RegisterForm({ clientId, onComplete }) {
         return;
       }
 
-      await authService.register(
+      const registerResponse = await authService.register(
         buildRegisterPayload(normalizedDetails, passwordValues.password),
       );
+
+      const redirectUrl = getRegistrationRedirectUrl(registerResponse);
+
+      if (redirectUrl) {
+        window.location.assign(redirectUrl);
+        return;
+      }
+
       navigate(loginPath);
     } catch (submissionError) {
       setError(
