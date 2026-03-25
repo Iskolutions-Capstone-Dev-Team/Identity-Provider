@@ -107,7 +107,7 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 }
 
 func (h *UserHandler) Register(c *gin.Context) {
-	var req dto.UserRequest
+	var req dto.PostRegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[Register] Bind JSON: %v", err)
 		c.JSON(
@@ -132,7 +132,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		"user_agent":   c.Request.UserAgent(),
 	})
 
-	createdID, err := h.Service.CreateUser(c.Request.Context(), req)
+	response, err := h.Service.Register(c.Request.Context(), req)
 	if err != nil {
 		log.Printf("[Register] %v", err)
 		// Log failure
@@ -164,8 +164,10 @@ func (h *UserHandler) Register(c *gin.Context) {
 			Metadata: metadata,
 		})
 
-	message := fmt.Sprintf("Registered user with the id %s", createdID)
-	c.JSON(http.StatusCreated, dto.SuccessResponse{Message: message})
+	c.JSON(
+		http.StatusCreated, 
+		response,
+	)
 }
 
 // GetUserList retrieves a paginated list of users
