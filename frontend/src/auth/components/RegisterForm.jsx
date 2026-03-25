@@ -19,7 +19,7 @@ const roleOptions = [
   },
 ];
 const verificationLength = 6;
-const resendDurationSeconds = 45;
+const resendDurationSeconds = 200;
 
 const initialDetails = {
   firstName: "",
@@ -45,6 +45,12 @@ const initialPasswordValues = {
 const initialPasswordErrors = {
   password: "",
   confirmPassword: "",
+};
+
+const registerRoleValueByLabel = {
+  Student: "student",
+  Guest: "guest",
+  Applicant: "applicant",
 };
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -84,6 +90,37 @@ function getApiErrorMessage(error, fallbackMessage) {
 
 function getRoleOption(value) {
   return roleOptions.find((roleOption) => roleOption.label === value) || null;
+}
+
+function trimRegistrationDetails(details) {
+  return {
+    ...details,
+    firstName: details.firstName.trim(),
+    lastName: details.lastName.trim(),
+    middleName: details.middleName.trim(),
+    email: details.email.trim(),
+  };
+}
+
+function getRegisterRoleValue(roleLabel) {
+  return registerRoleValueByLabel[roleLabel] || roleLabel.trim().toLowerCase();
+}
+
+function buildRegisterPayload(details, password) {
+  const normalizedDetails = trimRegistrationDetails(details);
+  const normalizedRole = getRegisterRoleValue(normalizedDetails.role);
+
+  return {
+    user_name: normalizedDetails.email,
+    first_name: normalizedDetails.firstName,
+    middle_name: normalizedDetails.middleName,
+    last_name: normalizedDetails.lastName,
+    email: normalizedDetails.email,
+    password,
+    status: "active",
+    role: normalizedRole,
+    roles: [normalizedRole],
+  };
 }
 
 function maskEmail(email) {
@@ -230,6 +267,7 @@ export default function RegisterForm({ clientId, onComplete }) {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isCompletingRegistration, setIsCompletingRegistration] = useState(false);
   const [error, setError] = useState("");
 
   const loginPath = buildLoginPath(clientId);
@@ -349,17 +387,14 @@ export default function RegisterForm({ clientId, onComplete }) {
       return;
     }
 
-    const normalizedEmail = details.email.trim();
+    const normalizedDetails = trimRegistrationDetails(details);
 
     setIsSendingOtp(true);
 
     try {
-      await authService.requestOtp(normalizedEmail);
+      await authService.requestOtp(normalizedDetails.email);
 
-      setDetails((currentDetails) => ({
-        ...currentDetails,
-        email: normalizedEmail,
-      }));
+      setDetails(normalizedDetails);
       setVerificationCode(Array(verificationLength).fill(""));
       setVerificationError("");
       setResendTimer(resendDurationSeconds);
@@ -473,7 +508,7 @@ export default function RegisterForm({ clientId, onComplete }) {
     setError("");
 
     try {
-      await authService.requestOtp(details.email.trim());
+      await authService.resendOtp(details.email);
       setVerificationCode(Array(verificationLength).fill(""));
       setResendTimer(resendDurationSeconds);
       verificationInputsRef.current[0]?.focus();
@@ -545,19 +580,33 @@ export default function RegisterForm({ clientId, onComplete }) {
       return;
     }
 
+    const normalizedDetails = trimRegistrationDetails(details);
+
+    setIsCompletingRegistration(true);
+
     try {
       if (onComplete) {
         await onComplete({
-          ...details,
+          ...normalizedDetails,
           verificationCode: verificationCode.join(""),
           password: passwordValues.password,
         });
         return;
       }
 
+      await authService.register(
+        buildRegisterPayload(normalizedDetails, passwordValues.password),
+      );
       navigate(loginPath);
     } catch (submissionError) {
-      setError(submissionError?.message || "Registration failed. Please try again.");
+      setError(
+        getApiErrorMessage(
+          submissionError,
+          "Registration failed. Please try again.",
+        ),
+      );
+    } finally {
+      setIsCompletingRegistration(false);
     }
   };
 
@@ -796,8 +845,8 @@ export default function RegisterForm({ clientId, onComplete }) {
           <FieldError message={passwordErrors.confirmPassword} />
         </div>
 
-        <button type="submit" className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
-          COMPLETE REGISTRATION
+        <button type="submit" disabled={isCompletingRegistration} className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:border-[#f8d24e]/60 disabled:bg-[#f8d24e]/60 disabled:text-[#991b1b]/70">
+          {isCompletingRegistration ? "CREATING ACCOUNT..." : "COMPLETE REGISTRATION"}
         </button>
       </form>
     );

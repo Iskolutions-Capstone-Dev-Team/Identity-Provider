@@ -16,6 +16,20 @@ function getLoginRedirectUrl(data) {
   return "";
 }
 
+function getRegisterRequestConfig() {
+  const apiKey = import.meta.env.BACKEND_API_KEY;
+  const headers = {};
+
+  if (apiKey) {
+    headers["X-API-Key"] = apiKey;
+  }
+
+  return {
+    headers,
+    skipAuthRefresh: true,
+  };
+}
+
 async function postToFirstAvailableRoute(routes, payload) {
   let lastNotFoundError = null;
 
@@ -89,7 +103,15 @@ export const authService = {
       skipAuthRefresh: true,
     });
 
+    if (response.status !== 200) {
+      throw new Error("Unexpected OTP response.");
+    }
+
     return response.data;
+  },
+
+  async resendOtp(email) {
+    return this.requestOtp(email);
   },
 
   async validateOtp(email, code) {
@@ -101,5 +123,15 @@ export const authService = {
         code,
       },
     );
+  },
+
+  async register(payload) {
+    const response = await axiosInstance.post(
+      "/register",
+      payload,
+      getRegisterRequestConfig(),
+    );
+
+    return response.data;
   },
 };
