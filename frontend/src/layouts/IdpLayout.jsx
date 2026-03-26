@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import AccessibilityWidget from "../components/AccessibilityWidget";
 import ErrorAlert from "../components/ErrorAlert";
 import Navbar from "../components/Navbar";
@@ -10,7 +10,6 @@ import { useCurrentUser } from "../hooks/useCurrentUser";
 import { DEFAULT_FORBIDDEN_ALERT_MESSAGE, IDP_FORBIDDEN_ALERT_EVENT } from "../utils/forbiddenAlert";
 
 export default function IdpLayout() {
-  const location = useLocation();
   const { sidebarOpen, toggleSidebar } = useSidebarState();
   const [openTerms, setOpenTerms] = useState(false);
   const [forbiddenMessage, setForbiddenMessage] = useState("");
@@ -35,18 +34,8 @@ export default function IdpLayout() {
       : "light";
   });
   const { currentUser, isLoadingCurrentUser } = useCurrentUser();
-  const isUserPoolPage = location.pathname === "/user-pool";
-  const isAppClientPage = location.pathname === "/app-client";
-  const isRolesPage = location.pathname === "/roles";
-  const isAuditLogsPage = location.pathname === "/audit-logs";
-  const isProfilePage = location.pathname === "/profile";
-  const showColorModeToggle =
-    isUserPoolPage ||
-    isAppClientPage ||
-    isRolesPage ||
-    isAuditLogsPage ||
-    isProfilePage;
-  const isDarkThemeRoute = showColorModeToggle && colorMode === "dark";
+  const showColorModeToggle = true;
+  const isDarkThemeRoute = colorMode === "dark";
 
   useEffect(() => {
     const accepted = sessionStorage.getItem("termsAccepted") === "true";
@@ -82,6 +71,9 @@ export default function IdpLayout() {
     window.localStorage.setItem("idpColorMode", colorMode);
     window.localStorage.setItem("userPoolColorMode", colorMode);
     window.localStorage.setItem("appClientColorMode", colorMode);
+    document.body.style.backgroundColor =
+      colorMode === "dark" ? "#182434" : "#fff8f3";
+    document.body.style.color = colorMode === "dark" ? "#f1f5f9" : "#1e293b";
   }, [colorMode]);
 
   const handleContinue = () => {
@@ -94,10 +86,6 @@ export default function IdpLayout() {
   };
 
   const handleToggleColorMode = () => {
-    if (!showColorModeToggle) {
-      return;
-    }
-
     setColorMode((current) => (current === "dark" ? "light" : "dark"));
   };
 
@@ -105,7 +93,7 @@ export default function IdpLayout() {
     <div
       className={`relative min-h-screen overflow-hidden font-[Poppins] transition-[background-color,color] duration-500 ease-out ${
         isDarkThemeRoute
-          ? "bg-[#111827] text-slate-100"
+          ? "bg-[#182434] text-slate-100"
           : "bg-[#fff8f3] text-slate-800"
       }`}
     >
@@ -127,7 +115,7 @@ export default function IdpLayout() {
           }`}
         />
         <div
-          className={`absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(248,210,78,0.1),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(123,13,21,0.2),transparent_30%),linear-gradient(180deg,#101827_0%,#172233_48%,#22141d_100%)] transition-opacity duration-500 ease-out ${
+          className={`absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(248,210,78,0.14),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(123,13,21,0.22),transparent_30%),linear-gradient(180deg,#1b2a3c_0%,#182232_46%,#23161f_100%)] transition-opacity duration-500 ease-out ${
             isDarkThemeRoute ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -137,7 +125,7 @@ export default function IdpLayout() {
           }`}
         />
         <div
-          className={`drift-glow absolute left-[-5rem] top-16 h-64 w-64 rounded-full bg-[#f8d24e]/10 blur-3xl transition-opacity duration-500 ease-out ${
+          className={`drift-glow absolute left-[-5rem] top-16 h-64 w-64 rounded-full bg-[#f8d24e]/12 blur-3xl transition-opacity duration-500 ease-out ${
             isDarkThemeRoute ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -147,7 +135,7 @@ export default function IdpLayout() {
           }`}
         />
         <div
-          className={`drift-glow drift-glow-delayed absolute bottom-6 right-[-6rem] h-72 w-72 rounded-full bg-[#7b0d15]/20 blur-3xl transition-opacity duration-500 ease-out ${
+          className={`drift-glow drift-glow-delayed absolute bottom-6 right-[-6rem] h-72 w-72 rounded-full bg-[#7b0d15]/24 blur-3xl transition-opacity duration-500 ease-out ${
             isDarkThemeRoute ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -162,7 +150,11 @@ export default function IdpLayout() {
       />
 
       <div className="relative flex min-h-screen">
-        <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+        <Sidebar
+          isOpen={sidebarOpen}
+          toggleSidebar={toggleSidebar}
+          activeColorMode={colorMode}
+        />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <Navbar
