@@ -43,6 +43,44 @@ body {
   border-color: #991b1b !important;
 }
 
+.steps.userpool-steps-dark .step {
+  color: #cbb8bd !important;
+}
+
+.steps.userpool-steps-dark .step:before {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.steps.userpool-steps-dark .step-primary {
+  color: #ffe28a !important;
+}
+
+.steps.userpool-steps-dark .step-primary:before {
+  background-color: #f8d24e !important;
+  border-color: #f8d24e !important;
+}
+
+.steps.userpool-steps-dark .step-primary:after {
+  background-color: #f8d24e !important;
+}
+
+.steps.userpool-steps-dark .step-primary .step-icon {
+  background-color: #7b0d15 !important;
+  color: white !important;
+  border-color: #f8d24e !important;
+}
+
+.steps.userpool-steps-dark .step-primary .step-icon svg {
+  color: white !important;
+  fill: white !important;
+}
+
+.steps.userpool-steps-dark .step-primary + .step-primary:before {
+  background-color: #f8d24e !important;
+  border-color: #f8d24e !important;
+}
+
 @keyframes floatLogo {
   0%, 100% {
     transform: translateY(0px);
