@@ -16,10 +16,10 @@ function MoonIcon() {
   );
 }
 
-export default function Navbar({ sidebarOpen, userPoolColorMode = "light", toggleUserPoolColorMode }) {
+export default function Navbar({ sidebarOpen, activeColorMode = "light", onToggleColorMode, showColorModeToggle = false }) {
   const navigate = useNavigate();
   const desktopOffsetClassName = sidebarOpen ? "lg:left-80" : "lg:left-32";
-  const isDarkMode = userPoolColorMode === "dark";
+  const isDarkMode = activeColorMode === "dark";
   const iconButtonClassName =
     "group flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.2rem] border border-white/10 bg-white/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-[background-color,border-color,box-shadow,transform,color] duration-300 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e]/25 hover:bg-white/[0.14] hover:text-[#f8d24e] sm:h-14 sm:w-14";
   const darkModeButtonClassName = `${iconButtonClassName} ${
@@ -45,40 +45,42 @@ export default function Navbar({ sidebarOpen, userPoolColorMode = "light", toggl
         </div>
 
         <div className="flex items-center gap-3">
-          <button type="button" onClick={toggleUserPoolColorMode}
-            aria-label={
-              isDarkMode
-                ? "Switch user pool to light mode"
-                : "Switch user pool to dark mode"
-            }
-            title={
-              isDarkMode
-                ? "Switch user pool to light mode"
-                : "Switch user pool to dark mode"
-            }
-            className={darkModeButtonClassName}
-          >
-            <span className="relative h-7 w-7">
-              <span aria-hidden="true"
-                className={`absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-300 ease-out ${
-                  isDarkMode
-                    ? "scale-75 rotate-90 opacity-0"
-                    : "scale-100 rotate-0 opacity-100"
-                }`}
-              >
-                <MoonIcon />
+          {showColorModeToggle ? (
+            <button type="button" onClick={onToggleColorMode}
+              aria-label={
+                isDarkMode
+                  ? "Switch page to light mode"
+                  : "Switch page to dark mode"
+              }
+              title={
+                isDarkMode
+                  ? "Switch page to light mode"
+                  : "Switch page to dark mode"
+              }
+              className={darkModeButtonClassName}
+            >
+              <span className="relative h-7 w-7">
+                <span aria-hidden="true"
+                  className={`absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-300 ease-out ${
+                    isDarkMode
+                      ? "scale-75 rotate-90 opacity-0"
+                      : "scale-100 rotate-0 opacity-100"
+                  }`}
+                >
+                  <MoonIcon />
+                </span>
+                <span aria-hidden="true"
+                  className={`absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-300 ease-out ${
+                    isDarkMode
+                      ? "scale-100 rotate-0 opacity-100"
+                      : "scale-75 -rotate-90 opacity-0"
+                  }`}
+                >
+                  <SunIcon />
+                </span>
               </span>
-              <span aria-hidden="true"
-                className={`absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-300 ease-out ${
-                  isDarkMode
-                    ? "scale-100 rotate-0 opacity-100"
-                    : "scale-75 -rotate-90 opacity-0"
-                }`}
-              >
-                <SunIcon />
-              </span>
-            </span>
-          </button>
+            </button>
+          ) : null}
 
           <button type="button" onClick={() => navigate("/profile")} aria-label="Open profile" className={iconButtonClassName}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={profileIconClassName}>
