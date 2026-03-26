@@ -18,10 +18,10 @@ const ITEMS_PER_PAGE = 10;
 const SUPERADMIN_ROLE = "idp:superadmin";
 
 export default function UserPool() {
-  const outletContext = useOutletContext();
-  const currentUser = outletContext?.currentUser || EMPTY_CURRENT_USER;
-  const userPoolColorMode = outletContext?.userPoolColorMode || "light";
-  const isDarkMode = userPoolColorMode === "dark";
+  const outletContext = useOutletContext() || {};
+  const currentUser = outletContext.currentUser || EMPTY_CURRENT_USER;
+  const colorMode = outletContext.colorMode || "light";
+  const isDarkMode = colorMode === "dark";
   const {
     users,
     search,
@@ -96,7 +96,7 @@ export default function UserPool() {
         <PageHeader
           title="Users"
           description="Manage and view user accounts in the user pool"
-          colorMode={userPoolColorMode}
+          colorMode={colorMode}
           icon={
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-20 w-20 sm:h-24 sm:w-24">
               <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd"/>
@@ -106,14 +106,14 @@ export default function UserPool() {
         />
 
         <div className="relative">
-          <UserPoolCard colorMode={userPoolColorMode}>
+          <UserPoolCard colorMode={colorMode}>
             <UserPoolFilters
               search={search}
               setSearch={setSearch}
               status={status}
               setStatus={setStatus}
               onCreate={() => setOpenAddModal(true)}
-              colorMode={userPoolColorMode}
+              colorMode={colorMode}
             />
             {!showLoading && fetchError && (
               <div className="alert alert-error mb-2">
@@ -127,7 +127,7 @@ export default function UserPool() {
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
               showDeleteAction={canDeleteUsers}
-              colorMode={userPoolColorMode}
+              colorMode={colorMode}
             />
             {!showLoading && (
               <div className={footerClassName}>
@@ -137,14 +137,14 @@ export default function UserPool() {
                   totalResults={totalResults}
                   currentResultsCount={paginatedUsers.length}
                   variant="glass"
-                  colorMode={userPoolColorMode}
+                  colorMode={colorMode}
                 />
                 <Pagination
                   totalPages={totalPages}
                   currentPage={page}
                   onPageChange={setPage}
                   variant="glass"
-                  colorMode={userPoolColorMode}
+                  colorMode={colorMode}
                 />
               </div>
             )}
@@ -154,13 +154,13 @@ export default function UserPool() {
               user={selectedUser}
               onSubmit={updateUser}
               onClose={() => setOpenViewEditModal(false)}
-              colorMode={userPoolColorMode}
+              colorMode={colorMode}
             />
             <AddUserModal
               open={openAddModal}
               onClose={() => setOpenAddModal(false)}
               onSubmit={createUser}
-              colorMode={userPoolColorMode}
+              colorMode={colorMode}
             />
           </UserPoolCard>
         </div>
@@ -169,7 +169,7 @@ export default function UserPool() {
         open={openDelete}
         message={`Delete user ${userToDelete?.username}?`}
         theme="glass"
-        colorMode={userPoolColorMode}
+        colorMode={colorMode}
         onCancel={() => {
           setOpenDelete(false);
           setUserToDelete(null);
