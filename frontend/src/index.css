@@ -12,6 +12,8 @@ body,
 body {
   min-height: 100%;
   background: #fff8f3;
+  color: #1e293b;
+  transition: background-color 500ms ease-out, color 500ms ease-out;
 }
 
 .steps .step-primary {
