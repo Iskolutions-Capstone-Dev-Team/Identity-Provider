@@ -37,7 +37,8 @@ export default function IdpLayout() {
   const { currentUser, isLoadingCurrentUser } = useCurrentUser();
   const isUserPoolPage = location.pathname === "/user-pool";
   const isAppClientPage = location.pathname === "/app-client";
-  const showColorModeToggle = isUserPoolPage || isAppClientPage;
+  const isRolesPage = location.pathname === "/roles";
+  const showColorModeToggle = isUserPoolPage || isAppClientPage || isRolesPage;
   const isDarkThemeRoute = showColorModeToggle && colorMode === "dark";
 
   useEffect(() => {
