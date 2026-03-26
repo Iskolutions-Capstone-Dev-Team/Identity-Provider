@@ -4,26 +4,7 @@ import ErrorAlert from "../ErrorAlert";
 import MultiSelect from "../MultiSelect";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolModalSelect from "./UserPoolModalSelect";
-import {
-  modalBodyClassName,
-  modalBodyStackClassName,
-  modalBoxClassName,
-  modalCloseButtonClassName,
-  modalFooterActionsClassName,
-  modalFooterClassName,
-  modalHeaderClassName,
-  modalHeaderDescriptionClassName,
-  modalHeaderTitleClassName,
-  modalHelperTextClassName,
-  modalInputClassName,
-  modalLabelClassName,
-  modalOptionalBadgeClassName,
-  modalOverlayClassName,
-  modalPrimaryButtonClassName,
-  modalReadOnlyInputClassName,
-  modalSecondaryButtonClassName,
-  modalSectionClassName,
-} from "../modalTheme";
+import { getModalTheme } from "../modalTheme";
 
 const initialFormData = {
   id: "",
@@ -111,13 +92,39 @@ const createFormData = (user) => ({
   roleIds: normalizeRoleIds(user?.roleIds),
 });
 
-const roleBadgeClassName =
-  "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
-
-export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
+export default function UserPoolModal({ open, mode, user, onClose, onSubmit, colorMode = "light" }) {
   const availableRoles = useAllRoles();
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
+  const isDarkMode = colorMode === "dark";
+  const {
+    modalBodyClassName,
+    modalBodyStackClassName,
+    modalBoxClassName,
+    modalCloseButtonClassName,
+    modalFooterActionsClassName,
+    modalFooterClassName,
+    modalHeaderClassName,
+    modalHeaderDescriptionClassName,
+    modalHeaderTitleClassName,
+    modalHelperTextClassName,
+    modalLabelClassName,
+    modalOptionalBadgeClassName,
+    modalOverlayClassName,
+    modalPrimaryButtonClassName,
+    modalReadOnlyInputClassName,
+    modalSecondaryButtonClassName,
+    modalSectionClassName,
+  } = getModalTheme(colorMode);
+  const roleBadgeClassName = isDarkMode
+    ? "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
+    : "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
+  const readOnlyRolesClassName = isDarkMode
+    ? "min-h-24 w-full rounded-[1rem] border border-white/10 bg-[rgba(10,15,24,0.76)] px-4 py-4 text-sm text-[#d6c3c7] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+    : "min-h-24 w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-4 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
+  const emptyRolesClassName = isDarkMode
+    ? "italic text-[#a58d95]"
+    : "italic text-[#8f6f76]";
 
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
@@ -345,7 +352,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
                   </label>
 
                   {isViewMode ? (
-                    <div className="min-h-24 w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-4 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+                    <div className={readOnlyRolesClassName}>
                       {displayedRoles.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {displayedRoles.map((role, index) => (
@@ -355,7 +362,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
                           ))}
                         </div>
                       ) : (
-                        <span className="italic text-[#8f6f76]">No content</span>
+                        <span className={emptyRolesClassName}>No content</span>
                       )}
                     </div>
                   ) : (
@@ -370,6 +377,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
                         placeholder="Select roles"
                         variant="userpoolModal"
                         hasError={rolesError}
+                        colorMode={colorMode}
                       />
                       {rolesError && (
                         <p className="mt-2 text-xs text-red-500">
@@ -398,6 +406,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit }) {
                       onChange={(value) => handleFieldChange("status", value)}
                       options={STATUS_OPTIONS}
                       ariaLabel="Status"
+                      colorMode={colorMode}
                     />
                   )}
                 </div>
