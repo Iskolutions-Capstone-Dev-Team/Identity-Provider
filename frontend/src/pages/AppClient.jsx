@@ -1,3 +1,4 @@
+import { useOutletContext } from "react-router-dom";
 import { useState } from "react";
 import { useAppClients } from "../hooks/useAppClients";
 import ConnectedAppClientCard from "../components/app-client/ConnectedAppClientCard";
@@ -13,6 +14,7 @@ import { useDelayedLoading } from "../hooks/useDelayedLoading";
 const ITEMS_PER_PAGE = 10;
 
 export default function AppClient() {
+    const { colorMode = "light" } = useOutletContext();
     const {
         search, setSearch, page, setPage,
         paginatedClients, totalPages, totalResults,
@@ -111,6 +113,7 @@ export default function AppClient() {
                         </svg>
                     }
                     variant="hero"
+                    colorMode={colorMode}
                 />
                 <div className="relative">
                     <ConnectedAppClientCard
@@ -128,12 +131,14 @@ export default function AppClient() {
                         onDelete={handleDeleteClick}
                         onCreate={openCreate}
                         onRotateSecret={handleRotateClick}
+                        colorMode={colorMode}
                     />
                 </div>
                 <AppClientCreateModal
                     open={createOpen}
                     onClose={() => setCreateOpen(false)}
                     onSubmit={handleCreateClient}
+                    colorMode={colorMode}
                 />
                 <AppClientModal
                     open={editViewOpen}
@@ -142,6 +147,7 @@ export default function AppClient() {
                     getClientDetails={getClientDetails}
                     onClose={() => setEditViewOpen(false)}
                     onSubmit={updateClient}
+                    colorMode={colorMode}
                 />
             </div>
 
@@ -153,6 +159,7 @@ export default function AppClient() {
                 loading={secretModal.loading}
                 hasError={secretModal.hasError}
                 onClose={resetSecretModal}
+                colorMode={colorMode}
             />
 
             <SecretConfirmModal
@@ -160,12 +167,14 @@ export default function AppClient() {
                 message="Generate a new client secret?"
                 onCancel={cancelRotateSecret}
                 onConfirm={confirmRotateSecret}
+                colorMode={colorMode}
             />
 
             <DeleteConfirmModal
                 open={showDeleteAlert}
                 message="Delete this app client?"
                 theme="glass"
+                colorMode={colorMode}
                 onCancel={() => {
                     setShowDeleteAlert(false);
                     setDeleteTarget(null);

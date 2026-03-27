@@ -1,9 +1,5 @@
 import { useState } from "react";
-import {
-  modalInputClassName,
-  modalLabelClassName,
-  modalSectionClassName,
-} from "./modalTheme";
+import { getModalTheme } from "./modalTheme";
 
 function PasswordVisibilityIcon({ isVisible }) {
   if (isVisible) {
@@ -23,15 +19,22 @@ function PasswordVisibilityIcon({ isVisible }) {
   );
 }
 
-function PasswordRuleItem({ isMet, label }) {
+function PasswordRuleItem({ isMet, label, colorMode = "light" }) {
+  const isDarkMode = colorMode === "dark";
+  const wrapperClassName = isDarkMode
+    ? "inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[0.72rem] font-medium text-[#d6c3c7]"
+    : "inline-flex items-center gap-2 rounded-full border border-[#7b0d15]/10 bg-[#fffaf2] px-2.5 py-1 text-[0.72rem] font-medium text-[#6f4f56]";
+  const statusClassName = isMet
+    ? isDarkMode
+      ? "bg-emerald-400/12 text-emerald-200"
+      : "bg-emerald-100 text-emerald-700"
+    : isDarkMode
+      ? "bg-[#f8d24e]/12 text-[#ffe28a]"
+      : "bg-[#fff4dc] text-[#7b0d15]";
+
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-[#7b0d15]/10 bg-[#fffaf2] px-2.5 py-1 text-[0.72rem] font-medium text-[#6f4f56]">
-      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-semibold ${
-          isMet
-            ? "bg-emerald-100 text-emerald-700"
-            : "bg-[#fff4dc] text-[#7b0d15]"
-        }`}
-      >
+    <span className={wrapperClassName}>
+      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-semibold ${statusClassName}`}>
         {isMet ? "OK" : "?"}
       </span>
       <span>{label}</span>
@@ -58,12 +61,21 @@ export function getPasswordValidationState(form) {
   };
 }
 
-export default function ChangePasswordStep({ form, setForm, showCurrentPassword = true }) {
+export default function ChangePasswordStep({ form, setForm, showCurrentPassword = true, colorMode = "light" }) {
   const [showPassword, setShowPassword] = useState({
     currentPassword: false,
     newPassword: false,
     confirmPassword: false,
   });
+  const {
+    modalInputClassName,
+    modalLabelClassName,
+    modalSectionClassName,
+  } = getModalTheme(colorMode);
+  const isDarkMode = colorMode === "dark";
+  const visibilityButtonClassName = isDarkMode
+    ? "absolute right-4 top-1/2 -translate-y-1/2 text-[#c7adb4] transition duration-300 hover:text-[#ffe28a]"
+    : "absolute right-4 top-1/2 -translate-y-1/2 text-[#8f6f76] transition duration-300 hover:text-[#5a0b12]";
 
   const validation = getPasswordValidationState(form);
   const fields = showCurrentPassword
@@ -110,7 +122,7 @@ export default function ChangePasswordStep({ form, setForm, showCurrentPassword 
                 required
               />
 
-              <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8f6f76] transition hover:text-[#5a0b12]" onClick={() => toggleShowPassword(field)}>
+              <button type="button" className={visibilityButtonClassName} onClick={() => toggleShowPassword(field)}>
                 <PasswordVisibilityIcon isVisible={showPassword[field]} />
               </button>
             </div>
@@ -120,18 +132,22 @@ export default function ChangePasswordStep({ form, setForm, showCurrentPassword 
                 <PasswordRuleItem
                   isMet={validation.checks.length}
                   label="At least 8 characters"
+                  colorMode={colorMode}
                 />
                 <PasswordRuleItem
                   isMet={validation.checks.uppercase}
                   label="One uppercase letter"
+                  colorMode={colorMode}
                 />
                 <PasswordRuleItem
                   isMet={validation.checks.number}
                   label="One number"
+                  colorMode={colorMode}
                 />
                 <PasswordRuleItem
                   isMet={validation.checks.special}
                   label="One special character"
+                  colorMode={colorMode}
                 />
               </div>
             )}

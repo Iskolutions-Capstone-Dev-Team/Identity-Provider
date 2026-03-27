@@ -1,23 +1,47 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  modalBodyClassName,
-  modalBodyStackClassName,
-  modalBoxClassName,
-  modalFooterActionsClassName,
-  modalFooterClassName,
-  modalHeaderClassName,
-  modalHeaderDescriptionClassName,
-  modalHeaderTitleClassName,
-  modalOverlayClassName,
-  modalPrimaryButtonClassName,
-  modalReadOnlyInputClassName,
-  modalSectionClassName,
-} from "../modalTheme";
+import { getModalTheme } from "../modalTheme";
 
-export default function ClientSecretModal({ open, clientName, clientId, secret, loading = false, hasError = false, onClose }) {
+export default function ClientSecretModal({ open, clientName, clientId, secret, loading = false, hasError = false, onClose, colorMode = "light" }) {
   const [copied, setCopied] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const isDarkMode = colorMode === "dark";
+  const {
+    modalBodyClassName,
+    modalBodyStackClassName,
+    modalBoxClassName,
+    modalFooterActionsClassName,
+    modalFooterClassName,
+    modalHeaderClassName,
+    modalHeaderDescriptionClassName,
+    modalHeaderTitleClassName,
+    modalOverlayClassName,
+    modalPrimaryButtonClassName,
+    modalReadOnlyInputClassName,
+    modalSectionClassName,
+  } = getModalTheme(colorMode);
+  const displayNameClassName = isDarkMode ? "font-semibold text-[#ffe28a]" : "font-semibold text-white";
+  const loadingTextClassName = isDarkMode
+    ? "flex items-center gap-3 text-sm text-[#d6c3c7]"
+    : "flex items-center gap-3 text-sm text-[#5d3a41]";
+  const loadingSpinnerClassName = isDarkMode
+    ? "loading loading-spinner loading-sm text-[#f8d24e]"
+    : "loading loading-spinner loading-sm text-[#7b0d15]";
+  const errorTextClassName = isDarkMode
+    ? "text-sm text-rose-300"
+    : "text-sm text-red-600";
+  const noteClassName = isDarkMode
+    ? "rounded-[1.5rem] border border-[#f8d24e]/28 bg-[linear-gradient(135deg,rgba(123,13,21,0.26),rgba(248,210,78,0.08))] px-5 py-4 shadow-[0_22px_45px_-36px_rgba(2,6,23,0.72)]"
+    : "rounded-[1.5rem] border border-[#d4a017]/35 bg-[#ffd700] px-5 py-4 shadow-[0_22px_45px_-36px_rgba(43,3,7,0.45)]";
+  const noteTextClassName = isDarkMode
+    ? "text-sm font-medium text-[#f8e5a3]"
+    : "text-sm font-medium text-[#5a0b12]";
+  const visibilityButtonClassName = isDarkMode
+    ? "absolute right-4 top-1/2 -translate-y-1/2 text-[#a58d95] transition hover:text-[#f8d24e] disabled:cursor-not-allowed disabled:text-[#6f6168]"
+    : "absolute right-4 top-1/2 -translate-y-1/2 text-[#8f6f76] transition hover:text-[#5a0b12] disabled:cursor-not-allowed disabled:text-[#c8afb4]";
+  const copyButtonClassName = isDarkMode
+    ? "btn h-12 w-12 rounded-[1rem] border border-white/12 bg-white/[0.04] px-0 text-[#f4eaea] shadow-none transition hover:border-[#f8d24e]/45 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
+    : "btn h-12 w-12 rounded-[1rem] border border-[#7b0d15]/15 bg-white/85 px-0 text-[#7b0d15] shadow-none transition hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
 
   useEffect(() => {
     if (!open) {
@@ -50,7 +74,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
             <h3 className={modalHeaderTitleClassName}>Client Secret</h3>
             <p className={modalHeaderDescriptionClassName}>
               Here is the client secret for{" "}
-              <span className="font-semibold text-white">{displayName}</span>.
+              <span className={displayNameClassName}>{displayName}</span>.
             </p>
           </div>
         </div>
@@ -59,8 +83,8 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
           <div className={modalBodyStackClassName}>
             {loading && (
               <section className={modalSectionClassName}>
-                <div className="flex items-center gap-3 text-sm text-[#5d3a41]">
-                  <span className="loading loading-spinner loading-sm text-[#7b0d15]" aria-hidden="true" />
+                <div className={loadingTextClassName}>
+                  <span className={loadingSpinnerClassName} aria-hidden="true" />
                   <span>Rotating secret. Please wait...</span>
                 </div>
               </section>
@@ -68,14 +92,14 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
 
             {!loading && hasError && (
               <section className={modalSectionClassName}>
-                <p className="text-sm text-red-600">Request failed, try again later.</p>
+                <p className={errorTextClassName}>Request failed, try again later.</p>
               </section>
             )}
 
             {!loading && !hasError && (
               <>
-                <section className="rounded-[1.5rem] border border-[#d4a017]/35 bg-[#ffd700] px-5 py-4 shadow-[0_22px_45px_-36px_rgba(43,3,7,0.45)]">
-                  <p className="text-sm font-medium text-[#5a0b12]">
+                <section className={noteClassName}>
+                  <p className={noteTextClassName}>
                     <span className="font-bold">Note:</span> This secret is shown{" "}
                     <span className="font-bold">one time only</span>. If it is lost, generate a new one.
                   </p>
@@ -85,7 +109,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
                   <div className="flex gap-3">
                     <div className="relative grow">
                       <input type={showSecret ? "text" : "password"} readOnly value={secret || ""} className={`${modalReadOnlyInputClassName} w-full pr-12 font-mono`}/>
-                      <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8f6f76] transition hover:text-[#5a0b12] disabled:cursor-not-allowed disabled:text-[#c8afb4]" onClick={() => setShowSecret((current) => !current)} disabled={!secret} aria-label={showSecret ? "Hide secret" : "Show secret"} title={showSecret ? "Hide secret" : "Show secret"}>
+                      <button type="button" className={visibilityButtonClassName} onClick={() => setShowSecret((current) => !current)} disabled={!secret} aria-label={showSecret ? "Hide secret" : "Show secret"} title={showSecret ? "Hide secret" : "Show secret"}>
                         {showSecret ? (
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M10.58 10.58a2 2 0 102.828 2.828M9.88 4.24A9.956 9.956 0 0112 4c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.132 5.411M6.228 6.228C4.024 7.515 2.458 9.56 1.5 12c1.274 4.057 5.064 7 9.542 7a9.96 9.96 0 005.227-1.472"/>
@@ -98,7 +122,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
                         )}
                       </button>
                     </div>
-                    <button type="button" className="btn h-12 w-12 rounded-[1rem] border border-[#7b0d15]/15 bg-white/85 px-0 text-[#7b0d15] shadow-none transition hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]" onClick={handleCopy} disabled={!secret}>
+                    <button type="button" className={copyButtonClassName} onClick={handleCopy} disabled={!secret}>
                       <span className="relative inline-flex h-6 w-6 items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"
                           className={`absolute size-6 transition-all duration-300 ease-out ${

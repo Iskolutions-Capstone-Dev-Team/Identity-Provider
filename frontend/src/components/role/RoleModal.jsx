@@ -3,36 +3,7 @@ import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import TagMultiSelect from "./TagMultiSelect";
-import {
-  modalBodyClassName,
-  modalBodyStackClassName,
-  modalBoxClassName,
-  modalCloseButtonClassName,
-  modalFooterActionsClassName,
-  modalFooterClassName,
-  modalHeaderClassName,
-  modalHeaderDescriptionClassName,
-  modalHeaderTitleClassName,
-  modalHelperTextClassName,
-  modalLabelClassName,
-  modalOverlayClassName,
-  modalPrimaryButtonClassName,
-  modalReadOnlyInputClassName,
-  modalSecondaryButtonClassName,
-  modalSectionClassName,
-} from "../modalTheme";
-
-const readOnlyTextAreaClassName =
-  `${modalReadOnlyInputClassName} min-h-28 whitespace-pre-wrap`;
-const readOnlySingleLineFieldClassName =
-  `${modalReadOnlyInputClassName} flex h-14 items-center`;
-const readOnlyTagFieldClassName =
-  `${readOnlySingleLineFieldClassName} overflow-hidden`;
-const editableFieldBaseClassName =
-  "w-full rounded-[1rem] border bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition placeholder:text-[#9b7d84] focus:border-[#d4a017]";
-const editableInputBaseClassName = `${editableFieldBaseClassName} h-14`;
-const editableTextAreaBaseClassName =
-  `${editableFieldBaseClassName} min-h-28 resize-none py-3`;
+import { getModalTheme } from "../modalTheme";
 
 const splitRoleName = (value = "") => {
   const trimmed = typeof value === "string" ? value.trim() : "";
@@ -59,17 +30,28 @@ const normalizeTagValue = (value) =>
 const normalizeRoleNameValue = (value) =>
   typeof value === "string" ? value.toLowerCase() : "";
 
-const getEditableInputClassName = (hasError) =>
-  `${editableInputBaseClassName} ${hasError ? "border-red-400 focus:border-red-500" : "border-[#7b0d15]/10"}`;
-
-const getEditableTextAreaClassName = (hasError) =>
-  `${editableTextAreaBaseClassName} ${
-    hasError ? "border-red-400 focus:border-red-500" : "border-[#7b0d15]/10"
-  }`;
-
-export default function RoleModal({ open, mode, role, tagOptions = [], isTagOptionsLoading = false, onClose, onSubmit }) {
+export default function RoleModal({ open, mode, role, tagOptions = [], isTagOptionsLoading = false, onClose, onSubmit, colorMode = "light" }) {
   const isCreateMode = mode === "create";
   const isViewMode = mode === "view";
+  const isDarkMode = colorMode === "dark";
+  const {
+    modalBodyClassName,
+    modalBodyStackClassName,
+    modalBoxClassName,
+    modalCloseButtonClassName,
+    modalFooterActionsClassName,
+    modalFooterClassName,
+    modalHeaderClassName,
+    modalHeaderDescriptionClassName,
+    modalHeaderTitleClassName,
+    modalHelperTextClassName,
+    modalLabelClassName,
+    modalOverlayClassName,
+    modalPrimaryButtonClassName,
+    modalReadOnlyInputClassName,
+    modalSecondaryButtonClassName,
+    modalSectionClassName,
+  } = getModalTheme(colorMode);
   const modalTitle =
     mode === "create" ? "Create Role" : mode === "edit" ? "Edit Role" : "View Role";
   const modalDescription =
@@ -88,6 +70,37 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
     name: false,
     description: false,
   });
+  const readOnlyTextAreaClassName =
+    `${modalReadOnlyInputClassName} min-h-28 whitespace-pre-wrap`;
+  const readOnlySingleLineFieldClassName =
+    `${modalReadOnlyInputClassName} flex h-14 items-center`;
+  const readOnlyTagFieldClassName =
+    `${readOnlySingleLineFieldClassName} overflow-hidden`;
+  const editableFieldBaseClassName = isDarkMode
+    ? "w-full rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,25,0.72),rgba(22,28,40,0.88))] px-4 text-sm text-[#f4eaea] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out placeholder:text-[#9f8790] focus:border-[#f8d24e]/55"
+    : "w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out placeholder:text-[#9b7d84] focus:border-[#d4a017]";
+  const editableInputBaseClassName = `${editableFieldBaseClassName} h-14`;
+  const editableTextAreaBaseClassName =
+    `${editableFieldBaseClassName} min-h-28 resize-none py-3`;
+  const tagBadgeClassName = isDarkMode
+    ? "inline-flex max-w-full items-center gap-2 rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
+    : "inline-flex max-w-full items-center gap-2 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
+  const tagIconClassName = isDarkMode
+    ? "flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#f8d24e]/18 text-[0.625rem] font-semibold text-[#ffe28a]"
+    : "flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#fff1d0] text-[0.625rem] font-semibold text-[#7b0d15]";
+  const emptyContentClassName = isDarkMode
+    ? "italic text-[#a58d95]"
+    : "italic text-[#8f6f76]";
+
+  const getEditableInputClassName = (hasError) =>
+    `${editableInputBaseClassName} ${
+      hasError ? "border-red-400 focus:border-red-500" : ""
+    }`;
+
+  const getEditableTextAreaClassName = (hasError) =>
+    `${editableTextAreaBaseClassName} ${
+      hasError ? "border-red-400 focus:border-red-500" : ""
+    }`;
 
   useEffect(() => {
     if (!open) {
@@ -266,6 +279,7 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
 
                   handleRoleNameChange(transcript);
                 }}
+                colorMode={colorMode}
               />
             )}
 
@@ -287,14 +301,14 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
                       {!isCreateMode ? (
                         <div className={readOnlyTagFieldClassName}>
                           {hasSelectedTag ? (
-                            <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]">
-                              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#fff1d0] text-[0.625rem] font-semibold text-[#7b0d15]">
+                            <span className={tagBadgeClassName}>
+                              <span className={tagIconClassName}>
                                 {selectedTags[0].charAt(0).toUpperCase()}
                               </span>
                               <span className="truncate">{selectedTags[0]}</span>
                             </span>
                           ) : (
-                            <span className="italic text-[#8f6f76]">No content</span>
+                            <span className={emptyContentClassName}>No content</span>
                           )}
                         </div>
                       ) : (
@@ -305,6 +319,7 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
                           placeholder={
                             isTagOptionsLoading ? "Loading tags..." : "Select tag"
                           }
+                          colorMode={colorMode}
                         />
                       )}
                       {isCreateMode && touched.tags && fieldErrors.tags && (
@@ -318,7 +333,7 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
                           {hasRoleName ? (
                             <span className="truncate">{roleName}</span>
                           ) : (
-                            <span className="italic text-[#8f6f76]">No content</span>
+                            <span className={emptyContentClassName}>No content</span>
                           )}
                         </div>
                       ) : (
@@ -355,7 +370,7 @@ export default function RoleModal({ open, mode, role, tagOptions = [], isTagOpti
                     {description.trim() ? (
                       description
                     ) : (
-                      <span className="italic text-[#8f6f76]">No content</span>
+                      <span className={emptyContentClassName}>No content</span>
                     )}
                   </div>
                 ) : (

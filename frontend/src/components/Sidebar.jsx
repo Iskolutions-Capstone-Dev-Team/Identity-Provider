@@ -39,11 +39,63 @@ const menuSections = [
 
 const mobileMenuItems = menuSections.flatMap((section) => section.items);
 
-function SidebarIcon({ iconPath, isActive }) {
+const lightSidebarTheme = {
+  desktopShell:
+    "border-white/10 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] shadow-[0_32px_90px_-38px_rgba(15,23,42,0.95)]",
+  desktopOverlay:
+    "bg-[radial-gradient(circle_at_top,rgba(248,210,78,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_30%)]",
+  brandButton:
+    "border-white/10 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-[#f8d24e]/20 hover:bg-white/[0.1]",
+  brandTitle: "text-white",
+  sectionLabel: "text-[#f8d24e]/70",
+  activeItem:
+    "border-[#f8d24e]/40 bg-[linear-gradient(135deg,rgba(248,210,78,0.96),rgba(255,215,0,0.86))] text-[#5a0b12] shadow-[0_22px_40px_-26px_rgba(248,210,78,0.95)]",
+  inactiveItem:
+    "border-white/8 bg-white/[0.03] text-white/80 hover:border-white/16 hover:bg-white/[0.1] hover:text-white",
+  tooltip:
+    "border-white/10 bg-[linear-gradient(135deg,rgba(123,13,21,0.96),rgba(43,3,7,0.98))] text-white shadow-[0_18px_40px_-24px_rgba(15,23,42,0.95)]",
+  mobileShell:
+    "border-white/10 bg-[linear-gradient(135deg,rgba(123,13,21,0.94),rgba(43,3,7,0.98))] shadow-[0_28px_60px_-28px_rgba(15,23,42,0.9)]",
+  mobileOverlay:
+    "bg-[radial-gradient(circle_at_top,rgba(248,210,78,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_34%)]",
+  mobileInactive: "text-white/70 hover:text-white",
+  mobileActive: "text-[#f8d24e]",
+  mobileIndicator: "bg-[#f8d24e]",
+  logoShadow: "drop-shadow-[0_10px_18px_rgba(248,210,78,0.3)]",
+};
+
+const darkSidebarTheme = {
+  desktopShell:
+    "border-white/8 bg-[linear-gradient(180deg,rgba(26,38,54,0.97),rgba(15,22,34,0.98))] shadow-[0_32px_90px_-38px_rgba(2,6,23,0.92)]",
+  desktopOverlay:
+    "bg-[radial-gradient(circle_at_top,rgba(248,210,78,0.12),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(123,13,21,0.18),transparent_30%),radial-gradient(circle_at_left,rgba(255,255,255,0.05),transparent_28%)]",
+  brandButton:
+    "border-white/8 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-[#f8d24e]/24 hover:bg-white/[0.08]",
+  brandTitle: "text-slate-100",
+  sectionLabel: "text-[#f8d24e]/72",
+  activeItem:
+    "border-[#f8d24e]/30 bg-[linear-gradient(135deg,rgba(111,21,30,0.94),rgba(55,20,31,0.98))] text-[#f8d24e] shadow-[0_22px_40px_-26px_rgba(123,13,21,0.72)]",
+  inactiveItem:
+    "border-white/8 bg-white/[0.03] text-slate-200/78 hover:border-white/14 hover:bg-white/[0.07] hover:text-slate-100",
+  tooltip:
+    "border-white/8 bg-[linear-gradient(135deg,rgba(27,39,56,0.98),rgba(16,24,37,0.99))] text-slate-100 shadow-[0_18px_40px_-24px_rgba(2,6,23,0.92)]",
+  mobileShell:
+    "border-white/8 bg-[linear-gradient(135deg,rgba(26,38,54,0.95),rgba(15,22,34,0.98))] shadow-[0_28px_60px_-28px_rgba(2,6,23,0.9)]",
+  mobileOverlay:
+    "bg-[radial-gradient(circle_at_top,rgba(248,210,78,0.1),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(123,13,21,0.16),transparent_34%),radial-gradient(circle_at_left,rgba(255,255,255,0.05),transparent_30%)]",
+  mobileInactive: "text-slate-300/75 hover:text-slate-100",
+  mobileActive: "text-[#f8d24e]",
+  mobileIndicator: "bg-[#f8d24e]",
+  logoShadow: "drop-shadow-[0_10px_18px_rgba(248,210,78,0.22)]",
+};
+
+function SidebarIcon({ iconPath, isActive, isDarkMode }) {
+  const activeIconClassName = isDarkMode ? "text-[#f8d24e]" : "text-[#5a0b12]";
+
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor"
       className={`h-5 w-5 shrink-0 transition duration-300 ${
-        isActive ? "text-[#5a0b12]" : "text-current"
+        isActive ? activeIconClassName : "text-current"
       }`}
     >
       <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
@@ -51,41 +103,41 @@ function SidebarIcon({ iconPath, isActive }) {
   );
 }
 
-function SidebarTooltip({ label }) {
+function SidebarTooltip({ label, className }) {
   return (
-    <span className="pointer-events-none absolute left-full top-1/2 ml-3 hidden -translate-y-1/2 rounded-xl border border-white/10 bg-[linear-gradient(135deg,rgba(123,13,21,0.96),rgba(43,3,7,0.98))] px-3 py-2 text-sm font-medium text-white opacity-0 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.95)] transition duration-200 group-hover:opacity-100 lg:block">
+    <span className={`pointer-events-none absolute left-full top-1/2 ml-3 hidden -translate-y-1/2 rounded-xl border px-3 py-2 text-sm font-medium opacity-0 transition duration-200 group-hover:opacity-100 lg:block ${className}`}>
       {label}
     </span>
   );
 }
 
-function SidebarMenuItem({ isOpen, item, isActive, onClick }) {
-  const buttonClassName = `flex h-14 w-full items-center overflow-hidden rounded-[1.35rem] border transition-all duration-300 ${
-    isOpen ? "justify-start px-3" : "justify-center px-0"
-  } ${
-    isActive
-      ? "border-[#f8d24e]/40 bg-[linear-gradient(135deg,rgba(248,210,78,0.96),rgba(255,215,0,0.86))] text-[#5a0b12] shadow-[0_22px_40px_-26px_rgba(248,210,78,0.95)]"
-      : "border-white/8 bg-white/[0.03] text-white/80 hover:border-white/16 hover:bg-white/[0.1] hover:text-white"
-  }`;
-
+function SidebarMenuItem({ isOpen, item, isActive, onClick, isDarkMode, theme }) {
+  const alignmentClassName = isOpen ? "justify-start px-3" : "justify-center px-0";
+  const surfaceClassName = isActive ? theme.activeItem : theme.inactiveItem;
   const labelClassName = `min-w-0 overflow-hidden whitespace-nowrap text-left text-sm font-semibold tracking-[0.01em] transition-all duration-300 ${
     isOpen ? "ml-3 max-w-40 opacity-100" : "ml-0 max-w-0 opacity-0"
   }`;
 
   return (
     <li className="group relative">
-      <button onClick={onClick} className={buttonClassName}>
-        <SidebarIcon iconPath={item.iconPath} isActive={isActive} />
+      <button type="button" onClick={onClick} className={`flex h-14 w-full items-center overflow-hidden rounded-[1.35rem] border transition-all duration-300 ${alignmentClassName} ${surfaceClassName}`}>
+        <SidebarIcon
+          iconPath={item.iconPath}
+          isActive={isActive}
+          isDarkMode={isDarkMode}
+        />
         <span className={labelClassName}>{item.name}</span>
       </button>
-      {!isOpen ? <SidebarTooltip label={item.name} /> : null}
+      {!isOpen ? <SidebarTooltip label={item.name} className={theme.tooltip} /> : null}
     </li>
   );
 }
 
-export default function Sidebar({ isOpen, toggleSidebar }) {
+export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "light" }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const isDarkMode = activeColorMode === "dark";
+  const theme = isDarkMode ? darkSidebarTheme : lightSidebarTheme;
   const railWidthClassName = isOpen ? "w-80" : "w-32";
   const sidebarWidthClassName = isOpen ? "w-72" : "w-24";
 
@@ -96,18 +148,17 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
   return (
     <>
       <div className={`hidden shrink-0 overflow-x-hidden transition-[width] duration-300 ease-out lg:block ${railWidthClassName}`}>
-        <aside className={`fixed bottom-4 left-4 top-4 z-30 flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] shadow-[0_32px_90px_-38px_rgba(15,23,42,0.95)] backdrop-blur-2xl transition-[width] duration-300 ease-out ${sidebarWidthClassName}`}>
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(248,210,78,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_30%)]" />
+        <aside className={`fixed bottom-4 left-4 top-4 z-30 flex flex-col overflow-hidden rounded-[2rem] border backdrop-blur-2xl transition-[width] duration-300 ease-out ${sidebarWidthClassName} ${theme.desktopShell}`}>
+          <div className={`pointer-events-none absolute inset-0 ${theme.desktopOverlay}`} />
 
           <div className="relative flex h-full flex-col">
             <div className="px-3 pt-3">
-              <button onClick={toggleSidebar}
-                className={`flex w-full items-center rounded-[1.6rem] border border-white/10 bg-white/[0.06] px-3 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition duration-300 hover:border-[#f8d24e]/20 hover:bg-white/[0.1] ${
+              <button type="button" onClick={toggleSidebar}
+                className={`flex w-full items-center rounded-[1.6rem] border px-3 py-3 text-left transition duration-300 ${
                   isOpen ? "gap-3" : "justify-center"
-                }`}
+                } ${theme.brandButton}`}
               >
-                <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="h-12 w-12 shrink-0 object-contain drop-shadow-[0_10px_18px_rgba(248,210,78,0.3)] transition duration-300 hover:scale-[1.03]"
-                />
+                <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className={`h-12 w-12 shrink-0 object-contain transition duration-300 hover:scale-[1.03] ${theme.logoShadow}`}/>
 
                 <div className={`min-w-0 overflow-hidden transition-all duration-300 ${
                     isOpen
@@ -115,7 +166,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
                       : "max-w-0 -translate-x-2 opacity-0"
                   }`}
                 >
-                  <h1 className="truncate text-2xl font-bold tracking-[0.05em] text-white">
+                  <h1 className={`truncate text-2xl font-bold tracking-[0.05em] ${theme.brandTitle}`}>
                     PUPTIDP
                   </h1>
                   <span className="mt-1 inline-flex rounded-full border border-[#f8d24e]/30 bg-[#f8d24e]/15 px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#f8d24e]">
@@ -131,11 +182,11 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
                   <div key={section.title}>
                     <div className="mb-3 flex h-5 items-center overflow-hidden px-2">
                       <p
-                        className={`whitespace-nowrap text-[0.65rem] font-semibold tracking-[0.28em] text-[#f8d24e]/70 transition-all duration-300 ${
+                        className={`whitespace-nowrap text-[0.65rem] font-semibold tracking-[0.28em] transition-all duration-300 ${
                           isOpen
                             ? "translate-x-0 opacity-100"
                             : "-translate-x-2 opacity-0"
-                        }`}
+                        } ${theme.sectionLabel}`}
                       >
                         {section.title}
                       </p>
@@ -152,6 +203,8 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
                             item={item}
                             isActive={isActive}
                             onClick={() => navigate(item.path)}
+                            isDarkMode={isDarkMode}
+                            theme={theme}
                           />
                         );
                       })}
@@ -172,6 +225,8 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
                   }}
                   isActive={false}
                   onClick={handleLogout}
+                  isDarkMode={isDarkMode}
+                  theme={theme}
                 />
               </ul>
             </div>
@@ -180,17 +235,17 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
       </div>
 
       <div className="fixed bottom-5 left-1/2 z-40 w-[calc(100%-1.5rem)] max-w-[28rem] -translate-x-1/2 lg:hidden">
-        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(123,13,21,0.94),rgba(43,3,7,0.98))] p-2 shadow-[0_28px_60px_-28px_rgba(15,23,42,0.9)] backdrop-blur-2xl">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(248,210,78,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_34%)]" />
+        <div className={`relative overflow-hidden rounded-[2rem] border p-2 backdrop-blur-2xl ${theme.mobileShell}`}>
+          <div className={`pointer-events-none absolute inset-0 ${theme.mobileOverlay}`} />
 
           <div className="relative flex items-center gap-2">
             {mobileMenuItems.map((item) => {
               const isActive = location.pathname === item.path;
 
               return (
-                <button key={item.path} onClick={() => navigate(item.path)}
-                  className={`relative flex flex-1 items-center justify-center py-3 text-white/70 transition-all duration-300 ${
-                    isActive ? "text-[#f8d24e]" : "hover:text-white"
+                <button key={item.path} type="button" onClick={() => navigate(item.path)}
+                  className={`relative flex flex-1 items-center justify-center py-3 transition-all duration-300 ${
+                    isActive ? theme.mobileActive : theme.mobileInactive
                   }`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor"
@@ -200,19 +255,19 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
                         : ""
                     }`}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath}/>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath} />
                   </svg>
-                  <span className={`absolute bottom-1 h-1.5 w-1.5 rounded-full bg-[#f8d24e] transition-all duration-300 ${
+                  <span className={`absolute bottom-1 h-1.5 w-1.5 rounded-full transition-all duration-300 ${
                       isActive ? "opacity-100" : "opacity-0"
-                    }`}
+                    } ${theme.mobileIndicator}`}
                   />
                 </button>
               );
             })}
 
-            <button onClick={handleLogout} className="flex flex-1 items-center justify-center py-3 text-white/70 transition-all duration-300 hover:text-white">
+            <button type="button" onClick={handleLogout} className={`flex flex-1 items-center justify-center py-3 transition-all duration-300 ${theme.mobileInactive}`}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15"/>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
               </svg>
             </button>
           </div>

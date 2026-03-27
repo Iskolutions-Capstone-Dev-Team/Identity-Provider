@@ -59,6 +59,18 @@ const PAGINATION_VARIANTS = {
     disabledButtonClassName:
       "cursor-not-allowed border-[#7b0d15]/8 bg-white/45 text-[#c8afb4] shadow-none hover:border-[#7b0d15]/8 hover:bg-white/45 hover:text-[#c8afb4]",
   },
+  glassDark: {
+    containerClassName:
+      "mt-1 flex flex-wrap justify-center gap-2 lg:justify-end",
+    baseButtonClassName:
+      "flex h-11 min-w-[2.75rem] items-center justify-center rounded-2xl border px-4 text-sm font-semibold outline-none transition duration-300",
+    inactiveButtonClassName:
+      "border-white/10 bg-white/[0.04] text-[#f3e7e9] shadow-[0_18px_40px_-34px_rgba(2,6,23,0.72)] hover:border-[#f8d24e]/55 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]",
+    activeButtonClassName:
+      "pointer-events-none border-[#f8d24e]/30 bg-[linear-gradient(135deg,#7b0d15_0%,#273449_100%)] text-white shadow-[0_20px_45px_-28px_rgba(2,6,23,0.9)]",
+    disabledButtonClassName:
+      "cursor-not-allowed border-white/8 bg-white/[0.02] text-[#7d6c74] shadow-none hover:border-white/8 hover:bg-white/[0.02] hover:text-[#7d6c74]",
+  },
 };
 
 export default function Pagination({
@@ -66,6 +78,7 @@ export default function Pagination({
   currentPage,
   onPageChange,
   variant = "default",
+  colorMode = "light",
 }) {
   if (totalPages <= 0) {
     return null;
@@ -75,7 +88,10 @@ export default function Pagination({
   const showNavigationButtons = totalPages > 5;
   const canGoToPreviousPage = currentPage > 1;
   const canGoToNextPage = currentPage < totalPages;
-  const styles = PAGINATION_VARIANTS[variant] || PAGINATION_VARIANTS.default;
+  const paginationVariant =
+    variant === "glass" && colorMode === "dark" ? "glassDark" : variant;
+  const styles =
+    PAGINATION_VARIANTS[paginationVariant] || PAGINATION_VARIANTS.default;
 
   const getButtonClassName = ({ isActive = false, isDisabled = false } = {}) => {
     if (isDisabled) {

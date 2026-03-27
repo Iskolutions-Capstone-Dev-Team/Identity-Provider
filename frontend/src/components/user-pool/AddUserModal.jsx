@@ -7,26 +7,7 @@ import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolModalSelect from "./UserPoolModalSelect";
-import {
-  modalBodyClassName,
-  modalBodyStackClassName,
-  modalBoxClassName,
-  modalCloseButtonClassName,
-  modalFooterActionsClassName,
-  modalFooterClassName,
-  modalHeaderClassName,
-  modalHeaderDescriptionClassName,
-  modalHeaderTitleClassName,
-  modalHelperTextClassName,
-  modalInputClassName,
-  modalLabelClassName,
-  modalOptionalBadgeClassName,
-  modalOverlayClassName,
-  modalPrimaryButtonClassName,
-  modalSecondaryButtonClassName,
-  modalSectionClassName,
-  modalStepsWrapClassName,
-} from "../modalTheme";
+import { getModalTheme } from "../modalTheme";
 
 const initialFormData = {
   email: "",
@@ -56,10 +37,12 @@ const initialFieldErrors = {
   tempPassword: "",
 };
 
-const passwordUtilityButtonClassName = "btn h-12 rounded-[1rem] border border-[#f8d24e]/55 bg-[#fff4dc] px-5 text-[#7b0d15] shadow-none transition hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white";
-const passwordVisibilityButtonClassName = "absolute right-4 top-[46%] -translate-y-1/2 text-[#8f6f76] transition hover:text-[#5a0b12]";
-
-export default function AddUserModal({ open, onClose, onSubmit }) {
+export default function AddUserModal({
+  open,
+  onClose,
+  onSubmit,
+  colorMode = "light",
+}) {
   const [step, setStep] = useState(1);
   const roles = useAllRoles();
   const [data, setData] = useState(initialFormData);
@@ -68,6 +51,39 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
   const [activeVoiceField, setActiveVoiceField] = useState("givenName");
   const [showTempPassword, setShowTempPassword] = useState(false);
+  const isDarkMode = colorMode === "dark";
+  const {
+    modalBodyClassName,
+    modalBodyStackClassName,
+    modalBoxClassName,
+    modalCloseButtonClassName,
+    modalFooterActionsClassName,
+    modalFooterClassName,
+    modalHeaderClassName,
+    modalHeaderDescriptionClassName,
+    modalHeaderTitleClassName,
+    modalHelperTextClassName,
+    modalInputClassName,
+    modalLabelClassName,
+    modalOptionalBadgeClassName,
+    modalOverlayClassName,
+    modalPrimaryButtonClassName,
+    modalSecondaryButtonClassName,
+    modalSectionClassName,
+    modalStepsWrapClassName,
+  } = getModalTheme(colorMode);
+  const passwordUtilityButtonClassName = isDarkMode
+    ? "btn h-12 rounded-[1rem] border border-[#f8d24e]/35 bg-[#f8d24e]/12 px-5 text-[#ffe28a] shadow-none transition-[background-color,background-image,border-color,color] duration-500 ease-out hover:border-[#f8d24e] hover:bg-none hover:bg-[#f8d24e] hover:text-[#7b0d15]"
+    : "btn h-12 rounded-[1rem] border border-[#f8d24e]/55 bg-[#fff4dc] px-5 text-[#7b0d15] shadow-none transition hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white";
+  const passwordVisibilityButtonClassName = isDarkMode
+    ? "absolute right-4 top-[46%] -translate-y-1/2 text-[#a58d95] transition hover:text-[#f8d24e]"
+    : "absolute right-4 top-[46%] -translate-y-1/2 text-[#8f6f76] transition hover:text-[#5a0b12]";
+  const emailIconClassName = isDarkMode
+    ? "border-r border-white/10 pr-3 text-[#a58d95]"
+    : "border-r border-[#7b0d15]/10 pr-3 text-[#8f6f76]";
+  const tempPasswordHintClassName = isDarkMode
+    ? "mt-3 text-xs text-[#c7adb4]"
+    : "mt-3 text-xs text-[#8f6f76]";
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -307,6 +323,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
             <div className={modalStepsWrapClassName}>
               <ModalSteps
                 currentStep={step}
+                colorMode={colorMode}
                 steps={[
                   <>
                     <span className="step-icon">
@@ -338,6 +355,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                     activeFieldLabel={activeVoiceFieldLabel}
                     onError={setError}
                     onTranscript={handleVoiceInput}
+                    colorMode={colorMode}
                   />
 
                   <label className={modalLabelClassName}>
@@ -345,7 +363,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                   </label>
                   <div className="validator w-full">
                     <label className={`${getInputClassName("email")} flex items-center gap-3 px-4`}>
-                      <span className="border-r border-[#7b0d15]/10 pr-3 text-[#8f6f76]">
+                      <span className={emailIconClassName}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
                           <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
                           <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
@@ -441,6 +459,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                       placeholder="Select entity groups"
                       variant="userpoolModal"
                       hasError={rolesError}
+                      colorMode={colorMode}
                     />
                     {rolesError && (
                       <p className="mt-2 text-xs text-red-500">
@@ -468,6 +487,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                         }
                         options={inviteModeOptions}
                         ariaLabel="Invitation Method"
+                        colorMode={colorMode}
                       />
                     </div>
 
@@ -492,6 +512,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                               }
                               options={deliveryOptions}
                               ariaLabel="Delivery Method"
+                              colorMode={colorMode}
                             />
                           </div>
                         </FadeWrapper>
@@ -514,6 +535,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                               activeFieldLabel={activeVoiceFieldLabel}
                               onError={setError}
                               onTranscript={handleVoiceInput}
+                              colorMode={colorMode}
                             />
 
                             <label className={modalLabelClassName}>
@@ -552,7 +574,7 @@ export default function AddUserModal({ open, onClose, onSubmit }) {
                                 {fieldErrors.tempPassword}
                               </p>
                             )}
-                            <p className="mt-3 text-xs text-[#8f6f76]">
+                            <p className={tempPasswordHintClassName}>
                               User will be required to set a new password at first sign-in.
                             </p>
                           </div>

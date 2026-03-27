@@ -3,33 +3,13 @@ import { useEffect, useState } from "react";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { formatTimestamp } from "../../utils/formatTimestamp";
-import {
-  modalBodyClassName,
-  modalBodyStackClassName,
-  modalBoxClassName,
-  modalCloseButtonClassName,
-  modalFooterActionsClassName,
-  modalFooterClassName,
-  modalHeaderClassName,
-  modalHeaderDescriptionClassName,
-  modalHeaderTitleClassName,
-  modalHelperTextClassName,
-  modalInputClassName,
-  modalLabelClassName,
-  modalOverlayClassName,
-  modalPrimaryButtonClassName,
-  modalSecondaryButtonClassName,
-  modalSectionClassName,
-} from "../modalTheme";
+import { getModalTheme } from "../modalTheme";
 
 const initialFieldErrors = {
   firstName: "",
   lastName: "",
   email: "",
 };
-
-const getInputClassName = (hasError) =>
-  `${modalInputClassName} ${hasError ? "border-red-400 focus:border-red-500" : ""}`;
 
 const createProfileState = (profileData = {}) => ({
   ...profileData,
@@ -57,7 +37,7 @@ function validateProfile(profile, allowEmailEdit) {
   return nextFieldErrors;
 }
 
-export default function EditProfileModal({ open, onClose, profileData, updateProfile, addAuditLog, allowEmailEdit = false }) {
+export default function EditProfileModal({ open, onClose, profileData, updateProfile, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
   const [profile, setProfile] = useState(createProfileState());
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
   const [activeVoiceField, setActiveVoiceField] = useState("firstName");
@@ -146,6 +126,34 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
     return null;
   }
 
+  const {
+    modalBodyClassName,
+    modalBodyStackClassName,
+    modalBoxClassName,
+    modalCloseButtonClassName,
+    modalFooterActionsClassName,
+    modalFooterClassName,
+    modalHeaderClassName,
+    modalHeaderDescriptionClassName,
+    modalHeaderTitleClassName,
+    modalHelperTextClassName,
+    modalInputClassName,
+    modalLabelClassName,
+    modalOverlayClassName,
+    modalPrimaryButtonClassName,
+    modalSecondaryButtonClassName,
+    modalSectionClassName,
+  } = getModalTheme(colorMode);
+  const isDarkMode = colorMode === "dark";
+  const fieldErrorClassName = isDarkMode
+    ? "mt-2 text-xs text-red-300"
+    : "mt-2 text-xs text-red-500";
+  const requiredNoteClassName = isDarkMode
+    ? "text-sm text-[#c7adb4]"
+    : "text-sm text-[#8f6f76]";
+  const getInputClassName = (hasError) =>
+    `${modalInputClassName} ${hasError ? "border-red-400 focus:border-red-500" : ""}`;
+
   return createPortal(
     <dialog open className={modalOverlayClassName}>
       <div className={modalBoxClassName}>
@@ -160,7 +168,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
 
             <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
@@ -168,7 +176,10 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
 
         <form id="edit-profile-form" noValidate className={modalBodyClassName} onSubmit={handleSubmit}>
           <div className={modalBodyStackClassName}>
-            <ErrorAlert message={errorMessage} onClose={() => setErrorMessage("")} />
+            <ErrorAlert
+              message={errorMessage}
+              onClose={() => setErrorMessage("")}
+            />
 
             <section className={modalSectionClassName}>
               <SpeechInputToolbar
@@ -176,6 +187,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                 activeFieldLabel={activeVoiceFieldLabel}
                 onError={setErrorMessage}
                 onTranscript={handleVoiceInput}
+                colorMode={colorMode}
               />
 
               <div className="grid gap-5 md:grid-cols-3">
@@ -185,15 +197,19 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                   </label>
                   <input type="text" name="firstName" value={profile.firstName} onChange={handleChange} onFocus={() => setActiveVoiceField("firstName")} placeholder="Enter first name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.firstName))}/>
                   {fieldErrors.firstName ? (
-                    <p className="mt-2 text-xs text-red-500">{fieldErrors.firstName}</p>
+                    <p className={fieldErrorClassName}>
+                      {fieldErrors.firstName}
+                    </p>
                   ) : (
-                    <p className={`${modalHelperTextClassName} mt-2`}>Max 50 characters</p>
+                    <p className={`${modalHelperTextClassName} mt-2`}>
+                      Max 50 characters
+                    </p>
                   )}
                 </div>
 
                 <div>
                   <label className={modalLabelClassName}>Middle Name</label>
-                  <input type="text" name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className={modalInputClassName}/>
+                  <input type="text"  name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className={modalInputClassName}/>
                   <p className={`${modalHelperTextClassName} mt-2`}>Optional</p>
                 </div>
 
@@ -203,9 +219,11 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                   </label>
                   <input type="text" name="lastName" value={profile.lastName} onChange={handleChange} onFocus={() => setActiveVoiceField("lastName")} placeholder="Enter last name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.lastName))}/>
                   {fieldErrors.lastName ? (
-                    <p className="mt-2 text-xs text-red-500">{fieldErrors.lastName}</p>
+                    <p className={fieldErrorClassName}>{fieldErrors.lastName}</p>
                   ) : (
-                    <p className={`${modalHelperTextClassName} mt-2`}>Max 50 characters</p>
+                    <p className={`${modalHelperTextClassName} mt-2`}>
+                      Max 50 characters
+                    </p>
                   )}
                 </div>
               </div>
@@ -219,7 +237,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                   </label>
                   <input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className={getInputClassName(Boolean(fieldErrors.email))}/>
                   {fieldErrors.email ? (
-                    <p className="mt-2 text-xs text-red-500">{fieldErrors.email}</p>
+                    <p className={fieldErrorClassName}>{fieldErrors.email}</p>
                   ) : (
                     <p className={`${modalHelperTextClassName} mt-2`}>
                       Must be an active email account
@@ -229,8 +247,9 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
               </section>
             )}
 
-            <div className="text-sm text-[#8f6f76]">
-              Fields marked with <span className="text-red-500">*</span> are required
+            <div className={requiredNoteClassName}>
+              Fields marked with <span className="text-red-500">*</span> are
+              required
             </div>
           </div>
         </form>

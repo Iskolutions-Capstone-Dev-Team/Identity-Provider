@@ -1,22 +1,5 @@
 import { createPortal } from "react-dom";
-import {
-  modalBodyClassName,
-  modalBodyStackClassName,
-  modalBoxClassName,
-  modalCloseButtonClassName,
-  modalFooterActionsClassName,
-  modalFooterClassName,
-  modalHeaderClassName,
-  modalHeaderDescriptionClassName,
-  modalHeaderTitleClassName,
-  modalLabelClassName,
-  modalOverlayClassName,
-  modalSecondaryButtonClassName,
-  modalSectionClassName,
-} from "../modalTheme";
-
-const modalHeaderSpacingClassName = `${modalHeaderClassName} !pb-10 sm:!pb-12`;
-const modalBodySpacingClassName = `${modalBodyClassName} !pt-7 sm:!pt-8`;
+import { getModalTheme } from "../modalTheme";
 
 function formatMetadata(metadata) {
   if (metadata == null) {
@@ -30,25 +13,63 @@ function formatMetadata(metadata) {
   return JSON.stringify(metadata, null, 2);
 }
 
-function DetailField({ label, value }) {
+function DetailField({ label, value, colorMode = "light" }) {
+  const isDarkMode = colorMode === "dark";
+  const fieldClassName = isDarkMode
+    ? "rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(16,23,38,0.94),rgba(32,22,30,0.9))] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[background-color,border-color,color] duration-500 ease-out"
+    : "rounded-[1.25rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] transition-[background-color,border-color,color] duration-500 ease-out";
+  const labelClassName = isDarkMode
+    ? "text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[#c7adb4] transition-colors duration-500 ease-out"
+    : "text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[#8f6f76] transition-colors duration-500 ease-out";
+  const valueClassName = isDarkMode
+    ? "mt-2 break-all text-sm font-medium text-[#f4eaea] transition-colors duration-500 ease-out"
+    : "mt-2 break-all text-sm font-medium text-[#4a1921] transition-colors duration-500 ease-out";
+
   return (
-    <div className="rounded-[1.25rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
-      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[#8f6f76]">
+    <div className={fieldClassName}>
+      <p className={labelClassName}>
         {label}
       </p>
-      <p className="mt-2 break-all text-sm font-medium text-[#4a1921]">
+      <p className={valueClassName}>
         {value ?? "-"}
       </p>
     </div>
   );
 }
 
-export default function LogMetadataModal({ open, log, loading, error, onClose }) {
+export default function LogMetadataModal({ open, log, loading, error, onClose, colorMode = "light" }) {
   if (!open) {
     return null;
   }
 
+  const {
+    modalBodyClassName,
+    modalBodyStackClassName,
+    modalBoxClassName,
+    modalCloseButtonClassName,
+    modalFooterActionsClassName,
+    modalFooterClassName,
+    modalHeaderClassName,
+    modalHeaderDescriptionClassName,
+    modalHeaderTitleClassName,
+    modalLabelClassName,
+    modalOverlayClassName,
+    modalSecondaryButtonClassName,
+    modalSectionClassName,
+  } = getModalTheme(colorMode);
+  const isDarkMode = colorMode === "dark";
   const metadataText = formatMetadata(log?.metadata);
+  const modalHeaderSpacingClassName = `${modalHeaderClassName} !pb-10 sm:!pb-12`;
+  const modalBodySpacingClassName = `${modalBodyClassName} !pt-7 sm:!pt-8`;
+  const messageBoxClassName = isDarkMode
+    ? "rounded-[1rem] border border-white/10 bg-[rgba(10,15,24,0.72)] px-4 py-4 text-sm text-[#d6c3c7] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[background-color,border-color,color] duration-500 ease-out"
+    : "rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-4 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] transition-[background-color,border-color,color] duration-500 ease-out";
+  const errorBoxClassName = isDarkMode
+    ? "rounded-[1rem] border border-red-400/25 bg-[linear-gradient(180deg,rgba(69,22,29,0.92),rgba(32,16,21,0.94))] px-4 py-4 text-sm text-[#ffd8dd] transition-[background-color,border-color,color] duration-500 ease-out"
+    : "rounded-[1rem] border border-[#b42318]/15 bg-[linear-gradient(180deg,rgba(255,247,247,0.98),rgba(255,255,255,0.94))] px-4 py-4 text-sm text-[#991b1b] transition-[background-color,border-color,color] duration-500 ease-out";
+  const metadataClassName = isDarkMode
+    ? "max-h-96 overflow-auto rounded-[1.25rem] bg-[linear-gradient(180deg,rgba(9,14,25,0.96),rgba(22,18,28,0.96))] p-4 text-xs leading-6 text-[#f8ecee] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[background-color,color] duration-500 ease-out"
+    : "max-h-96 overflow-auto rounded-[1.25rem] bg-[#2b0307] p-4 text-xs leading-6 text-[#fff8f3] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[background-color,color] duration-500 ease-out";
 
   return createPortal(
     <dialog open className={modalOverlayClassName}>
@@ -74,12 +95,12 @@ export default function LogMetadataModal({ open, log, loading, error, onClose })
           <div className={modalBodyStackClassName}>
             <section className={modalSectionClassName}>
               <div className="grid gap-4 md:grid-cols-2">
-                <DetailField label="Log ID" value={log?.id} />
-                <DetailField label="Timestamp" value={log?.timestamp} />
-                <DetailField label="Actor" value={log?.actor} />
-                <DetailField label="Target" value={log?.target} />
-                <DetailField label="Status" value={log?.status} />
-                <DetailField label="Action" value={log?.action} />
+                <DetailField label="Log ID" value={log?.id} colorMode={colorMode} />
+                <DetailField label="Timestamp" value={log?.timestamp} colorMode={colorMode} />
+                <DetailField label="Actor" value={log?.actor} colorMode={colorMode} />
+                <DetailField label="Target" value={log?.target} colorMode={colorMode} />
+                <DetailField label="Status" value={log?.status} colorMode={colorMode} />
+                <DetailField label="Action" value={log?.action} colorMode={colorMode} />
               </div>
             </section>
 
@@ -87,21 +108,21 @@ export default function LogMetadataModal({ open, log, loading, error, onClose })
               <h4 className={modalLabelClassName}>Metadata</h4>
 
               {loading && (
-                <div className="rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-4 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">Loading metadata...</div>
+                <div className={messageBoxClassName}>Loading metadata...</div>
               )}
 
               {!loading && error && (
-                <div className="rounded-[1rem] border border-[#b42318]/15 bg-[linear-gradient(180deg,rgba(255,247,247,0.98),rgba(255,255,255,0.94))] px-4 py-4 text-sm text-[#991b1b]">
+                <div className={errorBoxClassName}>
                   {error}
                 </div>
               )}
 
               {!loading && !metadataText && (
-                <div className="rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-4 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">No metadata available.</div>
+                <div className={messageBoxClassName}>No metadata available.</div>
               )}
 
               {!loading && metadataText && (
-                <pre className="max-h-96 overflow-auto rounded-[1.25rem] bg-[#2b0307] p-4 text-xs leading-6 text-[#fff8f3] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                <pre className={metadataClassName}>
                   {metadataText}
                 </pre>
               )}

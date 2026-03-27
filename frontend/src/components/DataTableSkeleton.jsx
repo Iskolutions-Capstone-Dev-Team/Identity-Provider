@@ -22,6 +22,17 @@ const TABLE_THEMES = {
     bodyCellClassName: "border-b border-[#7b0d15]/10 px-6 py-5",
     skeletonToneClassName: "bg-[#e8d8dc]",
   },
+  userpoolDark: {
+    wrapperClassName:
+      "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(28,18,29,0.92))] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.82)]",
+    tableClassName: "table w-full min-w-[62rem] lg:min-w-0 lg:table-fixed",
+    headerRowClassName:
+      "bg-[linear-gradient(135deg,#7b0d15_0%,#253247_55%,#421117_100%)]",
+    headerCellClassName:
+      "border-b border-white/10 px-6 py-4 text-left text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90",
+    bodyCellClassName: "border-b border-white/10 px-6 py-5",
+    skeletonToneClassName: "bg-white/12",
+  },
 };
 
 function renderCellContent(type, width, skeletonToneClassName) {

@@ -28,26 +28,48 @@ const defaultPrimaryButtonClassName =
 const glassPrimaryButtonClassName =
   "btn h-12 rounded-[1rem] border border-[#7b0d15] bg-[#7b0d15] px-6 text-white transition hover:border-[#5a0b12] hover:bg-[#5a0b12]";
 
-export default function DeleteConfirmModal({ open, message = "Delete this app client?", onCancel, onConfirm, theme = "default" }) {
+export default function DeleteConfirmModal({ open, message = "Delete this app client?", onCancel, onConfirm, theme = "default", colorMode = "light" }) {
   const isGlassTheme = theme === "glass";
+  const isDarkGlassTheme = isGlassTheme && colorMode === "dark";
+  const dialogClassName = isGlassTheme
+    ? glassDialogClassName
+    : defaultDialogClassName;
+  const boxClassName = isDarkGlassTheme
+    ? "modal-box w-full max-w-lg rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(35,22,31,0.96))] font-[Poppins] text-center text-[#f4eaea] shadow-[0_36px_90px_-40px_rgba(2,6,23,0.9)]"
+    : isGlassTheme
+      ? glassBoxClassName
+      : defaultBoxClassName;
+  const iconWrapClassName = isDarkGlassTheme
+    ? "flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-[#f8d24e]/25 bg-[radial-gradient(circle_at_top,rgba(248,210,78,0.16),transparent_45%),linear-gradient(135deg,#7b0d15_0%,#263345_60%,#1a121c_100%)] shadow-[0_24px_50px_-28px_rgba(2,6,23,0.8)]"
+    : isGlassTheme
+      ? glassIconWrapClassName
+      : defaultIconWrapClassName;
+  const titleClassName = isDarkGlassTheme
+    ? "text-2xl font-semibold tracking-tight text-[#f7dadd]"
+    : isGlassTheme
+      ? glassTitleClassName
+      : defaultTitleClassName;
+  const descriptionClassName = isDarkGlassTheme
+    ? "text-sm text-[#c7adb4]"
+    : isGlassTheme
+      ? glassDescriptionClassName
+      : defaultDescriptionClassName;
+  const secondaryButtonClassName = isDarkGlassTheme
+    ? "btn h-12 rounded-[1rem] border border-white/12 bg-white/[0.04] px-6 text-[#f4eaea] shadow-none transition hover:border-[#f8d24e]/45 hover:bg-[#f8d24e]/12 hover:text-[#ffe6a4]"
+    : isGlassTheme
+      ? glassSecondaryButtonClassName
+      : defaultSecondaryButtonClassName;
+  const primaryButtonClassName = isDarkGlassTheme
+    ? "btn h-12 rounded-[1rem] border border-[#f8d24e]/35 bg-[linear-gradient(135deg,#7b0d15_0%,#4f1018_100%)] px-6 text-white transition hover:border-[#f8d24e] hover:bg-[#8f121b]"
+    : isGlassTheme
+      ? glassPrimaryButtonClassName
+      : defaultPrimaryButtonClassName;
 
   return (
-    <dialog
-      className={`${
-        isGlassTheme ? glassDialogClassName : defaultDialogClassName
-      } ${open ? "modal-open" : ""}`}
-    >
-      <form
-        method="dialog"
-        className={isGlassTheme ? glassBoxClassName : defaultBoxClassName}
-      >
+    <dialog className={`${dialogClassName} ${open ? "modal-open" : ""}`}>
+      <form method="dialog" className={boxClassName}>
         <div className="mb-6 flex justify-center">
-          <div className={
-              isGlassTheme
-                ? glassIconWrapClassName
-                : defaultIconWrapClassName
-            }
-          >
+          <div className={iconWrapClassName}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
               className={`h-10 w-10 ${
                 isGlassTheme ? "text-white" : "text-[#ffd700]"
@@ -58,37 +80,18 @@ export default function DeleteConfirmModal({ open, message = "Delete this app cl
           </div>
         </div>
 
-        <h3 className={isGlassTheme ? glassTitleClassName : defaultTitleClassName}>
+        <h3 className={titleClassName}>
           {message}
         </h3>
-        <p className={`mt-2 ${
-            isGlassTheme
-              ? glassDescriptionClassName
-              : defaultDescriptionClassName
-          }`}
-        >
+        <p className={`mt-2 ${descriptionClassName}`}>
           This action cannot be undone.
         </p>
 
         <div className="modal-action justify-center gap-3">
-          <button type="button"
-            className={
-              isGlassTheme
-                ? glassSecondaryButtonClassName
-                : defaultSecondaryButtonClassName
-            }
-            onClick={onCancel}
-          >
+          <button type="button" className={secondaryButtonClassName} onClick={onCancel}>
             Cancel
           </button>
-          <button type="button"
-            className={
-              isGlassTheme
-                ? glassPrimaryButtonClassName
-                : defaultPrimaryButtonClassName
-            }
-            onClick={onConfirm}
-          >
+          <button type="button" className={primaryButtonClassName} onClick={onConfirm}>
             Delete
           </button>
         </div>

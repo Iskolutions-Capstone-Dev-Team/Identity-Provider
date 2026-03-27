@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-const baseClassName =
-  "inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#7b0d15]/15 bg-white/92 text-[#7b0d15] shadow-[0_14px_30px_-18px_rgba(43,3,7,0.55)] transition duration-200 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] focus:outline-none focus:ring-4 focus:ring-[#f8d24e]/25 disabled:cursor-not-allowed disabled:opacity-60";
-const listeningClassName =
-  "border-[#f8d24e] bg-[#fff4dc] text-[#7b0d15] shadow-[0_18px_34px_-18px_rgba(248,210,78,0.9)]";
-
 function getSpeechRecognitionConstructor() {
   if (typeof window === "undefined") {
     return null;
@@ -36,11 +31,19 @@ export default function SpeechInputButton({
   lang = "en-US",
   onError,
   onTranscript,
+  colorMode = "light",
 }) {
   const recognitionRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
   const SpeechRecognition = getSpeechRecognitionConstructor();
   const isSupported = Boolean(SpeechRecognition);
+  const isDarkMode = colorMode === "dark";
+  const baseClassName = isDarkMode
+    ? "inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-[#f4eaea] shadow-[0_14px_30px_-18px_rgba(2,6,23,0.72)] transition duration-200 hover:border-[#f8d24e]/55 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a] focus:outline-none focus:ring-4 focus:ring-[#f8d24e]/18 disabled:cursor-not-allowed disabled:opacity-60"
+    : "inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#7b0d15]/15 bg-white/92 text-[#7b0d15] shadow-[0_14px_30px_-18px_rgba(43,3,7,0.55)] transition duration-200 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] focus:outline-none focus:ring-4 focus:ring-[#f8d24e]/25 disabled:cursor-not-allowed disabled:opacity-60";
+  const listeningClassName = isDarkMode
+    ? "border-[#f8d24e] bg-[#f8d24e]/14 text-[#ffe28a] shadow-[0_18px_34px_-18px_rgba(248,210,78,0.45)]"
+    : "border-[#f8d24e] bg-[#fff4dc] text-[#7b0d15] shadow-[0_18px_34px_-18px_rgba(248,210,78,0.9)]";
 
   useEffect(() => {
     return () => {
@@ -159,8 +162,19 @@ export function SpeechInputToolbar({
   disabled = false,
   onError,
   onTranscript,
+  colorMode = "light",
 }) {
   const isSupported = Boolean(getSpeechRecognitionConstructor());
+  const isDarkMode = colorMode === "dark";
+  const toolbarClassName = isDarkMode
+    ? "flex items-center justify-between gap-3 rounded-[1.15rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(27,18,28,0.82))] px-4 py-3 shadow-[0_18px_40px_-34px_rgba(2,6,23,0.72)]"
+    : "flex items-center justify-between gap-3 rounded-[1.15rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,243,0.92))] px-4 py-3 shadow-[0_18px_40px_-34px_rgba(43,3,7,0.45)]";
+  const descriptionClassName = isDarkMode
+    ? "text-xs font-medium leading-5 text-[#c7adb4]"
+    : "text-xs font-medium leading-5 text-[#7b5560]";
+  const targetClassName = isDarkMode
+    ? "font-semibold text-[#ffe28a]"
+    : "font-semibold text-[#7b0d15]";
 
   if (!isSupported) {
     return null;
@@ -168,13 +182,13 @@ export function SpeechInputToolbar({
 
   return (
     <div
-      className={`flex items-center justify-between gap-3 rounded-[1.15rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,243,0.92))] px-4 py-3 shadow-[0_18px_40px_-34px_rgba(43,3,7,0.45)] ${className}`.trim()}
+      className={`${toolbarClassName} ${className}`.trim()}
     >
-      <p className="text-xs font-medium leading-5 text-[#7b5560]">
+      <p className={descriptionClassName}>
         {activeFieldLabel ? (
           <>
             Voice target:{" "}
-            <span className="font-semibold text-[#7b0d15]">
+            <span className={targetClassName}>
               {activeFieldLabel}
             </span>
             . Click another supported field to switch.
@@ -193,6 +207,7 @@ export function SpeechInputToolbar({
         disabled={disabled}
         onError={onError}
         onTranscript={onTranscript}
+        colorMode={colorMode}
       />
     </div>
   );

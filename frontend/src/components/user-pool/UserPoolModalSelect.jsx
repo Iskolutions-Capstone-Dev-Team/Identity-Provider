@@ -1,20 +1,30 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  modalSelectButtonClassName,
-  modalSelectMenuClassName,
-  modalSelectOptionClassName,
-  modalSelectOptionSelectedClassName,
-  modalSelectTriggerClassName,
+  getModalTheme,
 } from "../modalTheme";
 
 function getSelectedOption(options, value) {
   return options.find((option) => option.value === value) || options[0];
 }
 
-export default function UserPoolModalSelect({ value, onChange, options, ariaLabel }) {
+export default function UserPoolModalSelect({ value, onChange, options, ariaLabel, colorMode = "light" }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const selectedOption = getSelectedOption(options, value);
+  const isDarkMode = colorMode === "dark";
+  const {
+    modalSelectButtonClassName,
+    modalSelectMenuClassName,
+    modalSelectOptionClassName,
+    modalSelectOptionSelectedClassName,
+    modalSelectTriggerClassName,
+  } = getModalTheme(colorMode);
+  const valueClassName = isDarkMode
+    ? "truncate text-left text-sm font-medium text-[#f4eaea]"
+    : "truncate text-left text-sm font-medium text-[#4a1921]";
+  const chevronClassName = isDarkMode
+    ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f8d24e]/12 text-[#f8d24e] transition duration-300"
+    : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff2d2] text-[#991b1b] transition duration-300";
 
   useEffect(() => {
     if (!isOpen) {
@@ -50,11 +60,11 @@ export default function UserPoolModalSelect({ value, onChange, options, ariaLabe
   return (
     <div ref={dropdownRef} className={modalSelectTriggerClassName}>
       <button type="button" className={modalSelectButtonClassName} onClick={() => setIsOpen((current) => !current)} aria-haspopup="listbox" aria-expanded={isOpen}>
-        <span className="truncate text-left text-sm font-medium text-[#4a1921]">
+        <span className={valueClassName}>
           {selectedOption?.label}
         </span>
 
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff2d2] text-[#991b1b] transition duration-300">
+        <span className={chevronClassName}>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
             className={`h-5 w-5 transition duration-300 ${
               isOpen ? "rotate-180" : ""

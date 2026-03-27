@@ -40,6 +40,7 @@ const INITIAL_AUDIT_LOGS = [
 export default function Profile() {
   const outletContext = useOutletContext();
   const profile = outletContext?.currentUser || EMPTY_CURRENT_USER;
+  const colorMode = outletContext?.colorMode || "light";
   const [logs, setLogs] = useState(INITIAL_AUDIT_LOGS);
 
   const handleAddAuditLog = (log) => {
@@ -53,8 +54,9 @@ export default function Profile() {
           profile={profile}
           addAuditLog={handleAddAuditLog}
           allowEmailEdit={false}
+          colorMode={colorMode}
         />
-        <ProfileAuditLogs logs={logs} />
+        <ProfileAuditLogs logs={logs} colorMode={colorMode} />
       </div>
     </div>
   );

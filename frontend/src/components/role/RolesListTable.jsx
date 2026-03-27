@@ -3,20 +3,26 @@ import DataTableSkeleton from "../DataTableSkeleton";
 
 const headerCellClassName =
   "border-b border-white/10 px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90";
-const bodyCellClassName =
-  "border-b border-[#7b0d15]/10 px-6 py-5 text-center align-middle text-sm text-[#5d3a41]";
 
-function getRowClassName(index) {
-  return `transition-colors duration-300 ${
+function getRowClassName(index, isDarkMode) {
+  if (isDarkMode) {
+    return `transition-colors duration-500 ease-out ${
+      index % 2 === 0
+        ? "bg-white/[0.03] hover:bg-[#f8d24e]/[0.08]"
+        : "bg-[#7b0d15]/[0.08] hover:bg-[#7b0d15]/[0.16]"
+    }`;
+  }
+
+  return `transition-colors duration-500 ease-out ${
     index % 2 === 0
       ? "bg-white/70 hover:bg-[#fff4dc]/70"
       : "bg-[#fff8f3]/80 hover:bg-[#fff4dc]/80"
   }`;
 }
 
-function renderActionButton({ buttonKey, label, onClick, children }) {
+function renderActionButton({ buttonKey, label, onClick, children, className }) {
   return (
-    <button key={buttonKey} type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]" onClick={onClick} aria-label={label}>
+    <button key={buttonKey} type="button" className={className} onClick={onClick} aria-label={label}>
       {children}
     </button>
   );
@@ -66,11 +72,35 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
   return actions;
 }
 
-export default function RolesListTable({ loading = false, roles, onView, onEdit, onDelete }) {
+export default function RolesListTable({ loading = false, roles, onView, onEdit, onDelete, colorMode = "light" }) {
+  const isDarkMode = colorMode === "dark";
+  const tableTheme = isDarkMode ? "userpoolDark" : "userpool";
+  const wrapperClassName = isDarkMode
+    ? "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(28,18,29,0.92))] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.82)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
+    : "overflow-hidden rounded-[1.75rem] border border-[#7b0d15]/10 bg-white/65 shadow-[0_22px_55px_-38px_rgba(43,3,7,0.55)] transition-[background-color,border-color,box-shadow] duration-500 ease-out";
+  const tableHeaderRowClassName = isDarkMode
+    ? "bg-[linear-gradient(135deg,#7b0d15_0%,#253247_55%,#421117_100%)]"
+    : "bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)]";
+  const bodyCellClassName = isDarkMode
+    ? "border-b border-white/10 px-6 py-5 text-center align-middle text-sm text-[#f1e5e7]"
+    : "border-b border-[#7b0d15]/10 px-6 py-5 text-center align-middle text-sm text-[#5d3a41]";
+  const roleNameCellClassName = isDarkMode
+    ? `${bodyCellClassName} font-semibold text-[#f6eaec]`
+    : `${bodyCellClassName} font-semibold text-[#4a1921]`;
+  const createdCellClassName = isDarkMode
+    ? `${bodyCellClassName} text-[#f8d996]`
+    : `${bodyCellClassName} text-[#7b0d15]`;
+  const emptyStateClassName = isDarkMode
+    ? "px-6 py-16 text-center text-sm text-[#bda8af]"
+    : "px-6 py-16 text-center text-sm text-[#8f6f76]";
+  const actionButtonClassName = isDarkMode
+    ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] text-[#f1e5e7] shadow-[0_14px_30px_-24px_rgba(2,6,23,0.72)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
+    : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
+
   if (loading) {
     return (
       <DataTableSkeleton
-        theme="userpool"
+        theme={tableTheme}
         columns={[
           { header: "Role Name", type: "text", width: "w-28" },
           { header: "Description", type: "text", width: "w-36" },
@@ -82,11 +112,11 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
   }
 
   return (
-    <div className="overflow-hidden rounded-[1.75rem] border border-[#7b0d15]/10 bg-white/65 shadow-[0_22px_55px_-38px_rgba(43,3,7,0.55)]">
+    <div className={wrapperClassName}>
       <div className="overflow-x-auto">
         <table className="table w-full min-w-[56rem] lg:min-w-0 lg:table-fixed">
           <thead>
-            <tr className="bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)]">
+            <tr className={tableHeaderRowClassName}>
               <th className={headerCellClassName}>Role Name</th>
               <th className={headerCellClassName}>Description</th>
               <th className={headerCellClassName}>Created</th>
@@ -97,19 +127,19 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
           <tbody>
             {roles.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-6 py-16 text-center text-sm text-[#8f6f76]">
+                <td colSpan={4} className={emptyStateClassName}>
                   No roles found
                 </td>
               </tr>
             )}
 
             {roles.map((role, index) => (
-              <TableRowFade key={role.id} className={getRowClassName(index)}>
-                <td className={`${bodyCellClassName} font-semibold text-[#4a1921]`}>
+              <TableRowFade key={role.id} className={getRowClassName(index, isDarkMode)}>
+                <td className={roleNameCellClassName}>
                   {role.role_name}
                 </td>
                 <td className={bodyCellClassName}>{role.description}</td>
-                <td className={`${bodyCellClassName} text-[#7b0d15]`}>
+                <td className={createdCellClassName}>
                   {role.created_at}
                 </td>
                 <td className={bodyCellClassName}>
@@ -119,6 +149,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
                         buttonKey: action.key,
                         label: action.label,
                         onClick: action.onClick,
+                        className: actionButtonClassName,
                         children: action.icon,
                       }),
                     )}

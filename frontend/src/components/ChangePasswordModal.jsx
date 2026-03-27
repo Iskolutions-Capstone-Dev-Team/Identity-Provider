@@ -6,24 +6,7 @@ import ChangePasswordStep, {
 import OtpVerificationStep from "./OtpVerificationStep";
 import SuccessStep from "./SuccessStep";
 import SuccessAlert from "./SuccessAlert";
-import {
-  modalBodyClassName,
-  modalBodyStackClassName,
-  modalBoxClassName,
-  modalCloseButtonClassName,
-  modalFooterActionsClassName,
-  modalFooterClassName,
-  modalHeaderClassName,
-  modalHeaderDescriptionClassName,
-  modalHeaderTitleClassName,
-  modalOverlayClassName,
-  modalPrimaryButtonClassName,
-  modalSecondaryButtonClassName,
-} from "./modalTheme";
-
-const passwordModalBoxClassName = `${modalBoxClassName} !max-w-2xl`;
-const disabledPrimaryButtonClassName =
-  "cursor-not-allowed border-[#7b0d15]/12 bg-[#cdb7bb] text-white/70 hover:border-[#7b0d15]/12 hover:bg-[#cdb7bb]";
+import { getModalTheme } from "./modalTheme";
 
 const stepMeta = {
   1: {
@@ -43,11 +26,13 @@ const stepMeta = {
   },
 };
 
-function getPrimaryButtonClassName(isDisabled = false) {
-  return `${modalPrimaryButtonClassName} ${isDisabled ? disabledPrimaryButtonClassName : ""}`;
+function getDisabledPrimaryButtonClassName(isDarkMode) {
+  return isDarkMode
+    ? "cursor-not-allowed border-white/10 bg-white/[0.08] text-white/45 hover:border-white/10 hover:bg-white/[0.08]"
+    : "cursor-not-allowed border-[#7b0d15]/12 bg-[#cdb7bb] text-white/70 hover:border-[#7b0d15]/12 hover:bg-[#cdb7bb]";
 }
 
-export default function ChangePasswordModal({ isOpen, onClose, showCurrentPassword = true, addAuditLog, setToastMessage, enableSuccessAlert = false }) {
+export default function ChangePasswordModal({ isOpen, onClose, showCurrentPassword = true, addAuditLog, setToastMessage, enableSuccessAlert = false, colorMode = "light" }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     currentPassword: "",
@@ -152,6 +137,29 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   }
 
   const currentStepMeta = stepMeta[step] || stepMeta[1];
+  const {
+    modalBodyClassName,
+    modalBodyStackClassName,
+    modalBoxClassName,
+    modalCloseButtonClassName,
+    modalFooterActionsClassName,
+    modalFooterClassName,
+    modalHeaderClassName,
+    modalHeaderDescriptionClassName,
+    modalHeaderTitleClassName,
+    modalOverlayClassName,
+    modalPrimaryButtonClassName,
+    modalSecondaryButtonClassName,
+  } = getModalTheme(colorMode);
+  const isDarkMode = colorMode === "dark";
+  const passwordModalBoxClassName = `${modalBoxClassName} !max-w-2xl`;
+  const requiredFieldsClassName = isDarkMode
+    ? "text-sm text-[#c7adb4]"
+    : "text-sm text-[#8f6f76]";
+  const getPrimaryButtonClassName = (isDisabled = false) =>
+    `${modalPrimaryButtonClassName} ${
+      isDisabled ? getDisabledPrimaryButtonClassName(isDarkMode) : ""
+    }`;
 
   return (
     <>
@@ -186,6 +194,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
                     form={form}
                     setForm={setForm}
                     showCurrentPassword={showCurrentPassword}
+                    colorMode={colorMode}
                   />
                 )}
 
@@ -197,17 +206,18 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
                     canResend={canResend}
                     onResend={() => setStep(1)}
                     onVerify={verifyOTP}
+                    colorMode={colorMode}
                   />
                 )}
 
-                {step === 3 && <SuccessStep />}
+                {step === 3 && <SuccessStep colorMode={colorMode} />}
               </div>
             </div>
 
             <div className={modalFooterClassName}>
               {step === 1 ? (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="text-sm text-[#8f6f76]">
+                  <div className={requiredFieldsClassName}>
                     <span className="text-red-500">*</span> Required fields
                   </div>
                   <div className={modalFooterActionsClassName}>
