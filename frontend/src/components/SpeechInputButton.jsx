@@ -1,7 +1,16 @@
-import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 
-const FLOATING_BUTTON_POSITION_CLASS_NAME = "pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom,0px)+12rem)] right-4 z-[130] lg:bottom-28 lg:right-6";
+const defaultSpeechToolbarState = {
+  activeFieldLabel: "",
+  colorMode: null,
+  disabled: true,
+  onError: null,
+  onTranscript: null,
+};
+
+let currentSpeechToolbarId = null;
+let currentSpeechToolbarState = defaultSpeechToolbarState;
+const speechToolbarListeners = new Set();
 
 function getSpeechRecognitionConstructor() {
   if (typeof window === "undefined") {
@@ -9,6 +18,55 @@ function getSpeechRecognitionConstructor() {
   }
 
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function notifySpeechToolbarListeners() {
+  const snapshot = { ...currentSpeechToolbarState };
+  speechToolbarListeners.forEach((listener) => listener(snapshot));
+}
+
+function registerSpeechToolbar(toolbarId, nextState) {
+  currentSpeechToolbarId = toolbarId;
+  currentSpeechToolbarState = {
+    ...defaultSpeechToolbarState,
+    ...nextState,
+  };
+  notifySpeechToolbarListeners();
+}
+
+function unregisterSpeechToolbar(toolbarId) {
+  if (currentSpeechToolbarId !== toolbarId) {
+    return;
+  }
+
+  currentSpeechToolbarId = null;
+  currentSpeechToolbarState = defaultSpeechToolbarState;
+  notifySpeechToolbarListeners();
+}
+
+function useSpeechToolbarState(fallbackColorMode) {
+  const [toolbarState, setToolbarState] = useState(() => ({
+    ...currentSpeechToolbarState,
+    colorMode: currentSpeechToolbarState.colorMode || fallbackColorMode,
+  }));
+
+  useEffect(() => {
+    const handleToolbarChange = (nextState) => {
+      setToolbarState({
+        ...nextState,
+        colorMode: nextState.colorMode || fallbackColorMode,
+      });
+    };
+
+    speechToolbarListeners.add(handleToolbarChange);
+    handleToolbarChange(currentSpeechToolbarState);
+
+    return () => {
+      speechToolbarListeners.delete(handleToolbarChange);
+    };
+  }, [fallbackColorMode]);
+
+  return toolbarState;
 }
 
 function getSpeechRecognitionErrorMessage(errorCode) {
@@ -34,6 +92,7 @@ export default function SpeechInputButton({ ariaLabel = "Use voice input", class
   const isSupported = Boolean(SpeechRecognition);
   const isDarkMode = colorMode === "dark";
   const isFloatingButton = variant === "floating";
+  const iconSizeClassName = isFloatingButton ? "h-7 w-7" : "h-4 w-4";
   const floatingButtonClassName =
     "inline-flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-[#fff8f3] shadow-[0_20px_48px_-24px_rgba(43,3,7,0.82)] ring-[4px] ring-[#f8d24e] transition duration-200 hover:shadow-[0_24px_56px_-24px_rgba(43,3,7,0.9)] focus:outline-none focus:ring-[6px] focus:ring-[#f8d24e]/35 disabled:cursor-not-allowed disabled:opacity-60";
   const inlineButtonClassName = isDarkMode
@@ -139,11 +198,26 @@ export default function SpeechInputButton({ ariaLabel = "Use voice input", class
   return (
     <>
       <button type="button" className={`${baseClassName} ${isListening ? listeningClassName : ""} ${className}`.trim()} onClick={handleClick} aria-label={isListening ? "Stop voice input" : ariaLabel} aria-pressed={isListening} title={isListening ? "Stop voice input" : ariaLabel} disabled={disabled}>
-        {isListening ? (
-          <StopIcon isFloatingButton={isFloatingButton} />
-        ) : (
-          <MicrophoneIcon isFloatingButton={isFloatingButton} />
-        )}
+        <span className={`relative ${iconSizeClassName}`}>
+          <span aria-hidden="true"
+            className={`absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-300 ease-out ${
+              isListening
+                ? "scale-75 -rotate-90 opacity-0"
+                : "scale-100 rotate-0 opacity-100"
+            }`}
+          >
+            <MicrophoneIcon className={iconSizeClassName} />
+          </span>
+          <span aria-hidden="true"
+            className={`absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-300 ease-out ${
+              isListening
+                ? "scale-100 rotate-0 opacity-100"
+                : "scale-75 rotate-90 opacity-0"
+            }`}
+          >
+            <StopIcon className={iconSizeClassName} />
+          </span>
+        </span>
       </button>
 
       <span className="sr-only" role="status" aria-live="polite">
@@ -154,44 +228,61 @@ export default function SpeechInputButton({ ariaLabel = "Use voice input", class
 }
 
 export function SpeechInputToolbar({ activeFieldLabel, disabled = false, onError, onTranscript, colorMode = "light" }) {
-  const isSupported = Boolean(getSpeechRecognitionConstructor());
+  const toolbarIdRef = useRef(Symbol("speech-toolbar"));
 
-  if (!isSupported || typeof document === "undefined") {
-    return null;
-  }
+  useEffect(() => {
+    registerSpeechToolbar(toolbarIdRef.current, {
+      activeFieldLabel,
+      colorMode,
+      disabled,
+      onError,
+      onTranscript,
+    });
 
-  return createPortal(
-    <div className={FLOATING_BUTTON_POSITION_CLASS_NAME}>
-      <SpeechInputButton
-        ariaLabel={
-          activeFieldLabel
-            ? `Use voice input for ${activeFieldLabel.toLowerCase()}`
-            : "Select a supported input field for voice input"
-        }
-        className="pointer-events-auto"
-        disabled={disabled || !activeFieldLabel}
-        onError={onError}
-        onTranscript={onTranscript}
-        colorMode={colorMode}
-        variant="floating"
-      />
-    </div>,
-    document.body,
+    return () => {
+      unregisterSpeechToolbar(toolbarIdRef.current);
+    };
+  }, [activeFieldLabel, colorMode, disabled, onError, onTranscript]);
+
+  return null;
+}
+
+export function FloatingSpeechInputAction({ className = "", colorMode = "light" }) {
+  const speechToolbarState = useSpeechToolbarState(colorMode);
+  const isDisabled =
+    speechToolbarState.disabled ||
+    !speechToolbarState.activeFieldLabel ||
+    typeof speechToolbarState.onTranscript !== "function";
+
+  return (
+    <SpeechInputButton
+      ariaLabel={
+        speechToolbarState.activeFieldLabel
+          ? `Use voice input for ${speechToolbarState.activeFieldLabel.toLowerCase()}`
+          : "Select a supported input field for voice input"
+      }
+      className={className}
+      colorMode={speechToolbarState.colorMode || colorMode}
+      disabled={isDisabled}
+      onError={speechToolbarState.onError}
+      onTranscript={speechToolbarState.onTranscript}
+      variant="floating"
+    />
   );
 }
 
-function MicrophoneIcon({ isFloatingButton = false }) {
+function MicrophoneIcon({ className = "h-4 w-4" }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"className={isFloatingButton ? "h-7 w-7" : "h-4 w-4"}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path d="M12 1.5a3.75 3.75 0 0 0-3.75 3.75v6a3.75 3.75 0 1 0 7.5 0v-6A3.75 3.75 0 0 0 12 1.5Z" />
       <path d="M6 10.5a.75.75 0 0 1 .75.75 5.25 5.25 0 1 0 10.5 0 .75.75 0 0 1 1.5 0 6.75 6.75 0 0 1-6 6.705V20.25h2.25a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1 0-1.5h2.25v-2.295a6.75 6.75 0 0 1-6-6.705A.75.75 0 0 1 6 10.5Z" />
     </svg>
   );
 }
 
-function StopIcon({ isFloatingButton = false }) {
+function StopIcon({ className = "h-4 w-4" }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={isFloatingButton ? "h-7 w-7" : "h-4 w-4"}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path fillRule="evenodd" d="M6.75 5.25A1.5 1.5 0 0 0 5.25 6.75v10.5a1.5 1.5 0 0 0 1.5 1.5h10.5a1.5 1.5 0 0 0 1.5-1.5V6.75a1.5 1.5 0 0 0-1.5-1.5H6.75Z" clipRule="evenodd"/>
     </svg>
   );

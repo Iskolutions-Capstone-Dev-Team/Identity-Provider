@@ -1,12 +1,18 @@
 import { useEffect } from "react";
 
+export const ACCESSIBILITY_READY_EVENT = "idp-accessibility-ready";
+export const ACCESSIBILITY_UNAVAILABLE_EVENT = "idp-accessibility-unavailable";
+
 const ACCESSIBILITY_SCRIPT_ID = "idp-accessibility-script";
 const ACCESSIBILITY_MANAGED_ATTR = "data-idp-accessibility-managed";
 const ACCESSIBILITY_THEME_STYLE_ID = "idp-accessibility-theme";
 const ACCESSIBILITY_SCRIPT_SRC = "https://cdn.jsdelivr.net/npm/sienna-accessibility@latest/dist/sienna-accessibility.umd.js";
 const ACCESSIBILITY_POSITION = "bottom-right";
 const ACCESSIBILITY_MOBILE_BREAKPOINT = 1024;
-const ACCESSIBILITY_MOBILE_BOTTOM_OFFSET = "calc(env(safe-area-inset-bottom, 0px) + 7rem)";
+const ACCESSIBILITY_HIDDEN_BUTTON_MOBILE_BOTTOM_OFFSET = "calc(env(safe-area-inset-bottom, 0px) + 11.75rem)";
+const ACCESSIBILITY_HIDDEN_BUTTON_MOBILE_RIGHT_OFFSET = "1rem";
+const ACCESSIBILITY_HIDDEN_BUTTON_DESKTOP_BOTTOM_OFFSET = "6.25rem";
+const ACCESSIBILITY_HIDDEN_BUTTON_DESKTOP_RIGHT_OFFSET = "1.5rem";
 const ACCESSIBILITY_THEME_CSS = `
   .asw-container .asw-menu-btn {
     background: linear-gradient(135deg, #7b0d15 0%, #2b0307 100%) !important;
@@ -194,10 +200,46 @@ const ACCESSIBILITY_THEME_CSS = `
 
   @media (max-width: ${ACCESSIBILITY_MOBILE_BREAKPOINT - 0.02}px) {
     .asw-menu-btn {
-      bottom: ${ACCESSIBILITY_MOBILE_BOTTOM_OFFSET} !important;
+      bottom: ${ACCESSIBILITY_HIDDEN_BUTTON_MOBILE_BOTTOM_OFFSET} !important;
+      right: ${ACCESSIBILITY_HIDDEN_BUTTON_MOBILE_RIGHT_OFFSET} !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+  }
+
+  @media (min-width: ${ACCESSIBILITY_MOBILE_BREAKPOINT}px) {
+    .asw-menu-btn {
+      bottom: ${ACCESSIBILITY_HIDDEN_BUTTON_DESKTOP_BOTTOM_OFFSET} !important;
+      right: ${ACCESSIBILITY_HIDDEN_BUTTON_DESKTOP_RIGHT_OFFSET} !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
   }
 `;
+
+function dispatchAccessibilityEvent(eventName) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(eventName));
+}
+
+export function isAccessibilityWidgetReady() {
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  return Boolean(document.querySelector(".asw-menu-btn"));
+}
+
+export function toggleAccessibilityMenu() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.querySelector(".asw-menu-btn")?.click();
+}
 
 function removeManagedAccessibilityAssets() {
   if (typeof document === "undefined") {
@@ -260,6 +302,7 @@ export default function AccessibilityWidget() {
 
       markManagedNodes([...injectedHeadNodes, ...injectedBodyNodes]);
       applyAccessibilityTheme();
+      dispatchAccessibilityEvent(ACCESSIBILITY_READY_EVENT);
     };
 
     script.addEventListener("load", handleLoad);
@@ -268,6 +311,7 @@ export default function AccessibilityWidget() {
     return () => {
       script.removeEventListener("load", handleLoad);
       removeManagedAccessibilityAssets();
+      dispatchAccessibilityEvent(ACCESSIBILITY_UNAVAILABLE_EVENT);
     };
   }, []);
 
