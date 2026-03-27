@@ -36,6 +36,9 @@ func InitializeHandlers(db *sqlx.DB,
 		LogHandler: &v1.LogHandler{
 			LogService: service.LogService,
 		},
+		PermissionHandler: &v1.PermissionHandler{
+			Service:    service.PermissionService,
+		},
 		PubKey: PubKey,
 		CORS:   mw.CORSMiddleware(),
 	}
