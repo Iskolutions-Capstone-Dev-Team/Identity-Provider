@@ -608,7 +608,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
 
                   <section className={modalSectionClassName}>
                     <SpeechInputToolbar
-                      className="mb-5"
                       activeFieldLabel={activeVoiceFieldLabel}
                       onError={setError}
                       onTranscript={handleVoiceInput}
@@ -688,7 +687,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                 <section className={modalSectionClassName}>
                     <div className="space-y-5">
                       <SpeechInputToolbar
-                        className="mb-1"
                         activeFieldLabel={activeVoiceFieldLabel}
                         onError={setError}
                         onTranscript={handleVoiceInput}

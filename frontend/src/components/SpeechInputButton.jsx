@@ -1,4 +1,7 @@
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
+
+const FLOATING_BUTTON_POSITION_CLASS_NAME = "pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom,0px)+12rem)] right-4 z-[130] lg:bottom-28 lg:right-6";
 
 function getSpeechRecognitionConstructor() {
   if (typeof window === "undefined") {
@@ -24,23 +27,21 @@ function getSpeechRecognitionErrorMessage(errorCode) {
   }
 }
 
-export default function SpeechInputButton({
-  ariaLabel = "Use voice input",
-  className = "",
-  disabled = false,
-  lang = "en-US",
-  onError,
-  onTranscript,
-  colorMode = "light",
-}) {
+export default function SpeechInputButton({ ariaLabel = "Use voice input", className = "", disabled = false, lang = "en-US", onError, onTranscript, colorMode = "light", variant = "inline" }) {
   const recognitionRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
   const SpeechRecognition = getSpeechRecognitionConstructor();
   const isSupported = Boolean(SpeechRecognition);
   const isDarkMode = colorMode === "dark";
-  const baseClassName = isDarkMode
+  const isFloatingButton = variant === "floating";
+  const floatingButtonClassName =
+    "inline-flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-[#fff8f3] shadow-[0_20px_48px_-24px_rgba(43,3,7,0.82)] ring-[4px] ring-[#f8d24e] transition duration-200 hover:shadow-[0_24px_56px_-24px_rgba(43,3,7,0.9)] focus:outline-none focus:ring-[6px] focus:ring-[#f8d24e]/35 disabled:cursor-not-allowed disabled:opacity-60";
+  const inlineButtonClassName = isDarkMode
     ? "inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-[#f4eaea] shadow-[0_14px_30px_-18px_rgba(2,6,23,0.72)] transition duration-200 hover:border-[#f8d24e]/55 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a] focus:outline-none focus:ring-4 focus:ring-[#f8d24e]/18 disabled:cursor-not-allowed disabled:opacity-60"
     : "inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#7b0d15]/15 bg-white/92 text-[#7b0d15] shadow-[0_14px_30px_-18px_rgba(43,3,7,0.55)] transition duration-200 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] focus:outline-none focus:ring-4 focus:ring-[#f8d24e]/25 disabled:cursor-not-allowed disabled:opacity-60";
+  const baseClassName = isFloatingButton
+    ? floatingButtonClassName
+    : inlineButtonClassName;
   const listeningClassName = isDarkMode
     ? "border-[#f8d24e] bg-[#f8d24e]/14 text-[#ffe28a] shadow-[0_18px_34px_-18px_rgba(248,210,78,0.45)]"
     : "border-[#f8d24e] bg-[#fff4dc] text-[#7b0d15] shadow-[0_18px_34px_-18px_rgba(248,210,78,0.9)]";
@@ -137,16 +138,12 @@ export default function SpeechInputButton({
 
   return (
     <>
-      <button
-        type="button"
-        className={`${baseClassName} ${isListening ? listeningClassName : ""} ${className}`.trim()}
-        onClick={handleClick}
-        aria-label={isListening ? "Stop voice input" : ariaLabel}
-        aria-pressed={isListening}
-        title={isListening ? "Stop voice input" : ariaLabel}
-        disabled={disabled}
-      >
-        {isListening ? <StopIcon /> : <MicrophoneIcon />}
+      <button type="button" className={`${baseClassName} ${isListening ? listeningClassName : ""} ${className}`.trim()} onClick={handleClick} aria-label={isListening ? "Stop voice input" : ariaLabel} aria-pressed={isListening} title={isListening ? "Stop voice input" : ariaLabel} disabled={disabled}>
+        {isListening ? (
+          <StopIcon isFloatingButton={isFloatingButton} />
+        ) : (
+          <MicrophoneIcon isFloatingButton={isFloatingButton} />
+        )}
       </button>
 
       <span className="sr-only" role="status" aria-live="polite">
@@ -156,90 +153,46 @@ export default function SpeechInputButton({
   );
 }
 
-export function SpeechInputToolbar({
-  activeFieldLabel,
-  className = "",
-  disabled = false,
-  onError,
-  onTranscript,
-  colorMode = "light",
-}) {
+export function SpeechInputToolbar({ activeFieldLabel, disabled = false, onError, onTranscript, colorMode = "light" }) {
   const isSupported = Boolean(getSpeechRecognitionConstructor());
-  const isDarkMode = colorMode === "dark";
-  const toolbarClassName = isDarkMode
-    ? "flex items-center justify-between gap-3 rounded-[1.15rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(27,18,28,0.82))] px-4 py-3 shadow-[0_18px_40px_-34px_rgba(2,6,23,0.72)]"
-    : "flex items-center justify-between gap-3 rounded-[1.15rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,243,0.92))] px-4 py-3 shadow-[0_18px_40px_-34px_rgba(43,3,7,0.45)]";
-  const descriptionClassName = isDarkMode
-    ? "text-xs font-medium leading-5 text-[#c7adb4]"
-    : "text-xs font-medium leading-5 text-[#7b5560]";
-  const targetClassName = isDarkMode
-    ? "font-semibold text-[#ffe28a]"
-    : "font-semibold text-[#7b0d15]";
 
-  if (!isSupported) {
+  if (!isSupported || typeof document === "undefined") {
     return null;
   }
 
-  return (
-    <div
-      className={`${toolbarClassName} ${className}`.trim()}
-    >
-      <p className={descriptionClassName}>
-        {activeFieldLabel ? (
-          <>
-            Voice target:{" "}
-            <span className={targetClassName}>
-              {activeFieldLabel}
-            </span>
-            . Click another supported field to switch.
-          </>
-        ) : (
-          "Select a supported field, then use the mic."
-        )}
-      </p>
-
+  return createPortal(
+    <div className={FLOATING_BUTTON_POSITION_CLASS_NAME}>
       <SpeechInputButton
         ariaLabel={
           activeFieldLabel
             ? `Use voice input for ${activeFieldLabel.toLowerCase()}`
-            : "Select a field for voice input"
+            : "Select a supported input field for voice input"
         }
-        disabled={disabled}
+        className="pointer-events-auto"
+        disabled={disabled || !activeFieldLabel}
         onError={onError}
         onTranscript={onTranscript}
         colorMode={colorMode}
+        variant="floating"
       />
-    </div>
+    </div>,
+    document.body,
   );
 }
 
-function MicrophoneIcon() {
+function MicrophoneIcon({ isFloatingButton = false }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="h-4 w-4"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"className={isFloatingButton ? "h-7 w-7" : "h-4 w-4"}>
       <path d="M12 1.5a3.75 3.75 0 0 0-3.75 3.75v6a3.75 3.75 0 1 0 7.5 0v-6A3.75 3.75 0 0 0 12 1.5Z" />
       <path d="M6 10.5a.75.75 0 0 1 .75.75 5.25 5.25 0 1 0 10.5 0 .75.75 0 0 1 1.5 0 6.75 6.75 0 0 1-6 6.705V20.25h2.25a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1 0-1.5h2.25v-2.295a6.75 6.75 0 0 1-6-6.705A.75.75 0 0 1 6 10.5Z" />
     </svg>
   );
 }
 
-function StopIcon() {
+function StopIcon({ isFloatingButton = false }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="h-4 w-4"
-    >
-      <path
-        fillRule="evenodd"
-        d="M6.75 5.25A1.5 1.5 0 0 0 5.25 6.75v10.5a1.5 1.5 0 0 0 1.5 1.5h10.5a1.5 1.5 0 0 0 1.5-1.5V6.75a1.5 1.5 0 0 0-1.5-1.5H6.75Z"
-        clipRule="evenodd"
-      />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={isFloatingButton ? "h-7 w-7" : "h-4 w-4"}>
+      <path fillRule="evenodd" d="M6.75 5.25A1.5 1.5 0 0 0 5.25 6.75v10.5a1.5 1.5 0 0 0 1.5 1.5h10.5a1.5 1.5 0 0 0 1.5-1.5V6.75a1.5 1.5 0 0 0-1.5-1.5H6.75Z" clipRule="evenodd"/>
     </svg>
   );
 }
