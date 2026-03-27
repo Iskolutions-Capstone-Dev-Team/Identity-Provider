@@ -33,5 +33,18 @@ var PermissionsMigration = migrations.TableMigration{
 				('Delete Roles')
 			;`,
 		},
+		{
+			ID: "add-more-default-permissions",
+			SQL: `INSERT IGNORE INTO permissions (permission) VALUES 
+				('Add Roles'),
+				('Assign appclient to user'),
+				('Remove appclient from user'),
+				('Remove Roles'),
+				('Suspend user'),
+				('Activate user'),
+				('View audit logs'),
+				('View security logs')
+			;`,
+		},
 	},
 }
