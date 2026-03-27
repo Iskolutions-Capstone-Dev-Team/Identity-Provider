@@ -91,11 +91,15 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 			users.DELETE("/:id", h.UserHandler.DeleteUser)
 		}
 
-		
 		logs := admin.Group("/logs")
 		{
 			logs.GET("", h.LogHandler.GetLogList)
 			logs.GET("/:id", h.LogHandler.GetLog)
+		}
+
+		permissions := admin.Group("/permissions")
+		{
+			permissions.GET("", h.PermissionHandler.GetAllPermissions)
 		}
 	}
 }
