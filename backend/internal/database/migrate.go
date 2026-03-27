@@ -63,6 +63,7 @@ func RunAllMigrations(db *sqlx.DB) {
 		tables.AuthorizationCodesMigration,
 		tables.ClientAllowedRolesMigration,
 		tables.AdminAllowedClientsMigration,
+		tables.RolePermissionMigration,
 	}
 
 	procedurePlan := []migrations.MigrationPart{
