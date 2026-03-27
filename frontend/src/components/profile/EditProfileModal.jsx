@@ -183,7 +183,6 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
 
             <section className={modalSectionClassName}>
               <SpeechInputToolbar
-                className="mb-5"
                 activeFieldLabel={activeVoiceFieldLabel}
                 onError={setErrorMessage}
                 onTranscript={handleVoiceInput}

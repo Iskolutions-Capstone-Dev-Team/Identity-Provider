@@ -351,7 +351,6 @@ export default function AddUserModal({
               <form id="step1-form" onSubmit={(e) => e.preventDefault()} className="space-y-5">
                 <section className={modalSectionClassName}>
                   <SpeechInputToolbar
-                    className="mb-5"
                     activeFieldLabel={activeVoiceFieldLabel}
                     onError={setError}
                     onTranscript={handleVoiceInput}
@@ -531,7 +530,6 @@ export default function AddUserModal({
                         >
                           <div>
                             <SpeechInputToolbar
-                              className="mb-4"
                               activeFieldLabel={activeVoiceFieldLabel}
                               onError={setError}
                               onTranscript={handleVoiceInput}
