@@ -16,13 +16,14 @@ var (
 )
 
 type Handlers struct {
-	LogHandler    *v1.LogHandler
-	AuthHandler   *v1.AuthHandler
-	ClientHandler *v1.ClientHandler
-	RoleHandler   *v1.RoleHandler
-	UserHandler   *v1.UserHandler
-	PubKey        *rsa.PublicKey
-	CORS          gin.HandlerFunc
+	LogHandler        *v1.LogHandler
+	AuthHandler       *v1.AuthHandler
+	ClientHandler     *v1.ClientHandler
+	RoleHandler       *v1.RoleHandler
+	UserHandler       *v1.UserHandler
+	PermissionHandler *v1.PermissionHandler
+	PubKey            *rsa.PublicKey
+	CORS              gin.HandlerFunc
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
@@ -90,11 +91,15 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 			users.DELETE("/:id", h.UserHandler.DeleteUser)
 		}
 
-		
 		logs := admin.Group("/logs")
 		{
 			logs.GET("", h.LogHandler.GetLogList)
 			logs.GET("/:id", h.LogHandler.GetLog)
+		}
+
+		permissions := admin.Group("/permissions")
+		{
+			permissions.GET("", h.PermissionHandler.GetAllPermissions)
 		}
 	}
 }

@@ -52,6 +52,7 @@ func RunAllMigrations(db *sqlx.DB) {
 		tables.RolesMigration,
 		tables.ClientsMigration,
 		tables.AuditLogsMigration,
+		tables.PermissionsMigration,
 	}
 
 	childTables := []migrations.TableMigration{
