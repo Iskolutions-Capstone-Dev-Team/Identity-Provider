@@ -39,7 +39,7 @@ var PermissionsMigration = migrations.TableMigration{
 				('Add Roles'),
 				('Assign appclient to user'),
 				('Remove appclient from user'),
-				('Remove Roles')
+				('Remove Roles'),
 				('Suspend user'),
 				('Activate user')
 			;`,
