@@ -5,6 +5,8 @@ const ACCESSIBILITY_MANAGED_ATTR = "data-idp-accessibility-managed";
 const ACCESSIBILITY_THEME_STYLE_ID = "idp-accessibility-theme";
 const ACCESSIBILITY_SCRIPT_SRC = "https://cdn.jsdelivr.net/npm/sienna-accessibility@latest/dist/sienna-accessibility.umd.js";
 const ACCESSIBILITY_POSITION = "bottom-right";
+const ACCESSIBILITY_MOBILE_BREAKPOINT = 1024;
+const ACCESSIBILITY_MOBILE_BOTTOM_OFFSET = "calc(env(safe-area-inset-bottom, 0px) + 7rem)";
 const ACCESSIBILITY_THEME_CSS = `
   .asw-container .asw-menu-btn {
     background: linear-gradient(135deg, #7b0d15 0%, #2b0307 100%) !important;
@@ -188,6 +190,12 @@ const ACCESSIBILITY_THEME_CSS = `
   .asw-container .asw-footer a,
   .asw-container .asw-footer a span {
     color: #7b0d15 !important;
+  }
+
+  @media (max-width: ${ACCESSIBILITY_MOBILE_BREAKPOINT - 0.02}px) {
+    .asw-menu-btn {
+      bottom: ${ACCESSIBILITY_MOBILE_BOTTOM_OFFSET} !important;
+    }
   }
 `;
 
