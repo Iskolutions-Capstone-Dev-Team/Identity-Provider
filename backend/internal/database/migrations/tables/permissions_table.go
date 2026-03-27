@@ -30,7 +30,7 @@ var PermissionsMigration = migrations.TableMigration{
 				('View roles'),
 				('Assign Roles'),
 				('Edit Roles'),
-				('Delete Roles'),
+				('Delete Roles')
 			;`,
 		},
 	},
