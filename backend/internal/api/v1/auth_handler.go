@@ -28,8 +28,9 @@ const (
 
 // AuthHandler handles authentication HTTP requests.
 type AuthHandler struct {
-	AuthService *service.AuthService
-	LogService  *service.LogService
+	AuthService   *service.AuthService
+	ClientService *service.ClientService
+	LogService    *service.LogService
 }
 
 // buildMetadata is a helper to create json.RawMessage from a map.
@@ -242,20 +243,51 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 // @Summary Global Logout
 // @Description Clear session cookie and revoke all issued tokens for the user
 // @Tags Authentication
+// @Accept json
+// @Param req body dto.LogoutRequest true "Logout Request"
 // @Produce json
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
-	if err != nil {
-		c.JSON(http.StatusOK, dto.SuccessResponse{
-			Message: "already logged out",
+	var req dto.LogoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[Logout] Bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "Invalid request format",
 		})
 		return
 	}
 
-	// First get the session to know the user ID for audit logging
+	// Get logout URL
+	clientID, err := uuid.Parse(req.ClientID)
+	if err != nil {
+		log.Printf("[Logout] UUID Parse: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid client_id format",
+		})
+		return
+	}
+	client, err := h.ClientService.GetClientByID(c.Request.Context(), clientID)
+	if err != nil {
+		log.Printf("[Logout] Client Lookup: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "client not found",
+		})
+		return
+	}
+	logoutURL := client.LogoutURI
+
+	// Redirect to IdP
+	c.Redirect(http.StatusFound, os.Getenv("CLIENT_BASE_URL"))
+
+	// Retrieve all cookies
+	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
+	if err != nil {
+		c.Redirect(http.StatusFound, logoutURL)
+	}
+
+	// Get the session to know the user ID for audit logging
 	session, err := h.AuthService.ValidateSession(
 		c.Request.Context(),
 		sessionID,
@@ -274,19 +306,8 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		// Even if session not found, clear cookie
-		c.SetCookie(
-			service.SESSION_COOKIE_NAME,
-			"",
-			-1,
-			"/",
-			"",
-			true,
-			true,
-		)
-		c.JSON(http.StatusOK, dto.SuccessResponse{
-			Message: "session cleared",
-		})
+		h.AuthService.RevokeCookies(c)
+		c.Redirect(http.StatusFound, logoutURL)
 		return
 	}
 
@@ -308,8 +329,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error: "logout failed",
 		})
+		h.AuthService.RevokeCookies(c)
 		return
 	}
+	h.AuthService.RevokeCookies(c)
 
 	// Log success (resolve user email for better readability)
 	userEmail, _ := h.LogService.GetUserEmail(session.UserId)
@@ -330,20 +353,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 			}),
 		})
 
-	// Clear the session cookie
-	c.SetCookie(
-		service.SESSION_COOKIE_NAME,
-		"",
-		-1,
-		"/",
-		"",
-		true,
-		true,
-	)
-
-	c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "global logout successful",
-	})
+	c.Redirect(http.StatusFound, logoutURL)
 }
 
 // CheckSession verifies if the current session cookie is valid
@@ -434,9 +444,9 @@ func (h *AuthHandler) GetJWKS(c *gin.Context) {
 	// Log success
 	_ = h.LogService.PostAuditLogWithActorString("",
 		&dto.PostAuditLogRequest{
-			Action:   actionJWKS,
-			Target:   "public_keys",
-			Status:   models.StatusSuccess,
+			Action: actionJWKS,
+			Target: "public_keys",
+			Status: models.StatusSuccess,
 			Metadata: buildMetadata(map[string]interface{}{
 				"ip":         c.ClientIP(),
 				"user_agent": c.Request.UserAgent(),
@@ -569,8 +579,8 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 	// For refresh, we don't have a clear actor; use refresh token hint in metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"refresh_token_hint": req.RefreshToken[:min(8, len(req.RefreshToken))],
-		"ip":                  c.ClientIP(),
-		"user_agent":          c.Request.UserAgent(),
+		"ip":                 c.ClientIP(),
+		"user_agent":         c.Request.UserAgent(),
 	})
 
 	resp, err := h.AuthService.RotateRefreshToken(
@@ -582,9 +592,9 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 
 		metadataWithErr := buildMetadata(map[string]interface{}{
 			"refresh_token_hint": req.RefreshToken[:min(8, len(req.RefreshToken))],
-			"ip":                  c.ClientIP(),
-			"user_agent":          c.Request.UserAgent(),
-			"error":               err.Error(),
+			"ip":                 c.ClientIP(),
+			"user_agent":         c.Request.UserAgent(),
+			"error":              err.Error(),
 		})
 		_ = h.LogService.PostAuditLogWithActorString("",
 			&dto.PostAuditLogRequest{
