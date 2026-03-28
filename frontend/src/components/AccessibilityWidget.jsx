@@ -7,6 +7,11 @@ const ACCESSIBILITY_SCRIPT_ID = "idp-accessibility-script";
 const ACCESSIBILITY_MANAGED_ATTR = "data-idp-accessibility-managed";
 const ACCESSIBILITY_THEME_STYLE_ID = "idp-accessibility-theme";
 const ACCESSIBILITY_SCRIPT_SRC = "https://cdn.jsdelivr.net/npm/sienna-accessibility@latest/dist/sienna-accessibility.umd.js";
+const ACCESSIBILITY_RUNTIME_SELECTORS = [
+  ".asw-container",
+  "[class^='asw-']",
+  "[class*=' asw-']",
+];
 const ACCESSIBILITY_POSITION = "bottom-right";
 const ACCESSIBILITY_MOBILE_BREAKPOINT = 1024;
 const ACCESSIBILITY_HIDDEN_BUTTON_MOBILE_BOTTOM_OFFSET = "calc(env(safe-area-inset-bottom, 0px) + 11.75rem)";
@@ -252,6 +257,14 @@ function removeManagedAccessibilityAssets() {
 
   document.getElementById(ACCESSIBILITY_SCRIPT_ID)?.remove();
   document.getElementById(ACCESSIBILITY_THEME_STYLE_ID)?.remove();
+
+  const runtimeNodes = new Set(
+    ACCESSIBILITY_RUNTIME_SELECTORS.flatMap((selector) =>
+      Array.from(document.querySelectorAll(selector)),
+    ),
+  );
+
+  runtimeNodes.forEach((node) => node.remove());
 }
 
 function markManagedNodes(nodes) {
@@ -281,7 +294,7 @@ export default function AccessibilityWidget() {
       return undefined;
     }
 
-    removeManagedAccessibilityAssets();
+    clearAccessibilityWidget();
 
     const headSnapshot = new Set(Array.from(document.head.children));
     const bodySnapshot = new Set(Array.from(document.body.children));
@@ -310,10 +323,14 @@ export default function AccessibilityWidget() {
 
     return () => {
       script.removeEventListener("load", handleLoad);
-      removeManagedAccessibilityAssets();
-      dispatchAccessibilityEvent(ACCESSIBILITY_UNAVAILABLE_EVENT);
+      clearAccessibilityWidget();
     };
   }, []);
 
   return null;
+}
+
+export function clearAccessibilityWidget() {
+  removeManagedAccessibilityAssets();
+  dispatchAccessibilityEvent(ACCESSIBILITY_UNAVAILABLE_EVENT);
 }
