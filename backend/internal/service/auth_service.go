@@ -12,6 +12,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -312,4 +313,25 @@ func (s *AuthService) GetSessionToken(userID uuid.UUID,
 	}
 
 	return sessionID, nil
+}
+
+func (s *AuthService) RevokeCookies(c *gin.Context) {
+	c.SetCookie(
+		SESSION_COOKIE_NAME,
+		"",
+		-1,
+		"/",
+		"",
+		true,
+		true,
+	)
+	c.SetCookie(
+		ACCESS_TOKEN_NAME,
+		"",
+		-1,
+		"/",
+		"",
+		true,
+		true,
+	)
 }
