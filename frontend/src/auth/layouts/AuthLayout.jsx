@@ -1,7 +1,13 @@
+import { useEffect } from "react";
 import LoginHeader from "../components/LoginHeader";
 import LoginFooter from "../components/LoginFooter";
+import { clearAccessibilityWidget } from "../../components/AccessibilityWidget";
 
 export default function AuthLayout({ children }) {
+  useEffect(() => {
+    clearAccessibilityWidget();
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#250508] font-[Poppins] text-white">
       <div className="absolute inset-0">
