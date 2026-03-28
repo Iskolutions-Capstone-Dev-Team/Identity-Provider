@@ -12,6 +12,7 @@ const initialFormData = {
   givenName: "",
   middleName: "",
   surname: "",
+  suffix: "",
   status: "active",
   roles: [],
   roleIds: [],
@@ -87,6 +88,7 @@ const createFormData = (user) => ({
   givenName: user?.givenName || "",
   middleName: user?.middleName || "",
   surname: user?.surname || "",
+  suffix: user?.suffix || user?.suffixName || user?.suffix_name || "",
   status: normalizeStatus(user?.status),
   roles: normalizeRoleNames(user?.roles),
   roleIds: normalizeRoleIds(user?.roleIds),
@@ -322,7 +324,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit, col
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div>
                       <label className={modalLabelClassName}>
                         Middle Name
@@ -338,6 +340,18 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit, col
                     <div>
                       <label className={modalLabelClassName}>Last Name</label>
                       <input type="text" value={formData.surname} readOnly className={modalReadOnlyInputClassName}/>
+                    </div>
+
+                    <div>
+                      <label className={modalLabelClassName}>
+                        Suffix
+                      </label>
+                      <label className={`${modalReadOnlyInputClassName} flex items-center gap-2`}>
+                        <input type="text" value={formData.suffix} readOnly className="grow bg-transparent outline-none"/>
+                        <span className={modalOptionalBadgeClassName}>
+                          Optional
+                        </span>
+                      </label>
                     </div>
                   </div>
                 </div>

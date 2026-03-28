@@ -67,6 +67,7 @@ function mapUserResponse(user = {}) {
     givenName: user.first_name,
     middleName: user.middle_name,
     surname: user.last_name,
+    suffix: user.suffix || user.suffix_name || user.suffixName || "",
     status: user.status,
     createdAt: user.created_at,
     roles: normalizeRoleNames(user.roles),
@@ -81,7 +82,7 @@ function matchesUserSearch(user, searchValue) {
     return true;
   }
 
-  const fullName = [user.givenName, user.middleName, user.surname]
+  const fullName = [user.givenName, user.middleName, user.surname, user.suffix]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();

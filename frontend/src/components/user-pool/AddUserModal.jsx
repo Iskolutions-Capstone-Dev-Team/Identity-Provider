@@ -14,6 +14,7 @@ const initialFormData = {
   givenName: "",
   middleName: "",
   surname: "",
+  suffix: "",
   inviteMode: "temp",
   delivery: "email",
   tempPassword: "",
@@ -43,6 +44,8 @@ export default function AddUserModal({
   onSubmit,
   colorMode = "light",
 }) {
+  const buildFullName = ({ givenName, middleName, surname, suffix }) =>
+    [givenName, middleName, surname, suffix].filter(Boolean).join(" ");
   const [step, setStep] = useState(1);
   const roles = useAllRoles();
   const [data, setData] = useState(initialFormData);
@@ -239,7 +242,11 @@ export default function AddUserModal({
 
   useEffect(() => {
     if (step === 1) {
-      if (!["email", "givenName", "middleName", "surname"].includes(activeVoiceField)) {
+      if (
+        !["email", "givenName", "middleName", "surname", "suffix"].includes(
+          activeVoiceField,
+        )
+      ) {
         setActiveVoiceField("email");
       }
       return;
@@ -255,6 +262,8 @@ export default function AddUserModal({
       ? "Email Address"
       : activeVoiceField === "surname"
         ? "Last Name"
+        : activeVoiceField === "suffix"
+          ? "Suffix"
         : activeVoiceField === "middleName"
           ? "Middle Name"
           : activeVoiceField === "tempPassword"
@@ -277,7 +286,7 @@ export default function AddUserModal({
       .filter((role) => data.roleIds.includes(role.id))
       .map((role) => role.role_name);
 
-    const fullName = `${data.givenName}${data.middleName ? ` ${data.middleName}` : ""} ${data.surname}`;
+    const fullName = buildFullName(data);
 
     onSubmit({
       email: data.email,
@@ -285,6 +294,7 @@ export default function AddUserModal({
       givenName: data.givenName,
       middleName: data.middleName,
       surname: data.surname,
+      suffix: data.suffix,
       roleIds: data.roleIds,
       roles: selectedRoles,
       inviteMode: data.inviteMode,
@@ -408,7 +418,7 @@ export default function AddUserModal({
                       </label>
                     </div>
 
-                    <div className="space-y-1 md:col-span-2">
+                    <div className="space-y-1">
                       <label className={modalLabelClassName}>
                         Last Name <span className="text-red-500">*</span>
                       </label>
@@ -420,6 +430,20 @@ export default function AddUserModal({
                           </p>
                         )}
                       </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className={modalLabelClassName}>
+                        Suffix
+                      </label>
+                      <label
+                        className={`${modalInputClassName} flex items-center gap-2 px-4`}
+                      >
+                        <input type="text" name="suffix" value={data.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" className="grow bg-transparent"/>
+                        <span className={modalOptionalBadgeClassName}>
+                          Optional
+                        </span>
+                      </label>
                     </div>
                   </div>
                 </section>

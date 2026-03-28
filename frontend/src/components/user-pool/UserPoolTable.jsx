@@ -30,7 +30,7 @@ function getStatusClassName(status, isDarkMode) {
 }
 
 function getFullName(user) {
-  return [user.givenName, user.middleName, user.surname]
+  return [user.givenName, user.middleName, user.surname, user.suffix]
     .filter(Boolean)
     .join(" ");
 }
