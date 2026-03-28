@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ACCESSIBILITY_READY_EVENT,
   ACCESSIBILITY_UNAVAILABLE_EVENT,
@@ -10,23 +10,33 @@ import { FloatingSpeechInputAction } from "./SpeechInputButton";
 const FAB_CONTAINER_CLASS_NAME =
   "pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] right-4 z-[140] flex flex-col items-end gap-3 lg:bottom-6 lg:right-6";
 const FAB_BUTTON_CLASS_NAME =
-  "inline-flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-[#fff8f3] shadow-[0_20px_48px_-24px_rgba(43,3,7,0.82)] ring-[4px] ring-[#f8d24e] transition duration-200 hover:shadow-[0_24px_56px_-24px_rgba(43,3,7,0.9)] focus:outline-none focus:ring-[6px] focus:ring-[#f8d24e]/35 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-[#fff8f3] shadow-[0_20px_48px_-24px_rgba(43,3,7,0.82)] ring-[4px] ring-[#f8d24e] transition-[transform,box-shadow,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-[0_24px_56px_-24px_rgba(43,3,7,0.9)] focus:outline-none focus:ring-[6px] focus:ring-[#f8d24e]/35 disabled:cursor-not-allowed disabled:opacity-60";
+const FAB_ACTION_TRANSITION_MS = 300;
 const FAB_ACTION_WRAP_BASE_CLASS =
-  "origin-bottom-right transition-[opacity,transform] duration-200 ease-out";
+  "origin-bottom-right transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]";
 
-function getActionVisibilityClassName(isOpen) {
-  return isOpen
-    ? `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-auto translate-y-0 scale-100 opacity-100`
-    : `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none invisible translate-y-3 scale-95 opacity-0`;
+function getActionVisibilityClassName(isOpen, isVisible) {
+  if (isOpen) {
+    return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-auto translate-y-0 scale-100 opacity-100`;
+  }
+
+  if (isVisible) {
+    return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none translate-y-3 scale-95 opacity-0`;
+  }
+
+  return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none invisible translate-y-3 scale-95 opacity-0`;
 }
 
 export default function AssistiveFab({ colorMode = "light" }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [areActionsVisible, setAreActionsVisible] = useState(false);
   const [isAccessibilityReady, setIsAccessibilityReady] = useState(() =>
     isAccessibilityWidgetReady(),
   );
-  const fabRef = useRef(null);
-  const actionVisibilityClassName = getActionVisibilityClassName(isOpen);
+  const actionVisibilityClassName = getActionVisibilityClassName(
+    isOpen,
+    areActionsVisible,
+  );
   const toggleButtonClassName = `${FAB_BUTTON_CLASS_NAME} pointer-events-auto`;
 
   useEffect(() => {
@@ -61,56 +71,58 @@ export default function AssistiveFab({ colorMode = "light" }) {
   }, []);
 
   useEffect(() => {
-    if (!isOpen || typeof document === "undefined") {
+    if (isOpen) {
+      setAreActionsVisible(true);
       return undefined;
     }
 
-    const handlePointerDown = (event) => {
-      if (fabRef.current?.contains(event.target)) {
-        return;
-      }
+    if (!areActionsVisible) {
+      return undefined;
+    }
 
-      setIsOpen(false);
-    };
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("touchstart", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
+    const closeTimer = window.setTimeout(() => {
+      setAreActionsVisible(false);
+    }, FAB_ACTION_TRANSITION_MS);
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("touchstart", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
+      window.clearTimeout(closeTimer);
     };
-  }, [isOpen]);
+  }, [areActionsVisible, isOpen]);
 
   const handleAccessibilityClick = () => {
     toggleAccessibilityMenu();
-    setIsOpen(false);
   };
 
   return (
-    <div ref={fabRef} className={FAB_CONTAINER_CLASS_NAME}>
-      <div className={actionVisibilityClassName}>
+    <div className={FAB_CONTAINER_CLASS_NAME}>
+      <div aria-hidden={!isOpen} className={actionVisibilityClassName}>
         <FloatingSpeechInputAction
           className={FAB_BUTTON_CLASS_NAME}
           colorMode={colorMode}
         />
       </div>
 
-      <div className={actionVisibilityClassName}>
-        <button type="button" aria-label="Open web accessibility" title="Open web accessibility" className={FAB_BUTTON_CLASS_NAME} disabled={!isAccessibilityReady} onClick={handleAccessibilityClick}>
+      <div aria-hidden={!isOpen} className={actionVisibilityClassName}>
+        <button
+          type="button"
+          aria-label="Open web accessibility"
+          title="Open web accessibility"
+          className={FAB_BUTTON_CLASS_NAME}
+          disabled={!isAccessibilityReady}
+          onClick={handleAccessibilityClick}
+        >
           <AccessibilityIcon />
         </button>
       </div>
 
-      <button type="button" aria-expanded={isOpen} aria-label={isOpen ? "Close assistive tools" : "Open assistive tools"} title={isOpen ? "Close assistive tools" : "Open assistive tools"} className={toggleButtonClassName} onClick={() => setIsOpen((current) => !current)}>
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-label={isOpen ? "Close assistive tools" : "Open assistive tools"}
+        title={isOpen ? "Close assistive tools" : "Open assistive tools"}
+        className={toggleButtonClassName}
+        onClick={() => setIsOpen((current) => !current)}
+      >
         <ToggleIcon isOpen={isOpen} />
       </button>
     </div>
@@ -119,19 +131,33 @@ export default function AssistiveFab({ colorMode = "light" }) {
 
 function ToggleIcon({ isOpen }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-      className={`h-7 w-7 transition-transform duration-200 ${
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={`h-7 w-7 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         isOpen ? "rotate-45" : "rotate-0"
       }`}
     >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 4.5v15m7.5-7.5h-15"
+      />
     </svg>
   );
 }
 
 function AccessibilityIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="h-7 w-7"
+    >
       <path d="M12 2.25a1.875 1.875 0 1 0 0 3.75 1.875 1.875 0 0 0 0-3.75Z" />
       <path d="M7.5 8.25a.75.75 0 0 0 0 1.5h2.977l-.733 10.634a.75.75 0 1 0 1.496.103L12 13.42l.76 7.067a.75.75 0 1 0 1.493-.103L13.52 9.75H16.5a.75.75 0 0 0 0-1.5h-9Z" />
     </svg>
