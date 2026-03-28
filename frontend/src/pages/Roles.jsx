@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useRoles } from "../hooks/useRoles";
+import { usePermissions } from "../hooks/usePermissions";
 import RolesListCard from "../components/role/RolesListCard";
 import RoleModal from "../components/role/RoleModal";
 import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
-import { roleService } from "../services/roleService";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 
 const ITEMS_PER_PAGE = 10;
@@ -28,32 +28,17 @@ export default function Roles() {
     updateRole,
     deleteRole,
   } = useRoles();
+  const {
+    permissions: permissionOptions,
+    loading: isPermissionOptionsLoading,
+  } = usePermissions();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState("create");
   const [activeRole, setActiveRole] = useState(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [tagOptions, setTagOptions] = useState([]);
-  const [isTagOptionsLoading, setIsTagOptionsLoading] = useState(false);
   const showLoading = useDelayedLoading(loading);
-
-  const fetchTagOptions = useCallback(async () => {
-    try {
-      setIsTagOptionsLoading(true);
-      const tags = await roleService.getClientTags({ limit: 50 });
-      setTagOptions(tags);
-    } catch (error) {
-      console.error("Failed to fetch client tags:", error);
-      setTagOptions([]);
-    } finally {
-      setIsTagOptionsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchTagOptions();
-  }, [fetchTagOptions]);
 
   const openCreate = () => {
     setMode("create");
@@ -132,8 +117,8 @@ export default function Roles() {
           open={modalOpen}
           mode={mode}
           role={activeRole}
-          tagOptions={tagOptions}
-          isTagOptionsLoading={isTagOptionsLoading}
+          permissionOptions={permissionOptions}
+          isPermissionOptionsLoading={isPermissionOptionsLoading}
           onClose={() => setModalOpen(false)}
           onSubmit={handleSubmit}
           colorMode={colorMode}

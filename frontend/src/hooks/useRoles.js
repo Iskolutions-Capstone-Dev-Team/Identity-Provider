@@ -1,12 +1,82 @@
 import { useEffect, useState } from "react";
 import { roleService } from "../services/roleService";
 
+function toPositiveInt(value) {
+  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 function resolveRolePermissionFlag(...candidates) {
   const matchedFlag = candidates.find((value) => typeof value === "boolean");
   return matchedFlag ?? true;
 }
 
+function normalizePermissionLabel(permission) {
+  if (typeof permission === "string") {
+    return permission.trim();
+  }
+
+  if (!permission || typeof permission !== "object") {
+    return "";
+  }
+
+  const label = permission.permission ?? permission.permission_name ?? permission.name;
+  return typeof label === "string" ? label.trim() : "";
+}
+
+function normalizePermissionId(permission) {
+  if (permission && typeof permission === "object") {
+    return toPositiveInt(
+      permission.id ?? permission.permission_id ?? permission.permissionId,
+    );
+  }
+
+  return toPositiveInt(permission);
+}
+
+function getRolePermissionSource(role = {}) {
+  if (Array.isArray(role.permissions)) {
+    return role.permissions;
+  }
+
+  if (Array.isArray(role.permission_names)) {
+    return role.permission_names;
+  }
+
+  if (Array.isArray(role.permissionNames)) {
+    return role.permissionNames;
+  }
+
+  return [];
+}
+
+function normalizeRolePermissions(role = {}) {
+  const rawPermissions = getRolePermissionSource(role);
+  const rawPermissionIds = Array.isArray(role.permission_ids)
+    ? role.permission_ids
+    : Array.isArray(role.permissionIds)
+      ? role.permissionIds
+      : [];
+
+  const permissionLabels = Array.from(
+    new Set(rawPermissions.map((permission) => normalizePermissionLabel(permission)).filter(Boolean)),
+  );
+  const permissionIds = Array.from(
+    new Set([
+      ...rawPermissionIds.map((permissionId) => normalizePermissionId(permissionId)),
+      ...rawPermissions.map((permission) => normalizePermissionId(permission)),
+    ].filter((permissionId) => permissionId !== null)),
+  );
+
+  return {
+    permissionIds,
+    permissionLabels,
+  };
+}
+
 function normalizeRole(role = {}) {
+  const { permissionIds, permissionLabels } = normalizeRolePermissions(role);
+
   return {
     ...role,
     canUpdate: resolveRolePermissionFlag(
@@ -19,6 +89,8 @@ function normalizeRole(role = {}) {
       role.can_delete,
       role.canDelete,
     ),
+    permissionIds,
+    permissionLabels,
   };
 }
 

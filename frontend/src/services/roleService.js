@@ -153,6 +153,8 @@ export const roleService = {
     const response = await axiosInstance.post(`/admin/roles`, {
       role_name: data.role_name,
       description: data.description,
+      permission_ids: data.permission_ids || [],
+      permissions: data.permissions || [],
     });
 
     return response.data;
@@ -165,6 +167,8 @@ export const roleService = {
     const response = await axiosInstance.put(`/admin/roles/${id}`, {
       role_name: data.role_name,
       description: data.description,
+      permission_ids: data.permission_ids || [],
+      permissions: data.permissions || [],
     });
 
     return response.data;
