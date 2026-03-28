@@ -329,8 +329,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error: "logout failed",
 		})
+		h.AuthService.RevokeCookies(c)
 		return
 	}
+	h.AuthService.RevokeCookies(c)
 
 	// Log success (resolve user email for better readability)
 	userEmail, _ := h.LogService.GetUserEmail(session.UserId)
@@ -350,8 +352,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 				"user_agent": c.Request.UserAgent(),
 			}),
 		})
-
-	h.AuthService.RevokeCookies(c)
 
 	c.Redirect(http.StatusFound, logoutURL)
 }
