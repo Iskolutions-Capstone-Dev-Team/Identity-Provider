@@ -17,7 +17,6 @@ const GRANT_OPTIONS = [
 const initialFieldErrors = {
   imageFile: "",
   name: "",
-  tag: "",
   baseURL: "",
   redirectURL: "",
   logoutURL: "",
@@ -45,6 +44,26 @@ const isValidHttpUrl = (value) => {
   } catch {
     return false;
   }
+};
+
+const buildClientTag = (name = "") => {
+  const words = name
+    .trim()
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean);
+
+  if (words.length === 0) {
+    return "CLIENT";
+  }
+
+  if (words.length === 1) {
+    return words[0].toUpperCase().slice(0, 10);
+  }
+
+  return words
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("")
+    .slice(0, 10);
 };
 
 const getDropzoneBaseClassName = (isDarkMode) =>
@@ -106,7 +125,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
   } = getModalTheme(colorMode);
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
-  const [tag, setTag] = useState("");
   const [description, setDescription] = useState("");
   const [baseURL, setBaseURL] = useState("");
   const [redirectURL, setRedirectURL] = useState("");
@@ -165,7 +183,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     if (!open) {
       setStep(1);
       setName("");
-      setTag("");
       setDescription("");
       setBaseURL("");
       setRedirectURL("");
@@ -184,7 +201,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
 
   useEffect(() => {
     if (step === 1) {
-      if (!["name", "tag", "description"].includes(activeVoiceField)) {
+      if (!["name", "description"].includes(activeVoiceField)) {
         setActiveVoiceField("name");
       }
       return;
@@ -223,11 +240,9 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
   const activeVoiceFieldLabel =
     activeVoiceField === "description"
       ? "Description"
-      : activeVoiceField === "tag"
-        ? "Tag"
-        : activeVoiceField === "baseURL"
-          ? "Base URL"
-          : activeVoiceField === "redirectURL"
+      : activeVoiceField === "baseURL"
+        ? "Base URL"
+        : activeVoiceField === "redirectURL"
             ? "Redirect URL"
             : activeVoiceField === "logoutURL"
               ? "Logout URL"
@@ -241,11 +256,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
           ? `${currentDescription.trimEnd()} ${transcript}`
           : transcript,
       );
-      return;
-    }
-
-    if (activeVoiceField === "tag") {
-      updateFieldValue("tag", transcript.toUpperCase(), setTag);
       return;
     }
 
@@ -269,7 +279,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
 
   const validateBasicInfo = () => {
     const trimmedName = name.trim();
-    const trimmedTag = tag.trim();
     const nextFieldErrors = {
       ...initialFieldErrors,
       baseURL: fieldErrors.baseURL,
@@ -287,16 +296,9 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
       nextFieldErrors.name = "Client name must be between 5 and 100 characters.";
     }
 
-    if (!trimmedTag) {
-      nextFieldErrors.tag = "Tag is required.";
-    } else if (trimmedTag.length > 10) {
-      nextFieldErrors.tag = "Tag must be 10 characters or fewer.";
-    }
-
     setFieldErrors(nextFieldErrors);
 
-    const firstError =
-      nextFieldErrors.imageFile || nextFieldErrors.name || nextFieldErrors.tag;
+    const firstError = nextFieldErrors.imageFile || nextFieldErrors.name;
 
     if (firstError) {
       setError(firstError);
@@ -314,7 +316,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
       ...initialFieldErrors,
       imageFile: fieldErrors.imageFile,
       name: fieldErrors.name,
-      tag: fieldErrors.tag,
     };
 
     if (!trimmedBaseURL) {
@@ -458,6 +459,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
 
     setError("");
     const roleIds = normalizeRoleIds(roles);
+    const tag = buildClientTag(name);
     const selectedRoleOptions = roleIds
       .map((roleId) => roleOptions.find((role) => role.id === roleId))
       .filter(Boolean);
@@ -614,63 +616,31 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                       colorMode={colorMode}
                     />
 
-                    <div className="grid gap-5 md:grid-cols-2">
-                      <div>
-                        <label className={modalLabelClassName}>
-                          Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          minLength={5}
-                          maxLength={100}
-                          value={name}
-                          onChange={(event) =>
-                            updateFieldValue("name", event.target.value, setName)
-                          }
-                          onFocus={() => setActiveVoiceField("name")}
-                          placeholder="(e.g., Identity Provider System)"
-                          className={getInputClassName("name")}
-                        />
-                        {fieldErrors.name && (
-                          <p className={inlineErrorClassName}>
-                            {fieldErrors.name}
-                          </p>
-                        )}
-                        <p className={`${modalHelperTextClassName} mt-2`}>
-                          Must be 5-100 characters
+                    <div>
+                      <label className={modalLabelClassName}>
+                        Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        minLength={5}
+                        maxLength={100}
+                        value={name}
+                        onChange={(event) =>
+                          updateFieldValue("name", event.target.value, setName)
+                        }
+                        onFocus={() => setActiveVoiceField("name")}
+                        placeholder="(e.g., Identity Provider System)"
+                        className={getInputClassName("name")}
+                      />
+                      {fieldErrors.name && (
+                        <p className={inlineErrorClassName}>
+                          {fieldErrors.name}
                         </p>
-                      </div>
-
-                      <div>
-                        <label className={modalLabelClassName}>
-                          Tag <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={10}
-                          value={tag}
-                          onChange={(event) =>
-                            updateFieldValue(
-                              "tag",
-                              event.target.value.toUpperCase(),
-                              setTag,
-                            )
-                          }
-                          onFocus={() => setActiveVoiceField("tag")}
-                          placeholder="(e.g., IdP)"
-                          className={getInputClassName("tag")}
-                        />
-                        {fieldErrors.tag && (
-                          <p className={inlineErrorClassName}>
-                            {fieldErrors.tag}
-                          </p>
-                        )}
-                        <p className={`${modalHelperTextClassName} mt-2`}>
-                          Maximum 10 characters
-                        </p>
-                      </div>
+                      )}
+                      <p className={`${modalHelperTextClassName} mt-2`}>
+                        Must be 5-100 characters
+                      </p>
                     </div>
 
                     <div className="mt-5">

@@ -196,7 +196,6 @@ export default function AppClientModal({
     modalSectionClassName,
   } = getModalTheme(colorMode);
   const [name, setName] = useState("");
-  const [tag, setTag] = useState("");
   const [description, setDescription] = useState("");
   const [baseURL, setBaseURL] = useState("");
   const [redirectURL, setRedirectURL] = useState("");
@@ -305,7 +304,6 @@ export default function AppClientModal({
     if (!open || !client) return;
 
     setName(client.name || "");
-    setTag(client.tag || "");
     setDescription(client.description || "");
     setBaseURL(client.base_url || "");
     setRedirectURL(client.redirect_uri || "");
@@ -358,7 +356,6 @@ export default function AppClientModal({
         if (cancelled || !details) return;
 
         setName(details.name || "");
-        setTag(details.tag || "");
         setDescription(details.description || "");
         setBaseURL(details.base_url || "");
         setRedirectURL(details.redirect_uri || "");
@@ -778,38 +775,31 @@ export default function AppClientModal({
                     />
                   )}
 
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <div>
-                      <label className={modalLabelClassName}>
-                        Name {!isView && <span className="text-red-500">*</span>}
-                      </label>
-                      {isView ? (
-                        <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} placeholder="(e.g., Identity Provider System)"
-                          className={modalReadOnlyInputClassName}
-                          disabled={isView}
-                        />
-                      ) : (
-                        <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)"
-                          className={getEditableInputClassName("name")}
-                          disabled={isView}
-                        />
-                      )}
-                      {!isView && fieldErrors.name && (
-                        <p className={inlineErrorClassName}>
-                          {fieldErrors.name}
-                        </p>
-                      )}
-                      {!isView && (
-                        <p className={`${modalHelperTextClassName} mt-2`}>
-                          Must be 5-100 characters
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className={modalLabelClassName}>Tag</label>
-                      <input type="text" readOnly value={tag} className={modalReadOnlyInputClassName}/>
-                    </div>
+                  <div>
+                    <label className={modalLabelClassName}>
+                      Name {!isView && <span className="text-red-500">*</span>}
+                    </label>
+                    {isView ? (
+                      <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} placeholder="(e.g., Identity Provider System)"
+                        className={modalReadOnlyInputClassName}
+                        disabled={isView}
+                      />
+                    ) : (
+                      <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)"
+                        className={getEditableInputClassName("name")}
+                        disabled={isView}
+                      />
+                    )}
+                    {!isView && fieldErrors.name && (
+                      <p className={inlineErrorClassName}>
+                        {fieldErrors.name}
+                      </p>
+                    )}
+                    {!isView && (
+                      <p className={`${modalHelperTextClassName} mt-2`}>
+                        Must be 5-100 characters
+                      </p>
+                    )}
                   </div>
 
                   <div>
