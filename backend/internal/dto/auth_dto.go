@@ -26,4 +26,5 @@ type RefreshRequest struct {
 
 type LogoutRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
+	ClientID     string `json:"client_id" binding:"required"`
 }
