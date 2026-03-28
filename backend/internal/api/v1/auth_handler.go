@@ -243,7 +243,8 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 // @Summary Global Logout
 // @Description Clear session cookie and revoke all issued tokens for the user
 // @Tags Authentication
-// @Accept json {object} dto.LogoutRequest
+// @Accept json
+// @Param req body dto.LogoutRequest true "Logout Request"
 // @Produce json
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 500 {object} dto.ErrorResponse
