@@ -1,5 +1,7 @@
 import axiosInstance from "../../services/axiosInstance";
 
+const authClientId = import.meta.env.VITE_CLIENT_ID;
+
 function getLoginRedirectUrl(data) {
   if (typeof data === "string") {
     return data;
@@ -32,7 +34,7 @@ export const authService = {
   async exchangeCode(code) {
     const response = await axiosInstance.post("/auth/token", {
       code,
-      client_id: import.meta.env.VITE_CLIENT_ID,
+      client_id: authClientId,
       client_secret: import.meta.env.VITE_CLIENT_SECRET,
     }, {
       skipAuthRefresh: true,
@@ -42,7 +44,9 @@ export const authService = {
   },
 
   async logout() {
-    return axiosInstance.post("/auth/logout", null, {
+    return axiosInstance.post("/auth/logout", {
+      client_id: authClientId,
+    }, {
       skipAuthRefresh: true,
     });
   },
