@@ -3,6 +3,7 @@ import ResultsCount from "../ResultsCount";
 import Pagination from "../Pagination";
 import TransactionLogsTable from "./TransactionLogsTable";
 import DataTableSkeleton from "../DataTableSkeleton";
+import { SpeechInputToolbar } from "../SpeechInputButton";
 
 export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, loading, error, onView, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
@@ -27,6 +28,16 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
   const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
+  const updateSearchValue = (value) => {
+    setSearch(value);
+    onPageChange(1);
+  };
+  const handleSearchChange = (event) => {
+    updateSearchValue(event.target.value);
+  };
+  const handleSearchVoiceInput = (transcript) => {
+    updateSearchValue(transcript);
+  };
 
   let content = (
     <TransactionLogsTable
@@ -58,6 +69,11 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
     <AuditLogsCard colorMode={colorMode}>
       <div className={filtersClassName}>
         <div className="min-w-0 w-full">
+          <SpeechInputToolbar
+            activeFieldLabel="Audit Log Search"
+            onTranscript={handleSearchVoiceInput}
+            colorMode={colorMode}
+          />
           <label className={labelClassName}>
             Which transaction log are you looking for?
           </label>
@@ -68,11 +84,12 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
                 <path d="m21 21-4.3-4.3" />
               </g>
             </svg>
-            <input type="search" value={search} placeholder="Search by actor..." className={searchInputClassName}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                onPageChange(1);
-              }}
+            <input
+              type="search"
+              value={search}
+              placeholder="Search by actor..."
+              className={searchInputClassName}
+              onChange={handleSearchChange}
             />
           </label>
         </div>

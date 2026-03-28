@@ -2,6 +2,7 @@ import RoleCard from "./RoleCard";
 import Pagination from "../Pagination";
 import RolesListTable from "./RolesListTable";
 import ResultsCount from "../ResultsCount";
+import { SpeechInputToolbar } from "../SpeechInputButton";
 
 export default function RolesListCard({ loading = false, roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
@@ -26,11 +27,25 @@ export default function RolesListCard({ loading = false, roles, totalResults, it
   const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
+  const updateSearchValue = (value) => {
+    setSearch(value);
+  };
+  const handleSearchChange = (event) => {
+    updateSearchValue(event.target.value);
+  };
+  const handleSearchVoiceInput = (transcript) => {
+    updateSearchValue(transcript);
+  };
 
   return (
     <RoleCard colorMode={colorMode}>
       <div className={filtersClassName}>
         <div className="min-w-0 w-full">
+          <SpeechInputToolbar
+            activeFieldLabel="Role Search"
+            onTranscript={handleSearchVoiceInput}
+            colorMode={colorMode}
+          />
           <label className={labelClassName}>
             What role are you looking for?
           </label>
@@ -41,7 +56,13 @@ export default function RolesListCard({ loading = false, roles, totalResults, it
                 <path d="m21 21-4.3-4.3" />
               </g>
             </svg>
-            <input type="search" value={search} placeholder="Search by role name..." className={searchInputClassName} onChange={(event) => setSearch(event.target.value)}/>
+            <input
+              type="search"
+              value={search}
+              placeholder="Search by role name..."
+              className={searchInputClassName}
+              onChange={handleSearchChange}
+            />
           </label>
         </div>
 
