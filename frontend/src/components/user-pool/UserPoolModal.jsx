@@ -141,6 +141,15 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit, col
   const emptyRolesClassName = isDarkMode
     ? "italic text-[#a58d95]"
     : "italic text-[#8f6f76]";
+  const modalHeaderSpacingClassName =
+    isViewMode
+      ? `${modalHeaderClassName} !px-7 !pt-7 !pb-14 sm:!px-8 sm:!pt-8 sm:!pb-12`
+      : `${modalHeaderClassName} !px-7 !pt-6 !pb-6 sm:!px-8 sm:!pt-7 sm:!pb-7`;
+  const modalHeaderContentClassName = "max-w-xl pr-12 sm:pr-14";
+  const modalHeaderDescriptionSpacingClassName =
+    isViewMode
+      ? `${modalHeaderDescriptionClassName} !mt-3 max-w-[18rem] leading-relaxed sm:!mt-4 sm:max-w-[28rem]`
+      : `${modalHeaderDescriptionClassName} !mt-2 max-w-[18rem] leading-relaxed sm:!mt-3 sm:max-w-[28rem]`;
 
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
@@ -291,20 +300,20 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit, col
   return createPortal(
     <dialog open className={modalOverlayClassName}>
       <div className={modalBoxClassName}>
-        <div className={modalHeaderClassName}>
-          <div className="flex items-start justify-between gap-4">
-            <div className={`max-w-2xl ${isViewMode ? "pb-5 sm:pb-10" : ""}`}>
+        <div className={modalHeaderSpacingClassName}>
+          <div className="flex items-start justify-between gap-4 sm:gap-6">
+            <div className={modalHeaderContentClassName}>
               <h3 className={modalHeaderTitleClassName}>
                 {isViewMode ? "View User" : "Edit User"}
               </h3>
-              <p className={modalHeaderDescriptionClassName}>
+              <p className={modalHeaderDescriptionSpacingClassName}>
                 {isViewMode
                   ? "View the user's account information."
                   : "Update the user's roles and account status."}
               </p>
             </div>
 
-            <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
+            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>

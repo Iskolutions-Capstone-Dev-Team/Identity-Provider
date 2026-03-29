@@ -93,6 +93,11 @@ export default function AddUserModal({
   const tempPasswordHintClassName = isDarkMode
     ? "mt-3 text-xs text-[#c7adb4]"
     : "mt-3 text-xs text-[#8f6f76]";
+  const modalHeaderSpacingClassName =
+    `${modalHeaderClassName} !px-7 !pt-7 !pb-9 sm:!px-8 sm:!pt-8 sm:!pb-10`;
+  const modalHeaderContentClassName = "max-w-xl pr-12 sm:pr-14";
+  const modalHeaderDescriptionSpacingClassName =
+    `${modalHeaderDescriptionClassName} !mt-3 max-w-[18rem] leading-relaxed sm:!mt-4 sm:max-w-[28rem]`;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -321,16 +326,16 @@ export default function AddUserModal({
   return createPortal(
     <dialog open className={modalOverlayClassName}>
       <div className={modalBoxClassName}>
-        <div className={modalHeaderClassName}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="max-w-2xl">
+        <div className={modalHeaderSpacingClassName}>
+          <div className="flex items-start justify-between gap-4 sm:gap-6">
+            <div className={modalHeaderContentClassName}>
               <h3 className={modalHeaderTitleClassName}>Add User</h3>
-              <p className={modalHeaderDescriptionClassName}>
+              <p className={modalHeaderDescriptionSpacingClassName}>
                 Enter user information
               </p>
             </div>
 
-            <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
+            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
