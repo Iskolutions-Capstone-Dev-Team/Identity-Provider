@@ -97,6 +97,9 @@ export default function IdpLayout() {
           ? "bg-[#182434] text-slate-100"
           : "bg-[#fff8f3] text-slate-800"
       }`}
+      style={{
+        "--idp-success-alert-left": sidebarOpen ? "20rem" : "8rem",
+      }}
     >
       <AccessibilityWidget />
       <AssistiveFab colorMode={colorMode} />
