@@ -43,7 +43,6 @@ func MigrateAndSeed() {
 		"user_roles",
 		"idp_sessions",
 		"client_grant_types",
-		"client_allowed_roles",
 		"roles",
 		"admin_allowed_clients",
 	}
@@ -61,7 +60,6 @@ func seedAdminUser(adminDatabase *sqlx.DB) error {
 
 	adminEmail := os.Getenv("ADMIN_EMAIL")
 	adminPass := os.Getenv("ADMIN_PASSWORD")
-	adminUser := os.Getenv("ADMIN_USERNAME")
 
 	adminDatabase.Exec("DELETE FROM users WHERE email = ?", adminEmail)
 
@@ -70,7 +68,6 @@ func seedAdminUser(adminDatabase *sqlx.DB) error {
 
 	user := &models.User{
 		ID:           newAdminID[:],
-		Username:     adminUser,
 		Email:        adminEmail,
 		PasswordHash: hashedPassword,
 		RoleString:   []string{"idp:superadmin"},
@@ -91,7 +88,6 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 	cName := os.Getenv("CLIENT_NAME")
 	cCallback := os.Getenv("CLIENT_CALLBACK_URL")
 	cBase := os.Getenv("CLIENT_BASE_URL")
-	ctag := os.Getenv("CLIENT_TAG")
 
 	parsedID, _ := uuid.Parse(cID)
 	hashedClientSecret, _ := utils.HashSecret(cSecret)
@@ -100,13 +96,11 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 		"refresh_token",
 		"client_credentials",
 	}
-	roleIDs := []int{1, 2}
 
 	// Initialize the struct to avoid nil pointer
 	client := &models.Client{
 		ID:            parsedID[:],
 		ClientName:    cName,
-		Tag:           ctag,
 		ClientSecret:  hashedClientSecret,
 		BaseUrl:       cBase,
 		RedirectUri:   cCallback,
@@ -117,7 +111,7 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 
 	clientRepo := repository.NewClientRepository(adminDatabase)
 	uuid := uuid.New()
-	err := clientRepo.CreateClient(client, grants, roleIDs, uuid[:])
+	err := clientRepo.CreateClient(client, grants, uuid[:])
 	if err != nil {
 		return fmt.Errorf("[Migrate] Client seeding failed: %v", err)
 	} else {
