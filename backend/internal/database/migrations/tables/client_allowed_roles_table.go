@@ -17,5 +17,9 @@ var ClientAllowedRolesMigration = migrations.TableMigration{
 				INDEX idx_role_lookup (role_id)
 			);`,
 		},
+		{
+			ID: "drop-client-allowed-roles-table",
+			SQL: `DROP TABLE IF EXISTS client_allowed_roles;`,
+		},
 	},
 }
