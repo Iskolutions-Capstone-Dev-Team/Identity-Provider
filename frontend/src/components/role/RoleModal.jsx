@@ -21,14 +21,22 @@ const normalizePermissionLabel = (permission) => {
     return "";
   }
 
-  const label = permission.permission ?? permission.permission_name ?? permission.name;
+  const label =
+    permission.permission ??
+    permission.permission_name ??
+    permission.name ??
+    permission.PermissionName;
+
   return typeof label === "string" ? label.trim() : "";
 };
 
 const normalizePermissionId = (permission) => {
   if (permission && typeof permission === "object") {
     return toPositiveInt(
-      permission.id ?? permission.permission_id ?? permission.permissionId,
+      permission.id ??
+      permission.permission_id ??
+      permission.permissionId ??
+      permission.ID,
     );
   }
 
@@ -49,32 +57,6 @@ const normalizePermissionOption = (permission = {}) => {
   };
 };
 
-const normalizePermissionNames = (role = {}) => {
-  const rawPermissions = Array.isArray(role.permissions)
-    ? role.permissions
-    : Array.isArray(role.permission_names)
-      ? role.permission_names
-      : Array.isArray(role.permissionNames)
-        ? role.permissionNames
-        : [];
-
-  return Array.from(
-    new Set(rawPermissions.map((permission) => normalizePermissionLabel(permission)).filter(Boolean)),
-  );
-};
-
-const normalizePermissionIds = (role = {}) => {
-  const rawPermissionIds = Array.isArray(role.permission_ids)
-    ? role.permission_ids
-    : Array.isArray(role.permissionIds)
-      ? role.permissionIds
-      : [];
-
-  return Array.from(
-    new Set(rawPermissionIds.map((permissionId) => normalizePermissionId(permissionId)).filter((permissionId) => permissionId !== null)),
-  );
-};
-
 const mapPermissionNamesToIds = (permissionNames = [], permissionOptions = []) => {
   if (!Array.isArray(permissionNames) || permissionNames.length === 0) {
     return [];
@@ -90,7 +72,9 @@ const mapPermissionNamesToIds = (permissionNames = [], permissionOptions = []) =
   return Array.from(
     new Set(
       permissionNames
-        .map((permissionName) => permissionMap.get(permissionName.toLowerCase()))
+        .map((permissionName) =>
+          permissionMap.get(permissionName.toLowerCase()),
+        )
         .filter((permissionId) => permissionId !== undefined),
     ),
   );
@@ -136,14 +120,16 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
     modalSecondaryButtonClassName,
     modalSectionClassName,
   } = getModalTheme(colorMode);
+
   const modalTitle =
     mode === "create" ? "Create Role" : mode === "edit" ? "Edit Role" : "View Role";
   const modalDescription =
     mode === "create"
-      ? "Define a new role and choose its permissions."
+      ? "Define a new role and assign its permissions."
       : mode === "edit"
         ? "Modify the role's name, description, and permissions."
-        : "View the role's information and permissions.";
+        : "View the role's saved details and permissions.";
+
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedPermissionIds, setSelectedPermissionIds] = useState([]);
@@ -153,6 +139,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
     name: false,
     description: false,
   });
+
   const normalizedPermissionOptions = useMemo(
     () =>
       permissionOptions
@@ -176,17 +163,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
 
     return Array.from(optionMap.values());
   }, [normalizedPermissionOptions, selectedPermissionIds]);
-  const permissionOptionsById = useMemo(
-    () => new Map(mergedPermissionOptions.map((permission) => [permission.id, permission])),
-    [mergedPermissionOptions],
-  );
-  const selectedPermissionNames = useMemo(
-    () =>
-      selectedPermissionIds
-        .map((permissionId) => permissionOptionsById.get(permissionId)?.permission)
-        .filter(Boolean),
-    [permissionOptionsById, selectedPermissionIds],
-  );
+
   const readOnlyTextAreaClassName =
     `${modalReadOnlyInputClassName} min-h-28 whitespace-pre-wrap`;
   const editableFieldBaseClassName = isDarkMode
@@ -230,15 +207,22 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
       setDescription("");
       setSelectedPermissionIds([]);
     } else {
-      const rolePermissionIds = normalizePermissionIds(role);
-      const rolePermissionNames = normalizePermissionNames(role);
+      const rolePermissionIds = Array.isArray(role?.permissionIds)
+        ? role.permissionIds
+        : [];
+      const rolePermissionLabels = Array.isArray(role?.permissionLabels)
+        ? role.permissionLabels
+        : [];
 
       setRoleName(normalizeTextValue(role?.role_name));
       setDescription(normalizeTextValue(role?.description));
       setSelectedPermissionIds(
         rolePermissionIds.length > 0
           ? rolePermissionIds
-          : mapPermissionNamesToIds(rolePermissionNames, normalizedPermissionOptions),
+          : mapPermissionNamesToIds(
+              rolePermissionLabels,
+              normalizedPermissionOptions,
+            ),
       );
     }
 
@@ -298,8 +282,6 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
     clearAlertError();
   };
 
-  const hasPermissions = selectedPermissionIds.length > 0;
-
   const handleSubmit = (event) => {
     event.preventDefault();
 
@@ -318,16 +300,11 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
     }
 
     onSubmit({
-      id: role?.id || Date.now(),
+      id: role?.id,
       role_name: roleName.trim(),
       description: description.trim(),
       permission_ids: selectedPermissionIds,
-      permissions: selectedPermissionNames,
-      created_at:
-        role?.created_at || new Date().toISOString().slice(0, 10),
     });
-
-    onClose();
   };
 
   if (!open) {
@@ -398,7 +375,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                       )}
                     </div>
                   ) : (
-                    <input type="text" required value={roleName} onChange={(event) => handleRoleNameChange(event.target.value)} onBlur={() => setFieldTouched("name")} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., superadmin)" autoCapitalize="none"
+                    <input type="text" required value={roleName} onChange={(event) => handleRoleNameChange(event.target.value)} onBlur={() => setFieldTouched("name")} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., system:admin)" autoCapitalize="none"
                       className={getEditableInputClassName(
                         touched.name && Boolean(fieldErrors.name),
                       )}
@@ -469,7 +446,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                               isDarkMode,
                             })}
                           >
-                            <input type="checkbox" className={permissionCheckboxClassName} checked={isSelected} onChange={() => togglePermission(permission.id)} disabled={isViewMode}/>
+                            <input type="checkbox" className={permissionCheckboxClassName} checked={isSelected} onChange={() => togglePermission(permission.id)} disabled={isViewMode} />
                             <span className="break-words">{permission.permission}</span>
                           </label>
                         );
@@ -480,15 +457,37 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                       <span className={emptyContentClassName}>No permissions available</span>
                     </div>
                   )}
-
-                  {isViewMode && !hasPermissions && mergedPermissionOptions.length > 0 && (
-                    <p className={`${modalHelperTextClassName} mt-2`}>
-                      No permissions assigned.
-                    </p>
-                  )}
                 </div>
               </div>
             </section>
+
+            {isViewMode && (
+              <section className={modalSectionClassName}>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className={modalLabelClassName}>Created At</label>
+                    <div className={modalReadOnlyInputClassName}>
+                      {role?.created_at ? (
+                        <span className="truncate">{role.created_at}</span>
+                      ) : (
+                        <span className={emptyContentClassName}>No content</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={modalLabelClassName}>Updated At</label>
+                    <div className={modalReadOnlyInputClassName}>
+                      {role?.updated_at ? (
+                        <span className="truncate">{role.updated_at}</span>
+                      ) : (
+                        <span className={emptyContentClassName}>No content</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
           </div>
         </form>
 

@@ -1,5 +1,28 @@
 import axiosInstance from "./axiosInstance";
 
+const normalizeTextValue = (value) =>
+  typeof value === "string" ? value.trim() : "";
+
+const toPositiveInt = (value) => {
+  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const normalizePermissionIds = (permissionIds = []) =>
+  Array.from(
+    new Set(
+      (Array.isArray(permissionIds) ? permissionIds : [])
+        .map((permissionId) => toPositiveInt(permissionId))
+        .filter((permissionId) => permissionId !== null),
+    ),
+  );
+
+const buildRolePayload = (data = {}) => ({
+  role_name: normalizeTextValue(data.role_name),
+  description: normalizeTextValue(data.description),
+  permission_ids: normalizePermissionIds(data.permission_ids),
+});
+
 const normalizeClientTagOption = (client = {}) => {
   const rawTag = typeof client.tag === "string" ? client.tag.trim() : "";
   if (!rawTag) return null;
@@ -18,94 +41,50 @@ const normalizeClientTagOption = (client = {}) => {
 };
 
 export const roleService = {
-  // =========================
-  // GET PAGINATED ROLES
-  // =========================
-  async getRoles(page = 1) {
-    const response = await axiosInstance.get(`/admin/roles`, {
-      params: { page },
+  async getRoles(page = 1, { keyword = "" } = {}) {
+    const normalizedKeyword = normalizeTextValue(keyword);
+    const response = await axiosInstance.get("/admin/roles", {
+      params: {
+        page,
+        ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
+      },
     });
 
     return response.data;
   },
 
-  async getAllRolesPage(page = 1) {
-    const response = await axiosInstance.get(`/admin/roles/all`, {
-      params: { page },
+  async getAllRolesPage(page = 1, { keyword = "" } = {}) {
+    const normalizedKeyword = normalizeTextValue(keyword);
+    const response = await axiosInstance.get("/admin/roles/all", {
+      params: {
+        page,
+        ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
+      },
     });
 
     return response.data;
   },
 
-  async searchRoles(keyword = "") {
-    const normalizedKeyword =
-      typeof keyword === "string" ? keyword.trim() : "";
-
-    if (!normalizedKeyword) {
-      return {
-        roles: [],
-        current_page: 1,
-        last_page: 1,
-        total_count: 0,
-      };
-    }
-
-    try {
-      const response = await axiosInstance.get(`/admin/roles`, {
-        params: { keyword: normalizedKeyword },
-      });
-      const roles = Array.isArray(response.data?.roles) ? response.data.roles : [];
-
-      return {
-        ...response.data,
-        roles,
-        current_page: 1,
-        last_page: 1,
-        total_count: roles.length,
-      };
-    } catch (error) {
-      if (error?.response?.status === 404) {
-        return {
-          roles: [],
-          current_page: 1,
-          last_page: 1,
-          total_count: 0,
-        };
-      }
-
-      throw error;
-    }
-  },
-
-  // =========================
-  // GET ALL ROLES FOR USERPOOL
-  // =========================
   async getAllRoles() {
-    const response = await axiosInstance.get(`/admin/roles`, {
+    const response = await axiosInstance.get("/admin/roles", {
       params: { page: 1, limit: 10 },
     });
 
     return response.data.roles;
   },
 
-  // =========================
-  // GET ROLE BY ID
-  // =========================
   async getRoleById(id) {
     const response = await axiosInstance.get(`/admin/roles/${id}`);
     return response.data;
   },
 
-  // =========================
-  // GET CLIENT TAGS + LOGOS
-  // =========================
   async getClientTags({ limit = 50, keyword = "" } = {}) {
     const uniqueTags = new Map();
     let currentPage = 1;
     let lastPage = 1;
 
     do {
-      const response = await axiosInstance.get(`/admin/clients/tags`, {
+      const response = await axiosInstance.get("/admin/clients/tags", {
         params: {
           limit,
           page: currentPage,
@@ -146,37 +125,24 @@ export const roleService = {
     );
   },
 
-  // =========================
-  // CREATE ROLE
-  // =========================
   async createRole(data) {
-    const response = await axiosInstance.post(`/admin/roles`, {
-      role_name: data.role_name,
-      description: data.description,
-      permission_ids: data.permission_ids || [],
-      permissions: data.permissions || [],
-    });
+    const response = await axiosInstance.post(
+      "/admin/roles",
+      buildRolePayload(data),
+    );
 
     return response.data;
   },
 
-  // =========================
-  // UPDATE ROLE
-  // =========================
   async updateRole(id, data) {
-    const response = await axiosInstance.put(`/admin/roles/${id}`, {
-      role_name: data.role_name,
-      description: data.description,
-      permission_ids: data.permission_ids || [],
-      permissions: data.permissions || [],
-    });
+    const response = await axiosInstance.put(
+      `/admin/roles/${id}`,
+      buildRolePayload(data),
+    );
 
     return response.data;
   },
 
-  // =========================
-  // DELETE ROLE
-  // =========================
   async deleteRole(id) {
     const response = await axiosInstance.delete(`/admin/roles/${id}`);
     return response.data;

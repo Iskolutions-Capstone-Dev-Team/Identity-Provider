@@ -59,7 +59,7 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
     },
   ];
 
-  if (role.can_edit) {
+  if (role.canEdit) {
     actions.push({
       key: "edit",
       label: `Edit ${role.role_name}`,
@@ -72,7 +72,7 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
     });
   }
 
-  if (role.can_delete) {
+  if (role.canDelete) {
     actions.push({
       key: "delete",
       label: `Delete ${role.role_name}`,
@@ -86,6 +86,14 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
   }
 
   return actions;
+}
+
+function renderDateValue(value, emptyValueClassName) {
+  if (value) {
+    return value;
+  }
+
+  return <span className={emptyValueClassName}>No date</span>;
 }
 
 export default function RolesListTable({ loading = false, roles, onView, onEdit, onDelete, colorMode = "light" }) {
@@ -106,7 +114,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
   const permissionsBadgeClassName = isDarkMode
     ? "inline-flex items-center rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
     : "inline-flex items-center rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
-  const createdCellClassName = isDarkMode
+  const timestampCellClassName = isDarkMode
     ? `${bodyCellClassName} text-[#f8d996]`
     : `${bodyCellClassName} text-[#7b0d15]`;
   const permissionEmptyStateClassName = isDarkMode
@@ -128,6 +136,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
           { header: "Description", type: "text", width: "w-36" },
           { header: "Permissions", type: "text", width: "w-40" },
           { header: "Created", type: "text", width: "w-24" },
+          { header: "Updated", type: "text", width: "w-24" },
           { header: "Actions", type: "actions" },
         ]}
       />
@@ -137,13 +146,14 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
   return (
     <div className={wrapperClassName}>
       <div className="overflow-x-auto">
-        <table className="table w-full min-w-[72rem] lg:min-w-0 lg:table-fixed">
+        <table className="table w-full min-w-[84rem] lg:min-w-0 lg:table-fixed">
           <thead>
             <tr className={tableHeaderRowClassName}>
               <th className={headerCellClassName}>Role Name</th>
               <th className={headerCellClassName}>Description</th>
               <th className={headerCellClassName}>Permissions</th>
               <th className={headerCellClassName}>Created</th>
+              <th className={headerCellClassName}>Updated</th>
               <th className={headerCellClassName}>Actions</th>
             </tr>
           </thead>
@@ -151,7 +161,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
           <tbody>
             {roles.length === 0 && (
               <tr>
-                <td colSpan={5} className={emptyStateClassName}>
+                <td colSpan={6} className={emptyStateClassName}>
                   No roles found
                 </td>
               </tr>
@@ -170,8 +180,11 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
                     permissionsBadgeClassName,
                   )}
                 </td>
-                <td className={createdCellClassName}>
-                  {role.created_at}
+                <td className={timestampCellClassName}>
+                  {renderDateValue(role.created_at, permissionEmptyStateClassName)}
+                </td>
+                <td className={timestampCellClassName}>
+                  {renderDateValue(role.updated_at, permissionEmptyStateClassName)}
                 </td>
                 <td className={bodyCellClassName}>
                   <div className="flex items-center justify-center gap-2">
