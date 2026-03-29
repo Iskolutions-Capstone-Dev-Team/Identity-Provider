@@ -157,7 +157,7 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
         SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.name_suffix, u.email, u.password_hash, u.status, 
                u.created_at, u.updated_at, r.id AS role_id, 
-               r.name AS role_name, r.description AS role_description
+               r.role_name AS role_name, r.description AS role_description
         FROM users u
         LEFT JOIN user_roles ur ON ur.user_id = u.id
         LEFT JOIN roles r ON ur.role_id = r.id
