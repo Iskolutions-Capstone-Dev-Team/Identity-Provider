@@ -21,10 +21,15 @@ const initialFormData = {
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
-  { value: "suspended", label: "Suspended" },
+  { value: "suspended", label: "Suspend" },
 ];
 
 const STATUS_VALUES = new Set(["active", "inactive", "suspended"]);
+const STATUS_DISPLAY_LABELS = {
+  active: "Active",
+  inactive: "Inactive",
+  suspended: "Suspended",
+};
 
 const normalizeText = (value) =>
   typeof value === "string" ? value.trim() : "";
@@ -33,6 +38,9 @@ const normalizeStatus = (value) => {
   const normalizedValue = normalizeText(value).toLowerCase();
   return STATUS_VALUES.has(normalizedValue) ? normalizedValue : "active";
 };
+
+const getStatusDisplayLabel = (status) =>
+  STATUS_DISPLAY_LABELS[normalizeStatus(status)] || STATUS_DISPLAY_LABELS.active;
 
 const normalizeRoleNames = (roles) =>
   Array.from(
@@ -316,21 +324,26 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit, col
                     <input type="text" value={formData.id} readOnly className={modalReadOnlyInputClassName}/>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <label className={modalLabelClassName}>Email</label>
-                      <input type="email" value={formData.email} readOnly className={modalReadOnlyInputClassName}/>
-                    </div>
+                  <div>
+                    <label className={modalLabelClassName}>Email</label>
+                    <input type="email" value={formData.email} readOnly className={modalReadOnlyInputClassName}/>
+                  </div>
 
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <label className={modalLabelClassName}>
                         First Name
                       </label>
                       <input type="text" value={formData.givenName} readOnly className={modalReadOnlyInputClassName}/>
                     </div>
+
+                    <div>
+                      <label className={modalLabelClassName}>Last Name</label>
+                      <input type="text" value={formData.surname} readOnly className={modalReadOnlyInputClassName}/>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <label className={modalLabelClassName}>
                         Middle Name
@@ -341,11 +354,6 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit, col
                           Optional
                         </span>
                       </label>
-                    </div>
-
-                    <div>
-                      <label className={modalLabelClassName}>Last Name</label>
-                      <input type="text" value={formData.surname} readOnly className={modalReadOnlyInputClassName}/>
                     </div>
 
                     <div>
@@ -413,13 +421,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit, col
                     Status {!isViewMode && <span className="text-red-500">*</span>}
                   </label>
                   {isViewMode ? (
-                    <select value={formData.status} onChange={(e) => handleFieldChange("status", e.target.value)} disabled className={`${modalReadOnlyInputClassName} cursor-not-allowed appearance-none`}>
-                      {STATUS_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <input type="text" value={getStatusDisplayLabel(formData.status)} readOnly className={modalReadOnlyInputClassName}/>
                   ) : (
                     <UserPoolModalSelect
                       value={formData.status}
