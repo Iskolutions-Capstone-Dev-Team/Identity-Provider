@@ -4,13 +4,13 @@ import DataTableSkeleton from "../DataTableSkeleton";
 const headerCellClassName =
   "border-b border-white/10 px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90";
 
-function renderPermissionLabels(role, emptyStateClassName, badgeClassName) {
+function renderPermissionLabels( role, emptyStateClassName, listClassName, badgeClassName ) {
   if (!Array.isArray(role.permissionLabels) || role.permissionLabels.length === 0) {
     return <span className={emptyStateClassName}>No permissions</span>;
   }
 
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className={listClassName}>
       {role.permissionLabels.map((permission) => (
         <span key={permission} className={badgeClassName}>
           {permission}
@@ -88,14 +88,6 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
   return actions;
 }
 
-function renderDateValue(value, emptyValueClassName) {
-  if (value) {
-    return value;
-  }
-
-  return <span className={emptyValueClassName}>No date</span>;
-}
-
 export default function RolesListTable({ loading = false, roles, onView, onEdit, onDelete, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const tableTheme = isDarkMode ? "userpoolDark" : "userpool";
@@ -111,12 +103,11 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
   const roleNameCellClassName = isDarkMode
     ? `${bodyCellClassName} font-semibold text-[#f6eaec]`
     : `${bodyCellClassName} font-semibold text-[#4a1921]`;
+  const permissionsListClassName =
+    "mx-auto grid w-full max-w-[24rem] grid-cols-2 gap-3 min-[1700px]:grid-cols-3";
   const permissionsBadgeClassName = isDarkMode
-    ? "inline-flex items-center rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
-    : "inline-flex items-center rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
-  const timestampCellClassName = isDarkMode
-    ? `${bodyCellClassName} text-[#f8d996]`
-    : `${bodyCellClassName} text-[#7b0d15]`;
+    ? "inline-flex min-h-[3rem] w-full items-center justify-center rounded-2xl border border-[#f8d24e]/35 bg-[#f8d24e]/10 px-3 py-2 text-center text-xs font-semibold leading-tight text-[#ffe28a] shadow-[0_12px_24px_-20px_rgba(248,210,78,0.75)]"
+    : "inline-flex min-h-[3rem] w-full items-center justify-center rounded-2xl border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-2 text-center text-xs font-semibold leading-tight text-[#7b0d15] shadow-[0_12px_24px_-20px_rgba(123,13,21,0.35)]";
   const permissionEmptyStateClassName = isDarkMode
     ? "italic text-[#a58d95]"
     : "italic text-[#8f6f76]";
@@ -135,8 +126,6 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
           { header: "Role Name", type: "text", width: "w-28" },
           { header: "Description", type: "text", width: "w-36" },
           { header: "Permissions", type: "text", width: "w-40" },
-          { header: "Created", type: "text", width: "w-24" },
-          { header: "Updated", type: "text", width: "w-24" },
           { header: "Actions", type: "actions" },
         ]}
       />
@@ -146,14 +135,12 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
   return (
     <div className={wrapperClassName}>
       <div className="overflow-x-auto">
-        <table className="table w-full min-w-[84rem] lg:min-w-0 lg:table-fixed">
+        <table className="table w-full min-w-[64rem] lg:min-w-0 lg:table-fixed">
           <thead>
             <tr className={tableHeaderRowClassName}>
               <th className={headerCellClassName}>Role Name</th>
               <th className={headerCellClassName}>Description</th>
               <th className={headerCellClassName}>Permissions</th>
-              <th className={headerCellClassName}>Created</th>
-              <th className={headerCellClassName}>Updated</th>
               <th className={headerCellClassName}>Actions</th>
             </tr>
           </thead>
@@ -161,7 +148,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
           <tbody>
             {roles.length === 0 && (
               <tr>
-                <td colSpan={6} className={emptyStateClassName}>
+                <td colSpan={4} className={emptyStateClassName}>
                   No roles found
                 </td>
               </tr>
@@ -177,14 +164,9 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
                   {renderPermissionLabels(
                     role,
                     permissionEmptyStateClassName,
+                    permissionsListClassName,
                     permissionsBadgeClassName,
                   )}
-                </td>
-                <td className={timestampCellClassName}>
-                  {renderDateValue(role.created_at, permissionEmptyStateClassName)}
-                </td>
-                <td className={timestampCellClassName}>
-                  {renderDateValue(role.updated_at, permissionEmptyStateClassName)}
                 </td>
                 <td className={bodyCellClassName}>
                   <div className="flex items-center justify-center gap-2">
