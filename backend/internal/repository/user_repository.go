@@ -37,7 +37,7 @@ func (r *UserRepository) GetUserList(limit, offset int) ([]models.User, error) {
 	// 2. Fetch all data + roles for ONLY those specific IDs
 	// sqlx.In handles the IN (?) expansion for the slice of []byte
 	fullQuery, args, err := sqlx.In(`
-        SELECT u.id, u.username, u.first_name, u.middle_name, u.last_name,
+        SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.email, u.status, u.created_at, u.updated_at, 
                r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
@@ -110,7 +110,7 @@ func (r *UserRepository) GetBoundUserList(
 	// This ensures users without allowed roles (like the admin) still
 	// appear, but any unauthorized roles are completely stripped out.
 	const baseQuery = `
-		SELECT u.id, u.username, u.first_name, u.middle_name, 
+		SELECT u.id, u.first_name, u.middle_name, 
 		       u.last_name, u.email, u.status, u.created_at, 
 		       u.updated_at, ar.id AS role_id, 
 		       ar.role_name AS role_name, 
@@ -154,7 +154,7 @@ func (r *UserRepository) GetBoundUserList(
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	var rows []userRow
 	query := `
-        SELECT u.id, u.username, u.first_name, u.middle_name, u.last_name,
+        SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.email, u.password_hash, u.status, u.created_at, 
                u.updated_at, r.id AS role_id, r.name AS role_name, 
                r.description AS role_description
@@ -179,7 +179,7 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 func (r *UserRepository) GetUserById(id []byte) (*models.User, error) {
 	var rows []userRow
 	query := `
-        SELECT u.id, u.username, u.first_name, u.middle_name, u.last_name,
+        SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.email, u.status, u.created_at, u.updated_at, 
                r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
@@ -207,11 +207,10 @@ func (r *UserRepository) CreateUser(u *models.User) error {
 		return fmt.Errorf("failed to marshal user roles: %w", err)
 	}
 
-	query := `CALL CreateUser(?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `CALL CreateUser(?, ?, ?, ?, ?, ?, ?)`
 
 	_, err = r.db.Exec(query,
 		u.ID,
-		u.Username,
 		u.FirstName,
 		u.MiddleName,
 		u.LastName,
@@ -423,7 +422,6 @@ func (r *UserRepository) mapSingleUser(rows []userRow) *models.User {
 	// Initialize user using the first row's data
 	user := &models.User{
 		ID:           rows[0].ID,
-		Username:     rows[0].Username,
 		FirstName:    rows[0].FirstName,
 		MiddleName:   rows[0].MiddleName,
 		LastName:     rows[0].LastName,
@@ -455,7 +453,7 @@ func (r *UserRepository) groupRows(rows []userRow, ids [][]byte) []models.User {
 		idKey := string(row.ID)
 		if _, exists := userMap[idKey]; !exists {
 			userMap[idKey] = &models.User{
-				ID: row.ID, Username: row.Username, FirstName: row.FirstName,
+				ID: row.ID, FirstName: row.FirstName,
 				MiddleName: row.MiddleName, LastName: row.LastName,
 				Email: row.Email, Status: row.Status,
 				CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,

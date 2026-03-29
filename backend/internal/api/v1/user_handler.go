@@ -28,8 +28,8 @@ const (
 
 // UserHandler handles user management HTTP requests.
 type UserHandler struct {
-	Service          *service.UserService
-	LogService       *service.LogService
+	Service    *service.UserService
+	LogService *service.LogService
 }
 
 // PostUser creates a new user in the system
@@ -278,7 +278,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // GetMe retrieves user information based on the access token bearer auth
 // @Summary      Get authenticated user info
 // @Description  Returns user profile filtered by client allowed roles
-// @Tags         User
+// @Tags         Users
 // @Produce      json
 // @Success      200  {object}  dto.UserInfoResponse
 // @Failure      400  {object}  dto.ErrorResponse
@@ -629,7 +629,7 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 				http.StatusForbidden,
 				dto.ErrorResponse{
 					Error: fmt.Sprint(
-						"You don't have permission to", 
+						"You don't have permission to",
 						" edit/remove some of the roles you selected",
 					),
 				},

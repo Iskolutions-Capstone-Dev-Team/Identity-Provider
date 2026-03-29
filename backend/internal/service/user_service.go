@@ -34,7 +34,6 @@ func (s *UserService) CreateUser(
 
 	user := models.User{
 		ID:           userID[:],
-		Username:     req.Username,
 		FirstName:    req.FirstName,
 		MiddleName:   req.MiddleName,
 		LastName:     req.LastName,
@@ -67,7 +66,6 @@ func (s *UserService) GetUserByID(
 
 	return &dto.UserResponse{
 		ID:         id.String(),
-		Username:   user.Username,
 		FirstName:  user.FirstName,
 		MiddleName: user.MiddleName,
 		LastName:   user.LastName,
@@ -185,7 +183,6 @@ func (s *UserService) GetUserList(
 		userUUID, _ := uuid.FromBytes(user.ID)
 		userResponses = append(userResponses, dto.UserResponse{
 			ID:         userUUID.String(),
-			Username:   user.Username,
 			FirstName:  user.FirstName,
 			MiddleName: user.MiddleName,
 			LastName:   user.LastName,
@@ -247,7 +244,6 @@ func (s *UserService) GetBoundUserList(
 		userUUID, _ := uuid.FromBytes(user.ID)
 		userResponses = append(userResponses, dto.UserResponse{
 			ID:         userUUID.String(),
-			Username:   user.Username,
 			FirstName:  user.FirstName,
 			MiddleName: user.MiddleName,
 			LastName:   user.LastName,
