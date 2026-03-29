@@ -75,21 +75,25 @@ export default function MultiSelect({ options,
     : "ml-1 text-sm text-gray-400";
 
   const selectedTagClassName = isDarkUserPoolModalVariant
-    ? "flex items-center gap-1 rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
+    ? "inline-flex max-w-full shrink-0 items-center gap-1 rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
     : isUserPoolModalVariant
-    ? "flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]"
+    ? "inline-flex max-w-full shrink-0 items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]"
     : "flex items-center gap-1 rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600";
 
   const inputClassName = isDarkUserPoolModalVariant
-    ? "ml-1 min-w-12.5 flex-1 bg-transparent text-sm text-[#f4eaea] outline-none placeholder:text-[#a58d95]"
+    ? `ml-1 bg-transparent text-sm text-[#f4eaea] outline-none placeholder:text-[#a58d95] ${
+        selectedItems.length > 0 ? "min-w-0 w-0 flex-1" : "min-w-[3rem] flex-1"
+      }`
     : isUserPoolModalVariant
-    ? "ml-1 min-w-12.5 flex-1 bg-transparent text-sm text-[#4a1921] outline-none placeholder:text-[#9b7d84]"
+    ? `ml-1 bg-transparent text-sm text-[#4a1921] outline-none placeholder:text-[#9b7d84] ${
+        selectedItems.length > 0 ? "min-w-0 w-0 flex-1" : "min-w-[3rem] flex-1"
+      }`
     : "ml-1 min-w-12.5 flex-1 bg-transparent text-sm outline-none";
 
   const toolsClassName = isDarkUserPoolModalVariant
-    ? "ml-3 flex items-center gap-2 border-l border-white/10 pl-3"
+    ? "ml-2 flex shrink-0 items-center gap-1.5 border-l border-white/10 pl-2 sm:ml-3 sm:gap-2 sm:pl-3"
     : isUserPoolModalVariant
-    ? "ml-3 flex items-center gap-2 border-l border-[#7b0d15]/10 pl-3"
+    ? "ml-2 flex shrink-0 items-center gap-1.5 border-l border-[#7b0d15]/10 pl-2 sm:ml-3 sm:gap-2 sm:pl-3"
     : "ml-2 flex items-center gap-2 border-l border-gray-200 px-1";
 
   const clearButtonClassName = isDarkUserPoolModalVariant
@@ -99,15 +103,15 @@ export default function MultiSelect({ options,
     : "text-lg text-gray-400 hover:text-[#991b1b]";
 
   const chevronWrapClassName = isDarkUserPoolModalVariant
-    ? "inline-flex size-9 items-center justify-center rounded-full bg-[#f8d24e]/12 text-[#f8d24e]"
+    ? "inline-flex size-8 items-center justify-center rounded-full bg-[#f8d24e]/12 text-[#f8d24e] sm:size-9"
     : isUserPoolModalVariant
-    ? "inline-flex size-9 items-center justify-center rounded-full bg-[#fff4dc] text-[#7b0d15]"
+    ? "inline-flex size-8 items-center justify-center rounded-full bg-[#fff4dc] text-[#7b0d15] sm:size-9"
     : "text-gray-400";
 
   const dropdownClassName = isDarkUserPoolModalVariant
-    ? "absolute z-50 mt-2 max-h-72 w-full overflow-y-auto rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(16,23,38,0.98),rgba(27,18,28,0.98))] py-2 shadow-[0_26px_60px_-34px_rgba(2,6,23,0.82)]"
+    ? "mt-2 max-h-60 w-full overflow-y-auto rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(16,23,38,0.98),rgba(27,18,28,0.98))] py-2 shadow-[0_26px_60px_-34px_rgba(2,6,23,0.82)] sm:absolute sm:z-50 sm:max-h-72"
     : isUserPoolModalVariant
-    ? "absolute z-50 mt-2 max-h-72 w-full overflow-y-auto rounded-[1.25rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,248,243,0.96))] py-2 shadow-[0_26px_60px_-34px_rgba(43,3,7,0.62)]"
+    ? "mt-2 max-h-60 w-full overflow-y-auto rounded-[1.25rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,248,243,0.96))] py-2 shadow-[0_26px_60px_-34px_rgba(43,3,7,0.62)] sm:absolute sm:z-50 sm:max-h-72"
     : "absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-xl";
 
   const groupLabelClassName = isDarkUserPoolModalVariant
@@ -157,16 +161,16 @@ export default function MultiSelect({ options,
         }}
         className={triggerClassName}
       >
-        <div className="flex flex-wrap gap-1.5 items-center flex-1">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           {selectedItems.length === 0 && !searchTerm && (
             <span className={placeholderClassName}>{placeholder}</span>
           )}
 
           {selectedItems.map((item) => (
             <div key={item.id} className={selectedTagClassName}>
-              {item.role_name}
+              <span className="truncate">{item.role_name}</span>
               {!disabled && (
-                <button onClick={(e) => removeTag(e, item.id)} className="ml-1 font-bold transition hover:text-[#5a0b12]">
+                <button type="button" onClick={(e) => removeTag(e, item.id)} className="ml-1 shrink-0 font-bold transition hover:text-[#5a0b12]">
                   x
                 </button>
               )}
@@ -189,7 +193,7 @@ export default function MultiSelect({ options,
 
         <div className={toolsClassName}>
           {!disabled && selectedValues.length > 0 && (
-            <button onClick={clearAll} className={clearButtonClassName}>
+            <button type="button" onClick={clearAll} className={`${clearButtonClassName} shrink-0`}>
               x
             </button>
           )}
