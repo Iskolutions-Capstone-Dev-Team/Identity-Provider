@@ -105,11 +105,15 @@ func seedSuperAdminRole(db *sqlx.DB) (int, error) {
 
 func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 	userRepo := repository.NewUserRepository(adminDatabase)
-
 	adminEmail := os.Getenv("ADMIN_EMAIL")
 	adminPass := os.Getenv("ADMIN_PASSWORD")
 
-	admin, _ := userRepo.GetUserByEmail(adminEmail)
+	admin, err := userRepo.GetUserByEmail(adminEmail)
+
+	if err != nil {
+		return fmt.Errorf("[Migrate] Error checking for existing admin: %v", err)
+	}
+
 	if admin == nil {
 		newAdminID := uuid.New()
 		hashedPassword, _ := utils.HashSecret(adminPass)
@@ -126,7 +130,7 @@ func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 		}
 	}
 
-	if superAdminRoleID != 0 {
+	if admin != nil && superAdminRoleID != 0 {
 		err := userRepo.UpdateUserRoles(admin.ID, []int{superAdminRoleID})
 		if err != nil {
 			return fmt.Errorf("[Migrate] Failed to assign superadmin role: %v", err)
@@ -167,7 +171,7 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 		BaseUrl:       cBase,
 		RedirectUri:   cCallback,
 		LogoutUri:     cBase,
-		Description:   "Default Application Client",
+		Description:   "Identity Provider",
 		ImageLocation: "",
 	}
 
