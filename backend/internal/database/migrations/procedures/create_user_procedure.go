@@ -10,7 +10,6 @@ var CreateUserProcedure = migrations.MigrationPart{
         -- We define the procedure's default collation here
         CREATE PROCEDURE CreateUser(
             IN p_userId BINARY(16),
-            IN p_username VARCHAR(255),
             IN p_firstName VARCHAR(50),
             IN p_middleName VARCHAR(50),
             IN p_lastName VARCHAR(50),
@@ -31,13 +30,12 @@ var CreateUserProcedure = migrations.MigrationPart{
             IF NOT EXISTS (
                 SELECT 1 FROM users 
                 WHERE email COLLATE utf8mb4_unicode_ci = p_userEmail COLLATE utf8mb4_unicode_ci
-                OR username COLLATE utf8mb4_unicode_ci = p_username COLLATE utf8mb4_unicode_ci
             ) THEN
                 INSERT INTO users (
-                    id, username, first_name, middle_name, last_name, email, password_hash
+                    id, first_name, middle_name, last_name, email, password_hash
                 )
                 VALUES (
-                    p_userId, p_username, p_firstName, p_middleName, p_lastName, p_userEmail, p_userPasswordHash
+                    p_userId, p_firstName, p_middleName, p_lastName, p_userEmail, p_userPasswordHash
                 );  
             
                 -- 2. Insert roles with explicit collation casting
