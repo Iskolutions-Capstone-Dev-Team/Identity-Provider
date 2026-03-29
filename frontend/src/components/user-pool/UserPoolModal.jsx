@@ -20,10 +20,11 @@ const initialFormData = {
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
-  { value: "suspended", label: "Suspend" },
+  { value: "inactive", label: "Inactive" },
+  { value: "suspended", label: "Suspended" },
 ];
 
-const STATUS_VALUES = new Set(["active", "suspended"]);
+const STATUS_VALUES = new Set(["active", "inactive", "suspended"]);
 
 const normalizeText = (value) =>
   typeof value === "string" ? value.trim() : "";
@@ -88,7 +89,12 @@ const createFormData = (user) => ({
   givenName: user?.givenName || "",
   middleName: user?.middleName || "",
   surname: user?.surname || "",
-  suffix: user?.suffix || user?.suffixName || user?.suffix_name || "",
+  suffix:
+    user?.suffix ||
+    user?.name_suffix ||
+    user?.suffixName ||
+    user?.suffix_name ||
+    "",
   status: normalizeStatus(user?.status),
   roles: normalizeRoleNames(user?.roles),
   roleIds: normalizeRoleIds(user?.roleIds),

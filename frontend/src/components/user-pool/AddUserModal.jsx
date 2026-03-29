@@ -38,6 +38,12 @@ const initialFieldErrors = {
   tempPassword: "",
 };
 
+const extractErrorMessage = (error) =>
+  error?.response?.data?.error ||
+  error?.response?.data?.message ||
+  error?.message ||
+  "Unable to create user.";
+
 export default function AddUserModal({
   open,
   onClose,
@@ -274,7 +280,7 @@ export default function AddUserModal({
     handleFieldValueChange(activeVoiceField, transcript);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateStepTwo()) {
       setStep(2);
       return;
@@ -288,22 +294,26 @@ export default function AddUserModal({
 
     const fullName = buildFullName(data);
 
-    onSubmit({
-      email: data.email,
-      name: fullName,
-      givenName: data.givenName,
-      middleName: data.middleName,
-      surname: data.surname,
-      suffix: data.suffix,
-      roleIds: data.roleIds,
-      roles: selectedRoles,
-      inviteMode: data.inviteMode,
-      delivery: data.delivery,
-      tempPassword: data.tempPassword,
-      status: "active",
-    });
+    try {
+      await onSubmit({
+        email: data.email,
+        name: fullName,
+        givenName: data.givenName,
+        middleName: data.middleName,
+        surname: data.surname,
+        suffix: data.suffix,
+        roleIds: data.roleIds,
+        roles: selectedRoles,
+        inviteMode: data.inviteMode,
+        delivery: data.delivery,
+        tempPassword: data.tempPassword,
+        status: "active",
+      });
 
-    onClose();
+      onClose();
+    } catch (submitError) {
+      setError(extractErrorMessage(submitError));
+    }
   };
 
   if (!open) return null;
