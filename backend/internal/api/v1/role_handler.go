@@ -24,8 +24,8 @@ const (
 
 // RoleHandler handles role management HTTP requests.
 type RoleHandler struct {
-	Service          *service.RoleService
-	LogService       *service.LogService
+	Service    *service.RoleService
+	LogService *service.LogService
 }
 
 // PostRole handles POST /v1/admin/roles

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -13,13 +12,14 @@ import (
 )
 
 type RoleService struct {
-	RoleRepo   *repository.RoleRepository
-	ClientRepo *repository.ClientRepository
+	RoleRepo *repository.RoleRepository
 }
 
 /**
- * CreateRole handles the creation of a new role and automatically
- * binds it to a client based on the prefix of the role name.
+ * CreateRole handles the creation of a new role.
+ * Roles are scoped to clients implicitly via their name prefix
+ * (e.g., "myapp:admin" belongs to the "myapp" client).
+ * No explicit junction table binding is required.
  */
 func (s *RoleService) CreateRole(
 	ctx context.Context,
@@ -28,25 +28,14 @@ func (s *RoleService) CreateRole(
 	role := models.Role{
 		RoleName:    req.RoleName,
 		Description: req.Description,
+		Permissions: utils.Map(req.PermissionIDs, func(id int) models.Permission {
+			return models.Permission{ID: id}
+		}),
 	}
 
-	result, err := s.RoleRepo.CreateRole(role)
+	_, err := s.RoleRepo.CreateRole(role)
 	if err != nil {
 		return fmt.Errorf("Database Query (CreateRole): %w", err)
-	}
-
-	roleID, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("Database Query (LastInsertId): %w", err)
-	}
-
-	// Logic: Role name "client_tag:role_name"
-	// extracts "client_tag"
-	tag := strings.Split(req.RoleName, ":")[0]
-
-	err = s.ClientRepo.AddClientAllowedRole(int(roleID), tag)
-	if err != nil {
-		return fmt.Errorf("Database Query (BindRoleToClient): %w", err)
 	}
 
 	return nil
@@ -175,6 +164,7 @@ func (s *RoleService) formatRoleListResponse(
 			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
 			CanEdit:     true,
 			CanDelete:   true,
+			Permissions: r.Permissions,
 		})
 	}
 
@@ -207,6 +197,7 @@ func (s *RoleService) formatRoleWithMetadataListResponse(
 			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
 			CanEdit:     r.CanUpdate,
 			CanDelete:   r.CanDelete,
+			Permissions: r.Permissions,
 		})
 	}
 
@@ -242,6 +233,7 @@ func (s *RoleService) GetRoleByID(
 		Description: role.Description,
 		CreatedAt:   role.CreatedAt.Format(TIME_LAYOUT),
 		UpdatedAt:   role.UpdatedAt.Format(TIME_LAYOUT),
+		Permissions: role.Permissions,
 	}, nil
 }
 
@@ -270,6 +262,7 @@ func (s *RoleService) SearchRoles(
 			Description: r.Description,
 			CreatedAt:   r.CreatedAt.Format(TIME_LAYOUT),
 			UpdatedAt:   r.UpdatedAt.Format(TIME_LAYOUT),
+			Permissions: r.Permissions,
 		})
 	}
 
@@ -299,6 +292,9 @@ func (s *RoleService) UpdateRole(
 		ID:          id,
 		RoleName:    req.RoleName,
 		Description: req.Description,
+		Permissions: utils.Map(req.PermissionIDs, func(id int) models.Permission {
+			return models.Permission{ID: id}
+		}),
 	}
 
 	if err := s.RoleRepo.UpdateRole(role); err != nil {
