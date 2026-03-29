@@ -37,5 +37,13 @@ var RolesMigration = migrations.TableMigration{
 			`,
 
 		},
+		{
+			ID: "remove-admin-and-superadmin-roles",
+			SQL: `
+				DELETE FROM roles 
+				WHERE role_name IN 
+					('IDP:admin', 'IDP:superadmin');
+			`,
+		},
 	},
 }

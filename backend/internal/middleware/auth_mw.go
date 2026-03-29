@@ -43,7 +43,9 @@ func AuthMiddleware(publicKey *rsa.PublicKey) gin.HandlerFunc {
 
 // AuthorizeRBAC validates a JWT from a Cookie and checks required roles.
 func AuthorizeRBAC(publicKey *rsa.PublicKey,
-	userRepo *repository.UserRepository, authorizedRoles ...string,
+	userRepo *repository.UserRepository,
+	roleRepo *repository.RoleRepository,
+	authorizedRoles ...string,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := c.Cookie("access_token")
@@ -65,23 +67,46 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 		if err != nil {
 			log.Printf("[AuthorizeRBAC] UUID Parse Error: %v", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
 
 		user, err := userRepo.GetUserById(userID[:])
 		if err != nil {
 			log.Printf("[AuthorizeRBAC] Fetch user failed: %v", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		// Fetch and set all permissions based on roles
+		roleIDs := make([]int, len(user.Roles))
+		for i, r := range user.Roles {
+			roleIDs[i] = r.ID
+		}
+
+		permMap, err := roleRepo.FetchPermissionsForRoles(roleIDs)
+		permissionsSet := make(map[string]bool)
+		if err == nil {
+			for _, perms := range permMap {
+				for _, p := range perms {
+					permissionsSet[p.PermissionName] = true
+				}
+			}
+		}
+
+		permissions := make([]string, 0, len(permissionsSet))
+		for p := range permissionsSet {
+			permissions = append(permissions, p)
 		}
 
 		roleNames := service.GetRoleNames(user.Roles)
 		role := ""
 		authorized := false
-		if len (authorizedRoles) > 0 {
+		if len(authorizedRoles) > 0 {
 			for _, authorizedRole := range authorizedRoles {
 				if slices.Contains(roleNames, authorizedRole) {
-						authorized = true
-						role = authorizedRole
-					}
+					authorized = true
+					role = authorizedRole
+				}
 				if authorized {
 					break
 				}
@@ -100,7 +125,21 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 		c.Set("user_id", claims.UserID)
 		c.Set("role", role)
 		c.Set("email", user.Email)
+		c.Set("permissions", permissions)
 		c.Set("client_id", claims.AuthorizedParty)
 		c.Next()
 	}
+}
+
+// HasPermission checks if a given permission string exists in the context.
+func HasPermission(c *gin.Context, permission string) bool {
+	perms, exists := c.Get("permissions")
+	if !exists {
+		return false
+	}
+	permissionList, ok := perms.([]string)
+	if !ok {
+		return false
+	}
+	return slices.Contains(permissionList, permission)
 }

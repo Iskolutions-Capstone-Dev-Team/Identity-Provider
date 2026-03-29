@@ -67,7 +67,7 @@ func (r *RoleRepository) GetByID(id int) (*models.Role, error) {
 		return nil, err
 	}
 
-	permMap, err := r.fetchPermissionsForRoles([]int{role.ID})
+	permMap, err := r.FetchPermissionsForRoles([]int{role.ID})
 	if err == nil {
 		role.Permissions = permMap[role.ID]
 	}
@@ -185,7 +185,7 @@ func (r *RoleRepository) ListDistinctBoundRoles(
 		roleIDs[i] = roles[i].ID
 	}
 
-	permMap, err := r.fetchPermissionsForRoles(roleIDs)
+	permMap, err := r.FetchPermissionsForRoles(roleIDs)
 	if err == nil {
 		for i := range roles {
 			roles[i].Permissions = permMap[roles[i].ID]
@@ -306,7 +306,7 @@ func (r *RoleRepository) populatePermissions(
 		roleIDs[i] = roles[i].ID
 	}
 
-	permMap, err := r.fetchPermissionsForRoles(roleIDs)
+	permMap, err := r.FetchPermissionsForRoles(roleIDs)
 	if err == nil {
 		for i := range roles {
 			roles[i].Permissions = permMap[roles[i].ID]
@@ -315,7 +315,7 @@ func (r *RoleRepository) populatePermissions(
 	return roles, nil
 }
 
-func (r *RoleRepository) fetchPermissionsForRoles(
+func (r *RoleRepository) FetchPermissionsForRoles(
 	roleIDs []int,
 ) (map[int][]models.Permission, error) {
 	if len(roleIDs) == 0 {

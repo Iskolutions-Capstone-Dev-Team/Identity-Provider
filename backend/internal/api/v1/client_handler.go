@@ -9,6 +9,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -49,6 +50,12 @@ type ClientHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients [post]
 func (h *ClientHandler) PostClient(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "Add appclient") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	file, header, err := c.Request.FormFile("image")
 	if err != nil {
 		log.Print("[PostClient] FormFile Extraction: no image")
@@ -136,6 +143,12 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients [get]
 func (h *ClientHandler) GetClientList(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "View all appclients") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if page < 1 {
@@ -310,6 +323,12 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients/{id} [put]
 func (h *ClientHandler) PutClient(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "Edit appclient") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	idParam := c.Param("id")
 	clientUUID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -485,6 +504,12 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients/{id} [delete]
 func (h *ClientHandler) DeleteClient(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "Delete appclient") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	idParam := c.Param("id")
 	clientUUID, err := uuid.Parse(idParam)
 	if err != nil {
