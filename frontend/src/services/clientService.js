@@ -1,18 +1,56 @@
 import axiosInstance from "../services/axiosInstance";
 
-const toPositiveInt = (value) => {
-  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+const normalizeStringValue = (value) =>
+  typeof value === "string" ? value : "";
+
+const normalizeStringList = (values = []) =>
+  (Array.isArray(values) ? values : []).filter(
+    (value) => typeof value === "string" && value.trim().length > 0,
+  );
+
+const getClientItems = (payload = {}) => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload.clients)) {
+    return payload.clients;
+  }
+
+  if (Array.isArray(payload.data?.clients)) {
+    return payload.data.clients;
+  }
+
+  if (Array.isArray(payload.items)) {
+    return payload.items;
+  }
+
+  if (Array.isArray(payload.data)) {
+    return payload.data;
+  }
+
+  return [];
 };
 
-const normalizeRoleIds = (roles = []) =>
-  Array.from(
-    new Set(
-      (Array.isArray(roles) ? roles : [])
-        .map((role) => toPositiveInt(role))
-        .filter((roleId) => roleId !== null),
-    ),
-  );
+const buildClientFormData = (data = {}) => {
+  const formData = new FormData();
+
+  formData.append("name", normalizeStringValue(data.name));
+  formData.append("description", normalizeStringValue(data.description));
+  formData.append("base_url", normalizeStringValue(data.base_url));
+  formData.append("redirect_uri", normalizeStringValue(data.redirect_uri));
+  formData.append("logout_uri", normalizeStringValue(data.logout_uri));
+
+  normalizeStringList(data.grants).forEach((grant) => {
+    formData.append("grants", grant);
+  });
+
+  if (data.imageFile) {
+    formData.append("image", data.imageFile);
+  }
+
+  return formData;
+};
 
 const normalizeRotateSecretPayload = (payload, fallbackClientId) => {
   const data = payload?.data ?? payload?.result ?? payload ?? {};
@@ -43,30 +81,32 @@ export const clientService = {
     const normalizedPage =
       Number.isInteger(page) && page > 0 ? page : 1;
 
-    const response = await axiosInstance.get(`/admin/clients`, {
+    const response = await axiosInstance.get("/admin/clients", {
       params: {
         limit,
         page: normalizedPage,
         ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
       },
     });
-    const payload = response.data;
-    const items = Array.isArray(payload)
-      ? payload
-      : payload.data ?? payload.clients ?? payload.items ?? [];
 
+    const payload = response.data ?? {};
+    const items = getClientItems(payload);
     const total =
-      payload?.total ??
-      payload?.total_count ??
-      payload?.count ??
-      payload?.totalResults ??
+      payload.total_count ??
+      payload.total ??
+      payload.count ??
+      payload.totalResults ??
       items.length;
     const lastPage =
-      Number.isInteger(payload?.last_page) && payload.last_page > 0
-        ? payload.last_page
-        : 1;
+      payload.last_page ??
+      payload.lastPage ??
+      Math.max(1, Math.ceil(total / limit));
 
-    return { items, total, lastPage };
+    return {
+      items,
+      total: Number.isInteger(total) ? total : items.length,
+      lastPage: Number.isInteger(lastPage) && lastPage > 0 ? lastPage : 1,
+    };
   },
 
   async getClientById(id) {
@@ -75,25 +115,8 @@ export const clientService = {
   },
 
   async createClient(data) {
-    const formData = new FormData();
-
-    formData.append("name", data.name);
-    formData.append("tag", data.tag);
-    formData.append("description", data.description || "");
-    formData.append("base_url", data.base_url);
-    formData.append("redirect_uri", data.redirect_uri);
-    formData.append("logout_uri", data.logout_uri);
-
-    data.grants.forEach((g) => formData.append("grants", g));
-    normalizeRoleIds(data.roles).forEach((roleId) =>
-      formData.append("roles", String(roleId)),
-    );
-
-    if (data.imageFile) {
-      formData.append("image", data.imageFile);
-    }
-
-    const response = await axiosInstance.post(`/admin/clients`, formData, {
+    const formData = buildClientFormData(data);
+    const response = await axiosInstance.post("/admin/clients", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
@@ -101,25 +124,7 @@ export const clientService = {
   },
 
   async updateClient(id, data) {
-    const formData = new FormData();
-
-    formData.append("name", data.name);
-    formData.append("description", data.description || "");
-    formData.append("base_url", data.base_url);
-    formData.append("redirect_uri", data.redirect_uri);
-    formData.append("logout_uri", data.logout_uri);
-
-    (data.grants || []).forEach((g) => formData.append("grants", g));
-    normalizeRoleIds(data.roles).forEach((roleId) =>
-      formData.append("roles", String(roleId)),
-    );
-
-    if (data.imageFile) {
-      formData.append("image", data.imageFile);
-    } else if (data.image_location !== undefined) {
-      formData.append("image_location", data.image_location);
-    }
-
+    const formData = buildClientFormData(data);
     const response = await axiosInstance.put(`/admin/clients/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });

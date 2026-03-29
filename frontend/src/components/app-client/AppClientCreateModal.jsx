@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAllRoles } from "../../hooks/useAllRoles";
-import MultiSelect from "../MultiSelect";
 import ModalSteps from "../ModalSteps";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
@@ -23,20 +21,6 @@ const initialFieldErrors = {
 };
 const inlineErrorClassName = "mt-2 text-xs text-red-500";
 
-const toPositiveInt = (value) => {
-  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-};
-
-const normalizeRoleIds = (values = []) =>
-  Array.from(
-    new Set(
-      (Array.isArray(values) ? values : [])
-        .map((value) => toPositiveInt(value))
-        .filter((value) => value !== null),
-    ),
-  );
-
 const isValidHttpUrl = (value) => {
   try {
     const parsedUrl = new URL(value);
@@ -44,26 +28,6 @@ const isValidHttpUrl = (value) => {
   } catch {
     return false;
   }
-};
-
-const buildClientTag = (name = "") => {
-  const words = name
-    .trim()
-    .split(/[^a-zA-Z0-9]+/)
-    .filter(Boolean);
-
-  if (words.length === 0) {
-    return "CLIENT";
-  }
-
-  if (words.length === 1) {
-    return words[0].toUpperCase().slice(0, 10);
-  }
-
-  return words
-    .map((word) => word.charAt(0).toUpperCase())
-    .join("")
-    .slice(0, 10);
 };
 
 const getDropzoneBaseClassName = (isDarkMode) =>
@@ -132,8 +96,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
   const [grants, setGrants] = useState(["authorization_code"]);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const rolesData = useAllRoles();
-  const [roles, setRoles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [activeVoiceField, setActiveVoiceField] = useState("name");
@@ -167,18 +129,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     ? "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-[#111827] object-contain shadow-[0_36px_90px_-40px_rgba(2,6,23,0.9)]"
     : "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-white/90 object-contain shadow-[0_36px_90px_-40px_rgba(43,3,7,0.72)]";
 
-  const roleOptions = useMemo(
-    () =>
-      rolesData
-        .map((role) => {
-          const roleId = toPositiveInt(role?.id);
-          if (roleId === null || !role?.role_name) return null;
-          return { id: roleId, role_name: role.role_name };
-        })
-        .filter(Boolean),
-    [rolesData],
-  );
-
   useEffect(() => {
     if (!open) {
       setStep(1);
@@ -188,7 +138,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
       setRedirectURL("");
       setLogoutURL("");
       setGrants(["authorization_code"]);
-      setRoles([]);
       setImageFile(null);
       setImagePreview(null);
       setIsDragging(false);
@@ -458,34 +407,22 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     }
 
     setError("");
-    const roleIds = normalizeRoleIds(roles);
-    const tag = buildClientTag(name);
-    const selectedRoleOptions = roleIds
-      .map((roleId) => roleOptions.find((role) => role.id === roleId))
-      .filter(Boolean);
-    const selectedRoleNames = Array.from(
-      new Set(selectedRoleOptions.map((role) => role.role_name).filter(Boolean)),
-    );
 
     try {
       await onSubmit({
         name,
-        tag,
         description,
         base_url: baseURL,
         redirect_uri: redirectURL,
         logout_uri: logoutURL,
         grants,
-        roles: roleIds,
-        roleNames: selectedRoleNames,
-        roleOptions: selectedRoleOptions,
         imageFile,
       });
       onClose();
     } catch (submitError) {
       console.error("Create app client error:", submitError);
       setError(
-        "Unable to create app client. Please check selected roles and try again.",
+        "Unable to create app client. Please review the details and try again.",
       );
     }
   };
@@ -760,50 +697,37 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
               )}
 
               {step === 3 && (
-                <>
-                  <section className={modalSectionClassName}>
-                    <label className={modalLabelClassName}>
-                      Grants <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {GRANT_OPTIONS.map((grant) => {
-                        const isSelected = grants.includes(grant);
+                <section className={modalSectionClassName}>
+                  <label className={modalLabelClassName}>
+                    Grants <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {GRANT_OPTIONS.map((grant) => {
+                      const isSelected = grants.includes(grant);
 
-                        return (
-                          <label key={grant}
-                            className={getGrantClassName({
-                              isSelected,
-                              isDarkMode,
-                            })}
-                          >
-                            <input type="checkbox" name="grants" value={grant} className={grantCheckboxClassName} checked={isSelected} onChange={() => toggleGrant(grant)} required={grants.length === 0} title="Required"/>
-                            <span className="break-all">{grant}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    {grants.length === 0 && (
-                      <p className="mt-3 text-xs text-red-500">
-                        At least one grant is required.
-                      </p>
-                    )}
-                  </section>
-
-                  <section className={modalSectionClassName}>
-                    <label className={modalLabelClassName}>Roles</label>
-                    <p className={modalHelperTextClassName}>
-                      select roles that are permitted to use this client
+                      return (
+                        <label key={grant}
+                          className={getGrantClassName({
+                            isSelected,
+                            isDarkMode,
+                          })}
+                        >
+                          <input type="checkbox" name="grants" value={grant} className={grantCheckboxClassName} checked={isSelected} onChange={() => toggleGrant(grant)} required={grants.length === 0} title="Required"/>
+                          <span className="break-all">{grant}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {grants.length === 0 && (
+                    <p className="mt-3 text-xs text-red-500">
+                      At least one grant is required.
                     </p>
-                    <MultiSelect
-                      options={roleOptions}
-                      selectedValues={roles}
-                      onChange={(ids) => setRoles(normalizeRoleIds(ids))}
-                      placeholder="Select roles"
-                      variant="userpoolModal"
-                      colorMode={colorMode}
-                    />
-                  </section>
-                </>
+                  )}
+                  <p className={`${modalHelperTextClassName} mt-4`}>
+                    Allowed roles are managed by the finalized backend after the
+                    client is created.
+                  </p>
+                </section>
               )}
             </div>
           </div>
