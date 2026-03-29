@@ -49,6 +49,7 @@ type User struct {
 	FirstName    string     `db:"first_name"`
 	MiddleName   string     `db:"middle_name"`
 	LastName     string     `db:"last_name"`
+	NameSuffix   string     `db:"name_suffix"`
 	Email        string     `db:"email"`
 	PasswordHash string     `db:"password_hash"`
 	Status       UserStatus `db:"status"`

@@ -13,6 +13,7 @@ var UsersMigration = migrations.TableMigration{
 				first_name VARCHAR(50),
 				middle_name VARCHAR(50),
 				last_name VARCHAR(50),
+				name_suffix VARCHAR(5),
 				email VARCHAR(100) NOT NULL UNIQUE,
 				password_hash VARCHAR(255) NOT NULL,
 				status ENUM(

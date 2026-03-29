@@ -5,6 +5,7 @@ type UserRequest struct {
 	FirstName  string   `json:"first_name" binding:"required"`
 	MiddleName string   `json:"middle_name"`
 	LastName   string   `json:"last_name" binding:"required"`
+	NameSuffix string   `json:"name_suffix"`
 	Email      string   `json:"email" binding:"required,email"`
 	Password   string   `json:"password" binding:"required,min=8"`
 	Status     string   `json:"status" binding:"required"`
@@ -32,6 +33,7 @@ type UserResponse struct {
 	FirstName  string             `json:"first_name"`
 	MiddleName string             `json:"middle_name"`
 	LastName   string             `json:"last_name"`
+	NameSuffix string             `json:"name_suffix"`
 	Email      string             `json:"email"`
 	Status     string             `json:"status"`
 	CreatedAt  string             `json:"created_at"`
@@ -57,6 +59,7 @@ type UserInfoResponse struct {
 	FirstName  string   `json:"first_name"`
 	MiddleName string   `json:"middle_name"`
 	LastName   string   `json:"last_name"`
+	NameSuffix string   `json:"name_suffix"`
 	Email      string   `json:"email"`
 	Roles      []string `json:"roles"`
 }
