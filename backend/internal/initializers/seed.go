@@ -27,7 +27,12 @@ func MigrateAndSeed() {
 	database.RunAllMigrations(adminDatabase)
 	fmt.Println("Database migration completed successfully.")
 
-	err = seedAdminUser(adminDatabase)
+	roleID, err := seedSuperAdminRole(adminDatabase)
+	if err != nil {
+		log.Print(err)
+	}
+
+	err = seedAdminUser(adminDatabase, roleID)
 	if err != nil {
 		log.Print(err)
 	}
@@ -55,34 +60,84 @@ func MigrateAndSeed() {
 	}
 }
 
-func seedAdminUser(adminDatabase *sqlx.DB) error {
+func seedSuperAdminRole(db *sqlx.DB) (int, error) {
+	roleRepo := repository.NewRoleRepository(db)
+	permissionRepo := repository.NewPermissionRepository(db)
+
+	roleName := "IDP:superadmin"
+	var existingID int
+	query := "SELECT id FROM roles WHERE role_name = ? AND deleted_at IS NULL"
+	err := db.Get(&existingID, query, roleName)
+	if err == nil {
+		return existingID, nil
+	}
+
+	allPerms, err := permissionRepo.GetAllPermissions()
+	if err != nil {
+		return 0, fmt.Errorf("[Seed] Failed to fetch permissions: %v", err)
+	}
+
+	var selectedPerms []models.Permission
+	for _, p := range allPerms {
+		if p.PermissionName != "View users based on appclient" {
+			selectedPerms = append(selectedPerms, p)
+		}
+	}
+
+	role := models.Role{
+		RoleName:    roleName,
+		Description: "Super Administrator with full system access.",
+		Permissions: selectedPerms,
+	}
+
+	result, err := roleRepo.CreateRole(role)
+	if err != nil {
+		return 0, fmt.Errorf("[Seed] Failed to create superadmin role: %v", err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, nil
+	}
+
+	return int(id), nil
+}
+
+func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 	userRepo := repository.NewUserRepository(adminDatabase)
 
 	adminEmail := os.Getenv("ADMIN_EMAIL")
 	adminPass := os.Getenv("ADMIN_PASSWORD")
 
-	adminDatabase.Exec("DELETE FROM users WHERE email = ?", adminEmail)
+	admin, _ := userRepo.GetUserByEmail(adminEmail)
+	if admin == nil {
+		newAdminID := uuid.New()
+		hashedPassword, _ := utils.HashSecret(adminPass)
 
-	newAdminID := uuid.New()
-	hashedPassword, _ := utils.HashSecret(adminPass)
+		admin = &models.User{
+			ID:           newAdminID[:],
+			Email:        adminEmail,
+			PasswordHash: hashedPassword,
+			Status:       models.StatusActive,
+		}
 
-	user := &models.User{
-		ID:           newAdminID[:],
-		Email:        adminEmail,
-		PasswordHash: hashedPassword,
-		RoleString:   []string{"idp:superadmin"},
+		if err := userRepo.CreateUser(admin); err != nil {
+			return fmt.Errorf("[Migrate] Admin seeding failed: %v", err)
+		}
 	}
 
-	if err := userRepo.CreateUser(user); err != nil {
-		return fmt.Errorf("[Migrate] Admin seeding failed: %v", err)
-	} else {
-		fmt.Printf("Admin user %s seeded successfully.\n", adminEmail)
+	if superAdminRoleID != 0 {
+		err := userRepo.UpdateUserRoles(admin.ID, []int{superAdminRoleID})
+		if err != nil {
+			return fmt.Errorf("[Migrate] Failed to assign superadmin role: %v", err)
+		}
 	}
+
+	fmt.Printf("Admin user %s seeded and role assigned successfully.\n", adminEmail)
 	return nil
 }
 
 func seedAppClient(adminDatabase *sqlx.DB) error {
-	// Fetch client magic values from environment
 	cID := os.Getenv("CLIENT_ID")
 	cSecret := os.Getenv("CLIENT_SECRET")
 	cName := os.Getenv("CLIENT_NAME")
@@ -90,6 +145,14 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 	cBase := os.Getenv("CLIENT_BASE_URL")
 
 	parsedID, _ := uuid.Parse(cID)
+	clientRepo := repository.NewClientRepository(adminDatabase)
+
+	existingClient, _ := clientRepo.GetByID(parsedID[:])
+	if existingClient != nil {
+		fmt.Printf("Client %s already seeded.\n", cName)
+		return nil
+	}
+
 	hashedClientSecret, _ := utils.HashSecret(cSecret)
 	grants := []string{
 		"authorization_code",
@@ -97,7 +160,6 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 		"client_credentials",
 	}
 
-	// Initialize the struct to avoid nil pointer
 	client := &models.Client{
 		ID:            parsedID[:],
 		ClientName:    cName,
@@ -105,18 +167,24 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 		BaseUrl:       cBase,
 		RedirectUri:   cCallback,
 		LogoutUri:     cBase,
-		Description:   "",
+		Description:   "Default Application Client",
 		ImageLocation: "",
 	}
 
-	clientRepo := repository.NewClientRepository(adminDatabase)
-	uuid := uuid.New()
-	err := clientRepo.CreateClient(client, grants, uuid[:])
+	// Fetch current admin ID to bind as owner
+	adminEmail := os.Getenv("ADMIN_EMAIL")
+	userRepo := repository.NewUserRepository(adminDatabase)
+	admin, err := userRepo.GetUserByEmail(adminEmail)
+	if err != nil || admin == nil {
+		return fmt.Errorf("[Migrate] Failed to fetch admin for client bind")
+	}
+
+	err = clientRepo.CreateClient(client, grants, admin.ID)
 	if err != nil {
 		return fmt.Errorf("[Migrate] Client seeding failed: %v", err)
-	} else {
-		fmt.Printf("Client %s registered successfully.\n", cName)
 	}
+
+	fmt.Printf("Client %s registered successfully.\n", cName)
 	return nil
 }
 
