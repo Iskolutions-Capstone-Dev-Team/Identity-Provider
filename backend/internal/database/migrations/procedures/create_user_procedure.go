@@ -36,8 +36,14 @@ var CreateUserProcedure = migrations.MigrationPart{
                     id, first_name, middle_name, last_name, name_suffix, email, password_hash
                 )
                 VALUES (
-                    p_userId, p_firstName, p_middleName, p_lastName, p_nameSuffix, p_userEmail, p_userPasswordHash
-                );  
+                    p_userId, 
+                    COALESCE(p_firstName, ''), 
+                    COALESCE(p_middleName, ''), 
+                    COALESCE(p_lastName, ''), 
+                    COALESCE(p_nameSuffix, ''),
+                    p_userEmail, 
+                    p_userPasswordHash
+                );
             
                 -- 2. Insert roles with explicit collation casting
                 INSERT INTO user_roles (user_id, role_id)

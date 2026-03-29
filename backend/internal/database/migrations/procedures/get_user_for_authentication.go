@@ -14,7 +14,6 @@ var GetUserForAuthProcedure = migrations.MigrationPart{
 				u.first_name,
 				u.middle_name,
 				u.last_name,
-				u.name_suffix,
                 u.password_hash, 
                 u.status,
                 -- Return roles as a comma-separated string
