@@ -15,19 +15,18 @@ import (
 
 // Action constants for audit logging
 const (
-	actionCreateClient  = "create_client"
-	actionListClients   = "list_clients"
-	actionGetClient     = "get_client"
-	actionGetClientTags = "get_client_tags"
-	actionUpdateClient  = "update_client"
-	actionRotateSecret  = "rotate_secret"
-	actionDeleteClient  = "delete_client"
+	actionCreateClient = "create_client"
+	actionListClients  = "list_clients"
+	actionGetClient    = "get_client"
+	actionUpdateClient = "update_client"
+	actionRotateSecret = "rotate_secret"
+	actionDeleteClient = "delete_client"
 )
 
 // ClientHandler handles client management HTTP requests.
 type ClientHandler struct {
-	Service          *service.ClientService
-	LogService       *service.LogService
+	Service    *service.ClientService
+	LogService *service.LogService
 }
 
 // PostClient handles POST /v1/admin/clients
@@ -58,22 +57,13 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	}
 	defer file.Close()
 
-	roles := c.PostFormArray("roles")
-	roleIDs := make([]int, 0, len(roles))
-	for _, r := range roles {
-		id, _ := strconv.Atoi(r)
-		roleIDs = append(roleIDs, id)
-	}
-
 	req := dto.CreateClientRequest{
 		Name:        c.PostForm("name"),
-		Tag:         c.PostForm("tag"),
 		BaseURL:     c.PostForm("base_url"),
 		RedirectURI: c.PostForm("redirect_uri"),
 		LogoutURI:   c.PostForm("logout_uri"),
 		Description: c.PostForm("description"),
 		Grants:      c.PostFormArray("grants"),
-		RoleIDs:     roleIDs,
 	}
 
 	userID := c.GetString("user_id")
@@ -94,7 +84,6 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	// Prepare metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"client_name": req.Name,
-		"tag":         req.Tag,
 		"ip":          c.ClientIP(),
 		"user_agent":  c.Request.UserAgent(),
 	})
@@ -116,7 +105,6 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 				Status: models.StatusFail,
 				Metadata: buildMetadata(map[string]interface{}{
 					"client_name": req.Name,
-					"tag":         req.Tag,
 					"ip":          c.ClientIP(),
 					"user_agent":  c.Request.UserAgent(),
 					"error":       err.Error(),
@@ -310,107 +298,6 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"client": client})
 }
 
-// GetClientTags retrieves a paginated list of client tags.
-// @Summary Get client tags
-// @Description Fetches tags based on limit, page, and keyword filters.
-// @Tags Clients
-// @Accept json
-// @Produce json
-// @Param limit query int false "Items per page" default(10)
-// @Param page query int false "Page number" default(1)
-// @Param keyword query string false "Search keyword"
-// @Success 200 {object} dto.ClientListResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Router /clients/tags [get]
-func (h *ClientHandler) GetClientTags(c *gin.Context) {
-	const defaultLimit = "10"
-	const defaultPage = "1"
-
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", defaultLimit))
-	page, _ := strconv.Atoi(c.DefaultQuery("page", defaultPage))
-	keyword := c.Query("keyword")
-
-	if page < 1 {
-		page = 1
-	}
-
-	// 1. Get User Role
-	role := c.GetString("role")
-
-	// 2. Parse User Identity
-	uIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(uIDStr)
-	if err != nil {
-		log.Printf("[GetClientTags] UUID Parsing: %v", err)
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Identity parse error"},
-		)
-		return
-	}
-
-	// Resolve actor name
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
-	if actorName == "" {
-		actorName = uIDStr
-	}
-
-	// Metadata
-	metadata := buildMetadata(map[string]interface{}{
-		"limit":      limit,
-		"page":       page,
-		"keyword":    keyword,
-		"privilege":  role,
-		"ip":         c.ClientIP(),
-		"user_agent": c.Request.UserAgent(),
-	})
-
-	// 3. Delegate to Service
-	resp, err := h.Service.GetFilteredClientTagList(
-		c.Request.Context(),
-		role,
-		userID,
-		limit,
-		page,
-		keyword,
-	)
-	if err != nil {
-		log.Printf("[GetClientTags] Service Execution: %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionGetClientTags,
-				Target: "client_tags",
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"limit":      limit,
-					"page":       page,
-					"keyword":    keyword,
-					"privilege":  role,
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
-		c.JSON(
-			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to retrieve tags"},
-		)
-		return
-	}
-
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionGetClientTags,
-			Target:   "client_tags",
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
-
-	c.JSON(http.StatusOK, resp)
-}
-
 // PutClient handles PUT /v1/admin/clients/:id
 // @Summary Update Client Info
 // @Description Update safe fields (Name, Description, URLs, Image)
@@ -451,13 +338,6 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		defer file.Close()
 	}
 
-	roles := c.PostFormArray("roles")
-	roleIDs := make([]int, 0, len(roles))
-	for _, r := range roles {
-		id, _ := strconv.Atoi(r)
-		roleIDs = append(roleIDs, id)
-	}
-
 	req := dto.CreateClientRequest{
 		Name:        c.PostForm("name"),
 		BaseURL:     c.PostForm("base_url"),
@@ -465,7 +345,6 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		LogoutURI:   c.PostForm("logout_uri"),
 		Description: c.PostForm("description"),
 		Grants:      c.PostFormArray("grants"),
-		RoleIDs:     roleIDs,
 	}
 
 	// Metadata

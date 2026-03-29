@@ -21,7 +21,6 @@ func (g ClientGrantType) IsValid() bool {
 type Client struct {
 	ID            []byte    `db:"id"`
 	ClientName    string    `db:"client_name"`
-	Tag           string    `db:"tag"`
 	ClientSecret  string    `db:"client_secret"`
 	OldSecret     string    `db:"old_secret"`
 	BaseUrl       string    `db:"base_url"`
