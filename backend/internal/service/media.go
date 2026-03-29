@@ -16,8 +16,7 @@ import (
 // ProcessAndUploadIcon handles validation, seeking, and the S3 transfer
 func ProcessAndUploadIcon(
 	ctx context.Context,
-	tag string,
-	fileName string,
+	name string,
 	fileReader io.ReadSeeker,
 	size int64,
 	storage *storage.S3Provider,
@@ -28,7 +27,7 @@ func ProcessAndUploadIcon(
 		return "", fmt.Errorf("[MediaService] Header Read: %v", err)
 	}
 
-	if err := utils.ValidateImage(header, fileName); err != nil {
+	if err := utils.ValidateImage(header, name); err != nil {
 		return "", err
 	}
 
@@ -40,8 +39,8 @@ func ProcessAndUploadIcon(
 		return "", fmt.Errorf("[MediaService] File Seek: %v", err)
 	}
 
-	// 4. Construct Final Path
-	finalPath := fmt.Sprintf("icons/%s", tag)
+	// 4. Construct Final Path using client name as key
+	finalPath := fmt.Sprintf("icons/%s", name)
 
 	// 5. Execute Upload (S3Provider handles the 'Replace' logic naturally)
 	err := storage.UploadOrReplace(
