@@ -314,14 +314,16 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   return createPortal(
     <dialog open className={modalOverlayClassName}>
       <div className={modalBoxClassName}>
-        <div className={`${modalHeaderClassName} !pb-6 sm:!pb-7`}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="max-w-2xl">
+        <div className={`${modalHeaderClassName} !px-8 !pt-8 !pb-24 min-h-[10.5rem] sm:!px-10 sm:!pt-9 sm:!pb-20 sm:min-h-0`}>
+          <div className="flex items-start justify-between gap-4 sm:gap-6">
+            <div className="max-w-2xl pr-14 sm:pr-16">
               <h3 className={modalHeaderTitleClassName}>{modalTitle}</h3>
-              <p className={modalHeaderDescriptionClassName}>{modalDescription}</p>
+              <p className={`${modalHeaderDescriptionClassName} !mt-4 max-w-[20rem] leading-relaxed sm:!mt-5 sm:max-w-[34rem]`}>
+                {modalDescription}
+              </p>
             </div>
 
-            <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
+            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
