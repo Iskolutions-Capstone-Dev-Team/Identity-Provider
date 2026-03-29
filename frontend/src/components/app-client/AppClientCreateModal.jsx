@@ -128,6 +128,11 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
   const fullImageClassName = isDarkMode
     ? "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-[#111827] object-contain shadow-[0_36px_90px_-40px_rgba(2,6,23,0.9)]"
     : "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-white/90 object-contain shadow-[0_36px_90px_-40px_rgba(43,3,7,0.72)]";
+  const modalHeaderSpacingClassName =
+    `${modalHeaderClassName} !px-8 !pt-8 !pb-28 min-h-[11.5rem] sm:!px-10 sm:!pt-9 sm:!pb-20 sm:min-h-0`;
+  const modalHeaderContentClassName = "max-w-2xl pr-14 sm:pr-16";
+  const modalHeaderDescriptionSpacingClassName =
+    `${modalHeaderDescriptionClassName} !mt-4 max-w-[20rem] leading-relaxed sm:!mt-5 sm:max-w-[34rem]`;
 
   useEffect(() => {
     if (!open) {
@@ -433,18 +438,18 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     <>
       <dialog open className={modalOverlayClassName}>
         <div className={modalBoxClassName}>
-          <div className={modalHeaderClassName}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="max-w-2xl pb-5 sm:pb-10">
+          <div className={modalHeaderSpacingClassName}>
+            <div className="flex items-start justify-between gap-4 sm:gap-6">
+              <div className={modalHeaderContentClassName}>
                 <h3 className={modalHeaderTitleClassName}>
                   Create App Client
                 </h3>
-                <p className={modalHeaderDescriptionClassName}>
+                <p className={modalHeaderDescriptionSpacingClassName}>
                   Register a new application for integration.
                 </p>
               </div>
 
-              <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
+              <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
