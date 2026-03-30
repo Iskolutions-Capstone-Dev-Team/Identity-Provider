@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { userService } from "../services/userService";
 import { useAllRoles } from "./useAllRoles";
 
-const EDITABLE_STATUS_VALUES = new Set(["active", "inactive", "suspended"]);
+const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
 const ITEMS_PER_PAGE = 10;
 
 function normalizeRoleNames(roles) {

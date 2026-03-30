@@ -20,7 +20,6 @@ const initialFormData = {
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
   { value: "suspended", label: "Suspend" },
 ];
 
@@ -436,6 +435,7 @@ export default function UserPoolModal({ open, mode, user, onClose, onSubmit, col
                       value={formData.status}
                       onChange={(value) => handleFieldChange("status", value)}
                       options={STATUS_OPTIONS}
+                      selectedLabel={getStatusDisplayLabel(formData.status)}
                       ariaLabel="Status"
                       colorMode={colorMode}
                     />

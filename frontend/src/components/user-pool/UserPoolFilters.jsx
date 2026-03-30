@@ -4,7 +4,6 @@ import { SpeechInputToolbar } from "../SpeechInputButton";
 const statusOptions = [
   { value: "", label: "All Status" },
   { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
   { value: "suspended", label: "Suspended" },
 ];
 
