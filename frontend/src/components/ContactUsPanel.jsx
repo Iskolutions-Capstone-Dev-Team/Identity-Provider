@@ -13,6 +13,7 @@ const INITIAL_FIELD_ERRORS = {
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PANEL_TRANSITION_DURATION_MS = 320;
 
 function getEmailError(email) {
   if (!email.trim()) {
@@ -54,12 +55,37 @@ export default function ContactUsPanel({
   const [fieldErrors, setFieldErrors] = useState(INITIAL_FIELD_ERRORS);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isVisible, setIsVisible] = useState(false);
+  const [shouldRender, setShouldRender] = useState(isOpen);
 
   useEffect(() => {
-    if (!isOpen) {
-      setErrorMessage("");
-      setFieldErrors(INITIAL_FIELD_ERRORS);
+    let showFrame;
+    let showFrameFollowUp;
+    let hideTimer;
+
+    if (isOpen) {
+      setShouldRender(true);
+      setIsVisible(false);
+      showFrame = window.requestAnimationFrame(() => {
+        showFrameFollowUp = window.requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
+    } else {
+      setIsVisible(false);
+      hideTimer = window.setTimeout(() => {
+        setShouldRender(false);
+        setContactForm(INITIAL_CONTACT_FORM);
+        setFieldErrors(INITIAL_FIELD_ERRORS);
+        setErrorMessage("");
+      }, PANEL_TRANSITION_DURATION_MS);
     }
+
+    return () => {
+      window.cancelAnimationFrame(showFrame);
+      window.cancelAnimationFrame(showFrameFollowUp);
+      window.clearTimeout(hideTimer);
+    };
   }, [isOpen]);
 
   const isDarkMode = colorMode === "dark";
@@ -69,6 +95,12 @@ export default function ContactUsPanel({
   const headerClassName =
     "relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(248,210,78,0.22),transparent_34%),linear-gradient(135deg,#7b0d15_0%,#3d0910_58%,#1f0205_100%)] px-5 py-4 text-white";
   const bodyClassName = "space-y-4 px-5 py-5";
+  const panelMotionClassName = isVisible
+    ? "translate-x-0 translate-y-0 scale-100 opacity-100"
+    : "translate-x-4 translate-y-4 scale-95 opacity-0";
+  const panelWrapperClassName = isVisible
+    ? "pointer-events-auto"
+    : "pointer-events-none";
   const labelClassName = isDarkMode
     ? "mb-2 block text-xs font-semibold uppercase tracking-[0.08em] text-[#f7dadd]"
     : "mb-2 block text-xs font-semibold uppercase tracking-[0.08em] text-[#5a0b12]";
@@ -166,7 +198,6 @@ export default function ContactUsPanel({
   };
 
   const handleClose = () => {
-    resetContactForm();
     onClose?.();
   };
 
@@ -197,24 +228,20 @@ export default function ContactUsPanel({
         onClose={() => setSuccessMessage("")}
       />
 
-      {isOpen ? (
-        <div className="pointer-events-auto fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] right-[5.5rem] z-[141] w-[calc(100vw-7rem)] max-w-[22rem] sm:w-[22rem] lg:bottom-6 lg:right-[7rem]">
+      {shouldRender ? (
+        <div
+          aria-hidden={!isVisible}
+          className={`fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] right-[5.5rem] z-[141] w-[calc(100vw-7rem)] max-w-[22rem] origin-bottom-right transform-gpu transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform sm:w-[22rem] lg:bottom-6 lg:right-[7rem] ${panelWrapperClassName} ${panelMotionClassName}`}
+        >
           <div className={panelClassName}>
             <div className={headerClassName}>
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/12 bg-white/10 text-[#f8d24e] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-                      <ContactUsIcon className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold tracking-tight">
-                        Contact Us
-                      </h3>
-                      <p className="text-sm text-white/78">
-                        Share your email and message with us.
-                      </p>
-                    </div>
+                    <ContactUsIcon className="h-7 w-7 shrink-0 text-[#f8d24e]" />
+                    <h3 className="text-lg font-semibold tracking-tight">
+                      Contact Us
+                    </h3>
                   </div>
                 </div>
 
