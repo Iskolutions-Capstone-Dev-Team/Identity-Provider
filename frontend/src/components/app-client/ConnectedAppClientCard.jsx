@@ -2,6 +2,7 @@ import AppClientCard from "./AppClientCard";
 import Pagination from "../Pagination";
 import ConnectedAppClientTable from "./ConnectedAppClientTable";
 import ResultsCount from "../ResultsCount";
+import { SpeechInputToolbar } from "../SpeechInputButton";
 
 export default function ConnectedAppClientCard({ loading = false, clients, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate, onRotateSecret, colorMode = "light" }) {
     const isDarkMode = colorMode === "dark";
@@ -26,11 +27,25 @@ export default function ConnectedAppClientCard({ loading = false, clients, total
     const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
         isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
     }`;
+    const updateSearchValue = (value) => {
+        setSearch(value);
+    };
+    const handleSearchChange = (event) => {
+        updateSearchValue(event.target.value);
+    };
+    const handleSearchVoiceInput = (transcript) => {
+        updateSearchValue(transcript);
+    };
 
     return (
         <AppClientCard colorMode={colorMode}>
             <div className={containerClassName}>
                 <div className="min-w-0 w-full">
+                    <SpeechInputToolbar
+                        activeFieldLabel="Client Search"
+                        onTranscript={handleSearchVoiceInput}
+                        colorMode={colorMode}
+                    />
                     <label className={labelClassName}>
                         What are you looking for?
                     </label>
@@ -41,7 +56,13 @@ export default function ConnectedAppClientCard({ loading = false, clients, total
                                 <path d="m21 21-4.3-4.3"></path>
                             </g>
                         </svg>
-                        <input type="search" value={search} placeholder="Search by name..." className={searchInputClassName} onChange={(e) => setSearch(e.target.value)}/>
+                        <input
+                            type="search"
+                            value={search}
+                            placeholder="Search by name..."
+                            className={searchInputClassName}
+                            onChange={handleSearchChange}
+                        />
                     </label>
                 </div>
                 <div className="flex justify-end lg:justify-start">

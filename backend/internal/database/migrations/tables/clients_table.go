@@ -42,5 +42,12 @@ var ClientsMigration = migrations.TableMigration{
 				ADD COLUMN old_secret VARCHAR(255);
 			`,
 		},
+		{
+			ID: "remove-client-tag-column",
+			SQL: `
+				ALTER TABLE clients
+				DROP COLUMN tag;
+			`,
+		},
 	},
 }

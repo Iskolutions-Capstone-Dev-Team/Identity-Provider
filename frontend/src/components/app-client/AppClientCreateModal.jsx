@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAllRoles } from "../../hooks/useAllRoles";
-import MultiSelect from "../MultiSelect";
 import ModalSteps from "../ModalSteps";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
@@ -17,26 +15,11 @@ const GRANT_OPTIONS = [
 const initialFieldErrors = {
   imageFile: "",
   name: "",
-  tag: "",
   baseURL: "",
   redirectURL: "",
   logoutURL: "",
 };
 const inlineErrorClassName = "mt-2 text-xs text-red-500";
-
-const toPositiveInt = (value) => {
-  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-};
-
-const normalizeRoleIds = (values = []) =>
-  Array.from(
-    new Set(
-      (Array.isArray(values) ? values : [])
-        .map((value) => toPositiveInt(value))
-        .filter((value) => value !== null),
-    ),
-  );
 
 const isValidHttpUrl = (value) => {
   try {
@@ -106,7 +89,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
   } = getModalTheme(colorMode);
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
-  const [tag, setTag] = useState("");
   const [description, setDescription] = useState("");
   const [baseURL, setBaseURL] = useState("");
   const [redirectURL, setRedirectURL] = useState("");
@@ -114,8 +96,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
   const [grants, setGrants] = useState(["authorization_code"]);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const rolesData = useAllRoles();
-  const [roles, setRoles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [activeVoiceField, setActiveVoiceField] = useState("name");
@@ -148,30 +128,21 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
   const fullImageClassName = isDarkMode
     ? "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-[#111827] object-contain shadow-[0_36px_90px_-40px_rgba(2,6,23,0.9)]"
     : "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-white/90 object-contain shadow-[0_36px_90px_-40px_rgba(43,3,7,0.72)]";
-
-  const roleOptions = useMemo(
-    () =>
-      rolesData
-        .map((role) => {
-          const roleId = toPositiveInt(role?.id);
-          if (roleId === null || !role?.role_name) return null;
-          return { id: roleId, role_name: role.role_name };
-        })
-        .filter(Boolean),
-    [rolesData],
-  );
+  const modalHeaderSpacingClassName =
+    `${modalHeaderClassName} !px-7 !pt-7 !pb-10 sm:!px-8 sm:!pt-8 sm:!pb-12`;
+  const modalHeaderContentClassName = "min-w-0 flex-1 pr-3 sm:max-w-2xl sm:pr-16";
+  const modalHeaderDescriptionSpacingClassName =
+    `${modalHeaderDescriptionClassName} !mt-3 max-w-none leading-relaxed sm:!mt-4 sm:max-w-[28rem]`;
 
   useEffect(() => {
     if (!open) {
       setStep(1);
       setName("");
-      setTag("");
       setDescription("");
       setBaseURL("");
       setRedirectURL("");
       setLogoutURL("");
       setGrants(["authorization_code"]);
-      setRoles([]);
       setImageFile(null);
       setImagePreview(null);
       setIsDragging(false);
@@ -184,7 +155,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
 
   useEffect(() => {
     if (step === 1) {
-      if (!["name", "tag", "description"].includes(activeVoiceField)) {
+      if (!["name", "description"].includes(activeVoiceField)) {
         setActiveVoiceField("name");
       }
       return;
@@ -223,11 +194,9 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
   const activeVoiceFieldLabel =
     activeVoiceField === "description"
       ? "Description"
-      : activeVoiceField === "tag"
-        ? "Tag"
-        : activeVoiceField === "baseURL"
-          ? "Base URL"
-          : activeVoiceField === "redirectURL"
+      : activeVoiceField === "baseURL"
+        ? "Base URL"
+        : activeVoiceField === "redirectURL"
             ? "Redirect URL"
             : activeVoiceField === "logoutURL"
               ? "Logout URL"
@@ -241,11 +210,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
           ? `${currentDescription.trimEnd()} ${transcript}`
           : transcript,
       );
-      return;
-    }
-
-    if (activeVoiceField === "tag") {
-      updateFieldValue("tag", transcript.toUpperCase(), setTag);
       return;
     }
 
@@ -269,7 +233,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
 
   const validateBasicInfo = () => {
     const trimmedName = name.trim();
-    const trimmedTag = tag.trim();
     const nextFieldErrors = {
       ...initialFieldErrors,
       baseURL: fieldErrors.baseURL,
@@ -287,16 +250,9 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
       nextFieldErrors.name = "Client name must be between 5 and 100 characters.";
     }
 
-    if (!trimmedTag) {
-      nextFieldErrors.tag = "Tag is required.";
-    } else if (trimmedTag.length > 10) {
-      nextFieldErrors.tag = "Tag must be 10 characters or fewer.";
-    }
-
     setFieldErrors(nextFieldErrors);
 
-    const firstError =
-      nextFieldErrors.imageFile || nextFieldErrors.name || nextFieldErrors.tag;
+    const firstError = nextFieldErrors.imageFile || nextFieldErrors.name;
 
     if (firstError) {
       setError(firstError);
@@ -314,7 +270,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
       ...initialFieldErrors,
       imageFile: fieldErrors.imageFile,
       name: fieldErrors.name,
-      tag: fieldErrors.tag,
     };
 
     if (!trimmedBaseURL) {
@@ -457,33 +412,22 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     }
 
     setError("");
-    const roleIds = normalizeRoleIds(roles);
-    const selectedRoleOptions = roleIds
-      .map((roleId) => roleOptions.find((role) => role.id === roleId))
-      .filter(Boolean);
-    const selectedRoleNames = Array.from(
-      new Set(selectedRoleOptions.map((role) => role.role_name).filter(Boolean)),
-    );
 
     try {
       await onSubmit({
         name,
-        tag,
         description,
         base_url: baseURL,
         redirect_uri: redirectURL,
         logout_uri: logoutURL,
         grants,
-        roles: roleIds,
-        roleNames: selectedRoleNames,
-        roleOptions: selectedRoleOptions,
         imageFile,
       });
       onClose();
     } catch (submitError) {
       console.error("Create app client error:", submitError);
       setError(
-        "Unable to create app client. Please check selected roles and try again.",
+        "Unable to create app client. Please review the details and try again.",
       );
     }
   };
@@ -494,18 +438,18 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     <>
       <dialog open className={modalOverlayClassName}>
         <div className={modalBoxClassName}>
-          <div className={modalHeaderClassName}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="max-w-2xl pb-5 sm:pb-10">
+          <div className={modalHeaderSpacingClassName}>
+            <div className="flex items-start justify-between gap-4 sm:gap-6">
+              <div className={modalHeaderContentClassName}>
                 <h3 className={modalHeaderTitleClassName}>
                   Create App Client
                 </h3>
-                <p className={modalHeaderDescriptionClassName}>
-                  Register a new application for integration.
+                <p className={modalHeaderDescriptionSpacingClassName}>
+                  Register a new app client.
                 </p>
               </div>
 
-              <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
+              <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -614,63 +558,31 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                       colorMode={colorMode}
                     />
 
-                    <div className="grid gap-5 md:grid-cols-2">
-                      <div>
-                        <label className={modalLabelClassName}>
-                          Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          minLength={5}
-                          maxLength={100}
-                          value={name}
-                          onChange={(event) =>
-                            updateFieldValue("name", event.target.value, setName)
-                          }
-                          onFocus={() => setActiveVoiceField("name")}
-                          placeholder="(e.g., Identity Provider System)"
-                          className={getInputClassName("name")}
-                        />
-                        {fieldErrors.name && (
-                          <p className={inlineErrorClassName}>
-                            {fieldErrors.name}
-                          </p>
-                        )}
-                        <p className={`${modalHelperTextClassName} mt-2`}>
-                          Must be 5-100 characters
+                    <div>
+                      <label className={modalLabelClassName}>
+                        Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        minLength={5}
+                        maxLength={100}
+                        value={name}
+                        onChange={(event) =>
+                          updateFieldValue("name", event.target.value, setName)
+                        }
+                        onFocus={() => setActiveVoiceField("name")}
+                        placeholder="(e.g., Identity Provider System)"
+                        className={getInputClassName("name")}
+                      />
+                      {fieldErrors.name && (
+                        <p className={inlineErrorClassName}>
+                          {fieldErrors.name}
                         </p>
-                      </div>
-
-                      <div>
-                        <label className={modalLabelClassName}>
-                          Tag <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={10}
-                          value={tag}
-                          onChange={(event) =>
-                            updateFieldValue(
-                              "tag",
-                              event.target.value.toUpperCase(),
-                              setTag,
-                            )
-                          }
-                          onFocus={() => setActiveVoiceField("tag")}
-                          placeholder="(e.g., IdP)"
-                          className={getInputClassName("tag")}
-                        />
-                        {fieldErrors.tag && (
-                          <p className={inlineErrorClassName}>
-                            {fieldErrors.tag}
-                          </p>
-                        )}
-                        <p className={`${modalHelperTextClassName} mt-2`}>
-                          Maximum 10 characters
-                        </p>
-                      </div>
+                      )}
+                      <p className={`${modalHelperTextClassName} mt-2`}>
+                        Must be 5-100 characters
+                      </p>
                     </div>
 
                     <div className="mt-5">
@@ -790,50 +702,36 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
               )}
 
               {step === 3 && (
-                <>
-                  <section className={modalSectionClassName}>
-                    <label className={modalLabelClassName}>
-                      Grants <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {GRANT_OPTIONS.map((grant) => {
-                        const isSelected = grants.includes(grant);
+                <section className={modalSectionClassName}>
+                  <label className={modalLabelClassName}>
+                    Grants <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {GRANT_OPTIONS.map((grant) => {
+                      const isSelected = grants.includes(grant);
 
-                        return (
-                          <label key={grant}
-                            className={getGrantClassName({
-                              isSelected,
-                              isDarkMode,
-                            })}
-                          >
-                            <input type="checkbox" name="grants" value={grant} className={grantCheckboxClassName} checked={isSelected} onChange={() => toggleGrant(grant)} required={grants.length === 0} title="Required"/>
-                            <span className="break-all">{grant}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    {grants.length === 0 && (
-                      <p className="mt-3 text-xs text-red-500">
-                        At least one grant is required.
-                      </p>
-                    )}
-                  </section>
-
-                  <section className={modalSectionClassName}>
-                    <label className={modalLabelClassName}>Roles</label>
-                    <p className={modalHelperTextClassName}>
-                      select roles that are permitted to use this client
+                      return (
+                        <label key={grant}
+                          className={getGrantClassName({
+                            isSelected,
+                            isDarkMode,
+                          })}
+                        >
+                          <input type="checkbox" name="grants" value={grant} className={grantCheckboxClassName} checked={isSelected} onChange={() => toggleGrant(grant)} required={grants.length === 0} title="Required"/>
+                          <span className="break-all">{grant}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {grants.length === 0 && (
+                    <p className="mt-3 text-xs text-red-500">
+                      At least one grant is required.
                     </p>
-                    <MultiSelect
-                      options={roleOptions}
-                      selectedValues={roles}
-                      onChange={(ids) => setRoles(normalizeRoleIds(ids))}
-                      placeholder="Select roles"
-                      variant="userpoolModal"
-                      colorMode={colorMode}
-                    />
-                  </section>
-                </>
+                  )}
+                  <p className={`${modalHelperTextClassName} mt-4`}>
+                    Select the grant types required for this client.
+                  </p>
+                </section>
               )}
             </div>
           </div>

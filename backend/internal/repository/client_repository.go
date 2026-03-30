@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -22,10 +21,11 @@ type ClientRepository struct {
 func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 	var client models.Client
 	query := `
-        SELECT id, client_name, tag, description, 
-               image_location, base_url, redirect_uri, logout_uri, updated_at
-        FROM clients 
-        WHERE id = ? AND deleted_at IS NULL`
+		SELECT id, client_name, description,
+		       image_location, base_url,
+		       redirect_uri, logout_uri, updated_at
+		FROM clients
+		WHERE id = ? AND deleted_at IS NULL`
 
 	err := r.db.Get(&client, query, id)
 	if err != nil {
@@ -41,10 +41,12 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 	}
 
 	roleQuery := `
-		SELECT r.id, r.role_name
+		SELECT r.id, r.role_name, r.description
 		FROM roles r
-		JOIN client_allowed_roles c ON c.role_id = r.id
-		WHERE c.client_id = ?
+		JOIN user_roles ur ON ur.role_id = r.id
+		JOIN admin_allowed_clients aac ON aac.user_id = ur.user_id
+		WHERE aac.client_id = ? AND r.deleted_at IS NULL
+		GROUP BY r.id
 	`
 	err = r.db.Select(&client.AllowedRoles, roleQuery, id)
 	if err != nil {
@@ -66,13 +68,13 @@ func (r *ClientRepository) ListClients(limit,
 	var clients []models.Client
 	searchKeyword := "%" + keyword + "%"
 	query := `
-        SELECT 
-			id, client_name, tag, 
-			description, image_location, 
+		SELECT
+			id, client_name,
+			description, image_location,
 			base_url, redirect_uri, logout_uri, created_at
-        FROM clients 
-        WHERE deleted_at IS NULL AND client_name LIKE ?
-        LIMIT ? OFFSET ?
+		FROM clients
+		WHERE deleted_at IS NULL AND client_name LIKE ?
+		LIMIT ? OFFSET ?
 	`
 
 	err := r.db.Select(&clients, query, searchKeyword, limit, offset)
@@ -89,14 +91,14 @@ func (r *ClientRepository) ListBoundClients(
 	searchKeyword := "%" + keyword + "%"
 
 	query := `
-		SELECT 
-			c.id, c.client_name, c.tag, 
-			c.description, c.image_location, 
+		SELECT
+			c.id, c.client_name,
+			c.description, c.image_location,
 			c.base_url, c.redirect_uri, c.logout_uri, c.created_at
 		FROM clients c
 		JOIN admin_allowed_clients a ON c.id = a.client_id
-		WHERE a.user_id = ? 
-			AND c.deleted_at IS NULL 
+		WHERE a.user_id = ?
+			AND c.deleted_at IS NULL
 			AND c.client_name LIKE ?
 		LIMIT ? OFFSET ?
 	`
@@ -112,13 +114,13 @@ func (r *ClientRepository) ListBoundClients(
 	return clients, err
 }
 
-// CreateClient handles atomic insertion of client, grants, and prefixed roles.
+// CreateClient handles atomic insertion of client and grants.
+// Roles are scoped to a client implicitly via prefixed role names.
 // @Summary Create Client
 // @ID create-client
 func (r *ClientRepository) CreateClient(
 	client *models.Client,
 	grants []string,
-	roleIDs []int,
 	userID []byte,
 ) error {
 	tx, err := r.db.Beginx()
@@ -128,56 +130,63 @@ func (r *ClientRepository) CreateClient(
 	defer tx.Rollback()
 
 	// 1. Insert Client
-	q1 := `INSERT INTO clients (id, client_name, tag, client_secret, 
-               base_url, redirect_uri, logout_uri, description, image_location) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err = tx.Exec(q1, client.ID, client.ClientName, client.Tag,
-		client.ClientSecret, client.BaseUrl, client.RedirectUri,
-		client.LogoutUri, client.Description, client.ImageLocation)
+	q1 := `INSERT INTO clients (
+			id, client_name, client_secret,
+			base_url, redirect_uri, logout_uri,
+			description, image_location
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err = tx.Exec(
+		q1,
+		client.ID, client.ClientName,
+		client.ClientSecret, client.BaseUrl,
+		client.RedirectUri, client.LogoutUri,
+		client.Description, client.ImageLocation,
+	)
 	if err != nil {
 		return err
 	}
 
 	// 2. Insert Grant Types
-	q2 := `INSERT INTO client_grant_types (client_id, grant_type) VALUES (?, ?)`
+	q2 := `
+		INSERT INTO client_grant_types (client_id, grant_type)
+		VALUES (?, ?)
+	`
 	for _, g := range grants {
 		if _, err = tx.Exec(q2, client.ID, g); err != nil {
 			return err
 		}
 	}
 
-	// 3. Insert Client-allowed Roles
+	// 3. Bind admin to client
 	q3 := `
-		INSERT INTO client_allowed_roles (client_id, role_id) 
-		VALUES (?, ?)
-	`
-	for _, roleID := range roleIDs {
-		if _, err = tx.Exec(q3, client.ID, roleID); err != nil {
-			return err
-		}
-	}
-
-	q4 := `
 		INSERT INTO admin_allowed_clients (client_id, user_id)
 		VALUES (?, ?)
 	`
-	_, err = tx.Exec(q4, client.ID, userID)
+	_, err = tx.Exec(q3, client.ID, userID)
+	if err != nil {
+		return err
+	}
 
 	return tx.Commit()
 }
 
-// UpdateClient modifies safe fields only. tag and Secret are locked.
+// UpdateClient modifies safe fields only. Secret is locked.
 // @Summary Update Client
 // @ID update-client
-func (r *ClientRepository) UpdateClient(c *models.Client,
-	grants []string, roleIDs []int,
+func (r *ClientRepository) UpdateClient(
+	c *models.Client,
+	grants []string,
 ) error {
 	query := `
-        UPDATE clients 
-        SET client_name = ?, description = ?, 
-            image_location = IF(? = '', image_location, ?), 
-            base_url = ?, redirect_uri = ?, logout_uri = ?
-        WHERE id = ?`
+		UPDATE clients
+		SET
+			client_name = ?,
+			description = ?,
+			image_location = IF(? = '', image_location, ?),
+			base_url = ?,
+			redirect_uri = ?,
+			logout_uri = ?
+		WHERE id = ?`
 
 	_, err := r.db.Exec(
 		query,
@@ -194,17 +203,7 @@ func (r *ClientRepository) UpdateClient(c *models.Client,
 		return err
 	}
 
-	err = r.DeleteAndInsertGrants(c, grants)
-	if err != nil {
-		return err
-	}
-
-	err = r.UpdateAllowedRoles(c, roleIDs)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return r.DeleteAndInsertGrants(c, grants)
 }
 
 // SoftDelete marks a client as deleted withkey stringout removing the audit trail.
@@ -223,13 +222,19 @@ func (r *ClientRepository) GetGrantTypes(clientID []byte) ([]string, error) {
 	return grants, err
 }
 
-func (r *ClientRepository) GetClientAllowedRoles(clientID []byte) ([]models.Role, error) {
+// GetClientAllowedRoles returns the distinct set of roles assigned
+// to users who are bound to this client.
+func (r *ClientRepository) GetClientAllowedRoles(
+	clientID []byte,
+) ([]models.Role, error) {
 	var roles []models.Role
 	query := `
-		SELECT role_name, id FROM roles 
-		JOIN client_allowed_roles c
-		ON c.role_id = roles.id
-		WHERE client_id = ?`
+		SELECT DISTINCT r.id, r.role_name, r.description
+		FROM roles r
+		JOIN user_roles ur ON ur.role_id = r.id
+		JOIN admin_allowed_clients aac ON aac.user_id = ur.user_id
+		WHERE aac.client_id = ? AND r.deleted_at IS NULL
+	`
 	err := r.db.Select(&roles, query, clientID)
 	return roles, err
 }
@@ -311,172 +316,32 @@ func (r *ClientRepository) ChangeSecret(id []byte, newSecretHash string,
 	return nil
 }
 
-func (r *ClientRepository) RetrieveClientTagInformation(limit int,
-	offset int, keyword string,
-) ([]models.Client, error) {
-	var clients []models.Client
-	searchTerm := "%" + keyword + "%"
-
-	query := `
-		SELECT id, tag, image_location
-		FROM clients
-		WHERE deleted_at IS NULL AND tag LIKE ?
-		LIMIT ? OFFSET ?
-	`
-
-	err := r.db.Select(&clients, query, searchTerm, limit, offset)
-	if err != nil {
-		return nil, err
-	}
-	return clients, nil
-}
-
-func (r *ClientRepository) GetBoundClientTagList(
-	ctx context.Context,
-	userID []byte,
-	limit,
-	offset int,
-	keyword string,
-) ([]models.Client, error) {
-	var clients []models.Client
-	searchTerm := "%" + keyword + "%"
-
-	// Constants to avoid magic strings and keep lines under 80 chars
-	const query = `
-		SELECT DISTINCT c.id, c.tag, c.image_location
-		FROM clients c
-		JOIN admin_allowed_clients aac ON c.id = aac.client_id
-		WHERE aac.user_id = ? 
-			AND c.deleted_at IS NULL 
-			AND c.tag LIKE ?
-		LIMIT ? OFFSET ?
-	`
-
-	err := r.db.SelectContext(
-		ctx,
-		&clients,
-		query,
-		userID,
-		searchTerm,
-		limit,
-		offset,
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"[ClientRepository] Database Query (SelectContext): %w",
-			err,
-		)
-	}
-
-	return clients, nil
-}
-
-func (r *ClientRepository) DeleteAndInsertGrants(c *models.Client,
+func (r *ClientRepository) DeleteAndInsertGrants(
+	c *models.Client,
 	grants []string,
 ) error {
-	// Delete all and insert new grants
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	deleteQuery := `DELETE from client_grant_types WHERE client_id = ?`
-	_, err = tx.Exec(deleteQuery, c.ID)
-	if err != nil {
+	delQuery := `DELETE FROM client_grant_types WHERE client_id = ?`
+	if _, err = tx.Exec(delQuery, c.ID); err != nil {
 		return err
 	}
 
-	insertQuery := `
+	insQuery := `
 		INSERT INTO client_grant_types (client_id, grant_type)
 		VALUES (?, ?)
 	`
 	for _, grant := range grants {
-		_, err = tx.Exec(insertQuery, c.ID, grant)
-		if err != nil {
+		if _, err = tx.Exec(insQuery, c.ID, grant); err != nil {
 			return err
 		}
 	}
 
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *ClientRepository) UpdateAllowedRoles(client *models.Client,
-	roleIDs []int,
-) error {
-	tx, err := r.db.Beginx()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
-
-	deleteQuery := `
-		DELETE FROM client_allowed_roles 
-		WHERE client_id = ? AND role_id NOT IN (?)
-	`
-	if len(roleIDs) > 0 {
-		deleteQuery, args, _ := sqlx.In(
-			deleteQuery,
-			client.ID,
-			roleIDs,
-		)
-		if _, err := tx.Exec(tx.Rebind(deleteQuery), args...); err != nil {
-			return fmt.Errorf("failed to delete client allowed roles: %w", err)
-		}
-	} else {
-		deleteAll := "DELETE FROM client_allowed_roles WHERE client_id = ?"
-		if _, err := tx.Exec(deleteAll, client.ID); err != nil {
-			return fmt.Errorf("failed to delete all roles from user: %w", err)
-		}
-	}
-
-	insertQuery := `
-        INSERT INTO client_allowed_roles (client_id, role_id) 
-        VALUES (?, ?) 
-        ON DUPLICATE KEY UPDATE role_id = role_id`
-
-	for _, rid := range roleIDs {
-		if _, err := tx.Exec(insertQuery, client.ID, rid); err != nil {
-			return fmt.Errorf("upsert error: %w", err)
-		}
-	}
-
 	return tx.Commit()
-}
-
-func (r *ClientRepository) AddClientAllowedRole(roleID int, tag string) error {
-	var client models.Client
-	clientQuery := `SELECT id FROM clients WHERE tag = ?`
-	err := r.db.Get(&client, clientQuery, tag)
-	if err != nil {
-		return err
-	}
-
-	query := `
-		INSERT INTO client_allowed_roles (client_id, role_id)
-		VALUES (?, ?)	
-	`
-	_, err = r.db.Exec(query, client.ID, roleID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *ClientRepository) DeleteConnectedRoles(client *models.Client) error {
-	query := `DELETE FROM client_allowed_roles WHERE client_id = ?`
-	_, err := r.db.Exec(query, client.ID)
-	if err != nil {
-		return err
-	}
-
-	abbreviation := client.Tag + ":%"
-	deleteRoleQuery := `DELETE FROM roles WHERE role_name LIKE ?`
-	_, err = r.db.Exec(deleteRoleQuery, abbreviation)
-	return err
 }
 
 func (r *ClientRepository) AdminiClientBind(userID []byte,

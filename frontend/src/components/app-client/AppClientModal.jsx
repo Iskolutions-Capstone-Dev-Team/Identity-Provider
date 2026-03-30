@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
-import { useAllRoles } from "../../hooks/useAllRoles";
-import MultiSelect from "../MultiSelect";
 import { getModalTheme } from "../modalTheme";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
@@ -21,94 +19,6 @@ const initialFieldErrors = {
   logoutURL: "",
 };
 const inlineErrorClassName = "mt-2 text-xs text-red-500";
-
-const toPositiveInt = (value) => {
-  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-};
-
-const normalizeRoleIds = (values = []) =>
-  Array.from(
-    new Set(
-      (Array.isArray(values) ? values : [])
-        .map((value) => toPositiveInt(value))
-        .filter((value) => value !== null),
-    ),
-  );
-
-const normalizeRoleName = (value) =>
-  typeof value === "string" ? value.trim().toLowerCase() : "";
-
-const getRoleName = (role) => {
-  const rawName = role?.role_name ?? role?.roleName ?? role?.name ?? "";
-  return typeof rawName === "string" ? rawName.trim() : "";
-};
-
-const toRoleOption = (role) => {
-  const roleId = toPositiveInt(
-    role?.id ?? role?.role_id ?? role?.roleId ?? role?.value,
-  );
-  const roleName = getRoleName(role);
-
-  if (roleId === null || !roleName) {
-    return null;
-  }
-
-  return { id: roleId, role_name: roleName };
-};
-
-const createRoleLookup = (roleOptions = []) => {
-  const roleLookup = new Map();
-
-  roleOptions.forEach((role) => {
-    const normalizedName = normalizeRoleName(role?.role_name);
-    if (!normalizedName || roleLookup.has(normalizedName)) {
-      return;
-    }
-
-    roleLookup.set(normalizedName, role);
-  });
-
-  return roleLookup;
-};
-
-const mapRoleNamesToIds = (roleNames = [], roleOptions = []) => {
-  if (
-    !Array.isArray(roleNames) ||
-    roleNames.length === 0 ||
-    !Array.isArray(roleOptions)
-  ) {
-    return [];
-  }
-
-  const roleLookup = createRoleLookup(roleOptions);
-
-  const ids = roleNames
-    .map((name) => roleLookup.get(normalizeRoleName(name))?.id)
-    .filter((id) => id !== undefined);
-
-  return normalizeRoleIds(ids);
-};
-
-const mapRoleNamesToLabels = (roleNames = [], roleOptions = []) => {
-  if (
-    !Array.isArray(roleNames) ||
-    roleNames.length === 0 ||
-    !Array.isArray(roleOptions)
-  ) {
-    return [];
-  }
-
-  const roleLookup = createRoleLookup(roleOptions);
-
-  return Array.from(
-    new Set(
-      roleNames
-        .map((name) => roleLookup.get(normalizeRoleName(name))?.role_name)
-        .filter(Boolean),
-    ),
-  );
-};
 
 const isValidHttpUrl = (value) => {
   try {
@@ -165,15 +75,7 @@ const getGrantClassName = ({ isSelected, isView, isDarkMode }) =>
         : "hover:border-[#f8d24e]/45 hover:bg-[#fffaf2]"
   }`;
 
-export default function AppClientModal({
-  open,
-  mode,
-  client,
-  getClientDetails,
-  onClose,
-  onSubmit,
-  colorMode = "light",
-}) {
+export default function AppClientModal({ open, mode, client, getClientDetails, onClose, onSubmit, colorMode = "light" }) {
   const isView = mode === "view";
   const isDarkMode = colorMode === "dark";
   const {
@@ -196,17 +98,11 @@ export default function AppClientModal({
     modalSectionClassName,
   } = getModalTheme(colorMode);
   const [name, setName] = useState("");
-  const [tag, setTag] = useState("");
   const [description, setDescription] = useState("");
   const [baseURL, setBaseURL] = useState("");
   const [redirectURL, setRedirectURL] = useState("");
   const [logoutURL, setLogoutURL] = useState("");
   const [selectedGrants, setSelectedGrants] = useState(["authorization_code"]);
-  const rolesData = useAllRoles({endpoint: "all"});
-  const [roles, setRoles] = useState([]);
-  const [detailRoleNames, setDetailRoleNames] = useState([]);
-  const [hasRoleSelectionChanged, setHasRoleSelectionChanged] = useState(false);
-  const [hasLoadedLatestRoles, setHasLoadedLatestRoles] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageLocation, setImageLocation] = useState(null);
@@ -217,41 +113,6 @@ export default function AppClientModal({
   const [showFullImage, setShowFullImage] = useState(false);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
   const detailsRequestRef = useRef({ clientId: "", inFlight: false });
-
-  const roleOptions = useMemo(
-    () => rolesData.map(toRoleOption).filter(Boolean),
-    [rolesData],
-  );
-
-  const roleOptionsById = useMemo(
-    () => new Map(roleOptions.map((role) => [role.id, role])),
-    [roleOptions],
-  );
-
-  const selectedRoleLabels = useMemo(
-    () =>
-      roles
-        .map((roleId) => roleOptionsById.get(roleId)?.role_name)
-        .filter(Boolean),
-    [roleOptionsById, roles],
-  );
-
-  const resolvedDetailRoleIds = useMemo(
-    () => mapRoleNamesToIds(detailRoleNames, roleOptions),
-    [detailRoleNames, roleOptions],
-  );
-
-  const resolvedDetailRoleLabels = useMemo(
-    () => mapRoleNamesToLabels(detailRoleNames, roleOptions),
-    [detailRoleNames, roleOptions],
-  );
-
-  const displayedRoleLabels =
-    selectedRoleLabels.length > 0 ? selectedRoleLabels : resolvedDetailRoleLabels;
-
-  const hasInitialRoleData = detailRoleNames.length > 0 || roles.length > 0;
-  const isWaitingForRoleOptions =
-    hasLoadedLatestRoles && hasInitialRoleData && roleOptions.length === 0;
   const detailsBannerClassName = isDarkMode
     ? "rounded-[1rem] border border-[#f8d24e]/30 bg-[#f8d24e]/10 px-4 py-3 text-sm text-[#ffe28a]"
     : "rounded-[1rem] border border-[#f8d24e]/45 bg-[#fff4dc] px-4 py-3 text-sm text-[#7b0d15]";
@@ -282,15 +143,17 @@ export default function AppClientModal({
   const grantCheckboxClassName = isDarkMode
     ? "checkbox h-5 w-5 rounded border-white/20 bg-transparent checked:border-[#f8d24e] checked:bg-[#7b0d15] checked:text-white"
     : "checkbox h-5 w-5 rounded border-[#7b0d15]/20 bg-transparent checked:border-[#7b0d15] checked:bg-[#7b0d15] checked:text-white";
-  const roleBadgeClassName = isDarkMode
-    ? "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
-    : "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
   const fullImageBackdropClassName = isDarkMode
     ? "absolute inset-0 bg-[rgba(9,13,20,0.82)] backdrop-blur-sm"
     : "absolute inset-0 bg-[rgba(43,3,7,0.72)] backdrop-blur-sm";
   const fullImageClassName = isDarkMode
     ? "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-[#111827] object-contain shadow-[0_36px_90px_-40px_rgba(2,6,23,0.9)]"
     : "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-white/90 object-contain shadow-[0_36px_90px_-40px_rgba(43,3,7,0.72)]";
+  const modalHeaderSpacingClassName =
+    `${modalHeaderClassName} !px-8 !pt-8 !pb-28 min-h-[11.5rem] sm:!px-10 sm:!pt-9 sm:!pb-20 sm:min-h-0`;
+  const modalHeaderContentClassName = "max-w-2xl pr-14 sm:pr-16";
+  const modalHeaderDescriptionSpacingClassName =
+    `${modalHeaderDescriptionClassName} !mt-4 max-w-[20rem] leading-relaxed sm:!mt-5 sm:max-w-[34rem]`;
 
   const resolveImageSrc = (image) => {
     if (!image) return null;
@@ -305,16 +168,11 @@ export default function AppClientModal({
     if (!open || !client) return;
 
     setName(client.name || "");
-    setTag(client.tag || "");
     setDescription(client.description || "");
     setBaseURL(client.base_url || "");
     setRedirectURL(client.redirect_uri || "");
     setLogoutURL(client.logout_uri || "");
     setSelectedGrants(client.grants || ["authorization_code"]);
-    setRoles([]);
-    setDetailRoleNames([]);
-    setHasRoleSelectionChanged(false);
-    setHasLoadedLatestRoles(false);
     setImageFile(null);
     setIsDragging(false);
     setActiveVoiceField("name");
@@ -329,7 +187,6 @@ export default function AppClientModal({
   useEffect(() => {
     if (!open) {
       detailsRequestRef.current = { clientId: "", inFlight: false };
-      setHasLoadedLatestRoles(false);
       setActiveVoiceField("name");
       setFieldErrors(initialFieldErrors);
     }
@@ -350,7 +207,6 @@ export default function AppClientModal({
     let cancelled = false;
     detailsRequestRef.current = { clientId, inFlight: true };
     setIsDetailsLoading(true);
-    setHasLoadedLatestRoles(false);
     setError("");
 
     getClientDetails(clientId)
@@ -358,16 +214,11 @@ export default function AppClientModal({
         if (cancelled || !details) return;
 
         setName(details.name || "");
-        setTag(details.tag || "");
         setDescription(details.description || "");
         setBaseURL(details.base_url || "");
         setRedirectURL(details.redirect_uri || "");
         setLogoutURL(details.logout_uri || "");
         setSelectedGrants(details.grants || ["authorization_code"]);
-        setRoles(normalizeRoleIds(details.roles || []));
-        setDetailRoleNames(Array.isArray(details.roleNames) ? details.roleNames : []);
-        setHasRoleSelectionChanged(false);
-        setHasLoadedLatestRoles(true);
         setFieldErrors(initialFieldErrors);
 
         const image = details.image || details.image_location || null;
@@ -390,24 +241,6 @@ export default function AppClientModal({
       cancelled = true;
     };
   }, [client, getClientDetails, open]);
-
-  useEffect(() => {
-    if (
-      hasRoleSelectionChanged ||
-      roles.length > 0 ||
-      detailRoleNames.length === 0 ||
-      resolvedDetailRoleIds.length === 0
-    ) {
-      return;
-    }
-
-    setRoles(resolvedDetailRoleIds);
-  }, [
-    detailRoleNames,
-    hasRoleSelectionChanged,
-    resolvedDetailRoleIds,
-    roles,
-  ]);
 
   const clearFieldError = (fieldName) => {
     setFieldErrors((current) =>
@@ -608,11 +441,6 @@ export default function AppClientModal({
       return;
     }
 
-    if (!hasLoadedLatestRoles || isWaitingForRoleOptions) {
-      setError("Load the latest app client roles before saving changes.");
-      return;
-    }
-
     if (!validateEditableFields()) {
       return;
     }
@@ -623,25 +451,6 @@ export default function AppClientModal({
     }
 
     setError("");
-    let roleIds = normalizeRoleIds(roles);
-    if (!hasRoleSelectionChanged && roleIds.length === 0) {
-      roleIds = resolvedDetailRoleIds;
-    }
-
-    const selectedRoleOptions = roleIds
-      .map((roleId) => roleOptionsById.get(roleId))
-      .filter(Boolean)
-      .map((role) => ({
-        id: role.id,
-        role_name: role.role_name,
-      }))
-      .filter(Boolean);
-
-    const selectedRoleNames = Array.from(
-      new Set(
-        selectedRoleOptions.map((role) => role.role_name).filter(Boolean),
-      ),
-    );
 
     try {
       await onSubmit({
@@ -652,17 +461,13 @@ export default function AppClientModal({
         redirect_uri: redirectURL,
         logout_uri: logoutURL,
         grants: selectedGrants,
-        roles: roleIds,
-        roleNames: selectedRoleNames,
-        roleOptions: selectedRoleOptions,
         imageFile,
-        image_location: imageLocation ?? "",
       });
 
       onClose();
     } catch (submitError) {
       console.error("Submit app client error:", submitError);
-      setError("Unable to save app client. Please check selected roles and try again.");
+      setError("Unable to save app client. Please review the details and try again.");
     }
   };
 
@@ -672,20 +477,20 @@ export default function AppClientModal({
     <>
       <dialog open className={modalOverlayClassName}>
         <div className={modalBoxClassName}>
-          <div className={`${modalHeaderClassName} !pb-11 sm:!pb-16`}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="max-w-2xl">
+          <div className={modalHeaderSpacingClassName}>
+            <div className="flex items-start justify-between gap-4 sm:gap-6">
+              <div className={modalHeaderContentClassName}>
                 <h3 className={modalHeaderTitleClassName}>
                   {isView ? "View App Client" : "Edit App Client"}
                 </h3>
-                <p className={modalHeaderDescriptionClassName}>
+                <p className={modalHeaderDescriptionSpacingClassName}>
                   {isView
                     ? "Application client's configuration details."
                     : "Update the application client's configuration and settings."}
                 </p>
               </div>
 
-              <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
+              <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -778,38 +583,31 @@ export default function AppClientModal({
                     />
                   )}
 
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <div>
-                      <label className={modalLabelClassName}>
-                        Name {!isView && <span className="text-red-500">*</span>}
-                      </label>
-                      {isView ? (
-                        <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} placeholder="(e.g., Identity Provider System)"
-                          className={modalReadOnlyInputClassName}
-                          disabled={isView}
-                        />
-                      ) : (
-                        <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)"
-                          className={getEditableInputClassName("name")}
-                          disabled={isView}
-                        />
-                      )}
-                      {!isView && fieldErrors.name && (
-                        <p className={inlineErrorClassName}>
-                          {fieldErrors.name}
-                        </p>
-                      )}
-                      {!isView && (
-                        <p className={`${modalHelperTextClassName} mt-2`}>
-                          Must be 5-100 characters
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className={modalLabelClassName}>Tag</label>
-                      <input type="text" readOnly value={tag} className={modalReadOnlyInputClassName}/>
-                    </div>
+                  <div>
+                    <label className={modalLabelClassName}>
+                      Name {!isView && <span className="text-red-500">*</span>}
+                    </label>
+                    {isView ? (
+                      <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} placeholder="(e.g., Identity Provider System)"
+                        className={modalReadOnlyInputClassName}
+                        disabled={isView}
+                      />
+                    ) : (
+                      <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)"
+                        className={getEditableInputClassName("name")}
+                        disabled={isView}
+                      />
+                    )}
+                    {!isView && fieldErrors.name && (
+                      <p className={inlineErrorClassName}>
+                        {fieldErrors.name}
+                      </p>
+                    )}
+                    {!isView && (
+                      <p className={`${modalHelperTextClassName} mt-2`}>
+                        Must be 5-100 characters
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -935,52 +733,6 @@ export default function AppClientModal({
                       </p>
                     )}
                   </div>
-
-                  <div>
-                    <label className={modalLabelClassName}>Roles</label>
-                    {!isView && (
-                      <p className={modalHelperTextClassName}>
-                        select roles that are permitted to use this client
-                      </p>
-                    )}
-                    {isView ? (
-                      <div className={viewContentBoxClassName}>
-                        {isDetailsLoading || isWaitingForRoleOptions ? (
-                          <span className={emptyContentClassName}>
-                            Loading latest roles...
-                          </span>
-                        ) : displayedRoleLabels.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {displayedRoleLabels.map((roleName, index) => (
-                              <span key={`${roleName}-${index}`} className={roleBadgeClassName}>
-                                {roleName}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className={emptyContentClassName}>No content</span>
-                        )}
-                      </div>
-                    ) : (
-                      <MultiSelect
-                        options={roleOptions}
-                        selectedValues={roles}
-                        onChange={(ids) => {
-                          setHasRoleSelectionChanged(true);
-                          setRoles(normalizeRoleIds(ids));
-                        }}
-                        placeholder="Select roles"
-                        disabled={
-                          isView ||
-                          isDetailsLoading ||
-                          !hasLoadedLatestRoles ||
-                          isWaitingForRoleOptions
-                        }
-                        variant="userpoolModal"
-                        colorMode={colorMode}
-                      />
-                    )}
-                  </div>
                 </div>
               </section>
             </div>
@@ -993,14 +745,7 @@ export default function AppClientModal({
               </button>
 
               {!isView && (
-                <button form="app-client-form" type="submit"
-                  disabled={
-                    isDetailsLoading ||
-                    !hasLoadedLatestRoles ||
-                    isWaitingForRoleOptions
-                  }
-                  className={modalPrimaryButtonClassName}
-                >
+                <button form="app-client-form" type="submit" disabled={isDetailsLoading} className={modalPrimaryButtonClassName}>
                   {mode === "create" ? "Create" : "Save"}
                 </button>
               )}

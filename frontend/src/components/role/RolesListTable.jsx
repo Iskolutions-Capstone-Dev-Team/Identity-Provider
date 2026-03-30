@@ -4,6 +4,22 @@ import DataTableSkeleton from "../DataTableSkeleton";
 const headerCellClassName =
   "border-b border-white/10 px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90";
 
+function renderPermissionLabels( role, emptyStateClassName, listClassName, badgeClassName ) {
+  if (!Array.isArray(role.permissionLabels) || role.permissionLabels.length === 0) {
+    return <span className={emptyStateClassName}>No permissions</span>;
+  }
+
+  return (
+    <div className={listClassName}>
+      {role.permissionLabels.map((permission) => (
+        <span key={permission} className={badgeClassName}>
+          {permission}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function getRowClassName(index, isDarkMode) {
   if (isDarkMode) {
     return `transition-colors duration-500 ease-out ${
@@ -43,7 +59,7 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
     },
   ];
 
-  if (role.can_edit) {
+  if (role.canEdit) {
     actions.push({
       key: "edit",
       label: `Edit ${role.role_name}`,
@@ -56,7 +72,7 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
     });
   }
 
-  if (role.can_delete) {
+  if (role.canDelete) {
     actions.push({
       key: "delete",
       label: `Delete ${role.role_name}`,
@@ -87,9 +103,14 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
   const roleNameCellClassName = isDarkMode
     ? `${bodyCellClassName} font-semibold text-[#f6eaec]`
     : `${bodyCellClassName} font-semibold text-[#4a1921]`;
-  const createdCellClassName = isDarkMode
-    ? `${bodyCellClassName} text-[#f8d996]`
-    : `${bodyCellClassName} text-[#7b0d15]`;
+  const permissionsListClassName =
+    "mx-auto grid w-full max-w-[24rem] grid-cols-2 gap-3 min-[1700px]:grid-cols-3";
+  const permissionsBadgeClassName = isDarkMode
+    ? "inline-flex min-h-[3rem] w-full items-center justify-center rounded-2xl border border-[#f8d24e]/35 bg-[#f8d24e]/10 px-3 py-2 text-center text-xs font-semibold leading-tight text-[#ffe28a] shadow-[0_12px_24px_-20px_rgba(248,210,78,0.75)]"
+    : "inline-flex min-h-[3rem] w-full items-center justify-center rounded-2xl border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-2 text-center text-xs font-semibold leading-tight text-[#7b0d15] shadow-[0_12px_24px_-20px_rgba(123,13,21,0.35)]";
+  const permissionEmptyStateClassName = isDarkMode
+    ? "italic text-[#a58d95]"
+    : "italic text-[#8f6f76]";
   const emptyStateClassName = isDarkMode
     ? "px-6 py-16 text-center text-sm text-[#bda8af]"
     : "px-6 py-16 text-center text-sm text-[#8f6f76]";
@@ -104,7 +125,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
         columns={[
           { header: "Role Name", type: "text", width: "w-28" },
           { header: "Description", type: "text", width: "w-36" },
-          { header: "Created", type: "text", width: "w-24" },
+          { header: "Permissions", type: "text", width: "w-40" },
           { header: "Actions", type: "actions" },
         ]}
       />
@@ -114,12 +135,12 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
   return (
     <div className={wrapperClassName}>
       <div className="overflow-x-auto">
-        <table className="table w-full min-w-[56rem] lg:min-w-0 lg:table-fixed">
+        <table className="table w-full min-w-[64rem] lg:min-w-0 lg:table-fixed">
           <thead>
             <tr className={tableHeaderRowClassName}>
               <th className={headerCellClassName}>Role Name</th>
               <th className={headerCellClassName}>Description</th>
-              <th className={headerCellClassName}>Created</th>
+              <th className={headerCellClassName}>Permissions</th>
               <th className={headerCellClassName}>Actions</th>
             </tr>
           </thead>
@@ -139,8 +160,13 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
                   {role.role_name}
                 </td>
                 <td className={bodyCellClassName}>{role.description}</td>
-                <td className={createdCellClassName}>
-                  {role.created_at}
+                <td className={bodyCellClassName}>
+                  {renderPermissionLabels(
+                    role,
+                    permissionEmptyStateClassName,
+                    permissionsListClassName,
+                    permissionsBadgeClassName,
+                  )}
                 </td>
                 <td className={bodyCellClassName}>
                   <div className="flex items-center justify-center gap-2">

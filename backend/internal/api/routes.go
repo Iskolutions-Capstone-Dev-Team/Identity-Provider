@@ -50,7 +50,8 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
-	admin.Use(middleware.AuthorizeRBAC(h.PubKey, s.UserService.Repo, role1, role2))
+	admin.Use(middleware.AuthorizeRBAC(h.PubKey, s.UserService.Repo, 
+		s.RoleService.RoleRepo, role1, role2))
 	{
 		admin.GET("/status", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "IdP is operational"})
@@ -62,7 +63,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 			clients.POST("", h.ClientHandler.PostClient)
 			clients.GET("", h.ClientHandler.GetClientList)
 			clients.GET("/:id", h.ClientHandler.GetClient)
-			clients.GET("/tags", h.ClientHandler.GetClientTags)
+
 			clients.PUT("/:id", h.ClientHandler.PutClient)
 			clients.PATCH("/:id/secret", h.ClientHandler.PatchClientSecret)
 			clients.DELETE("/:id", h.ClientHandler.DeleteClient)

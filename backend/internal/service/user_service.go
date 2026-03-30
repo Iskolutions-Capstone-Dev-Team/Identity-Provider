@@ -34,10 +34,10 @@ func (s *UserService) CreateUser(
 
 	user := models.User{
 		ID:           userID[:],
-		Username:     req.Username,
 		FirstName:    req.FirstName,
 		MiddleName:   req.MiddleName,
 		LastName:     req.LastName,
+		NameSuffix:   req.NameSuffix,
 		Email:        req.Email,
 		PasswordHash: passwordHash,
 		Status:       models.StatusActive,
@@ -67,10 +67,10 @@ func (s *UserService) GetUserByID(
 
 	return &dto.UserResponse{
 		ID:         id.String(),
-		Username:   user.Username,
 		FirstName:  user.FirstName,
 		MiddleName: user.MiddleName,
 		LastName:   user.LastName,
+		NameSuffix: user.NameSuffix,
 		Email:      user.Email,
 		Status:     string(user.Status),
 		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
@@ -115,6 +115,7 @@ func (s *UserService) GetMe(
 		FirstName:  user.FirstName,
 		MiddleName: user.MiddleName,
 		LastName:   user.LastName,
+		NameSuffix: user.NameSuffix,
 		Email:      user.Email,
 		Roles:      roleStrings,
 	}, nil
@@ -185,10 +186,10 @@ func (s *UserService) GetUserList(
 		userUUID, _ := uuid.FromBytes(user.ID)
 		userResponses = append(userResponses, dto.UserResponse{
 			ID:         userUUID.String(),
-			Username:   user.Username,
 			FirstName:  user.FirstName,
 			MiddleName: user.MiddleName,
 			LastName:   user.LastName,
+			NameSuffix: user.NameSuffix,
 			Email:      user.Email,
 			Status:     string(user.Status),
 			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
@@ -247,10 +248,10 @@ func (s *UserService) GetBoundUserList(
 		userUUID, _ := uuid.FromBytes(user.ID)
 		userResponses = append(userResponses, dto.UserResponse{
 			ID:         userUUID.String(),
-			Username:   user.Username,
 			FirstName:  user.FirstName,
 			MiddleName: user.MiddleName,
 			LastName:   user.LastName,
+			NameSuffix: user.NameSuffix,
 			Email:      user.Email,
 			Status:     string(user.Status),
 			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),

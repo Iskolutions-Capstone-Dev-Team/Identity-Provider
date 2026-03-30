@@ -30,9 +30,15 @@ function getStatusClassName(status, isDarkMode) {
 }
 
 function getFullName(user) {
-  return [user.givenName, user.middleName, user.surname]
+  const fullName = [user.givenName, user.middleName, user.surname, user.suffix]
     .filter(Boolean)
     .join(" ");
+
+  return fullName || user.displayName || user.email || "User";
+}
+
+function getUserLabel(user) {
+  return user.displayName || user.email || "User";
 }
 
 function getRolesGridClassName(roles = []) {
@@ -196,7 +202,7 @@ export default function UserPoolTable({ loading = false, users = [], onView, onE
                 <td className={sharedActionsBodyCellClassName}>
                   <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                     {renderActionButton({
-                      label: `View ${user.username}`,
+                      label: `View ${getUserLabel(user)}`,
                       onClick: () => onView(user),
                       className: actionButtonClassName,
                       children: (
@@ -208,7 +214,7 @@ export default function UserPoolTable({ loading = false, users = [], onView, onE
                     })}
 
                     {renderActionButton({
-                      label: `Edit ${user.username}`,
+                      label: `Edit ${getUserLabel(user)}`,
                       onClick: () => onEdit(user),
                       className: actionButtonClassName,
                       children: (
@@ -220,7 +226,7 @@ export default function UserPoolTable({ loading = false, users = [], onView, onE
 
                     {showDeleteAction &&
                       renderActionButton({
-                        label: `Delete ${user.username}`,
+                        label: `Delete ${getUserLabel(user)}`,
                         onClick: () => onDelete(user),
                         className: actionButtonClassName,
                         children: (

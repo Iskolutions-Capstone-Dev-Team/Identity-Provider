@@ -8,6 +8,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -41,6 +42,12 @@ type LogHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/logs [get]
 func (h *LogHandler) GetLogList(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "View audit logs") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	// Parse pagination
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -144,6 +151,12 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/logs/{id} [get]
 func (h *LogHandler) GetLog(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "View audit logs") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	idParam := c.Param("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {

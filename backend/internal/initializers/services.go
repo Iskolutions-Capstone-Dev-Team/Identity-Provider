@@ -21,8 +21,7 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 			Storage: Storage,
 		},
 		RoleService: &service.RoleService{
-			RoleRepo:   roleRepo,
-			ClientRepo: clientRepo,
+			RoleRepo: roleRepo,
 		},
 		UserService: &service.UserService{
 			Repo:       userRepo,

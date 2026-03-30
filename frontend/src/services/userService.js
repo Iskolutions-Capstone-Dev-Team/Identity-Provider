@@ -1,5 +1,17 @@
 import axiosInstance from "./axiosInstance";
 
+const normalizeTextValue = (value) =>
+  typeof value === "string" ? value.trim() : "";
+
+const normalizeRoleNames = (roles = []) =>
+  Array.from(
+    new Set(
+      (Array.isArray(roles) ? roles : [])
+        .map((role) => normalizeTextValue(role))
+        .filter(Boolean),
+    ),
+  );
+
 export const userService = {
   async getMe() {
     const res = await axiosInstance.get("/me");
@@ -7,20 +19,22 @@ export const userService = {
   },
 
   async getUsers(page = 1) {
-    const res = await axiosInstance.get(`/admin/users?page=${page}`);
+    const res = await axiosInstance.get("/admin/users", {
+      params: { page },
+    });
     return res.data;
   },
 
   async createUser(data) {
     const payload = {
-      email: data.email,
-      first_name: data.first_name,
-      middle_name: data.middle_name || "",
-      last_name: data.last_name,
-      user_name: data.user_name,
-      password: data.password,
-      status: data.status,
-      roles: data.roles || [],
+      email: normalizeTextValue(data.email),
+      first_name: normalizeTextValue(data.first_name),
+      middle_name: normalizeTextValue(data.middle_name),
+      last_name: normalizeTextValue(data.last_name),
+      name_suffix: normalizeTextValue(data.name_suffix),
+      password: normalizeTextValue(data.password),
+      status: normalizeTextValue(data.status).toLowerCase(),
+      roles: normalizeRoleNames(data.roles),
     };
 
     const res = await axiosInstance.post("/admin/users", payload, {

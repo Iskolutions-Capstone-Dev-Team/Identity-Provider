@@ -15,10 +15,14 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/initializers"
 	_ "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/docs"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/docs"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/swaggo/swag"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"encoding/json"
+	"strings"
 )
 
 // @title Unified Access Identity Provider API
@@ -31,8 +35,65 @@ import (
 // @license.url https://opensource.org/licenses/MIT
 // @host localhost:8080
 // @BasePath /api/v1
+func initSwagger() {
+	originalDoc := docs.SwaggerInfo.ReadDoc()
+	
+	// Register Internal Doc (unfiltered)
+	swag.Register("internal", &swag.Spec{
+		InfoInstanceName: "internal",
+		SwaggerTemplate:  originalDoc,
+	})
+
+	// Parse Doc for filtering
+	var docMap map[string]interface{}
+	if err := json.Unmarshal([]byte(originalDoc), &docMap); err != nil {
+		log.Printf("[initSwagger] Error parsing original doc: %v", err)
+		return
+	}
+
+	// Filter paths for External Doc
+	paths, ok := docMap["paths"].(map[string]interface{})
+	if !ok {
+		log.Printf("[initSwagger] Error extracting paths")
+		return
+	}
+
+	externalPaths := make(map[string]interface{})
+	for path, methods := range paths {
+		isExternal := false
+		// Criteria for external documentation:
+		// 1. JWKS (Identity Provider public keys)
+		// 2. Auth routes EXCEPT login and session
+		// 3. User profile information (/me)
+		if strings.Contains(path, "jwks.json") || path == "/api/v1/me" {
+			isExternal = true
+		} else if strings.HasPrefix(path, "/api/v1/auth/") {
+			if !strings.Contains(path, "/login") && !strings.Contains(path, "/session") {
+				isExternal = true
+			}
+		}
+
+		if isExternal {
+			externalPaths[path] = methods
+		}
+	}
+	docMap["paths"] = externalPaths
+	docBytes, err := json.Marshal(docMap)
+	if err != nil {
+		log.Printf("[initSwagger] Error marshaling external doc: %v", err)
+		return
+	}
+
+	// Register External Doc (filtered)
+	swag.Register("external", &swag.Spec{
+		InfoInstanceName: "external",
+		SwaggerTemplate:  string(docBytes),
+	})
+}
+
 func main() {
 	godotenv.Load()
+	initSwagger()
 	initializers.LoadRSAKeys()
 	initializers.NewS3Storage()
 
@@ -64,8 +125,9 @@ func main() {
 	r := gin.Default()
 	r.Use(h.CORS)
 
-	// Register Swagger UI route
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Register separate Swagger UI routes for Internal and External views
+	r.GET("/swagger/internal/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("internal")))
+	r.GET("/swagger/external/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("external")))
 
 	api.SetupRoutes(r, *h, s)
 

@@ -17,6 +17,10 @@ import { useDelayedLoading } from "../hooks/useDelayedLoading";
 const ITEMS_PER_PAGE = 10;
 const SUPERADMIN_ROLE = "idp:superadmin";
 
+function getUserLabel(user) {
+  return user?.displayName || user?.email || "User";
+}
+
 export default function UserPool() {
   const outletContext = useOutletContext() || {};
   const currentUser = outletContext.currentUser || EMPTY_CURRENT_USER;
@@ -85,7 +89,7 @@ export default function UserPool() {
       return;
     }
 
-    deleteUser(userToDelete.id, userToDelete.username);
+    deleteUser(userToDelete.id, getUserLabel(userToDelete));
     setOpenDelete(false);
     setUserToDelete(null);
   };
@@ -167,7 +171,7 @@ export default function UserPool() {
       </div>
       <DeleteConfirmModal
         open={openDelete}
-        message={`Delete user ${userToDelete?.username}?`}
+        message={`Delete user ${getUserLabel(userToDelete)}?`}
         theme="glass"
         colorMode={colorMode}
         onCancel={() => {

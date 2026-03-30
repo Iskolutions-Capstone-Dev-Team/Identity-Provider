@@ -2,7 +2,6 @@ package dto
 
 type CreateClientRequest struct {
 	Name        string   `json:"name"`
-	Tag         string   `json:"tag"`
 	BaseURL     string   `json:"base_url"`
 	RedirectURI string   `json:"redirect_uri"`
 	LogoutURI   string   `json:"logout_uri"`
@@ -14,7 +13,6 @@ type CreateClientRequest struct {
 type ClientResponse struct {
 	ID            string         `json:"id"`
 	Name          string         `json:"name"`
-	Tag           string         `json:"tag"`
 	Description   string         `json:"description"`
 	ImageLocation string         `json:"image_location"`
 	BaseURL       string         `json:"base_url"`

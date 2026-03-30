@@ -7,7 +7,7 @@ function getSelectedOption(options, value) {
   return options.find((option) => option.value === value) || options[0];
 }
 
-export default function UserPoolModalSelect({ value, onChange, options, ariaLabel, colorMode = "light" }) {
+export default function UserPoolModalSelect({ value, onChange, options, selectedLabel, ariaLabel, colorMode = "light" }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const selectedOption = getSelectedOption(options, value);
@@ -61,7 +61,7 @@ export default function UserPoolModalSelect({ value, onChange, options, ariaLabe
     <div ref={dropdownRef} className={modalSelectTriggerClassName}>
       <button type="button" className={modalSelectButtonClassName} onClick={() => setIsOpen((current) => !current)} aria-haspopup="listbox" aria-expanded={isOpen}>
         <span className={valueClassName}>
-          {selectedOption?.label}
+          {selectedLabel || selectedOption?.label}
         </span>
 
         <span className={chevronClassName}>

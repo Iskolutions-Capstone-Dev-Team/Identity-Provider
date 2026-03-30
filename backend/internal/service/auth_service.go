@@ -190,8 +190,11 @@ func (s *AuthService) ExchangeCodeForToken(
 
 	// 1. Authenticate Client
 	valid, err := s.Repo.VerifyClient(clientIDBin, req.ClientSecret)
-	if err != nil || !valid {
+	if err != nil {
 		return nil, fmt.Errorf("Client Verification: %w", err)
+	}
+	if !valid {
+		return nil, fmt.Errorf("Client Verification: invalid credentials")
 	}
 
 	// 2. Consume Authorization Code

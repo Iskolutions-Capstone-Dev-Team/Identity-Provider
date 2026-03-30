@@ -8,6 +8,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -17,15 +18,14 @@ const (
 	actionCreateRole  = "create_role"
 	actionListRoles   = "list_roles"
 	actionGetRole     = "get_role"
-	actionSearchRoles = "search_roles"
 	actionUpdateRole  = "update_role"
 	actionDeleteRole  = "delete_role"
 )
 
 // RoleHandler handles role management HTTP requests.
 type RoleHandler struct {
-	Service          *service.RoleService
-	LogService       *service.LogService
+	Service    *service.RoleService
+	LogService *service.LogService
 }
 
 // PostRole handles POST /v1/admin/roles
@@ -40,6 +40,12 @@ type RoleHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/roles [post]
 func (h *RoleHandler) PostRole(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "Add Roles") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	var req dto.RoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostRole] Bind JSON: %v", err)
@@ -114,6 +120,12 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/roles [get]
 func (h *RoleHandler) GetRoleList(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "View roles") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	keyword := c.DefaultQuery("keyword", "")
@@ -315,6 +327,12 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 // @Failure 400 {object} dto.ErrorResponse
 // @Router /v1/admin/roles/{id} [put]
 func (h *RoleHandler) PutRole(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "Edit Roles") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Printf("[PutRole] Parse ID: %v", err)
@@ -393,6 +411,12 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "Delete Roles") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Printf("[DeleteRole] Parse ID: %v", err)

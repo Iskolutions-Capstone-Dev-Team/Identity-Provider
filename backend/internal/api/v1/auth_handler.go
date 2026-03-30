@@ -419,6 +419,13 @@ func (h *AuthHandler) CheckSession(c *gin.Context) {
 }
 
 // GetJWKS handles the retrieval of public keys for token verification
+// @Summary Get JWKS
+// @Description Retrieve the JSON Web Key Set for verifying JWT signatures
+// @Tags JSON Web Key Set
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /.well-known/jwks.json [get]
 func (h *AuthHandler) GetJWKS(c *gin.Context) {
 	jwks, err := h.AuthService.GetJWKS(c.Request.Context())
 	if err != nil {

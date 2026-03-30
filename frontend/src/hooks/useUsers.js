@@ -45,7 +45,11 @@ function normalizeStatus(status) {
 }
 
 function isStatusRequestError(error) {
-  return error?.response?.data?.error === "invalid status request";
+  const errorMessage = error?.response?.data?.error || error?.message || "";
+  return (
+    typeof errorMessage === "string" &&
+    errorMessage.toLowerCase().includes("status")
+  );
 }
 
 function areSameStringArrays(first = [], second = []) {
@@ -60,13 +64,28 @@ function areSameStringArrays(first = [], second = []) {
 }
 
 function mapUserResponse(user = {}) {
+  const givenName = user.first_name ?? "";
+  const middleName = user.middle_name ?? "";
+  const surname = user.last_name ?? "";
+  const suffix =
+    user.name_suffix ??
+    user.suffix ??
+    user.suffix_name ??
+    user.suffixName ??
+    "";
+  const fullName = [givenName, middleName, surname, suffix]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
   return {
     id: user.id,
-    username: user.user_name,
     email: user.email,
-    givenName: user.first_name,
-    middleName: user.middle_name,
-    surname: user.last_name,
+    givenName,
+    middleName,
+    surname,
+    suffix,
+    displayName: fullName || user.email || "User",
     status: user.status,
     createdAt: user.created_at,
     roles: normalizeRoleNames(user.roles),
@@ -81,13 +100,13 @@ function matchesUserSearch(user, searchValue) {
     return true;
   }
 
-  const fullName = [user.givenName, user.middleName, user.surname]
+  const fullName = [user.givenName, user.middleName, user.surname, user.suffix]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
 
   return (
-    user.username?.toLowerCase().includes(normalizedSearch) ||
+    user.displayName?.toLowerCase().includes(normalizedSearch) ||
     user.email?.toLowerCase().includes(normalizedSearch) ||
     fullName.includes(normalizedSearch)
   );
@@ -183,13 +202,12 @@ export function useUsers() {
   // =========================
   const createUser = async (newUser) => {
     try {
-      const userName = (newUser.username || newUser.email || "").trim();
       const payload = {
         email: newUser.email,
         first_name: newUser.givenName,
         middle_name: newUser.middleName,
         last_name: newUser.surname,
-        user_name: userName,
+        name_suffix: newUser.suffix,
         password: newUser.tempPassword || "TempPass123!",
         roles: newUser.roles,
         status: newUser.status,
@@ -201,16 +219,17 @@ export function useUsers() {
       await fetchUsers({ showLoading: false });
     } catch (error) {
       console.error("Create user error:", error);
+      throw error;
     }
   };
 
   // =========================
   // DELETE USER
   // =========================
-  const deleteUser = async (userId, username) => {
+  const deleteUser = async (userId, label) => {
     try {
       await userService.deleteUser(userId);
-      setSuccessMessage(`User ${username} deleted successfully`);
+      setSuccessMessage(`User ${label} deleted successfully`);
       await fetchUsers({ showLoading: false });
     } catch (error) {
       console.error("Delete error:", error);

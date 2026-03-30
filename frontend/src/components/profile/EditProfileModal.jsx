@@ -16,6 +16,7 @@ const createProfileState = (profileData = {}) => ({
   firstName: profileData.firstName || "",
   middleName: profileData.middleName || "",
   lastName: profileData.lastName || "",
+  suffix: profileData.suffix || "",
   email: profileData.email || "",
 });
 
@@ -114,6 +115,8 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
   const activeVoiceFieldLabel =
     activeVoiceField === "lastName"
       ? "Last Name"
+      : activeVoiceField === "suffix"
+        ? "Suffix"
       : activeVoiceField === "middleName"
         ? "Middle Name"
         : "First Name";
@@ -189,7 +192,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                 colorMode={colorMode}
               />
 
-              <div className="grid gap-5 md:grid-cols-3">
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                 <div>
                   <label className={modalLabelClassName}>
                     First Name <span className="text-red-500">*</span>
@@ -224,6 +227,12 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                       Max 50 characters
                     </p>
                   )}
+                </div>
+
+                <div>
+                  <label className={modalLabelClassName}>Suffix</label>
+                  <input type="text" name="suffix" value={profile.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" maxLength={20} className={modalInputClassName}/>
+                  <p className={`${modalHelperTextClassName} mt-2`}>Optional</p>
                 </div>
               </div>
             </section>

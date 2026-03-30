@@ -8,8 +8,8 @@ const defaultSpeechToolbarState = {
   onTranscript: null,
 };
 
-let currentSpeechToolbarId = null;
 let currentSpeechToolbarState = defaultSpeechToolbarState;
+const speechToolbarRegistry = new Map();
 const speechToolbarListeners = new Set();
 
 function getSpeechRecognitionConstructor() {
@@ -25,23 +25,35 @@ function notifySpeechToolbarListeners() {
   speechToolbarListeners.forEach((listener) => listener(snapshot));
 }
 
-function registerSpeechToolbar(toolbarId, nextState) {
-  currentSpeechToolbarId = toolbarId;
-  currentSpeechToolbarState = {
-    ...defaultSpeechToolbarState,
-    ...nextState,
-  };
+function syncSpeechToolbarState() {
+  const registeredToolbarStates = Array.from(speechToolbarRegistry.values());
+
+  // Keep the most recently registered toolbar active so modal fields can
+  // temporarily override page-level inputs like search bars.
+  currentSpeechToolbarState =
+    registeredToolbarStates[registeredToolbarStates.length - 1] ||
+    defaultSpeechToolbarState;
+
   notifySpeechToolbarListeners();
 }
 
+function registerSpeechToolbar(toolbarId, nextState) {
+  speechToolbarRegistry.delete(toolbarId);
+  speechToolbarRegistry.set(toolbarId, {
+    ...defaultSpeechToolbarState,
+    ...nextState,
+  });
+
+  syncSpeechToolbarState();
+}
+
 function unregisterSpeechToolbar(toolbarId) {
-  if (currentSpeechToolbarId !== toolbarId) {
+  if (!speechToolbarRegistry.has(toolbarId)) {
     return;
   }
 
-  currentSpeechToolbarId = null;
-  currentSpeechToolbarState = defaultSpeechToolbarState;
-  notifySpeechToolbarListeners();
+  speechToolbarRegistry.delete(toolbarId);
+  syncSpeechToolbarState();
 }
 
 function useSpeechToolbarState(fallbackColorMode) {

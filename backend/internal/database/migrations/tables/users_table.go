@@ -26,5 +26,19 @@ var UsersMigration = migrations.TableMigration{
 				deleted_at TIMESTAMP NULL
 			);`,
 		},
+		{
+			ID: "remove-username-column",
+			SQL: `
+				ALTER TABLE users
+				DROP COLUMN username;
+			`,
+		},
+		{
+			ID: "add-name-suffix-column",
+			SQL: `
+				ALTER TABLE users
+				ADD COLUMN name_suffix VARCHAR(20);
+			`,
+		},
 	},
 }

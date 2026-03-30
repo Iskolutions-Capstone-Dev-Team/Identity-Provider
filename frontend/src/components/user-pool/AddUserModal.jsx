@@ -14,6 +14,7 @@ const initialFormData = {
   givenName: "",
   middleName: "",
   surname: "",
+  suffix: "",
   inviteMode: "temp",
   delivery: "email",
   tempPassword: "",
@@ -37,12 +38,20 @@ const initialFieldErrors = {
   tempPassword: "",
 };
 
+const extractErrorMessage = (error) =>
+  error?.response?.data?.error ||
+  error?.response?.data?.message ||
+  error?.message ||
+  "Unable to create user.";
+
 export default function AddUserModal({
   open,
   onClose,
   onSubmit,
   colorMode = "light",
 }) {
+  const buildFullName = ({ givenName, middleName, surname, suffix }) =>
+    [givenName, middleName, surname, suffix].filter(Boolean).join(" ");
   const [step, setStep] = useState(1);
   const roles = useAllRoles();
   const [data, setData] = useState(initialFormData);
@@ -84,6 +93,11 @@ export default function AddUserModal({
   const tempPasswordHintClassName = isDarkMode
     ? "mt-3 text-xs text-[#c7adb4]"
     : "mt-3 text-xs text-[#8f6f76]";
+  const modalHeaderSpacingClassName =
+    `${modalHeaderClassName} !px-7 !pt-7 !pb-9 sm:!px-8 sm:!pt-8 sm:!pb-10`;
+  const modalHeaderContentClassName = "max-w-xl pr-12 sm:pr-14";
+  const modalHeaderDescriptionSpacingClassName =
+    `${modalHeaderDescriptionClassName} !mt-3 max-w-[18rem] leading-relaxed sm:!mt-4 sm:max-w-[28rem]`;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -239,7 +253,11 @@ export default function AddUserModal({
 
   useEffect(() => {
     if (step === 1) {
-      if (!["email", "givenName", "middleName", "surname"].includes(activeVoiceField)) {
+      if (
+        !["email", "givenName", "middleName", "surname", "suffix"].includes(
+          activeVoiceField,
+        )
+      ) {
         setActiveVoiceField("email");
       }
       return;
@@ -255,6 +273,8 @@ export default function AddUserModal({
       ? "Email Address"
       : activeVoiceField === "surname"
         ? "Last Name"
+        : activeVoiceField === "suffix"
+          ? "Suffix"
         : activeVoiceField === "middleName"
           ? "Middle Name"
           : activeVoiceField === "tempPassword"
@@ -265,7 +285,7 @@ export default function AddUserModal({
     handleFieldValueChange(activeVoiceField, transcript);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateStepTwo()) {
       setStep(2);
       return;
@@ -277,23 +297,28 @@ export default function AddUserModal({
       .filter((role) => data.roleIds.includes(role.id))
       .map((role) => role.role_name);
 
-    const fullName = `${data.givenName}${data.middleName ? ` ${data.middleName}` : ""} ${data.surname}`;
+    const fullName = buildFullName(data);
 
-    onSubmit({
-      email: data.email,
-      name: fullName,
-      givenName: data.givenName,
-      middleName: data.middleName,
-      surname: data.surname,
-      roleIds: data.roleIds,
-      roles: selectedRoles,
-      inviteMode: data.inviteMode,
-      delivery: data.delivery,
-      tempPassword: data.tempPassword,
-      status: "active",
-    });
+    try {
+      await onSubmit({
+        email: data.email,
+        name: fullName,
+        givenName: data.givenName,
+        middleName: data.middleName,
+        surname: data.surname,
+        suffix: data.suffix,
+        roleIds: data.roleIds,
+        roles: selectedRoles,
+        inviteMode: data.inviteMode,
+        delivery: data.delivery,
+        tempPassword: data.tempPassword,
+        status: "active",
+      });
 
-    onClose();
+      onClose();
+    } catch (submitError) {
+      setError(extractErrorMessage(submitError));
+    }
   };
 
   if (!open) return null;
@@ -301,16 +326,16 @@ export default function AddUserModal({
   return createPortal(
     <dialog open className={modalOverlayClassName}>
       <div className={modalBoxClassName}>
-        <div className={modalHeaderClassName}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="max-w-2xl">
+        <div className={modalHeaderSpacingClassName}>
+          <div className="flex items-start justify-between gap-4 sm:gap-6">
+            <div className={modalHeaderContentClassName}>
               <h3 className={modalHeaderTitleClassName}>Add User</h3>
-              <p className={modalHeaderDescriptionClassName}>
+              <p className={modalHeaderDescriptionSpacingClassName}>
                 Enter user information
               </p>
             </div>
 
-            <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
+            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
@@ -408,7 +433,7 @@ export default function AddUserModal({
                       </label>
                     </div>
 
-                    <div className="space-y-1 md:col-span-2">
+                    <div className="space-y-1">
                       <label className={modalLabelClassName}>
                         Last Name <span className="text-red-500">*</span>
                       </label>
@@ -420,6 +445,20 @@ export default function AddUserModal({
                           </p>
                         )}
                       </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className={modalLabelClassName}>
+                        Suffix
+                      </label>
+                      <label
+                        className={`${modalInputClassName} flex items-center gap-2 px-4`}
+                      >
+                        <input type="text" name="suffix" value={data.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" className="grow bg-transparent"/>
+                        <span className={modalOptionalBadgeClassName}>
+                          Optional
+                        </span>
+                      </label>
                     </div>
                   </div>
                 </section>

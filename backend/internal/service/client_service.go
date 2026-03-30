@@ -33,7 +33,6 @@ func (s *ClientService) CreateClient(
 	// 1. Process and Upload Image
 	imagePath, err := ProcessAndUploadIcon(
 		ctx,
-		req.Tag,
 		imageHeader.Filename,
 		image,
 		imageHeader.Size,
@@ -52,7 +51,6 @@ func (s *ClientService) CreateClient(
 	clientModel := &models.Client{
 		ID:            clientID[:],
 		ClientName:    req.Name,
-		Tag:           req.Tag,
 		ClientSecret:  hashedSecret,
 		BaseUrl:       req.BaseURL,
 		RedirectUri:   req.RedirectURI,
@@ -62,7 +60,7 @@ func (s *ClientService) CreateClient(
 	}
 
 	// 4. Persistence
-	err = s.Repo.CreateClient(clientModel, req.Grants, req.RoleIDs, userID[:])
+	err = s.Repo.CreateClient(clientModel, req.Grants, userID[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (Create): %w", err)
 	}
@@ -138,7 +136,6 @@ func (s *ClientService) GetClientList(
 		res = append(res, dto.ClientResponse{
 			ID:            id.String(),
 			Name:          cl.ClientName,
-			Tag:           cl.Tag,
 			Description:   cl.Description,
 			ImageLocation: imgUrl,
 			BaseURL:       cl.BaseUrl,
@@ -197,7 +194,6 @@ func (s *ClientService) GetBoundClients(
 		res = append(res, dto.ClientResponse{
 			ID:            id.String(),
 			Name:          cl.ClientName,
-			Tag:           cl.Tag,
 			Description:   cl.Description,
 			ImageLocation: imgURL,
 			BaseURL:       cl.BaseUrl,
@@ -256,7 +252,6 @@ func (s *ClientService) GetClientByID(
 	return &dto.ClientResponse{
 		ID:            id.String(),
 		Name:          cl.ClientName,
-		Tag:           cl.Tag,
 		Description:   cl.Description,
 		ImageLocation: imgUrl,
 		BaseURL:       cl.BaseUrl,
@@ -268,160 +263,9 @@ func (s *ClientService) GetClientByID(
 }
 
 /**
- * GetFilteredClientTagList routes the request to either a full
- * tag list or a bound tag list based on the user's privilege.
+ * GetFilteredClientTagList and related tag-list methods have been
+ * removed. The tag column no longer exists on clients.
  */
-func (s *ClientService) GetFilteredClientTagList(
-	ctx context.Context,
-	role string,
-	userID uuid.UUID,
-	limit,
-	page int,
-	keyword string,
-) (*dto.ClientListResponse, error) {
-	// SuperAdmin sees all tags
-	if role == SUPERADMIN {
-		return s.GetClientTags(ctx, limit, page, keyword)
-	}
-
-	// Regular Admin only sees tags for bound clients
-	if role == ADMIN {
-		return s.GetBoundClientTagList(
-			ctx,
-			limit,
-			page,
-			keyword,
-			userID,
-		)
-	}
-
-	return nil, fmt.Errorf("Privilege Validation: unauthorized level")
-}
-
-/**
- * GetClientTags retrieves a paginated list of all client tag
- * information with calculated metadata.
- */
-func (s *ClientService) GetClientTags(
-	ctx context.Context,
-	limit,
-	page int,
-	keyword string,
-) (*dto.ClientListResponse, error) {
-	offset := (page - 1) * limit
-
-	total, err := s.Repo.CountClients(keyword)
-	if err != nil {
-		return nil, fmt.Errorf("Database Query (Count): %w", err)
-	}
-
-	clients, err := s.Repo.RetrieveClientTagInformation(
-		limit,
-		offset,
-		keyword,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("Database Query (RetrieveTags): %w", err)
-	}
-
-	var res []dto.ClientResponse
-	for _, cl := range clients {
-		id, _ := uuid.FromBytes(cl.ID)
-
-		imgUrl, _ := GetPresignedURL(
-			ctx,
-			cl.ImageLocation,
-			s.Storage,
-		)
-
-		res = append(res, dto.ClientResponse{
-			ID:            id.String(),
-			Name:          cl.ClientName,
-			Tag:           cl.Tag,
-			Description:   cl.Description,
-			ImageLocation: imgUrl,
-			BaseURL:       cl.BaseUrl,
-			RedirectURI:   cl.RedirectUri,
-			LogoutURI:     cl.LogoutUri,
-		})
-	}
-
-	lastPage := (total + limit - 1) / limit
-	if lastPage == 0 {
-		lastPage = 1
-	}
-
-	return &dto.ClientListResponse{
-		Clients:     res,
-		CurrentPage: page,
-		LastPage:    lastPage,
-		TotalCount:  total,
-	}, nil
-}
-
-/**
- * GetBoundClientTagList retrieves tag information for clients
- * bound to a specific user, with calculated metadata.
- */
-func (s *ClientService) GetBoundClientTagList(
-	ctx context.Context,
-	limit,
-	page int,
-	keyword string,
-	userID uuid.UUID,
-) (*dto.ClientListResponse, error) {
-	offset := (page - 1) * limit
-
-	total, err := s.Repo.CountBoundClients(keyword, userID[:])
-	if err != nil {
-		return nil, fmt.Errorf("Database Query (CountBound): %w", err)
-	}
-
-	clients, err := s.Repo.GetBoundClientTagList(
-		ctx,
-		userID[:],
-		limit,
-		offset,
-		keyword,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("Database Query (RetrieveTags): %w", err)
-	}
-
-	var res []dto.ClientResponse
-	for _, cl := range clients {
-		id, _ := uuid.FromBytes(cl.ID)
-
-		imgUrl, _ := GetPresignedURL(
-			ctx,
-			cl.ImageLocation,
-			s.Storage,
-		)
-
-		res = append(res, dto.ClientResponse{
-			ID:            id.String(),
-			Name:          cl.ClientName,
-			Tag:           cl.Tag,
-			Description:   cl.Description,
-			ImageLocation: imgUrl,
-			BaseURL:       cl.BaseUrl,
-			RedirectURI:   cl.RedirectUri,
-			LogoutURI:     cl.LogoutUri,
-		})
-	}
-
-	lastPage := (total + limit - 1) / limit
-	if lastPage == 0 {
-		lastPage = 1
-	}
-
-	return &dto.ClientListResponse{
-		Clients:     res,
-		CurrentPage: page,
-		LastPage:    lastPage,
-		TotalCount:  total,
-	}, nil
-}
 
 /**
  * UpdateClient handles the business logic for modifying an
@@ -443,7 +287,6 @@ func (s *ClientService) UpdateClient(
 	if file != nil && header != nil {
 		newPath, err := ProcessAndUploadIcon(
 			ctx,
-			existing.Tag,
 			header.Filename,
 			file,
 			header.Size,
@@ -465,7 +308,7 @@ func (s *ClientService) UpdateClient(
 		ImageLocation: imagePath,
 	}
 
-	err = s.Repo.UpdateClient(clientModel, req.Grants, req.RoleIDs)
+	err = s.Repo.UpdateClient(clientModel, req.Grants)
 	if err != nil {
 		return fmt.Errorf("Database Query (Update): %w", err)
 	}
@@ -528,12 +371,6 @@ func (s *ClientService) DeleteClient(
 	// 2. Soft Delete Client Record
 	if err := s.Repo.SoftDelete(id[:]); err != nil {
 		return fmt.Errorf("Database Query (SoftDelete): %w", err)
-	}
-
-	// 3. Cleanup Role Associations
-	err = s.Repo.DeleteConnectedRoles(cl)
-	if err != nil {
-		return fmt.Errorf("Database Query (DeleteRoles): %w", err)
 	}
 
 	return nil

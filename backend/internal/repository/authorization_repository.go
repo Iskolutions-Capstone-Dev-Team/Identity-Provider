@@ -78,7 +78,6 @@ func (r *AuthCodeRepository) GetUserForAuth(email string) (*models.UserClaims,
 ) {
 	var row struct {
 		ID           []byte `db:"id"`
-		Username     string `db:"username"`
 		FirstName    string `db:"first_name"`
 		MiddleName   string `db:"middle_name"`
 		LastName     string `db:"last_name"`

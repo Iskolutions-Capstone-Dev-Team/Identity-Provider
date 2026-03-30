@@ -10,6 +10,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -28,8 +29,8 @@ const (
 
 // UserHandler handles user management HTTP requests.
 type UserHandler struct {
-	Service          *service.UserService
-	LogService       *service.LogService
+	Service    *service.UserService
+	LogService *service.LogService
 }
 
 // PostUser creates a new user in the system
@@ -44,6 +45,12 @@ type UserHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/users [post]
 func (h *UserHandler) PostUser(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "Add user") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	var req dto.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostUser] Bind JSON: %v", err)
@@ -117,6 +124,12 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 func (h *UserHandler) GetUserList(c *gin.Context) {
 	const defaultLimit = "10"
 	const defaultPage = "1"
+
+	// RBAC Check
+	if !middleware.HasPermission(c, "View all users") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
 
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", defaultLimit))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", defaultPage))
@@ -278,7 +291,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // GetMe retrieves user information based on the access token bearer auth
 // @Summary      Get authenticated user info
 // @Description  Returns user profile filtered by client allowed roles
-// @Tags         User
+// @Tags         Users
 // @Produce      json
 // @Success      200  {object}  dto.UserInfoResponse
 // @Failure      400  {object}  dto.ErrorResponse
@@ -379,6 +392,12 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 		return
 	}
 
+	// RBAC Check
+	if !middleware.HasPermission(c, "Edit user") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	var req dto.UpdatePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchUserPassword] Bind JSON: %v", err)
@@ -466,6 +485,12 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "Invalid ID Format"},
 		)
+		return
+	}
+
+	// RBAC Check
+	if !middleware.HasPermission(c, "Edit user") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
 	}
 
@@ -572,6 +597,12 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 		return
 	}
 
+	// RBAC Check
+	if !middleware.HasPermission(c, "Assign Roles") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	var req dto.UpdateUserRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchUserRoles] Bind JSON: %v", err)
@@ -629,7 +660,7 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 				http.StatusForbidden,
 				dto.ErrorResponse{
 					Error: fmt.Sprint(
-						"You don't have permission to", 
+						"You don't have permission to",
 						" edit/remove some of the roles you selected",
 					),
 				},
@@ -666,6 +697,12 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
+	// RBAC Check
+	if !middleware.HasPermission(c, "Delete user") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
 	id := c.Param("id")
 	userID, err := uuid.Parse(id)
 	if err != nil {

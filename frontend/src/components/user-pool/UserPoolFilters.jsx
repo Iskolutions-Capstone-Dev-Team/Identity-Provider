@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { SpeechInputToolbar } from "../SpeechInputButton";
 
 const statusOptions = [
   { value: "", label: "All Status" },
   { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
   { value: "suspended", label: "Suspended" },
 ];
 
@@ -93,9 +93,26 @@ export default function UserPoolFilters({ search, setSearch, status, setStatus, 
     setIsStatusOpen(false);
   };
 
+  const updateSearchValue = (value) => {
+    setSearch(value);
+  };
+
+  const handleSearchChange = (event) => {
+    updateSearchValue(event.target.value);
+  };
+
+  const handleSearchVoiceInput = (transcript) => {
+    updateSearchValue(transcript);
+  };
+
   return (
     <div className={containerClassName}>
       <div className="min-w-0">
+        <SpeechInputToolbar
+          activeFieldLabel="User Search"
+          onTranscript={handleSearchVoiceInput}
+          colorMode={colorMode}
+        />
         <label className={labelClassName}>Who are you looking for?</label>
         <label className={searchFieldClassName}>
           <svg className={searchIconClassName} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
@@ -104,7 +121,13 @@ export default function UserPoolFilters({ search, setSearch, status, setStatus, 
               <path d="m20 20-3.8-3.8" />
             </g>
           </svg>
-          <input type="search" value={search} placeholder="Search by email, or name..." className={searchInputClassName} onChange={(e) => setSearch(e.target.value)}/>
+          <input
+            type="search"
+            value={search}
+            placeholder="Search by email, or name..."
+            className={searchInputClassName}
+            onChange={handleSearchChange}
+          />
         </label>
       </div>
 
