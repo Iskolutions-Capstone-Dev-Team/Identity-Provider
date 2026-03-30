@@ -46,11 +46,7 @@ function getValidationAlertMessage(fieldErrors) {
   return Object.values(fieldErrors).filter(Boolean).join(" ");
 }
 
-export default function ContactUsPanel({
-  isOpen,
-  colorMode = "light",
-  onClose,
-}) {
+export default function ContactUsPanel({ isOpen, colorMode = "light", onClose }) {
   const [contactForm, setContactForm] = useState(INITIAL_CONTACT_FORM);
   const [fieldErrors, setFieldErrors] = useState(INITIAL_FIELD_ERRORS);
   const [errorMessage, setErrorMessage] = useState("");
@@ -90,11 +86,12 @@ export default function ContactUsPanel({
 
   const isDarkMode = colorMode === "dark";
   const panelClassName = isDarkMode
-    ? "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(31,19,27,0.96))] text-[#f4eaea] shadow-[0_36px_80px_-40px_rgba(2,6,23,0.9)] backdrop-blur-xl"
-    : "overflow-hidden rounded-[1.75rem] border border-[#7b0d15]/12 bg-[linear-gradient(180deg,rgba(255,250,244,0.98),rgba(255,255,255,0.96))] text-slate-800 shadow-[0_36px_80px_-40px_rgba(43,3,7,0.72)] backdrop-blur-xl";
+    ? "flex max-h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(31,19,27,0.96))] text-[#f4eaea] shadow-[0_36px_80px_-40px_rgba(2,6,23,0.9)] backdrop-blur-xl"
+    : "flex max-h-full flex-col overflow-hidden rounded-[1.75rem] border border-[#7b0d15]/12 bg-[linear-gradient(180deg,rgba(255,250,244,0.98),rgba(255,255,255,0.96))] text-slate-800 shadow-[0_36px_80px_-40px_rgba(43,3,7,0.72)] backdrop-blur-xl";
   const headerClassName =
-    "relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(248,210,78,0.22),transparent_34%),linear-gradient(135deg,#7b0d15_0%,#3d0910_58%,#1f0205_100%)] px-5 py-4 text-white";
-  const bodyClassName = "space-y-4 px-5 py-5";
+    "relative shrink-0 overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(248,210,78,0.22),transparent_34%),linear-gradient(135deg,#7b0d15_0%,#3d0910_58%,#1f0205_100%)] px-5 py-4 text-white";
+  const bodyClassName =
+    "flex-1 space-y-4 overflow-y-auto px-5 py-5 overscroll-contain";
   const panelMotionClassName = isVisible
     ? "translate-x-0 translate-y-0 scale-100 opacity-100"
     : "translate-x-4 translate-y-4 scale-95 opacity-0";
@@ -229,10 +226,7 @@ export default function ContactUsPanel({
       />
 
       {shouldRender ? (
-        <div
-          aria-hidden={!isVisible}
-          className={`fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] right-[5.5rem] z-[141] w-[calc(100vw-7rem)] max-w-[22rem] origin-bottom-right transform-gpu transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform sm:w-[22rem] lg:bottom-6 lg:right-[7rem] ${panelWrapperClassName} ${panelMotionClassName}`}
-        >
+        <div aria-hidden={!isVisible} className={`fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom,0px)+6.5rem)] top-20 z-[141] origin-bottom transform-gpu transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform sm:inset-x-auto sm:top-auto sm:w-[22rem] sm:max-w-[22rem] sm:origin-bottom-right sm:right-[5.5rem] sm:bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] lg:bottom-6 lg:right-[7rem] ${panelWrapperClassName} ${panelMotionClassName}`}>
           <div className={panelClassName}>
             <div className={headerClassName}>
               <div className="flex items-start justify-between gap-4">
@@ -245,12 +239,7 @@ export default function ContactUsPanel({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  aria-label="Close contact form"
-                  className="btn btn-circle btn-sm border border-white/12 bg-white/10 text-white shadow-none transition hover:bg-white/18"
-                  onClick={handleClose}
-                >
+                <button type="button" aria-label="Close contact form" className="btn btn-circle btn-sm border border-white/12 bg-white/10 text-white shadow-none transition hover:bg-white/18" onClick={handleClose}>
                   <CloseIcon />
                 </button>
               </div>
@@ -266,12 +255,7 @@ export default function ContactUsPanel({
                 <label htmlFor="contact-us-email" className={labelClassName}>
                   Email Address <span className="text-red-400">*</span>
                 </label>
-                <input
-                  id="contact-us-email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="Enter your email"
-                  value={contactForm.email}
+                <input id="contact-us-email" type="email" autoComplete="email" placeholder="Enter your email" value={contactForm.email}
                   onChange={(event) =>
                     updateField("email", event.target.value)
                   }
@@ -292,12 +276,7 @@ export default function ContactUsPanel({
                 <label htmlFor="contact-us-message" className={labelClassName}>
                   Message <span className="text-red-400">*</span>
                 </label>
-                <textarea
-                  id="contact-us-message"
-                  rows={5}
-                  maxLength={1000}
-                  placeholder="Write your message"
-                  value={contactForm.message}
+                <textarea id="contact-us-message" rows={5} maxLength={1000} placeholder="Write your message" value={contactForm.message}
                   onChange={(event) =>
                     updateField("message", event.target.value)
                   }
@@ -315,11 +294,7 @@ export default function ContactUsPanel({
               </div>
 
               <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  onClick={handleClose}
-                >
+                <button type="button" className={secondaryButtonClassName} onClick={handleClose}>
                   Cancel
                 </button>
 
@@ -337,12 +312,7 @@ export default function ContactUsPanel({
 
 export function ContactUsIcon({ className = "h-7 w-7" }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
       <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
     </svg>
@@ -351,19 +321,8 @@ export function ContactUsIcon({ className = "h-7 w-7" }) {
 
 function CloseIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      className="h-4 w-4"
-    >
-      <path
-        d="M6 18 18 6M6 6l12 12"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+      <path d="M6 18 18 6M6 6l12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
