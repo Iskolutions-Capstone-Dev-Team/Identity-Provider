@@ -103,7 +103,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [redirectURL, setRedirectURL] = useState("");
   const [logoutURL, setLogoutURL] = useState("");
   const [selectedGrants, setSelectedGrants] = useState(["authorization_code"]);
-  const [detailRoleNames, setDetailRoleNames] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageLocation, setImageLocation] = useState(null);
@@ -114,7 +113,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [showFullImage, setShowFullImage] = useState(false);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
   const detailsRequestRef = useRef({ clientId: "", inFlight: false });
-  const displayedRoleLabels = detailRoleNames;
   const detailsBannerClassName = isDarkMode
     ? "rounded-[1rem] border border-[#f8d24e]/30 bg-[#f8d24e]/10 px-4 py-3 text-sm text-[#ffe28a]"
     : "rounded-[1rem] border border-[#f8d24e]/45 bg-[#fff4dc] px-4 py-3 text-sm text-[#7b0d15]";
@@ -145,9 +143,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const grantCheckboxClassName = isDarkMode
     ? "checkbox h-5 w-5 rounded border-white/20 bg-transparent checked:border-[#f8d24e] checked:bg-[#7b0d15] checked:text-white"
     : "checkbox h-5 w-5 rounded border-[#7b0d15]/20 bg-transparent checked:border-[#7b0d15] checked:bg-[#7b0d15] checked:text-white";
-  const roleBadgeClassName = isDarkMode
-    ? "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
-    : "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
   const fullImageBackdropClassName = isDarkMode
     ? "absolute inset-0 bg-[rgba(9,13,20,0.82)] backdrop-blur-sm"
     : "absolute inset-0 bg-[rgba(43,3,7,0.72)] backdrop-blur-sm";
@@ -178,7 +173,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setRedirectURL(client.redirect_uri || "");
     setLogoutURL(client.logout_uri || "");
     setSelectedGrants(client.grants || ["authorization_code"]);
-    setDetailRoleNames(Array.isArray(client.roleNames) ? client.roleNames : []);
     setImageFile(null);
     setIsDragging(false);
     setActiveVoiceField("name");
@@ -225,7 +219,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         setRedirectURL(details.redirect_uri || "");
         setLogoutURL(details.logout_uri || "");
         setSelectedGrants(details.grants || ["authorization_code"]);
-        setDetailRoleNames(Array.isArray(details.roleNames) ? details.roleNames : []);
         setFieldErrors(initialFieldErrors);
 
         const image = details.image || details.image_location || null;
@@ -739,33 +732,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                         At least one grant is required.
                       </p>
                     )}
-                  </div>
-
-                  <div>
-                    <label className={modalLabelClassName}>Allowed Roles</label>
-                    {!isView && (
-                      <p className={modalHelperTextClassName}>
-                        This list is managed by the finalized backend for the
-                        current client.
-                      </p>
-                    )}
-                    <div className={viewContentBoxClassName}>
-                      {isDetailsLoading ? (
-                        <span className={emptyContentClassName}>
-                          Loading latest roles...
-                        </span>
-                      ) : displayedRoleLabels.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {displayedRoleLabels.map((roleName, index) => (
-                            <span key={`${roleName}-${index}`} className={roleBadgeClassName}>
-                              {roleName}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className={emptyContentClassName}>No roles returned</span>
-                      )}
-                    </div>
                   </div>
                 </div>
               </section>

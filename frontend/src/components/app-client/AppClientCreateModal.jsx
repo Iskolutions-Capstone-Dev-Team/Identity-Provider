@@ -129,10 +129,10 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     ? "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-[#111827] object-contain shadow-[0_36px_90px_-40px_rgba(2,6,23,0.9)]"
     : "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-white/90 object-contain shadow-[0_36px_90px_-40px_rgba(43,3,7,0.72)]";
   const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} !px-8 !pt-8 !pb-28 min-h-[11.5rem] sm:!px-10 sm:!pt-9 sm:!pb-20 sm:min-h-0`;
-  const modalHeaderContentClassName = "max-w-2xl pr-14 sm:pr-16";
+    `${modalHeaderClassName} !px-7 !pt-7 !pb-10 sm:!px-8 sm:!pt-8 sm:!pb-12`;
+  const modalHeaderContentClassName = "min-w-0 flex-1 pr-3 sm:max-w-2xl sm:pr-16";
   const modalHeaderDescriptionSpacingClassName =
-    `${modalHeaderDescriptionClassName} !mt-4 max-w-[20rem] leading-relaxed sm:!mt-5 sm:max-w-[34rem]`;
+    `${modalHeaderDescriptionClassName} !mt-3 max-w-none leading-relaxed sm:!mt-4 sm:max-w-[28rem]`;
 
   useEffect(() => {
     if (!open) {
@@ -445,7 +445,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                   Create App Client
                 </h3>
                 <p className={modalHeaderDescriptionSpacingClassName}>
-                  Register a new application for integration.
+                  Register a new app client.
                 </p>
               </div>
 
@@ -729,8 +729,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                     </p>
                   )}
                   <p className={`${modalHelperTextClassName} mt-4`}>
-                    Allowed roles are managed by the finalized backend after the
-                    client is created.
+                    Select the grant types required for this client.
                   </p>
                 </section>
               )}
