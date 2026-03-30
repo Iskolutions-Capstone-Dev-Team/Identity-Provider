@@ -5,17 +5,15 @@ import {
   isAccessibilityWidgetReady,
   toggleAccessibilityMenu,
 } from "./AccessibilityWidget";
+import ContactUsPanel, { ContactUsIcon } from "./ContactUsPanel";
 import { FloatingSpeechInputAction } from "./SpeechInputButton";
 
 const FAB_CONTAINER_CLASS_NAME =
   "pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] right-4 z-[140] flex flex-col items-end gap-3 lg:bottom-6 lg:right-6";
 const FAB_BUTTON_CLASS_NAME =
   "inline-flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-[#fff8f3] shadow-[0_20px_48px_-24px_rgba(43,3,7,0.82)] ring-[4px] ring-[#f8d24e] transition-[transform,box-shadow,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-[0_24px_56px_-24px_rgba(43,3,7,0.9)] focus:outline-none focus:ring-[6px] focus:ring-[#f8d24e]/35 disabled:cursor-not-allowed disabled:opacity-60";
-const FAB_ACTION_COUNT = 2;
 const FAB_ACTION_STAGGER_MS = 55;
 const FAB_ACTION_TRANSITION_MS = 320;
-const FAB_ACTION_HIDE_DELAY_MS =
-  FAB_ACTION_TRANSITION_MS + FAB_ACTION_STAGGER_MS * (FAB_ACTION_COUNT - 1);
 const FAB_ACTION_WRAP_BASE_CLASS =
   "origin-bottom-right will-change-transform transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
 
@@ -51,6 +49,7 @@ function getActionTransitionStyle(actionIndex, actionCount) {
 export default function AssistiveFab({ colorMode = "light" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [areActionsVisible, setAreActionsVisible] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const [isAccessibilityReady, setIsAccessibilityReady] = useState(() =>
     isAccessibilityWidgetReady(),
   );
@@ -60,9 +59,15 @@ export default function AssistiveFab({ colorMode = "light" }) {
     toggleAccessibilityMenu();
   };
 
+  const handleContactToggle = () => {
+    setIsContactOpen((current) => !current);
+  };
+  const isContactPanelOpen = isOpen && isContactOpen;
+
   const fabActions = [
     {
       key: "speech",
+      tooltipLabel: "Voice Input",
       content: (
         <FloatingSpeechInputAction
           className={FAB_BUTTON_CLASS_NAME}
@@ -72,20 +77,35 @@ export default function AssistiveFab({ colorMode = "light" }) {
     },
     {
       key: "accessibility",
+      tooltipLabel: "Web Accessibility",
       content: (
-        <button
-          type="button"
-          aria-label="Open web accessibility"
-          title="Open web accessibility"
-          className={FAB_BUTTON_CLASS_NAME}
-          disabled={!isAccessibilityReady}
-          onClick={handleAccessibilityClick}
-        >
+        <button type="button" aria-label="Open web accessibility" title="Open web accessibility" className={FAB_BUTTON_CLASS_NAME} disabled={!isAccessibilityReady} onClick={handleAccessibilityClick}>
           <AccessibilityIcon />
         </button>
       ),
     },
+    {
+      key: "contact-us",
+      tooltipLabel: "Contact Us",
+      content: (
+        <button type="button" aria-expanded={isContactOpen}
+          aria-label={
+            isContactOpen ? "Close contact us form" : "Open contact us form"
+          }
+          title={
+            isContactOpen ? "Close contact us form" : "Open contact us form"
+          }
+          className={FAB_BUTTON_CLASS_NAME}
+          onClick={handleContactToggle}
+        >
+          <ContactUsIcon />
+        </button>
+      ),
+    },
   ];
+  const fabActionHideDelayMs =
+    FAB_ACTION_TRANSITION_MS +
+    FAB_ACTION_STAGGER_MS * (fabActions.length - 1);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -130,82 +150,100 @@ export default function AssistiveFab({ colorMode = "light" }) {
 
     const closeTimer = window.setTimeout(() => {
       setAreActionsVisible(false);
-    }, FAB_ACTION_HIDE_DELAY_MS);
+    }, fabActionHideDelayMs);
 
     return () => {
       window.clearTimeout(closeTimer);
     };
-  }, [areActionsVisible, isOpen]);
+  }, [areActionsVisible, fabActionHideDelayMs, isOpen]);
 
   return (
-    <div className={FAB_CONTAINER_CLASS_NAME}>
-      {fabActions.map((action, actionIndex) => {
-        const distanceFromToggle = fabActions.length - actionIndex - 1;
-        const actionVisibilityClassName = getActionVisibilityClassName(
-          isOpen,
-          areActionsVisible,
-          distanceFromToggle,
-        );
-        const actionTransitionStyle = getActionTransitionStyle(
-          actionIndex,
-          fabActions.length,
-        );
+    <>
+      <ContactUsPanel
+        isOpen={isContactPanelOpen}
+        colorMode={colorMode}
+        onClose={() => setIsContactOpen(false)}
+      />
 
-        return (
-          <div
-            key={action.key}
-            aria-hidden={!isOpen}
-            className={actionVisibilityClassName}
-            style={actionTransitionStyle}
-          >
-            {action.content}
-          </div>
-        );
-      })}
+      <div className={FAB_CONTAINER_CLASS_NAME}>
+        {fabActions.map((action, actionIndex) => {
+          const distanceFromToggle = fabActions.length - actionIndex - 1;
+          const actionVisibilityClassName = getActionVisibilityClassName(
+            isOpen,
+            areActionsVisible,
+            distanceFromToggle,
+          );
+          const actionTransitionStyle = getActionTransitionStyle(
+            actionIndex,
+            fabActions.length,
+          );
 
-      <button
-        type="button"
-        aria-expanded={isOpen}
-        aria-label={isOpen ? "Close assistive tools" : "Open assistive tools"}
-        title={isOpen ? "Close assistive tools" : "Open assistive tools"}
-        className={toggleButtonClassName}
-        onClick={() => setIsOpen((current) => !current)}
-      >
-        <ToggleIcon isOpen={isOpen} />
-      </button>
+          return (
+            <div key={action.key} aria-hidden={!isOpen} className={actionVisibilityClassName} style={actionTransitionStyle}>
+              <FabActionTooltip
+                label={action.tooltipLabel}
+                colorMode={colorMode}
+              >
+                {action.content}
+              </FabActionTooltip>
+            </div>
+          );
+        })}
+
+        <button type="button" aria-expanded={isOpen} aria-label={isOpen ? "Close assistive tools" : "Open assistive tools"} title={isOpen ? "Close assistive tools" : "Open assistive tools"} className={toggleButtonClassName}
+          onClick={() => {
+            if (isOpen) {
+              setIsContactOpen(false);
+            }
+
+            setIsOpen((current) => !current);
+          }}
+        >
+          <ToggleIcon isOpen={isOpen} />
+        </button>
+      </div>
+    </>
+  );
+}
+
+function FabActionTooltip({ label, colorMode = "light", children }) {
+  const isDarkMode = colorMode === "dark";
+  const tooltipClassName = isDarkMode
+    ? "border border-white/10 bg-[linear-gradient(135deg,rgba(17,24,39,0.98),rgba(31,19,27,0.96))] text-[#f4eaea] shadow-[0_20px_42px_-24px_rgba(2,6,23,0.88)]"
+    : "border border-[#7b0d15]/12 bg-[linear-gradient(135deg,rgba(255,250,244,0.98),rgba(255,255,255,0.96))] text-[#5a0b12] shadow-[0_20px_42px_-24px_rgba(43,3,7,0.42)]";
+  const tooltipArrowClassName = isDarkMode
+    ? "border-r border-t border-white/10 bg-[rgb(25,22,31)]"
+    : "border-r border-t border-[#7b0d15]/12 bg-[rgb(255,251,246)]";
+
+  return (
+    <div className="group relative flex items-center justify-end">
+      <div className="pointer-events-none absolute right-[calc(100%+0.9rem)] top-1/2 z-[1] flex -translate-y-1/2 items-center gap-2 opacity-0 invisible translate-x-2 transition-[opacity,transform,visibility] duration-200 ease-out group-hover:visible group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-x-0 group-focus-within:opacity-100">
+        <span className={`whitespace-nowrap rounded-2xl px-3 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.08em] backdrop-blur-xl ${tooltipClassName}`}>
+          {label}
+        </span>
+        <span aria-hidden="true" className={`h-3 w-3 rotate-45 rounded-[0.2rem] ${tooltipArrowClassName}`}/>
+      </div>
+
+      {children}
     </div>
   );
 }
 
 function ToggleIcon({ isOpen }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
       className={`h-7 w-7 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         isOpen ? "rotate-45" : "rotate-0"
       }`}
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 4.5v15m7.5-7.5h-15"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
     </svg>
   );
 }
 
 function AccessibilityIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="h-7 w-7"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
       <path d="M12 2.25a1.875 1.875 0 1 0 0 3.75 1.875 1.875 0 0 0 0-3.75Z" />
       <path d="M7.5 8.25a.75.75 0 0 0 0 1.5h2.977l-.733 10.634a.75.75 0 1 0 1.496.103L12 13.42l.76 7.067a.75.75 0 1 0 1.493-.103L13.52 9.75H16.5a.75.75 0 0 0 0-1.5h-9Z" />
     </svg>
