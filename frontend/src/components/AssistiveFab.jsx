@@ -67,6 +67,7 @@ export default function AssistiveFab({ colorMode = "light" }) {
   const fabActions = [
     {
       key: "speech",
+      tooltipLabel: "Voice Input",
       content: (
         <FloatingSpeechInputAction
           className={FAB_BUTTON_CLASS_NAME}
@@ -76,25 +77,18 @@ export default function AssistiveFab({ colorMode = "light" }) {
     },
     {
       key: "accessibility",
+      tooltipLabel: "Web Accessibility",
       content: (
-        <button
-          type="button"
-          aria-label="Open web accessibility"
-          title="Open web accessibility"
-          className={FAB_BUTTON_CLASS_NAME}
-          disabled={!isAccessibilityReady}
-          onClick={handleAccessibilityClick}
-        >
+        <button type="button" aria-label="Open web accessibility" title="Open web accessibility" className={FAB_BUTTON_CLASS_NAME} disabled={!isAccessibilityReady} onClick={handleAccessibilityClick}>
           <AccessibilityIcon />
         </button>
       ),
     },
     {
       key: "contact-us",
+      tooltipLabel: "Contact Us",
       content: (
-        <button
-          type="button"
-          aria-expanded={isContactOpen}
+        <button type="button" aria-expanded={isContactOpen}
           aria-label={
             isContactOpen ? "Close contact us form" : "Open contact us form"
           }
@@ -185,23 +179,18 @@ export default function AssistiveFab({ colorMode = "light" }) {
           );
 
           return (
-            <div
-              key={action.key}
-              aria-hidden={!isOpen}
-              className={actionVisibilityClassName}
-              style={actionTransitionStyle}
-            >
-              {action.content}
+            <div key={action.key} aria-hidden={!isOpen} className={actionVisibilityClassName} style={actionTransitionStyle}>
+              <FabActionTooltip
+                label={action.tooltipLabel}
+                colorMode={colorMode}
+              >
+                {action.content}
+              </FabActionTooltip>
             </div>
           );
         })}
 
-        <button
-          type="button"
-          aria-expanded={isOpen}
-          aria-label={isOpen ? "Close assistive tools" : "Open assistive tools"}
-          title={isOpen ? "Close assistive tools" : "Open assistive tools"}
-          className={toggleButtonClassName}
+        <button type="button" aria-expanded={isOpen} aria-label={isOpen ? "Close assistive tools" : "Open assistive tools"} title={isOpen ? "Close assistive tools" : "Open assistive tools"} className={toggleButtonClassName}
           onClick={() => {
             if (isOpen) {
               setIsContactOpen(false);
@@ -217,35 +206,44 @@ export default function AssistiveFab({ colorMode = "light" }) {
   );
 }
 
+function FabActionTooltip({ label, colorMode = "light", children }) {
+  const isDarkMode = colorMode === "dark";
+  const tooltipClassName = isDarkMode
+    ? "border border-white/10 bg-[linear-gradient(135deg,rgba(17,24,39,0.98),rgba(31,19,27,0.96))] text-[#f4eaea] shadow-[0_20px_42px_-24px_rgba(2,6,23,0.88)]"
+    : "border border-[#7b0d15]/12 bg-[linear-gradient(135deg,rgba(255,250,244,0.98),rgba(255,255,255,0.96))] text-[#5a0b12] shadow-[0_20px_42px_-24px_rgba(43,3,7,0.42)]";
+  const tooltipArrowClassName = isDarkMode
+    ? "border-r border-t border-white/10 bg-[rgb(25,22,31)]"
+    : "border-r border-t border-[#7b0d15]/12 bg-[rgb(255,251,246)]";
+
+  return (
+    <div className="group relative flex items-center justify-end">
+      <div className="pointer-events-none absolute right-[calc(100%+0.9rem)] top-1/2 z-[1] flex -translate-y-1/2 items-center gap-2 opacity-0 invisible translate-x-2 transition-[opacity,transform,visibility] duration-200 ease-out group-hover:visible group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-x-0 group-focus-within:opacity-100">
+        <span className={`whitespace-nowrap rounded-2xl px-3 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.08em] backdrop-blur-xl ${tooltipClassName}`}>
+          {label}
+        </span>
+        <span aria-hidden="true" className={`h-3 w-3 rotate-45 rounded-[0.2rem] ${tooltipArrowClassName}`}/>
+      </div>
+
+      {children}
+    </div>
+  );
+}
+
 function ToggleIcon({ isOpen }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
       className={`h-7 w-7 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         isOpen ? "rotate-45" : "rotate-0"
       }`}
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 4.5v15m7.5-7.5h-15"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
     </svg>
   );
 }
 
 function AccessibilityIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="h-7 w-7"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
       <path d="M12 2.25a1.875 1.875 0 1 0 0 3.75 1.875 1.875 0 0 0 0-3.75Z" />
       <path d="M7.5 8.25a.75.75 0 0 0 0 1.5h2.977l-.733 10.634a.75.75 0 1 0 1.496.103L12 13.42l.76 7.067a.75.75 0 1 0 1.493-.103L13.52 9.75H16.5a.75.75 0 0 0 0-1.5h-9Z" />
     </svg>
