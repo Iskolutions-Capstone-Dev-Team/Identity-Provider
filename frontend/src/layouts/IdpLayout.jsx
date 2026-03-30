@@ -101,7 +101,7 @@ export default function IdpLayout() {
         "--idp-success-alert-left": sidebarOpen ? "20rem" : "8rem",
       }}
     >
-      <AccessibilityWidget />
+      <AccessibilityWidget colorMode={colorMode} />
       <AssistiveFab colorMode={colorMode} />
 
       <div className="pointer-events-none fixed inset-x-4 top-24 z-[120] flex justify-center sm:justify-end">
