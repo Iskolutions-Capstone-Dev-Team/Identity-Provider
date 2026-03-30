@@ -61,7 +61,7 @@ export default function ProfileDetails({ profile, colorMode = "light" }) {
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DetailField
           id="firstName"
           label="First Name"
@@ -78,6 +78,12 @@ export default function ProfileDetails({ profile, colorMode = "light" }) {
           id="lastName"
           label="Last Name"
           value={profile.lastName}
+          colorMode={colorMode}
+        />
+        <DetailField
+          id="suffix"
+          label="Suffix"
+          value={profile.suffix}
           colorMode={colorMode}
         />
       </div>

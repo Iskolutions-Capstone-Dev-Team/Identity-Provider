@@ -6,6 +6,7 @@ export const EMPTY_CURRENT_USER = {
   firstName: "",
   middleName: "",
   lastName: "",
+  suffix: "",
   email: "",
   roles: [],
 };
@@ -42,6 +43,12 @@ function mapCurrentUser(user = {}) {
     firstName: user.first_name || "",
     middleName: user.middle_name || "",
     lastName: user.last_name || "",
+    suffix:
+      user.name_suffix ||
+      user.suffix ||
+      user.suffix_name ||
+      user.suffixName ||
+      "",
     email: user.email || "",
     roles: normalizeRoleNames(user.roles),
   };
@@ -52,6 +59,7 @@ export function formatCurrentUserName(currentUser = EMPTY_CURRENT_USER) {
     currentUser.firstName,
     currentUser.middleName,
     currentUser.lastName,
+    currentUser.suffix,
   ]
     .filter(Boolean)
     .join(" ")

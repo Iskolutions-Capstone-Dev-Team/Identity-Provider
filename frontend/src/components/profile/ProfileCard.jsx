@@ -7,7 +7,7 @@ import ActionButtons from "./ActionButtons";
 import SuccessAlert from "../SuccessAlert";
 
 function formatProfileName(profile = {}) {
-  return [profile.firstName, profile.middleName, profile.lastName]
+  return [profile.firstName, profile.middleName, profile.lastName, profile.suffix]
     .filter(Boolean)
     .join(" ")
     .trim();
