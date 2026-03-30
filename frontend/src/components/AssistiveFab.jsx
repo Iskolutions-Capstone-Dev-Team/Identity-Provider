@@ -5,17 +5,15 @@ import {
   isAccessibilityWidgetReady,
   toggleAccessibilityMenu,
 } from "./AccessibilityWidget";
+import ContactUsPanel, { ContactUsIcon } from "./ContactUsPanel";
 import { FloatingSpeechInputAction } from "./SpeechInputButton";
 
 const FAB_CONTAINER_CLASS_NAME =
   "pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] right-4 z-[140] flex flex-col items-end gap-3 lg:bottom-6 lg:right-6";
 const FAB_BUTTON_CLASS_NAME =
   "inline-flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-[#fff8f3] shadow-[0_20px_48px_-24px_rgba(43,3,7,0.82)] ring-[4px] ring-[#f8d24e] transition-[transform,box-shadow,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-[0_24px_56px_-24px_rgba(43,3,7,0.9)] focus:outline-none focus:ring-[6px] focus:ring-[#f8d24e]/35 disabled:cursor-not-allowed disabled:opacity-60";
-const FAB_ACTION_COUNT = 2;
 const FAB_ACTION_STAGGER_MS = 55;
 const FAB_ACTION_TRANSITION_MS = 320;
-const FAB_ACTION_HIDE_DELAY_MS =
-  FAB_ACTION_TRANSITION_MS + FAB_ACTION_STAGGER_MS * (FAB_ACTION_COUNT - 1);
 const FAB_ACTION_WRAP_BASE_CLASS =
   "origin-bottom-right will-change-transform transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
 
@@ -51,6 +49,7 @@ function getActionTransitionStyle(actionIndex, actionCount) {
 export default function AssistiveFab({ colorMode = "light" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [areActionsVisible, setAreActionsVisible] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const [isAccessibilityReady, setIsAccessibilityReady] = useState(() =>
     isAccessibilityWidgetReady(),
   );
@@ -59,6 +58,11 @@ export default function AssistiveFab({ colorMode = "light" }) {
   const handleAccessibilityClick = () => {
     toggleAccessibilityMenu();
   };
+
+  const handleContactToggle = () => {
+    setIsContactOpen((current) => !current);
+  };
+  const isContactPanelOpen = isOpen && isContactOpen;
 
   const fabActions = [
     {
@@ -85,7 +89,29 @@ export default function AssistiveFab({ colorMode = "light" }) {
         </button>
       ),
     },
+    {
+      key: "contact-us",
+      content: (
+        <button
+          type="button"
+          aria-expanded={isContactOpen}
+          aria-label={
+            isContactOpen ? "Close contact us form" : "Open contact us form"
+          }
+          title={
+            isContactOpen ? "Close contact us form" : "Open contact us form"
+          }
+          className={FAB_BUTTON_CLASS_NAME}
+          onClick={handleContactToggle}
+        >
+          <ContactUsIcon />
+        </button>
+      ),
+    },
   ];
+  const fabActionHideDelayMs =
+    FAB_ACTION_TRANSITION_MS +
+    FAB_ACTION_STAGGER_MS * (fabActions.length - 1);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -130,50 +156,64 @@ export default function AssistiveFab({ colorMode = "light" }) {
 
     const closeTimer = window.setTimeout(() => {
       setAreActionsVisible(false);
-    }, FAB_ACTION_HIDE_DELAY_MS);
+    }, fabActionHideDelayMs);
 
     return () => {
       window.clearTimeout(closeTimer);
     };
-  }, [areActionsVisible, isOpen]);
+  }, [areActionsVisible, fabActionHideDelayMs, isOpen]);
 
   return (
-    <div className={FAB_CONTAINER_CLASS_NAME}>
-      {fabActions.map((action, actionIndex) => {
-        const distanceFromToggle = fabActions.length - actionIndex - 1;
-        const actionVisibilityClassName = getActionVisibilityClassName(
-          isOpen,
-          areActionsVisible,
-          distanceFromToggle,
-        );
-        const actionTransitionStyle = getActionTransitionStyle(
-          actionIndex,
-          fabActions.length,
-        );
+    <>
+      <ContactUsPanel
+        isOpen={isContactPanelOpen}
+        colorMode={colorMode}
+        onClose={() => setIsContactOpen(false)}
+      />
 
-        return (
-          <div
-            key={action.key}
-            aria-hidden={!isOpen}
-            className={actionVisibilityClassName}
-            style={actionTransitionStyle}
-          >
-            {action.content}
-          </div>
-        );
-      })}
+      <div className={FAB_CONTAINER_CLASS_NAME}>
+        {fabActions.map((action, actionIndex) => {
+          const distanceFromToggle = fabActions.length - actionIndex - 1;
+          const actionVisibilityClassName = getActionVisibilityClassName(
+            isOpen,
+            areActionsVisible,
+            distanceFromToggle,
+          );
+          const actionTransitionStyle = getActionTransitionStyle(
+            actionIndex,
+            fabActions.length,
+          );
 
-      <button
-        type="button"
-        aria-expanded={isOpen}
-        aria-label={isOpen ? "Close assistive tools" : "Open assistive tools"}
-        title={isOpen ? "Close assistive tools" : "Open assistive tools"}
-        className={toggleButtonClassName}
-        onClick={() => setIsOpen((current) => !current)}
-      >
-        <ToggleIcon isOpen={isOpen} />
-      </button>
-    </div>
+          return (
+            <div
+              key={action.key}
+              aria-hidden={!isOpen}
+              className={actionVisibilityClassName}
+              style={actionTransitionStyle}
+            >
+              {action.content}
+            </div>
+          );
+        })}
+
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          aria-label={isOpen ? "Close assistive tools" : "Open assistive tools"}
+          title={isOpen ? "Close assistive tools" : "Open assistive tools"}
+          className={toggleButtonClassName}
+          onClick={() => {
+            if (isOpen) {
+              setIsContactOpen(false);
+            }
+
+            setIsOpen((current) => !current);
+          }}
+        >
+          <ToggleIcon isOpen={isOpen} />
+        </button>
+      </div>
+    </>
   );
 }
 
