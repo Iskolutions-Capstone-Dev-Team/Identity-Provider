@@ -3,6 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import SuccessAlert from "../components/SuccessAlert";
 import NotificationsListCard from "../components/notification/NotificationsListCard";
+import NotificationsSummaryCard from "../components/notification/NotificationsSummaryCard";
 import { useUsers } from "../hooks/useUsers";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { useContactRequestNotifications } from "../hooks/useContactRequestNotifications";
@@ -104,7 +105,7 @@ export default function Notifications() {
       <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
         <PageHeader
           title="Notifications"
-          description="Track pending registrants, superadmin requests, and maintenance updates in one view."
+          description="Track pending registrants, requests, and maintenance updates in one view."
           colorMode={colorMode}
           icon={
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-20 w-20 sm:h-24 sm:w-24">
@@ -112,6 +113,13 @@ export default function Notifications() {
             </svg>
           }
           variant="hero"
+        />
+
+        <NotificationsSummaryCard
+          registrantsCount={registrants.length}
+          contactRequestsCount={contactRequests.length}
+          maintenanceCount={maintenanceNotifications.length}
+          colorMode={colorMode}
         />
 
         <div className="relative">
