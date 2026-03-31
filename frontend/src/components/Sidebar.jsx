@@ -35,6 +35,20 @@ const menuSections = [
       },
     ],
   },
+  {
+    title: "COMMUNICATIONS",
+    items: [
+      {
+        name: "Notifications",
+        path: "/notifications",
+        icon: ({ className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>
+          </svg>
+        ),
+      },
+    ],
+  },
 ];
 
 const mobileMenuItems = menuSections.flatMap((section) => section.items);
@@ -89,18 +103,25 @@ const darkSidebarTheme = {
   logoShadow: "drop-shadow-[0_10px_18px_rgba(248,210,78,0.22)]",
 };
 
-function SidebarIcon({ iconPath, isActive, isDarkMode }) {
-  const activeIconClassName = isDarkMode ? "text-[#f8d24e]" : "text-[#5a0b12]";
+function renderSidebarMenuIcon(item, className) {
+  if (typeof item.icon === "function") {
+    return item.icon({ className });
+  }
 
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor"
-      className={`h-5 w-5 shrink-0 transition duration-300 ${
-        isActive ? activeIconClassName : "text-current"
-      }`}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath} />
     </svg>
   );
+}
+
+function SidebarIcon({ item, isActive, isDarkMode }) {
+  const activeIconClassName = isDarkMode ? "text-[#f8d24e]" : "text-[#5a0b12]";
+  const iconClassName = `h-5 w-5 shrink-0 transition duration-300 ${
+    isActive ? activeIconClassName : "text-current"
+  }`;
+
+  return renderSidebarMenuIcon(item, iconClassName);
 }
 
 function SidebarTooltip({ label, className }) {
@@ -122,7 +143,7 @@ function SidebarMenuItem({ isOpen, item, isActive, onClick, isDarkMode, theme })
     <li className="group relative">
       <button type="button" onClick={onClick} className={`flex h-14 w-full items-center overflow-hidden rounded-[1.35rem] border transition-all duration-300 ${alignmentClassName} ${surfaceClassName}`}>
         <SidebarIcon
-          iconPath={item.iconPath}
+          item={item}
           isActive={isActive}
           isDarkMode={isDarkMode}
         />
@@ -248,15 +269,14 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
                     isActive ? theme.mobileActive : theme.mobileInactive
                   }`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor"
-                    className={`h-5 w-5 transition-all duration-300 ${
+                  {renderSidebarMenuIcon(
+                    item,
+                    `h-5 w-5 transition-all duration-300 ${
                       isActive
                         ? "scale-110 drop-shadow-[0_0_14px_rgba(248,210,78,0.72)]"
                         : ""
-                    }`}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d={item.iconPath} />
-                  </svg>
+                    }`,
+                  )}
                   <span className={`absolute bottom-1 h-1.5 w-1.5 rounded-full transition-all duration-300 ${
                       isActive ? "opacity-100" : "opacity-0"
                     } ${theme.mobileIndicator}`}
