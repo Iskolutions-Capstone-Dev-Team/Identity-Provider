@@ -27,7 +27,9 @@ export default function NotificationSection({ title, description, count = 0, emp
       <div className={`flex flex-col gap-3 px-5 py-5 sm:flex-row sm:items-start sm:justify-between ${headerClassName}`}>
         <div className="min-w-0">
           <h2 className={titleClassName}>{title}</h2>
-          <p className={descriptionClassName}>{description}</p>
+          {description ? (
+            <p className={descriptionClassName}>{description}</p>
+          ) : null}
         </div>
         <span className={countClassName}>{count}</span>
       </div>

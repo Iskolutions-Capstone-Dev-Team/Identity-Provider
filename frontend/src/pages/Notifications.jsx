@@ -8,39 +8,6 @@ import { useUsers } from "../hooks/useUsers";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { useContactRequestNotifications } from "../hooks/useContactRequestNotifications";
 
-const maintenanceNotifications = [
-  {
-    id: "maintenance-identity-window",
-    title: "Identity service maintenance window",
-    system: "Login and registration services",
-    description:
-      "Scheduled optimization is planned for April 6, 2026. Short login delays may happen while services are rotated.",
-    scheduledFor: "2026-04-06T23:00:00+08:00",
-    statusLabel: "Upcoming",
-    impact: "Low impact",
-  },
-  {
-    id: "maintenance-role-audit",
-    title: "Role and permission review reminder",
-    system: "Admin console",
-    description:
-      "Please review high-privilege roles before April 10, 2026 to keep approvals aligned with current staffing.",
-    scheduledFor: "2026-04-10T09:00:00+08:00",
-    statusLabel: "Action required",
-    impact: "Admin review",
-  },
-  {
-    id: "maintenance-backup-check",
-    title: "Backup verification in progress",
-    system: "Identity backups",
-    description:
-      "Nightly backup validation is currently being monitored. No outage is expected while checks complete.",
-    scheduledFor: "2026-03-31T22:00:00+08:00",
-    statusLabel: "In progress",
-    impact: "Monitoring only",
-  },
-];
-
 export default function Notifications() {
   const { colorMode = "light" } = useOutletContext() || {};
   const {
@@ -105,7 +72,7 @@ export default function Notifications() {
       <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
         <PageHeader
           title="Notifications"
-          description="Track pending registrants, requests, and maintenance updates in one view."
+          description="Track pending registrants and requests in one view."
           colorMode={colorMode}
           icon={
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-20 w-20 sm:h-24 sm:w-24">
@@ -118,7 +85,6 @@ export default function Notifications() {
         <NotificationsSummaryCard
           registrantsCount={registrants.length}
           contactRequestsCount={contactRequests.length}
-          maintenanceCount={maintenanceNotifications.length}
           colorMode={colorMode}
         />
 
@@ -127,7 +93,6 @@ export default function Notifications() {
             loadingRegistrants={showLoading}
             registrants={registrants}
             contactRequests={contactRequests}
-            maintenanceNotifications={maintenanceNotifications}
             fetchError={actionError || fetchError}
             onApproveRegistrant={handleApproveRegistrant}
             onRejectRegistrant={handleRejectRegistrant}
