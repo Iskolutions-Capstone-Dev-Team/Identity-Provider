@@ -1,4 +1,4 @@
-function SummaryMetric({ title, value, description, icon, colorMode = "light" }) {
+function SummaryMetric({ title, value, description, icon, loading = false, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const tileClassName = isDarkMode
     ? "group rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-5 py-5 shadow-[0_18px_45px_-36px_rgba(2,6,23,0.92)] transition-[transform,border-color,box-shadow,background-color] duration-300 ease-out hover:-translate-y-1 hover:border-white/15 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03))] hover:shadow-[0_28px_65px_-40px_rgba(2,6,23,0.98)] transition-all"
@@ -15,6 +15,9 @@ function SummaryMetric({ title, value, description, icon, colorMode = "light" })
   const descriptionClassName = isDarkMode
     ? "text-base leading-7 text-[#bfaeb4]"
     : "text-base leading-7 text-[#8f6f76]";
+  const skeletonClassName = isDarkMode
+    ? "mt-3 h-10 w-16 animate-pulse rounded-2xl bg-white/8"
+    : "mt-3 h-10 w-16 animate-pulse rounded-2xl bg-[#7b0d15]/7";
 
   return (
     <div className={tileClassName}>
@@ -22,19 +25,24 @@ function SummaryMetric({ title, value, description, icon, colorMode = "light" })
         <p className={titleClassName}>{title}</p>
         <span className={iconBadgeClassName}>{icon}</span>
       </div>
-      <p className={`mt-3 ${valueClassName}`}>{value}</p>
+      {loading ? (
+        <div className={skeletonClassName} />
+      ) : (
+        <p className={`mt-3 ${valueClassName}`}>{value}</p>
+      )}
       <p className={`mt-2 ${descriptionClassName}`}>{description}</p>
     </div>
   );
 }
 
-export default function NotificationsSummaryCard({ registrantsCount = 0, contactRequestsCount = 0, colorMode = "light" }) {
+export default function NotificationsSummaryCard({ registrantsCount = 0, contactRequestsCount = 0, loading = false, colorMode = "light" }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <SummaryMetric
         title="User registrants"
         value={registrantsCount}
         description="Accounts waiting for approval."
+        loading={loading}
         icon={
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
             <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clipRule="evenodd" />
@@ -46,6 +54,7 @@ export default function NotificationsSummaryCard({ registrantsCount = 0, contact
         title="Request"
         value={contactRequestsCount}
         description="Submitted requests awaiting review."
+        loading={loading}
         icon={
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
             <path fillRule="evenodd" d="M5.625 1.5H9a3.75 3.75 0 0 1 3.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 0 1 3.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 0 1-1.875-1.875V3.375c0-1.036.84-1.875 1.875-1.875Zm6.905 9.97a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l1.72-1.72V18a.75.75 0 0 0 1.5 0v-4.19l1.72 1.72a.75.75 0 1 0 1.06-1.06l-3-3Z" clipRule="evenodd" />
