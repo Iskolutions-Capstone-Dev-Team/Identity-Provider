@@ -8,54 +8,6 @@ import { useUsers } from "../hooks/useUsers";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { useContactRequestNotifications } from "../hooks/useContactRequestNotifications";
 
-const PREVIEW_REGISTRANTS = [
-  {
-    id: "preview-registrant-1",
-    givenName: "Miko",
-    middleName: "",
-    surname: "Causon",
-    suffix: "",
-    displayName: "Miko Causon",
-    email: "mikocauson@email.com",
-    status: "inactive",
-    createdAt: "2026-03-30T09:18:00+08:00",
-    roles: ["Applicant"],
-    isPreview: true,
-  },
-  {
-    id: "preview-registrant-2",
-    givenName: "Kyle",
-    middleName: "",
-    surname: "Efondo",
-    suffix: "",
-    displayName: "Kyle Efondo",
-    email: "kyleefondo@email.com",
-    status: "inactive",
-    createdAt: "2026-03-29T14:42:00+08:00",
-    roles: ["Student"],
-    isPreview: true,
-  },
-];
-
-const PREVIEW_REQUESTS = [
-  {
-    id: "preview-request-1",
-    email: "mikocauson@email.com",
-    message:
-      "Hello, I would like to request to delete a user with an email pearlfranco@email.com.",
-    submittedAt: "2026-03-30T11:05:00+08:00",
-    isPreview: true,
-  },
-  {
-    id: "preview-request-2",
-    email: "kyleefondo@example.com",
-    message:
-      "Can I request for this email account to be assign with a role superadmin?",
-    submittedAt: "2026-03-28T16:25:00+08:00",
-    isPreview: true,
-  },
-];
-
 export default function Notifications() {
   const { colorMode = "light" } = useOutletContext() || {};
   const {
@@ -68,11 +20,6 @@ export default function Notifications() {
     deleteUser,
   } = useUsers();
   const [actionError, setActionError] = useState("");
-  const [previewRegistrantStatuses, setPreviewRegistrantStatuses] = useState(() => {
-    return Object.fromEntries(
-      PREVIEW_REGISTRANTS.map((registrant) => [registrant.id, "pending"]),
-    );
-  });
   const [readRequestIds, setReadRequestIds] = useState(() => new Set());
   const contactRequests = useContactRequestNotifications();
   const showLoading = useDelayedLoading(loading);
@@ -100,38 +47,19 @@ export default function Notifications() {
       });
   }, [users]);
 
-  const previewRegistrants = useMemo(() => {
-    if (showLoading || registrants.length > 0) {
-      return registrants;
-    }
-
-    return PREVIEW_REGISTRANTS;
-  }, [registrants, showLoading]);
-
-  const previewRequests = useMemo(() => {
-    if (contactRequests.length > 0) {
-      return contactRequests;
-    }
-
-    return PREVIEW_REQUESTS;
-  }, [contactRequests]);
-
   const displayRegistrants = useMemo(() => {
-    return previewRegistrants.map((registrant) => ({
+    return registrants.map((registrant) => ({
       ...registrant,
-      workflowStatus:
-        registrant?.isPreview
-          ? previewRegistrantStatuses[registrant.id] || "pending"
-          : "pending",
+      workflowStatus: "pending",
     }));
-  }, [previewRegistrantStatuses, previewRegistrants]);
+  }, [registrants]);
 
   const displayRequests = useMemo(() => {
-    return previewRequests.map((request) => ({
+    return contactRequests.map((request) => ({
       ...request,
       isRead: readRequestIds.has(request.id) || Boolean(request?.isRead),
     }));
-  }, [previewRequests, readRequestIds]);
+  }, [contactRequests, readRequestIds]);
 
   const pendingRegistrantsCount = useMemo(() => {
     return displayRegistrants.filter(
@@ -145,14 +73,6 @@ export default function Notifications() {
 
   const handleApproveRegistrant = async (user) => {
     setActionError("");
-
-    if (user?.isPreview) {
-      setPreviewRegistrantStatuses((currentStatuses) => ({
-        ...currentStatuses,
-        [user.id]: "created",
-      }));
-      return;
-    }
 
     try {
       await updateUser(
@@ -169,14 +89,6 @@ export default function Notifications() {
 
   const handleRejectRegistrant = async (user) => {
     setActionError("");
-
-    if (user?.isPreview) {
-      setPreviewRegistrantStatuses((currentStatuses) => ({
-        ...currentStatuses,
-        [user.id]: "declined",
-      }));
-      return;
-    }
 
     await deleteUser(user?.id, user?.displayName || user?.email || "User");
   };
