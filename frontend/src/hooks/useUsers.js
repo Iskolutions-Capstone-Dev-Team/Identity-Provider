@@ -228,11 +228,13 @@ export function useUsers() {
   // =========================
   const deleteUser = async (userId, label) => {
     try {
+      setFetchError("");
       await userService.deleteUser(userId);
       setSuccessMessage(`User ${label} deleted successfully`);
       await fetchUsers({ showLoading: false });
     } catch (error) {
       console.error("Delete error:", error);
+      setFetchError(`Failed to delete ${label}.`);
     }
   };
 

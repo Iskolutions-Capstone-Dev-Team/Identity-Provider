@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ErrorAlert from "./ErrorAlert";
 import SuccessAlert from "./SuccessAlert";
+import { addContactRequestNotification } from "../utils/contactRequestNotifications";
 
 const INITIAL_CONTACT_FORM = {
   email: "",
@@ -210,6 +211,11 @@ export default function ContactUsPanel({ isOpen, colorMode = "light", onClose })
       setErrorMessage(validationMessage);
       return;
     }
+
+    addContactRequestNotification({
+      email: contactForm.email,
+      message: contactForm.message,
+    });
 
     setSuccessMessage(
       "Message was submitted successfully.",
