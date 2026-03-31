@@ -10,6 +10,7 @@ import UserPool from "./pages/UserPool";
 import Roles from "./pages/Roles";
 import AppClient from "./pages/AppClient";
 import AuditLogs from "./pages/AuditLogs";
+import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import IdpLayout from "./layouts/IdpLayout";
 
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/roles" element={<Roles />} />
           <Route path="/audit-logs" element={<AuditLogs />} />
           <Route path="/app-client" element={<AppClient />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
