@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
+import InputEmailStep from "./InputEmailStep";
 import ChangePasswordStep, {
   getPasswordValidationState,
 } from "./ChangePasswordStep";
@@ -8,23 +9,49 @@ import SuccessStep from "./SuccessStep";
 import SuccessAlert from "./SuccessAlert";
 import { getModalTheme } from "./modalTheme";
 
-const stepMeta = {
-  1: {
-    title: "Change Password",
-    description: "Secure your account with a new password",
-    showCloseButton: true,
-  },
-  2: {
-    title: "Verify Identity",
-    description: "Enter the OTP sent to your email",
-    showCloseButton: true,
-  },
-  3: {
-    title: "Success!",
-    description: "Password changed successfully",
-    showCloseButton: false,
-  },
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMPTY_OTP = ["", "", "", "", "", ""];
+const EMPTY_PASSWORD_FORM = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
 };
+
+function getInitialStep(showCurrentPassword = true) {
+  return showCurrentPassword ? "password" : "email";
+}
+
+function getStepMeta(step, showCurrentPassword = true) {
+  switch (step) {
+    case "email":
+      return {
+        title: "Forgot Password?",
+        description: "Enter your email to receive a verification code",
+        showCloseButton: true,
+      };
+    case "otp":
+      return {
+        title: "Verify Identity",
+        description: "Enter the OTP sent to your email",
+        showCloseButton: true,
+      };
+    case "success":
+      return {
+        title: "Success!",
+        description: "Password changed successfully",
+        showCloseButton: false,
+      };
+    case "password":
+    default:
+      return {
+        title: showCurrentPassword ? "Change Password" : "Set New Password",
+        description: showCurrentPassword
+          ? "Secure your account with a new password"
+          : "Create a new password for your account",
+        showCloseButton: true,
+      };
+  }
+}
 
 function getDisabledPrimaryButtonClassName(isDarkMode) {
   return isDarkMode
@@ -32,14 +59,14 @@ function getDisabledPrimaryButtonClassName(isDarkMode) {
     : "cursor-not-allowed border-[#7b0d15]/12 bg-[#cdb7bb] text-white/70 hover:border-[#7b0d15]/12 hover:bg-[#cdb7bb]";
 }
 
-export default function ChangePasswordModal({ isOpen, onClose, showCurrentPassword = true, addAuditLog, setToastMessage, enableSuccessAlert = false, colorMode = "light" }) {
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+export default function ChangePasswordModal({ isOpen, onClose, showCurrentPassword = true, addAuditLog, setToastMessage, enableSuccessAlert = false, colorMode = "light", emailAddress = "" }) {
+  const isForgotPasswordFlow = !showCurrentPassword;
+  const [step, setStep] = useState(() => getInitialStep(showCurrentPassword));
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [form, setForm] = useState(EMPTY_PASSWORD_FORM);
+  const [otp, setOtp] = useState(EMPTY_OTP);
+  const [otpError, setOtpError] = useState("");
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -50,7 +77,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   );
 
   useEffect(() => {
-    if (step !== 2) {
+    if (step !== "otp") {
       return;
     }
 
@@ -74,19 +101,18 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
 
   useEffect(() => {
     if (!isOpen) {
-      setStep(1);
-      setForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-      setOtp(["", "", "", "", "", ""]);
+      setStep(getInitialStep(showCurrentPassword));
+      setRecoveryEmail("");
+      setEmailError("");
+      setForm(EMPTY_PASSWORD_FORM);
+      setOtp(EMPTY_OTP);
+      setOtpError("");
       setSuccessMessage("");
     }
-  }, [isOpen]);
+  }, [isOpen, showCurrentPassword]);
 
   useEffect(() => {
-    if (step !== 3) {
+    if (step !== "success") {
       return;
     }
 
@@ -113,30 +139,104 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     }
   }, [step, setToastMessage, enableSuccessAlert]);
 
+  const trimmedRecoveryEmail = recoveryEmail.trim();
+  const isRecoveryEmailValid = EMAIL_REGEX.test(trimmedRecoveryEmail);
+
+  const logPasswordChange = () => {
+    if (!addAuditLog) {
+      return;
+    }
+
+    addAuditLog({
+      timestamp: new Date().toISOString().replace("T", " ").slice(0, 19),
+      action: "PASSWORD_CHANGE",
+      details: isForgotPasswordFlow
+        ? "Password reset successfully"
+        : "Password changed successfully",
+      color: "yellow",
+    });
+  };
+
+  const handleEmailContinue = () => {
+    if (!trimmedRecoveryEmail) {
+      setEmailError("Email address is required.");
+      return;
+    }
+
+    if (!isRecoveryEmailValid) {
+      setEmailError("Enter a valid email address.");
+      return;
+    }
+
+    setEmailError("");
+    setOtpError("");
+    setStep("otp");
+  };
+
+  const handlePasswordContinue = () => {
+    if (!passwordValidation.isValid) {
+      return;
+    }
+
+    if (isForgotPasswordFlow) {
+      logPasswordChange();
+      setStep("success");
+      return;
+    }
+
+    setOtpError("");
+    setStep("otp");
+  };
+
+  const handleRecoveryEmailChange = (value) => {
+    setRecoveryEmail(value);
+
+    if (emailError) {
+      setEmailError("");
+    }
+  };
+
+  const handleOtpChange = (updatedOtp) => {
+    setOtp(updatedOtp);
+
+    if (otpError) {
+      setOtpError("");
+    }
+  };
+
+  const handleResend = () => {
+    setOtp(EMPTY_OTP);
+    setOtpError("");
+    setEmailError("");
+    setStep(getInitialStep(showCurrentPassword));
+  };
+
   const verifyOTP = () => {
     const code = otp.join("");
 
     if (code.length !== 6 || !/^\d+$/.test(code)) {
+      setOtpError("Enter the 6-digit OTP code.");
       return;
     }
 
-    if (addAuditLog) {
-      addAuditLog({
-        timestamp: new Date().toISOString().replace("T", " ").slice(0, 19),
-        action: "PASSWORD_CHANGE",
-        details: "Password changed successfully",
-        color: "yellow",
-      });
+    setOtpError("");
+
+    if (isForgotPasswordFlow) {
+      setStep("password");
+      return;
     }
 
-    setStep(3);
+    logPasswordChange();
+    setStep("success");
   };
 
   if (!isOpen) {
     return null;
   }
 
-  const currentStepMeta = stepMeta[step] || stepMeta[1];
+  const currentStepMeta = getStepMeta(step, showCurrentPassword);
+  const otpEmailAddress =
+    trimmedRecoveryEmail || emailAddress || "your email address";
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -160,6 +260,15 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     `${modalPrimaryButtonClassName} ${
       isDisabled ? getDisabledPrimaryButtonClassName(isDarkMode) : ""
     }`;
+  const isFormStep = step === "email" || step === "password";
+  const isPrimaryDisabled =
+    step === "password" ? !passwordValidation.isValid : false;
+  const primaryButtonLabel =
+    step === "email"
+      ? "Continue"
+      : isForgotPasswordFlow
+        ? "Change Password"
+        : "Continue";
 
   return (
     <>
@@ -189,7 +298,17 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
 
             <div className={modalBodyClassName}>
               <div className={modalBodyStackClassName}>
-                {step === 1 && (
+                {step === "email" && (
+                  <InputEmailStep
+                    email={recoveryEmail}
+                    setEmail={handleRecoveryEmailChange}
+                    errorMessage={emailError}
+                    onClearError={() => setEmailError("")}
+                    colorMode={colorMode}
+                  />
+                )}
+
+                {step === "password" && (
                   <ChangePasswordStep
                     form={form}
                     setForm={setForm}
@@ -198,24 +317,32 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
                   />
                 )}
 
-                {step === 2 && (
+                {step === "otp" && (
                   <OtpVerificationStep
                     otp={otp}
-                    setOtp={setOtp}
+                    setOtp={handleOtpChange}
                     timer={timer}
                     canResend={canResend}
-                    onResend={() => setStep(1)}
+                    onResend={handleResend}
                     onVerify={verifyOTP}
+                    errorMessage={otpError}
+                    onClearError={() => setOtpError("")}
+                    emailAddress={otpEmailAddress}
                     colorMode={colorMode}
                   />
                 )}
 
-                {step === 3 && <SuccessStep colorMode={colorMode} />}
+                {step === "success" && (
+                  <SuccessStep
+                    colorMode={colorMode}
+                    showCurrentPassword={showCurrentPassword}
+                  />
+                )}
               </div>
             </div>
 
             <div className={modalFooterClassName}>
-              {step === 1 ? (
+              {isFormStep ? (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className={requiredFieldsClassName}>
                     <span className="text-red-500">*</span> Required fields
@@ -224,25 +351,31 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
                     <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
                       Cancel
                     </button>
-                    <button type="button" disabled={!passwordValidation.isValid}
-                      className={getPrimaryButtonClassName(
-                        !passwordValidation.isValid,
-                      )}
-                      onClick={() => setStep(2)}
+                    <button
+                      type="button"
+                      disabled={isPrimaryDisabled}
+                      className={getPrimaryButtonClassName(isPrimaryDisabled)}
+                      onClick={
+                        step === "email"
+                          ? handleEmailContinue
+                          : handlePasswordContinue
+                      }
                     >
-                      Continue
+                      {primaryButtonLabel}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className={modalFooterActionsClassName}>
-                  {step === 2 && (
+                  {step === "otp" && (
                     <button type="button" className={modalPrimaryButtonClassName} onClick={verifyOTP}>
-                      Verify & Change Password
+                      {isForgotPasswordFlow
+                        ? "Verify OTP"
+                        : "Verify & Change Password"}
                     </button>
                   )}
 
-                  {step === 3 && (
+                  {step === "success" && (
                     <button type="button" className={modalPrimaryButtonClassName} onClick={onClose}>
                       Close
                     </button>
