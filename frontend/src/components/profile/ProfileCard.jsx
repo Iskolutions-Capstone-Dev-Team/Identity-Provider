@@ -155,6 +155,7 @@ export default function ProfileCard({ profile, addAuditLog, allowEmailEdit = fal
         isOpen={isPasswordOpen}
         onClose={() => setPasswordOpen(false)}
         showCurrentPassword={true}
+        emailAddress={currentProfile.email}
         addAuditLog={addAuditLog}
         setToastMessage={setToastMessage}
         enableSuccessAlert={false}
