@@ -1,6 +1,6 @@
 import { getModalTheme } from "./modalTheme";
 
-export default function SuccessStep({ colorMode = "light" }) {
+export default function SuccessStep({ colorMode = "light", showCurrentPassword = true }) {
   const { modalSectionClassName } = getModalTheme(colorMode);
   const isDarkMode = colorMode === "dark";
   const successIconClassName = isDarkMode
@@ -36,6 +36,15 @@ export default function SuccessStep({ colorMode = "light" }) {
   const statusBadgeClassName = isDarkMode
     ? "inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200 transition-[background-color,border-color,color] duration-500 ease-out"
     : "inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 transition-[background-color,border-color,color] duration-500 ease-out";
+  const description = showCurrentPassword
+    ? "Your password has been changed successfully. You will be logged out automatically for security reasons."
+    : "Your password has been changed successfully. You can now sign in with your new password.";
+  const securityNote = showCurrentPassword
+    ? "For security purposes, you'll need to log in again with your new password on your next session."
+    : "Use your updated password the next time you access your account.";
+  const activityName = showCurrentPassword
+    ? "Password Change"
+    : "Password Reset";
 
   return (
     <div className="space-y-5">
@@ -47,10 +56,7 @@ export default function SuccessStep({ colorMode = "light" }) {
         </div>
 
         <h4 className={headingClassName}>Password Updated</h4>
-        <p className={descriptionClassName}>
-          Your password has been changed successfully. You will be logged out
-          automatically for security reasons.
-        </p>
+        <p className={descriptionClassName}>{description}</p>
       </section>
 
       <section className={infoCardClassName}>
@@ -60,9 +66,8 @@ export default function SuccessStep({ colorMode = "light" }) {
           </svg>
           <div className="text-left">
             <p className={infoTextClassName}>
-              <span className="font-semibold">Security Note:</span> For security
-              purposes, you'll need to log in again with your new password on
-              your next session.
+              <span className="font-semibold">Security Note:</span>{" "}
+              {securityNote}
             </p>
           </div>
         </div>
@@ -74,7 +79,7 @@ export default function SuccessStep({ colorMode = "light" }) {
           <div className={activityCardClassName}>
             <div className="flex items-center justify-between gap-3">
               <div className="text-left">
-                <p className={activityNameClassName}>Password Change</p>
+                <p className={activityNameClassName}>{activityName}</p>
                 <p className={activityTimeClassName}>Just now</p>
               </div>
               <span className={statusBadgeClassName}>Completed</span>
