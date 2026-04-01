@@ -24,6 +24,7 @@ const initialDetails = {
   firstName: "",
   lastName: "",
   middleName: "",
+  suffix: "",
   email: "",
   role: "",
 };
@@ -32,6 +33,7 @@ const initialDetailErrors = {
   firstName: "",
   lastName: "",
   middleName: "",
+  suffix: "",
   email: "",
   role: "",
 };
@@ -315,6 +317,7 @@ export default function RegisterForm({ clientId, onComplete }) {
       firstName: getFirstNameError(details.firstName),
       lastName: getLastNameError(details.lastName),
       middleName: "",
+      suffix: "",
       email: getEmailError(details.email),
       role: getRoleError(details.role),
     };
@@ -497,41 +500,68 @@ export default function RegisterForm({ clientId, onComplete }) {
 
     return (
       <form onSubmit={handleDetailsSubmit} noValidate className="space-y-4">
+        <div>
+          <FormLabel required>First Name</FormLabel>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
+              <UserIcon />
+            </span>
+            <input type="text" value={details.firstName} onChange={(event) => handleDetailChange("firstName", event.target.value)} onBlur={() => handleDetailBlur("firstName")} autoComplete="given-name" placeholder="Enter your first name" className={getInputClassName(detailErrors.firstName)}/>
+          </div>
+          <FieldError message={detailErrors.firstName} />
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <FormLabel required>First Name</FormLabel>
+            <FormLabel>Middle Name</FormLabel>
             <div className="relative">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
                 <UserIcon />
               </span>
-              <input type="text" value={details.firstName} onChange={(event) => handleDetailChange("firstName", event.target.value)} onBlur={() => handleDetailBlur("firstName")} autoComplete="given-name" placeholder="Enter your first name" className={getInputClassName(detailErrors.firstName)}/>
+              <input type="text" value={details.middleName}
+                onChange={(event) =>
+                  handleDetailChange("middleName", event.target.value)
+                }
+                autoComplete="additional-name"
+                placeholder="Enter your middle name"
+                className={getInputClassName(false)}
+              />
             </div>
-            <FieldError message={detailErrors.firstName} />
+            <p className="pl-1 pt-2 text-xs font-medium uppercase tracking-[0.08em] text-white/65">
+              Optional
+            </p>
           </div>
 
           <div>
-            <FormLabel required>Last Name</FormLabel>
+            <FormLabel>Suffix</FormLabel>
             <div className="relative">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
                 <UserIcon />
               </span>
-              <input type="text" value={details.lastName} onChange={(event) => handleDetailChange("lastName", event.target.value)} onBlur={() => handleDetailBlur("lastName")} autoComplete="family-name" placeholder="Enter your last name" className={getInputClassName(detailErrors.lastName)}/>
+              <input type="text" value={details.suffix}
+                onChange={(event) =>
+                  handleDetailChange("suffix", event.target.value)
+                }
+                autoComplete="honorific-suffix"
+                placeholder="Enter your suffix"
+                className={getInputClassName(false)}
+              />
             </div>
-            <FieldError message={detailErrors.lastName} />
+            <p className="pl-1 pt-2 text-xs font-medium uppercase tracking-[0.08em] text-white/65">
+              Optional
+            </p>
           </div>
         </div>
 
         <div>
-          <FormLabel>Middle Name</FormLabel>
-          <label className="flex h-12 w-full items-center gap-3 rounded-2xl border border-white/20 bg-white/95 pl-4 pr-3 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 focus-within:border-[#ffd700] focus-within:ring-4 focus-within:ring-[#ffd700]/20">
-            <span className="shrink-0 text-[#7b0d15]/60">
+          <FormLabel required>Last Name</FormLabel>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
               <UserIcon />
             </span>
-            <input type="text" value={details.middleName} onChange={(event) => handleDetailChange("middleName", event.target.value)} autoComplete="additional-name" placeholder="Enter your middle name" className="min-w-0 grow bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"/>
-            <span className="inline-flex shrink-0 rounded-full border border-[#7b0d15]/15 bg-[#7b0d15]/8 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-[#7b0d15]/70">
-              Optional
-            </span>
-          </label>
+            <input type="text" value={details.lastName} onChange={(event) => handleDetailChange("lastName", event.target.value)} onBlur={() => handleDetailBlur("lastName")} autoComplete="family-name" placeholder="Enter your last name" className={getInputClassName(detailErrors.lastName)}/>
+          </div>
+          <FieldError message={detailErrors.lastName} />
         </div>
 
         <div>
@@ -734,7 +764,7 @@ export default function RegisterForm({ clientId, onComplete }) {
   };
 
   return (
-    <div className="relative z-20 w-full max-w-[32rem] px-1 sm:px-0">
+    <div className="relative z-20 w-full max-w-[36rem] px-1 sm:px-0">
       <div className="rounded-4xl border border-white/20 bg-white/10 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
         <div className="rounded-[calc(2rem-4px)] bg-[linear-gradient(180deg,rgba(120,12,22,0.72),rgba(60,7,12,0.86))] px-6 py-7 sm:px-8 sm:py-8">
           <div className="space-y-6">
@@ -791,11 +821,7 @@ export default function RegisterForm({ clientId, onComplete }) {
 function UserIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
-      <path
-        fillRule="evenodd"
-        d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z"
-        clipRule="evenodd"
-      />
+      <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clipRule="evenodd"/>
     </svg>
   );
 }
