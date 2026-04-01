@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 
 function ErrorIcon() {
   return (
@@ -16,9 +16,12 @@ function CloseIcon() {
   );
 }
 
-export default function ErrorAlert({ message, onClose }) {
+export default function ErrorAlert({ message, onClose, autoHideDuration = 4000 }) {
   const [isVisible, setIsVisible] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
+  const handleClose = useEffectEvent(() => {
+    onClose?.();
+  });
 
   useEffect(() => {
     let showTimeout;
@@ -34,9 +37,9 @@ export default function ErrorAlert({ message, onClose }) {
       hideTimeout = window.setTimeout(() => {
         setIsVisible(false);
         removeTimeout = window.setTimeout(() => {
-          onClose?.();
+          handleClose();
         }, 280);
-      }, 4000);
+      }, autoHideDuration);
     } else {
       setIsVisible(false);
       removeTimeout = window.setTimeout(() => {
@@ -49,7 +52,7 @@ export default function ErrorAlert({ message, onClose }) {
       window.clearTimeout(hideTimeout);
       window.clearTimeout(removeTimeout);
     };
-  }, [message, onClose]);
+  }, [message, autoHideDuration]);
 
   if (!shouldRender) {
     return null;
