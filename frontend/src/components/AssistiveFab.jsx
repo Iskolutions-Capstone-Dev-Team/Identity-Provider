@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
-import {
-  ACCESSIBILITY_READY_EVENT,
-  ACCESSIBILITY_UNAVAILABLE_EVENT,
-  isAccessibilityWidgetReady,
-  toggleAccessibilityMenu,
-} from "./AccessibilityWidget";
+import { ACCESSIBILITY_READY_EVENT, ACCESSIBILITY_UNAVAILABLE_EVENT, isAccessibilityWidgetReady, toggleAccessibilityMenu } from "./AccessibilityWidget";
 import ContactUsPanel, { ContactUsIcon } from "./ContactUsPanel";
+import OnePortalButton from "./OnePortalButton";
 import { FloatingSpeechInputAction } from "./SpeechInputButton";
 
 const FAB_CONTAINER_CLASS_NAME =
   "pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] right-4 z-[140] flex flex-col items-end gap-3 lg:bottom-6 lg:right-6";
 const FAB_BUTTON_CLASS_NAME =
   "inline-flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-[#fff8f3] shadow-[0_20px_48px_-24px_rgba(43,3,7,0.82)] ring-[4px] ring-[#f8d24e] transition-[transform,box-shadow,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-[0_24px_56px_-24px_rgba(43,3,7,0.9)] focus:outline-none focus:ring-[6px] focus:ring-[#f8d24e]/35 disabled:cursor-not-allowed disabled:opacity-60";
+const FAB_TOOLTIP_CLASS_NAME =
+  "whitespace-nowrap rounded-2xl border border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] px-3 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-[#fff8f3] shadow-[0_20px_42px_-24px_rgba(43,3,7,0.82)] backdrop-blur-xl";
+const FAB_TOOLTIP_ARROW_CLASS_NAME =
+  "h-3 w-3 rotate-45 rounded-[0.2rem] border-r border-t border-[#f8d24e] bg-[rgb(75,7,13)]";
 const FAB_ACTION_STAGGER_MS = 55;
 const FAB_ACTION_TRANSITION_MS = 320;
 const FAB_ACTION_WRAP_BASE_CLASS =
@@ -65,6 +65,13 @@ export default function AssistiveFab({ colorMode = "light" }) {
   const isContactPanelOpen = isOpen && isContactOpen;
 
   const fabActions = [
+    {
+      key: "one-portal",
+      tooltipLabel: "One Portal",
+      content: (
+        <OnePortalButton className={FAB_BUTTON_CLASS_NAME} />
+      ),
+    },
     {
       key: "speech",
       tooltipLabel: "Voice Input",
@@ -182,7 +189,6 @@ export default function AssistiveFab({ colorMode = "light" }) {
             <div key={action.key} aria-hidden={!isOpen} className={actionVisibilityClassName} style={actionTransitionStyle}>
               <FabActionTooltip
                 label={action.tooltipLabel}
-                colorMode={colorMode}
               >
                 {action.content}
               </FabActionTooltip>
@@ -206,22 +212,28 @@ export default function AssistiveFab({ colorMode = "light" }) {
   );
 }
 
-function FabActionTooltip({ label, colorMode = "light", children }) {
-  const isDarkMode = colorMode === "dark";
-  const tooltipClassName = isDarkMode
-    ? "border border-white/10 bg-[linear-gradient(135deg,rgba(17,24,39,0.98),rgba(31,19,27,0.96))] text-[#f4eaea] shadow-[0_20px_42px_-24px_rgba(2,6,23,0.88)]"
-    : "border border-[#7b0d15]/12 bg-[linear-gradient(135deg,rgba(255,250,244,0.98),rgba(255,255,255,0.96))] text-[#5a0b12] shadow-[0_20px_42px_-24px_rgba(43,3,7,0.42)]";
-  const tooltipArrowClassName = isDarkMode
-    ? "border-r border-t border-white/10 bg-[rgb(25,22,31)]"
-    : "border-r border-t border-[#7b0d15]/12 bg-[rgb(255,251,246)]";
+function FabActionTooltip({ label, children }) {
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+  const tooltipVisibilityClassName = isTooltipVisible
+    ? "visible translate-x-0 opacity-100"
+    : "invisible translate-x-2 opacity-0";
+
+  const handleFocus = (event) => {
+    if (!(event.target instanceof Element)) {
+      return;
+    }
+
+    setIsTooltipVisible(event.target.matches(":focus-visible"));
+  };
 
   return (
-    <div className="group relative flex items-center justify-end">
-      <div className="pointer-events-none absolute right-[calc(100%+0.9rem)] top-1/2 z-[1] flex -translate-y-1/2 items-center gap-2 opacity-0 invisible translate-x-2 transition-[opacity,transform,visibility] duration-200 ease-out group-hover:visible group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-x-0 group-focus-within:opacity-100">
-        <span className={`whitespace-nowrap rounded-2xl px-3 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.08em] backdrop-blur-xl ${tooltipClassName}`}>
-          {label}
-        </span>
-        <span aria-hidden="true" className={`h-3 w-3 rotate-45 rounded-[0.2rem] ${tooltipArrowClassName}`}/>
+    <div className="relative flex items-center justify-end" onMouseEnter={() => setIsTooltipVisible(true)} onMouseLeave={() => setIsTooltipVisible(false)} onFocusCapture={handleFocus} onBlurCapture={() => setIsTooltipVisible(false)}>
+      <div className={`pointer-events-none absolute right-[calc(100%+0.9rem)] top-1/2 z-[1] flex -translate-y-1/2 items-center gap-2 transition-[opacity,transform,visibility] duration-200 ease-out ${tooltipVisibilityClassName}`}>
+        <span className={FAB_TOOLTIP_CLASS_NAME}>{label}</span>
+        <span
+          aria-hidden="true"
+          className={FAB_TOOLTIP_ARROW_CLASS_NAME}
+        />
       </div>
 
       {children}
