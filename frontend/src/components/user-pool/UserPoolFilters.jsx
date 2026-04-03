@@ -1,10 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { SpeechInputToolbar } from "../SpeechInputButton";
+import { ADMIN_USER_TYPE, REGULAR_USER_TYPE } from "../../utils/userPoolAccess";
 
 const statusOptions = [
   { value: "", label: "All Status" },
   { value: "active", label: "Active" },
   { value: "suspended", label: "Suspended" },
+];
+const userTypeOptions = [
+  {
+    value: REGULAR_USER_TYPE,
+    label: "Users",
+  },
+  {
+    value: ADMIN_USER_TYPE,
+    label: "Admin",
+  },
 ];
 
 const statusOptionClassName =
@@ -17,12 +28,29 @@ function getStatusLabel(status) {
   return matchedOption?.label || statusOptions[0].label;
 }
 
-export default function UserPoolFilters({ search, setSearch, status, setStatus, onCreate, colorMode = "light" }) {
+function UserTypeIcon({ userType }) {
+  if (userType === ADMIN_USER_TYPE) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
+        <path d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
+      <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, onCreate, colorMode = "light" }) {
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [activeTooltip, setActiveTooltip] = useState(null);
   const statusDropdownRef = useRef(null);
   const selectedStatusLabel = getStatusLabel(status);
   const isDarkMode = colorMode === "dark";
-  const containerClassName = `flex flex-col gap-5 border-b pb-6 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(14rem,19rem)_auto] lg:items-end ${
+  const containerClassName = `flex flex-col gap-5 border-b pb-6 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(14rem,18rem)_auto_auto] lg:items-end ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
   const labelClassName = isDarkMode
@@ -49,6 +77,26 @@ export default function UserPoolFilters({ search, setSearch, status, setStatus, 
   const statusMenuClassName = isDarkMode
     ? "absolute left-0 right-0 top-[calc(100%+0.65rem)] z-30 overflow-hidden rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(16,23,38,0.98),rgba(30,20,30,0.98))] shadow-[0_26px_50px_-30px_rgba(2,6,23,0.8)] backdrop-blur-xl transition-[background-color,border-color,box-shadow] duration-500 ease-out"
     : "absolute left-0 right-0 top-[calc(100%+0.65rem)] z-30 overflow-hidden rounded-[1.35rem] border border-[#eed7ab] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,247,239,0.99))] shadow-[0_26px_50px_-30px_rgba(43,3,7,0.55)] backdrop-blur-xl transition-[background-color,border-color,box-shadow] duration-500 ease-out";
+  const userTypeGroupClassName = isDarkMode
+    ? "inline-grid h-14 w-fit grid-cols-2 gap-1.5 rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(30,20,28,0.88))] p-1.5 shadow-[0_18px_45px_-36px_rgba(2,6,23,0.72)]"
+    : "inline-grid h-14 w-fit grid-cols-2 gap-1.5 rounded-[1.35rem] border border-[#eed7ab] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,247,239,0.94))] p-1.5 shadow-[0_18px_45px_-36px_rgba(43,3,7,0.45)]";
+  const getUserTypeButtonClassName = (isSelected) =>
+    `flex h-full w-14 items-center justify-center rounded-[1rem] transition duration-300 ${
+      isSelected
+        ? isDarkMode
+          ? "bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] text-white shadow-[0_16px_28px_-22px_rgba(2,6,23,0.82)]"
+          : "bg-[#7b0d15] text-white shadow-[0_16px_28px_-22px_rgba(123,13,21,0.45)]"
+        : isDarkMode
+          ? "bg-white/[0.03] text-[#d6c3c7] hover:bg-[#f8d24e]/10 hover:text-[#ffe28a]"
+          : "bg-white/75 text-[#5d3a41] hover:bg-[#fff4dc] hover:text-[#7b0d15]"
+    } focus-visible:outline-none focus-visible:ring-2 ${
+      isDarkMode
+        ? "focus-visible:ring-[#f8d24e]/70"
+        : "focus-visible:ring-[#7b0d15]/30"
+    }`;
+  const tooltipBubbleClassName = isDarkMode
+    ? "pointer-events-none absolute left-1/2 top-[calc(100%+0.65rem)] z-30 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white/10 bg-[linear-gradient(180deg,rgba(16,23,38,0.98),rgba(30,20,30,0.98))] px-3 py-2 text-xs font-semibold text-[#f6eaec] opacity-0 shadow-[0_18px_40px_-24px_rgba(2,6,23,0.8)] transition duration-200"
+    : "pointer-events-none absolute left-1/2 top-[calc(100%+0.65rem)] z-30 -translate-x-1/2 whitespace-nowrap rounded-xl border border-[#eed7ab] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,247,239,0.99))] px-3 py-2 text-xs font-semibold text-[#5d3a41] opacity-0 shadow-[0_18px_40px_-24px_rgba(43,3,7,0.35)] transition duration-200";
   const statusOptionThemeClassName = isDarkMode
     ? "w-full px-4 py-3 text-left text-sm font-medium text-[#f6eaec] transition duration-200 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
     : statusOptionClassName;
@@ -121,13 +169,7 @@ export default function UserPoolFilters({ search, setSearch, status, setStatus, 
               <path d="m20 20-3.8-3.8" />
             </g>
           </svg>
-          <input
-            type="search"
-            value={search}
-            placeholder="Search by email, or name..."
-            className={searchInputClassName}
-            onChange={handleSearchChange}
-          />
+          <input type="search" value={search} placeholder="Search by email, or name..." className={searchInputClassName} onChange={handleSearchChange}/>
         </label>
       </div>
 
@@ -167,6 +209,47 @@ export default function UserPoolFilters({ search, setSearch, status, setStatus, 
               })}
             </div>
           ) : null}
+        </div>
+      </div>
+
+      <div className="min-w-0 lg:justify-self-start">
+        <label className={labelClassName}>Account Type</label>
+        <div className={userTypeGroupClassName} role="tablist" aria-label="Account Type">
+          {userTypeOptions.map((option) => {
+            const isSelected = option.value === userType;
+
+            return (
+              <div key={option.value} className="relative">
+                <button type="button" className={getUserTypeButtonClassName(isSelected)}
+                  onClick={() => {
+                    setUserType(option.value);
+                    setActiveTooltip(null);
+                  }}
+                  onMouseEnter={() => setActiveTooltip(option.value)}
+                  onMouseLeave={() => setActiveTooltip((current) =>
+                    current === option.value ? null : current,
+                  )}
+                  onFocus={() => setActiveTooltip(option.value)}
+                  onBlur={() => setActiveTooltip((current) =>
+                    current === option.value ? null : current,
+                  )}
+                  role="tab"
+                  aria-selected={isSelected}
+                  aria-label={option.label}
+                >
+                  <UserTypeIcon userType={option.value} />
+                </button>
+                <span
+                  className={`${tooltipBubbleClassName} ${
+                    activeTooltip === option.value ? "opacity-100" : ""
+                  }`}
+                  role="tooltip"
+                >
+                  {option.label}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
