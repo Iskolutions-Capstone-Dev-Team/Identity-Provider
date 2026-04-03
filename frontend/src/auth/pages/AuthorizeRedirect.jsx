@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
-import { clearAuthAlert } from "../utils/authAlert";
 import { buildLoginPath } from "../utils/loginRoute";
 
 export default function AuthorizeRedirect() {
@@ -17,7 +16,6 @@ export default function AuthorizeRedirect() {
         await authService.checkSession();
         navigate("/user-pool", { replace: true });
       } catch {
-        clearAuthAlert();
         navigate(buildLoginPath(), { replace: true });
       }
     };
