@@ -7,7 +7,9 @@ import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolModalSelect from "./UserPoolModalSelect";
+import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import { getModalTheme } from "../modalTheme";
+import { ADMIN_USER_TYPE, deriveRolesFromAppClients, getAdminRoleOptions, getAppClientSelectOptions } from "../../utils/userPoolAccess";
 
 const initialFormData = {
   email: "",
@@ -18,7 +20,8 @@ const initialFormData = {
   inviteMode: "temp",
   delivery: "email",
   tempPassword: "",
-  roleIds: [],
+  selectedAdminRoleId: null,
+  accessibleClientIds: [],
 };
 
 const inviteModeOptions = [
@@ -44,23 +47,27 @@ const extractErrorMessage = (error) =>
   error?.message ||
   "Unable to create user.";
 
-export default function AddUserModal({
-  open,
-  onClose,
-  onSubmit,
-  colorMode = "light",
-}) {
+export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", appClientOptions = [], isLoadingAppClients = false, colorMode = "light" }) {
   const buildFullName = ({ givenName, middleName, surname, suffix }) =>
     [givenName, middleName, surname, suffix].filter(Boolean).join(" ");
   const [step, setStep] = useState(1);
-  const roles = useAllRoles();
+  const availableRoles = useAllRoles();
   const [data, setData] = useState(initialFormData);
-  const [rolesError, setRolesError] = useState(false);
+  const [accessError, setAccessError] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
   const [activeVoiceField, setActiveVoiceField] = useState("givenName");
   const [showTempPassword, setShowTempPassword] = useState(false);
   const isDarkMode = colorMode === "dark";
+  const isAdminView = userType === ADMIN_USER_TYPE;
+  const adminRoleOptions = getAdminRoleOptions(availableRoles);
+  const appClientSelectOptions = getAppClientSelectOptions(appClientOptions, {
+    includeAdminRoles: false,
+  });
+  const accessFieldLabel = isAdminView ? "Role" : "Accessible App Clients";
+  const accessHelperText = isAdminView
+    ? "Select one role for this user."
+    : "Choose which app clients this user can access.";
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -194,9 +201,11 @@ export default function AddUserModal({
       surname: "",
       tempPassword: "",
     };
-    const hasRolesError = !data.roleIds || data.roleIds.length === 0;
+    const hasAccessError = isAdminView
+      ? !Number.isInteger(data.selectedAdminRoleId)
+      : data.accessibleClientIds.length === 0;
 
-    setRolesError(hasRolesError);
+    setAccessError(hasAccessError);
 
     if (data.inviteMode === "temp") {
       if (!data.tempPassword.trim()) {
@@ -209,10 +218,10 @@ export default function AddUserModal({
 
     setFieldErrors(nextFieldErrors);
 
-    if (hasRolesError || nextFieldErrors.tempPassword) {
+    if (hasAccessError || nextFieldErrors.tempPassword) {
       setError(
-        hasRolesError
-          ? "At least one role must be selected."
+        hasAccessError
+          ? `Select at least one ${isAdminView ? "role" : "app client"}.`
           : nextFieldErrors.tempPassword,
       );
       return false;
@@ -243,7 +252,7 @@ export default function AddUserModal({
     if (!open) {
       setData(initialFormData);
       setStep(1);
-      setRolesError(false);
+      setAccessError(false);
       setFieldErrors(initialFieldErrors);
       setActiveVoiceField("givenName");
       setShowTempPassword(false);
@@ -293,9 +302,31 @@ export default function AddUserModal({
 
     setError("");
 
-    const selectedRoles = roles
-      .filter((role) => data.roleIds.includes(role.id))
-      .map((role) => role.role_name);
+    const adminRole = adminRoleOptions.find(
+      (role) => role.id === data.selectedAdminRoleId,
+    );
+    const derivedRoleAccess = isAdminView
+      ? {
+          roleIds: adminRole ? [adminRole.id] : [],
+          roleNames: adminRole ? [adminRole.role_name] : [],
+        }
+      : deriveRolesFromAppClients(
+          data.accessibleClientIds,
+          appClientOptions,
+          availableRoles,
+          { includeAdminRoles: false },
+        );
+
+    if (derivedRoleAccess.roleIds.length === 0) {
+      setAccessError(true);
+      setError(
+        isAdminView
+          ? "Select one role."
+          : "Selected app clients do not map to available roles yet.",
+      );
+      setStep(2);
+      return;
+    }
 
     const fullName = buildFullName(data);
 
@@ -307,8 +338,9 @@ export default function AddUserModal({
         middleName: data.middleName,
         surname: data.surname,
         suffix: data.suffix,
-        roleIds: data.roleIds,
-        roles: selectedRoles,
+        roleIds: derivedRoleAccess.roleIds,
+        roles: derivedRoleAccess.roleNames,
+        accessibleClientIds: data.accessibleClientIds,
         inviteMode: data.inviteMode,
         delivery: data.delivery,
         tempPassword: data.tempPassword,
@@ -331,7 +363,9 @@ export default function AddUserModal({
             <div className={modalHeaderContentClassName}>
               <h3 className={modalHeaderTitleClassName}>Add User</h3>
               <p className={modalHeaderDescriptionSpacingClassName}>
-                Enter user information
+                {isAdminView
+                  ? "Enter admin user information"
+                  : "Enter user information"}
               </p>
             </div>
 
@@ -451,9 +485,7 @@ export default function AddUserModal({
                       <label className={modalLabelClassName}>
                         Suffix
                       </label>
-                      <label
-                        className={`${modalInputClassName} flex items-center gap-2 px-4`}
-                      >
+                      <label className={`${modalInputClassName} flex items-center gap-2 px-4`}>
                         <input type="text" name="suffix" value={data.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" className="grow bg-transparent"/>
                         <span className={modalOptionalBadgeClassName}>
                           Optional
@@ -475,34 +507,58 @@ export default function AddUserModal({
               >
                 <section className={modalSectionClassName}>
                   <label className={modalLabelClassName}>
-                    Role <span className="text-red-500">*</span>
+                    {accessFieldLabel} <span className="text-red-500">*</span>
                   </label>
                   <p className={modalHelperTextClassName}>
-                    Choose a role for the user
+                    {accessHelperText}
                   </p>
                   <div className="w-full">
-                    <MultiSelect
-                      options={roles.map((role) => ({
-                        id: role.id,
-                        role_name: role.role_name,
-                      }))}
-                      selectedValues={data.roleIds || []}
-                      onChange={(ids) => {
-                        setData((prev) => ({ ...prev, roleIds: ids }));
-                        if (ids.length > 0) {
-                          setRolesError(false);
+                    {isAdminView ? (
+                      <UserPoolRoleRadioGroup
+                        options={adminRoleOptions}
+                        selectedValue={data.selectedAdminRoleId}
+                        onChange={(selectedAdminRoleId) => {
+                          setData((prev) => ({
+                            ...prev,
+                            selectedAdminRoleId,
+                          }));
+                          setAccessError(false);
                           setError(fieldErrors.tempPassword || "");
-                        }
-                      }}
-                      placeholder="Select entity groups"
-                      variant="userpoolModal"
-                      hasError={rolesError}
-                      colorMode={colorMode}
-                    />
-                    {rolesError && (
-                      <p className="mt-2 text-xs text-red-500">
-                        At least one role is required
+                        }}
+                        colorMode={colorMode}
+                        name="add-user-role"
+                      />
+                    ) : (
+                      <MultiSelect
+                        options={appClientSelectOptions}
+                        selectedValues={data.accessibleClientIds}
+                        onChange={(accessibleClientIds) => {
+                          setData((prev) => ({
+                            ...prev,
+                            accessibleClientIds,
+                          }));
+                          if (accessibleClientIds.length > 0) {
+                            setAccessError(false);
+                            setError(fieldErrors.tempPassword || "");
+                          }
+                        }}
+                        placeholder="Select app clients"
+                        variant="userpoolModal"
+                        hasError={accessError}
+                        colorMode={colorMode}
+                      />
+                    )}
+                    {!isAdminView && isLoadingAppClients && (
+                      <p className={modalHelperTextClassName}>
+                        Loading app clients...
                       </p>
+                    )}
+                    {accessError && (
+                        <p className="mt-2 text-xs text-red-500">
+                          {isAdminView
+                            ? "One role is required"
+                            : "At least one app client is required"}
+                        </p>
                     )}
                   </div>
                 </section>

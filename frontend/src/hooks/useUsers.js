@@ -1,29 +1,10 @@
 import { useEffect, useState } from "react";
 import { userService } from "../services/userService";
 import { useAllRoles } from "./useAllRoles";
+import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, normalizeRoleNames, resolveUserIsAdmin } from "../utils/userPoolAccess";
 
 const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
 const ITEMS_PER_PAGE = 10;
-
-function normalizeRoleNames(roles) {
-  if (!Array.isArray(roles)) {
-    return [];
-  }
-
-  return Array.from(
-    new Set(
-      roles
-        .map((role) => {
-          if (typeof role === "string") {
-            return role.trim();
-          }
-
-          return role?.role_name?.trim() || "";
-        })
-        .filter(Boolean),
-    ),
-  );
-}
 
 function normalizeRoleIds(roleIds) {
   return Array.from(
@@ -89,6 +70,7 @@ function mapUserResponse(user = {}) {
     status: user.status,
     createdAt: user.created_at,
     roles: normalizeRoleNames(user.roles),
+    isAdmin: resolveUserIsAdmin(user),
   };
 }
 
@@ -152,6 +134,7 @@ export function useUsers() {
   const [users, setUsers] = useState([]);
   const allRoles = useAllRoles();
   const [search, setSearch] = useState("");
+  const [userType, setUserType] = useState(REGULAR_USER_TYPE);
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [successMessage, setSuccessMessage] = useState("");
@@ -195,6 +178,12 @@ export function useUsers() {
     const nextValue = typeof value === "string" ? value : "";
     setPage(1);
     setStatus(nextValue);
+  };
+
+  const setUserTypeFilter = (value) => {
+    const nextValue = value === ADMIN_USER_TYPE ? ADMIN_USER_TYPE : REGULAR_USER_TYPE;
+    setPage(1);
+    setUserType(nextValue);
   };
 
   // =========================
@@ -294,8 +283,10 @@ export function useUsers() {
     .filter((user) => {
       const matchesSearch = matchesUserSearch(user, search);
       const matchesStatus = status ? user.status === status : true;
+      const matchesUserType =
+        userType === ADMIN_USER_TYPE ? user.isAdmin : !user.isAdmin;
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus && matchesUserType;
     });
 
   const totalResults = filteredUsers.length;
@@ -316,6 +307,8 @@ export function useUsers() {
     users,
     search,
     setSearch: setSearchKeyword,
+    userType,
+    setUserType: setUserTypeFilter,
     status,
     setStatus: setStatusFilter,
     page: currentPage,

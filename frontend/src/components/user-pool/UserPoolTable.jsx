@@ -1,6 +1,7 @@
 import TableRowFade from "../TableRowFade";
 import { shortenId } from "../../utils/shortenId";
 import DataTableSkeleton from "../DataTableSkeleton";
+import { ADMIN_USER_TYPE, getAccessibleAppClientNames } from "../../utils/userPoolAccess";
 
 const headerCellClassName = "border-b  border-white/10 px-4 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90 xl:px-6";
 const bodyCellClassName = "border-b border-[#7b0d15]/10 px-4 py-4 align-top text-center text-sm text-[#4a1921] xl:px-6";
@@ -41,19 +42,19 @@ function getUserLabel(user) {
   return user.displayName || user.email || "User";
 }
 
-function getRolesGridClassName(roles = []) {
-  const hasMultipleRoles = roles.length > 1;
+function getAccessGridClassName(items = []) {
+  const hasMultipleItems = items.length > 1;
 
-  if (!hasMultipleRoles) {
+  if (!hasMultipleItems) {
     return "grid grid-cols-1 justify-items-start gap-1";
   }
 
   return "grid grid-cols-1 justify-items-start gap-1 lg:grid-cols-2";
 }
 
-function getRoleItemClassName(role) {
-  const isWideRole = role.length > 13;
-  return isWideRole ? "lg:col-span-2" : "";
+function getAccessItemClassName(itemLabel) {
+  const isWideItem = itemLabel.length > 18;
+  return isWideItem ? "lg:col-span-2" : "";
 }
 
 function renderActionButton({ label, onClick, children, className }) {
@@ -64,8 +65,13 @@ function renderActionButton({ label, onClick, children, className }) {
   );
 }
 
-export default function UserPoolTable({ loading = false, users = [], onView, onEdit, onDelete, showDeleteAction = false, colorMode = "light" }) {
+export default function UserPoolTable({ loading = false, users = [], userType = "regular", appClients = [], onView, onEdit, onDelete, showDeleteAction = false, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
+  const isAdminView = userType === ADMIN_USER_TYPE;
+  const accessColumnLabel = isAdminView ? "Roles" : "Accessible App Clients";
+  const emptyStateLabel = isAdminView
+    ? "No admin users found"
+    : "No regular users found";
   const tableTheme = isDarkMode ? "userpoolDark" : "userpool";
   const wrapperClassName = isDarkMode
     ? "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(28,18,29,0.92))] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.82)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
@@ -97,6 +103,9 @@ export default function UserPoolTable({ loading = false, users = [], onView, onE
   const actionButtonClassName = isDarkMode
     ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] text-[#f1e5e7] shadow-[0_14px_30px_-24px_rgba(2,6,23,0.72)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
     : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
+  const getAccessItems = (user) =>
+    isAdminView ? user.roles : getAccessibleAppClientNames(user.roles, appClients);
+  const emptyAccessLabel = isAdminView ? "No roles" : "No app clients";
 
   if (loading) {
     return (
@@ -106,7 +115,7 @@ export default function UserPoolTable({ loading = false, users = [], onView, onE
           { header: "ID", type: "text", width: "w-16" },
           { header: "Email", type: "text", width: "w-32" },
           { header: "Name", type: "stackedText" },
-          { header: "Roles", type: "badges" },
+          { header: accessColumnLabel, type: "badges" },
           { header: "Status", type: "badge", width: "w-20" },
           { header: "Actions", type: "actions" },
         ]}
@@ -132,7 +141,7 @@ export default function UserPoolTable({ loading = false, users = [], onView, onE
               <th className={headerCellClassName}>ID</th>
               <th className={emailHeaderCellClassName}>Email</th>
               <th className={headerCellClassName}>Name</th>
-              <th className={headerCellClassName}>Roles</th>
+              <th className={headerCellClassName}>{accessColumnLabel}</th>
               <th className={statusHeaderCellClassName}>Status</th>
               <th className={actionsHeaderCellClassName}>Actions</th>
             </tr>
@@ -142,25 +151,28 @@ export default function UserPoolTable({ loading = false, users = [], onView, onE
             {users.length === 0 && (
               <tr>
                 <td colSpan={6} className={emptyStateClassName}>
-                  No users found
+                  {emptyStateLabel}
                 </td>
               </tr>
             )}
 
-            {users.map((user, index) => (
-              <TableRowFade
-                key={user.id}
-                keyId={user.id}
-                className={`transition-colors duration-500 ease-out ${
-                  isDarkMode
-                    ? index % 2 === 0
-                      ? "bg-white/[0.03] hover:bg-[#f8d24e]/[0.08]"
-                      : "bg-[#7b0d15]/[0.08] hover:bg-[#7b0d15]/[0.16]"
-                    : index % 2 === 0
-                      ? "bg-white/70 hover:bg-[#fff4dc]/70"
-                      : "bg-[#fff8f3]/80 hover:bg-[#fff4dc]/80"
-                }`}
-              >
+            {users.map((user, index) => {
+              const accessItems = getAccessItems(user);
+
+              return (
+                <TableRowFade
+                  key={user.id}
+                  keyId={user.id}
+                  className={`transition-colors duration-500 ease-out ${
+                    isDarkMode
+                      ? index % 2 === 0
+                        ? "bg-white/[0.03] hover:bg-[#f8d24e]/[0.08]"
+                        : "bg-[#7b0d15]/[0.08] hover:bg-[#7b0d15]/[0.16]"
+                      : index % 2 === 0
+                        ? "bg-white/70 hover:bg-[#fff4dc]/70"
+                        : "bg-[#fff8f3]/80 hover:bg-[#fff4dc]/80"
+                  }`}
+                >
                 <td className={sharedBodyCellClassName}>
                   <div className="tooltip tooltip-right" data-tip={user.id}>
                     <span className={idBadgeClassName}>
@@ -180,15 +192,21 @@ export default function UserPoolTable({ loading = false, users = [], onView, onE
                 </td>
 
                 <td className={sharedBodyCellClassName}>
-                  <div className={getRolesGridClassName(user.roles)}>
-                    {user.roles?.map((role, roleIndex) => (
-                      <div key={`${role}-${roleIndex}`} className={getRoleItemClassName(role)}>
-                        <span className={roleBadgeClassName}>
-                          {role}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  {accessItems.length > 0 ? (
+                    <div className={getAccessGridClassName(accessItems)}>
+                      {accessItems.map((item, itemIndex) => (
+                        <div key={`${item}-${itemIndex}`} className={getAccessItemClassName(item)}>
+                          <span className={roleBadgeClassName}>
+                            {item}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className={isDarkMode ? "text-[#a58d95]" : "text-[#8f6f76]"}>
+                      {emptyAccessLabel}
+                    </span>
+                  )}
                 </td>
 
                 <td className={sharedStatusBodyCellClassName}>
@@ -237,8 +255,9 @@ export default function UserPoolTable({ loading = false, users = [], onView, onE
                       })}
                   </div>
                 </td>
-              </TableRowFade>
-            ))}
+                </TableRowFade>
+              );
+            })}
           </tbody>
         </table>
       </div>

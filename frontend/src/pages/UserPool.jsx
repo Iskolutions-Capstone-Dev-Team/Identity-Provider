@@ -13,6 +13,8 @@ import ResultsCount from "../components/ResultsCount";
 import PageHeader from "../components/PageHeader";
 import { EMPTY_CURRENT_USER, hasCurrentUserRole } from "../hooks/useCurrentUser";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
+import { useAllAppClients } from "../hooks/useAllAppClients";
+import { REGULAR_USER_TYPE } from "../utils/userPoolAccess";
 
 const ITEMS_PER_PAGE = 10;
 const SUPERADMIN_ROLE = "idp:superadmin";
@@ -30,6 +32,8 @@ export default function UserPool() {
     users,
     search,
     setSearch,
+    userType,
+    setUserType,
     status,
     setStatus,
     page,
@@ -45,13 +49,16 @@ export default function UserPool() {
     updateUser,
     deleteUser,
   } = useUsers();
+  const { appClients, isLoadingAppClients } = useAllAppClients();
   const [openViewEditModal, setOpenViewEditModal] = useState(false);
   const [modalMode, setModalMode] = useState("view");
   const [selectedUser, setSelectedUser] = useState(null);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
-  const showLoading = useDelayedLoading(loading);
+  const showLoading = useDelayedLoading(
+    loading || (userType === REGULAR_USER_TYPE && isLoadingAppClients),
+  );
   const currentUserFromList =
     users.find((user) => currentUser.id && user.id === currentUser.id) ||
     users.find((user) => currentUser.email && user.email === currentUser.email) ||
@@ -114,6 +121,8 @@ export default function UserPool() {
             <UserPoolFilters
               search={search}
               setSearch={setSearch}
+              userType={userType}
+              setUserType={setUserType}
               status={status}
               setStatus={setStatus}
               onCreate={() => setOpenAddModal(true)}
@@ -127,6 +136,8 @@ export default function UserPool() {
             <UserPoolTable
               loading={showLoading}
               users={paginatedUsers}
+              userType={userType}
+              appClients={appClients}
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
@@ -156,6 +167,9 @@ export default function UserPool() {
               open={openViewEditModal}
               mode={modalMode}
               user={selectedUser}
+              userType={userType}
+              appClientOptions={appClients}
+              isLoadingAppClients={isLoadingAppClients}
               onSubmit={updateUser}
               onClose={() => setOpenViewEditModal(false)}
               colorMode={colorMode}
@@ -164,6 +178,9 @@ export default function UserPool() {
               open={openAddModal}
               onClose={() => setOpenAddModal(false)}
               onSubmit={createUser}
+              userType={userType}
+              appClientOptions={appClients}
+              isLoadingAppClients={isLoadingAppClients}
               colorMode={colorMode}
             />
           </UserPoolCard>
