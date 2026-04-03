@@ -85,6 +85,24 @@ function normalizeAppClientName(client = {}) {
   );
 }
 
+function getClientRoleNames(client = {}) {
+  return normalizeRoleNames(client?.roleNames);
+}
+
+function getFilteredRoleNames(roleNames = [], { includeAdminRoles = true } = {}) {
+  const normalizedRoleNames = normalizeRoleNames(roleNames);
+
+  if (includeAdminRoles) {
+    return normalizedRoleNames;
+  }
+
+  return normalizedRoleNames.filter((roleName) => !isAdminRoleName(roleName));
+}
+
+function getSelectableClientRoleNames(client = {}, options = {}) {
+  return getFilteredRoleNames(getClientRoleNames(client), options);
+}
+
 export function getAccessibleAppClientsForRoles(roleNames = [], appClients = []) {
   const normalizedRoleLookup = new Set(
     normalizeRoleNames(roleNames).map((roleName) => normalizeLowerText(roleName)),
@@ -113,7 +131,7 @@ export function getAccessibleAppClientIds(roleNames = [], appClients = []) {
     .filter(Boolean);
 }
 
-export function deriveRolesFromAppClients( selectedClientIds = [], appClients = [], availableRoles = [] ) {
+export function deriveRolesFromAppClients( selectedClientIds = [], appClients = [], availableRoles = [], options = {} ) {
   const selectedClientLookup = new Set(
     (Array.isArray(selectedClientIds) ? selectedClientIds : []).filter(Boolean),
   );
@@ -124,7 +142,7 @@ export function deriveRolesFromAppClients( selectedClientIds = [], appClients = 
       return;
     }
 
-    normalizeRoleNames(client?.roleNames).forEach((roleName) => {
+    getSelectableClientRoleNames(client, options).forEach((roleName) => {
       matchedRoleNames.push(roleName);
     });
   });
@@ -162,8 +180,9 @@ export function getAdminRoleOptions(roles = []) {
   );
 }
 
-export function getAppClientSelectOptions(appClients = []) {
+export function getAppClientSelectOptions(appClients = [], options = {}) {
   return (Array.isArray(appClients) ? appClients : [])
+    .filter((client) => getSelectableClientRoleNames(client, options).length > 0)
     .map((client) => ({
       id: client?.id,
       label: normalizeAppClientName(client),

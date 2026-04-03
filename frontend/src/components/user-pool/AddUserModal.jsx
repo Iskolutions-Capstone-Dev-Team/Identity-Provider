@@ -61,7 +61,9 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
   const adminRoleOptions = getAdminRoleOptions(availableRoles);
-  const appClientSelectOptions = getAppClientSelectOptions(appClientOptions);
+  const appClientSelectOptions = getAppClientSelectOptions(appClientOptions, {
+    includeAdminRoles: false,
+  });
   const accessFieldLabel = isAdminView ? "Role" : "Accessible App Clients";
   const accessHelperText = isAdminView
     ? "Select one role for this user."
@@ -312,6 +314,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
           data.accessibleClientIds,
           appClientOptions,
           availableRoles,
+          { includeAdminRoles: false },
         );
 
     if (derivedRoleAccess.roleIds.length === 0) {

@@ -118,7 +118,9 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
   const adminRoleOptions = getAdminRoleOptions(availableRoles);
-  const appClientSelectOptions = getAppClientSelectOptions(appClientOptions);
+  const appClientSelectOptions = getAppClientSelectOptions(appClientOptions, {
+    includeAdminRoles: false,
+  });
   const accessFieldLabel = isAdminView ? "Role" : "Accessible App Clients";
   const {
     modalBodyClassName,
@@ -352,6 +354,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
             formData.accessibleClientIds,
             appClientOptions,
             availableRoles,
+            { includeAdminRoles: false },
           )
         : {
             roleIds: selectedRoleIds,
