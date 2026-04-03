@@ -1,7 +1,21 @@
 import React, { useState, useRef, useEffect } from "react";
 
-export default function MultiSelect({ options,
-  selectedValues, onChange, placeholder, disabled = false, variant = "default", hasError = false, colorMode = "light" }) {
+function getOptionLabel(option) {
+  if (!option || typeof option !== "object") {
+    return "";
+  }
+
+  return (
+    option.label ||
+    option.name ||
+    option.role_name ||
+    option.roleName ||
+    option.tag ||
+    ""
+  );
+}
+
+export default function MultiSelect({ options, selectedValues, onChange, placeholder, disabled = false, variant = "default", hasError = false, colorMode = "light" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef(null);
@@ -44,7 +58,7 @@ export default function MultiSelect({ options,
   const unselectedItems = options.filter(
     (opt) =>
       !selectedValues.includes(opt.id) &&
-      opt.role_name.toLowerCase().includes(searchTerm.toLowerCase()),
+      getOptionLabel(opt).toLowerCase().includes(searchTerm.toLowerCase()),
   );
   const isUserPoolModalVariant = variant === "userpoolModal";
   const isDarkUserPoolModalVariant =
@@ -168,7 +182,7 @@ export default function MultiSelect({ options,
 
           {selectedItems.map((item) => (
             <div key={item.id} className={selectedTagClassName}>
-              <span className="truncate">{item.role_name}</span>
+              <span className="truncate">{getOptionLabel(item)}</span>
               {!disabled && (
                 <button type="button" onClick={(e) => removeTag(e, item.id)} className="ml-1 shrink-0 font-bold transition hover:text-[#5a0b12]">
                   x
@@ -220,7 +234,7 @@ export default function MultiSelect({ options,
                 <div key={option.id} onClick={() => toggleOption(option.id)} className={optionClassName}>
                   <input type="checkbox" checked={true} readOnly className={checkboxClassName}/>
                   <span className={selectedOptionTextClassName}>
-                    {option.role_name}
+                    {getOptionLabel(option)}
                   </span>
                 </div>
               ))}
@@ -232,7 +246,7 @@ export default function MultiSelect({ options,
             unselectedItems.map((option) => (
               <div key={option.id} onClick={() => toggleOption(option.id)} className={optionClassName}>
                 <input type="checkbox" checked={false} readOnly className={checkboxClassName}/>
-                <span className={optionTextClassName}>{option.role_name}</span>
+                <span className={optionTextClassName}>{getOptionLabel(option)}</span>
               </div>
             ))
           ) : (
