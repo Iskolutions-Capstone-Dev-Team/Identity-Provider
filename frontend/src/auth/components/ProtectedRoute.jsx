@@ -4,7 +4,7 @@ import { authService } from "../services/authService";
 import { clearAuthState } from "../utils/authCookies";
 import { ensureValidAccessToken } from "../utils/tokenRefresh";
 import { buildLoginPath } from "../utils/loginRoute";
-import { rememberUnauthorizedAlert } from "../utils/authAlert";
+import { UNAUTHORIZED_PAGE_PATH } from "../utils/unauthorizedPage";
 
 export default function ProtectedRoute({ children }) {
   const [authState, setAuthState] = useState("loading");
@@ -25,7 +25,8 @@ export default function ProtectedRoute({ children }) {
       } catch (error) {
         if (error.response?.status === 403) {
           clearAuthState();
-          rememberUnauthorizedAlert();
+          setAuthState("unauthorized");
+          return;
         }
 
         setAuthState("denied");
@@ -64,6 +65,10 @@ export default function ProtectedRoute({ children }) {
 
   if (authState === "denied") {
     return <Navigate to={buildLoginPath()} replace />;
+  }
+
+  if (authState === "unauthorized") {
+    return <Navigate to={UNAUTHORIZED_PAGE_PATH} replace />;
   }
 
   return children;

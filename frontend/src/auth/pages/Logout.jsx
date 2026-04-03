@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import { clearAuthState } from "../utils/authCookies";
-import { clearAuthAlert } from "../utils/authAlert";
 import { buildLoginPath } from "../utils/loginRoute";
 
 export default function Logout() {
@@ -19,7 +18,6 @@ export default function Logout() {
       } catch (err) {
         console.error("Logout failed", err);
       } finally {
-        clearAuthAlert();
         clearAuthState();
         setTimeout(() => navigate(buildLoginPath(), { replace: true }), 500);
       }
