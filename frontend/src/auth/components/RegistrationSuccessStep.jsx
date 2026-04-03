@@ -65,7 +65,7 @@ export default function RegistrationSuccessStep({ email, loginPath }) {
               What happens next?
             </p>
             <p className="text-sm leading-6 text-[#6f4f56]">
-              Our admin team will review your registration. We&apos;ll send a
+              Our admin will review your registration. We&apos;ll send a
               password setup link to{" "}
               <span className="font-semibold text-[#5a0b12]">{maskedEmail}</span>{" "}
               once your account has been verified.
