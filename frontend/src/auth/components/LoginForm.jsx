@@ -1,12 +1,11 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { authService } from "../services/authService";
 import ErrorAlert from "../../components/ErrorAlert";
 import ChangePasswordModal from "../../components/ChangePasswordModal";
-import { UNAUTHORIZED_PAGE_PATH } from "../utils/unauthorizedPage";
+import { clearAuthAlert, consumeAuthAlert } from "../utils/authAlert";
 
 export default function LoginForm({ clientId }) {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +20,14 @@ export default function LoginForm({ clientId }) {
   const registerPath = clientId
     ? `/register?client_id=${encodeURIComponent(clientId)}`
     : "/register";
+
+  useEffect(() => {
+    const authAlert = consumeAuthAlert();
+
+    if (authAlert) {
+      setError(authAlert);
+    }
+  }, []);
 
   const toggleShowPassword = () => {
     setShowPassword((prev) => !prev);
@@ -112,6 +119,7 @@ export default function LoginForm({ clientId }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    clearAuthAlert();
     setError("");
 
     if (!validateFields()) {
@@ -139,7 +147,7 @@ export default function LoginForm({ clientId }) {
       } else if (status === 401) {
         setError("Invalid email or password.");
       } else if (status === 403) {
-        navigate(UNAUTHORIZED_PAGE_PATH, { replace: true });
+        setError("Your account is not authorized to access this system.");
       } else if (status === 500) {
         setError("Server error. Please try again later.");
       } else {
