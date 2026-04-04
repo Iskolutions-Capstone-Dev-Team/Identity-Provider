@@ -9,7 +9,7 @@ type UserRequest struct {
 	Email      string   `json:"email" binding:"required,email"`
 	Password   string   `json:"password" binding:"required,min=8"`
 	Status     string   `json:"status" binding:"required"`
-	RoleID     int      `json:"role_id" binding:"required"`
+	RoleID     int      `json:"role_id"`
 }
 
 // UpdatePasswordRequest handles incoming patch data for updating password
