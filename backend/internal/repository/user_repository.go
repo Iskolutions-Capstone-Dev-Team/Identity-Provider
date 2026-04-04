@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -18,7 +19,7 @@ type UserRepository interface {
 	UpdateStatus(ctx context.Context, user *models.User) error
 	UpdateUserPassword(ctx context.Context, user *models.User) error
 	UpdateUserRole(ctx context.Context, userID []byte,
-		roleID int) error
+		roleID sql.NullInt64) error
 	SoftDelete(ctx context.Context, id []byte) error
 	CountUsers(ctx context.Context) (int, error)
 	CountBoundUsers(ctx context.Context, adminID []byte) (int, error)
@@ -31,9 +32,9 @@ type userRepository struct {
 
 type userRow struct {
 	models.User
-	RID   int    `db:"role_id"`
-	RName string `db:"role_name"`
-	RDesc string `db:"role_description"`
+	RID   sql.NullInt64  `db:"role_id"`
+	RName sql.NullString `db:"role_name"`
+	RDesc sql.NullString `db:"role_description"`
 }
 
 // GetUserList retrieves a paginated list of non-deleted users.
@@ -78,10 +79,12 @@ func (r *userRepository) GetUserList(ctx context.Context,
 	result := make([]models.User, 0, len(rows))
 	for _, row := range rows {
 		user := row.User
-		user.Role = models.Role{
-			ID:          row.RID,
-			RoleName:    row.RName,
-			Description: row.RDesc,
+		if row.RID.Valid {
+			user.Role = models.Role{
+				ID:          int(row.RID.Int64),
+				RoleName:    row.RName.String,
+				Description: row.RDesc.String,
+			}
 		}
 		result = append(result, user)
 	}
@@ -151,10 +154,12 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 	result := make([]models.User, 0, len(rows))
 	for _, row := range rows {
 		user := row.User
-		user.Role = models.Role{
-			ID:          row.RID,
-			RoleName:    row.RName,
-			Description: row.RDesc,
+		if row.RID.Valid {
+			user.Role = models.Role{
+				ID:          int(row.RID.Int64),
+				RoleName:    row.RName.String,
+				Description: row.RDesc.String,
+			}
 		}
 		result = append(result, user)
 	}
@@ -186,10 +191,12 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
 	}
 
 	user := rows[0].User
-	user.Role = models.Role{
-		ID:          rows[0].RID,
-		RoleName:    rows[0].RName,
-		Description: rows[0].RDesc,
+	if rows[0].RID.Valid {
+		user.Role = models.Role{
+			ID:          int(rows[0].RID.Int64),
+			RoleName:    rows[0].RName.String,
+			Description: rows[0].RDesc.String,
+		}
 	}
 
 	return &user, nil
@@ -219,10 +226,12 @@ func (r *userRepository) GetUserById(ctx context.Context,
 	}
 
 	user := rows[0].User
-	user.Role = models.Role{
-		ID:          rows[0].RID,
-		RoleName:    rows[0].RName,
-		Description: rows[0].RDesc,
+	if rows[0].RID.Valid {
+		user.Role = models.Role{
+			ID:          int(rows[0].RID.Int64),
+			RoleName:    rows[0].RName.String,
+			Description: rows[0].RDesc.String,
+		}
 	}
 
 	return &user, nil
@@ -268,7 +277,7 @@ func (r *userRepository) UpdateUserPassword(ctx context.Context,
 
 // UpdateUserRole updates the role of a specific user.
 func (r *userRepository) UpdateUserRole(ctx context.Context,
-	userID []byte, roleID int,
+	userID []byte, roleID sql.NullInt64,
 ) error {
 	query := `UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ?`
 	_, err := r.db.ExecContext(ctx, query, roleID, userID)

@@ -28,7 +28,7 @@ type UserService interface {
 		newPassword string) error
 	UpdateUserStatus(ctx context.Context, id uuid.UUID,
 		newStatus string) error
-	UpdateUserRole(ctx context.Context, id uuid.UUID, roleID int,
+	UpdateUserRole(ctx context.Context, id uuid.UUID, roleID *int,
 		adminID uuid.UUID, permissions []string) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
@@ -70,7 +70,12 @@ func (s *userService) CreateUser(
 		Email:        req.Email,
 		PasswordHash: passwordHash,
 		Status:       models.StatusActive,
-		RoleID:       sql.NullInt64{Int64: int64(req.RoleID), Valid: true},
+		RoleID: sql.NullInt64{
+			Valid: req.RoleID != nil,
+		},
+	}
+	if req.RoleID != nil {
+		user.RoleID.Int64 = int64(*req.RoleID)
 	}
 
 	err = s.Repo.CreateUser(ctx, &user)
@@ -93,21 +98,10 @@ func (s *userService) GetUserByID(
 		return nil, fmt.Errorf("Database Query (GetUserById): %w", err)
 	}
 
-	return &dto.UserResponse{
-		ID:         id.String(),
-		FirstName:  user.FirstName,
-		MiddleName: user.MiddleName,
-		LastName:   user.LastName,
-		NameSuffix: user.NameSuffix,
-		Email:      user.Email,
-		Status:     string(user.Status),
-		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-		Roles: dto.UserRoleRepsonse{
-			ID:       user.Role.ID,
-			RoleName: user.Role.RoleName,
-		},
-	}, nil
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	return s.mapToUserResponse(*user, id), nil
 }
 
 /**
@@ -193,21 +187,8 @@ func (s *userService) GetUserList(
 	var userResponses []dto.UserResponse
 	for _, user := range users {
 		userUUID, _ := uuid.FromBytes(user.ID)
-		userResponses = append(userResponses, dto.UserResponse{
-			ID:         userUUID.String(),
-			FirstName:  user.FirstName,
-			MiddleName: user.MiddleName,
-			LastName:   user.LastName,
-			NameSuffix: user.NameSuffix,
-			Email:      user.Email,
-			Status:     string(user.Status),
-			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-			UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-			Roles: dto.UserRoleRepsonse{
-				ID:       user.Role.ID,
-				RoleName: user.Role.RoleName,
-			},
-		})
+		userResponses = append(userResponses, *s.mapToUserResponse(user,
+			userUUID))
 	}
 
 	lastPage := (total + limit - 1) / limit
@@ -247,21 +228,8 @@ func (s *userService) GetBoundUserList(
 	var userResponses []dto.UserResponse
 	for _, user := range users {
 		userUUID, _ := uuid.FromBytes(user.ID)
-		userResponses = append(userResponses, dto.UserResponse{
-			ID:         userUUID.String(),
-			FirstName:  user.FirstName,
-			MiddleName: user.MiddleName,
-			LastName:   user.LastName,
-			NameSuffix: user.NameSuffix,
-			Email:      user.Email,
-			Status:     string(user.Status),
-			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-			UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-			Roles: dto.UserRoleRepsonse{
-				ID:       user.Role.ID,
-				RoleName: user.Role.RoleName,
-			},
-		})
+		userResponses = append(userResponses, *s.mapToUserResponse(user,
+			userUUID))
 	}
 
 	lastPage := (total + limit - 1) / limit
@@ -335,12 +303,19 @@ func (s *userService) UpdateUserStatus(
 func (s *userService) UpdateUserRole(
 	ctx context.Context,
 	id uuid.UUID,
-	roleID int,
+	roleID *int,
 	adminID uuid.UUID,
 	permissions []string,
 ) error {
 	if slices.Contains(permissions, "Update user roles") {
-		err := s.Repo.UpdateUserRole(ctx, id[:], roleID)
+		var nullRoleID sql.NullInt64
+		if roleID != nil {
+			nullRoleID = sql.NullInt64{
+				Int64: int64(*roleID),
+				Valid: true,
+			}
+		}
+		err := s.Repo.UpdateUserRole(ctx, id[:], nullRoleID)
 		if err != nil {
 			return fmt.Errorf("Database Query (UpdateUserRole): %w", err)
 		}
@@ -358,4 +333,31 @@ func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (s *userService) mapToUserResponse(
+	user models.User,
+	id uuid.UUID,
+) *dto.UserResponse {
+	resp := &dto.UserResponse{
+		ID:         id.String(),
+		FirstName:  user.FirstName,
+		MiddleName: user.MiddleName,
+		LastName:   user.LastName,
+		NameSuffix: user.NameSuffix,
+		Email:      user.Email,
+		Status:     string(user.Status),
+		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
+		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+	}
+
+	if user.RoleID.Valid {
+		resp.Roles = &dto.UserRoleRepsonse{
+			ID:          user.Role.ID,
+			RoleName:    user.Role.RoleName,
+			Description: user.Role.Description,
+		}
+	}
+
+	return resp
 }
