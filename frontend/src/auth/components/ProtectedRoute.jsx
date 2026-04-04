@@ -22,8 +22,6 @@ export default function ProtectedRoute({ children }) {
           return;
         }
 
-        await authService.checkIdpAccess();
-
         const currentUser = await userService.getMe();
 
         if (!hasAssignedRoles(currentUser)) {

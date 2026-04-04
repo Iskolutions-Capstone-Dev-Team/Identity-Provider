@@ -56,10 +56,4 @@ export const authService = {
       skipAuthRefresh: true,
     });
   },
-
-  async checkIdpAccess() {
-    return axiosInstance.get("/admin/status", {
-      skipForbiddenRedirect: true,
-    });
-  },
 };

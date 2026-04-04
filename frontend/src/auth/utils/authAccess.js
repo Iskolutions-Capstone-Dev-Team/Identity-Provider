@@ -1,5 +1,17 @@
 export const DEFAULT_AUTHENTICATED_PATH = "/user-pool";
 
+function normalizeRoleSource(roles) {
+  if (Array.isArray(roles)) {
+    return roles;
+  }
+
+  if (roles === null || roles === undefined) {
+    return [];
+  }
+
+  return [roles];
+}
+
 function normalizeRoleName(role) {
   if (typeof role === "string") {
     return role.trim();
@@ -15,11 +27,11 @@ function normalizeRoleName(role) {
 }
 
 export function getAssignedRoleNames(roles = []) {
-  if (!Array.isArray(roles)) {
-    return [];
-  }
+  const normalizedRoles = normalizeRoleSource(roles);
 
-  return Array.from(new Set(roles.map(normalizeRoleName).filter(Boolean)));
+  return Array.from(
+    new Set(normalizedRoles.map(normalizeRoleName).filter(Boolean)),
+  );
 }
 
 export function hasAssignedRoles(user = {}) {
