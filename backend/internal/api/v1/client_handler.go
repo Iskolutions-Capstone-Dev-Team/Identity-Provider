@@ -30,7 +30,6 @@ type ClientHandler struct {
 	LogService service.LogService
 }
 
-
 // PostClient handles POST /v1/admin/clients
 // @Summary Register a new Service Provider with Icon
 // @Description Creates client, saves icon, hashes secret, and maps roles
@@ -52,7 +51,10 @@ type ClientHandler struct {
 // @Router /v1/admin/clients [post]
 func (h *ClientHandler) PostClient(c *gin.Context) {
 	if !middleware.HasPermission(c, "Add appclient") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		c.JSON(
+			http.StatusUnauthorized,
+			dto.ErrorResponse{Error: "Unauthorized"},
+		)
 		return
 	}
 
@@ -141,7 +143,10 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 // @Router /v1/admin/clients [get]
 func (h *ClientHandler) GetClientList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View all appclients") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		c.JSON(
+			http.StatusUnauthorized,
+			dto.ErrorResponse{Error: "Unauthorized"},
+		)
 		return
 	}
 
@@ -309,7 +314,10 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 // @Router /v1/admin/clients/{id} [put]
 func (h *ClientHandler) PutClient(c *gin.Context) {
 	if !middleware.HasPermission(c, "Edit appclient") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		c.JSON(
+			http.StatusUnauthorized,
+			dto.ErrorResponse{Error: "Unauthorized"},
+		)
 		return
 	}
 
@@ -480,7 +488,10 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 // @Router /v1/admin/clients/{id} [delete]
 func (h *ClientHandler) DeleteClient(c *gin.Context) {
 	if !middleware.HasPermission(c, "Delete appclient") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		c.JSON(
+			http.StatusUnauthorized,
+			dto.ErrorResponse{Error: "Unauthorized"},
+		)
 		return
 	}
 
