@@ -11,12 +11,32 @@ import (
 	"github.com/google/uuid"
 )
 
-type LogService struct {
+type LogService interface {
+	PostAuditLog(ctx context.Context, actorID []byte,
+		req *dto.PostAuditLogRequest) error
+	GetLog(ctx context.Context, req *dto.GetAuditLogRequest,
+	) (*dto.PostAuditLogRequest, error)
+	GetLogList(ctx context.Context, limit,
+		offset int) ([]dto.PostAuditLogRequest, error)
+	PostAuditLogWithActorString(ctx context.Context, actor string,
+		req *dto.PostAuditLogRequest) error
+	ResolveClientName(ctx context.Context, clientID string) string
+	GetUserEmail(ctx context.Context, userID []byte) (string, error)
+	GetLogByID(ctx context.Context, id int64) (*dto.PostAuditLogRequest, error)
+	GetLogListWithFilters(ctx context.Context, filters map[string]interface{},
+		limit, page int) ([]dto.PostAuditLogRequest, int64, int, error)
+}
+
+type logService struct {
 	Repo repository.LogRepository
 }
 
+func NewLogService(repo repository.LogRepository) LogService {
+	return &logService{Repo: repo}
+}
+
 // PostAuditLog handles logic for creating an audit log.
-func (s *LogService) PostAuditLog(ctx context.Context, actorID []byte,
+func (s *logService) PostAuditLog(ctx context.Context, actorID []byte,
 	req *dto.PostAuditLogRequest,
 ) error {
 	actorName := s.resolveActor(ctx, actorID)
@@ -33,7 +53,7 @@ func (s *LogService) PostAuditLog(ctx context.Context, actorID []byte,
 }
 
 // GetLog retrieves a single audit log based on DTO filters.
-func (s *LogService) GetLog(ctx context.Context,
+func (s *logService) GetLog(ctx context.Context,
 	req *dto.GetAuditLogRequest,
 ) (*dto.PostAuditLogRequest, error) {
 	res, err := s.Repo.GetLog(ctx, req.Actor, req.Status)
@@ -51,7 +71,7 @@ func (s *LogService) GetLog(ctx context.Context,
 }
 
 // GetLogList retrieves a list of audit logs converted to DTOs.
-func (s *LogService) GetLogList(ctx context.Context,
+func (s *logService) GetLogList(ctx context.Context,
 	limit, offset int,
 ) ([]dto.PostAuditLogRequest, error) {
 	logs, err := s.Repo.GetLogList(ctx, limit, offset)
@@ -74,7 +94,7 @@ func (s *LogService) GetLogList(ctx context.Context,
 }
 
 // resolveActor attempts to find the actor name from users or clients.
-func (s *LogService) resolveActor(ctx context.Context, id []byte) string {
+func (s *logService) resolveActor(ctx context.Context, id []byte) string {
 	if email, err := s.Repo.GetUserEmailbyID(ctx, id); err == nil &&
 		email != "" {
 		return email
@@ -89,7 +109,7 @@ func (s *LogService) resolveActor(ctx context.Context, id []byte) string {
 }
 
 // PostAuditLogWithActorString creates an audit log with string actor.
-func (s *LogService) PostAuditLogWithActorString(ctx context.Context,
+func (s *logService) PostAuditLogWithActorString(ctx context.Context,
 	actor string, req *dto.PostAuditLogRequest,
 ) error {
 	log := &models.AuditLog{
@@ -103,7 +123,7 @@ func (s *LogService) PostAuditLogWithActorString(ctx context.Context,
 }
 
 // ResolveClientName returns a human-readable client name.
-func (s *LogService) ResolveClientName(ctx context.Context,
+func (s *logService) ResolveClientName(ctx context.Context,
 	clientID string,
 ) string {
 	idBytes, err := uuid.Parse(clientID)
@@ -118,14 +138,14 @@ func (s *LogService) ResolveClientName(ctx context.Context,
 }
 
 // GetUserEmail returns the email for a user ID.
-func (s *LogService) GetUserEmail(ctx context.Context,
+func (s *logService) GetUserEmail(ctx context.Context,
 	userID []byte,
 ) (string, error) {
 	return s.Repo.GetUserEmailbyID(ctx, userID)
 }
 
 // GetLogByID retrieves a single audit log by its ID.
-func (s *LogService) GetLogByID(ctx context.Context,
+func (s *logService) GetLogByID(ctx context.Context,
 	id int64,
 ) (*dto.PostAuditLogRequest, error) {
 	log, err := s.Repo.GetLogByID(ctx, id)
@@ -142,7 +162,7 @@ func (s *LogService) GetLogByID(ctx context.Context,
 }
 
 // GetLogListWithFilters retrieves logs matching filters.
-func (s *LogService) GetLogListWithFilters(ctx context.Context,
+func (s *logService) GetLogListWithFilters(ctx context.Context,
 	filters map[string]interface{}, limit, page int,
 ) ([]dto.PostAuditLogRequest, int64, int, error) {
 	if limit <= 0 {
@@ -173,3 +193,4 @@ func (s *LogService) GetLogListWithFilters(ctx context.Context,
 	lastPage := int((total + int64(limit) - 1) / int64(limit))
 	return dtos, total, lastPage, nil
 }
+

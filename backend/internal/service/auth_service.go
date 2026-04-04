@@ -16,7 +16,25 @@ import (
 	"github.com/google/uuid"
 )
 
-type AuthService struct {
+type AuthService interface {
+	Authorize(ctx context.Context, clientIDStr string,
+		sessionToken string) (string, error)
+	LoginAndAuthorize(ctx context.Context, req dto.LoginRequest,
+		ipAddress, userAgent string) (string, string, error)
+	Logout(ctx context.Context, sessionID string) error
+	ValidateSession(ctx context.Context,
+		sessionID string) (*models.IdPSession, error)
+	GetJWKS(ctx context.Context) (*JWKS, error)
+	ExchangeCodeForToken(ctx context.Context,
+		req dto.TokenExchangeRequest) (*dto.TokenResponse, error)
+	RotateRefreshToken(ctx context.Context,
+		oldToken string) (*dto.TokenResponse, error)
+	GetSessionToken(ctx context.Context, userID uuid.UUID,
+		ipAddress, userAgent string) (string, error)
+	RevokeCookies(c *gin.Context)
+}
+
+type authService struct {
 	Repo        repository.AuthCodeRepository
 	SessionRepo repository.SessionRepository
 	ClientRepo  repository.ClientRepository
@@ -24,11 +42,24 @@ type AuthService struct {
 	PublicKey   *rsa.PublicKey
 }
 
+func NewAuthService(repo repository.AuthCodeRepository,
+	sessionRepo repository.SessionRepository,
+	clientRepo repository.ClientRepository,
+	privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey) AuthService {
+	return &authService{
+		Repo:        repo,
+		SessionRepo: sessionRepo,
+		ClientRepo:  clientRepo,
+		PrivateKey:  privateKey,
+		PublicKey:   publicKey,
+	}
+}
+
 /**
  * Authorize validates the user's session and generates an
  * authorization code for the requesting client.
  */
-func (s *AuthService) Authorize(
+func (s *authService) Authorize(
 	ctx context.Context,
 	clientIDStr string,
 	sessionToken string,
@@ -74,7 +105,7 @@ func (s *AuthService) Authorize(
  * LoginAndAuthorize verifies credentials and generates an
  * authorization code and a session for the user.
  */
-func (s *AuthService) LoginAndAuthorize(
+func (s *authService) LoginAndAuthorize(
 	ctx context.Context,
 	req dto.LoginRequest,
 	ipAddress,
@@ -116,7 +147,7 @@ func (s *AuthService) LoginAndAuthorize(
  * Logout revokes all active tokens for the user associated
  * with the provided session ID.
  */
-func (s *AuthService) Logout(
+func (s *authService) Logout(
 	ctx context.Context,
 	sessionID string,
 ) error {
@@ -141,7 +172,7 @@ func (s *AuthService) Logout(
 /**
  * ValidateSession checks if a session ID exists and is still active.
  */
-func (s *AuthService) ValidateSession(
+func (s *authService) ValidateSession(
 	ctx context.Context,
 	sessionID string,
 ) (*models.IdPSession, error) {
@@ -160,7 +191,7 @@ func (s *AuthService) ValidateSession(
 /**
  * GetJWKS constructs the JSON Web Key Set.
  */
-func (s *AuthService) GetJWKS(ctx context.Context) (*JWKS, error) {
+func (s *authService) GetJWKS(ctx context.Context) (*JWKS, error) {
 	keyID := os.Getenv("KEY_ID")
 
 	jwk := PublicKeyToJWK(s.PublicKey, keyID)
@@ -173,7 +204,7 @@ func (s *AuthService) GetJWKS(ctx context.Context) (*JWKS, error) {
 /**
  * ExchangeCodeForToken validates the authorization code and client.
  */
-func (s *AuthService) ExchangeCodeForToken(
+func (s *authService) ExchangeCodeForToken(
 	ctx context.Context,
 	req dto.TokenExchangeRequest,
 ) (*dto.TokenResponse, error) {
@@ -242,7 +273,7 @@ func (s *AuthService) ExchangeCodeForToken(
 /**
  * RotateRefreshToken validates an existing refresh token and issues a new pair.
  */
-func (s *AuthService) RotateRefreshToken(
+func (s *authService) RotateRefreshToken(
 	ctx context.Context,
 	oldToken string,
 ) (*dto.TokenResponse, error) {
@@ -288,7 +319,7 @@ func (s *AuthService) RotateRefreshToken(
 	}, nil
 }
 
-func (s *AuthService) GetSessionToken(ctx context.Context,
+func (s *authService) GetSessionToken(ctx context.Context,
 	userID uuid.UUID, ipAddress, userAgent string,
 ) (string, error) {
 	sessionID, _ := utils.GenerateRandomString(32)
@@ -313,7 +344,7 @@ func (s *AuthService) GetSessionToken(ctx context.Context,
 	return sessionID, nil
 }
 
-func (s *AuthService) RevokeCookies(c *gin.Context) {
+func (s *authService) RevokeCookies(c *gin.Context) {
 	c.SetCookie(
 		SESSION_COOKIE_NAME,
 		"",
@@ -333,3 +364,4 @@ func (s *AuthService) RevokeCookies(c *gin.Context) {
 		true,
 	)
 }
+

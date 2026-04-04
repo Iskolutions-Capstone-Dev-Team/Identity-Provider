@@ -11,15 +11,43 @@ import (
 	"github.com/google/uuid"
 )
 
-type UserService struct {
+type UserService interface {
+	CreateUser(ctx context.Context, req dto.UserRequest) (uuid.UUID, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
+	GetMe(ctx context.Context, userID,
+		clientID uuid.UUID) (*dto.UserInfoResponse, error)
+	GetFilteredUserList(ctx context.Context, role string, userID uuid.UUID,
+		limit, page int) (*dto.UserResponseList, error)
+	GetUserList(ctx context.Context, limit,
+		page int) (*dto.UserResponseList, error)
+	GetBoundUserList(ctx context.Context, limit, page int,
+		userID uuid.UUID) (*dto.UserResponseList, error)
+	UpdateUserPassword(ctx context.Context, id uuid.UUID,
+		newPassword string) error
+	UpdateUserStatus(ctx context.Context, id uuid.UUID,
+		newStatus string) error
+	UpdateUserRoles(ctx context.Context, id uuid.UUID, roleIDs []int,
+		adminID uuid.UUID, role string) error
+	DeleteUser(ctx context.Context, id uuid.UUID) error
+}
+
+type userService struct {
 	Repo       repository.UserRepository
 	ClientRepo repository.ClientRepository
+}
+
+func NewUserService(repo repository.UserRepository,
+	clientRepo repository.ClientRepository) UserService {
+	return &userService{
+		Repo:       repo,
+		ClientRepo: clientRepo,
+	}
 }
 
 /**
  * CreateUser handles the business logic for new user registration.
  */
-func (s *UserService) CreateUser(
+func (s *userService) CreateUser(
 	ctx context.Context,
 	req dto.UserRequest,
 ) (uuid.UUID, error) {
@@ -53,7 +81,7 @@ func (s *UserService) CreateUser(
 /**
  * GetUserByID retrieves a single user by their UUID.
  */
-func (s *UserService) GetUserByID(
+func (s *userService) GetUserByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*dto.UserResponse, error) {
@@ -78,7 +106,7 @@ func (s *UserService) GetUserByID(
 /**
  * GetMe retrieves profile information for the authenticated user.
  */
-func (s *UserService) GetMe(
+func (s *userService) GetMe(
 	ctx context.Context,
 	userID,
 	clientID uuid.UUID,
@@ -119,7 +147,7 @@ func (s *UserService) GetMe(
 /**
  * GetFilteredUserList routes the request to fetch either all or bound users.
  */
-func (s *UserService) GetFilteredUserList(
+func (s *userService) GetFilteredUserList(
 	ctx context.Context,
 	role string,
 	userID uuid.UUID,
@@ -140,7 +168,7 @@ func (s *UserService) GetFilteredUserList(
 /**
  * GetUserList retrieves a paginated list of all users.
  */
-func (s *UserService) GetUserList(
+func (s *userService) GetUserList(
 	ctx context.Context,
 	limit,
 	page int,
@@ -195,7 +223,7 @@ func (s *UserService) GetUserList(
 /**
  * GetBoundUserList retrieves users sharing allowed client roles with admin.
  */
-func (s *UserService) GetBoundUserList(
+func (s *userService) GetBoundUserList(
 	ctx context.Context,
 	limit,
 	page int,
@@ -262,7 +290,7 @@ func GetUserRoles(roles []models.Role) ([]dto.UserRoleRepsonse, error) {
 /**
  * UpdateUserPassword handles hashing and persistence of new password.
  */
-func (s *UserService) UpdateUserPassword(
+func (s *userService) UpdateUserPassword(
 	ctx context.Context,
 	id uuid.UUID,
 	newPassword string,
@@ -288,7 +316,7 @@ func (s *UserService) UpdateUserPassword(
 /**
  * UpdateUserStatus modifies the operational status of a user.
  */
-func (s *UserService) UpdateUserStatus(
+func (s *userService) UpdateUserStatus(
 	ctx context.Context,
 	id uuid.UUID,
 	newStatus string,
@@ -314,7 +342,7 @@ func (s *UserService) UpdateUserStatus(
 /**
  * UpdateUserRoles modifies associations between user and their roles.
  */
-func (s *UserService) UpdateUserRoles(
+func (s *userService) UpdateUserRoles(
 	ctx context.Context,
 	id uuid.UUID,
 	roleIDs []int,
@@ -340,10 +368,11 @@ func (s *UserService) UpdateUserRoles(
 /**
  * DeleteUser performs a soft-delete on a user record.
  */
-func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
+func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	if err := s.Repo.SoftDelete(ctx, id[:]); err != nil {
 		return fmt.Errorf("Database Query (SoftDelete): %w", err)
 	}
 
 	return nil
 }
+

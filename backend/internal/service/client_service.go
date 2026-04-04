@@ -14,16 +14,42 @@ import (
 	"github.com/google/uuid"
 )
 
-type ClientService struct {
+type ClientService interface {
+	CreateClient(ctx context.Context, req dto.CreateClientRequest,
+		image multipart.File, imageHeader *multipart.FileHeader,
+		userID uuid.UUID) (*dto.ClientSecretResponse, error)
+	GetFilteredClientList(ctx context.Context, role string, userID uuid.UUID,
+		limit, page int, keyword string) (*dto.ClientListResponse, error)
+	GetClientList(ctx context.Context, limit, page int,
+		keyword string) (*dto.ClientListResponse, error)
+	GetBoundClients(ctx context.Context, userID uuid.UUID, limit, page int,
+		keyword string) (*dto.ClientListResponse, error)
+	GetClientByID(ctx context.Context, id uuid.UUID) (*dto.ClientResponse, error)
+	UpdateClient(ctx context.Context, id uuid.UUID, req dto.CreateClientRequest,
+		file multipart.File, header *multipart.FileHeader) error
+	RotateClientSecret(ctx context.Context,
+		id uuid.UUID) (*dto.ClientSecretResponse, error)
+	DeleteClient(ctx context.Context, id uuid.UUID) error
+}
+
+type clientService struct {
 	Repo    repository.ClientRepository
 	Storage *storage.S3Provider
+}
+
+func NewClientService(repo repository.ClientRepository,
+	storage *storage.S3Provider) ClientService {
+	return &clientService{
+		Repo:    repo,
+		Storage: storage,
+	}
 }
 
 /**
  * CreateClient handles business logic for client registration
  * including secret hashing and data persistence.
  */
-func (s *ClientService) CreateClient(
+func (s *clientService) CreateClient(
 	ctx context.Context,
 	req dto.CreateClientRequest,
 	image multipart.File,
@@ -76,7 +102,7 @@ func (s *ClientService) CreateClient(
  * GetFilteredClientList routes the request to either a full
  * list or a bound list based on the user's privilege level.
  */
-func (s *ClientService) GetFilteredClientList(
+func (s *clientService) GetFilteredClientList(
 	ctx context.Context,
 	role string,
 	userID uuid.UUID,
@@ -101,7 +127,7 @@ func (s *ClientService) GetFilteredClientList(
  * GetClientList retrieves a paginated list of clients,
  * calculates metadata, and generates presigned URLs for icons.
  */
-func (s *ClientService) GetClientList(
+func (s *clientService) GetClientList(
 	ctx context.Context,
 	limit,
 	page int,
@@ -162,7 +188,7 @@ func (s *ClientService) GetClientList(
  * GetBoundClients retrieves clients associated with a specific
  * administrator, supporting keyword search and pagination.
  */
-func (s *ClientService) GetBoundClients(
+func (s *clientService) GetBoundClients(
 	ctx context.Context,
 	userID uuid.UUID,
 	limit,
@@ -215,7 +241,7 @@ func (s *ClientService) GetBoundClients(
  * GetClientByID fetches a complete client profile including
  * grants, roles, and presigned image URLs.
  */
-func (s *ClientService) GetClientByID(
+func (s *clientService) GetClientByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*dto.ClientResponse, error) {
@@ -267,7 +293,7 @@ func (s *ClientService) GetClientByID(
  * UpdateClient handles the business logic for modifying an
  * existing client, including optional image replacement.
  */
-func (s *ClientService) UpdateClient(
+func (s *clientService) UpdateClient(
 	ctx context.Context,
 	id uuid.UUID,
 	req dto.CreateClientRequest,
@@ -316,7 +342,7 @@ func (s *ClientService) UpdateClient(
  * RotateClientSecret generates a new 32-character secret,
  * hashes it, and updates the client record.
  */
-func (s *ClientService) RotateClientSecret(
+func (s *clientService) RotateClientSecret(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*dto.ClientSecretResponse, error) {
@@ -349,7 +375,7 @@ func (s *ClientService) RotateClientSecret(
  * DeleteClient deactivates a client by removing its storage
  * assets and soft-deleting its database records.
  */
-func (s *ClientService) DeleteClient(
+func (s *clientService) DeleteClient(
 	ctx context.Context,
 	id uuid.UUID,
 ) error {
@@ -371,3 +397,4 @@ func (s *ClientService) DeleteClient(
 
 	return nil
 }
+

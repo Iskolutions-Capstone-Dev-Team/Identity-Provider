@@ -11,14 +11,35 @@ import (
 	"github.com/google/uuid"
 )
 
-type RoleService struct {
+type RoleService interface {
+	CreateRole(ctx context.Context, req dto.RoleRequest) error
+	GetFilteredRoleList(ctx context.Context, role string, userID uuid.UUID,
+		limit, page int, keyword string) (*dto.RoleListResponse, error)
+	GetRoleList(ctx context.Context, limit, page int,
+		keyword string) (*dto.RoleListResponse, error)
+	GetAllExceptIDP(ctx context.Context, limit, page int,
+		keyword string) (*dto.RoleListResponse, error)
+	GetAuthorizedRoles(ctx context.Context, userID uuid.UUID,
+		limit, page int, keyword string) (*dto.RoleListResponse, error)
+	GetRoleByID(ctx context.Context, id int) (*dto.RoleResponse, error)
+	SearchRoles(ctx context.Context,
+		keyword string) (*dto.RoleListResponse, error)
+	UpdateRole(ctx context.Context, id int, req dto.RoleRequest) error
+	DeleteRole(ctx context.Context, id int) error
+}
+
+type roleService struct {
 	RoleRepo repository.RoleRepository
+}
+
+func NewRoleService(roleRepo repository.RoleRepository) RoleService {
+	return &roleService{RoleRepo: roleRepo}
 }
 
 /**
  * CreateRole handles the creation of a new role.
  */
-func (s *RoleService) CreateRole(
+func (s *roleService) CreateRole(
 	ctx context.Context,
 	req dto.RoleRequest,
 ) error {
@@ -41,7 +62,7 @@ func (s *RoleService) CreateRole(
 /**
  * GetFilteredRoleList determines which roles the user can see.
  */
-func (s *RoleService) GetFilteredRoleList(
+func (s *roleService) GetFilteredRoleList(
 	ctx context.Context,
 	role string,
 	userID uuid.UUID,
@@ -65,7 +86,7 @@ func (s *RoleService) GetFilteredRoleList(
 /**
  * GetRoleList retrieves a paginated list of roles.
  */
-func (s *RoleService) GetRoleList(
+func (s *roleService) GetRoleList(
 	ctx context.Context,
 	limit,
 	page int,
@@ -89,7 +110,7 @@ func (s *RoleService) GetRoleList(
 /**
  * GetRoleList retrieves a paginated list of roles excluding IdP.
  */
-func (s *RoleService) GetAllExceptIDP(
+func (s *roleService) GetAllExceptIDP(
 	ctx context.Context,
 	limit,
 	page int,
@@ -113,7 +134,7 @@ func (s *RoleService) GetAllExceptIDP(
 /**
  * GetAuthorizedRoles retrieves a distinct list of roles for an admin.
  */
-func (s *RoleService) GetAuthorizedRoles(
+func (s *roleService) GetAuthorizedRoles(
 	ctx context.Context,
 	userID uuid.UUID,
 	limit,
@@ -144,7 +165,7 @@ func (s *RoleService) GetAuthorizedRoles(
 /**
  * formatRoleListResponse is a helper to standardize DTO mapping.
  */
-func (s *RoleService) formatRoleListResponse(
+func (s *roleService) formatRoleListResponse(
 	roles []models.Role,
 	total,
 	limit,
@@ -177,7 +198,7 @@ func (s *RoleService) formatRoleListResponse(
 	}
 }
 
-func (s *RoleService) formatRoleWithMetadataListResponse(
+func (s *roleService) formatRoleWithMetadataListResponse(
 	roles []models.RoleWithMetaData,
 	total,
 	limit,
@@ -213,7 +234,7 @@ func (s *RoleService) formatRoleWithMetadataListResponse(
 /**
  * GetRoleByID retrieves a single role by its integer ID.
  */
-func (s *RoleService) GetRoleByID(
+func (s *roleService) GetRoleByID(
 	ctx context.Context,
 	id int,
 ) (*dto.RoleResponse, error) {
@@ -235,7 +256,7 @@ func (s *RoleService) GetRoleByID(
 /**
  * SearchRoles finds roles based on a keyword.
  */
-func (s *RoleService) SearchRoles(
+func (s *roleService) SearchRoles(
 	ctx context.Context,
 	keyword string,
 ) (*dto.RoleListResponse, error) {
@@ -277,7 +298,7 @@ func GetRoleNames(roles []models.Role) []string {
 /**
  * UpdateRole modifies an existing role record.
  */
-func (s *RoleService) UpdateRole(
+func (s *roleService) UpdateRole(
 	ctx context.Context,
 	id int,
 	req dto.RoleRequest,
@@ -301,10 +322,11 @@ func (s *RoleService) UpdateRole(
 /**
  * DeleteRole removes a role record.
  */
-func (s *RoleService) DeleteRole(ctx context.Context, id int) error {
+func (s *roleService) DeleteRole(ctx context.Context, id int) error {
 	if err := s.RoleRepo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("Database Query (Delete): %w", err)
 	}
 
 	return nil
 }
+

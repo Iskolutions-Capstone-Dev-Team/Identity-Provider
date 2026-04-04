@@ -7,11 +7,15 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 )
 
-type PermissionService struct {
+type PermissionService interface {
+	GetAllPermissions(ctx context.Context) ([]dto.PermissionResponse, error)
+}
+
+type permissionService struct {
 	Repo repository.PermissionRepository
 }
 
-func (s *PermissionService) GetAllPermissions(ctx context.Context,
+func (s *permissionService) GetAllPermissions(ctx context.Context,
 ) ([]dto.PermissionResponse, error) {
 	permissions, err := s.Repo.GetAllPermissions(ctx)
 	if err != nil {
@@ -26,4 +30,8 @@ func (s *PermissionService) GetAllPermissions(ctx context.Context,
 		})
 	}
 	return response, nil
+}
+
+func NewPermissionService(r repository.PermissionRepository) PermissionService {
+	return &permissionService{Repo: r}
 }
