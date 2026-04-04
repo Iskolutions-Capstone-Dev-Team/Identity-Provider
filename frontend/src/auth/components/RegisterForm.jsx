@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
+import RegistrationSuccessStep from "./RegistrationSuccessStep";
 import { buildLoginPath } from "../utils/loginRoute";
 
 const roleOptions = [
@@ -17,6 +18,7 @@ const roleOptions = [
     Icon: ApplicantRoleIcon,
   },
 ];
+
 const verificationLength = 6;
 const resendDurationSeconds = 45;
 
@@ -38,23 +40,10 @@ const initialDetailErrors = {
   role: "",
 };
 
-const initialPasswordValues = {
-  password: "",
-  confirmPassword: "",
-};
-
-const initialPasswordErrors = {
-  password: "",
-  confirmPassword: "",
-};
-
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
-function getInputClassName(hasError, hasActionButton = false) {
-  return `h-12 w-full rounded-2xl border bg-white/95 pl-12 ${
-    hasActionButton ? "pr-12" : "pr-4"
-  } text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
+function getInputClassName(hasError) {
+  return `h-12 w-full rounded-2xl border bg-white/95 pl-12 pr-4 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
     hasError
       ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
       : "border-white/20 focus:border-[#ffd700] focus:ring-[#ffd700]/20"
@@ -85,10 +74,14 @@ function maskEmail(email) {
   }
 
   const visibleLocalPart = localPart.slice(0, Math.min(3, localPart.length));
-  const hiddenLocalPart = "*".repeat(Math.max(localPart.length - visibleLocalPart.length, 2));
+  const hiddenLocalPart = "*".repeat(
+    Math.max(localPart.length - visibleLocalPart.length, 2),
+  );
   const [domainName, ...domainParts] = domainPart.split(".");
   const visibleDomainName = domainName.slice(0, Math.min(2, domainName.length));
-  const hiddenDomainName = "*".repeat(Math.max(domainName.length - visibleDomainName.length, 2));
+  const hiddenDomainName = "*".repeat(
+    Math.max(domainName.length - visibleDomainName.length, 2),
+  );
   const domainSuffix = domainParts.length ? `.${domainParts.join(".")}` : "";
 
   return `${visibleLocalPart}${hiddenLocalPart}@${visibleDomainName}${hiddenDomainName}${domainSuffix}`;
@@ -130,30 +123,6 @@ function getRoleError(value) {
   return "";
 }
 
-function getPasswordError(value) {
-  if (!value.trim()) {
-    return "Password is required.";
-  }
-
-  if (!passwordRegex.test(value)) {
-    return "Use at least 8 characters with uppercase, lowercase, and a number.";
-  }
-
-  return "";
-}
-
-function getConfirmPasswordError(password, confirmPassword) {
-  if (!confirmPassword.trim()) {
-    return "Please confirm your password.";
-  }
-
-  if (password !== confirmPassword) {
-    return "Passwords do not match.";
-  }
-
-  return "";
-}
-
 function getDetailFieldError(field, details) {
   switch (field) {
     case "firstName":
@@ -164,20 +133,6 @@ function getDetailFieldError(field, details) {
       return getEmailError(details.email);
     case "role":
       return getRoleError(details.role);
-    default:
-      return "";
-  }
-}
-
-function getPasswordFieldError(field, passwordValues) {
-  switch (field) {
-    case "password":
-      return getPasswordError(passwordValues.password);
-    case "confirmPassword":
-      return getConfirmPasswordError(
-        passwordValues.password,
-        passwordValues.confirmPassword
-      );
     default:
       return "";
   }
@@ -201,7 +156,6 @@ function FormLabel({ children, required = false }) {
 }
 
 export default function RegisterForm({ clientId, onComplete }) {
-  const navigate = useNavigate();
   const verificationInputsRef = useRef([]);
   const roleDropdownRef = useRef(null);
 
@@ -209,14 +163,10 @@ export default function RegisterForm({ clientId, onComplete }) {
   const [details, setDetails] = useState(initialDetails);
   const [detailErrors, setDetailErrors] = useState(initialDetailErrors);
   const [verificationCode, setVerificationCode] = useState(
-    Array(verificationLength).fill("")
+    Array(verificationLength).fill(""),
   );
   const [verificationError, setVerificationError] = useState("");
   const [resendTimer, setResendTimer] = useState(resendDurationSeconds);
-  const [passwordValues, setPasswordValues] = useState(initialPasswordValues);
-  const [passwordErrors, setPasswordErrors] = useState(initialPasswordErrors);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [error, setError] = useState("");
 
@@ -256,7 +206,10 @@ export default function RegisterForm({ clientId, onComplete }) {
     }
 
     const handlePointerDown = (event) => {
-      if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.target)) {
+      if (
+        roleDropdownRef.current &&
+        !roleDropdownRef.current.contains(event.target)
+      ) {
         setIsRoleMenuOpen(false);
       }
     };
@@ -406,76 +359,10 @@ export default function RegisterForm({ clientId, onComplete }) {
     return true;
   };
 
-  const handleVerificationSubmit = (event) => {
+  const handleVerificationSubmit = async (event) => {
     event.preventDefault();
 
     if (!validateVerificationStep()) {
-      return;
-    }
-
-    setStep("createPassword");
-  };
-
-  const handleResendCode = () => {
-    setVerificationCode(Array(verificationLength).fill(""));
-    setVerificationError("");
-    setError("");
-    setResendTimer(resendDurationSeconds);
-    verificationInputsRef.current[0]?.focus();
-  };
-
-  const handlePasswordChange = (field, value) => {
-    setPasswordValues((currentValues) => ({
-      ...currentValues,
-      [field]: value,
-    }));
-
-    setError("");
-    setPasswordErrors((currentErrors) => ({
-      ...currentErrors,
-      [field]: "",
-      ...(field === "password" ? { confirmPassword: "" } : {}),
-    }));
-  };
-
-  const handlePasswordBlur = (field) => {
-    const nextErrors = {
-      ...passwordErrors,
-      [field]: getPasswordFieldError(field, passwordValues),
-    };
-
-    if (field === "password" && passwordValues.confirmPassword) {
-      nextErrors.confirmPassword = getConfirmPasswordError(
-        passwordValues.password,
-        passwordValues.confirmPassword
-      );
-    }
-
-    setPasswordErrors(nextErrors);
-  };
-
-  const validatePasswordStep = () => {
-    const nextErrors = {
-      password: getPasswordError(passwordValues.password),
-      confirmPassword: getConfirmPasswordError(
-        passwordValues.password,
-        passwordValues.confirmPassword
-      ),
-    };
-
-    setPasswordErrors(nextErrors);
-
-    const validationMessage = getFirstErrorMessage(nextErrors);
-    setError(validationMessage);
-
-    return !validationMessage;
-  };
-
-  const handlePasswordSubmit = async (event) => {
-    event.preventDefault();
-    setError("");
-
-    if (!validatePasswordStep()) {
       return;
     }
 
@@ -484,15 +371,21 @@ export default function RegisterForm({ clientId, onComplete }) {
         await onComplete({
           ...details,
           verificationCode: verificationCode.join(""),
-          password: passwordValues.password,
         });
-        return;
       }
 
-      navigate(loginPath);
+      setStep("registrationSuccess");
     } catch (submissionError) {
       setError(submissionError?.message || "Registration failed. Please try again.");
     }
+  };
+
+  const handleResendCode = () => {
+    setVerificationCode(Array(verificationLength).fill(""));
+    setVerificationError("");
+    setError("");
+    setResendTimer(resendDurationSeconds);
+    verificationInputsRef.current[0]?.focus();
   };
 
   const renderDetailsStep = () => {
@@ -506,7 +399,15 @@ export default function RegisterForm({ clientId, onComplete }) {
             <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
               <UserIcon />
             </span>
-            <input type="text" value={details.firstName} onChange={(event) => handleDetailChange("firstName", event.target.value)} onBlur={() => handleDetailBlur("firstName")} autoComplete="given-name" placeholder="Enter your first name" className={getInputClassName(detailErrors.firstName)}/>
+            <input type="text" value={details.firstName}
+              onChange={(event) =>
+                handleDetailChange("firstName", event.target.value)
+              }
+              onBlur={() => handleDetailBlur("firstName")}
+              autoComplete="given-name"
+              placeholder="Enter your first name"
+              className={getInputClassName(detailErrors.firstName)}
+            />
           </div>
           <FieldError message={detailErrors.firstName} />
         </div>
@@ -559,7 +460,15 @@ export default function RegisterForm({ clientId, onComplete }) {
             <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
               <UserIcon />
             </span>
-            <input type="text" value={details.lastName} onChange={(event) => handleDetailChange("lastName", event.target.value)} onBlur={() => handleDetailBlur("lastName")} autoComplete="family-name" placeholder="Enter your last name" className={getInputClassName(detailErrors.lastName)}/>
+            <input type="text" value={details.lastName}
+              onChange={(event) =>
+                handleDetailChange("lastName", event.target.value)
+              }
+              onBlur={() => handleDetailBlur("lastName")}
+              autoComplete="family-name"
+              placeholder="Enter your last name"
+              className={getInputClassName(detailErrors.lastName)}
+            />
           </div>
           <FieldError message={detailErrors.lastName} />
         </div>
@@ -570,7 +479,15 @@ export default function RegisterForm({ clientId, onComplete }) {
             <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
               <EmailIcon />
             </span>
-            <input type="email" value={details.email} onChange={(event) => handleDetailChange("email", event.target.value)} onBlur={() => handleDetailBlur("email")} autoComplete="email" placeholder="Enter your email address" className={getInputClassName(detailErrors.email)}/>
+            <input type="email" value={details.email}
+              onChange={(event) =>
+                handleDetailChange("email", event.target.value)
+              }
+              onBlur={() => handleDetailBlur("email")}
+              autoComplete="email"
+              placeholder="Enter your email address"
+              className={getInputClassName(detailErrors.email)}
+            />
           </div>
           <FieldError message={detailErrors.email} />
         </div>
@@ -582,7 +499,9 @@ export default function RegisterForm({ clientId, onComplete }) {
               <button type="button" onClick={() => setIsRoleMenuOpen((currentValue) => !currentValue)}
                 onBlur={() => {
                   window.setTimeout(() => {
-                    if (!roleDropdownRef.current?.contains(document.activeElement)) {
+                    if (
+                      !roleDropdownRef.current?.contains(document.activeElement)
+                    ) {
                       handleDetailBlur("role");
                     }
                   }, 0);
@@ -593,9 +512,17 @@ export default function RegisterForm({ clientId, onComplete }) {
               >
                 <span className="flex min-w-0 items-center gap-3">
                   <span className="shrink-0 text-[#7b0d15]/60">
-                    {selectedRoleOption ? <selectedRoleOption.Icon /> : <RoleIcon />}
+                    {selectedRoleOption ? (
+                      <selectedRoleOption.Icon />
+                    ) : (
+                      <RoleIcon />
+                    )}
                   </span>
-                  <span className={`truncate text-sm ${details.role ? "text-slate-800" : "text-slate-400"}`}>
+                  <span
+                    className={`truncate text-sm ${
+                      details.role ? "text-slate-800" : "text-slate-400"
+                    }`}
+                  >
                     {details.role || "Select your role"}
                   </span>
                 </span>
@@ -677,8 +604,12 @@ export default function RegisterForm({ clientId, onComplete }) {
                 inputMode="numeric"
                 maxLength={1}
                 value={digit}
-                onChange={(event) => handleVerificationChange(index, event.target.value)}
-                onKeyDown={(event) => handleVerificationKeyDown(index, event)}
+                onChange={(event) =>
+                  handleVerificationChange(index, event.target.value)
+                }
+                onKeyDown={(event) =>
+                  handleVerificationKeyDown(index, event)
+                }
                 className={`h-14 min-w-0 rounded-2xl border bg-white/95 text-center text-xl font-semibold text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 focus:ring-4 ${
                   verificationError
                     ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
@@ -691,7 +622,7 @@ export default function RegisterForm({ clientId, onComplete }) {
         </div>
 
         <p className="text-center text-sm text-white/80">
-          Didn't receive a code?{" "}
+          Didn&apos;t receive a code?{" "}
           <button type="button" onClick={handleResendCode} disabled={resendTimer > 0}
             className={`font-semibold underline decoration-transparent transition duration-300 ${
               resendTimer > 0
@@ -706,58 +637,6 @@ export default function RegisterForm({ clientId, onComplete }) {
 
         <button type="submit" className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
           VERIFY &amp; CONTINUE
-        </button>
-      </form>
-    );
-  };
-
-  const renderPasswordStep = () => {
-    return (
-      <form onSubmit={handlePasswordSubmit} noValidate className="space-y-4">
-        <div>
-          <FormLabel required>Password</FormLabel>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
-              <PasswordIcon />
-            </span>
-            <input type={showPassword ? "text" : "password"} value={passwordValues.password} onChange={(event) => handlePasswordChange("password", event.target.value)} onBlur={() => handlePasswordBlur("password")} autoComplete="new-password" placeholder="Create your password" className={getInputClassName(passwordErrors.password, true)}/>
-            <button type="button" onClick={() => setShowPassword((currentValue) => !currentValue)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]" aria-label={showPassword ? "Hide password" : "Show password"}>
-              {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
-            </button>
-          </div>
-          <FieldError message={passwordErrors.password} />
-        </div>
-
-        <div>
-          <FormLabel required>Confirm Password</FormLabel>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
-              <PasswordIcon />
-            </span>
-            <input type={showConfirmPassword ? "text" : "password"} value={passwordValues.confirmPassword}
-              onChange={(event) =>
-                handlePasswordChange("confirmPassword", event.target.value)
-              }
-              onBlur={() => handlePasswordBlur("confirmPassword")}
-              autoComplete="new-password"
-              placeholder="Confirm your password"
-              className={getInputClassName(passwordErrors.confirmPassword, true)}
-            />
-            <button type="button"
-              onClick={() =>
-                setShowConfirmPassword((currentValue) => !currentValue)
-              }
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]"
-              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-            >
-              {showConfirmPassword ? <EyeSlashIcon /> : <EyeIcon />}
-            </button>
-          </div>
-          <FieldError message={passwordErrors.confirmPassword} />
-        </div>
-
-        <button type="submit" className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
-          COMPLETE REGISTRATION
         </button>
       </form>
     );
@@ -788,29 +667,26 @@ export default function RegisterForm({ clientId, onComplete }) {
                     Verify <span className="text-[#f8d24e]">Your Email</span>
                   </h2>
                   <p className="mx-auto max-w-sm text-sm font-light leading-6 text-white/80">
-                    We sent a code to the email you provided ({maskEmail(details.email)}). If
-                    you can't find it, check your spam folder.
-                  </p>
-                </div>
-              ) : null}
-
-              {step === "createPassword" ? (
-                <div className="space-y-2">
-                  <h2 className="text-3xl font-bold leading-tight text-white">
-                    Create Your <span className="text-[#f8d24e]">Password</span>
-                  </h2>
-                  <p className="mx-auto max-w-sm text-sm font-light leading-6 text-white/80">
-                    You're almost there. Set a strong password to protect your new account.
+                    We sent a code to the email you provided (
+                    {maskEmail(details.email)}). If you can&apos;t find it,
+                    check your spam folder.
                   </p>
                 </div>
               ) : null}
             </div>
 
-            <ErrorAlert message={error} onClose={() => setError("")} />
+            {step !== "registrationSuccess" ? (
+              <ErrorAlert message={error} onClose={() => setError("")} />
+            ) : null}
 
             {step === "details" ? renderDetailsStep() : null}
             {step === "verifyEmail" ? renderVerificationStep() : null}
-            {step === "createPassword" ? renderPasswordStep() : null}
+            {step === "registrationSuccess" ? (
+              <RegistrationSuccessStep
+                email={details.email}
+                loginPath={loginPath}
+              />
+            ) : null}
           </div>
         </div>
       </div>
@@ -862,33 +738,7 @@ function GuestRoleIcon() {
 function ApplicantRoleIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-      <path fillRule="evenodd" d="M1 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V6Zm4 1.5a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm2 3a4 4 0 0 0-3.665 2.395.75.75 0 0 0 .416 1A8.98 8.98 0 0 0 7 14.5a8.98 8.98 0 0 0 3.249-.604.75.75 0 0 0 .416-1.001A4.001 4.001 0 0 0 7 10.5Zm5-3.75a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Zm0 6.5a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Zm.75-4a.75.75 0 0 0 0 1.5h2.5a.75.75 0 0 0 0-1.5h-2.5Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function PasswordIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
-      <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3C17.25 3.85 14.9 1.5 12 1.5Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd"/>
-    </svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  );
-}
-
-function EyeSlashIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0 1 12 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 0 1 2.293-3.607M6.72 6.72A9.956 9.956 0 0 1 12 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 0 1-4.563 5.956M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18" />
+      <path fillRule="evenodd" d="M1 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V6Zm4 1.5a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm2 3a4 4 0 0 0-3.665 2.395.75.75 0 0 0 .416 1A8.98 8.98 0 0 0 7 14.5a8.98 8.98 0 0 0 3.249-.604.75.75 0 0 0 .416-1.001A4.001 4.001 0 0 0 7 10.5Zm5-3.75a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Zm0 6.5a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Zm.75-4a.75.75 0 0 0 0 1.5h2.5a.75.75 0 0 0 0-1.5h-2.5Z" clipRule="evenodd"/>
     </svg>
   );
 }
