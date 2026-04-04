@@ -113,7 +113,7 @@ func (s *clientService) GetFilteredClientList(
 	page int,
 	keyword string,
 ) (*dto.ClientListResponse, error) {
-	if slices.Contains(permissions, "View all clients") {
+	if slices.Contains(permissions, "View all appclients") {
 		return s.GetClientList(ctx, limit, page, keyword)
 	}
 
