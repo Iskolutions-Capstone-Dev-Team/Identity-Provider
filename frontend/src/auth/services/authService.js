@@ -57,9 +57,8 @@ export const authService = {
     });
   },
 
-  async checkAdminAccess() {
-    return axiosInstance.get("/admin/users", {
-      params: { page: 1 },
+  async checkIdpAccess() {
+    return axiosInstance.get("/admin/status", {
       skipForbiddenRedirect: true,
     });
   },

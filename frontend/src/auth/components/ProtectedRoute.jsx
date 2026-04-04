@@ -5,6 +5,8 @@ import { clearAuthState } from "../utils/authCookies";
 import { ensureValidAccessToken } from "../utils/tokenRefresh";
 import { buildLoginPath } from "../utils/loginRoute";
 import { UNAUTHORIZED_PAGE_PATH } from "../utils/unauthorizedPage";
+import { userService } from "../../services/userService";
+import { hasAssignedRoles } from "../utils/authAccess";
 
 export default function ProtectedRoute({ children }) {
   const [authState, setAuthState] = useState("loading");
@@ -20,7 +22,16 @@ export default function ProtectedRoute({ children }) {
           return;
         }
 
-        await authService.checkAdminAccess();
+        await authService.checkIdpAccess();
+
+        const currentUser = await userService.getMe();
+
+        if (!hasAssignedRoles(currentUser)) {
+          clearAuthState();
+          setAuthState("unauthorized");
+          return;
+        }
+
         setAuthState("allowed");
       } catch (error) {
         if (error.response?.status === 403) {
