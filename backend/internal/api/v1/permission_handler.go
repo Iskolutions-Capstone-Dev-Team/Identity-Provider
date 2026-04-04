@@ -23,7 +23,7 @@ type PermissionHandler struct {
  * @Router /permissions [get]
  */
 func (h *PermissionHandler) GetAllPermissions(c *gin.Context) {
-	permissions, err := h.Service.GetAllPermissions()
+	permissions, err := h.Service.GetAllPermissions(c.Request.Context())
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
