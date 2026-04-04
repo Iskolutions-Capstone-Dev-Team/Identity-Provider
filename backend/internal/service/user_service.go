@@ -16,8 +16,7 @@ import (
 type UserService interface {
 	CreateUser(ctx context.Context, req dto.UserRequest) (uuid.UUID, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
-	GetMe(ctx context.Context, userID,
-		clientID uuid.UUID) (*dto.UserInfoResponse, error)
+	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
 	GetFilteredUserList(ctx context.Context, permissions []string,
 		userID uuid.UUID, limit, page int) (*dto.UserResponseList, error)
 	GetUserList(ctx context.Context, limit,
@@ -34,16 +33,12 @@ type UserService interface {
 }
 
 type userService struct {
-	Repo       repository.UserRepository
-	ClientRepo repository.ClientRepository
+	Repo repository.UserRepository
 }
 
-func NewUserService(repo repository.UserRepository,
-	clientRepo repository.ClientRepository,
-) UserService {
+func NewUserService(repo repository.UserRepository) UserService {
 	return &userService{
-		Repo:       repo,
-		ClientRepo: clientRepo,
+		Repo: repo,
 	}
 }
 
@@ -109,27 +104,11 @@ func (s *userService) GetUserByID(
  */
 func (s *userService) GetMe(
 	ctx context.Context,
-	userID,
-	clientID uuid.UUID,
+	userID uuid.UUID,
 ) (*dto.UserInfoResponse, error) {
 	user, err := s.Repo.GetUserById(ctx, userID[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetUser): %w", err)
-	}
-
-	allowedRoles, err := s.ClientRepo.GetClientAllowedRoles(ctx, clientID[:])
-	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetAllowedRoles): %w", err)
-	}
-
-	allowedMap := make(map[int]bool)
-	for _, r := range allowedRoles {
-		allowedMap[r.ID] = true
-	}
-
-	var roleString string
-	if allowedMap[user.Role.ID] {
-		roleString = user.Role.RoleName
 	}
 
 	return &dto.UserInfoResponse{
@@ -139,7 +118,7 @@ func (s *userService) GetMe(
 		LastName:   user.LastName,
 		NameSuffix: user.NameSuffix,
 		Email:      user.Email,
-		Roles:      roleString,
+		Roles:      user.Role.RoleName,
 	}, nil
 }
 

@@ -321,7 +321,7 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	resp, err := h.Service.GetMe(ctx, uID, cID)
+	resp, err := h.Service.GetMe(ctx, uID)
 	if err != nil {
 		log.Printf("[GetMe] %v", err)
 		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
