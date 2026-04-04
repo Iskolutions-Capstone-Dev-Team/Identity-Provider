@@ -1,6 +1,7 @@
 package initializers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -15,7 +16,6 @@ import (
 
 /**
  * Migrate handles the database schema updates and initial data seeding.
- * It uses administrative privileges to ensure schema changes are permitted.
  */
 func MigrateAndSeed() {
 	adminDatabase, err := database.ConnectAdminToDB()
@@ -62,6 +62,7 @@ func MigrateAndSeed() {
 }
 
 func seedSuperAdminRole(db *sqlx.DB) (int, error) {
+	ctx := context.Background()
 	roleRepo := repository.NewRoleRepository(db)
 	permissionRepo := repository.NewPermissionRepository(db)
 
@@ -73,7 +74,7 @@ func seedSuperAdminRole(db *sqlx.DB) (int, error) {
 		return existingID, nil
 	}
 
-	allPerms, err := permissionRepo.GetAllPermissions()
+	allPerms, err := permissionRepo.GetAllPermissions(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("[Seed] Failed to fetch permissions: %v", err)
 	}
@@ -91,7 +92,7 @@ func seedSuperAdminRole(db *sqlx.DB) (int, error) {
 		Permissions: selectedPerms,
 	}
 
-	result, err := roleRepo.CreateRole(role)
+	result, err := roleRepo.CreateRole(ctx, role)
 	if err != nil {
 		return 0, fmt.Errorf("[Seed] Failed to create superadmin role: %v", err)
 	}
@@ -105,11 +106,12 @@ func seedSuperAdminRole(db *sqlx.DB) (int, error) {
 }
 
 func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
+	ctx := context.Background()
 	userRepo := repository.NewUserRepository(adminDatabase)
 	adminEmail := os.Getenv("ADMIN_EMAIL")
 	adminPass := os.Getenv("ADMIN_PASSWORD")
 
-	admin, err := userRepo.GetUserByEmail(adminEmail)
+	admin, err := userRepo.GetUserByEmail(ctx, adminEmail)
 
 	if err != nil {
 		return fmt.Errorf("[Migrate] Error checking for existing admin: %v", err)
@@ -126,23 +128,24 @@ func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 			Status:       models.StatusActive,
 		}
 
-		if err := userRepo.CreateUser(admin); err != nil {
+		if err := userRepo.CreateUser(ctx, admin); err != nil {
 			return fmt.Errorf("[Migrate] Admin seeding failed: %v", err)
 		}
 	}
 
 	if admin != nil && superAdminRoleID != 0 {
-		err := userRepo.UpdateUserRoles(admin.ID, []int{superAdminRoleID})
+		err := userRepo.UpdateUserRoles(ctx, admin.ID, []int{superAdminRoleID})
 		if err != nil {
 			return fmt.Errorf("[Migrate] Failed to assign superadmin role: %v", err)
 		}
 	}
 
-	fmt.Printf("Admin user %s seeded and role assigned successfully.\n", adminEmail)
+	fmt.Printf("Admin user %s seeded successfully.\n", adminEmail)
 	return nil
 }
 
 func seedAppClient(adminDatabase *sqlx.DB) error {
+	ctx := context.Background()
 	cID := os.Getenv("CLIENT_ID")
 	cSecret := os.Getenv("CLIENT_SECRET")
 	cName := os.Getenv("CLIENT_NAME")
@@ -152,7 +155,7 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 	parsedID, _ := uuid.Parse(cID)
 	clientRepo := repository.NewClientRepository(adminDatabase)
 
-	existingClient, _ := clientRepo.GetByID(parsedID[:])
+	existingClient, _ := clientRepo.GetByID(ctx, parsedID[:])
 	if existingClient != nil {
 		fmt.Printf("Client %s already seeded.\n", cName)
 		return nil
@@ -176,15 +179,14 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 		ImageLocation: "",
 	}
 
-	// Fetch current admin ID to bind as owner
 	adminEmail := os.Getenv("ADMIN_EMAIL")
 	userRepo := repository.NewUserRepository(adminDatabase)
-	admin, err := userRepo.GetUserByEmail(adminEmail)
+	admin, err := userRepo.GetUserByEmail(ctx, adminEmail)
 	if err != nil || admin == nil {
 		return fmt.Errorf("[Migrate] Failed to fetch admin for client bind")
 	}
 
-	err = clientRepo.CreateClient(client, grants, admin.ID)
+	err = clientRepo.CreateClient(ctx, client, grants, admin.ID)
 	if err != nil {
 		return fmt.Errorf("[Migrate] Client seeding failed: %v", err)
 	}
