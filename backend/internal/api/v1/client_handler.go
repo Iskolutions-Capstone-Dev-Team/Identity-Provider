@@ -183,9 +183,10 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 		"user_agent": c.Request.UserAgent(),
 	})
 
+	permissions := c.GetStringSlice("permissions")
 	resp, err := h.Service.GetFilteredClientList(
 		ctx,
-		role,
+		permissions,
 		userID,
 		limit,
 		page,
