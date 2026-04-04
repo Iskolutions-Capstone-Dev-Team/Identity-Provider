@@ -9,12 +9,11 @@ import (
 )
 
 type Middleware struct {
-	ClientRepo *repository.ClientRepository
+	ClientRepo repository.ClientRepository
 }
 
 /**
  * CORSMiddleware handles cross-origin resource sharing for registered clients.
- * It dynamically fetches allowed base URLs from the client repository.
  */
 func (m *Middleware) CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -25,7 +24,7 @@ func (m *Middleware) CORSMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		baseURLs, err := m.ClientRepo.ListClientBaseURLS()
+		baseURLs, err := m.ClientRepo.ListClientBaseURLS(c.Request.Context())
 		if err != nil {
 			log.Printf("[CORSMiddleware] Failed to fetch urls: %v", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
