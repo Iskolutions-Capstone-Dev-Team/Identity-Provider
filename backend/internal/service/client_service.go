@@ -15,7 +15,7 @@ import (
 )
 
 type ClientService struct {
-	Repo    *repository.ClientRepository
+	Repo    repository.ClientRepository
 	Storage *storage.S3Provider
 }
 
@@ -60,7 +60,7 @@ func (s *ClientService) CreateClient(
 	}
 
 	// 4. Persistence
-	err = s.Repo.CreateClient(clientModel, req.Grants, userID[:])
+	err = s.Repo.CreateClient(ctx, clientModel, req.Grants, userID[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (Create): %w", err)
 	}
@@ -109,12 +109,12 @@ func (s *ClientService) GetClientList(
 ) (*dto.ClientListResponse, error) {
 	offset := (page - 1) * limit
 
-	total, err := s.Repo.CountClients(keyword)
+	total, err := s.Repo.CountClients(ctx, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (Count): %w", err)
 	}
 
-	clients, err := s.Repo.ListClients(limit, offset, keyword)
+	clients, err := s.Repo.ListClients(ctx, limit, offset, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (List): %w", err)
 	}
@@ -172,6 +172,7 @@ func (s *ClientService) GetBoundClients(
 	offset := (page - 1) * limit
 
 	clients, err := s.Repo.ListBoundClients(
+		ctx,
 		limit,
 		offset,
 		keyword,
@@ -181,7 +182,7 @@ func (s *ClientService) GetBoundClients(
 		return nil, fmt.Errorf("Database Query (ListBound): %w", err)
 	}
 
-	total, err := s.Repo.CountBoundClients(keyword, userID[:])
+	total, err := s.Repo.CountBoundClients(ctx, keyword, userID[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (CountBound): %v", err)
 	}
@@ -218,14 +219,14 @@ func (s *ClientService) GetClientByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*dto.ClientResponse, error) {
-	cl, err := s.Repo.GetByID(id[:])
+	cl, err := s.Repo.GetByID(ctx, id[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetByID): %w", err)
 	}
 
 	// Fetch associated data
-	grants, _ := s.Repo.GetGrantTypes(cl.ID)
-	roles, err := s.Repo.GetClientAllowedRoles(cl.ID)
+	grants, _ := s.Repo.GetGrantTypes(ctx, cl.ID)
+	roles, err := s.Repo.GetClientAllowedRoles(ctx, cl.ID)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetRoles): %w", err)
 	}
@@ -263,11 +264,6 @@ func (s *ClientService) GetClientByID(
 }
 
 /**
- * GetFilteredClientTagList and related tag-list methods have been
- * removed. The tag column no longer exists on clients.
- */
-
-/**
  * UpdateClient handles the business logic for modifying an
  * existing client, including optional image replacement.
  */
@@ -278,7 +274,7 @@ func (s *ClientService) UpdateClient(
 	file multipart.File,
 	header *multipart.FileHeader,
 ) error {
-	existing, err := s.Repo.GetByID(id[:])
+	existing, err := s.Repo.GetByID(ctx, id[:])
 	if err != nil {
 		return fmt.Errorf("Database Query (Search): %w", err)
 	}
@@ -308,7 +304,7 @@ func (s *ClientService) UpdateClient(
 		ImageLocation: imagePath,
 	}
 
-	err = s.Repo.UpdateClient(clientModel, req.Grants)
+	err = s.Repo.UpdateClient(ctx, clientModel, req.Grants)
 	if err != nil {
 		return fmt.Errorf("Database Query (Update): %w", err)
 	}
@@ -337,7 +333,7 @@ func (s *ClientService) RotateClientSecret(
 	}
 
 	// 3. Persistence
-	err = s.Repo.ChangeSecret(id[:], newSecretHash)
+	err = s.Repo.ChangeSecret(ctx, id[:], newSecretHash)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (ChangeSecret): %w", err)
 	}
@@ -357,7 +353,7 @@ func (s *ClientService) DeleteClient(
 	ctx context.Context,
 	id uuid.UUID,
 ) error {
-	cl, err := s.Repo.GetByID(id[:])
+	cl, err := s.Repo.GetByID(ctx, id[:])
 	if err != nil {
 		return fmt.Errorf("Database Query (Search): %w", err)
 	}
@@ -369,7 +365,7 @@ func (s *ClientService) DeleteClient(
 	}
 
 	// 2. Soft Delete Client Record
-	if err := s.Repo.SoftDelete(id[:]); err != nil {
+	if err := s.Repo.SoftDelete(ctx, id[:]); err != nil {
 		return fmt.Errorf("Database Query (SoftDelete): %w", err)
 	}
 

@@ -12,13 +12,12 @@ import (
 )
 
 type UserService struct {
-	Repo       *repository.UserRepository
-	ClientRepo *repository.ClientRepository
+	Repo       repository.UserRepository
+	ClientRepo repository.ClientRepository
 }
 
 /**
- * CreateUser handles the business logic for new user
- * registration, including ID generation and password security.
+ * CreateUser handles the business logic for new user registration.
  */
 func (s *UserService) CreateUser(
 	ctx context.Context,
@@ -26,7 +25,6 @@ func (s *UserService) CreateUser(
 ) (uuid.UUID, error) {
 	userID := uuid.New()
 
-	// Securely hash the plain-text password
 	passwordHash, err := utils.HashSecret(req.Password)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("Secret Hashing: %w", err)
@@ -44,7 +42,7 @@ func (s *UserService) CreateUser(
 		RoleString:   req.Roles,
 	}
 
-	err = s.Repo.CreateUser(&user)
+	err = s.Repo.CreateUser(ctx, &user)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("Database Query (CreateUser): %w", err)
 	}
@@ -53,14 +51,13 @@ func (s *UserService) CreateUser(
 }
 
 /**
- * GetUserByID retrieves a single user by their UUID and
- * formats the record into a response DTO.
+ * GetUserByID retrieves a single user by their UUID.
  */
 func (s *UserService) GetUserByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*dto.UserResponse, error) {
-	user, err := s.Repo.GetUserById(id[:])
+	user, err := s.Repo.GetUserById(ctx, id[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetUserById): %w", err)
 	}
@@ -79,25 +76,23 @@ func (s *UserService) GetUserByID(
 }
 
 /**
- * GetMe retrieves profile information for the authenticated
- * user, filtered by the roles allowed for the specific client.
+ * GetMe retrieves profile information for the authenticated user.
  */
 func (s *UserService) GetMe(
 	ctx context.Context,
 	userID,
 	clientID uuid.UUID,
 ) (*dto.UserInfoResponse, error) {
-	user, err := s.Repo.GetUserById(userID[:])
+	user, err := s.Repo.GetUserById(ctx, userID[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetUser): %w", err)
 	}
 
-	allowedRoles, err := s.ClientRepo.GetClientAllowedRoles(clientID[:])
+	allowedRoles, err := s.ClientRepo.GetClientAllowedRoles(ctx, clientID[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetAllowedRoles): %w", err)
 	}
 
-	// Create a map for O(1) role lookup
 	allowedMap := make(map[int]bool)
 	for _, r := range allowedRoles {
 		allowedMap[r.ID] = true
@@ -122,14 +117,7 @@ func (s *UserService) GetMe(
 }
 
 /**
- * GetFilteredUserList routes the request to fetch either all
- * users or bound users based on the admin's privilege level.
- * @param ctx Request context
- * @param level Admin's privilege level
- * @param userID Admin's UUID
- * @param limit Items per page
- * @param page Current page number
- * @return Paginated user list response or error
+ * GetFilteredUserList routes the request to fetch either all or bound users.
  */
 func (s *UserService) GetFilteredUserList(
 	ctx context.Context,
@@ -138,12 +126,10 @@ func (s *UserService) GetFilteredUserList(
 	limit,
 	page int,
 ) (*dto.UserResponseList, error) {
-	// SuperAdmin sees all users
 	if role == SUPERADMIN {
 		return s.GetUserList(ctx, limit, page)
 	}
 
-	// Regular Admin only sees users bound to their allowed clients
 	if role == ADMIN {
 		return s.GetBoundUserList(ctx, limit, page, userID)
 	}
@@ -152,12 +138,7 @@ func (s *UserService) GetFilteredUserList(
 }
 
 /**
- * GetUserList retrieves a paginated list of all users and their
- * assigned roles, calculating metadata for the response.
- * @param ctx Request context
- * @param limit Items per page
- * @param page Current page number
- * @return Paginated user list response or error
+ * GetUserList retrieves a paginated list of all users.
  */
 func (s *UserService) GetUserList(
 	ctx context.Context,
@@ -166,12 +147,12 @@ func (s *UserService) GetUserList(
 ) (*dto.UserResponseList, error) {
 	offset := (page - 1) * limit
 
-	users, err := s.Repo.GetUserList(limit, offset)
+	users, err := s.Repo.GetUserList(ctx, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetUserList): %w", err)
 	}
 
-	total, err := s.Repo.CountUsers()
+	total, err := s.Repo.CountUsers(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (CountUsers): %w", err)
 	}
@@ -212,13 +193,7 @@ func (s *UserService) GetUserList(
 }
 
 /**
- * GetBoundUserList retrieves a paginated list of users that
- * share allowed client roles with the specified admin.
- * @param ctx Request context
- * @param limit Items per page
- * @param page Current page number
- * @param userID The ID of the admin making the request
- * @return Paginated user list response or error
+ * GetBoundUserList retrieves users sharing allowed client roles with admin.
  */
 func (s *UserService) GetBoundUserList(
 	ctx context.Context,
@@ -228,12 +203,12 @@ func (s *UserService) GetBoundUserList(
 ) (*dto.UserResponseList, error) {
 	offset := (page - 1) * limit
 
-	users, err := s.Repo.GetBoundUserList(limit, offset, userID[:])
+	users, err := s.Repo.GetBoundUserList(ctx, limit, offset, userID[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetBound): %w", err)
 	}
 
-	total, err := s.Repo.CountBoundUsers(userID[:])
+	total, err := s.Repo.CountBoundUsers(ctx, userID[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (CountBound): %w", err)
 	}
@@ -285,15 +260,13 @@ func GetUserRoles(roles []models.Role) ([]dto.UserRoleRepsonse, error) {
 }
 
 /**
- * UpdateUserPassword handles the secure hashing and persistence of
- * a user's new password.
+ * UpdateUserPassword handles hashing and persistence of new password.
  */
 func (s *UserService) UpdateUserPassword(
 	ctx context.Context,
 	id uuid.UUID,
 	newPassword string,
 ) error {
-	// 1. Secure Hashing
 	passwordHash, err := utils.HashSecret(newPassword)
 	if err != nil {
 		return fmt.Errorf("Secret Hashing: %w", err)
@@ -304,8 +277,7 @@ func (s *UserService) UpdateUserPassword(
 		PasswordHash: passwordHash,
 	}
 
-	// 2. Persistence
-	err = s.Repo.UpdateUserPassword(&user)
+	err = s.Repo.UpdateUserPassword(ctx, &user)
 	if err != nil {
 		return fmt.Errorf("Database Query (UpdatePassword): %w", err)
 	}
@@ -314,8 +286,7 @@ func (s *UserService) UpdateUserPassword(
 }
 
 /**
- * UpdateUserStatus modifies the operational status of a user
- * after validating the state transition.
+ * UpdateUserStatus modifies the operational status of a user.
  */
 func (s *UserService) UpdateUserStatus(
 	ctx context.Context,
@@ -332,7 +303,7 @@ func (s *UserService) UpdateUserStatus(
 		Status: status,
 	}
 
-	err = s.Repo.UpdateStatus(&user)
+	err = s.Repo.UpdateStatus(ctx, &user)
 	if err != nil {
 		return fmt.Errorf("Database Query (UpdateStatus): %w", err)
 	}
@@ -341,8 +312,7 @@ func (s *UserService) UpdateUserStatus(
 }
 
 /**
- * UpdateUserRoles modifies the associations between a user
- * and their assigned roles in the system.
+ * UpdateUserRoles modifies associations between user and their roles.
  */
 func (s *UserService) UpdateUserRoles(
 	ctx context.Context,
@@ -352,27 +322,26 @@ func (s *UserService) UpdateUserRoles(
 	role string,
 ) error {
 	if role == SUPERADMIN {
-		err := s.Repo.UpdateUserRoles(id[:], roleIDs)
+		err := s.Repo.UpdateUserRoles(ctx, id[:], roleIDs)
 		if err != nil {
 			return fmt.Errorf("Database Query (UpdateUserRoles): %w", err)
 		}
 	}
 	if role == ADMIN {
-		err := s.Repo.UpdateFilteredRoles(adminID[:], id[:], roleIDs)
+		err := s.Repo.UpdateFilteredRoles(ctx, adminID[:], id[:], roleIDs)
 		if err != nil {
 			return fmt.Errorf("Database Query: (UpdateFilteredRoles): %v", err)
 		}
 	}
-	
+
 	return nil
 }
 
 /**
- * DeleteUser performs a soft-delete on a user record, marking
- * them as inactive without removing the data from the database.
+ * DeleteUser performs a soft-delete on a user record.
  */
 func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	if err := s.Repo.SoftDelete(id[:]); err != nil {
+	if err := s.Repo.SoftDelete(ctx, id[:]); err != nil {
 		return fmt.Errorf("Database Query (SoftDelete): %w", err)
 	}
 

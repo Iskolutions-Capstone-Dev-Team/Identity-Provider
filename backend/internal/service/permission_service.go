@@ -1,17 +1,19 @@
 package service
 
 import (
+	"context"
+
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 )
 
 type PermissionService struct {
-	Repo *repository.PermissionRepository
+	Repo repository.PermissionRepository
 }
 
-func (s *PermissionService) GetAllPermissions() ([]dto.PermissionResponse, 
-	error) {
-	permissions, err := s.Repo.GetAllPermissions()
+func (s *PermissionService) GetAllPermissions(ctx context.Context,
+) ([]dto.PermissionResponse, error) {
+	permissions, err := s.Repo.GetAllPermissions(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -17,9 +17,9 @@ import (
 )
 
 type AuthService struct {
-	Repo        *repository.AuthCodeRepository
-	SessionRepo *repository.SessionRepository
-	ClientRepo  *repository.ClientRepository
+	Repo        repository.AuthCodeRepository
+	SessionRepo repository.SessionRepository
+	ClientRepo  repository.ClientRepository
 	PrivateKey  *rsa.PrivateKey
 	PublicKey   *rsa.PublicKey
 }
@@ -39,7 +39,7 @@ func (s *AuthService) Authorize(
 	}
 
 	// 1. Session Validation
-	session, err := s.SessionRepo.GetByID(sessionToken)
+	session, err := s.SessionRepo.GetByID(ctx, sessionToken)
 	if session == nil {
 		return "", fmt.Errorf("No session Found")
 	}
@@ -50,7 +50,7 @@ func (s *AuthService) Authorize(
 	}
 
 	// 2. Client Verification
-	client, err := s.ClientRepo.GetByID(clientID[:])
+	client, err := s.ClientRepo.GetByID(ctx, clientID[:])
 	if err != nil {
 		return "", fmt.Errorf("Database Query (GetClient): %w", err)
 	}
@@ -62,7 +62,7 @@ func (s *AuthService) Authorize(
 	}
 
 	userID := session.UserId
-	err = s.Repo.StoreCode(code, userID[:], clientID[:], client.RedirectUri)
+	err = s.Repo.StoreCode(ctx, code, userID[:], clientID[:], client.RedirectUri)
 	if err != nil {
 		return "", fmt.Errorf("Code Storage: %w", err)
 	}
@@ -81,7 +81,7 @@ func (s *AuthService) LoginAndAuthorize(
 	userAgent string,
 ) (string, string, error) {
 	// 1. Authenticate User
-	claims, storedHash, err := s.Repo.GetUserForAuth(req.Email)
+	claims, storedHash, err := s.Repo.GetUserForAuth(ctx, req.Email)
 	if err != nil {
 		return "", "", fmt.Errorf("Database Query (UserLookup): %w", err)
 	}
@@ -92,7 +92,7 @@ func (s *AuthService) LoginAndAuthorize(
 
 	// 2. Client Validation
 	clientUUID, _ := uuid.Parse(req.ClientID)
-	regURI, err := s.Repo.GetClientRedirectURI(clientUUID[:])
+	regURI, err := s.Repo.GetClientRedirectURI(ctx, clientUUID[:])
 	if err != nil {
 		return "", "", fmt.Errorf("Database Query (ClientLookup): %w", err)
 	}
@@ -100,13 +100,13 @@ func (s *AuthService) LoginAndAuthorize(
 	// 3. Authorization Code Logic
 	code, _ := utils.GenerateAuthorizationCode()
 	userID, _ := uuid.Parse(claims.UserID)
-	err = s.Repo.StoreCode(code, userID[:], clientUUID[:], regURI)
+	err = s.Repo.StoreCode(ctx, code, userID[:], clientUUID[:], regURI)
 	if err != nil {
 		return "", "", fmt.Errorf("Database Query (StoreCode): %w", err)
 	}
 
 	// 4. Session Management
-	sessionID, err := s.GetSessionToken(userID, ipAddress, userAgent)
+	sessionID, err := s.GetSessionToken(ctx, userID, ipAddress, userAgent)
 
 	redirectURL := fmt.Sprintf("%s?code=%s", regURI, code)
 	return redirectURL, sessionID, nil
@@ -121,37 +121,35 @@ func (s *AuthService) Logout(
 	sessionID string,
 ) error {
 	// 1. Retrieve session to identify the user
-	session, err := s.SessionRepo.GetByID(sessionID)
+	session, err := s.SessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
 		return fmt.Errorf("Database Query (GetSession): %w", err)
 	}
 
 	// 2. Perform global token revocation
-	err = s.Repo.RevokeTokens(session.UserId)
+	err = s.Repo.RevokeTokens(ctx, session.UserId)
 	if err != nil {
 		return fmt.Errorf("Database Query (RevokeTokens): %w", err)
 	}
 
 	// 3. Optional: Delete the session from DB
-	_ = s.SessionRepo.Delete(sessionID)
+	_ = s.SessionRepo.Delete(ctx, sessionID)
 
 	return nil
 }
 
 /**
- * ValidateSession checks if a session ID exists and is still
- * within its valid timeframe.
+ * ValidateSession checks if a session ID exists and is still active.
  */
 func (s *AuthService) ValidateSession(
 	ctx context.Context,
 	sessionID string,
 ) (*models.IdPSession, error) {
-	session, err := s.SessionRepo.GetByID(sessionID)
+	session, err := s.SessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetSession): %w", err)
 	}
 
-	// Logic: Session must not be expired
 	if time.Now().After(session.ExpiresAt) {
 		return nil, fmt.Errorf("Session Validation: expired")
 	}
@@ -160,13 +158,11 @@ func (s *AuthService) ValidateSession(
 }
 
 /**
- * GetJWKS constructs the JSON Web Key Set containing the
- * active public keys for token verification.
+ * GetJWKS constructs the JSON Web Key Set.
  */
 func (s *AuthService) GetJWKS(ctx context.Context) (*JWKS, error) {
 	keyID := os.Getenv("KEY_ID")
 
-	// Convert internal RSA Public Key to JWK format
 	jwk := PublicKeyToJWK(s.PublicKey, keyID)
 
 	return &JWKS{
@@ -175,8 +171,7 @@ func (s *AuthService) GetJWKS(ctx context.Context) (*JWKS, error) {
 }
 
 /**
- * ExchangeCodeForToken validates the authorization code and client
- * credentials before generating access and refresh tokens.
+ * ExchangeCodeForToken validates the authorization code and client.
  */
 func (s *AuthService) ExchangeCodeForToken(
 	ctx context.Context,
@@ -189,7 +184,7 @@ func (s *AuthService) ExchangeCodeForToken(
 	clientIDBin := clientUUID[:]
 
 	// 1. Authenticate Client
-	valid, err := s.Repo.VerifyClient(clientIDBin, req.ClientSecret)
+	valid, err := s.Repo.VerifyClient(ctx, clientIDBin, req.ClientSecret)
 	if err != nil {
 		return nil, fmt.Errorf("Client Verification: %w", err)
 	}
@@ -198,7 +193,7 @@ func (s *AuthService) ExchangeCodeForToken(
 	}
 
 	// 2. Consume Authorization Code
-	authCode, err := s.Repo.ExchangeCode(req.Code)
+	authCode, err := s.Repo.ExchangeCode(ctx, req.Code)
 	if err != nil {
 		return nil, fmt.Errorf("Code Exchange: %w", err)
 	}
@@ -209,12 +204,12 @@ func (s *AuthService) ExchangeCodeForToken(
 	}
 
 	// 4. Identity Retrieval
-	claims, err := s.Repo.GetClaimsByID(authCode.UserId)
+	claims, err := s.Repo.GetClaimsByID(ctx, authCode.UserId)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetClaims): %w", err)
 	}
 
-	client, err := s.ClientRepo.GetByID(clientIDBin)
+	client, err := s.ClientRepo.GetByID(ctx, clientIDBin)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetClient): %w", err)
 	}
@@ -227,6 +222,7 @@ func (s *AuthService) ExchangeCodeForToken(
 
 	refreshStr, _ := utils.GenerateRandomString(SECRET_ENTROPY)
 	err = s.Repo.StoreRefreshToken(
+		ctx,
 		refreshStr,
 		authCode.UserId,
 		clientIDBin,
@@ -244,15 +240,14 @@ func (s *AuthService) ExchangeCodeForToken(
 }
 
 /**
- * RotateRefreshToken validates an existing refresh token,
- * invalidates it, and issues a new pair of access and refresh tokens.
+ * RotateRefreshToken validates an existing refresh token and issues a new pair.
  */
 func (s *AuthService) RotateRefreshToken(
 	ctx context.Context,
 	oldToken string,
 ) (*dto.TokenResponse, error) {
 	// 1. Identify User and Client from the existing token
-	uID, cID, err := s.Repo.GetIDsFromToken(oldToken)
+	uID, cID, err := s.Repo.GetIDsFromToken(ctx, oldToken)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (TokenLookup): %w", err)
 	}
@@ -263,18 +258,18 @@ func (s *AuthService) RotateRefreshToken(
 		return nil, fmt.Errorf("Token Generation: %w", err)
 	}
 
-	err = s.Repo.RotateRefreshToken(oldToken, newToken)
+	err = s.Repo.RotateRefreshToken(ctx, oldToken, newToken)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (RotateToken): %w", err)
 	}
 
 	// 3. Retrieve Identity and Client data
-	claims, err := s.Repo.GetClaimsByID(uID)
+	claims, err := s.Repo.GetClaimsByID(ctx, uID)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetClaims): %w", err)
 	}
 
-	client, err := s.ClientRepo.GetByID(cID)
+	client, err := s.ClientRepo.GetByID(ctx, cID)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetClient): %w", err)
 	}
@@ -293,8 +288,8 @@ func (s *AuthService) RotateRefreshToken(
 	}, nil
 }
 
-func (s *AuthService) GetSessionToken(userID uuid.UUID,
-	ipAddress, userAgent string,
+func (s *AuthService) GetSessionToken(ctx context.Context,
+	userID uuid.UUID, ipAddress, userAgent string,
 ) (string, error) {
 	sessionID, _ := utils.GenerateRandomString(32)
 	expiry := time.Now().AddDate(
@@ -311,7 +306,7 @@ func (s *AuthService) GetSessionToken(userID uuid.UUID,
 		ExpiresAt: expiry,
 	}
 
-	if err := s.SessionRepo.Create(session); err != nil {
+	if err := s.SessionRepo.Create(ctx, session); err != nil {
 		return "", fmt.Errorf("Database Query (CreateSession): %w", err)
 	}
 

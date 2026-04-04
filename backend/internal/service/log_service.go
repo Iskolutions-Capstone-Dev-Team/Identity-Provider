@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -11,14 +12,14 @@ import (
 )
 
 type LogService struct {
-	Repo *repository.LogRepository
+	Repo repository.LogRepository
 }
 
 // PostAuditLog handles logic for creating an audit log.
-func (s *LogService) PostAuditLog(actorID []byte,
+func (s *LogService) PostAuditLog(ctx context.Context, actorID []byte,
 	req *dto.PostAuditLogRequest,
 ) error {
-	actorName := s.resolveActor(actorID)
+	actorName := s.resolveActor(ctx, actorID)
 
 	log := &models.AuditLog{
 		Actor:    &actorName,
@@ -28,14 +29,14 @@ func (s *LogService) PostAuditLog(actorID []byte,
 		Metadata: req.Metadata,
 	}
 
-	return s.Repo.CreateLog(log)
+	return s.Repo.CreateLog(ctx, log)
 }
 
 // GetLog retrieves a single audit log based on DTO filters.
-func (s *LogService) GetLog(req *dto.GetAuditLogRequest) (
-	*dto.PostAuditLogRequest, error,
-) {
-	res, err := s.Repo.GetLog(req.Actor, req.Status)
+func (s *LogService) GetLog(ctx context.Context,
+	req *dto.GetAuditLogRequest,
+) (*dto.PostAuditLogRequest, error) {
+	res, err := s.Repo.GetLog(ctx, req.Actor, req.Status)
 	if err != nil {
 		return nil, fmt.Errorf("[LogService] GetLog: %w", err)
 	}
@@ -50,10 +51,10 @@ func (s *LogService) GetLog(req *dto.GetAuditLogRequest) (
 }
 
 // GetLogList retrieves a list of audit logs converted to DTOs.
-func (s *LogService) GetLogList(limit, offset int) (
-	[]dto.PostAuditLogRequest, error,
-) {
-	logs, err := s.Repo.GetLogList(limit, offset)
+func (s *LogService) GetLogList(ctx context.Context,
+	limit, offset int,
+) ([]dto.PostAuditLogRequest, error) {
+	logs, err := s.Repo.GetLogList(ctx, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("[LogService] GetLogList: %w", err)
 	}
@@ -73,20 +74,24 @@ func (s *LogService) GetLogList(limit, offset int) (
 }
 
 // resolveActor attempts to find the actor name from users or clients.
-func (s *LogService) resolveActor(id []byte) string {
-	if email, err := s.Repo.GetUserEmailbyID(id); err == nil && email != "" {
+func (s *LogService) resolveActor(ctx context.Context, id []byte) string {
+	if email, err := s.Repo.GetUserEmailbyID(ctx, id); err == nil &&
+		email != "" {
 		return email
 	}
 
-	if name, err := s.Repo.GetClientNameByID(id); err == nil && name != "" {
+	if name, err := s.Repo.GetClientNameByID(ctx, id); err == nil &&
+		name != "" {
 		return name
 	}
 
 	return fmt.Sprintf("ID:%x", id)
 }
 
-// PostAuditLogWithActorString creates an audit log with the actor as a direct string.
-func (s *LogService) PostAuditLogWithActorString(actor string, req *dto.PostAuditLogRequest) error {
+// PostAuditLogWithActorString creates an audit log with string actor.
+func (s *LogService) PostAuditLogWithActorString(ctx context.Context,
+	actor string, req *dto.PostAuditLogRequest,
+) error {
 	log := &models.AuditLog{
 		Actor:    &actor,
 		Action:   req.Action,
@@ -94,33 +99,36 @@ func (s *LogService) PostAuditLogWithActorString(actor string, req *dto.PostAudi
 		Status:   req.Status,
 		Metadata: req.Metadata,
 	}
-	return s.Repo.CreateLog(log)
+	return s.Repo.CreateLog(ctx, log)
 }
 
-// ResolveClientName returns a human-readable client name from a client ID string.
-// If the ID is not a valid UUID or the lookup fails, it returns the original ID.
-func (s *LogService) ResolveClientName(clientID string) string {
+// ResolveClientName returns a human-readable client name.
+func (s *LogService) ResolveClientName(ctx context.Context,
+	clientID string,
+) string {
 	idBytes, err := uuid.Parse(clientID)
 	if err != nil {
-		// Not a UUID – assume it's already a name or URL
 		return clientID
 	}
-	name, err := s.Repo.GetClientNameByID(idBytes[:])
+	name, err := s.Repo.GetClientNameByID(ctx, idBytes[:])
 	if err != nil || name == "" {
 		return clientID
 	}
 	return name
 }
 
-// GetUserEmail returns the email for a user ID (as []byte).
-// If lookup fails, it returns an empty string.
-func (s *LogService) GetUserEmail(userID []byte) (string, error) {
-	return s.Repo.GetUserEmailbyID(userID)
+// GetUserEmail returns the email for a user ID.
+func (s *LogService) GetUserEmail(ctx context.Context,
+	userID []byte,
+) (string, error) {
+	return s.Repo.GetUserEmailbyID(ctx, userID)
 }
 
-// GetLogByID retrieves a single audit log by its ID and converts it to DTO.
-func (s *LogService) GetLogByID(id int64) (*dto.PostAuditLogRequest, error) {
-	log, err := s.Repo.GetLogByID(id)
+// GetLogByID retrieves a single audit log by its ID.
+func (s *LogService) GetLogByID(ctx context.Context,
+	id int64,
+) (*dto.PostAuditLogRequest, error) {
+	log, err := s.Repo.GetLogByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("[LogService] GetLogByID: %w", err)
 	}
@@ -133,11 +141,9 @@ func (s *LogService) GetLogByID(id int64) (*dto.PostAuditLogRequest, error) {
 	}, nil
 }
 
-// GetLogListWithFilters retrieves a paginated list of logs matching the filters.
-// It returns the list and total count.
-func (s *LogService) GetLogListWithFilters(
-	filters map[string]interface{},
-	limit, page int,
+// GetLogListWithFilters retrieves logs matching filters.
+func (s *LogService) GetLogListWithFilters(ctx context.Context,
+	filters map[string]interface{}, limit, page int,
 ) ([]dto.PostAuditLogRequest, int64, int, error) {
 	if limit <= 0 {
 		limit = 10
@@ -147,7 +153,7 @@ func (s *LogService) GetLogListWithFilters(
 	}
 	offset := (page - 1) * limit
 
-	logs, total, err := s.Repo.GetLogListWithFilters(filters, limit, offset)
+	logs, total, err := s.Repo.GetLogListWithFilters(ctx, filters, limit, offset)
 	if err != nil {
 		return nil, 0, 0, fmt.Errorf("[LogService] GetLogListWithFilters: %w", err)
 	}
