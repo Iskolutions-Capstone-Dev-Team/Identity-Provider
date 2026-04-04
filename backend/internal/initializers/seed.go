@@ -2,6 +2,7 @@ package initializers
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -111,7 +112,6 @@ func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 	adminPass := os.Getenv("ADMIN_PASSWORD")
 
 	admin, err := userRepo.GetUserByEmail(ctx, adminEmail)
-
 	if err != nil {
 		return fmt.Errorf("[Migrate] Error checking for existing admin: %v", err)
 	}
@@ -125,7 +125,10 @@ func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 			Email:        adminEmail,
 			PasswordHash: hashedPassword,
 			Status:       models.StatusActive,
-			RoleID:       superAdminRoleID,
+			RoleID: sql.NullInt64{
+				Int64: int64(superAdminRoleID),
+				Valid: true,
+			},
 		}
 
 		if err := userRepo.CreateUser(ctx, admin); err != nil {

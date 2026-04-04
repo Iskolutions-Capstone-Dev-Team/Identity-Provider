@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"slices"
 
@@ -69,7 +70,7 @@ func (s *userService) CreateUser(
 		Email:        req.Email,
 		PasswordHash: passwordHash,
 		Status:       models.StatusActive,
-		RoleID:       req.RoleID,
+		RoleID:       sql.NullInt64{Int64: int64(req.RoleID), Valid: true},
 	}
 
 	err = s.Repo.CreateUser(ctx, &user)

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 )
@@ -56,6 +57,6 @@ type User struct {
 	CreatedAt    time.Time  `db:"created_at"`
 	UpdatedAt    time.Time  `db:"updated_at"`
 
-	RoleID       int        `db:"role_id"`
-	Role         Role      `db:"-"`
+	RoleID sql.NullInt64 `db:"role_id"`
+	Role   Role          `db:"-"`
 }
