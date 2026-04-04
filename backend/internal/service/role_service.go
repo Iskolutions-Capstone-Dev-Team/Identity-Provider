@@ -71,7 +71,7 @@ func (s *roleService) GetFilteredRoleList(
 	page int,
 	keyword string,
 ) (*dto.RoleListResponse, error) {
-	if slices.Contains(permissions, "View all roles") {
+	if slices.Contains(permissions, "View roles") {
 		return s.GetRoleList(ctx, limit, page, keyword)
 	}
 
