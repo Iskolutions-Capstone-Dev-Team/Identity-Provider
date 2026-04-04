@@ -7,6 +7,9 @@ services:
     container_name: idp_backend
     restart: always
     env_file: ./.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "localhost:host-gateway"
     environment:
       - GODEBUG=http2debug=0,asyncpreemptoff=1
     ports:
@@ -97,17 +100,14 @@ services:
       - S3_BUCKET=${S3_BUCKET}
     entrypoint: >
       /bin/sh -c "
-      # Wait for MinIO server to be fully ready
-      sleep 10;
-      # Configure the 'mc' client with an alias named 'local'
+      sleep 5;
       mc alias set local http://minio:9000 ${S3_KEY} ${S3_SECRET};
-      # Create the bucket only if it does not exist
       mc mb local/${S3_BUCKET} --ignore-existing;
-      # Set policy to download (optional: allows public read of images)
+      # This makes the bucket public-read
       mc anonymous set download local/${S3_BUCKET};
-      # Set CORS for local development
-      echo '[{\"AllowedOrigins\":[\"http://localhost:5173\"],\"AllowedMethods\":[\"GET\"],\"AllowedHeaders\":[\"*\"]}]' > /tmp/cors.json;
-      mc cors set myminio/user-uploads /tmp/cors.json;
+      # Fix the alias here to 'local' instead of 'myminio'
+      echo '[{\"AllowedOrigins\":[\"*\"],\"AllowedMethods\":[\"GET\"],\"AllowedHeaders\":[\"*\"]}]' > /tmp/cors.json;
+      mc cors set local/${S3_BUCKET} /tmp/cors.json;
       exit 0;
       "
 

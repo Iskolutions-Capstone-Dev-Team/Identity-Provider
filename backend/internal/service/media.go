@@ -65,6 +65,16 @@ func GetPresignedURL(ctx context.Context,
 	object = strings.TrimPrefix(object, "/")
 	expiry := time.Second * 3600
 
+	isMinio := strings.Contains(storage.Client.EndpointURL().Host, "minio")
+    
+    if isMinio {
+        publicURL := fmt.Sprintf("http://%s/%s/%s", 
+            storage.PublicEndpoint, 
+            storage.BucketName, 
+            object)
+        return publicURL, nil
+    }
+
 	presignedURL, err := storage.Client.PresignedGetObject(
 		ctx,
 		storage.BucketName,

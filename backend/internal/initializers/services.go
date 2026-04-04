@@ -16,29 +16,18 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 	permissionRepo := repository.NewPermissionRepository(db)
 
 	return service.ServiceContainer{
-		ClientService: &service.ClientService{
-			Repo:    clientRepo,
-			Storage: Storage,
-		},
-		RoleService: &service.RoleService{
-			RoleRepo: roleRepo,
-		},
-		UserService: &service.UserService{
-			Repo:       userRepo,
-			ClientRepo: clientRepo,
-		},
-		AuthService: &service.AuthService{
-			Repo:        authRepo,
-			SessionRepo: sessionRepo,
-			ClientRepo:  clientRepo,
-			PublicKey:   PubKey,
-			PrivateKey:  PrivKey,
-		},
-		LogService: &service.LogService{
-			Repo: logRepo,
-		},
-		PermissionService: &service.PermissionService{
-			Repo: permissionRepo,
-		},
+		ClientService: service.NewClientService(clientRepo, Storage),
+		RoleService:   service.NewRoleService(roleRepo),
+		UserService:   service.NewUserService(userRepo, clientRepo),
+		AuthService: service.NewAuthService(
+			authRepo,
+			sessionRepo,
+			clientRepo,
+			PrivKey,
+			PubKey,
+		),
+		LogService:        service.NewLogService(logRepo),
+		PermissionService: service.NewPermissionService(permissionRepo),
 	}
 }
+
