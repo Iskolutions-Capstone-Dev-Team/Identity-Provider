@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"strings"
@@ -9,20 +10,41 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type RoleRepository struct {
+type RoleRepository interface {
+	CreateRole(ctx context.Context, role models.Role) (sql.Result, error)
+	GetByID(ctx context.Context, id int) (*models.Role, error)
+	SearchRoles(ctx context.Context, keyword string) ([]models.Role, error)
+	ListRoles(ctx context.Context, limit, offset int,
+		keyword string) ([]models.Role, error)
+	ListAllExceptIdP(ctx context.Context, limit, offset int,
+		keyword string) ([]models.Role, error)
+	ListDistinctBoundRoles(ctx context.Context, limit, offset int,
+		userID []byte, keyword string) ([]models.RoleWithMetaData, error)
+	UpdateRole(ctx context.Context, role models.Role) error
+	Delete(ctx context.Context, id int) error
+	CountRoles(ctx context.Context, keyword string) (int, error)
+	CountDistinctBoundRoles(ctx context.Context, userID []byte,
+		keyword string) (int, error)
+	FetchPermissionsForRoles(ctx context.Context,
+		roleIDs []int) (map[int][]models.Permission, error)
+}
+
+type roleRepository struct {
 	db *sqlx.DB
 }
 
 // CreateRole adds a new role to the system.
-func (r *RoleRepository) CreateRole(role models.Role) (sql.Result, error) {
-	tx, err := r.db.Beginx()
+func (r *roleRepository) CreateRole(ctx context.Context,
+	role models.Role,
+) (sql.Result, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
 	query := "INSERT INTO roles (role_name, description) VALUES (?, ?)"
-	result, err := tx.Exec(query, role.RoleName, role.Description)
+	result, err := tx.ExecContext(ctx, query, role.RoleName, role.Description)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +55,6 @@ func (r *RoleRepository) CreateRole(role models.Role) (sql.Result, error) {
 	}
 
 	if len(role.Permissions) > 0 {
-		// Prepare arguments and placeholders for bulk insert
 		args := make([]interface{}, 0, len(role.Permissions)*2)
 		placeholders := make([]string, 0, len(role.Permissions))
 
@@ -42,13 +63,11 @@ func (r *RoleRepository) CreateRole(role models.Role) (sql.Result, error) {
 			args = append(args, roleID, perm.ID)
 		}
 
-		// Join placeholders into a single bulk query
 		bulkQuery := "INSERT INTO role_permissions " +
 			"(role_id, permission_id) VALUES " +
 			strings.Join(placeholders, ", ")
 
-		// Rebind handles driver-specific placeholders (e.g., ? vs $1)
-		_, err = tx.Exec(tx.Rebind(bulkQuery), args...)
+		_, err = tx.ExecContext(ctx, tx.Rebind(bulkQuery), args...)
 		if err != nil {
 			return nil, err
 		}
@@ -58,16 +77,18 @@ func (r *RoleRepository) CreateRole(role models.Role) (sql.Result, error) {
 }
 
 // GetByID retrieves a single role by its integer ID.
-func (r *RoleRepository) GetByID(id int) (*models.Role, error) {
+func (r *roleRepository) GetByID(ctx context.Context,
+	id int,
+) (*models.Role, error) {
 	var role models.Role
 	query := `
         SELECT id, role_name, description, created_at, updated_at
         FROM roles WHERE id = ? AND deleted_at IS NULL`
-	if err := r.db.Get(&role, query, id); err != nil {
+	if err := r.db.GetContext(ctx, &role, query, id); err != nil {
 		return nil, err
 	}
 
-	permMap, err := r.FetchPermissionsForRoles([]int{role.ID})
+	permMap, err := r.FetchPermissionsForRoles(ctx, []int{role.ID})
 	if err == nil {
 		role.Permissions = permMap[role.ID]
 	}
@@ -76,7 +97,9 @@ func (r *RoleRepository) GetByID(id int) (*models.Role, error) {
 }
 
 // SearchRoles retrieves a list of roles from a keyword.
-func (r *RoleRepository) SearchRoles(keyword string) ([]models.Role, error) {
+func (r *roleRepository) SearchRoles(ctx context.Context,
+	keyword string,
+) ([]models.Role, error) {
 	var roles []models.Role
 	pattern := "%" + keyword + "%"
 	query := `
@@ -85,15 +108,15 @@ func (r *RoleRepository) SearchRoles(keyword string) ([]models.Role, error) {
         LIMIT 10
     `
 
-	if err := r.db.Select(&roles, query, pattern); err != nil {
+	if err := r.db.SelectContext(ctx, &roles, query, pattern); err != nil {
 		return nil, err
 	}
 
-	return r.populatePermissions(roles)
+	return r.populatePermissions(ctx, roles)
 }
 
 // ListRoles returns a paginated list of active roles.
-func (r *RoleRepository) ListRoles(limit, offset int,
+func (r *roleRepository) ListRoles(ctx context.Context, limit, offset int,
 	keyword string,
 ) ([]models.Role, error) {
 	var roles []models.Role
@@ -103,15 +126,16 @@ func (r *RoleRepository) ListRoles(limit, offset int,
         WHERE deleted_at IS NULL AND role_name LIKE ?
         ORDER BY id DESC 
         LIMIT ? OFFSET ?`
-	if err := r.db.Select(&roles, query, searchKeyword, limit, offset); err != nil {
+	if err := r.db.SelectContext(ctx, &roles, query, searchKeyword, limit,
+		offset); err != nil {
 		return nil, err
 	}
 
-	return r.populatePermissions(roles)
+	return r.populatePermissions(ctx, roles)
 }
 
 // ListAllExceptIdP returns a paginated list of active roles excluding IdP.
-func (r *RoleRepository) ListAllExceptIdP(limit, offset int,
+func (r *roleRepository) ListAllExceptIdP(ctx context.Context, limit, offset int,
 	keyword string,
 ) ([]models.Role, error) {
 	var roles []models.Role
@@ -126,18 +150,16 @@ func (r *RoleRepository) ListAllExceptIdP(limit, offset int,
 		ORDER BY id DESC 
 		LIMIT ? OFFSET ?
 	`
-	if err := r.db.Select(&roles, query, searchKeyword, notLike, limit, offset); err != nil {
+	if err := r.db.SelectContext(ctx, &roles, query, searchKeyword, notLike,
+		limit, offset); err != nil {
 		return nil, err
 	}
 
-	return r.populatePermissions(roles)
+	return r.populatePermissions(ctx, roles)
 }
 
-func (r *RoleRepository) ListDistinctBoundRoles(
-	limit int,
-	offset int,
-	userID []byte,
-	keyword string,
+func (r *roleRepository) ListDistinctBoundRoles(ctx context.Context,
+	limit int, offset int, userID []byte, keyword string,
 ) ([]models.RoleWithMetaData, error) {
 	var roles []models.RoleWithMetaData
 	searchKeyword := "%" + keyword + "%"
@@ -166,16 +188,8 @@ func (r *RoleRepository) ListDistinctBoundRoles(
         LIMIT ? OFFSET ?
 	`
 
-	err := r.db.Select(
-		&roles,
-		query,
-		userID,
-		userID,
-		userID,
-		searchKeyword,
-		limit,
-		offset,
-	)
+	err := r.db.SelectContext(ctx, &roles, query, userID, userID, userID,
+		searchKeyword, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +199,7 @@ func (r *RoleRepository) ListDistinctBoundRoles(
 		roleIDs[i] = roles[i].ID
 	}
 
-	permMap, err := r.FetchPermissionsForRoles(roleIDs)
+	permMap, err := r.FetchPermissionsForRoles(ctx, roleIDs)
 	if err == nil {
 		for i := range roles {
 			roles[i].Permissions = permMap[roles[i].ID]
@@ -196,8 +210,10 @@ func (r *RoleRepository) ListDistinctBoundRoles(
 }
 
 // UpdateRole modifies the description or name of an existing role.
-func (r *RoleRepository) UpdateRole(role models.Role) error {
-	tx, err := r.db.Beginx()
+func (r *roleRepository) UpdateRole(ctx context.Context,
+	role models.Role,
+) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -212,13 +228,8 @@ func (r *RoleRepository) UpdateRole(role models.Role) error {
 		WHERE id = ? 
 			AND deleted_at IS NULL
 			AND SUBSTRING_INDEX(role_name, ':', 1) = SUBSTRING_INDEX(?, ':', 1)`
-	result, err := tx.Exec(
-		query,
-		role.RoleName,
-		role.Description,
-		role.ID,
-		role.RoleName,
-	)
+	result, err := tx.ExecContext(ctx, query, role.RoleName, role.Description,
+		role.ID, role.RoleName)
 	if err != nil {
 		return err
 	}
@@ -231,8 +242,8 @@ func (r *RoleRepository) UpdateRole(role models.Role) error {
 		return errors.New("Forbidden role_name change or role not found.")
 	}
 
-	if _, err := tx.Exec(`DELETE FROM role_permissions WHERE role_id = ?`,
-		role.ID); err != nil {
+	if _, err := tx.ExecContext(ctx,
+		`DELETE FROM role_permissions WHERE role_id = ?`, role.ID); err != nil {
 		return err
 	}
 
@@ -242,7 +253,8 @@ func (r *RoleRepository) UpdateRole(role models.Role) error {
             VALUES (?, ?)
         `
 		for _, perm := range role.Permissions {
-			if _, err := tx.Exec(permQuery, role.ID, perm.ID); err != nil {
+			_, err := tx.ExecContext(ctx, permQuery, role.ID, perm.ID)
+			if err != nil {
 				return err
 			}
 		}
@@ -252,30 +264,27 @@ func (r *RoleRepository) UpdateRole(role models.Role) error {
 }
 
 // Delete purges the role.
-// @Summary Soft Delete Role
-// @ID delete-role
-func (r *RoleRepository) Delete(id int) error {
+func (r *roleRepository) Delete(ctx context.Context, id int) error {
 	query := `DELETE FROM roles WHERE id = ?`
-	_, err := r.db.Exec(query, id)
+	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }
 
 // CountRoles counts the number of roles that are not deleted.
-// @Summary Count all active non deleted roles
-// @ID count-roles
-func (r *RoleRepository) CountRoles(keyword string) (int, error) {
+func (r *roleRepository) CountRoles(ctx context.Context,
+	keyword string,
+) (int, error) {
 	var count int
 	searchKeyword := "%" + keyword + "%"
 	query := `
 		SELECT COUNT(*) FROM roles 
 		WHERE deleted_at IS NULL AND role_name LIKE ?`
-	err := r.db.Get(&count, query, searchKeyword)
+	err := r.db.GetContext(ctx, &count, query, searchKeyword)
 	return count, err
 }
 
-func (r *RoleRepository) CountDistinctBoundRoles(
-	userID []byte,
-	keyword string,
+func (r *roleRepository) CountDistinctBoundRoles(ctx context.Context,
+	userID []byte, keyword string,
 ) (int, error) {
 	var count int
 	searchKeyword := "%" + keyword + "%"
@@ -290,7 +299,7 @@ func (r *RoleRepository) CountDistinctBoundRoles(
 			AND r.role_name LIKE ?
 	`
 
-	err := r.db.Get(&count, query, userID, searchKeyword)
+	err := r.db.GetContext(ctx, &count, query, userID, searchKeyword)
 	if err != nil {
 		return 0, err
 	}
@@ -298,7 +307,7 @@ func (r *RoleRepository) CountDistinctBoundRoles(
 	return count, nil
 }
 
-func (r *RoleRepository) populatePermissions(
+func (r *roleRepository) populatePermissions(ctx context.Context,
 	roles []models.Role,
 ) ([]models.Role, error) {
 	roleIDs := make([]int, len(roles))
@@ -306,7 +315,7 @@ func (r *RoleRepository) populatePermissions(
 		roleIDs[i] = roles[i].ID
 	}
 
-	permMap, err := r.FetchPermissionsForRoles(roleIDs)
+	permMap, err := r.FetchPermissionsForRoles(ctx, roleIDs)
 	if err == nil {
 		for i := range roles {
 			roles[i].Permissions = permMap[roles[i].ID]
@@ -315,7 +324,7 @@ func (r *RoleRepository) populatePermissions(
 	return roles, nil
 }
 
-func (r *RoleRepository) FetchPermissionsForRoles(
+func (r *roleRepository) FetchPermissionsForRoles(ctx context.Context,
 	roleIDs []int,
 ) (map[int][]models.Permission, error) {
 	if len(roleIDs) == 0 {
@@ -332,7 +341,7 @@ func (r *RoleRepository) FetchPermissionsForRoles(
 	}
 
 	query = r.db.Rebind(query)
-	rows, err := r.db.Queryx(query, args...)
+	rows, err := r.db.QueryxContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -350,6 +359,6 @@ func (r *RoleRepository) FetchPermissionsForRoles(
 	return permMap, nil
 }
 
-func NewRoleRepository(db *sqlx.DB) *RoleRepository {
-	return &RoleRepository{db: db}
+func NewRoleRepository(db *sqlx.DB) RoleRepository {
+	return &roleRepository{db: db}
 }

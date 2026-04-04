@@ -1,24 +1,49 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/jmoiron/sqlx"
 )
 
-type ClientRepository struct {
+type ClientRepository interface {
+	GetByID(ctx context.Context, id []byte) (*models.Client, error)
+	ListClients(ctx context.Context, limit,
+		offset int, keyword string) ([]models.Client, error)
+	ListBoundClients(ctx context.Context, limit, offset int,
+		keyword string, userID []byte) ([]models.Client, error)
+	CreateClient(ctx context.Context, client *models.Client,
+		grants []string, userID []byte) error
+	UpdateClient(ctx context.Context, c *models.Client,
+		grants []string) error
+	SoftDelete(ctx context.Context, id []byte) error
+	GetGrantTypes(ctx context.Context, clientID []byte) ([]string, error)
+	GetClientAllowedRoles(ctx context.Context,
+		clientID []byte) ([]models.Role, error)
+	ListClientBaseURLS(ctx context.Context) ([]string, error)
+	CountClients(ctx context.Context, keyword string) (int, error)
+	CountBoundClients(ctx context.Context, keyword string,
+		userID []byte) (int, error)
+	RotateSecret(ctx context.Context, id []byte, oldSecretHash,
+		newSecretHash string) error
+	ChangeSecret(ctx context.Context, id []byte,
+		newSecretHash string) error
+	DeleteAndInsertGrants(ctx context.Context, c *models.Client,
+		grants []string) error
+	AdminiClientBind(ctx context.Context, userID, clientID []byte) error
+	RemoveAdminClientBind(ctx context.Context, clientID []byte) error
+}
+
+type clientRepository struct {
 	db *sqlx.DB
 }
 
 // GetByID retrieves a specific client by its binary UUID.
-// @Summary Get Client by ID
-// @ID get-client-by-id
-// @Accept json
-// @Produce json
-// @Param id query []byte true "Client Binary ID"
-// @Success 200 {object} models.Client
-func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
+func (r *clientRepository) GetByID(ctx context.Context,
+	id []byte,
+) (*models.Client, error) {
 	var client models.Client
 	query := `
 		SELECT id, client_name, description,
@@ -27,7 +52,7 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 		FROM clients
 		WHERE id = ? AND deleted_at IS NULL`
 
-	err := r.db.Get(&client, query, id)
+	err := r.db.GetContext(ctx, &client, query, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get client: %w", err)
 	}
@@ -35,7 +60,7 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 	grantQuery := `
 		SELECT grant_type FROM client_grant_types WHERE client_id = ?
 	`
-	err = r.db.Select(&client.Grants, grantQuery, id)
+	err = r.db.SelectContext(ctx, &client.Grants, grantQuery, id)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +73,7 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 		WHERE aac.client_id = ? AND r.deleted_at IS NULL
 		GROUP BY r.id
 	`
-	err = r.db.Select(&client.AllowedRoles, roleQuery, id)
+	err = r.db.SelectContext(ctx, &client.AllowedRoles, roleQuery, id)
 	if err != nil {
 		return nil, err
 	}
@@ -57,12 +82,7 @@ func (r *ClientRepository) GetByID(id []byte) (*models.Client, error) {
 }
 
 // ListClients returns a paginated list of non-deleted service providers.
-// @Summary List Clients
-// @ID list-clients
-// @Param limit query int true "Limit"
-// @Param offset query int true "Offset"
-// @Success 200 {array} models.Client
-func (r *ClientRepository) ListClients(limit,
+func (r *clientRepository) ListClients(ctx context.Context, limit,
 	offset int, keyword string,
 ) ([]models.Client, error) {
 	var clients []models.Client
@@ -77,15 +97,12 @@ func (r *ClientRepository) ListClients(limit,
 		LIMIT ? OFFSET ?
 	`
 
-	err := r.db.Select(&clients, query, searchKeyword, limit, offset)
+	err := r.db.SelectContext(ctx, &clients, query, searchKeyword, limit, offset)
 	return clients, err
 }
 
-func (r *ClientRepository) ListBoundClients(
-	limit int,
-	offset int,
-	keyword string,
-	userID []byte,
+func (r *clientRepository) ListBoundClients(ctx context.Context,
+	limit int, offset int, keyword string, userID []byte,
 ) ([]models.Client, error) {
 	var clients []models.Client
 	searchKeyword := "%" + keyword + "%"
@@ -103,27 +120,16 @@ func (r *ClientRepository) ListBoundClients(
 		LIMIT ? OFFSET ?
 	`
 
-	err := r.db.Select(
-		&clients,
-		query,
-		userID,
-		searchKeyword,
-		limit,
-		offset,
-	)
+	err := r.db.SelectContext(ctx, &clients, query, userID, searchKeyword,
+		limit, offset)
 	return clients, err
 }
 
 // CreateClient handles atomic insertion of client and grants.
-// Roles are scoped to a client implicitly via prefixed role names.
-// @Summary Create Client
-// @ID create-client
-func (r *ClientRepository) CreateClient(
-	client *models.Client,
-	grants []string,
-	userID []byte,
+func (r *clientRepository) CreateClient(ctx context.Context,
+	client *models.Client, grants []string, userID []byte,
 ) error {
-	tx, err := r.db.Beginx()
+	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -135,12 +141,9 @@ func (r *ClientRepository) CreateClient(
 			base_url, redirect_uri, logout_uri,
 			description, image_location
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err = tx.Exec(
-		q1,
-		client.ID, client.ClientName,
-		client.ClientSecret, client.BaseUrl,
-		client.RedirectUri, client.LogoutUri,
-		client.Description, client.ImageLocation,
+	_, err = tx.ExecContext(ctx, q1, client.ID, client.ClientName,
+		client.ClientSecret, client.BaseUrl, client.RedirectUri,
+		client.LogoutUri, client.Description, client.ImageLocation,
 	)
 	if err != nil {
 		return err
@@ -152,7 +155,7 @@ func (r *ClientRepository) CreateClient(
 		VALUES (?, ?)
 	`
 	for _, g := range grants {
-		if _, err = tx.Exec(q2, client.ID, g); err != nil {
+		if _, err = tx.ExecContext(ctx, q2, client.ID, g); err != nil {
 			return err
 		}
 	}
@@ -162,7 +165,7 @@ func (r *ClientRepository) CreateClient(
 		INSERT INTO admin_allowed_clients (client_id, user_id)
 		VALUES (?, ?)
 	`
-	_, err = tx.Exec(q3, client.ID, userID)
+	_, err = tx.ExecContext(ctx, q3, client.ID, userID)
 	if err != nil {
 		return err
 	}
@@ -170,12 +173,9 @@ func (r *ClientRepository) CreateClient(
 	return tx.Commit()
 }
 
-// UpdateClient modifies safe fields only. Secret is locked.
-// @Summary Update Client
-// @ID update-client
-func (r *ClientRepository) UpdateClient(
-	c *models.Client,
-	grants []string,
+// UpdateClient modifies safe fields only.
+func (r *clientRepository) UpdateClient(ctx context.Context,
+	c *models.Client, grants []string,
 ) error {
 	query := `
 		UPDATE clients
@@ -188,43 +188,36 @@ func (r *ClientRepository) UpdateClient(
 			logout_uri = ?
 		WHERE id = ?`
 
-	_, err := r.db.Exec(
-		query,
-		c.ClientName,
-		c.Description,
-		c.ImageLocation,
-		c.ImageLocation,
-		c.BaseUrl,
-		c.RedirectUri,
-		c.LogoutUri,
-		c.ID,
+	_, err := r.db.ExecContext(ctx, query, c.ClientName, c.Description,
+		c.ImageLocation, c.ImageLocation, c.BaseUrl, c.RedirectUri,
+		c.LogoutUri, c.ID,
 	)
 	if err != nil {
 		return err
 	}
 
-	return r.DeleteAndInsertGrants(c, grants)
+	return r.DeleteAndInsertGrants(ctx, c, grants)
 }
 
-// SoftDelete marks a client as deleted withkey stringout removing the audit trail.
-// @Summary Soft Delete Client
-// @ID delete-client
-func (r *ClientRepository) SoftDelete(id []byte) error {
+// SoftDelete marks a client as deleted.
+func (r *clientRepository) SoftDelete(ctx context.Context, id []byte) error {
 	query := `UPDATE clients SET deleted_at = NOW() WHERE id = ?`
-	_, err := r.db.Exec(query, id)
+	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }
 
-func (r *ClientRepository) GetGrantTypes(clientID []byte) ([]string, error) {
+func (r *clientRepository) GetGrantTypes(ctx context.Context,
+	clientID []byte,
+) ([]string, error) {
 	var grants []string
 	query := `SELECT grant_type FROM client_grant_types WHERE client_id = ?`
-	err := r.db.Select(&grants, query, clientID)
+	err := r.db.SelectContext(ctx, &grants, query, clientID)
 	return grants, err
 }
 
 // GetClientAllowedRoles returns the distinct set of roles assigned
 // to users who are bound to this client.
-func (r *ClientRepository) GetClientAllowedRoles(
+func (r *clientRepository) GetClientAllowedRoles(ctx context.Context,
 	clientID []byte,
 ) ([]models.Role, error) {
 	var roles []models.Role
@@ -235,21 +228,24 @@ func (r *ClientRepository) GetClientAllowedRoles(
 		JOIN admin_allowed_clients aac ON aac.user_id = ur.user_id
 		WHERE aac.client_id = ? AND r.deleted_at IS NULL
 	`
-	err := r.db.Select(&roles, query, clientID)
+	err := r.db.SelectContext(ctx, &roles, query, clientID)
 	return roles, err
 }
 
-func (r *ClientRepository) ListClientBaseURLS() ([]string, error) {
+func (r *clientRepository) ListClientBaseURLS(ctx context.Context,
+) ([]string, error) {
 	var baseURLS []string
 	query := `SELECT base_url FROM clients WHERE deleted_at IS NULL`
-	err := r.db.Select(&baseURLS, query)
+	err := r.db.SelectContext(ctx, &baseURLS, query)
 	if err != nil {
 		return nil, err
 	}
 	return baseURLS, nil
 }
 
-func (r *ClientRepository) CountClients(keyword string) (int, error) {
+func (r *clientRepository) CountClients(ctx context.Context,
+	keyword string,
+) (int, error) {
 	var count int
 	searchKeyword := "%" + keyword + "%"
 
@@ -258,15 +254,15 @@ func (r *ClientRepository) CountClients(keyword string) (int, error) {
 		WHERE deleted_at IS NULL
 		AND client_name LIKE ?
 	`
-	err := r.db.Get(&count, query, searchKeyword)
+	err := r.db.GetContext(ctx, &count, query, searchKeyword)
 	if err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
-func (r *ClientRepository) CountBoundClients(keyword string,
-	userID []byte,
+func (r *clientRepository) CountBoundClients(ctx context.Context,
+	keyword string, userID []byte,
 ) (int, error) {
 	var count int
 	searchKeyword := "%" + keyword + "%"
@@ -280,13 +276,13 @@ func (r *ClientRepository) CountBoundClients(keyword string,
 			AND c.client_name LIKE ?
 	`
 
-	err := r.db.Get(&count, query, userID, searchKeyword)
+	err := r.db.GetContext(ctx, &count, query, userID, searchKeyword)
 
 	return count, err
 }
 
-func (r *ClientRepository) RotateSecret(id []byte, oldSecretHash string,
-	newSecretHash string,
+func (r *clientRepository) RotateSecret(ctx context.Context,
+	id []byte, oldSecretHash, newSecretHash string,
 ) error {
 	query := `
 		UPDATE clients
@@ -294,14 +290,15 @@ func (r *ClientRepository) RotateSecret(id []byte, oldSecretHash string,
 		WHERE id = ?
 	`
 
-	_, err := r.db.Exec(query, newSecretHash, oldSecretHash, id)
+	_, err := r.db.ExecContext(ctx, query, newSecretHash, oldSecretHash, id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *ClientRepository) ChangeSecret(id []byte, newSecretHash string,
+func (r *clientRepository) ChangeSecret(ctx context.Context,
+	id []byte, newSecretHash string,
 ) error {
 	query := `
 		UPDATE clients
@@ -309,25 +306,24 @@ func (r *ClientRepository) ChangeSecret(id []byte, newSecretHash string,
 		WHERE id = ?
 	`
 
-	_, err := r.db.Exec(query, newSecretHash, id)
+	_, err := r.db.ExecContext(ctx, query, newSecretHash, id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *ClientRepository) DeleteAndInsertGrants(
-	c *models.Client,
-	grants []string,
+func (r *clientRepository) DeleteAndInsertGrants(ctx context.Context,
+	c *models.Client, grants []string,
 ) error {
-	tx, err := r.db.Begin()
+	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
 	delQuery := `DELETE FROM client_grant_types WHERE client_id = ?`
-	if _, err = tx.Exec(delQuery, c.ID); err != nil {
+	if _, err = tx.ExecContext(ctx, delQuery, c.ID); err != nil {
 		return err
 	}
 
@@ -336,7 +332,7 @@ func (r *ClientRepository) DeleteAndInsertGrants(
 		VALUES (?, ?)
 	`
 	for _, grant := range grants {
-		if _, err = tx.Exec(insQuery, c.ID, grant); err != nil {
+		if _, err = tx.ExecContext(ctx, insQuery, c.ID, grant); err != nil {
 			return err
 		}
 	}
@@ -344,28 +340,30 @@ func (r *ClientRepository) DeleteAndInsertGrants(
 	return tx.Commit()
 }
 
-func (r *ClientRepository) AdminiClientBind(userID []byte,
-	clientID []byte,
+func (r *clientRepository) AdminiClientBind(ctx context.Context,
+	userID, clientID []byte,
 ) error {
 	query := `
-		INSERT INTO admin_alllowed_lients (user_id, client_id)
+		INSERT INTO admin_allowed_clients (user_id, client_id)
 		VALUES (?, ?)
 	`
 
-	_, err := r.db.Exec(query, userID, clientID)
+	_, err := r.db.ExecContext(ctx, query, userID, clientID)
 	return err
 }
 
-func (r *ClientRepository) RemoveAdminClientBind(clientID []byte) error {
+func (r *clientRepository) RemoveAdminClientBind(ctx context.Context,
+	clientID []byte,
+) error {
 	query := `
 		DELETE FROM admin_allowed_clients
 		WHERE client_id = ?
 	`
 
-	_, err := r.db.Exec(query, clientID)
+	_, err := r.db.ExecContext(ctx, query, clientID)
 	return err
 }
 
-func NewClientRepository(db *sqlx.DB) *ClientRepository {
-	return &ClientRepository{db: db}
+func NewClientRepository(db *sqlx.DB) ClientRepository {
+	return &clientRepository{db: db}
 }
