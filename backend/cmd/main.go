@@ -129,7 +129,7 @@ func main() {
 	r.GET("/swagger/internal/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("internal")))
 	r.GET("/swagger/external/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("external")))
 
-	api.SetupRoutes(r, *h, s)
+	api.SetupRoutes(r, *h)
 
 	srv := &http.Server{
 		Addr:    ":8080",
