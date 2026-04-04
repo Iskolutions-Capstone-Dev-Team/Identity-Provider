@@ -11,17 +11,35 @@ import (
 	"github.com/google/uuid"
 )
 
-type RoleService struct {
-	RoleRepo *repository.RoleRepository
+type RoleService interface {
+	CreateRole(ctx context.Context, req dto.RoleRequest) error
+	GetFilteredRoleList(ctx context.Context, role string, userID uuid.UUID,
+		limit, page int, keyword string) (*dto.RoleListResponse, error)
+	GetRoleList(ctx context.Context, limit, page int,
+		keyword string) (*dto.RoleListResponse, error)
+	GetAllExceptIDP(ctx context.Context, limit, page int,
+		keyword string) (*dto.RoleListResponse, error)
+	GetAuthorizedRoles(ctx context.Context, userID uuid.UUID,
+		limit, page int, keyword string) (*dto.RoleListResponse, error)
+	GetRoleByID(ctx context.Context, id int) (*dto.RoleResponse, error)
+	SearchRoles(ctx context.Context,
+		keyword string) (*dto.RoleListResponse, error)
+	UpdateRole(ctx context.Context, id int, req dto.RoleRequest) error
+	DeleteRole(ctx context.Context, id int) error
+}
+
+type roleService struct {
+	RoleRepo repository.RoleRepository
+}
+
+func NewRoleService(roleRepo repository.RoleRepository) RoleService {
+	return &roleService{RoleRepo: roleRepo}
 }
 
 /**
  * CreateRole handles the creation of a new role.
- * Roles are scoped to clients implicitly via their name prefix
- * (e.g., "myapp:admin" belongs to the "myapp" client).
- * No explicit junction table binding is required.
  */
-func (s *RoleService) CreateRole(
+func (s *roleService) CreateRole(
 	ctx context.Context,
 	req dto.RoleRequest,
 ) error {
@@ -33,7 +51,7 @@ func (s *RoleService) CreateRole(
 		}),
 	}
 
-	_, err := s.RoleRepo.CreateRole(role)
+	_, err := s.RoleRepo.CreateRole(ctx, role)
 	if err != nil {
 		return fmt.Errorf("Database Query (CreateRole): %w", err)
 	}
@@ -42,10 +60,9 @@ func (s *RoleService) CreateRole(
 }
 
 /**
- * GetFilteredRoleList determines which roles the user can see
- * based on their administrative privilege level.
+ * GetFilteredRoleList determines which roles the user can see.
  */
-func (s *RoleService) GetFilteredRoleList(
+func (s *roleService) GetFilteredRoleList(
 	ctx context.Context,
 	role string,
 	userID uuid.UUID,
@@ -69,7 +86,7 @@ func (s *RoleService) GetFilteredRoleList(
 /**
  * GetRoleList retrieves a paginated list of roles.
  */
-func (s *RoleService) GetRoleList(
+func (s *roleService) GetRoleList(
 	ctx context.Context,
 	limit,
 	page int,
@@ -77,12 +94,12 @@ func (s *RoleService) GetRoleList(
 ) (*dto.RoleListResponse, error) {
 	offset := (page - 1) * limit
 
-	roles, err := s.RoleRepo.ListRoles(limit, offset, keyword)
+	roles, err := s.RoleRepo.ListRoles(ctx, limit, offset, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (ListRoles): %w", err)
 	}
 
-	total, err := s.RoleRepo.CountRoles(keyword)
+	total, err := s.RoleRepo.CountRoles(ctx, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (CountRoles): %w", err)
 	}
@@ -91,9 +108,9 @@ func (s *RoleService) GetRoleList(
 }
 
 /**
- * GetRoleList retrieves a paginated list of roles.
+ * GetRoleList retrieves a paginated list of roles excluding IdP.
  */
-func (s *RoleService) GetAllExceptIDP(
+func (s *roleService) GetAllExceptIDP(
 	ctx context.Context,
 	limit,
 	page int,
@@ -101,12 +118,12 @@ func (s *RoleService) GetAllExceptIDP(
 ) (*dto.RoleListResponse, error) {
 	offset := (page - 1) * limit
 
-	roles, err := s.RoleRepo.ListAllExceptIdP(limit, offset, keyword)
+	roles, err := s.RoleRepo.ListAllExceptIdP(ctx, limit, offset, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (ListRoles): %w", err)
 	}
 
-	total, err := s.RoleRepo.CountRoles(keyword)
+	total, err := s.RoleRepo.CountRoles(ctx, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (CountRoles): %w", err)
 	}
@@ -115,10 +132,9 @@ func (s *RoleService) GetAllExceptIDP(
 }
 
 /**
- * GetAuthorizedRoles retrieves a distinct list of roles for an
- * admin, including pagination metadata.
+ * GetAuthorizedRoles retrieves a distinct list of roles for an admin.
  */
-func (s *RoleService) GetAuthorizedRoles(
+func (s *roleService) GetAuthorizedRoles(
 	ctx context.Context,
 	userID uuid.UUID,
 	limit,
@@ -128,6 +144,7 @@ func (s *RoleService) GetAuthorizedRoles(
 	offset := (page - 1) * limit
 
 	roles, err := s.RoleRepo.ListDistinctBoundRoles(
+		ctx,
 		limit,
 		offset,
 		userID[:],
@@ -137,7 +154,7 @@ func (s *RoleService) GetAuthorizedRoles(
 		return nil, fmt.Errorf("Database Query (ListBoundRoles): %w", err)
 	}
 
-	total, err := s.RoleRepo.CountDistinctBoundRoles(userID[:], keyword)
+	total, err := s.RoleRepo.CountDistinctBoundRoles(ctx, userID[:], keyword)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (CountBoundRoles): %w", err)
 	}
@@ -148,7 +165,7 @@ func (s *RoleService) GetAuthorizedRoles(
 /**
  * formatRoleListResponse is a helper to standardize DTO mapping.
  */
-func (s *RoleService) formatRoleListResponse(
+func (s *roleService) formatRoleListResponse(
 	roles []models.Role,
 	total,
 	limit,
@@ -181,7 +198,7 @@ func (s *RoleService) formatRoleListResponse(
 	}
 }
 
-func (s *RoleService) formatRoleWithMetadataListResponse(
+func (s *roleService) formatRoleWithMetadataListResponse(
 	roles []models.RoleWithMetaData,
 	total,
 	limit,
@@ -215,14 +232,13 @@ func (s *RoleService) formatRoleWithMetadataListResponse(
 }
 
 /**
- * GetRoleByID retrieves a single role by its integer ID
- * and formats it into a DTO.
+ * GetRoleByID retrieves a single role by its integer ID.
  */
-func (s *RoleService) GetRoleByID(
+func (s *roleService) GetRoleByID(
 	ctx context.Context,
 	id int,
 ) (*dto.RoleResponse, error) {
-	role, err := s.RoleRepo.GetByID(id)
+	role, err := s.RoleRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetByID): %w", err)
 	}
@@ -238,14 +254,13 @@ func (s *RoleService) GetRoleByID(
 }
 
 /**
- * SearchRoles finds roles based on a keyword and returns a
- * formatted list response.
+ * SearchRoles finds roles based on a keyword.
  */
-func (s *RoleService) SearchRoles(
+func (s *roleService) SearchRoles(
 	ctx context.Context,
 	keyword string,
 ) (*dto.RoleListResponse, error) {
-	roles, err := s.RoleRepo.SearchRoles(keyword)
+	roles, err := s.RoleRepo.SearchRoles(ctx, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (SearchRoles): %w", err)
 	}
@@ -281,9 +296,9 @@ func GetRoleNames(roles []models.Role) []string {
 }
 
 /**
- * UpdateRole modifies an existing role record in the database.
+ * UpdateRole modifies an existing role record.
  */
-func (s *RoleService) UpdateRole(
+func (s *roleService) UpdateRole(
 	ctx context.Context,
 	id int,
 	req dto.RoleRequest,
@@ -297,7 +312,7 @@ func (s *RoleService) UpdateRole(
 		}),
 	}
 
-	if err := s.RoleRepo.UpdateRole(role); err != nil {
+	if err := s.RoleRepo.UpdateRole(ctx, role); err != nil {
 		return fmt.Errorf("Database Query (UpdateRole): %w", err)
 	}
 
@@ -305,13 +320,13 @@ func (s *RoleService) UpdateRole(
 }
 
 /**
- * DeleteRole removes a role record from the system by its
- * unique integer identifier.
+ * DeleteRole removes a role record.
  */
-func (s *RoleService) DeleteRole(ctx context.Context, id int) error {
-	if err := s.RoleRepo.Delete(id); err != nil {
+func (s *roleService) DeleteRole(ctx context.Context, id int) error {
+	if err := s.RoleRepo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("Database Query (Delete): %w", err)
 	}
 
 	return nil
 }
+

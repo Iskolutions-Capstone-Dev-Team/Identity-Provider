@@ -1,10 +1,10 @@
 package middleware
 
 import (
-	"slices"
 	"crypto/rsa"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -43,8 +43,8 @@ func AuthMiddleware(publicKey *rsa.PublicKey) gin.HandlerFunc {
 
 // AuthorizeRBAC validates a JWT from a Cookie and checks required roles.
 func AuthorizeRBAC(publicKey *rsa.PublicKey,
-	userRepo *repository.UserRepository,
-	roleRepo *repository.RoleRepository,
+	userRepo repository.UserRepository,
+	roleRepo repository.RoleRepository,
 	authorizedRoles ...string,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -70,7 +70,8 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 			return
 		}
 
-		user, err := userRepo.GetUserById(userID[:])
+		ctx := c.Request.Context()
+		user, err := userRepo.GetUserById(ctx, userID[:])
 		if err != nil {
 			log.Printf("[AuthorizeRBAC] Fetch user failed: %v", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -83,7 +84,7 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 			roleIDs[i] = r.ID
 		}
 
-		permMap, err := roleRepo.FetchPermissionsForRoles(roleIDs)
+		permMap, err := roleRepo.FetchPermissionsForRoles(ctx, roleIDs)
 		permissionsSet := make(map[string]bool)
 		if err == nil {
 			for _, perms := range permMap {

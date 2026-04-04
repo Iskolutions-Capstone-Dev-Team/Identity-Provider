@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -21,8 +21,9 @@ const (
 
 // LogHandler handles audit log retrieval HTTP requests.
 type LogHandler struct {
-	LogService *service.LogService
+	LogService service.LogService
 }
+
 
 // GetLogList handles GET /api/v1/logs
 // @Summary List audit logs
@@ -42,20 +43,17 @@ type LogHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/logs [get]
 func (h *LogHandler) GetLogList(c *gin.Context) {
-	// RBAC Check
 	if !middleware.HasPermission(c, "View audit logs") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
 	}
 
-	// Parse pagination
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if page < 1 {
 		page = 1
 	}
 
-	// Build filters map
 	filters := make(map[string]interface{})
 	if actor := c.Query("actor"); actor != "" {
 		filters["actor"] = actor
@@ -70,22 +68,20 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 		filters["status"] = status
 	}
 	if from := c.Query("from_date"); from != "" {
-		// Validate date format? We'll pass as string; DB will handle.
 		filters["from_date"] = from
 	}
 	if to := c.Query("to_date"); to != "" {
 		filters["to_date"] = to
 	}
 
-	// Get actor from context for audit logging
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
 	}
 
-	// Prepare metadata for audit log
 	metadata := buildMetadata(map[string]interface{}{
 		"limit":      limit,
 		"page":       page,
@@ -94,13 +90,11 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	// Call service
 	logs, total, lastPage, err := h.LogService.GetLogListWithFilters(
-		filters, limit, page)
+		ctx, filters, limit, page)
 	if err != nil {
 		log.Printf("[GetLogList] Service Execution: %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionListLogs,
 				Target: "log_list",
@@ -120,8 +114,7 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionListLogs,
 			Target:   "log_list",
@@ -129,7 +122,6 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 			Metadata: metadata,
 		})
 
-	// Build response
 	resp := dto.GetAuditLogListResponse{
 		AuditLogs:   logs,
 		TotalCount:  total,
@@ -151,7 +143,6 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/logs/{id} [get]
 func (h *LogHandler) GetLog(c *gin.Context) {
-	// RBAC Check
 	if !middleware.HasPermission(c, "View audit logs") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
@@ -167,26 +158,24 @@ func (h *LogHandler) GetLog(c *gin.Context) {
 		return
 	}
 
-	// Get actor from context
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
 	}
 
-	// Prepare metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"log_id":     id,
 		"ip":         c.ClientIP(),
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	logEntry, err := h.LogService.GetLogByID(id)
+	logEntry, err := h.LogService.GetLogByID(ctx, id)
 	if err != nil {
 		log.Printf("[GetLog] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionGetLog,
 				Target: idParam,
@@ -204,8 +193,7 @@ func (h *LogHandler) GetLog(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionGetLog,
 			Target:   idParam,

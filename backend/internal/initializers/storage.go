@@ -19,6 +19,7 @@ func NewS3Storage() error {
 	secretKey := os.Getenv("S3_SECRET")
 	useSSL := os.Getenv("S3_USE_SSL") == "true"
 	bucket := os.Getenv("S3_BUCKET")
+	publicEndpoint := os.Getenv("S3_PUBLIC_HOST")
 
 	// 2. Defensive check: stop before the nil pointer happens
 	if endpoint == "" || accessKey == "" || secretKey == "" {
@@ -26,20 +27,17 @@ func NewS3Storage() error {
 	}
 
 	// 3. Create the client
-	client, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
-		Secure: useSSL,
-		// Removed custom transport: S3 handles routing via DNS,
-		// unlike your local Docker setup.
-	})
-	if err != nil {
-		return fmt.Errorf("[StorageInit] Client Creation: %v", err)
+	signedEndpoint := publicEndpoint
+	if publicEndpoint == "" {
+		signedEndpoint = endpoint
 	}
+	client, err := createClient(signedEndpoint, accessKey, secretKey, useSSL)
 
 	// 4. Assign to global variable
 	Storage = &storage.S3Provider{
-		Client:     client,
-		BucketName: bucket,
+		Client:         client,
+		BucketName:     bucket,
+		PublicEndpoint: publicEndpoint,
 	}
 
 	// 5. [Crucial] Verify connection immediately so it fails here, not at line 26
@@ -49,4 +47,18 @@ func NewS3Storage() error {
 	}
 
 	return nil
+}
+
+func createClient(endpoint, accessKey, secretKey string,
+	useSSL bool,
+) (*minio.Client, error) {
+	client, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: useSSL,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("[StorageInit] Client Creation: %v", err)
+	}
+
+	return client, nil
 }

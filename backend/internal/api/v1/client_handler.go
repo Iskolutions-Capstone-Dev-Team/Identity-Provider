@@ -7,9 +7,9 @@ import (
 	"strconv"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -26,9 +26,10 @@ const (
 
 // ClientHandler handles client management HTTP requests.
 type ClientHandler struct {
-	Service    *service.ClientService
-	LogService *service.LogService
+	Service    service.ClientService
+	LogService service.LogService
 }
+
 
 // PostClient handles POST /v1/admin/clients
 // @Summary Register a new Service Provider with Icon
@@ -50,7 +51,6 @@ type ClientHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients [post]
 func (h *ClientHandler) PostClient(c *gin.Context) {
-	// RBAC Check
 	if !middleware.HasPermission(c, "Add appclient") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
@@ -82,13 +82,12 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 		return
 	}
 
-	// Resolve actor name for audit log
-	actorName, _ := h.LogService.GetUserEmail(userUUID[:])
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userUUID[:])
 	if actorName == "" {
-		actorName = userID // fallback
+		actorName = userID
 	}
 
-	// Prepare metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"client_name": req.Name,
 		"ip":          c.ClientIP(),
@@ -96,7 +95,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	})
 
 	resp, err := h.Service.CreateClient(
-		c.Request.Context(),
+		ctx,
 		req,
 		file,
 		header,
@@ -104,8 +103,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PostClient] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionCreateClient,
 				Target: req.Name,
@@ -122,8 +120,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionCreateClient,
 			Target:   req.Name,
@@ -143,7 +140,6 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients [get]
 func (h *ClientHandler) GetClientList(c *gin.Context) {
-	// RBAC Check
 	if !middleware.HasPermission(c, "View all appclients") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
@@ -156,10 +152,7 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	}
 	keyword := c.Query("keyword")
 
-	// Get Admin Role
 	role := c.GetString("role")
-
-	// Parse User Identity
 	uIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
@@ -170,13 +163,12 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 		return
 	}
 
-	// Resolve actor name
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = uIDStr
 	}
 
-	// Prepare metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"limit":      limit,
 		"page":       page,
@@ -186,9 +178,8 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	// Delegate to Service
 	resp, err := h.Service.GetFilteredClientList(
-		c.Request.Context(),
+		ctx,
 		role,
 		userID,
 		limit,
@@ -197,8 +188,7 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetClientList] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionListClients,
 				Target: "client_list",
@@ -219,8 +209,7 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionListClients,
 			Target:   "client_list",
@@ -253,18 +242,16 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 		return
 	}
 
-	// Resolve client name for target (optional, can use ID)
-	clientName := h.LogService.ResolveClientName(idParam)
+	ctx := c.Request.Context()
+	clientName := h.LogService.ResolveClientName(ctx, idParam)
 
-	// Get actor
 	userIDStr := c.GetString("user_id")
-	userID, _ := uuid.Parse(userIDStr) // ignore error, we'll fallback
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	userID, _ := uuid.Parse(userIDStr)
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
 	}
 
-	// Metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"client_id":   idParam,
 		"client_name": clientName,
@@ -273,13 +260,12 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	})
 
 	client, err := h.Service.GetClientByID(
-		c.Request.Context(),
+		ctx,
 		clientUUID,
 	)
 	if err != nil {
 		log.Printf("[GetClient] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionGetClient,
 				Target: clientName,
@@ -299,8 +285,7 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionGetClient,
 			Target:   clientName,
@@ -323,7 +308,6 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients/{id} [put]
 func (h *ClientHandler) PutClient(c *gin.Context) {
-	// RBAC Check
 	if !middleware.HasPermission(c, "Edit appclient") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
@@ -336,18 +320,16 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		return
 	}
 
-	// Resolve client name for target
-	clientName := h.LogService.ResolveClientName(idParam)
+	ctx := c.Request.Context()
+	clientName := h.LogService.ResolveClientName(ctx, idParam)
 
-	// Get actor
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
 	}
 
-	// Optional file handling
 	var file multipart.File
 	var header *multipart.FileHeader
 	f, hder, err := c.Request.FormFile("image")
@@ -366,7 +348,6 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		Grants:      c.PostFormArray("grants"),
 	}
 
-	// Metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"client_id":   idParam,
 		"client_name": clientName,
@@ -375,7 +356,7 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 	})
 
 	err = h.Service.UpdateClient(
-		c.Request.Context(),
+		ctx,
 		clientUUID,
 		req,
 		file,
@@ -383,8 +364,7 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PutClient] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionUpdateClient,
 				Target: clientName,
@@ -402,8 +382,7 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionUpdateClient,
 			Target:   clientName,
@@ -436,18 +415,16 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 		return
 	}
 
-	// Resolve client name
-	clientName := h.LogService.ResolveClientName(clientIDString)
+	ctx := c.Request.Context()
+	clientName := h.LogService.ResolveClientName(ctx, clientIDString)
 
-	// Get actor
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
 	}
 
-	// Metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"client_id":   clientIDString,
 		"client_name": clientName,
@@ -456,13 +433,12 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 	})
 
 	resp, err := h.Service.RotateClientSecret(
-		c.Request.Context(),
+		ctx,
 		clientID,
 	)
 	if err != nil {
 		log.Printf("[PatchClientSecret] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionRotateSecret,
 				Target: clientName,
@@ -482,8 +458,7 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionRotateSecret,
 			Target:   clientName,
@@ -504,7 +479,6 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/clients/{id} [delete]
 func (h *ClientHandler) DeleteClient(c *gin.Context) {
-	// RBAC Check
 	if !middleware.HasPermission(c, "Delete appclient") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
@@ -521,18 +495,16 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 		return
 	}
 
-	// Resolve client name
-	clientName := h.LogService.ResolveClientName(idParam)
+	ctx := c.Request.Context()
+	clientName := h.LogService.ResolveClientName(ctx, idParam)
 
-	// Get actor
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
 	}
 
-	// Metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"client_id":   idParam,
 		"client_name": clientName,
@@ -540,11 +512,10 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 		"user_agent":  c.Request.UserAgent(),
 	})
 
-	err = h.Service.DeleteClient(c.Request.Context(), clientUUID)
+	err = h.Service.DeleteClient(ctx, clientUUID)
 	if err != nil {
 		log.Printf("[DeleteClient] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionDeleteClient,
 				Target: clientName,
@@ -564,8 +535,7 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionDeleteClient,
 			Target:   clientName,

@@ -6,27 +6,28 @@ import (
 	"strconv"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 // Action constants for audit logging
 const (
-	actionCreateRole  = "create_role"
-	actionListRoles   = "list_roles"
-	actionGetRole     = "get_role"
-	actionUpdateRole  = "update_role"
-	actionDeleteRole  = "delete_role"
+	actionCreateRole = "create_role"
+	actionListRoles  = "list_roles"
+	actionGetRole    = "get_role"
+	actionUpdateRole = "update_role"
+	actionDeleteRole = "delete_role"
 )
 
 // RoleHandler handles role management HTTP requests.
 type RoleHandler struct {
-	Service    *service.RoleService
-	LogService *service.LogService
+	Service    service.RoleService
+	LogService service.LogService
 }
+
 
 // PostRole handles POST /v1/admin/roles
 // @Summary Create a new role
@@ -40,7 +41,6 @@ type RoleHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/roles [post]
 func (h *RoleHandler) PostRole(c *gin.Context) {
-	// RBAC Check
 	if !middleware.HasPermission(c, "Add Roles") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
@@ -56,26 +56,24 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 		return
 	}
 
-	// Get actor from context
 	userIDStr := c.GetString("user_id")
-	userID, _ := uuid.Parse(userIDStr) // ignore error, fallback to string
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	userID, _ := uuid.Parse(userIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
 	}
 
-	// Prepare metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"role_name":  req.RoleName,
 		"ip":         c.ClientIP(),
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	err := h.Service.CreateRole(c.Request.Context(), req)
+	err := h.Service.CreateRole(ctx, req)
 	if err != nil {
 		log.Printf("[PostRole] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionCreateRole,
 				Target: req.RoleName,
@@ -94,8 +92,7 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionCreateRole,
 			Target:   req.RoleName,
@@ -120,7 +117,6 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/roles [get]
 func (h *RoleHandler) GetRoleList(c *gin.Context) {
-	// RBAC Check
 	if !middleware.HasPermission(c, "View roles") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
@@ -134,10 +130,7 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		page = 1
 	}
 
-	// 1. Fetch Role
 	role := c.GetString("role")
-
-	// 2. Identity Extraction
 	uIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
@@ -148,13 +141,12 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		return
 	}
 
-	// Resolve actor name
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = uIDStr
 	}
 
-	// Prepare metadata
 	metadata := buildMetadata(map[string]interface{}{
 		"limit":      limit,
 		"page":       page,
@@ -164,9 +156,8 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	// 3. Service Execution
 	resp, err := h.Service.GetFilteredRoleList(
-		c.Request.Context(),
+		ctx,
 		role,
 		userID,
 		limit,
@@ -175,8 +166,7 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetRoleList] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionListRoles,
 				Target: "role_list",
@@ -197,8 +187,7 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionListRoles,
 			Target:   "role_list",
@@ -265,26 +254,24 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 		return
 	}
 
-	// Get actor
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
 	}
 
-	// Prepare metadata (role ID known, name will be added after fetch if successful)
 	metadata := buildMetadata(map[string]interface{}{
 		"role_id":    id,
 		"ip":         c.ClientIP(),
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	resp, err := h.Service.GetRoleByID(c.Request.Context(), id)
+	resp, err := h.Service.GetRoleByID(ctx, id)
 	if err != nil {
 		log.Printf("[GetRole] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionGetRole,
 				Target: strconv.Itoa(id),
@@ -303,8 +290,7 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 		return
 	}
 
-	// Log success with role name
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionGetRole,
 			Target:   resp.RoleName,
@@ -327,7 +313,6 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 // @Failure 400 {object} dto.ErrorResponse
 // @Router /v1/admin/roles/{id} [put]
 func (h *RoleHandler) PutRole(c *gin.Context) {
-	// RBAC Check
 	if !middleware.HasPermission(c, "Edit Roles") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
@@ -350,15 +335,14 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 		return
 	}
 
-	// Get actor
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
 	}
 
-	// Prepare metadata (role ID known, name may be updated)
 	metadata := buildMetadata(map[string]interface{}{
 		"role_id":    id,
 		"new_name":   req.RoleName,
@@ -366,11 +350,10 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	err = h.Service.UpdateRole(c.Request.Context(), id, req)
+	err = h.Service.UpdateRole(ctx, id, req)
 	if err != nil {
 		log.Printf("[PutRole] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionUpdateRole,
 				Target: strconv.Itoa(id),
@@ -390,8 +373,7 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 		return
 	}
 
-	// Log success (use new name as target)
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionUpdateRole,
 			Target:   req.RoleName,
@@ -411,7 +393,6 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /v1/admin/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
-	// RBAC Check
 	if !middleware.HasPermission(c, "Delete Roles") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
@@ -427,27 +408,24 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 		return
 	}
 
-	// Get actor
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
-	actorName, _ := h.LogService.GetUserEmail(userID[:])
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
 	}
 
-	// To get role name for target, we could fetch it first, but that adds overhead.
-	// Use ID as target, optionally include name in metadata if fetched.
 	metadata := buildMetadata(map[string]interface{}{
 		"role_id":    id,
 		"ip":         c.ClientIP(),
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	err = h.Service.DeleteRole(c.Request.Context(), id)
+	err = h.Service.DeleteRole(ctx, id)
 	if err != nil {
 		log.Printf("[DeleteRole] %v", err)
-		// Log failure
-		_ = h.LogService.PostAuditLogWithActorString(actorName,
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
 				Action: actionDeleteRole,
 				Target: strconv.Itoa(id),
@@ -466,8 +444,7 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 		return
 	}
 
-	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(actorName,
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action:   actionDeleteRole,
 			Target:   strconv.Itoa(id),
