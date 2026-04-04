@@ -137,7 +137,10 @@ func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 	}
 
 	if admin != nil && superAdminRoleID != 0 {
-		err := userRepo.UpdateUserRole(ctx, admin.ID, superAdminRoleID)
+		err := userRepo.UpdateUserRole(ctx, admin.ID, sql.NullInt64{
+			Int64: int64(superAdminRoleID),
+			Valid: true,
+		})
 		if err != nil {
 			return fmt.Errorf("[Migrate] Failed to assign superadmin role: %v", err)
 		}
