@@ -16,7 +16,7 @@ var CreateUserProcedure = migrations.MigrationPart{
             IN p_nameSuffix VARCHAR(5),
             IN p_userEmail VARCHAR(100),
             IN p_userPasswordHash VARCHAR(255),
-            IN p_rolesJson JSON
+            IN p_roleId INT
         )
         BEGIN
             DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -30,10 +30,12 @@ var CreateUserProcedure = migrations.MigrationPart{
             -- 1. Use COLLATE explicitly in the check to resolve the 'Illegal Mix'
             IF NOT EXISTS (
                 SELECT 1 FROM users 
-                WHERE email COLLATE utf8mb4_unicode_ci = p_userEmail COLLATE utf8mb4_unicode_ci
+                WHERE email COLLATE utf8mb4_unicode_ci = 
+                    p_userEmail COLLATE utf8mb4_unicode_ci
             ) THEN
                 INSERT INTO users (
-                    id, first_name, middle_name, last_name, name_suffix, email, password_hash
+                    id, first_name, middle_name, last_name, name_suffix, 
+                    email, password_hash, role_id
                 )
                 VALUES (
                     p_userId, 
@@ -42,19 +44,8 @@ var CreateUserProcedure = migrations.MigrationPart{
                     COALESCE(p_lastName, ''), 
                     COALESCE(p_nameSuffix, ''),
                     p_userEmail, 
-                    p_userPasswordHash
-                );
-            
-                -- 2. Insert roles with explicit collation casting
-                INSERT INTO user_roles (user_id, role_id)
-                SELECT p_userId, r.id
-                FROM roles r
-                WHERE r.role_name COLLATE utf8mb4_unicode_ci IN (
-                    SELECT jt.role_name COLLATE utf8mb4_unicode_ci
-                    FROM JSON_TABLE(
-                        p_rolesJson, 
-                        "$[*]" COLUMNS(role_name VARCHAR(50) PATH "$")
-                    ) AS jt
+                    p_userPasswordHash,
+                    p_roleId
                 );
 
                 COMMIT;

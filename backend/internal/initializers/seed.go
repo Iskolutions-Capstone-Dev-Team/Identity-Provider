@@ -45,7 +45,6 @@ func MigrateAndSeed() {
 	privilegedTables := [...]string{
 		"authorization_codes",
 		"refresh_tokens",
-		"user_roles",
 		"idp_sessions",
 		"client_grant_types",
 		"roles",
@@ -126,6 +125,7 @@ func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 			Email:        adminEmail,
 			PasswordHash: hashedPassword,
 			Status:       models.StatusActive,
+			RoleID:       superAdminRoleID,
 		}
 
 		if err := userRepo.CreateUser(ctx, admin); err != nil {
@@ -134,7 +134,7 @@ func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 	}
 
 	if admin != nil && superAdminRoleID != 0 {
-		err := userRepo.UpdateUserRoles(ctx, admin.ID, []int{superAdminRoleID})
+		err := userRepo.UpdateUserRole(ctx, admin.ID, superAdminRoleID)
 		if err != nil {
 			return fmt.Errorf("[Migrate] Failed to assign superadmin role: %v", err)
 		}

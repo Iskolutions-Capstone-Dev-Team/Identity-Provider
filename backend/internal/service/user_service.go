@@ -27,7 +27,7 @@ type UserService interface {
 		newPassword string) error
 	UpdateUserStatus(ctx context.Context, id uuid.UUID,
 		newStatus string) error
-	UpdateUserRoles(ctx context.Context, id uuid.UUID, roleIDs []int,
+	UpdateUserRole(ctx context.Context, id uuid.UUID, roleID int,
 		adminID uuid.UUID, permissions []string) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
@@ -69,7 +69,7 @@ func (s *userService) CreateUser(
 		Email:        req.Email,
 		PasswordHash: passwordHash,
 		Status:       models.StatusActive,
-		RoleString:   req.Roles,
+		RoleID:       req.RoleID,
 	}
 
 	err = s.Repo.CreateUser(ctx, &user)
@@ -102,6 +102,10 @@ func (s *userService) GetUserByID(
 		Status:     string(user.Status),
 		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
 		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+		Roles: dto.UserRoleRepsonse{
+			ID:       user.Role.ID,
+			RoleName: user.Role.RoleName,
+		},
 	}, nil
 }
 
@@ -128,11 +132,9 @@ func (s *userService) GetMe(
 		allowedMap[r.ID] = true
 	}
 
-	roleStrings := make([]string, 0)
-	for _, r := range user.Roles {
-		if allowedMap[r.ID] {
-			roleStrings = append(roleStrings, r.RoleName)
-		}
+	var roleString string
+	if allowedMap[user.Role.ID] {
+		roleString = user.Role.RoleName
 	}
 
 	return &dto.UserInfoResponse{
@@ -142,7 +144,7 @@ func (s *userService) GetMe(
 		LastName:   user.LastName,
 		NameSuffix: user.NameSuffix,
 		Email:      user.Email,
-		Roles:      roleStrings,
+		Roles:      roleString,
 	}, nil
 }
 
@@ -189,11 +191,6 @@ func (s *userService) GetUserList(
 
 	var userResponses []dto.UserResponse
 	for _, user := range users {
-		roleList, err := GetUserRoles(user.Roles)
-		if err != nil {
-			return nil, fmt.Errorf("Role Parsing: %w", err)
-		}
-
 		userUUID, _ := uuid.FromBytes(user.ID)
 		userResponses = append(userResponses, dto.UserResponse{
 			ID:         userUUID.String(),
@@ -205,7 +202,10 @@ func (s *userService) GetUserList(
 			Status:     string(user.Status),
 			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
 			UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-			Roles:      roleList,
+			Roles: dto.UserRoleRepsonse{
+				ID:       user.Role.ID,
+				RoleName: user.Role.RoleName,
+			},
 		})
 	}
 
@@ -245,11 +245,6 @@ func (s *userService) GetBoundUserList(
 
 	var userResponses []dto.UserResponse
 	for _, user := range users {
-		roleList, err := GetUserRoles(user.Roles)
-		if err != nil {
-			return nil, fmt.Errorf("Role Parsing: %w", err)
-		}
-
 		userUUID, _ := uuid.FromBytes(user.ID)
 		userResponses = append(userResponses, dto.UserResponse{
 			ID:         userUUID.String(),
@@ -261,7 +256,10 @@ func (s *userService) GetBoundUserList(
 			Status:     string(user.Status),
 			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
 			UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-			Roles:      roleList,
+			Roles: dto.UserRoleRepsonse{
+				ID:       user.Role.ID,
+				RoleName: user.Role.RoleName,
+			},
 		})
 	}
 
@@ -276,17 +274,6 @@ func (s *userService) GetBoundUserList(
 		CurrentPage: page,
 		LastPage:    lastPage,
 	}, nil
-}
-
-func GetUserRoles(roles []models.Role) ([]dto.UserRoleRepsonse, error) {
-	var roleList []dto.UserRoleRepsonse
-	for _, role := range roles {
-		roleList = append(roleList, dto.UserRoleRepsonse{
-			ID:       role.ID,
-			RoleName: role.RoleName,
-		})
-	}
-	return roleList, nil
 }
 
 /**
@@ -342,19 +329,19 @@ func (s *userService) UpdateUserStatus(
 }
 
 /**
- * UpdateUserRoles modifies associations between user and their roles.
+ * UpdateUserRole modifies association between user and their role.
  */
-func (s *userService) UpdateUserRoles(
+func (s *userService) UpdateUserRole(
 	ctx context.Context,
 	id uuid.UUID,
-	roleIDs []int,
+	roleID int,
 	adminID uuid.UUID,
 	permissions []string,
 ) error {
 	if slices.Contains(permissions, "Update user roles") {
-		err := s.Repo.UpdateUserRoles(ctx, id[:], roleIDs)
+		err := s.Repo.UpdateUserRole(ctx, id[:], roleID)
 		if err != nil {
-			return fmt.Errorf("Database Query (UpdateUserRoles): %w", err)
+			return fmt.Errorf("Database Query (UpdateUserRole): %w", err)
 		}
 	}
 

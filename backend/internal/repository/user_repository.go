@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -18,11 +17,8 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, u *models.User) error
 	UpdateStatus(ctx context.Context, user *models.User) error
 	UpdateUserPassword(ctx context.Context, user *models.User) error
-	UpdateFilteredRoles(ctx context.Context, adminID,
-		userID []byte, roleIDs []int) error
-	UpdateUserRoles(ctx context.Context, userID []byte,
-		roleIDs []int) error
-	GetRoles(ctx context.Context, userID []byte) ([]models.Role, error)
+	UpdateUserRole(ctx context.Context, userID []byte,
+		roleID int) error
 	SoftDelete(ctx context.Context, id []byte) error
 	CountUsers(ctx context.Context) (int, error)
 	CountBoundUsers(ctx context.Context, adminID []byte) (int, error)
@@ -35,9 +31,9 @@ type userRepository struct {
 
 type userRow struct {
 	models.User
-	RID   *int    `db:"role_id"`
-	RName *string `db:"role_name"`
-	RDesc *string `db:"role_description"`
+	RID   int    `db:"role_id"`
+	RName string `db:"role_name"`
+	RDesc string `db:"role_description"`
 }
 
 // GetUserList retrieves a paginated list of non-deleted users.
@@ -56,18 +52,19 @@ func (r *userRepository) GetUserList(ctx context.Context,
 		return []models.User{}, nil
 	}
 
-	fullQuery, args, err := sqlx.In(`
+	sql := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name, 
                u.name_suffix, u.email, u.status, u.created_at, 
                u.updated_at, r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
         FROM users u
-        LEFT JOIN user_roles ur ON ur.user_id = u.id
-        LEFT JOIN roles r ON ur.role_id = r.id
+        LEFT JOIN roles r ON u.role_id = r.id
         WHERE u.id IN (?) AND u.deleted_at IS NULL
-        ORDER BY u.created_at DESC`, ids)
+        ORDER BY u.created_at DESC`
+	
+	fullQuery, args, err := sqlx.In(sql, ids)
 	if err != nil {
-		return nil, fmt.Errorf("[GetUserList] Query Expansion: %w", err)
+		return nil, fmt.Errorf("[GetUserList] In-Query expansion: %w", err)
 	}
 
 	fullQuery = r.db.Rebind(fullQuery)
@@ -75,10 +72,21 @@ func (r *userRepository) GetUserList(ctx context.Context,
 	var rows []userRow
 	err = r.db.SelectContext(ctx, &rows, fullQuery, args...)
 	if err != nil {
-		return nil, fmt.Errorf("[GetUserList] Database Join: %w", err)
+		return nil, fmt.Errorf("[GetUserList] Database Query: %w", err)
 	}
 
-	return r.groupRows(rows, ids), nil
+	result := make([]models.User, 0, len(rows))
+	for _, row := range rows {
+		user := row.User
+		user.Role = models.Role{
+			ID:          row.RID,
+			RoleName:    row.RName,
+			Description: row.RDesc,
+		}
+		result = append(result, user)
+	}
+
+	return result, nil
 }
 
 // GetBoundUserList retrieves a paginated list of users for an admin.
@@ -91,8 +99,7 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 		SELECT id FROM (
 			SELECT u.id 
 			FROM users u
-			JOIN user_roles ur ON u.id = ur.user_id
-			JOIN client_allowed_roles car ON ur.role_id = car.role_id
+			JOIN client_allowed_roles car ON u.role_id = car.role_id
 			JOIN admin_allowed_clients aac 
 				ON car.client_id = aac.client_id
 			WHERE aac.user_id = ? AND u.deleted_at IS NULL
@@ -116,24 +123,16 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 	const baseQuery = `
 		SELECT u.id, u.first_name, u.middle_name, 
 		       u.last_name, u.name_suffix, u.email, u.status, u.created_at, 
-		       u.updated_at, ar.id AS role_id, 
-		       ar.role_name AS role_name, 
-		       ar.description AS role_description
+		       u.updated_at, r.id AS role_id, 
+		       r.role_name AS role_name, 
+		       r.description AS role_description
 		FROM users u
-		LEFT JOIN (
-			SELECT ur.user_id, r.id, r.role_name, r.description
-			FROM user_roles ur
-			JOIN roles r ON ur.role_id = r.id
-			JOIN client_allowed_roles car ON r.id = car.role_id
-			JOIN admin_allowed_clients aac 
-				ON car.client_id = aac.client_id
-			WHERE aac.user_id = ?
-		) ar ON ar.user_id = u.id
+		LEFT JOIN roles r ON u.role_id = r.id
 		WHERE u.id IN (?) AND u.deleted_at IS NULL
 		ORDER BY u.created_at DESC
 	`
 
-	fullQuery, args, err := sqlx.In(baseQuery, adminID, ids)
+	fullQuery, args, err := sqlx.In(baseQuery, ids)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[GetBoundUserList] {Query Expansion}: %w",
@@ -149,7 +148,18 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 		return nil, fmt.Errorf("[GetBoundUserList] {Database Join}: %w", err)
 	}
 
-	return r.groupRows(rows, ids), nil
+	result := make([]models.User, 0, len(rows))
+	for _, row := range rows {
+		user := row.User
+		user.Role = models.Role{
+			ID:          row.RID,
+			RoleName:    row.RName,
+			Description: row.RDesc,
+		}
+		result = append(result, user)
+	}
+
+	return result, nil
 }
 
 // GetUserByEmail finds a user by email, including the hash and roles.
@@ -163,8 +173,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
                u.created_at, u.updated_at, r.id AS role_id, 
                r.role_name AS role_name, r.description AS role_description
         FROM users u
-        LEFT JOIN user_roles ur ON ur.user_id = u.id
-        LEFT JOIN roles r ON ur.role_id = r.id
+        LEFT JOIN roles r ON u.role_id = r.id
         WHERE u.email = ? AND u.deleted_at IS NULL`
 
 	err := r.db.SelectContext(ctx, &rows, query, email)
@@ -176,7 +185,14 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
 		return nil, nil
 	}
 
-	return r.mapSingleUser(rows), nil
+	user := rows[0].User
+	user.Role = models.Role{
+		ID:          rows[0].RID,
+		RoleName:    rows[0].RName,
+		Description: rows[0].RDesc,
+	}
+
+	return &user, nil
 }
 
 // GetUserById retrieves a specific user by binary UUID including roles.
@@ -190,8 +206,7 @@ func (r *userRepository) GetUserById(ctx context.Context,
                u.updated_at, r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
         FROM users u
-        LEFT JOIN user_roles ur ON ur.user_id = u.id
-        LEFT JOIN roles r ON ur.role_id = r.id
+        LEFT JOIN roles r ON u.role_id = r.id
         WHERE u.id = ? AND u.deleted_at IS NULL`
 
 	err := r.db.SelectContext(ctx, &rows, query, id)
@@ -203,20 +218,22 @@ func (r *userRepository) GetUserById(ctx context.Context,
 		return nil, nil
 	}
 
-	return r.mapSingleUser(rows), nil
-}
-
-// CreateUser executes a stored procedure to handle User and Roles atomically.
-func (r *userRepository) CreateUser(ctx context.Context, u *models.User) error {
-	rolesJSON, err := json.Marshal(u.RoleString)
-	if err != nil {
-		return fmt.Errorf("failed to marshal user roles: %w", err)
+	user := rows[0].User
+	user.Role = models.Role{
+		ID:          rows[0].RID,
+		RoleName:    rows[0].RName,
+		Description: rows[0].RDesc,
 	}
 
+	return &user, nil
+}
+
+// CreateUser executes a stored procedure to handle User creation.
+func (r *userRepository) CreateUser(ctx context.Context, u *models.User) error {
 	query := `CALL CreateUser(?, ?, ?, ?, ?, ?, ?, ?)`
 
-	_, err = r.db.ExecContext(ctx, query, u.ID, u.FirstName, u.MiddleName,
-		u.LastName, u.NameSuffix, u.Email, u.PasswordHash, rolesJSON)
+	_, err := r.db.ExecContext(ctx, query, u.ID, u.FirstName, u.MiddleName,
+		u.LastName, u.NameSuffix, u.Email, u.PasswordHash, u.RoleID)
 	if err != nil {
 		return fmt.Errorf("failed to execute CreateUser procedure: %w", err)
 	}
@@ -249,132 +266,16 @@ func (r *userRepository) UpdateUserPassword(ctx context.Context,
 	return nil
 }
 
-func (r *userRepository) UpdateFilteredRoles(ctx context.Context,
-	adminID []byte, userID []byte, roleIDs []int,
+// UpdateUserRole updates the role of a specific user.
+func (r *userRepository) UpdateUserRole(ctx context.Context,
+	userID []byte, roleID int,
 ) error {
-	forbiddenQuery, args, _ := sqlx.In(`
-        SELECT r.role_name FROM user_roles ur
-		JOIN roles r ON ur.role_id = r.id
-		WHERE ur.user_id = ? 
-		AND ur.role_id IN (?)
-		AND NOT EXISTS (
-			SELECT 1 FROM clients c
-			JOIN admin_allowed_clients aac ON c.id = aac.client_id
-			WHERE aac.user_id = ? AND r.role_name LIKE CONCAT(c.tag, ':%')
-		)`, userID, roleIDs, adminID)
-
-	var violations []string
-	err := r.db.SelectContext(ctx, &violations, forbiddenQuery, args...)
+	query := `UPDATE users SET role_id = ?, updated_at = NOW() WHERE id = ?`
+	_, err := r.db.ExecContext(ctx, query, roleID, userID)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update user role: %w", err)
 	}
-	if len(violations) > 0 {
-		return fmt.Errorf(
-			"You are not permitted to modify these roles: %s",
-			violations,
-		)
-	}
-
-	tx, err := r.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	scopeQuery := `
-		SELECT r.id
-		FROM roles r
-		JOIN client_allowed_roles cr ON r.id = cr.role_id
-		JOIN clients c ON cr.client_id = c.id
-		JOIN admin_allowed_clients aac ON c.id = aac.client_id
-		WHERE aac.user_id = ?
-		AND r.role_name LIKE CONCAT(c.tag, ':%')`
-
-	deleteQuery := `
-		DELETE FROM user_roles 
-		WHERE user_id = ? 
-		AND role_id IN (` + scopeQuery + `)
-		AND role_id NOT IN (?)`
-
-	deleteQuery, args, err = sqlx.In(deleteQuery, userID, adminID, roleIDs)
-	if err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, tx.Rebind(deleteQuery), args...); err != nil {
-		return err
-	}
-
-	for _, rid := range roleIDs {
-		ins := `
-			INSERT INTO user_roles (user_id, role_id)
-			SELECT ?, ? WHERE ? IN (` + scopeQuery + `)
-			ON DUPLICATE KEY update role_id = role_id`
-		_, err := tx.ExecContext(ctx, ins, userID, rid, rid, adminID)
-		if err != nil {
-			return err
-		}
-	}
-
-	return tx.Commit()
-}
-
-// UpdateUserRoles updates the roles of a specific user.
-func (r *userRepository) UpdateUserRoles(ctx context.Context,
-	userID []byte, roleIDs []int,
-) error {
-	tx, err := r.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
-
-	if len(roleIDs) > 0 {
-		deleteQuery, args, _ := sqlx.In(
-			`DELETE FROM user_roles WHERE user_id = ? AND role_id NOT IN (?)`,
-			userID,
-			roleIDs,
-		)
-		if _, err := tx.ExecContext(ctx, tx.Rebind(deleteQuery),
-			args...); err != nil {
-			return fmt.Errorf("failed to delete user roles: %w", err)
-		}
-	} else {
-		deleteAll := "DELETE FROM user_roles WHERE user_id = ?"
-		if _, err := tx.ExecContext(ctx, deleteAll, userID); err != nil {
-			return fmt.Errorf("failed to delete all roles from user: %w", err)
-		}
-	}
-
-	insertQuery := `
-        INSERT INTO user_roles (user_id, role_id) 
-        VALUES (?, ?) 
-        ON DUPLICATE KEY UPDATE role_id = role_id`
-
-	for _, rid := range roleIDs {
-		if _, err := tx.ExecContext(ctx, insertQuery, userID, rid); err != nil {
-			return fmt.Errorf("upsert error: %w", err)
-		}
-	}
-
-	return tx.Commit()
-}
-
-// GetRoles fetches the roles assigned to a user via the junction table.
-func (r *userRepository) GetRoles(ctx context.Context,
-	userID []byte,
-) ([]models.Role, error) {
-	var roles []models.Role
-	query := `
-		SELECT r.id, r.role_name, r.description 
-		FROM roles r
-		JOIN user_roles ur ON r.id = ur.role_id
-		WHERE ur.user_id = ? AND r.deleted_at IS NULL`
-
-	err := r.db.SelectContext(ctx, &roles, query, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user roles: %w", err)
-	}
-	return roles, nil
+	return nil
 }
 
 // SoftDelete marks the user as deleted.
@@ -401,8 +302,7 @@ func (r *userRepository) CountBoundUsers(ctx context.Context,
 		SELECT COUNT(id) FROM (
 			SELECT u.id 
 			FROM users u
-			JOIN user_roles ur ON u.id = ur.user_id
-			JOIN client_allowed_roles car ON ur.role_id = car.role_id
+			JOIN client_allowed_roles car ON u.role_id = car.role_id
 			JOIN admin_allowed_clients aac 
 				ON car.client_id = aac.client_id
 			WHERE aac.user_id = ? AND u.deleted_at IS NULL
@@ -421,65 +321,6 @@ func (r *userRepository) CountBoundUsers(ctx context.Context,
 	}
 
 	return total, nil
-}
-
-func (r *userRepository) mapSingleUser(rows []userRow) *models.User {
-	user := &models.User{
-		ID:           rows[0].ID,
-		FirstName:    rows[0].FirstName,
-		MiddleName:   rows[0].MiddleName,
-		LastName:     rows[0].LastName,
-		NameSuffix:   rows[0].NameSuffix,
-		Email:        rows[0].Email,
-		PasswordHash: rows[0].PasswordHash,
-		Status:       rows[0].Status,
-		CreatedAt:    rows[0].CreatedAt,
-		UpdatedAt:    rows[0].UpdatedAt,
-		Roles:        []models.Role{},
-	}
-
-	for _, row := range rows {
-		if row.RID != nil {
-			user.Roles = append(user.Roles, models.Role{
-				ID:          *row.RID,
-				RoleName:    *row.RName,
-				Description: *row.RDesc,
-			})
-		}
-	}
-
-	return user
-}
-
-func (r *userRepository) groupRows(rows []userRow, ids [][]byte) []models.User {
-	userMap := make(map[string]*models.User)
-
-	for _, row := range rows {
-		idKey := string(row.ID)
-		if _, exists := userMap[idKey]; !exists {
-			userMap[idKey] = &models.User{
-				ID: row.ID, FirstName: row.FirstName,
-				MiddleName: row.MiddleName, LastName: row.LastName,
-				NameSuffix: row.NameSuffix, Email: row.Email, Status: row.Status,
-				CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
-				Roles: []models.Role{},
-			}
-		}
-
-		if row.RID != nil {
-			userMap[idKey].Roles = append(userMap[idKey].Roles, models.Role{
-				ID: *row.RID, RoleName: *row.RName, Description: *row.RDesc,
-			})
-		}
-	}
-
-	result := make([]models.User, 0, len(ids))
-	for _, id := range ids {
-		if u, ok := userMap[string(id)]; ok {
-			result = append(result, *u)
-		}
-	}
-	return result
 }
 
 func (r *userRepository) RemoveClientAdminBind(ctx context.Context,

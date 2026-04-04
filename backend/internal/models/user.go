@@ -56,6 +56,6 @@ type User struct {
 	CreatedAt    time.Time  `db:"created_at"`
 	UpdatedAt    time.Time  `db:"updated_at"`
 
-	RoleString []string `db:"-"`
-	Roles	[]Role `db:"-"`
+	RoleID       int        `db:"role_id"`
+	Role         Role      `db:"-"`
 }

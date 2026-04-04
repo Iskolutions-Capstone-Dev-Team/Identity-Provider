@@ -40,5 +40,14 @@ var UsersMigration = migrations.TableMigration{
 				ADD COLUMN name_suffix VARCHAR(20);
 			`,
 		},
+		{
+			ID: "add-role-id-column",
+			SQL: `
+				ALTER TABLE users
+				ADD COLUMN role_id INT,
+				ADD CONSTRAINT fk_user_role 
+					FOREIGN KEY (role_id) REFERENCES roles(id);
+			`,
+		},
 	},
 }

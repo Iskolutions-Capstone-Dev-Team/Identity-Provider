@@ -77,11 +77,8 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 			return
 		}
 
-		// Fetch and set all permissions based on roles
-		roleIDs := make([]int, len(user.Roles))
-		for i, r := range user.Roles {
-			roleIDs[i] = r.ID
-		}
+		// Fetch and set all permissions based on role
+		roleIDs := []int{user.Role.ID}
 
 		permMap, err := roleRepo.FetchPermissionsForRoles(ctx, roleIDs)
 		permissionsSet := make(map[string]bool)

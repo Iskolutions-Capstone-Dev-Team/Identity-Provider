@@ -23,7 +23,7 @@ const (
 	actionGetMe        = "get_me"
 	actionUpdatePass   = "update_password"
 	actionUpdateStatus = "update_status"
-	actionUpdateRoles  = "update_roles"
+	actionUpdateUserRole = "update_user_role"
 	actionDeleteUser   = "delete_user"
 )
 
@@ -546,9 +546,9 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 	})
 }
 
-// PatchUserRoles updates the roles assigned to a specific user.
-// @Summary Update user roles
-// @Description Partially updates a user's role set based on the request body.
+// PatchUserRole updates the role assigned to a specific user.
+// @Summary Update user role
+// @Description Updates a user's role based on the request body.
 // @Tags Users
 // @Accept json
 // @Produce json
@@ -557,8 +557,8 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /users/{id}/roles [patch]
-func (h *UserHandler) PatchUserRoles(c *gin.Context) {
+// @Router /users/{id}/role [patch]
+func (h *UserHandler) PatchUserRole(c *gin.Context) {
 	id := c.Param("id")
 	userID, err := uuid.Parse(id)
 	if err != nil {
@@ -577,7 +577,7 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 
 	var req dto.UpdateUserRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("[PatchUserRoles] Bind JSON: %v", err)
+		log.Printf("[PatchUserRole] Bind JSON: %v", err)
 		c.JSON(
 			http.StatusBadRequest,
 			dto.ErrorResponse{Error: "Invalid input"},
@@ -595,29 +595,29 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 
 	metadata := buildMetadata(map[string]interface{}{
 		"target_id":  id,
-		"role_ids":   req.RoleIDs,
+		"role_id":    req.RoleID,
 		"ip":         c.ClientIP(),
 		"user_agent": c.Request.UserAgent(),
 	})
 
 	permissions := c.GetStringSlice("permissions")
-	err = h.Service.UpdateUserRoles(
+	err = h.Service.UpdateUserRole(
 		ctx,
 		userID,
-		req.RoleIDs,
+		req.RoleID,
 		actorID,
 		permissions,
 	)
 	if err != nil {
-		log.Printf("[PatchUserRoles] %v", err)
+		log.Printf("[PatchUserRole] %v", err)
 		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 			&dto.PostAuditLogRequest{
-				Action: actionUpdateRoles,
+				Action: actionUpdateUserRole,
 				Target: id,
 				Status: models.StatusFail,
 				Metadata: buildMetadata(map[string]interface{}{
 					"target_id":  id,
-					"role_ids":   req.RoleIDs,
+					"role_id":    req.RoleID,
 					"ip":         c.ClientIP(),
 					"user_agent": c.Request.UserAgent(),
 					"error":      err.Error(),
@@ -641,14 +641,14 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 
 	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
-			Action:   actionUpdateRoles,
+			Action:   actionUpdateUserRole,
 			Target:   id,
 			Status:   models.StatusSuccess,
 			Metadata: metadata,
 		})
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "roles updated successfully!",
+		Message: "role updated successfully!",
 	})
 }
 

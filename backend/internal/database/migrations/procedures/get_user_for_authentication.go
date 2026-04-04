@@ -16,12 +16,9 @@ var GetUserForAuthProcedure = migrations.MigrationPart{
 				u.last_name,
                 u.password_hash, 
                 u.status,
-                -- Return roles as a comma-separated string
-                IFNULL((SELECT GROUP_CONCAT(r.role_name) 
-                 FROM user_roles ur 
-                 JOIN roles r ON ur.role_id = r.id 
-                 WHERE ur.user_id = u.id), '') as roles
+                IFNULL(r.role_name, '') as roles
             FROM users u
+            LEFT JOIN roles r ON u.role_id = r.id
             WHERE u.email = p_email AND u.status != 'deleted'
             LIMIT 1;
         END;`,

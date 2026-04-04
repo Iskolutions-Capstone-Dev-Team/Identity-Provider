@@ -68,8 +68,8 @@ func (r *clientRepository) GetByID(ctx context.Context,
 	roleQuery := `
 		SELECT r.id, r.role_name, r.description
 		FROM roles r
-		JOIN user_roles ur ON ur.role_id = r.id
-		JOIN admin_allowed_clients aac ON aac.user_id = ur.user_id
+		JOIN users u ON u.role_id = r.id
+		JOIN admin_allowed_clients aac ON aac.user_id = u.id
 		WHERE aac.client_id = ? AND r.deleted_at IS NULL
 		GROUP BY r.id
 	`
@@ -224,8 +224,8 @@ func (r *clientRepository) GetClientAllowedRoles(ctx context.Context,
 	query := `
 		SELECT DISTINCT r.id, r.role_name, r.description
 		FROM roles r
-		JOIN user_roles ur ON ur.role_id = r.id
-		JOIN admin_allowed_clients aac ON aac.user_id = ur.user_id
+		JOIN users u ON u.role_id = r.id
+		JOIN admin_allowed_clients aac ON aac.user_id = u.id
 		WHERE aac.client_id = ? AND r.deleted_at IS NULL
 	`
 	err := r.db.SelectContext(ctx, &roles, query, clientID)
