@@ -3,6 +3,17 @@ import axiosInstance from "./axiosInstance";
 const normalizeTextValue = (value) =>
   typeof value === "string" ? value.trim() : "";
 
+const normalizeRoleId = (value) => {
+  if (value === null) {
+    return null;
+  }
+
+  const normalizedValue = Number.parseInt(value, 10);
+  return Number.isInteger(normalizedValue) && normalizedValue > 0
+    ? normalizedValue
+    : undefined;
+};
+
 const normalizeRoleNames = (roles = []) =>
   Array.from(
     new Set(
@@ -34,8 +45,15 @@ export const userService = {
       name_suffix: normalizeTextValue(data.name_suffix),
       password: normalizeTextValue(data.password),
       status: normalizeTextValue(data.status).toLowerCase(),
-      roles: normalizeRoleNames(data.roles),
     };
+
+    const normalizedRoleId = normalizeRoleId(data.role_id);
+
+    if (data.role_id === null || normalizedRoleId !== undefined) {
+      payload.role_id = normalizedRoleId ?? null;
+    } else {
+      payload.roles = normalizeRoleNames(data.roles);
+    }
 
     const res = await axiosInstance.post("/admin/users", payload, {
       headers: { "Content-Type": "application/json" },
@@ -57,6 +75,19 @@ export const userService = {
     };
 
     const res = await axiosInstance.patch(`/admin/users/${id}/status`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    return res.data;
+  },
+
+  async updateUserRole(id, roleId = null) {
+    const normalizedRoleId = normalizeRoleId(roleId);
+    const payload = {
+      role_id: normalizedRoleId ?? null,
+    };
+
+    const res = await axiosInstance.patch(`/admin/users/${id}/role`, payload, {
       headers: { "Content-Type": "application/json" },
     });
 

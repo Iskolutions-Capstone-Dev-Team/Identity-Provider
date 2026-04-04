@@ -9,9 +9,15 @@ const normalizeText = (value) =>
 const normalizeLowerText = (value) => normalizeText(value).toLowerCase();
 
 export function normalizeRoleNames(roles = []) {
+  const normalizedRoles = Array.isArray(roles)
+    ? roles
+    : roles === null || roles === undefined
+      ? []
+      : [roles];
+
   return Array.from(
     new Set(
-      (Array.isArray(roles) ? roles : [])
+      normalizedRoles
         .map((role) => {
           if (typeof role === "string") {
             return role.trim();

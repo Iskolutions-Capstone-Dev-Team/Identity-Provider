@@ -47,7 +47,11 @@ const getStatusDisplayLabel = (status) =>
 const normalizeRoleNames = (roles) =>
   Array.from(
     new Set(
-      (Array.isArray(roles) ? roles : [])
+      (Array.isArray(roles)
+        ? roles
+        : roles === null || roles === undefined
+          ? []
+          : [roles])
         .map((role) => {
           if (typeof role === "string") {
             return role.trim();
@@ -287,6 +291,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     return getAccessibleAppClientNames(formData.roles, appClientOptions);
   }, [appClientOptions, formData.roles]);
 
+  const selectedAdminRoleId = selectedRoleIds[0] ?? null;
+
   const handleFieldChange = (field, value) => {
     setFormData((current) => ({
       ...current,
@@ -311,9 +317,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
       roles: selectedRoles,
     }));
 
-    if (normalizedRoleIds.length > 0) {
-      setAccessError(false);
-    }
+    setAccessError(false);
 
     if (error) {
       setError("");
@@ -361,12 +365,10 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
             roleNames: displayedRoles,
           };
 
-    if (nextAccess.roleIds.length === 0) {
+    if (!isAdminView && nextAccess.roleIds.length === 0) {
       setAccessError(true);
       setError(
-        isAdminView
-          ? "One role must be selected."
-          : "Selected app clients do not map to available roles yet.",
+        "Selected app clients do not map to available roles yet.",
       );
       return;
     }
@@ -384,6 +386,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
       await onSubmit(
         {
           ...formData,
+          userType,
+          roleId: selectedAdminRoleId,
           roleIds: nextAccess.roleIds,
           roles: nextAccess.roleNames,
         },
@@ -488,7 +492,10 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
               <div className="space-y-5">
                 <div>
                   <label className={modalLabelClassName}>
-                    {accessFieldLabel} {!isViewMode && <span className="text-red-500">*</span>}
+                    {accessFieldLabel}
+                    {!isViewMode && !isAdminView ? (
+                      <span className="text-red-500"> *</span>
+                    ) : null}
                   </label>
 
                   {isViewMode ? (
@@ -509,16 +516,18 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                     <>
                       <p className={modalHelperTextClassName}>
                         {isAdminView
-                          ? "Select one role for this user."
+                          ? "Select one role for this user, or leave it unassigned."
                           : "Choose which app clients this user can access."}
                       </p>
                       {isAdminView ? (
                         <UserPoolRoleRadioGroup
                           options={adminRoleOptions}
-                          selectedValue={selectedRoleIds[0] ?? null}
+                          selectedValue={selectedAdminRoleId}
                           onChange={handleAdminRoleChange}
                           colorMode={colorMode}
                           name="edit-user-role"
+                          allowEmpty
+                          emptyOptionLabel="No role assigned"
                         />
                       ) : (
                         <MultiSelect
@@ -536,11 +545,9 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                           Loading app clients...
                         </p>
                       )}
-                      {accessError && (
+                      {!isAdminView && accessError && (
                         <p className="mt-2 text-xs text-red-500">
-                          {isAdminView
-                            ? "One role is required"
-                            : "At least one app client is required"}
+                          At least one app client is required
                         </p>
                       )}
                     </>

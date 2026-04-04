@@ -198,9 +198,14 @@ export function useUsers() {
         last_name: newUser.surname,
         name_suffix: newUser.suffix,
         password: newUser.tempPassword || "TempPass123!",
-        roles: newUser.roles,
         status: newUser.status,
       };
+
+      if (newUser.userType === ADMIN_USER_TYPE) {
+        payload.role_id = newUser.roleId ?? null;
+      } else {
+        payload.roles = newUser.roles;
+      }
 
       await userService.createUser(payload);
 
@@ -231,11 +236,11 @@ export function useUsers() {
   // UPDATE USER
   // =========================
   const updateUser = async (updatedUser, originalUser = {}) => {
+    const isAdminUserUpdate = updatedUser?.userType === ADMIN_USER_TYPE;
     const nextStatus = normalizeStatus(updatedUser?.status);
     const previousStatus = normalizeStatus(originalUser?.status);
     const nextRoles = normalizeRoleNames(updatedUser?.roles);
     const previousRoles = normalizeRoleNames(originalUser?.roles);
-    const nextRoleIds = normalizeRoleIds(updatedUser?.roleIds);
     const shouldUpdateStatus = Boolean(nextStatus) && nextStatus !== previousStatus;
     const shouldUpdateRoles = !areSameStringArrays(nextRoles, previousRoles);
     let rolesWereUpdated = false;
@@ -246,7 +251,12 @@ export function useUsers() {
       }
 
       if (shouldUpdateRoles) {
-        await userService.updateUserRoles(updatedUser.id, nextRoleIds);
+        if (isAdminUserUpdate) {
+          await userService.updateUserRole(updatedUser.id, updatedUser.roleId ?? null);
+        } else {
+          const nextRoleIds = normalizeRoleIds(updatedUser?.roleIds);
+          await userService.updateUserRoles(updatedUser.id, nextRoleIds);
+        }
         rolesWereUpdated = true;
       }
 

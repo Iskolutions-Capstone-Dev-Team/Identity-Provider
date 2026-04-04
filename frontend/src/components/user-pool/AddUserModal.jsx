@@ -66,7 +66,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   });
   const accessFieldLabel = isAdminView ? "Role" : "Accessible App Clients";
   const accessHelperText = isAdminView
-    ? "Select one role for this user."
+    ? "Select one role for this user, or leave it unassigned."
     : "Choose which app clients this user can access.";
   const {
     modalBodyClassName,
@@ -201,9 +201,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       surname: "",
       tempPassword: "",
     };
-    const hasAccessError = isAdminView
-      ? !Number.isInteger(data.selectedAdminRoleId)
-      : data.accessibleClientIds.length === 0;
+    const hasAccessError = !isAdminView && data.accessibleClientIds.length === 0;
 
     setAccessError(hasAccessError);
 
@@ -317,12 +315,10 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
           { includeAdminRoles: false },
         );
 
-    if (derivedRoleAccess.roleIds.length === 0) {
+    if (!isAdminView && derivedRoleAccess.roleIds.length === 0) {
       setAccessError(true);
       setError(
-        isAdminView
-          ? "Select one role."
-          : "Selected app clients do not map to available roles yet.",
+        "Selected app clients do not map to available roles yet.",
       );
       setStep(2);
       return;
@@ -338,6 +334,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         middleName: data.middleName,
         surname: data.surname,
         suffix: data.suffix,
+        userType,
+        roleId: adminRole?.id ?? null,
         roleIds: derivedRoleAccess.roleIds,
         roles: derivedRoleAccess.roleNames,
         accessibleClientIds: data.accessibleClientIds,
@@ -507,7 +505,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
               >
                 <section className={modalSectionClassName}>
                   <label className={modalLabelClassName}>
-                    {accessFieldLabel} <span className="text-red-500">*</span>
+                    {accessFieldLabel}
+                    {!isAdminView ? <span className="text-red-500"> *</span> : null}
                   </label>
                   <p className={modalHelperTextClassName}>
                     {accessHelperText}
@@ -527,6 +526,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                         }}
                         colorMode={colorMode}
                         name="add-user-role"
+                        allowEmpty
+                        emptyOptionLabel="No role assigned"
                       />
                     ) : (
                       <MultiSelect
@@ -553,11 +554,9 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                         Loading app clients...
                       </p>
                     )}
-                    {accessError && (
+                    {!isAdminView && accessError && (
                         <p className="mt-2 text-xs text-red-500">
-                          {isAdminView
-                            ? "One role is required"
-                            : "At least one app client is required"}
+                          At least one app client is required
                         </p>
                     )}
                   </div>
