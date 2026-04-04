@@ -26,9 +26,10 @@ const (
 
 // ClientHandler handles client management HTTP requests.
 type ClientHandler struct {
-	Service    *service.ClientService
-	LogService *service.LogService
+	Service    service.ClientService
+	LogService service.LogService
 }
+
 
 // PostClient handles POST /v1/admin/clients
 // @Summary Register a new Service Provider with Icon

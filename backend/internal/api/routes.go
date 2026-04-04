@@ -6,9 +6,10 @@ import (
 
 	v1 "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/gin-gonic/gin"
 )
+
 
 var (
 	role1 = "IDP:superadmin"
@@ -22,11 +23,14 @@ type Handlers struct {
 	RoleHandler       *v1.RoleHandler
 	UserHandler       *v1.UserHandler
 	PermissionHandler *v1.PermissionHandler
+	UserRepo          repository.UserRepository
+	RoleRepo          repository.RoleRepository
 	PubKey            *rsa.PublicKey
 	CORS              gin.HandlerFunc
 }
 
-func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
+func SetupRoutes(r *gin.Engine, h Handlers) {
+
 	wellKnown := r.Group("/.well-known")
 	{
 		wellKnown.GET("/jwks.json", h.AuthHandler.GetJWKS)
@@ -50,8 +54,8 @@ func SetupRoutes(r *gin.Engine, h Handlers, s service.ServiceContainer) {
 
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
-	admin.Use(middleware.AuthorizeRBAC(h.PubKey, s.UserService.Repo, 
-		s.RoleService.RoleRepo, role1, role2))
+	admin.Use(middleware.AuthorizeRBAC(h.PubKey, h.UserRepo,
+		h.RoleRepo, role1, role2))
 	{
 		admin.GET("/status", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "IdP is operational"})

@@ -29,9 +29,10 @@ const (
 
 // UserHandler handles user management HTTP requests.
 type UserHandler struct {
-	Service    *service.UserService
-	LogService *service.LogService
+	Service    service.UserService
+	LogService service.LogService
 }
+
 
 // PostUser creates a new user in the system
 // @Summary Create User

@@ -9,8 +9,9 @@ import (
 )
 
 type PermissionHandler struct {
-	Service *service.PermissionService
+	Service service.PermissionService
 }
+
 
 /**
  * @Summary Get All Permissions

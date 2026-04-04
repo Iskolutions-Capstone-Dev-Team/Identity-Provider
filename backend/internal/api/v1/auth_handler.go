@@ -27,10 +27,11 @@ const (
 
 // AuthHandler handles authentication HTTP requests.
 type AuthHandler struct {
-	AuthService   *service.AuthService
-	ClientService *service.ClientService
-	LogService    *service.LogService
+	AuthService   service.AuthService
+	ClientService service.ClientService
+	LogService    service.LogService
 }
+
 
 
 // GetAuthorize initiates the authorization flow for the user.

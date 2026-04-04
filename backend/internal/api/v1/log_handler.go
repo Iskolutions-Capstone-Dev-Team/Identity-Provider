@@ -21,8 +21,9 @@ const (
 
 // LogHandler handles audit log retrieval HTTP requests.
 type LogHandler struct {
-	LogService *service.LogService
+	LogService service.LogService
 }
+
 
 // GetLogList handles GET /api/v1/logs
 // @Summary List audit logs
