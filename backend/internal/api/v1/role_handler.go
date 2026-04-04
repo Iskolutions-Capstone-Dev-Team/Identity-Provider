@@ -118,7 +118,10 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 // @Router /v1/admin/roles [get]
 func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View roles") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		c.JSON(
+			http.StatusUnauthorized, 
+			dto.ErrorResponse{Error: "Unauthorized"},
+		)
 		return
 	}
 
@@ -156,9 +159,10 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		"user_agent": c.Request.UserAgent(),
 	})
 
+	permissions := c.GetStringSlice("permissions")
 	resp, err := h.Service.GetFilteredRoleList(
 		ctx,
-		role,
+		permissions,
 		userID,
 		limit,
 		page,

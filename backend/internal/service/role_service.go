@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -13,7 +14,7 @@ import (
 
 type RoleService interface {
 	CreateRole(ctx context.Context, req dto.RoleRequest) error
-	GetFilteredRoleList(ctx context.Context, role string, userID uuid.UUID,
+	GetFilteredRoleList(ctx context.Context, permissions []string, userID uuid.UUID,
 		limit, page int, keyword string) (*dto.RoleListResponse, error)
 	GetRoleList(ctx context.Context, limit, page int,
 		keyword string) (*dto.RoleListResponse, error)
@@ -64,20 +65,14 @@ func (s *roleService) CreateRole(
  */
 func (s *roleService) GetFilteredRoleList(
 	ctx context.Context,
-	role string,
+	permissions []string,
 	userID uuid.UUID,
 	limit int,
 	page int,
 	keyword string,
 ) (*dto.RoleListResponse, error) {
-	// SuperAdmin: Full system visibility
-	if role == SUPERADMIN {
+	if slices.Contains(permissions, "View all roles") {
 		return s.GetRoleList(ctx, limit, page, keyword)
-	}
-
-	// Admin: Visibility restricted to roles of managed clients
-	if role == ADMIN {
-		return s.GetAuthorizedRoles(ctx, userID, limit, page, keyword)
 	}
 
 	return nil, fmt.Errorf("Privilege Validation: level unauthorized")
@@ -329,4 +324,3 @@ func (s *roleService) DeleteRole(ctx context.Context, id int) error {
 
 	return nil
 }
-
