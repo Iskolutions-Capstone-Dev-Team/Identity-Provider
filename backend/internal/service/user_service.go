@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -16,8 +17,8 @@ type UserService interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
 	GetMe(ctx context.Context, userID,
 		clientID uuid.UUID) (*dto.UserInfoResponse, error)
-	GetFilteredUserList(ctx context.Context, role string, userID uuid.UUID,
-		limit, page int) (*dto.UserResponseList, error)
+	GetFilteredUserList(ctx context.Context, permissions []string,
+		userID uuid.UUID, limit, page int) (*dto.UserResponseList, error)
 	GetUserList(ctx context.Context, limit,
 		page int) (*dto.UserResponseList, error)
 	GetBoundUserList(ctx context.Context, limit, page int,
@@ -27,7 +28,7 @@ type UserService interface {
 	UpdateUserStatus(ctx context.Context, id uuid.UUID,
 		newStatus string) error
 	UpdateUserRoles(ctx context.Context, id uuid.UUID, roleIDs []int,
-		adminID uuid.UUID, role string) error
+		adminID uuid.UUID, permissions []string) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
@@ -37,7 +38,8 @@ type userService struct {
 }
 
 func NewUserService(repo repository.UserRepository,
-	clientRepo repository.ClientRepository) UserService {
+	clientRepo repository.ClientRepository,
+) UserService {
 	return &userService{
 		Repo:       repo,
 		ClientRepo: clientRepo,
@@ -149,16 +151,16 @@ func (s *userService) GetMe(
  */
 func (s *userService) GetFilteredUserList(
 	ctx context.Context,
-	role string,
+	permissions []string,
 	userID uuid.UUID,
 	limit,
 	page int,
 ) (*dto.UserResponseList, error) {
-	if role == SUPERADMIN {
+	if slices.Contains(permissions, "View all users") {
 		return s.GetUserList(ctx, limit, page)
 	}
 
-	if role == ADMIN {
+	if slices.Contains(permissions, "View users based on appclient") {
 		return s.GetBoundUserList(ctx, limit, page, userID)
 	}
 
@@ -347,18 +349,12 @@ func (s *userService) UpdateUserRoles(
 	id uuid.UUID,
 	roleIDs []int,
 	adminID uuid.UUID,
-	role string,
+	permissions []string,
 ) error {
-	if role == SUPERADMIN {
+	if slices.Contains(permissions, "Update user roles") {
 		err := s.Repo.UpdateUserRoles(ctx, id[:], roleIDs)
 		if err != nil {
 			return fmt.Errorf("Database Query (UpdateUserRoles): %w", err)
-		}
-	}
-	if role == ADMIN {
-		err := s.Repo.UpdateFilteredRoles(ctx, adminID[:], id[:], roleIDs)
-		if err != nil {
-			return fmt.Errorf("Database Query: (UpdateFilteredRoles): %v", err)
 		}
 	}
 
@@ -375,4 +371,3 @@ func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 
 	return nil
 }
-

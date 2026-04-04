@@ -161,9 +161,10 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		"user_agent": c.Request.UserAgent(),
 	})
 
+	permissions := c.GetStringSlice("permissions")
 	resp, err := h.Service.GetFilteredUserList(
 		ctx,
-		role,
+		permissions,
 		userID,
 		limit,
 		page,
@@ -592,8 +593,6 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 		actorName = actorIDStr
 	}
 
-	adminRole := c.GetString("role")
-
 	metadata := buildMetadata(map[string]interface{}{
 		"target_id":  id,
 		"role_ids":   req.RoleIDs,
@@ -601,12 +600,13 @@ func (h *UserHandler) PatchUserRoles(c *gin.Context) {
 		"user_agent": c.Request.UserAgent(),
 	})
 
+	permissions := c.GetStringSlice("permissions")
 	err = h.Service.UpdateUserRoles(
 		ctx,
 		userID,
 		req.RoleIDs,
 		actorID,
-		adminRole,
+		permissions,
 	)
 	if err != nil {
 		log.Printf("[PatchUserRoles] %v", err)
