@@ -657,7 +657,8 @@ func (h *UserHandler) PatchUserRole(c *gin.Context) {
 		return
 	}
 
-	if !middleware.HasPermission(c, "Assign Roles") {
+	if !middleware.HasPermission(c, "Assign Roles") &&
+		!middleware.HasPermission(c, "Remove Roles") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
 	}

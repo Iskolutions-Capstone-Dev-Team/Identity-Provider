@@ -289,7 +289,8 @@ func (s *userService) UpdateUserRole(
 	adminID uuid.UUID,
 	permissions []string,
 ) error {
-	if slices.Contains(permissions, "Update user roles") {
+	if slices.Contains(permissions, "Assign Roles") ||
+		slices.Contains(permissions, "Remove Roles") {
 		var nullRoleID sql.NullInt64
 		if roleID != nil {
 			nullRoleID = sql.NullInt64{
@@ -301,9 +302,10 @@ func (s *userService) UpdateUserRole(
 		if err != nil {
 			return fmt.Errorf("Database Query (UpdateUserRole): %w", err)
 		}
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("Permission Validation: unauthorized to update roles")
 }
 
 /**
