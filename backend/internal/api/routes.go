@@ -61,7 +61,6 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			clients.POST("", h.ClientHandler.PostClient)
 			clients.GET("", h.ClientHandler.GetClientList)
 			clients.GET("/:id", h.ClientHandler.GetClient)
-
 			clients.PUT("/:id", h.ClientHandler.PutClient)
 			clients.PATCH("/:id/secret", h.ClientHandler.PatchClientSecret)
 			clients.DELETE("/:id", h.ClientHandler.DeleteClient)
@@ -83,7 +82,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		{
 			users.POST("", h.UserHandler.PostUser)
 			users.GET("", h.UserHandler.GetUserList)
-			users.GET("/admin", h.UserHandler.GetAdminUserList)
+			users.GET("/admins", h.UserHandler.GetAdminUserList)
 			users.GET("/:id", h.UserHandler.GetUser)
 			users.PATCH("/:id/status", h.UserHandler.PatchUserStatus)
 			users.PATCH("/:id/password", h.UserHandler.PatchUserPassword)

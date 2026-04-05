@@ -214,7 +214,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 // @Param page query int false "Page number" default(1)
 // @Success 200 {object} dto.UserSimplifiedResponseList
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/users/admin [get]
+// @Router /api/v1/admin/users/admins [get]
 func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 	const defaultLimit = "10"
 	const defaultPage = "1"
