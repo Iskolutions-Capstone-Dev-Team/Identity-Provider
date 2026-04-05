@@ -136,20 +136,6 @@ function applyRegularUserAccessSelections(users, accessSelections = {}) {
   });
 }
 
-function findUserByIdOrEmail(users = [], user = {}) {
-  return users.find((currentUser) => {
-    if (user?.id && currentUser?.id === user.id) {
-      return true;
-    }
-
-    return Boolean(
-      user?.email &&
-      currentUser?.email &&
-      currentUser.email.toLowerCase() === user.email.toLowerCase(),
-    );
-  });
-}
-
 function matchesUserSearch(user, searchValue) {
   const normalizedSearch =
     typeof searchValue === "string" ? searchValue.trim().toLowerCase() : "";
@@ -378,16 +364,7 @@ export function useUsers() {
       }
 
       setSuccessMessage("User successfully created!");
-      const refreshedUsers = await fetchUsers(userType, { showLoading: false });
-      const selectedRoleId = normalizeRoleId(newUser.roleId);
-
-      if (
-        isAdminUser &&
-        selectedRoleId !== null &&
-        findUserByIdOrEmail(refreshedUsers, newUser)?.roleId !== selectedRoleId
-      ) {
-        throw new Error("The selected role was not saved.");
-      }
+      await fetchUsers(userType, { showLoading: false });
     } catch (error) {
       console.error("Create user error:", error);
       throw error;
@@ -448,16 +425,7 @@ export function useUsers() {
       );
 
       if (shouldUpdateStatus || shouldUpdateRole) {
-        const refreshedUsers = await fetchUsers(userType, { showLoading: false });
-
-        if (
-          shouldUpdateRole &&
-          nextRoleId !== null &&
-          findUserByIdOrEmail(refreshedUsers, updatedUser)?.roleId !== nextRoleId
-        ) {
-          throw new Error("The selected role was not saved.");
-        }
-
+        await fetchUsers(userType, { showLoading: false });
         return;
       }
 
