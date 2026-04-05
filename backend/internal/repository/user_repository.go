@@ -83,6 +83,7 @@ func (r *userRepository) GetUserList(ctx context.Context,
 	for _, row := range rows {
 		user := row.User
 		if row.RID.Valid {
+			user.RoleID = row.RID
 			user.Role = models.Role{
 				ID:          int(row.RID.Int64),
 				RoleName:    row.RName.String,
@@ -140,6 +141,7 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 	for _, row := range rows {
 		user := row.User
 		if row.RID.Valid {
+			user.RoleID = row.RID
 			user.Role = models.Role{
 				ID:          int(row.RID.Int64),
 				RoleName:    row.RName.String,
@@ -215,6 +217,7 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 	for _, row := range rows {
 		user := row.User
 		if row.RID.Valid {
+			user.RoleID = row.RID
 			user.Role = models.Role{
 				ID:          int(row.RID.Int64),
 				RoleName:    row.RName.String,
@@ -252,6 +255,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
 
 	user := rows[0].User
 	if rows[0].RID.Valid {
+		user.RoleID = rows[0].RID
 		user.Role = models.Role{
 			ID:          int(rows[0].RID.Int64),
 			RoleName:    rows[0].RName.String,
@@ -287,6 +291,7 @@ func (r *userRepository) GetUserById(ctx context.Context,
 
 	user := rows[0].User
 	if rows[0].RID.Valid {
+		user.RoleID = rows[0].RID
 		user.Role = models.Role{
 			ID:          int(rows[0].RID.Int64),
 			RoleName:    rows[0].RName.String,

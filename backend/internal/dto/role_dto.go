@@ -20,7 +20,7 @@ type RoleResponse struct {
 	CanEdit   bool `json:"can_edit"`
 }
 
-type UserRoleRepsonse struct {
+type UserRoleResponse struct {
 	ID          int    `json:"id"`
 	RoleName    string `json:"role_name"`
 	Description string `json:"description"`

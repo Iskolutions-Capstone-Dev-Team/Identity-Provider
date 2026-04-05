@@ -334,7 +334,7 @@ func (s *userService) mapToUserResponse(
 	}
 
 	if user.RoleID.Valid {
-		resp.Roles = &dto.UserRoleRepsonse{
+		resp.Roles = &dto.UserRoleResponse{
 			ID:          user.Role.ID,
 			RoleName:    user.Role.RoleName,
 			Description: user.Role.Description,
