@@ -31,7 +31,7 @@ export const userService = {
   },
 
   async getAdminUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = {}) {
-    const res = await axiosInstance.get("/admin/users/admin", {
+    const res = await axiosInstance.get("/admin/users/admins", {
       params: { page, limit },
     });
     return res.data;
