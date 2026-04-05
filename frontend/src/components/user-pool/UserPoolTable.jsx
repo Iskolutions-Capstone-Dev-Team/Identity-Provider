@@ -1,7 +1,7 @@
 import TableRowFade from "../TableRowFade";
 import { shortenId } from "../../utils/shortenId";
 import DataTableSkeleton from "../DataTableSkeleton";
-import { ADMIN_USER_TYPE, getAccessibleAppClientNames } from "../../utils/userPoolAccess";
+import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../utils/userPoolAccess";
 
 const headerCellClassName = "border-b  border-white/10 px-4 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90 xl:px-6";
 const bodyCellClassName = "border-b border-[#7b0d15]/10 px-4 py-4 align-top text-center text-sm text-[#4a1921] xl:px-6";
@@ -68,7 +68,7 @@ function renderActionButton({ label, onClick, children, className }) {
 export default function UserPoolTable({ loading = false, users = [], userType = "regular", appClients = [], onView, onEdit, onDelete, showDeleteAction = false, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
-  const accessColumnLabel = isAdminView ? "Roles" : "Accessible App Clients";
+  const accessColumnLabel = isAdminView ? "Role" : "Accessible App Clients";
   const emptyStateLabel = isAdminView
     ? "No admin users found"
     : "No regular users found";
@@ -104,8 +104,8 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
     ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] text-[#f1e5e7] shadow-[0_14px_30px_-24px_rgba(2,6,23,0.72)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
     : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
   const getAccessItems = (user) =>
-    isAdminView ? user.roles : getAccessibleAppClientNames(user.roles, appClients);
-  const emptyAccessLabel = isAdminView ? "No roles" : "No app clients";
+    isAdminView ? user.roles : getAppClientNamesByIds(user.accessibleClientIds, appClients);
+  const emptyAccessLabel = isAdminView ? "No role assigned" : "No app clients";
 
   if (loading) {
     return (
