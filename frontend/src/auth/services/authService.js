@@ -56,11 +56,4 @@ export const authService = {
       skipAuthRefresh: true,
     });
   },
-
-  async checkAdminAccess() {
-    return axiosInstance.get("/admin/users", {
-      params: { page: 1 },
-      skipForbiddenRedirect: true,
-    });
-  },
 };

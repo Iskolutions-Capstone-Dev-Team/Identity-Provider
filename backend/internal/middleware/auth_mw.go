@@ -45,7 +45,6 @@ func AuthMiddleware(publicKey *rsa.PublicKey) gin.HandlerFunc {
 func AuthorizeRBAC(publicKey *rsa.PublicKey,
 	userRepo repository.UserRepository,
 	roleRepo repository.RoleRepository,
-	authorizedRoles ...string,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := c.Cookie("access_token")
@@ -78,19 +77,26 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 			return
 		}
 
-		// Fetch and set all permissions based on roles
-		roleIDs := make([]int, len(user.Roles))
-		for i, r := range user.Roles {
-			roleIDs[i] = r.ID
-		}
+		// Fetch and set all permissions based on role
+		roleIDs := []int{user.Role.ID}
 
 		permMap, err := roleRepo.FetchPermissionsForRoles(ctx, roleIDs)
 		permissionsSet := make(map[string]bool)
-		if err == nil {
-			for _, perms := range permMap {
-				for _, p := range perms {
-					permissionsSet[p.PermissionName] = true
-				}
+		if err != nil {
+			log.Printf("[AuthorizeRBAC] Fetch permissions failed: %v", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		if len(permMap) == 0 {
+			log.Printf(
+				"[AuthorizeRBAC] No permissions found for user %s", user.Email,
+			)
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		for _, perms := range permMap {
+			for _, p := range perms {
+				permissionsSet[p.PermissionName] = true
 			}
 		}
 
@@ -99,32 +105,7 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 			permissions = append(permissions, p)
 		}
 
-		roleNames := service.GetRoleNames(user.Roles)
-		role := ""
-		authorized := false
-		if len(authorizedRoles) > 0 {
-			for _, authorizedRole := range authorizedRoles {
-				if slices.Contains(roleNames, authorizedRole) {
-					authorized = true
-					role = authorizedRole
-				}
-				if authorized {
-					break
-				}
-			}
-
-			if !authorized {
-				log.Print("Insufficient Permissions")
-				c.JSON(http.StatusForbidden,
-					gin.H{"error": "Insufficient permissions"},
-				)
-				c.Abort()
-				return
-			}
-		}
-
 		c.Set("user_id", claims.UserID)
-		c.Set("role", role)
 		c.Set("email", user.Email)
 		c.Set("permissions", permissions)
 		c.Set("client_id", claims.AuthorizedParty)

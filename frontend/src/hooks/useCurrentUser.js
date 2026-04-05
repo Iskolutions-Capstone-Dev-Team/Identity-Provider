@@ -12,13 +12,15 @@ export const EMPTY_CURRENT_USER = {
 };
 
 function normalizeRoleNames(roles) {
-  if (!Array.isArray(roles)) {
-    return [];
-  }
+  const normalizedRoles = Array.isArray(roles)
+    ? roles
+    : roles === null || roles === undefined
+      ? []
+      : [roles];
 
   return Array.from(
     new Set(
-      roles
+      normalizedRoles
         .map((role) => {
           if (typeof role === "string") {
             return role.trim();

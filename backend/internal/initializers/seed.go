@@ -2,6 +2,7 @@ package initializers
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -45,7 +46,6 @@ func MigrateAndSeed() {
 	privilegedTables := [...]string{
 		"authorization_codes",
 		"refresh_tokens",
-		"user_roles",
 		"idp_sessions",
 		"client_grant_types",
 		"roles",
@@ -112,7 +112,6 @@ func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 	adminPass := os.Getenv("ADMIN_PASSWORD")
 
 	admin, err := userRepo.GetUserByEmail(ctx, adminEmail)
-
 	if err != nil {
 		return fmt.Errorf("[Migrate] Error checking for existing admin: %v", err)
 	}
@@ -126,6 +125,10 @@ func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 			Email:        adminEmail,
 			PasswordHash: hashedPassword,
 			Status:       models.StatusActive,
+			RoleID: sql.NullInt64{
+				Int64: int64(superAdminRoleID),
+				Valid: true,
+			},
 		}
 
 		if err := userRepo.CreateUser(ctx, admin); err != nil {
@@ -134,7 +137,10 @@ func seedAdminUser(adminDatabase *sqlx.DB, superAdminRoleID int) error {
 	}
 
 	if admin != nil && superAdminRoleID != 0 {
-		err := userRepo.UpdateUserRoles(ctx, admin.ID, []int{superAdminRoleID})
+		err := userRepo.UpdateUserRole(ctx, admin.ID, sql.NullInt64{
+			Int64: int64(superAdminRoleID),
+			Valid: true,
+		})
 		if err != nil {
 			return fmt.Errorf("[Migrate] Failed to assign superadmin role: %v", err)
 		}

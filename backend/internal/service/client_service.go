@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"mime/multipart"
+	"slices"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -18,8 +19,9 @@ type ClientService interface {
 	CreateClient(ctx context.Context, req dto.CreateClientRequest,
 		image multipart.File, imageHeader *multipart.FileHeader,
 		userID uuid.UUID) (*dto.ClientSecretResponse, error)
-	GetFilteredClientList(ctx context.Context, role string, userID uuid.UUID,
-		limit, page int, keyword string) (*dto.ClientListResponse, error)
+	GetFilteredClientList(ctx context.Context, permissions []string, 
+		userID uuid.UUID, limit, page int, 
+		keyword string) (*dto.ClientListResponse, error)
 	GetClientList(ctx context.Context, limit, page int,
 		keyword string) (*dto.ClientListResponse, error)
 	GetBoundClients(ctx context.Context, userID uuid.UUID, limit, page int,
@@ -38,7 +40,8 @@ type clientService struct {
 }
 
 func NewClientService(repo repository.ClientRepository,
-	storage *storage.S3Provider) ClientService {
+	storage *storage.S3Provider,
+) ClientService {
 	return &clientService{
 		Repo:    repo,
 		Storage: storage,
@@ -104,20 +107,14 @@ func (s *clientService) CreateClient(
  */
 func (s *clientService) GetFilteredClientList(
 	ctx context.Context,
-	role string,
+	permissions []string,
 	userID uuid.UUID,
 	limit,
 	page int,
 	keyword string,
 ) (*dto.ClientListResponse, error) {
-	// SuperAdmin sees everything
-	if role == SUPERADMIN {
+	if slices.Contains(permissions, "View all appclients") {
 		return s.GetClientList(ctx, limit, page, keyword)
-	}
-
-	// Regular Admin only sees bound clients
-	if role == ADMIN {
-		return s.GetBoundClients(ctx, userID, limit, page, keyword)
 	}
 
 	return nil, fmt.Errorf("Privilege Validation: unauthorized level")
@@ -397,4 +394,3 @@ func (s *clientService) DeleteClient(
 
 	return nil
 }
-

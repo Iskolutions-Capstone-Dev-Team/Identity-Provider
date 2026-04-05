@@ -4,6 +4,7 @@ import { authService } from "../services/authService";
 import { storeTokenResponse } from "../utils/authCookies";
 import { buildLoginPath } from "../utils/loginRoute";
 import { UNAUTHORIZED_PAGE_PATH } from "../utils/unauthorizedPage";
+import { DEFAULT_AUTHENTICATED_PATH } from "../utils/authAccess";
 
 export default function Callback() {
   const [searchParams] = useSearchParams();
@@ -31,7 +32,9 @@ export default function Callback() {
 
         storeTokenResponse(tokenResponse);
         sessionStorage.removeItem("termsAccepted");
-        setTimeout(() => navigate("/user-pool"), 1000);
+        setTimeout(() => {
+          navigate(DEFAULT_AUTHENTICATED_PATH, { replace: true });
+        }, 1000);
       } catch (err) {
         console.error(err);
         navigate(UNAUTHORIZED_PAGE_PATH, { replace: true });

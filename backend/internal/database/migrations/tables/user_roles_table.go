@@ -17,5 +17,9 @@ var UserRolesMigration = migrations.TableMigration{
 				INDEX idx_role_lookup (role_id)
 			);`,
 		},
+		{
+			ID: "drop-user-roles-table",
+			SQL: `DROP TABLE IF EXISTS user_roles;`,
+		},
 	},
 }

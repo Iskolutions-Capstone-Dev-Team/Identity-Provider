@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import { buildLoginPath } from "../utils/loginRoute";
+import { DEFAULT_AUTHENTICATED_PATH } from "../utils/authAccess";
 
 export default function AuthorizeRedirect() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function AuthorizeRedirect() {
     const redirectBySession = async () => {
       try {
         await authService.checkSession();
-        navigate("/user-pool", { replace: true });
+        navigate(DEFAULT_AUTHENTICATED_PATH, { replace: true });
       } catch {
         navigate(buildLoginPath(), { replace: true });
       }

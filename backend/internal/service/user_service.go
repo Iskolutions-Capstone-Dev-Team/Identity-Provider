@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"slices"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -14,10 +16,9 @@ import (
 type UserService interface {
 	CreateUser(ctx context.Context, req dto.UserRequest) (uuid.UUID, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
-	GetMe(ctx context.Context, userID,
-		clientID uuid.UUID) (*dto.UserInfoResponse, error)
-	GetFilteredUserList(ctx context.Context, role string, userID uuid.UUID,
-		limit, page int) (*dto.UserResponseList, error)
+	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
+	GetFilteredUserList(ctx context.Context, permissions []string,
+		userID uuid.UUID, limit, page int) (*dto.UserResponseList, error)
 	GetUserList(ctx context.Context, limit,
 		page int) (*dto.UserResponseList, error)
 	GetBoundUserList(ctx context.Context, limit, page int,
@@ -26,21 +27,18 @@ type UserService interface {
 		newPassword string) error
 	UpdateUserStatus(ctx context.Context, id uuid.UUID,
 		newStatus string) error
-	UpdateUserRoles(ctx context.Context, id uuid.UUID, roleIDs []int,
-		adminID uuid.UUID, role string) error
+	UpdateUserRole(ctx context.Context, id uuid.UUID, roleID *int,
+		adminID uuid.UUID, permissions []string) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
 type userService struct {
-	Repo       repository.UserRepository
-	ClientRepo repository.ClientRepository
+	Repo repository.UserRepository
 }
 
-func NewUserService(repo repository.UserRepository,
-	clientRepo repository.ClientRepository) UserService {
+func NewUserService(repo repository.UserRepository) UserService {
 	return &userService{
-		Repo:       repo,
-		ClientRepo: clientRepo,
+		Repo: repo,
 	}
 }
 
@@ -67,7 +65,12 @@ func (s *userService) CreateUser(
 		Email:        req.Email,
 		PasswordHash: passwordHash,
 		Status:       models.StatusActive,
-		RoleString:   req.Roles,
+		RoleID: sql.NullInt64{
+			Valid: req.RoleID != nil,
+		},
+	}
+	if req.RoleID != nil {
+		user.RoleID.Int64 = int64(*req.RoleID)
 	}
 
 	err = s.Repo.CreateUser(ctx, &user)
@@ -90,17 +93,10 @@ func (s *userService) GetUserByID(
 		return nil, fmt.Errorf("Database Query (GetUserById): %w", err)
 	}
 
-	return &dto.UserResponse{
-		ID:         id.String(),
-		FirstName:  user.FirstName,
-		MiddleName: user.MiddleName,
-		LastName:   user.LastName,
-		NameSuffix: user.NameSuffix,
-		Email:      user.Email,
-		Status:     string(user.Status),
-		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-	}, nil
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	return s.mapToUserResponse(*user, id), nil
 }
 
 /**
@@ -108,29 +104,11 @@ func (s *userService) GetUserByID(
  */
 func (s *userService) GetMe(
 	ctx context.Context,
-	userID,
-	clientID uuid.UUID,
+	userID uuid.UUID,
 ) (*dto.UserInfoResponse, error) {
 	user, err := s.Repo.GetUserById(ctx, userID[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetUser): %w", err)
-	}
-
-	allowedRoles, err := s.ClientRepo.GetClientAllowedRoles(ctx, clientID[:])
-	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetAllowedRoles): %w", err)
-	}
-
-	allowedMap := make(map[int]bool)
-	for _, r := range allowedRoles {
-		allowedMap[r.ID] = true
-	}
-
-	roleStrings := make([]string, 0)
-	for _, r := range user.Roles {
-		if allowedMap[r.ID] {
-			roleStrings = append(roleStrings, r.RoleName)
-		}
 	}
 
 	return &dto.UserInfoResponse{
@@ -140,7 +118,7 @@ func (s *userService) GetMe(
 		LastName:   user.LastName,
 		NameSuffix: user.NameSuffix,
 		Email:      user.Email,
-		Roles:      roleStrings,
+		Roles:      user.Role.RoleName,
 	}, nil
 }
 
@@ -149,16 +127,16 @@ func (s *userService) GetMe(
  */
 func (s *userService) GetFilteredUserList(
 	ctx context.Context,
-	role string,
+	permissions []string,
 	userID uuid.UUID,
 	limit,
 	page int,
 ) (*dto.UserResponseList, error) {
-	if role == SUPERADMIN {
+	if slices.Contains(permissions, "View all users") {
 		return s.GetUserList(ctx, limit, page)
 	}
 
-	if role == ADMIN {
+	if slices.Contains(permissions, "View users based on appclient") {
 		return s.GetBoundUserList(ctx, limit, page, userID)
 	}
 
@@ -187,24 +165,9 @@ func (s *userService) GetUserList(
 
 	var userResponses []dto.UserResponse
 	for _, user := range users {
-		roleList, err := GetUserRoles(user.Roles)
-		if err != nil {
-			return nil, fmt.Errorf("Role Parsing: %w", err)
-		}
-
 		userUUID, _ := uuid.FromBytes(user.ID)
-		userResponses = append(userResponses, dto.UserResponse{
-			ID:         userUUID.String(),
-			FirstName:  user.FirstName,
-			MiddleName: user.MiddleName,
-			LastName:   user.LastName,
-			NameSuffix: user.NameSuffix,
-			Email:      user.Email,
-			Status:     string(user.Status),
-			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-			UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-			Roles:      roleList,
-		})
+		userResponses = append(userResponses, *s.mapToUserResponse(user,
+			userUUID))
 	}
 
 	lastPage := (total + limit - 1) / limit
@@ -243,24 +206,9 @@ func (s *userService) GetBoundUserList(
 
 	var userResponses []dto.UserResponse
 	for _, user := range users {
-		roleList, err := GetUserRoles(user.Roles)
-		if err != nil {
-			return nil, fmt.Errorf("Role Parsing: %w", err)
-		}
-
 		userUUID, _ := uuid.FromBytes(user.ID)
-		userResponses = append(userResponses, dto.UserResponse{
-			ID:         userUUID.String(),
-			FirstName:  user.FirstName,
-			MiddleName: user.MiddleName,
-			LastName:   user.LastName,
-			NameSuffix: user.NameSuffix,
-			Email:      user.Email,
-			Status:     string(user.Status),
-			CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-			UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-			Roles:      roleList,
-		})
+		userResponses = append(userResponses, *s.mapToUserResponse(user,
+			userUUID))
 	}
 
 	lastPage := (total + limit - 1) / limit
@@ -274,17 +222,6 @@ func (s *userService) GetBoundUserList(
 		CurrentPage: page,
 		LastPage:    lastPage,
 	}, nil
-}
-
-func GetUserRoles(roles []models.Role) ([]dto.UserRoleRepsonse, error) {
-	var roleList []dto.UserRoleRepsonse
-	for _, role := range roles {
-		roleList = append(roleList, dto.UserRoleRepsonse{
-			ID:       role.ID,
-			RoleName: role.RoleName,
-		})
-	}
-	return roleList, nil
 }
 
 /**
@@ -340,25 +277,26 @@ func (s *userService) UpdateUserStatus(
 }
 
 /**
- * UpdateUserRoles modifies associations between user and their roles.
+ * UpdateUserRole modifies association between user and their role.
  */
-func (s *userService) UpdateUserRoles(
+func (s *userService) UpdateUserRole(
 	ctx context.Context,
 	id uuid.UUID,
-	roleIDs []int,
+	roleID *int,
 	adminID uuid.UUID,
-	role string,
+	permissions []string,
 ) error {
-	if role == SUPERADMIN {
-		err := s.Repo.UpdateUserRoles(ctx, id[:], roleIDs)
-		if err != nil {
-			return fmt.Errorf("Database Query (UpdateUserRoles): %w", err)
+	if slices.Contains(permissions, "Update user roles") {
+		var nullRoleID sql.NullInt64
+		if roleID != nil {
+			nullRoleID = sql.NullInt64{
+				Int64: int64(*roleID),
+				Valid: true,
+			}
 		}
-	}
-	if role == ADMIN {
-		err := s.Repo.UpdateFilteredRoles(ctx, adminID[:], id[:], roleIDs)
+		err := s.Repo.UpdateUserRole(ctx, id[:], nullRoleID)
 		if err != nil {
-			return fmt.Errorf("Database Query: (UpdateFilteredRoles): %v", err)
+			return fmt.Errorf("Database Query (UpdateUserRole): %w", err)
 		}
 	}
 
@@ -376,3 +314,29 @@ func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
+func (s *userService) mapToUserResponse(
+	user models.User,
+	id uuid.UUID,
+) *dto.UserResponse {
+	resp := &dto.UserResponse{
+		ID:         id.String(),
+		FirstName:  user.FirstName,
+		MiddleName: user.MiddleName,
+		LastName:   user.LastName,
+		NameSuffix: user.NameSuffix,
+		Email:      user.Email,
+		Status:     string(user.Status),
+		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
+		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+	}
+
+	if user.RoleID.Valid {
+		resp.Roles = &dto.UserRoleRepsonse{
+			ID:          user.Role.ID,
+			RoleName:    user.Role.RoleName,
+			Description: user.Role.Description,
+		}
+	}
+
+	return resp
+}

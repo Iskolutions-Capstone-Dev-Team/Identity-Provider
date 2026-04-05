@@ -2,7 +2,7 @@ function getOptionLabel(option) {
   return option?.role_name || option?.label || "Untitled role";
 }
 
-export default function UserPoolRoleRadioGroup({ options = [], selectedValue = null, onChange, colorMode = "light", disabled = false, name = "user-pool-role" }) {
+export default function UserPoolRoleRadioGroup({ options = [], selectedValue = null, onChange, colorMode = "light", disabled = false, name = "user-pool-role", allowEmpty = false, emptyOptionLabel = "No role assigned" }) {
   const isDarkMode = colorMode === "dark";
   const radioClassName = isDarkMode
     ? "radio h-5 w-5 border-white/20 bg-transparent text-[#7b0d15] checked:border-[#f8d24e] checked:bg-[#7b0d15]"
@@ -19,9 +19,13 @@ export default function UserPoolRoleRadioGroup({ options = [], selectedValue = n
     );
   }
 
+  const selectableOptions = allowEmpty
+    ? [{ id: null, label: emptyOptionLabel }, ...options]
+    : options;
+
   return (
     <div className="grid gap-3 md:grid-cols-2">
-      {options.map((option) => {
+      {selectableOptions.map((option, index) => {
         const isSelected = option.id === selectedValue;
         const cardClassName = `flex items-center gap-3 rounded-[1rem] border px-4 py-3 text-sm font-medium transition duration-300 ${
           isSelected
@@ -40,7 +44,7 @@ export default function UserPoolRoleRadioGroup({ options = [], selectedValue = n
         }`;
 
         return (
-          <label key={option.id} className={cardClassName}>
+          <label key={option.id ?? `empty-option-${index}`} className={cardClassName}>
             <input type="radio" name={name} className={radioClassName} checked={isSelected}
               onChange={() => {
                 if (!disabled) {

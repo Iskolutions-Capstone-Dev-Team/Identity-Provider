@@ -9,7 +9,7 @@ type UserRequest struct {
 	Email      string   `json:"email" binding:"required,email"`
 	Password   string   `json:"password" binding:"required,min=8"`
 	Status     string   `json:"status" binding:"required"`
-	Roles      []string `json:"roles" binding:"required,gt=0"`
+	RoleID     *int     `json:"role_id"`
 }
 
 // UpdatePasswordRequest handles incoming patch data for updating password
@@ -22,9 +22,8 @@ type UpdateStatusRequest struct {
 	NewStatus string `json:"new_status" binding:"required"`
 }
 
-// UpdateUserRoleRequest handles patch data for updating user roles
 type UpdateUserRoleRequest struct {
-	RoleIDs []int `json:"role_ids" binding:"required" validate:"required"`
+	RoleID *int `json:"role_id"`
 }
 
 // UserResponse provides a safe view of user data, hiding the password hash.
@@ -38,7 +37,7 @@ type UserResponse struct {
 	Status     string             `json:"status"`
 	CreatedAt  string             `json:"created_at"`
 	UpdatedAt  string             `json:"updated_at"`
-	Roles      []UserRoleRepsonse `json:"roles"`
+	Roles      *UserRoleRepsonse `json:"roles,omitempty"`
 }
 
 // UserResponseList follows the same pagination pattern as Roles and Clients.
@@ -61,5 +60,5 @@ type UserInfoResponse struct {
 	LastName   string   `json:"last_name"`
 	NameSuffix string   `json:"name_suffix"`
 	Email      string   `json:"email"`
-	Roles      []string `json:"roles"`
+	Roles      string   `json:"roles"`
 }

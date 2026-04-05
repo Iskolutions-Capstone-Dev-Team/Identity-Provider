@@ -33,7 +33,7 @@ import (
 // @contact.email causonmikolorenz@gmail.com
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
-// @host localhost:8080
+// @host identity-provider.isaxbsit2027.com
 // @BasePath /api/v1
 func initSwagger() {
 	originalDoc := docs.SwaggerInfo.ReadDoc()
@@ -68,7 +68,8 @@ func initSwagger() {
 		if strings.Contains(path, "jwks.json") || path == "/api/v1/me" {
 			isExternal = true
 		} else if strings.HasPrefix(path, "/api/v1/auth/") {
-			if !strings.Contains(path, "/login") && !strings.Contains(path, "/session") {
+			if (!strings.Contains(path, "/login") &&
+				!strings.Contains(path, "/session")) {
 				isExternal = true
 			}
 		}
@@ -126,8 +127,12 @@ func main() {
 	r.Use(h.CORS)
 
 	// Register separate Swagger UI routes for Internal and External views
-	r.GET("/swagger/internal/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("internal")))
-	r.GET("/swagger/external/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("external")))
+	r.GET("/swagger/internal/*any", ginSwagger.WrapHandler(
+		swaggerFiles.Handler, ginSwagger.InstanceName("internal"),
+	))
+	r.GET("/swagger/external/*any", ginSwagger.WrapHandler(
+		swaggerFiles.Handler, ginSwagger.InstanceName("external"),
+	))
 
 	api.SetupRoutes(r, *h)
 

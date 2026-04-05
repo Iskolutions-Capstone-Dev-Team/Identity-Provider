@@ -48,7 +48,6 @@ func RunAllMigrations(db *sqlx.DB) {
     );`)
 
 	parentTables := []migrations.TableMigration{
-		tables.UsersMigration,
 		tables.RolesMigration,
 		tables.ClientsMigration,
 		tables.AuditLogsMigration,
@@ -56,6 +55,7 @@ func RunAllMigrations(db *sqlx.DB) {
 	}
 
 	childTables := []migrations.TableMigration{
+		tables.UsersMigration,
 		tables.UserRolesMigration,
 		tables.ClientGrantTypesMigration,
 		tables.IdpSessionsMigration,

@@ -10,12 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-var (
-	role1 = "IDP:superadmin"
-	role2 = "IDP:admin"
-)
-
 type Handlers struct {
 	LogHandler        *v1.LogHandler
 	AuthHandler       *v1.AuthHandler
@@ -55,7 +49,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
 	admin.Use(middleware.AuthorizeRBAC(h.PubKey, h.UserRepo,
-		h.RoleRepo, role1, role2))
+		h.RoleRepo))
 	{
 		admin.GET("/status", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "IdP is operational"})
@@ -92,7 +86,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.GET("/:id", h.UserHandler.GetUser)
 			users.PATCH("/:id/status", h.UserHandler.PatchUserStatus)
 			users.PATCH("/:id/password", h.UserHandler.PatchUserPassword)
-			users.PATCH("/:id/roles", h.UserHandler.PatchUserRoles)
+			users.PATCH("/:id/role", h.UserHandler.PatchUserRole)
 			users.DELETE("/:id", h.UserHandler.DeleteUser)
 		}
 

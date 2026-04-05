@@ -44,7 +44,6 @@ export default function UserPool() {
     successMessage,
     setSuccessMessage,
     loading,
-    fetchError,
     createUser,
     updateUser,
     deleteUser,
@@ -128,11 +127,6 @@ export default function UserPool() {
               onCreate={() => setOpenAddModal(true)}
               colorMode={colorMode}
             />
-            {!showLoading && fetchError && (
-              <div className="alert alert-error mb-2">
-                <span>{fetchError}</span>
-              </div>
-            )}
             <UserPoolTable
               loading={showLoading}
               users={paginatedUsers}
