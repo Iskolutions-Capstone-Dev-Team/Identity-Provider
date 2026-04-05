@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
 import MultiSelect from "../MultiSelect";
@@ -6,7 +6,7 @@ import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import { getModalTheme } from "../modalTheme";
-import { ADMIN_USER_TYPE, deriveRolesFromAppClients, getAccessibleAppClientIds, getAccessibleAppClientNames, getAdminRoleOptions, getAppClientSelectOptions } from "../../utils/userPoolAccess";
+import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../utils/userPoolAccess";
 
 const initialFormData = {
   id: "",
@@ -16,8 +16,8 @@ const initialFormData = {
   surname: "",
   suffix: "",
   status: "active",
+  roleId: null,
   roles: [],
-  roleIds: [],
   accessibleClientIds: [],
 };
 
@@ -41,55 +41,44 @@ const normalizeStatus = (value) => {
   return STATUS_VALUES.has(normalizedValue) ? normalizedValue : "active";
 };
 
-const getStatusDisplayLabel = (status) =>
-  STATUS_DISPLAY_LABELS[normalizeStatus(status)] || STATUS_DISPLAY_LABELS.active;
+const normalizeRoleId = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
 
-const normalizeRoleNames = (roles) =>
-  Array.from(
+  const normalizedValue = Number.parseInt(value, 10);
+  return Number.isInteger(normalizedValue) && normalizedValue > 0
+    ? normalizedValue
+    : null;
+};
+
+const normalizeClientIds = (clientIds) =>
+  Array.from(new Set((Array.isArray(clientIds) ? clientIds : []).filter(Boolean)));
+
+const normalizeRoleNames = (roles) => {
+  const normalizedRoles = Array.isArray(roles)
+    ? roles
+    : roles === null || roles === undefined
+      ? []
+      : [roles];
+
+  return Array.from(
     new Set(
-      (Array.isArray(roles)
-        ? roles
-        : roles === null || roles === undefined
-          ? []
-          : [roles])
+      normalizedRoles
         .map((role) => {
           if (typeof role === "string") {
             return role.trim();
           }
 
-          return normalizeText(role?.role_name);
+          return normalizeText(role?.role_name || role?.roleName || role?.name);
         })
         .filter(Boolean),
     ),
   );
-
-const normalizeRoleIds = (roleIds) =>
-  Array.from(
-    new Set(
-      (Array.isArray(roleIds) ? roleIds : [])
-        .map((roleId) => Number.parseInt(roleId, 10))
-        .filter((roleId) => Number.isInteger(roleId) && roleId > 0),
-    ),
-  );
-
-const mapRoleNamesToIds = (roleNames, roleOptions) => {
-  if (!Array.isArray(roleNames) || roleNames.length === 0) {
-    return [];
-  }
-
-  const roleLookup = new Map(
-    (Array.isArray(roleOptions) ? roleOptions : []).map((role) => [
-      normalizeText(role?.role_name).toLowerCase(),
-      role.id,
-    ]),
-  );
-
-  return normalizeRoleIds(
-    roleNames
-      .map((roleName) => roleLookup.get(normalizeText(roleName).toLowerCase()))
-      .filter((roleId) => roleId !== undefined),
-  );
 };
+
+const getStatusDisplayLabel = (status) =>
+  STATUS_DISPLAY_LABELS[normalizeStatus(status)] || STATUS_DISPLAY_LABELS.active;
 
 const extractErrorMessage = (error) =>
   error?.response?.data?.error ||
@@ -110,22 +99,19 @@ const createFormData = (user) => ({
     user?.suffix_name ||
     "",
   status: normalizeStatus(user?.status),
+  roleId: normalizeRoleId(user?.roleId),
   roles: normalizeRoleNames(user?.roles),
-  roleIds: normalizeRoleIds(user?.roleIds),
-  accessibleClientIds: [],
+  accessibleClientIds: normalizeClientIds(user?.accessibleClientIds),
 });
 
 export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, colorMode = "light" }) {
   const availableRoles = useAllRoles();
+  const adminRoleOptions = getAdminRoleOptions(availableRoles);
+  const appClientSelectOptions = getAllAppClientSelectOptions(appClientOptions);
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
-  const adminRoleOptions = getAdminRoleOptions(availableRoles);
-  const appClientSelectOptions = getAppClientSelectOptions(appClientOptions, {
-    includeAdminRoles: false,
-  });
-  const accessFieldLabel = isAdminView ? "Role" : "Accessible App Clients";
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -148,10 +134,10 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const roleBadgeClassName = isDarkMode
     ? "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
     : "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
-  const readOnlyRolesClassName = isDarkMode
+  const readOnlyAccessClassName = isDarkMode
     ? "min-h-24 w-full rounded-[1rem] border border-white/10 bg-[rgba(10,15,24,0.76)] px-4 py-4 text-sm text-[#d6c3c7] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
     : "min-h-24 w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-4 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
-  const emptyRolesClassName = isDarkMode
+  const emptyAccessClassName = isDarkMode
     ? "italic text-[#a58d95]"
     : "italic text-[#8f6f76]";
   const modalHeaderSpacingClassName =
@@ -167,173 +153,23 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
   const [error, setError] = useState("");
-  const [accessError, setAccessError] = useState(false);
-  const [hasAccessSelectionChanged, setHasAccessSelectionChanged] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
 
     const nextFormData = createFormData(user);
     setFormData(nextFormData);
     setOriginalUser(nextFormData);
     setError("");
-    setAccessError(false);
-    setHasAccessSelectionChanged(false);
   }, [open, user]);
 
-  useEffect(() => {
-    if (
-      !open ||
-      isAdminView ||
-      hasAccessSelectionChanged ||
-      formData.accessibleClientIds.length > 0 ||
-      formData.roles.length === 0 ||
-      appClientOptions.length === 0
-    ) {
-      return;
-    }
-
-    const accessibleClientIds = getAccessibleAppClientIds(
-      formData.roles,
-      appClientOptions,
-    );
-
-    if (accessibleClientIds.length === 0) {
-      return;
-    }
-
-    setFormData((current) =>
-      current.accessibleClientIds.length > 0
-        ? current
-        : {
-            ...current,
-            accessibleClientIds,
-          },
-    );
-
-    setOriginalUser((current) =>
-      current.accessibleClientIds.length > 0
-        ? current
-        : {
-            ...current,
-            accessibleClientIds,
-          },
-    );
-  }, [
-    appClientOptions,
-    formData.accessibleClientIds.length,
-    formData.roles,
-    hasAccessSelectionChanged,
-    isAdminView,
-    open,
-  ]);
-
-  useEffect(() => {
-    if (
-      !open ||
-      hasAccessSelectionChanged ||
-      formData.roleIds.length > 0 ||
-      formData.roles.length === 0 ||
-      availableRoles.length === 0
-    ) {
-      return;
-    }
-
-    const mappedRoleIds = mapRoleNamesToIds(formData.roles, availableRoles);
-    if (mappedRoleIds.length === 0) {
-      return;
-    }
-
+  const handleStatusChange = (value) => {
     setFormData((current) => ({
       ...current,
-      roleIds: mappedRoleIds,
+      status: normalizeStatus(value),
     }));
-
-    setOriginalUser((current) =>
-      current.roleIds.length > 0
-        ? current
-        : {
-            ...current,
-            roleIds: mappedRoleIds,
-          },
-    );
-  }, [
-    availableRoles,
-    formData.roleIds.length,
-    formData.roles,
-    hasAccessSelectionChanged,
-    open,
-  ]);
-
-  const selectedRoleIds = useMemo(() => {
-    if (formData.roleIds.length > 0 || hasAccessSelectionChanged) {
-      return formData.roleIds;
-    }
-
-    return mapRoleNamesToIds(formData.roles, availableRoles);
-  }, [availableRoles, formData.roleIds, formData.roles, hasAccessSelectionChanged]);
-
-  const displayedRoles = useMemo(() => {
-    if (formData.roles.length > 0) {
-      return formData.roles;
-    }
-
-    const roleLookup = new Map(
-      availableRoles.map((role) => [role.id, role.role_name]),
-    );
-
-    return selectedRoleIds
-      .map((roleId) => roleLookup.get(roleId))
-      .filter(Boolean);
-  }, [availableRoles, formData.roles, selectedRoleIds]);
-
-  const displayedAccessibleClients = useMemo(() => {
-    return getAccessibleAppClientNames(formData.roles, appClientOptions);
-  }, [appClientOptions, formData.roles]);
-
-  const selectedAdminRoleId = selectedRoleIds[0] ?? null;
-
-  const handleFieldChange = (field, value) => {
-    setFormData((current) => ({
-      ...current,
-      [field]: field === "status" ? normalizeStatus(value) : value,
-    }));
-
-    if (error) {
-      setError("");
-    }
-  };
-
-  const handleRoleChange = (roleIds) => {
-    const normalizedRoleIds = normalizeRoleIds(roleIds);
-    const selectedRoles = availableRoles
-      .filter((role) => normalizedRoleIds.includes(role.id))
-      .map((role) => role.role_name);
-
-    setHasAccessSelectionChanged(true);
-    setFormData((current) => ({
-      ...current,
-      roleIds: normalizedRoleIds,
-      roles: selectedRoles,
-    }));
-
-    setAccessError(false);
-
-    if (error) {
-      setError("");
-    }
-  };
-
-  const handleAppClientChange = (accessibleClientIds) => {
-    setHasAccessSelectionChanged(true);
-    setFormData((current) => ({
-      ...current,
-      accessibleClientIds,
-    }));
-
-    if (accessibleClientIds.length > 0) {
-      setAccessError(false);
-    }
 
     if (error) {
       setError("");
@@ -341,39 +177,40 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   };
 
   const handleAdminRoleChange = (roleId) => {
-    handleRoleChange([roleId]);
+    const normalizedRoleId = normalizeRoleId(roleId);
+    const selectedRole = adminRoleOptions.find(
+      (role) => role.id === normalizedRoleId,
+    );
+
+    setFormData((current) => ({
+      ...current,
+      roleId: normalizedRoleId,
+      roles: selectedRole ? [selectedRole.role_name] : [],
+    }));
+
+    if (error) {
+      setError("");
+    }
+  };
+
+  const handleAppClientChange = (accessibleClientIds) => {
+    setFormData((current) => ({
+      ...current,
+      accessibleClientIds,
+    }));
+
+    if (error) {
+      setError("");
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isViewMode) return onClose();
 
-    const nextAccess = isAdminView
-      ? {
-          roleIds: selectedRoleIds,
-          roleNames: displayedRoles,
-        }
-      : hasAccessSelectionChanged
-        ? deriveRolesFromAppClients(
-            formData.accessibleClientIds,
-            appClientOptions,
-            availableRoles,
-            { includeAdminRoles: false },
-          )
-        : {
-            roleIds: selectedRoleIds,
-            roleNames: displayedRoles,
-          };
-
-    if (!isAdminView && nextAccess.roleIds.length === 0) {
-      setAccessError(true);
-      setError(
-        "Selected app clients do not map to available roles yet.",
-      );
+    if (isViewMode) {
+      onClose();
       return;
     }
-
-    setAccessError(false);
 
     if (!STATUS_VALUES.has(formData.status)) {
       setError("Select a valid status.");
@@ -387,9 +224,6 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
         {
           ...formData,
           userType,
-          roleId: selectedAdminRoleId,
-          roleIds: nextAccess.roleIds,
-          roles: nextAccess.roleNames,
         },
         originalUser,
       );
@@ -400,7 +234,22 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     }
   };
 
-  if (!open) return null;
+  if (!open) {
+    return null;
+  }
+
+  const roleAccessItems =
+    formData.roles.length > 0
+      ? formData.roles
+      : adminRoleOptions
+          .filter((role) => role.id === formData.roleId)
+          .map((role) => role.role_name);
+  const regularAccessItems = getAppClientNamesByIds(
+    formData.accessibleClientIds,
+    appClientOptions,
+  );
+  const accessFieldLabel = isAdminView ? "Role" : "Accessible App Clients";
+  const accessItems = isAdminView ? roleAccessItems : regularAccessItems;
 
   return createPortal(
     <dialog open className={modalOverlayClassName}>
@@ -415,14 +264,18 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                 {isViewMode
                   ? "View the user's account information."
                   : isAdminView
-                    ? "Update the user's role and account status."
-                    : "Update the user's app access and account status."}
+                    ? "Update the admin role and account status."
+                    : "Update the account status and frontend app-client selection."}
               </p>
             </div>
 
-            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
+            <button
+              type="button"
+              className={`${modalCloseButtonClassName} shrink-0`}
+              onClick={onClose}
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
@@ -437,12 +290,12 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                 <div className="space-y-5">
                   <div>
                     <label className={modalLabelClassName}>User ID</label>
-                    <input type="text" value={formData.id} readOnly className={modalReadOnlyInputClassName}/>
+                    <input type="text" value={formData.id} readOnly className={modalReadOnlyInputClassName} />
                   </div>
 
                   <div>
                     <label className={modalLabelClassName}>Email</label>
-                    <input type="email" value={formData.email} readOnly className={modalReadOnlyInputClassName}/>
+                    <input type="email" value={formData.email} readOnly className={modalReadOnlyInputClassName} />
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -450,12 +303,12 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                       <label className={modalLabelClassName}>
                         First Name
                       </label>
-                      <input type="text" value={formData.givenName} readOnly className={modalReadOnlyInputClassName}/>
+                      <input type="text" value={formData.givenName} readOnly className={modalReadOnlyInputClassName} />
                     </div>
 
                     <div>
                       <label className={modalLabelClassName}>Last Name</label>
-                      <input type="text" value={formData.surname} readOnly className={modalReadOnlyInputClassName}/>
+                      <input type="text" value={formData.surname} readOnly className={modalReadOnlyInputClassName} />
                     </div>
                   </div>
 
@@ -465,7 +318,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                         Middle Name
                       </label>
                       <label className={`${modalReadOnlyInputClassName} flex items-center gap-2`}>
-                        <input type="text" value={formData.middleName} readOnly className="grow bg-transparent outline-none"/>
+                        <input type="text" value={formData.middleName} readOnly className="grow bg-transparent outline-none" />
                         <span className={modalOptionalBadgeClassName}>
                           Optional
                         </span>
@@ -477,7 +330,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                         Suffix
                       </label>
                       <label className={`${modalReadOnlyInputClassName} flex items-center gap-2`}>
-                        <input type="text" value={formData.suffix} readOnly className="grow bg-transparent outline-none"/>
+                        <input type="text" value={formData.suffix} readOnly className="grow bg-transparent outline-none" />
                         <span className={modalOptionalBadgeClassName}>
                           Optional
                         </span>
@@ -493,61 +346,55 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                 <div>
                   <label className={modalLabelClassName}>
                     {accessFieldLabel}
-                    {!isViewMode && !isAdminView ? (
-                      <span className="text-red-500"> *</span>
-                    ) : null}
                   </label>
 
                   {isViewMode ? (
-                    <div className={readOnlyRolesClassName}>
-                      {(isAdminView ? displayedRoles : displayedAccessibleClients).length > 0 ? (
+                    <div className={readOnlyAccessClassName}>
+                      {accessItems.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
-                          {(isAdminView ? displayedRoles : displayedAccessibleClients).map((item, index) => (
+                          {accessItems.map((item, index) => (
                             <span key={`${item}-${index}`} className={roleBadgeClassName}>
                               {item}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <span className={emptyRolesClassName}>No content</span>
+                        <span className={emptyAccessClassName}>
+                          {isAdminView ? "No role assigned" : "No app clients selected"}
+                        </span>
                       )}
                     </div>
+                  ) : isAdminView ? (
+                    <>
+                      <p className={modalHelperTextClassName}>
+                        Choose the role for this admin account.
+                      </p>
+                      <UserPoolRoleRadioGroup
+                        options={adminRoleOptions}
+                        selectedValue={formData.roleId}
+                        onChange={handleAdminRoleChange}
+                        colorMode={colorMode}
+                        name="edit-user-role"
+                        allowEmpty
+                        emptyOptionLabel="No role assigned"
+                      />
+                    </>
                   ) : (
                     <>
                       <p className={modalHelperTextClassName}>
-                        {isAdminView
-                          ? "Select one role for this user, or leave it unassigned."
-                          : "Choose which app clients this user can access."}
+                        Choose which app clients this user can access.
                       </p>
-                      {isAdminView ? (
-                        <UserPoolRoleRadioGroup
-                          options={adminRoleOptions}
-                          selectedValue={selectedAdminRoleId}
-                          onChange={handleAdminRoleChange}
-                          colorMode={colorMode}
-                          name="edit-user-role"
-                          allowEmpty
-                          emptyOptionLabel="No role assigned"
-                        />
-                      ) : (
-                        <MultiSelect
-                          options={appClientSelectOptions}
-                          selectedValues={formData.accessibleClientIds}
-                          onChange={handleAppClientChange}
-                          placeholder="Select app clients"
-                          variant="userpoolModal"
-                          hasError={accessError}
-                          colorMode={colorMode}
-                        />
-                      )}
-                      {!isAdminView && isLoadingAppClients && (
+                      <MultiSelect
+                        options={appClientSelectOptions}
+                        selectedValues={formData.accessibleClientIds}
+                        onChange={handleAppClientChange}
+                        placeholder="Select app clients"
+                        variant="userpoolModal"
+                        colorMode={colorMode}
+                      />
+                      {isLoadingAppClients && (
                         <p className={modalHelperTextClassName}>
                           Loading app clients...
-                        </p>
-                      )}
-                      {!isAdminView && accessError && (
-                        <p className="mt-2 text-xs text-red-500">
-                          At least one app client is required
                         </p>
                       )}
                     </>
@@ -559,11 +406,11 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                     Status {!isViewMode && <span className="text-red-500">*</span>}
                   </label>
                   {isViewMode ? (
-                    <input type="text" value={getStatusDisplayLabel(formData.status)} readOnly className={modalReadOnlyInputClassName}/>
+                    <input type="text" value={getStatusDisplayLabel(formData.status)} readOnly className={modalReadOnlyInputClassName} />
                   ) : (
                     <UserPoolModalSelect
                       value={formData.status}
-                      onChange={(value) => handleFieldChange("status", value)}
+                      onChange={handleStatusChange}
                       options={STATUS_OPTIONS}
                       selectedLabel={getStatusDisplayLabel(formData.status)}
                       ariaLabel="Status"

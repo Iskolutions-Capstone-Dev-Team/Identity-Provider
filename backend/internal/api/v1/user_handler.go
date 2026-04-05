@@ -25,6 +25,7 @@ const (
 	actionUpdateStatus = "update_status"
 	actionUpdateUserRole = "update_user_role"
 	actionDeleteUser   = "delete_user"
+	actionListAdmins   = "list_admins"
 )
 
 // UserHandler handles user management HTTP requests.
@@ -115,7 +116,7 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 // @Tags Users
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Success 200 {object} dto.UserResponseList
+// @Success 200 {object} dto.UserSimplifiedResponseList
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/users [get]
 func (h *UserHandler) GetUserList(c *gin.Context) {
@@ -123,8 +124,10 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	const defaultPage = "1"
 
 	// RBAC Check
-	if !middleware.HasPermission(c, "View all users") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+	if !middleware.HasPermission(c, "View all users") &&
+		!middleware.HasPermission(c, "View users based on appclient") {
+		c.JSON(http.StatusUnauthorized,
+			dto.ErrorResponse{Error: "Unauthorized"})
 		return
 	}
 
@@ -196,6 +199,90 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		&dto.PostAuditLogRequest{
 			Action:   actionListUsers,
 			Target:   "user_list",
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
+
+	c.JSON(http.StatusOK, resp)
+}
+
+// GetAdminUserList retrieves a paginated list of accounts with roles
+// @Summary List Admin Users
+// @Description Get a paginated list of all accounts that have a role
+// @Tags Users
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Success 200 {object} dto.UserResponseList
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/v1/admin/users/admins [get]
+func (h *UserHandler) GetAdminUserList(c *gin.Context) {
+	const defaultLimit = "10"
+	const defaultPage = "1"
+
+	// RBAC Check
+	if !middleware.HasPermission(c, "View all users") {
+		c.JSON(http.StatusUnauthorized,
+			dto.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", defaultLimit))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", defaultPage))
+
+	if page < 1 {
+		page = 1
+	}
+
+	role := c.GetString("role")
+	uIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(uIDStr)
+	if err != nil {
+		log.Printf("[GetAdminUserList] UUID Parsing: %v", err)
+		c.JSON(http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Identity parse error"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
+	if actorName == "" {
+		actorName = uIDStr
+	}
+
+	metadata := buildMetadata(map[string]interface{}{
+		"limit":      limit,
+		"page":       page,
+		"privilege":  role,
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
+	})
+
+	resp, err := h.Service.GetAdminUserList(ctx, limit, page)
+	if err != nil {
+		log.Printf("[GetAdminUserList] Service Execution: %v", err)
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionListAdmins,
+				Target: "admin_list",
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"limit":      limit,
+					"page":       page,
+					"privilege":  role,
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
+				}),
+			})
+		c.JSON(http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Failed to retrieve admin list"})
+		return
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionListAdmins,
+			Target:   "admin_list",
 			Status:   models.StatusSuccess,
 			Metadata: metadata,
 		})
@@ -570,7 +657,8 @@ func (h *UserHandler) PatchUserRole(c *gin.Context) {
 		return
 	}
 
-	if !middleware.HasPermission(c, "Assign Roles") {
+	if !middleware.HasPermission(c, "Assign Roles") &&
+		!middleware.HasPermission(c, "Remove Roles") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
 	}
