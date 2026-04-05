@@ -212,7 +212,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 // @Tags Users
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Success 200 {object} dto.UserSimplifiedResponseList
+// @Success 200 {object} dto.UserResponseList
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/admin/users/admins [get]
 func (h *UserHandler) GetAdminUserList(c *gin.Context) {

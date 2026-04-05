@@ -25,7 +25,7 @@ type UserService interface {
 	GetBoundUserList(ctx context.Context, limit, page int,
 		userID uuid.UUID) (*dto.UserSimplifiedResponseList, error)
 	GetAdminUserList(ctx context.Context, limit,
-		page int) (*dto.UserSimplifiedResponseList, error)
+		page int) (*dto.UserResponseList, error)
 	UpdateUserPassword(ctx context.Context, id uuid.UUID,
 		newPassword string) error
 	UpdateUserStatus(ctx context.Context, id uuid.UUID,
@@ -368,7 +368,7 @@ func (s *userService) GetAdminUserList(
 	ctx context.Context,
 	limit,
 	page int,
-) (*dto.UserSimplifiedResponseList, error) {
+) (*dto.UserResponseList, error) {
 	offset := (page - 1) * limit
 
 	users, err := s.Repo.GetAdminUserList(ctx, limit, offset)
@@ -381,11 +381,11 @@ func (s *userService) GetAdminUserList(
 		return nil, fmt.Errorf("Database Query (CountAdmins): %w", err)
 	}
 
-	var userResponses []dto.UserSimplifiedResponse
+	var userResponses []dto.UserResponse
 	for _, user := range users {
 		userUUID, _ := uuid.FromBytes(user.ID)
 		userResponses = append(userResponses,
-			*s.mapToSimplifiedUserResponse(user, userUUID))
+			*s.mapToUserResponse(user, userUUID))
 	}
 
 	lastPage := (total + limit - 1) / limit
@@ -393,7 +393,7 @@ func (s *userService) GetAdminUserList(
 		lastPage = 1
 	}
 
-	return &dto.UserSimplifiedResponseList{
+	return &dto.UserResponseList{
 		Users:       userResponses,
 		TotalCount:  total,
 		CurrentPage: page,
