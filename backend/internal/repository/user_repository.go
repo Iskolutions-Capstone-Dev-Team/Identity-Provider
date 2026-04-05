@@ -13,6 +13,8 @@ type UserRepository interface {
 	GetUserList(ctx context.Context, limit, offset int) ([]models.User, error)
 	GetBoundUserList(ctx context.Context, limit, offset int,
 		adminID []byte) ([]models.User, error)
+	GetAdminUserList(ctx context.Context, limit,
+		offset int) ([]models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetUserById(ctx context.Context, id []byte) (*models.User, error)
 	CreateUser(ctx context.Context, u *models.User) error
@@ -22,6 +24,7 @@ type UserRepository interface {
 		roleID sql.NullInt64) error
 	SoftDelete(ctx context.Context, id []byte) error
 	CountUsers(ctx context.Context) (int, error)
+	CountAdminUsers(ctx context.Context) (int, error)
 	CountBoundUsers(ctx context.Context, adminID []byte) (int, error)
 	RemoveClientAdminBind(ctx context.Context, userID []byte) error
 }
@@ -74,6 +77,63 @@ func (r *userRepository) GetUserList(ctx context.Context,
 	err = r.db.SelectContext(ctx, &rows, fullQuery, args...)
 	if err != nil {
 		return nil, fmt.Errorf("[GetUserList] Database Query: %w", err)
+	}
+
+	result := make([]models.User, 0, len(rows))
+	for _, row := range rows {
+		user := row.User
+		if row.RID.Valid {
+			user.Role = models.Role{
+				ID:          int(row.RID.Int64),
+				RoleName:    row.RName.String,
+				Description: row.RDesc.String,
+			}
+		}
+		result = append(result, user)
+	}
+
+	return result, nil
+}
+
+// GetAdminUserList retrieves users that have an assigned role.
+func (r *userRepository) GetAdminUserList(ctx context.Context,
+	limit, offset int,
+) ([]models.User, error) {
+	var ids [][]byte
+	idQuery := `SELECT id FROM users 
+                WHERE deleted_at IS NULL AND role_id IS NOT NULL 
+                LIMIT ? OFFSET ?`
+
+	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("[GetAdminUserList] ID Fetch: %w", err)
+	}
+
+	if len(ids) == 0 {
+		return []models.User{}, nil
+	}
+
+	const sql = `
+        SELECT u.id, u.first_name, u.middle_name, u.last_name, 
+               u.name_suffix, u.email, u.status, u.created_at, 
+               u.updated_at, r.id AS role_id, r.role_name AS role_name, 
+               r.description AS role_description
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        WHERE u.id IN (?) AND u.deleted_at IS NULL
+        ORDER BY u.created_at DESC`
+
+	fullQuery, args, err := sqlx.In(sql, ids)
+	if err != nil {
+		return nil, fmt.Errorf("[GetAdminUserList] expansion: %w", err)
+	}
+
+	fullQuery = r.db.Rebind(fullQuery)
+
+	var rows []userRow
+	err = r.db.SelectContext(ctx, &rows, fullQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("[GetAdminUserList] Query: %w", err)
 	}
 
 	result := make([]models.User, 0, len(rows))
@@ -297,6 +357,14 @@ func (r *userRepository) SoftDelete(ctx context.Context, id []byte) error {
 func (r *userRepository) CountUsers(ctx context.Context) (int, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`
+	err := r.db.GetContext(ctx, &count, query)
+	return count, err
+}
+
+func (r *userRepository) CountAdminUsers(ctx context.Context) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM users 
+              WHERE deleted_at IS NULL AND role_id IS NOT NULL`
 	err := r.db.GetContext(ctx, &count, query)
 	return count, err
 }

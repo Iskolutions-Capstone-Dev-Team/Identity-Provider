@@ -18,11 +18,14 @@ type UserService interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
 	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
 	GetFilteredUserList(ctx context.Context, permissions []string,
-		userID uuid.UUID, limit, page int) (*dto.UserResponseList, error)
+		userID uuid.UUID, limit,
+		page int) (*dto.UserSimplifiedResponseList, error)
 	GetUserList(ctx context.Context, limit,
-		page int) (*dto.UserResponseList, error)
+		page int) (*dto.UserSimplifiedResponseList, error)
 	GetBoundUserList(ctx context.Context, limit, page int,
-		userID uuid.UUID) (*dto.UserResponseList, error)
+		userID uuid.UUID) (*dto.UserSimplifiedResponseList, error)
+	GetAdminUserList(ctx context.Context, limit,
+		page int) (*dto.UserSimplifiedResponseList, error)
 	UpdateUserPassword(ctx context.Context, id uuid.UUID,
 		newPassword string) error
 	UpdateUserStatus(ctx context.Context, id uuid.UUID,
@@ -131,7 +134,7 @@ func (s *userService) GetFilteredUserList(
 	userID uuid.UUID,
 	limit,
 	page int,
-) (*dto.UserResponseList, error) {
+) (*dto.UserSimplifiedResponseList, error) {
 	if slices.Contains(permissions, "View all users") {
 		return s.GetUserList(ctx, limit, page)
 	}
@@ -150,7 +153,7 @@ func (s *userService) GetUserList(
 	ctx context.Context,
 	limit,
 	page int,
-) (*dto.UserResponseList, error) {
+) (*dto.UserSimplifiedResponseList, error) {
 	offset := (page - 1) * limit
 
 	users, err := s.Repo.GetUserList(ctx, limit, offset)
@@ -163,11 +166,11 @@ func (s *userService) GetUserList(
 		return nil, fmt.Errorf("Database Query (CountUsers): %w", err)
 	}
 
-	var userResponses []dto.UserResponse
+	var userResponses []dto.UserSimplifiedResponse
 	for _, user := range users {
 		userUUID, _ := uuid.FromBytes(user.ID)
-		userResponses = append(userResponses, *s.mapToUserResponse(user,
-			userUUID))
+		userResponses = append(userResponses,
+			*s.mapToSimplifiedUserResponse(user, userUUID))
 	}
 
 	lastPage := (total + limit - 1) / limit
@@ -175,7 +178,7 @@ func (s *userService) GetUserList(
 		lastPage = 1
 	}
 
-	return &dto.UserResponseList{
+	return &dto.UserSimplifiedResponseList{
 		Users:       userResponses,
 		TotalCount:  total,
 		CurrentPage: page,
@@ -191,7 +194,7 @@ func (s *userService) GetBoundUserList(
 	limit,
 	page int,
 	userID uuid.UUID,
-) (*dto.UserResponseList, error) {
+) (*dto.UserSimplifiedResponseList, error) {
 	offset := (page - 1) * limit
 
 	users, err := s.Repo.GetBoundUserList(ctx, limit, offset, userID[:])
@@ -204,11 +207,11 @@ func (s *userService) GetBoundUserList(
 		return nil, fmt.Errorf("Database Query (CountBound): %w", err)
 	}
 
-	var userResponses []dto.UserResponse
+	var userResponses []dto.UserSimplifiedResponse
 	for _, user := range users {
 		userUUID, _ := uuid.FromBytes(user.ID)
-		userResponses = append(userResponses, *s.mapToUserResponse(user,
-			userUUID))
+		userResponses = append(userResponses,
+			*s.mapToSimplifiedUserResponse(user, userUUID))
 	}
 
 	lastPage := (total + limit - 1) / limit
@@ -216,7 +219,7 @@ func (s *userService) GetBoundUserList(
 		lastPage = 1
 	}
 
-	return &dto.UserResponseList{
+	return &dto.UserSimplifiedResponseList{
 		Users:       userResponses,
 		TotalCount:  total,
 		CurrentPage: page,
@@ -339,4 +342,61 @@ func (s *userService) mapToUserResponse(
 	}
 
 	return resp
+}
+
+func (s *userService) mapToSimplifiedUserResponse(
+	user models.User,
+	id uuid.UUID,
+) *dto.UserSimplifiedResponse {
+	return &dto.UserSimplifiedResponse{
+		ID:         id.String(),
+		FirstName:  user.FirstName,
+		MiddleName: user.MiddleName,
+		LastName:   user.LastName,
+		NameSuffix: user.NameSuffix,
+		Email:      user.Email,
+		Status:     string(user.Status),
+		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
+		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+	}
+}
+
+/**
+ * GetAdminUserList retrieves a paginated list of users with assigned roles.
+ */
+func (s *userService) GetAdminUserList(
+	ctx context.Context,
+	limit,
+	page int,
+) (*dto.UserSimplifiedResponseList, error) {
+	offset := (page - 1) * limit
+
+	users, err := s.Repo.GetAdminUserList(ctx, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (GetAdminList): %w", err)
+	}
+
+	total, err := s.Repo.CountAdminUsers(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (CountAdmins): %w", err)
+	}
+
+	var userResponses []dto.UserSimplifiedResponse
+	for _, user := range users {
+		userUUID, _ := uuid.FromBytes(user.ID)
+		userResponses = append(userResponses,
+			*s.mapToSimplifiedUserResponse(user, userUUID))
+	}
+
+	lastPage := (total + limit - 1) / limit
+	if lastPage == 0 {
+		lastPage = 1
+	}
+
+	return &dto.UserSimplifiedResponseList{
+		Users:       userResponses,
+		TotalCount:  total,
+		CurrentPage: page,
+		LastPage:    lastPage,
+	}, nil
 }

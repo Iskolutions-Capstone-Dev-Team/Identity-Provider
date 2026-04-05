@@ -40,6 +40,27 @@ type UserResponse struct {
 	Roles      *UserRoleRepsonse `json:"roles,omitempty"`
 }
 
+// UserSimplifiedResponse provides user data without role details.
+type UserSimplifiedResponse struct {
+	ID         string `json:"id"`
+	FirstName  string `json:"first_name"`
+	MiddleName string `json:"middle_name"`
+	LastName   string `json:"last_name"`
+	NameSuffix string `json:"name_suffix"`
+	Email      string `json:"email"`
+	Status     string `json:"status"`
+	CreatedAt  string `json:"created_at"`
+	UpdatedAt  string `json:"updated_at"`
+}
+
+// UserSimplifiedResponseList is a paginated list of simplified user views.
+type UserSimplifiedResponseList struct {
+	Users       []UserSimplifiedResponse `json:"users"`
+	TotalCount  int                      `json:"total_count"`
+	CurrentPage int                      `json:"current_page"`
+	LastPage    int                      `json:"last_page"`
+}
+
 // UserResponseList follows the same pagination pattern as Roles and Clients.
 type UserResponseList struct {
 	Users       []UserResponse `json:"users"`

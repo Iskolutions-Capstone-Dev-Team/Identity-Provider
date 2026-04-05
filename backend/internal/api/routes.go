@@ -83,6 +83,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		{
 			users.POST("", h.UserHandler.PostUser)
 			users.GET("", h.UserHandler.GetUserList)
+			users.GET("/admin", h.UserHandler.GetAdminUserList)
 			users.GET("/:id", h.UserHandler.GetUser)
 			users.PATCH("/:id/status", h.UserHandler.PatchUserStatus)
 			users.PATCH("/:id/password", h.UserHandler.PatchUserPassword)
