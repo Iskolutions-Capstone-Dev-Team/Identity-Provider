@@ -57,6 +57,28 @@ function getAccessItemClassName(itemLabel) {
   return isWideItem ? "lg:col-span-2" : "";
 }
 
+function getColumnWidths(isAdminView) {
+  if (isAdminView) {
+    return [
+      "w-[8rem] lg:w-[10%]",
+      "w-[14rem] lg:w-[22%]",
+      "w-[12rem] lg:w-[23%]",
+      "w-[9rem] lg:w-[16%]",
+      "w-[8.5rem] lg:w-[13%]",
+      "w-[9rem] lg:w-[16%]",
+    ];
+  }
+
+  return [
+    "w-[8rem] lg:w-[9%]",
+    "w-[14rem] lg:w-[20%]",
+    "w-[11rem] lg:w-[18%]",
+    "w-[13rem] lg:w-[24%]",
+    "w-[9rem] lg:w-[13%]",
+    "w-[9.5rem] lg:w-[12%]",
+  ];
+}
+
 function renderActionButton({ label, onClick, children, className }) {
   return (
     <button type="button" className={className} onClick={onClick} aria-label={label}>
@@ -103,6 +125,7 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
   const actionButtonClassName = isDarkMode
     ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] text-[#f1e5e7] shadow-[0_14px_30px_-24px_rgba(2,6,23,0.72)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
     : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
+  const columnWidths = getColumnWidths(isAdminView);
   const getAccessItems = (user) =>
     isAdminView ? user.roles : getAppClientNamesByIds(user.accessibleClientIds, appClients);
   const emptyAccessLabel = isAdminView ? "No role assigned" : "No app clients";
@@ -128,12 +151,9 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
       <div className="overflow-x-auto lg:overflow-x-hidden">
         <table className="table w-full min-w-[62rem] lg:min-w-0 lg:table-fixed">
           <colgroup>
-            <col className="w-[8rem] lg:w-[9%]" />
-            <col className="w-[14rem] lg:w-[20%]" />
-            <col className="w-[11rem] lg:w-[18%]" />
-            <col className="w-[13rem] lg:w-[24%]" />
-            <col className="w-[9rem] lg:w-[13%]" />
-            <col className="w-[9.5rem] lg:w-[12%]" />
+            {columnWidths.map((className, index) => (
+              <col key={index} className={className} />
+            ))}
           </colgroup>
 
           <thead>
@@ -193,15 +213,21 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
 
                 <td className={sharedBodyCellClassName}>
                   {accessItems.length > 0 ? (
-                    <div className={getAccessGridClassName(accessItems)}>
-                      {accessItems.map((item, itemIndex) => (
-                        <div key={`${item}-${itemIndex}`} className={getAccessItemClassName(item)}>
-                          <span className={roleBadgeClassName}>
-                            {item}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                    isAdminView ? (
+                      <div className="flex justify-center">
+                        <span className={roleBadgeClassName}>{accessItems[0]}</span>
+                      </div>
+                    ) : (
+                      <div className={getAccessGridClassName(accessItems)}>
+                        {accessItems.map((item, itemIndex) => (
+                          <div key={`${item}-${itemIndex}`} className={getAccessItemClassName(item)}>
+                            <span className={roleBadgeClassName}>
+                              {item}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )
                   ) : (
                     <span className={isDarkMode ? "text-[#a58d95]" : "text-[#8f6f76]"}>
                       {emptyAccessLabel}
