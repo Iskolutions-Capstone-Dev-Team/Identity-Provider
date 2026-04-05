@@ -11,6 +11,7 @@ import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ResultsCount from "../components/ResultsCount";
 import PageHeader from "../components/PageHeader";
+import ErrorAlert from "../components/ErrorAlert";
 import { EMPTY_CURRENT_USER, hasCurrentUserRole } from "../hooks/useCurrentUser";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { useAllAppClients } from "../hooks/useAllAppClients";
@@ -29,7 +30,6 @@ export default function UserPool() {
   const colorMode = outletContext.colorMode || "light";
   const isDarkMode = colorMode === "dark";
   const {
-    users,
     search,
     setSearch,
     userType,
@@ -43,6 +43,8 @@ export default function UserPool() {
     totalResults,
     successMessage,
     setSuccessMessage,
+    fetchError,
+    setFetchError,
     loading,
     createUser,
     updateUser,
@@ -58,13 +60,7 @@ export default function UserPool() {
   const showLoading = useDelayedLoading(
     loading || (userType === REGULAR_USER_TYPE && isLoadingAppClients),
   );
-  const currentUserFromList =
-    users.find((user) => currentUser.id && user.id === currentUser.id) ||
-    users.find((user) => currentUser.email && user.email === currentUser.email) ||
-    EMPTY_CURRENT_USER;
-  const canDeleteUsers =
-    hasCurrentUserRole(currentUser, SUPERADMIN_ROLE) ||
-    hasCurrentUserRole(currentUserFromList, SUPERADMIN_ROLE);
+  const canDeleteUsers = hasCurrentUserRole(currentUser, SUPERADMIN_ROLE);
   const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
@@ -117,6 +113,10 @@ export default function UserPool() {
 
         <div className="relative">
           <UserPoolCard colorMode={colorMode}>
+            <ErrorAlert
+              message={fetchError}
+              onClose={() => setFetchError("")}
+            />
             <UserPoolFilters
               search={search}
               setSearch={setSearch}

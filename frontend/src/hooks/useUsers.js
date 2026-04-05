@@ -1,19 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { userService } from "../services/userService";
-import { useAllRoles } from "./useAllRoles";
-import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, normalizeRoleNames, resolveUserIsAdmin } from "../utils/userPoolAccess";
+import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, normalizeRoleNames } from "../utils/userPoolAccess";
 
 const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
+const FETCH_LIMIT = 100;
 const ITEMS_PER_PAGE = 10;
 
-function normalizeRoleIds(roleIds) {
-  return Array.from(
-    new Set(
-      (Array.isArray(roleIds) ? roleIds : [])
-        .map((roleId) => Number.parseInt(roleId, 10))
-        .filter((roleId) => Number.isInteger(roleId) && roleId > 0),
-    ),
-  );
+function normalizeClientIds(clientIds = []) {
+  return Array.from(new Set((Array.isArray(clientIds) ? clientIds : []).filter(Boolean)));
+}
+
+function areSameArrays(first = [], second = []) {
+  const normalizedFirst = [...first].sort();
+  const normalizedSecond = [...second].sort();
+
+  if (normalizedFirst.length !== normalizedSecond.length) {
+    return false;
+  }
+
+  return normalizedFirst.every((value, index) => value === normalizedSecond[index]);
 }
 
 function normalizeStatus(status) {
@@ -25,6 +30,55 @@ function normalizeStatus(status) {
   return EDITABLE_STATUS_VALUES.has(normalizedStatus) ? normalizedStatus : "";
 }
 
+function normalizeRoleId(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const normalizedValue = Number.parseInt(value, 10);
+  return Number.isInteger(normalizedValue) && normalizedValue > 0
+    ? normalizedValue
+    : null;
+}
+
+function getUserRoleId(user = {}) {
+  const roleSource = Array.isArray(user?.roles) ? user.roles[0] : user?.roles;
+  const roleCandidates = [
+    user?.role_id,
+    user?.roleId,
+    roleSource?.id,
+    user?.role?.id,
+  ];
+
+  for (const roleCandidate of roleCandidates) {
+    const normalizedRoleId = normalizeRoleId(roleCandidate);
+
+    if (normalizedRoleId !== null) {
+      return normalizedRoleId;
+    }
+  }
+
+  return null;
+}
+
+function getUserIdKey(user = {}) {
+  if (typeof user?.id !== "string") {
+    return "";
+  }
+
+  const normalizedId = user.id.trim();
+  return normalizedId ? `id:${normalizedId}` : "";
+}
+
+function getUserEmailKey(user = {}) {
+  if (typeof user?.email !== "string") {
+    return "";
+  }
+
+  const normalizedEmail = user.email.trim().toLowerCase();
+  return normalizedEmail ? `email:${normalizedEmail}` : "";
+}
+
 function isStatusRequestError(error) {
   const errorMessage = error?.response?.data?.error || error?.message || "";
   return (
@@ -33,18 +87,7 @@ function isStatusRequestError(error) {
   );
 }
 
-function areSameStringArrays(first = [], second = []) {
-  const normalizedFirst = [...first].sort();
-  const normalizedSecond = [...second].sort();
-
-  if (normalizedFirst.length !== normalizedSecond.length) {
-    return false;
-  }
-
-  return normalizedFirst.every((value, index) => value === normalizedSecond[index]);
-}
-
-function mapUserResponse(user = {}) {
+function mapUserResponse(user = {}, { isAdmin = false } = {}) {
   const givenName = user.first_name ?? "";
   const middleName = user.middle_name ?? "";
   const surname = user.last_name ?? "";
@@ -69,9 +112,28 @@ function mapUserResponse(user = {}) {
     displayName: fullName || user.email || "User",
     status: user.status,
     createdAt: user.created_at,
+    roleId: getUserRoleId(user),
     roles: normalizeRoleNames(user.roles),
-    isAdmin: resolveUserIsAdmin(user),
+    accessibleClientIds: normalizeClientIds(user.accessibleClientIds),
+    isAdmin,
   };
+}
+
+function applyRegularUserAccessSelections(users, accessSelections = {}) {
+  return users.map((user) => {
+    const userIdKey = getUserIdKey(user);
+    const userEmailKey = getUserEmailKey(user);
+    const accessibleClientIds =
+      accessSelections[userIdKey] ??
+      accessSelections[userEmailKey] ??
+      user.accessibleClientIds ??
+      [];
+
+    return {
+      ...user,
+      accessibleClientIds: normalizeClientIds(accessibleClientIds),
+    };
+  });
 }
 
 function matchesUserSearch(user, searchValue) {
@@ -94,18 +156,8 @@ function matchesUserSearch(user, searchValue) {
   );
 }
 
-function normalizeVisibleRoles(userRoles, allRoles) {
-  if (allRoles.length === 0) {
-    return userRoles;
-  }
-
-  return userRoles.filter((roleName) =>
-    allRoles.some((role) => role.role_name === roleName),
-  );
-}
-
-async function getAllUsers() {
-  const firstPage = await userService.getUsers(1);
+async function getAllUsersFromEndpoint(fetchPage) {
+  const firstPage = await fetchPage(1);
   const collectedUsers = Array.isArray(firstPage?.users) ? [...firstPage.users] : [];
   const lastPage =
     Number.isInteger(firstPage?.last_page) && firstPage.last_page > 1
@@ -116,7 +168,7 @@ async function getAllUsers() {
     const pageRequests = [];
 
     for (let nextPage = 2; nextPage <= lastPage; nextPage += 1) {
-      pageRequests.push(userService.getUsers(nextPage));
+      pageRequests.push(fetchPage(nextPage));
     }
 
     const pageResults = await Promise.all(pageRequests);
@@ -127,12 +179,63 @@ async function getAllUsers() {
     });
   }
 
-  return collectedUsers.map(mapUserResponse);
+  return collectedUsers;
+}
+
+async function getRegularUsers() {
+  const allUsers = await getAllUsersFromEndpoint((page) =>
+    userService.getUsers({ page, limit: FETCH_LIMIT }),
+  );
+
+  let adminUserIds = new Set();
+
+  try {
+    const adminUsers = await getAllUsersFromEndpoint((page) =>
+      userService.getAdminUsers({ page, limit: FETCH_LIMIT }),
+    );
+
+    adminUserIds = new Set(
+      adminUsers.map((user) => user?.id).filter(Boolean),
+    );
+  } catch (error) {
+    console.error("Failed to load admin users while filtering regular users:", error);
+  }
+
+  return allUsers
+    .filter((user) => !adminUserIds.has(user?.id))
+    .map((user) => mapUserResponse(user, { isAdmin: false }));
+}
+
+async function getAdminUsers() {
+  const adminUsers = await getAllUsersFromEndpoint((page) =>
+    userService.getAdminUsers({ page, limit: FETCH_LIMIT }),
+  );
+
+  const detailedAdminUsers = await Promise.all(
+    adminUsers.map(async (user) => {
+      try {
+        const detailedUser = await userService.getUser(user.id);
+        return mapUserResponse(detailedUser, { isAdmin: true });
+      } catch (error) {
+        console.error(`Failed to load admin user details for ${user.id}:`, error);
+        return mapUserResponse(user, { isAdmin: true });
+      }
+    }),
+  );
+
+  return detailedAdminUsers;
+}
+
+async function getUsersByType(userType) {
+  if (userType === ADMIN_USER_TYPE) {
+    return getAdminUsers();
+  }
+
+  return getRegularUsers();
 }
 
 export function useUsers() {
   const [users, setUsers] = useState([]);
-  const allRoles = useAllRoles();
   const [search, setSearch] = useState("");
   const [userType, setUserType] = useState(REGULAR_USER_TYPE);
   const [status, setStatus] = useState("");
@@ -140,33 +243,84 @@ export function useUsers() {
   const [successMessage, setSuccessMessage] = useState("");
   const [fetchError, setFetchError] = useState("");
   const [loading, setLoading] = useState(true);
+  const latestFetchRef = useRef(0);
+  const regularUserAccessSelectionsRef = useRef({});
 
-  // =========================
-  // FETCH USERS
-  // =========================
-  const fetchUsers = async ({ showLoading = true } = {}) => {
+  const saveRegularUserAccessSelection = (user, accessibleClientIds = []) => {
+    const nextSelections = { ...regularUserAccessSelectionsRef.current };
+    const normalizedAccessibleClientIds = normalizeClientIds(accessibleClientIds);
+    const userIdKey = getUserIdKey(user);
+    const userEmailKey = getUserEmailKey(user);
+
+    if (normalizedAccessibleClientIds.length === 0) {
+      if (userIdKey) {
+        delete nextSelections[userIdKey];
+      }
+
+      if (userEmailKey) {
+        delete nextSelections[userEmailKey];
+      }
+    } else {
+      if (userIdKey) {
+        nextSelections[userIdKey] = normalizedAccessibleClientIds;
+      }
+
+      if (userEmailKey) {
+        nextSelections[userEmailKey] = normalizedAccessibleClientIds;
+      }
+    }
+
+    regularUserAccessSelectionsRef.current = nextSelections;
+  };
+
+  const fetchUsers = async (
+    selectedUserType = userType,
+    { showLoading = true } = {},
+  ) => {
+    const fetchId = latestFetchRef.current + 1;
+    latestFetchRef.current = fetchId;
+
     try {
       if (showLoading) {
         setLoading(true);
       }
 
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
+      const nextUsers = await getUsersByType(selectedUserType);
+      const usersWithLocalSelections =
+        selectedUserType === REGULAR_USER_TYPE
+          ? applyRegularUserAccessSelections(
+              nextUsers,
+              regularUserAccessSelectionsRef.current,
+            )
+          : nextUsers;
+
+      if (latestFetchRef.current !== fetchId) {
+        return;
+      }
+
+      setUsers(usersWithLocalSelections);
       setFetchError("");
+      return usersWithLocalSelections;
     } catch (error) {
       console.error("Fetch users error:", error);
+
+      if (latestFetchRef.current !== fetchId) {
+        return;
+      }
+
       setUsers([]);
       setFetchError("Failed to load users. Check the backend connection.");
+      return [];
     } finally {
-      if (showLoading) {
+      if (showLoading && latestFetchRef.current === fetchId) {
         setLoading(false);
       }
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(userType);
+  }, [userType]);
 
   const setSearchKeyword = (value) => {
     const nextValue = typeof value === "string" ? value : "";
@@ -186,94 +340,113 @@ export function useUsers() {
     setUserType(nextValue);
   };
 
-  // =========================
-  // CREATE USER
-  // =========================
   const createUser = async (newUser) => {
     try {
+      const isAdminUser = newUser.userType === ADMIN_USER_TYPE;
       const payload = {
         email: newUser.email,
         first_name: newUser.givenName,
         middle_name: newUser.middleName,
         last_name: newUser.surname,
         name_suffix: newUser.suffix,
-        password: newUser.tempPassword || "TempPass123!",
+        password: newUser.tempPassword,
         status: newUser.status,
+        role_id:
+          isAdminUser
+            ? normalizeRoleId(newUser.roleId)
+            : null,
       };
-
-      if (newUser.userType === ADMIN_USER_TYPE) {
-        payload.role_id = newUser.roleId ?? null;
-      } else {
-        payload.roles = newUser.roles;
-      }
 
       await userService.createUser(payload);
 
+      if (!isAdminUser) {
+        saveRegularUserAccessSelection(newUser, newUser.accessibleClientIds);
+      }
+
       setSuccessMessage("User successfully created!");
-      await fetchUsers({ showLoading: false });
+      await fetchUsers(userType, { showLoading: false });
     } catch (error) {
       console.error("Create user error:", error);
       throw error;
     }
   };
 
-  // =========================
-  // DELETE USER
-  // =========================
   const deleteUser = async (userId, label) => {
     try {
       setFetchError("");
       await userService.deleteUser(userId);
       setSuccessMessage(`User ${label} deleted successfully`);
-      await fetchUsers({ showLoading: false });
+      await fetchUsers(userType, { showLoading: false });
     } catch (error) {
       console.error("Delete error:", error);
       setFetchError(`Failed to delete ${label}.`);
     }
   };
 
-  // =========================
-  // UPDATE USER
-  // =========================
   const updateUser = async (updatedUser, originalUser = {}) => {
     const isAdminUserUpdate = updatedUser?.userType === ADMIN_USER_TYPE;
     const nextStatus = normalizeStatus(updatedUser?.status);
     const previousStatus = normalizeStatus(originalUser?.status);
-    const nextRoles = normalizeRoleNames(updatedUser?.roles);
-    const previousRoles = normalizeRoleNames(originalUser?.roles);
+    const nextAccessibleClientIds = normalizeClientIds(updatedUser?.accessibleClientIds);
+    const previousAccessibleClientIds = normalizeClientIds(originalUser?.accessibleClientIds);
+    const nextRoleId = isAdminUserUpdate ? normalizeRoleId(updatedUser?.roleId) : null;
+    const previousRoleId = isAdminUserUpdate
+      ? normalizeRoleId(originalUser?.roleId)
+      : null;
     const shouldUpdateStatus = Boolean(nextStatus) && nextStatus !== previousStatus;
-    const shouldUpdateRoles = !areSameStringArrays(nextRoles, previousRoles);
-    let rolesWereUpdated = false;
+    const shouldUpdateRole = isAdminUserUpdate && nextRoleId !== previousRoleId;
+    const shouldUpdateAccessibleClients =
+      !isAdminUserUpdate &&
+      !areSameArrays(nextAccessibleClientIds, previousAccessibleClientIds);
+    let roleWasUpdated = false;
 
     try {
-      if (!shouldUpdateStatus && !shouldUpdateRoles) {
+      if (!shouldUpdateStatus && !shouldUpdateRole && !shouldUpdateAccessibleClients) {
         return;
       }
 
-      if (shouldUpdateRoles) {
-        if (isAdminUserUpdate) {
-          await userService.updateUserRole(updatedUser.id, updatedUser.roleId ?? null);
-        } else {
-          const nextRoleIds = normalizeRoleIds(updatedUser?.roleIds);
-          await userService.updateUserRoles(updatedUser.id, nextRoleIds);
-        }
-        rolesWereUpdated = true;
+      if (shouldUpdateAccessibleClients) {
+        saveRegularUserAccessSelection(updatedUser, nextAccessibleClientIds);
+      }
+
+      if (shouldUpdateRole) {
+        await userService.updateUserRole(updatedUser.id, nextRoleId);
+        roleWasUpdated = true;
       }
 
       if (shouldUpdateStatus) {
         await userService.updateUserStatus(updatedUser.id, nextStatus);
       }
 
-      setSuccessMessage("User successfully updated!");
-      await fetchUsers({ showLoading: false });
-    } catch (error) {
-      if (rolesWereUpdated) {
-        await fetchUsers({ showLoading: false });
+      setSuccessMessage(
+        shouldUpdateAccessibleClients && !shouldUpdateStatus && !shouldUpdateRole
+          ? "App client access updated."
+          : "User successfully updated!",
+      );
+
+      if (shouldUpdateStatus || shouldUpdateRole) {
+        await fetchUsers(userType, { showLoading: false });
+        return;
       }
 
-      if (rolesWereUpdated && isStatusRequestError(error)) {
+      setUsers((currentUsers) =>
+        currentUsers.map((user) =>
+          user.id === updatedUser.id
+            ? {
+                ...user,
+                accessibleClientIds: nextAccessibleClientIds,
+              }
+            : user,
+        ),
+      );
+    } catch (error) {
+      if (roleWasUpdated) {
+        await fetchUsers(userType, { showLoading: false });
+      }
+
+      if (roleWasUpdated && isStatusRequestError(error)) {
         throw new Error(
-          "Roles were updated, but the backend rejected the status update request.",
+          "The role was updated, but the backend rejected the status update request.",
         );
       }
 
@@ -282,22 +455,12 @@ export function useUsers() {
     }
   };
 
-  // =========================
-  // FILTER USERS
-  // =========================
-  const filteredUsers = users
-    .map((user) => ({
-      ...user,
-      roles: normalizeVisibleRoles(user.roles, allRoles),
-    }))
-    .filter((user) => {
-      const matchesSearch = matchesUserSearch(user, search);
-      const matchesStatus = status ? user.status === status : true;
-      const matchesUserType =
-        userType === ADMIN_USER_TYPE ? user.isAdmin : !user.isAdmin;
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch = matchesUserSearch(user, search);
+    const matchesStatus = status ? user.status === status : true;
 
-      return matchesSearch && matchesStatus && matchesUserType;
-    });
+    return matchesSearch && matchesStatus;
+  });
 
   const totalResults = filteredUsers.length;
   const totalPages = Math.max(1, Math.ceil(totalResults / ITEMS_PER_PAGE));

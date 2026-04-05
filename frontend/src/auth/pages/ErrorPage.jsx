@@ -1,16 +1,76 @@
 import { useNavigate } from "react-router-dom";
 import { clearIdpErrorMessage, clearIdpErrorReturnPath, getIdpErrorMessage, getIdpErrorReturnPath } from "../utils/idpErrorPage";
+import { userService } from "../../services/userService";
+import { resolveUserIsAdmin } from "../../utils/userPoolAccess";
+
+const DEFAULT_ERROR_RETURN_PATH = "/profile";
+const URL_PARSE_FALLBACK_ORIGIN = "https://idp.invalid";
+const ADMIN_ONLY_PATHS = new Set([
+  "/user-pool",
+  "/roles",
+  "/app-client",
+  "/audit-logs",
+  "/notifications",
+]);
+
+function getPathname(path = "") {
+  if (typeof path !== "string") {
+    return "";
+  }
+
+  const normalizedPath = path.trim();
+
+  if (!normalizedPath) {
+    return "";
+  }
+
+  try {
+    return new URL(
+      normalizedPath,
+      typeof window === "undefined"
+        ? URL_PARSE_FALLBACK_ORIGIN
+        : window.location.origin,
+    ).pathname;
+  } catch {
+    return normalizedPath.split(/[?#]/, 1)[0] || "";
+  }
+}
+
+function resolveSafeReturnPath(path = "", currentUser = {}) {
+  const normalizedPath = typeof path === "string" ? path.trim() : "";
+  const pathname = getPathname(normalizedPath);
+
+  if (!normalizedPath || !pathname) {
+    return DEFAULT_ERROR_RETURN_PATH;
+  }
+
+  if (!ADMIN_ONLY_PATHS.has(pathname)) {
+    return normalizedPath;
+  }
+
+  return resolveUserIsAdmin(currentUser)
+    ? normalizedPath
+    : DEFAULT_ERROR_RETURN_PATH;
+}
 
 export default function ErrorPage() {
   const navigate = useNavigate();
   const errorMessage = getIdpErrorMessage();
 
-  const handleGoBack = () => {
+  const handleGoBack = async () => {
     const returnPath = getIdpErrorReturnPath();
 
     clearIdpErrorMessage();
     clearIdpErrorReturnPath();
-    navigate(returnPath, { replace: true });
+
+    try {
+      const currentUser = await userService.getMe();
+      navigate(resolveSafeReturnPath(returnPath, currentUser), {
+        replace: true,
+      });
+    } catch {
+      navigate(DEFAULT_ERROR_RETURN_PATH, { replace: true });
+    }
   };
 
   return (
