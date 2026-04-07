@@ -17,18 +17,17 @@ import (
 
 // Action constants for audit logging
 const (
-	actionCreateUser   = "create_user"
-	actionListUsers    = "list_users"
-	actionGetUser      = "get_user"
-	actionGetMe        = "get_me"
-	actionUpdatePass   = "update_password"
-	actionUpdateStatus = "update_status"
+	actionCreateUser     = "create_user"
+	actionListUsers      = "list_users"
+	actionGetUser        = "get_user"
+	actionGetMe          = "get_me"
+	actionUpdatePass     = "update_password"
+	actionUpdateStatus   = "update_status"
 	actionUpdateUserRole = "update_user_role"
 	actionDeleteUser     = "delete_user"
 	actionListAdmins     = "list_admins"
 	actionUpdateAccess   = "update_user_access"
 )
-
 
 // UserHandler handles user management HTTP requests.
 type UserHandler struct {
@@ -37,8 +36,6 @@ type UserHandler struct {
 	ClientService service.ClientService
 	AccessService service.ClientAllowedUserService
 }
-
-
 
 // PostUser creates a new user in the system
 // @Summary Create User
@@ -854,6 +851,9 @@ func (h *UserHandler) GetUserAccess(c *gin.Context) {
 
 	result := make([]dto.ClientAccessResponse, 0, len(resp.Clients))
 	for _, cl := range resp.Clients {
+		if strings.Contains(cl.Name, "Identity Provider") {
+			continue
+		}
 		result = append(result, dto.ClientAccessResponse{
 			ID:   cl.ID,
 			Name: cl.Name,
@@ -930,4 +930,3 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Access synchronized!"})
 }
-
