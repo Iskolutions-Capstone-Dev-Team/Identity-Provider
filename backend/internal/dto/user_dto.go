@@ -26,7 +26,17 @@ type UpdateUserRoleRequest struct {
 	RoleID *int `json:"role_id"`
 }
 
+type UpdateUserAccessRequest struct {
+	ClientIDs []string `json:"client_ids" binding:"required"`
+}
+
+type ClientAccessResponse struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // UserResponse provides a safe view of user data, hiding the password hash.
+
 type UserResponse struct {
 	ID         string            `json:"id"`
 	FirstName  string            `json:"first_name"`
