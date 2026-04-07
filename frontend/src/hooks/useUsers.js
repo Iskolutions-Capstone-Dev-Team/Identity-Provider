@@ -1,10 +1,20 @@
 import { useEffect, useRef, useState } from "react";
+import { mailService } from "../services/mailService";
 import { userService } from "../services/userService";
+import { generateTemporaryPassword } from "../utils/passwordRules";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, normalizeRoleNames } from "../utils/userPoolAccess";
 
 const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
 const FETCH_LIMIT = 100;
 const ITEMS_PER_PAGE = 10;
+const INVITATION_ACCOUNT_SETUP = "invitation";
+const VALID_ACCOUNT_TYPES = new Set([
+  "admin",
+  "applicant",
+  "faculty",
+  "guest",
+  "student",
+]);
 
 function normalizeClientIds(clientIds = []) {
   return Array.from(
@@ -57,6 +67,18 @@ function normalizeStatus(status) {
 
   const normalizedStatus = status.trim().toLowerCase();
   return EDITABLE_STATUS_VALUES.has(normalizedStatus) ? normalizedStatus : "";
+}
+
+function normalizeAccountType(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const normalizedAccountType = value.trim().toLowerCase();
+
+  return VALID_ACCOUNT_TYPES.has(normalizedAccountType)
+    ? normalizedAccountType
+    : "";
 }
 
 function normalizeRoleId(value) {
@@ -387,8 +409,21 @@ export function useUsers() {
 
   const createUser = async (newUser) => {
     const isAdminUser = newUser.userType === ADMIN_USER_TYPE;
+    const isInvitationFlow =
+      !isAdminUser && newUser.accountSetupType === INVITATION_ACCOUNT_SETUP;
+    const accountType = isInvitationFlow
+      ? normalizeAccountType(newUser.accountType)
+      : "";
     const nextAccessibleClientIds = normalizeClientIds(newUser.accessibleClientIds);
+    const temporaryPassword = isInvitationFlow
+      ? generateTemporaryPassword()
+      : newUser.tempPassword;
     let userWasCreated = false;
+    let followUpStep = "create_user";
+
+    if (isInvitationFlow && !accountType) {
+      throw new Error("Select an account type.");
+    }
 
     try {
       const payload = {
@@ -397,7 +432,7 @@ export function useUsers() {
         middle_name: newUser.middleName,
         last_name: newUser.surname,
         name_suffix: newUser.suffix,
-        password: newUser.tempPassword,
+        password: temporaryPassword,
         status: newUser.status,
         role_id:
           isAdminUser
@@ -407,6 +442,7 @@ export function useUsers() {
 
       const createdUserResponse = await userService.createUser(payload);
       userWasCreated = true;
+      followUpStep = "sync_access";
 
       if (!isAdminUser && nextAccessibleClientIds.length > 0) {
         const createdUserId =
@@ -429,17 +465,34 @@ export function useUsers() {
         );
       }
 
-      setSuccessMessage("User successfully created!");
+      if (isInvitationFlow) {
+        followUpStep = "send_invitation";
+        await mailService.sendInvitation({
+          email: newUser.email,
+          invitationType: accountType,
+        });
+      }
+
+      followUpStep = "complete";
+      setSuccessMessage(
+        isInvitationFlow
+          ? "User created and invitation sent!"
+          : "User successfully created!",
+      );
       await fetchUsers(userType, { showLoading: false });
     } catch (error) {
       console.error("Create user error:", error);
 
       if (userWasCreated) {
         await fetchUsers(userType, { showLoading: false });
-        throw new Error(
-          error?.message ||
-            "The user was created, but app-client access could not be completed.",
-        );
+        const fallbackMessage =
+          followUpStep === "sync_access"
+            ? "The user was created, but app-client access could not be completed."
+            : followUpStep === "send_invitation"
+              ? "The user was created, but the invitation could not be sent."
+              : "The user was created, but follow-up setup could not be completed.";
+
+        throw new Error(error?.message || fallbackMessage);
       }
 
       throw error;
