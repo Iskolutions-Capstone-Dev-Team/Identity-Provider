@@ -10,7 +10,7 @@ export const mailService = {
       invitation_type: normalizeTextValue(invitationType).toLowerCase(),
     };
 
-    const response = await axiosInstance.post("/mail/invitation", payload, {
+    const response = await axiosInstance.post("/admin/mail/invitation", payload, {
       headers: { "Content-Type": "application/json" },
     });
 
