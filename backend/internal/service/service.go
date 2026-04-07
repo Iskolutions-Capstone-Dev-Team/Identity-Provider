@@ -7,5 +7,6 @@ type ServiceContainer struct {
 	AuthService              AuthService
 	LogService               LogService
 	PermissionService        PermissionService
+	MailService              MailService
 	ClientAllowedUserService ClientAllowedUserService
 }
