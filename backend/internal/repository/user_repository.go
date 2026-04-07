@@ -93,6 +93,10 @@ func (r *userRepository) GetUserList(ctx context.Context,
 		result = append(result, user)
 	}
 
+	if err := r.populateClients(ctx, result); err != nil {
+		return nil, fmt.Errorf("[GetBoundList] Prep: %w", err)
+	}
+
 	return result, nil
 }
 
@@ -149,6 +153,10 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 			}
 		}
 		result = append(result, user)
+	}
+
+	if err := r.populateClients(ctx, result); err != nil {
+		return nil, fmt.Errorf("[GetBoundList] Prep: %w", err)
 	}
 
 	return result, nil
@@ -225,6 +233,10 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 			}
 		}
 		result = append(result, user)
+	}
+
+	if err := r.populateClients(ctx, result); err != nil {
+		return nil, fmt.Errorf("[GetBoundList] Prep: %w", err)
 	}
 
 	return result, nil
@@ -419,4 +431,61 @@ func (r *userRepository) RemoveClientAdminBind(ctx context.Context,
 
 func NewUserRepository(db *sqlx.DB) UserRepository {
 	return &userRepository{db: db}
+}
+
+type clientAccessRow struct {
+	UserID     []byte `db:"user_id"`
+	ClientID   []byte `db:"client_id"`
+	ClientName string `db:"client_name"`
+}
+
+/**
+ * populateClients fetches and assigns allowed clients to a list of users.
+ */
+func (r *userRepository) populateClients(ctx context.Context,
+	users []models.User,
+) error {
+	if len(users) == 0 {
+		return nil
+	}
+
+	userIDs := make([][]byte, 0, len(users))
+	for _, u := range users {
+		userIDs = append(userIDs, u.ID)
+	}
+
+	const query = `
+		SELECT cau.user_id, c.id AS client_id, c.client_name
+		FROM client_allowed_users cau
+		JOIN clients c ON cau.client_id = c.id
+		WHERE cau.user_id IN (?)
+	`
+
+	fullQuery, args, err := sqlx.In(query, userIDs)
+	if err != nil {
+		return fmt.Errorf("In-Query Expansion: %w", err)
+	}
+
+	fullQuery = r.db.Rebind(fullQuery)
+
+	var rows []clientAccessRow
+	err = r.db.SelectContext(ctx, &rows, fullQuery, args...)
+	if err != nil {
+		return fmt.Errorf("Database Map Fetch: %w", err)
+	}
+
+	clientMap := make(map[string][]models.Client)
+	for _, row := range rows {
+		userKey := string(row.UserID)
+		clientMap[userKey] = append(clientMap[userKey], models.Client{
+			ID:         row.ClientID,
+			ClientName: row.ClientName,
+		})
+	}
+
+	for i := range users {
+		users[i].AllowedClients = clientMap[string(users[i].ID)]
+	}
+
+	return nil
 }
