@@ -42,19 +42,8 @@ function getUserLabel(user) {
   return user.displayName || user.email || "User";
 }
 
-function getAccessGridClassName(items = []) {
-  const hasMultipleItems = items.length > 1;
-
-  if (!hasMultipleItems) {
-    return "grid grid-cols-1 justify-items-start gap-1";
-  }
-
-  return "grid grid-cols-1 justify-items-start gap-1 lg:grid-cols-2";
-}
-
-function getAccessItemClassName(itemLabel) {
-  const isWideItem = itemLabel.length > 18;
-  return isWideItem ? "lg:col-span-2" : "";
+function getAccessListClassName() {
+  return "flex flex-wrap items-center justify-center gap-2";
 }
 
 function getColumnWidths(isAdminView) {
@@ -218,9 +207,9 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
                         <span className={roleBadgeClassName}>{accessItems[0]}</span>
                       </div>
                     ) : (
-                      <div className={getAccessGridClassName(accessItems)}>
+                      <div className={getAccessListClassName()}>
                         {accessItems.map((item, itemIndex) => (
-                          <div key={`${item}-${itemIndex}`} className={getAccessItemClassName(item)}>
+                          <div key={`${item}-${itemIndex}`} className="flex justify-center">
                             <span className={roleBadgeClassName}>
                               {item}
                             </span>
