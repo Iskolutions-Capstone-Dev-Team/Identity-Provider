@@ -14,7 +14,7 @@ import PageHeader from "../components/PageHeader";
 import ErrorAlert from "../components/ErrorAlert";
 import { EMPTY_CURRENT_USER, hasCurrentUserRole } from "../hooks/useCurrentUser";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
-import { useAllAppClients } from "../hooks/useAllAppClients";
+import { useManagedUserAccessClients } from "../hooks/useManagedUserAccessClients";
 import { REGULAR_USER_TYPE } from "../utils/userPoolAccess";
 
 const ITEMS_PER_PAGE = 10;
@@ -50,7 +50,7 @@ export default function UserPool() {
     updateUser,
     deleteUser,
   } = useUsers();
-  const { appClients, isLoadingAppClients } = useAllAppClients();
+  const { appClients, isLoadingAppClients } = useManagedUserAccessClients();
   const [openViewEditModal, setOpenViewEditModal] = useState(false);
   const [modalMode, setModalMode] = useState("view");
   const [selectedUser, setSelectedUser] = useState(null);

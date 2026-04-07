@@ -7,7 +7,36 @@ const FETCH_LIMIT = 100;
 const ITEMS_PER_PAGE = 10;
 
 function normalizeClientIds(clientIds = []) {
-  return Array.from(new Set((Array.isArray(clientIds) ? clientIds : []).filter(Boolean)));
+  return Array.from(
+    new Set(
+      (Array.isArray(clientIds) ? clientIds : [])
+        .map((clientId) => (typeof clientId === "string" ? clientId.trim() : ""))
+        .filter(Boolean),
+    ),
+  );
+}
+
+function normalizeEmailAddress(email) {
+  return typeof email === "string" ? email.trim().toLowerCase() : "";
+}
+
+function getAccessibleClientIds(user = {}) {
+  const directClientIds = normalizeClientIds(
+    user?.accessibleClientIds ??
+      user?.accessible_client_ids ??
+      user?.clientIds ??
+      user?.client_ids,
+  );
+
+  if (directClientIds.length > 0) {
+    return directClientIds;
+  }
+
+  return normalizeClientIds(
+    (Array.isArray(user?.clients) ? user.clients : []).map(
+      (client) => client?.id ?? client?.client_id ?? client?.clientId ?? "",
+    ),
+  );
 }
 
 function areSameArrays(first = [], second = []) {
@@ -114,7 +143,7 @@ function mapUserResponse(user = {}, { isAdmin = false } = {}) {
     createdAt: user.created_at,
     roleId: getUserRoleId(user),
     roles: normalizeRoleNames(user.roles),
-    accessibleClientIds: normalizeClientIds(user.accessibleClientIds),
+    accessibleClientIds: getAccessibleClientIds(user),
     isAdmin,
   };
 }
@@ -234,6 +263,22 @@ async function getUsersByType(userType) {
   return getRegularUsers();
 }
 
+async function findRegularUserByEmail(email) {
+  const normalizedEmail = normalizeEmailAddress(email);
+
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  const regularUsers = await getRegularUsers();
+
+  return (
+    regularUsers.find(
+      (user) => normalizeEmailAddress(user?.email) === normalizedEmail,
+    ) ?? null
+  );
+}
+
 export function useUsers() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
@@ -309,7 +354,7 @@ export function useUsers() {
       }
 
       setUsers([]);
-      setFetchError("Failed to load users. Check the backend connection.");
+      setFetchError("Unable to load users right now.");
       return [];
     } finally {
       if (showLoading && latestFetchRef.current === fetchId) {
@@ -341,8 +386,11 @@ export function useUsers() {
   };
 
   const createUser = async (newUser) => {
+    const isAdminUser = newUser.userType === ADMIN_USER_TYPE;
+    const nextAccessibleClientIds = normalizeClientIds(newUser.accessibleClientIds);
+    let userWasCreated = false;
+
     try {
-      const isAdminUser = newUser.userType === ADMIN_USER_TYPE;
       const payload = {
         email: newUser.email,
         first_name: newUser.givenName,
@@ -357,16 +405,43 @@ export function useUsers() {
             : null,
       };
 
-      await userService.createUser(payload);
+      const createdUserResponse = await userService.createUser(payload);
+      userWasCreated = true;
 
-      if (!isAdminUser) {
-        saveRegularUserAccessSelection(newUser, newUser.accessibleClientIds);
+      if (!isAdminUser && nextAccessibleClientIds.length > 0) {
+        const createdUserId =
+          createdUserResponse?.createdUserId ||
+          (await findRegularUserByEmail(newUser.email))?.id;
+
+        if (!createdUserId) {
+          throw new Error(
+            "The user was created, but app-client access could not be saved. Please edit the user and try again.",
+          );
+        }
+
+        await userService.updateUserAccess(createdUserId, nextAccessibleClientIds);
+        saveRegularUserAccessSelection(
+          {
+            id: createdUserId,
+            email: newUser.email,
+          },
+          nextAccessibleClientIds,
+        );
       }
 
       setSuccessMessage("User successfully created!");
       await fetchUsers(userType, { showLoading: false });
     } catch (error) {
       console.error("Create user error:", error);
+
+      if (userWasCreated) {
+        await fetchUsers(userType, { showLoading: false });
+        throw new Error(
+          error?.message ||
+            "The user was created, but app-client access could not be completed.",
+        );
+      }
+
       throw error;
     }
   };
@@ -398,6 +473,7 @@ export function useUsers() {
     const shouldUpdateAccessibleClients =
       !isAdminUserUpdate &&
       !areSameArrays(nextAccessibleClientIds, previousAccessibleClientIds);
+    let accessWasUpdated = false;
     let roleWasUpdated = false;
 
     try {
@@ -406,7 +482,9 @@ export function useUsers() {
       }
 
       if (shouldUpdateAccessibleClients) {
+        await userService.updateUserAccess(updatedUser.id, nextAccessibleClientIds);
         saveRegularUserAccessSelection(updatedUser, nextAccessibleClientIds);
+        accessWasUpdated = true;
       }
 
       if (shouldUpdateRole) {
@@ -440,13 +518,19 @@ export function useUsers() {
         ),
       );
     } catch (error) {
-      if (roleWasUpdated) {
+      if (accessWasUpdated || roleWasUpdated) {
         await fetchUsers(userType, { showLoading: false });
+      }
+
+      if (accessWasUpdated && isStatusRequestError(error)) {
+        throw new Error(
+          "App-client access was updated, but the status could not be saved.",
+        );
       }
 
       if (roleWasUpdated && isStatusRequestError(error)) {
         throw new Error(
-          "The role was updated, but the backend rejected the status update request.",
+          "The role was updated, but the status could not be saved.",
         );
       }
 

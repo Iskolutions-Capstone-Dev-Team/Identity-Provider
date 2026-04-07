@@ -26,36 +26,49 @@ type UpdateUserRoleRequest struct {
 	RoleID *int `json:"role_id"`
 }
 
+type UpdateUserAccessRequest struct {
+	ClientIDs []string `json:"client_ids" binding:"required"`
+}
+
+type ClientAccessResponse struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // UserResponse provides a safe view of user data, hiding the password hash.
+
 type UserResponse struct {
-	ID         string            `json:"id"`
-	FirstName  string            `json:"first_name"`
-	MiddleName string            `json:"middle_name"`
-	LastName   string            `json:"last_name"`
-	NameSuffix string            `json:"name_suffix"`
-	Email      string            `json:"email"`
-	Status     string            `json:"status"`
-	CreatedAt  string            `json:"created_at"`
-	UpdatedAt  string            `json:"updated_at"`
-	Roles      *UserRoleResponse `json:"roles,omitempty"`
+	ID         string                 `json:"id"`
+	FirstName  string                 `json:"first_name"`
+	MiddleName string                 `json:"middle_name"`
+	LastName   string                 `json:"last_name"`
+	NameSuffix string                 `json:"name_suffix"`
+	Email      string                 `json:"email"`
+	Status     string                 `json:"status"`
+	CreatedAt  string                 `json:"created_at"`
+	UpdatedAt  string                 `json:"updated_at"`
+	Roles      *UserRoleResponse      `json:"roles,omitempty"`
+	Clients    []ClientAccessResponse `json:"clients,omitempty"`
 }
 
 // UserSimplifiedResponse provides user data without role details.
 type UserSimplifiedResponse struct {
-	ID         string `json:"id"`
-	FirstName  string `json:"first_name"`
-	MiddleName string `json:"middle_name"`
-	LastName   string `json:"last_name"`
-	NameSuffix string `json:"name_suffix"`
-	Email      string `json:"email"`
-	Status     string `json:"status"`
-	CreatedAt  string `json:"created_at"`
-	UpdatedAt  string `json:"updated_at"`
+	ID         string                 `json:"id"`
+	FirstName  string                 `json:"first_name"`
+	MiddleName string                 `json:"middle_name"`
+	LastName   string                 `json:"last_name"`
+	NameSuffix string                 `json:"name_suffix"`
+	Email      string                 `json:"email"`
+	Status     string                 `json:"status"`
+	CreatedAt  string                 `json:"created_at"`
+	UpdatedAt  string                 `json:"updated_at"`
+	Clients    []ClientAccessResponse `json:"clients,omitempty"`
 }
 
 // UserSimplifiedResponseList is a paginated list of simplified user views.
 type UserSimplifiedResponseList struct {
 	Users       []UserSimplifiedResponse `json:"users"`
+	Clients     []ClientAccessResponse   `json:"clients,omitempty"`
 	TotalCount  int                      `json:"total_count"`
 	CurrentPage int                      `json:"current_page"`
 	LastPage    int                      `json:"last_page"`

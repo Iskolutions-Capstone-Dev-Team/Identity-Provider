@@ -51,6 +51,7 @@ func MigrateAndSeed() {
 		"roles",
 		"admin_allowed_clients",
 		"role_permissions",
+		"client_allowed_users",
 	}
 
 	for _, tableName := range privilegedTables {

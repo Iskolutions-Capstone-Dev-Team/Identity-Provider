@@ -36,12 +36,16 @@ type UserService interface {
 }
 
 type userService struct {
-	Repo repository.UserRepository
+	Repo       repository.UserRepository
+	ClientRepo repository.ClientRepository
 }
 
-func NewUserService(repo repository.UserRepository) UserService {
+func NewUserService(repo repository.UserRepository,
+	clientRepo repository.ClientRepository,
+) UserService {
 	return &userService{
-		Repo: repo,
+		Repo:       repo,
+		ClientRepo: clientRepo,
 	}
 }
 
@@ -135,15 +139,43 @@ func (s *userService) GetFilteredUserList(
 	limit,
 	page int,
 ) (*dto.UserSimplifiedResponseList, error) {
+	var resp *dto.UserSimplifiedResponseList
+	var err error
+
 	if slices.Contains(permissions, "View all users") {
-		return s.GetUserList(ctx, limit, page)
+		resp, err = s.GetUserList(ctx, limit, page)
+	} else if slices.Contains(permissions, "View users based on appclient") {
+		resp, err = s.GetBoundUserList(ctx, limit, page, userID)
+	} else {
+		return nil, fmt.Errorf("Privilege Validation: unauthorized level")
 	}
 
-	if slices.Contains(permissions, "View users based on appclient") {
-		return s.GetBoundUserList(ctx, limit, page, userID)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("Privilege Validation: unauthorized level")
+	// Fetch top-level client list for filtering
+	var clients []models.Client
+	if slices.Contains(permissions, "View all users") {
+		clients, err = s.ClientRepo.ListClients(ctx, 100, 0, "")
+	} else {
+		clients, err = s.ClientRepo.ListBoundClients(ctx, 100, 0, "", userID[:])
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("Client Fetch: %w", err)
+	}
+
+	resp.Clients = make([]dto.ClientAccessResponse, 0, len(clients))
+	for _, c := range clients {
+		cUUID, _ := uuid.FromBytes(c.ID)
+		resp.Clients = append(resp.Clients, dto.ClientAccessResponse{
+			ID:   cUUID.String(),
+			Name: c.ClientName,
+		})
+	}
+
+	return resp, nil
 }
 
 /**
@@ -343,6 +375,17 @@ func (s *userService) mapToUserResponse(
 		}
 	}
 
+	clients := make([]dto.ClientAccessResponse, 0, len(user.AllowedClients))
+	for _, client := range user.AllowedClients {
+		clientUUID, _ := uuid.FromBytes(client.ID)
+		clients = append(clients, dto.ClientAccessResponse{
+			ID:   clientUUID.String(),
+			Name: client.ClientName,
+		})
+	}
+
+	resp.Clients = clients
+
 	return resp
 }
 
@@ -350,6 +393,15 @@ func (s *userService) mapToSimplifiedUserResponse(
 	user models.User,
 	id uuid.UUID,
 ) *dto.UserSimplifiedResponse {
+	clients := make([]dto.ClientAccessResponse, 0, len(user.AllowedClients))
+	for _, client := range user.AllowedClients {
+		clientUUID, _ := uuid.FromBytes(client.ID)
+		clients = append(clients, dto.ClientAccessResponse{
+			ID:   clientUUID.String(),
+			Name: client.ClientName,
+		})
+	}
+
 	return &dto.UserSimplifiedResponse{
 		ID:         id.String(),
 		FirstName:  user.FirstName,
@@ -360,6 +412,7 @@ func (s *userService) mapToSimplifiedUserResponse(
 		Status:     string(user.Status),
 		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
 		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+		Clients:    clients,
 	}
 }
 

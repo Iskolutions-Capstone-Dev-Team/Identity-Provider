@@ -265,7 +265,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                   ? "View the user's account information."
                   : isAdminView
                     ? "Update the admin role and account status."
-                    : "Update the account status and frontend app-client selection."}
+                    : "Update the account status and app-client access."}
               </p>
             </div>
 

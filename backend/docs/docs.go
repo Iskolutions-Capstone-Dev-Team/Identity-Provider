@@ -23,9 +23,100 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/roles": {
+        "/.well-known/jwks.json": {
             "get": {
-                "description": "Searches for roles matching the provided query parameter.",
+                "description": "Retrieve the JSON Web Key Set for verifying JWT signatures",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "JSON Web Key Set"
+                ],
+                "summary": "Get JWKS",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users/access": {
+            "get": {
+                "description": "Fetch all client IDs and names managed by the admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List Managed Clients",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.ClientAccessResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users/admins": {
+            "get": {
+                "description": "Get a paginated list of all accounts that have a role",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List Admin Users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponseList"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users/{id}/access": {
+            "put": {
+                "description": "Updates user client access mapping within the admin's scope.",
                 "consumes": [
                     "application/json"
                 ],
@@ -33,33 +124,42 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "roles"
+                    "Users"
                 ],
-                "summary": "Search roles by keyword",
+                "summary": "Sync User Client Access",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search term for role names",
-                        "name": "keyword",
-                        "in": "query",
+                        "description": "User ID (UUID)",
+                        "name": "id",
+                        "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Access data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateUserAccessRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.RoleListResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
-                    "501": {
-                        "description": "Not Implemented",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -128,6 +228,9 @@ const docTemplate = `{
         "/api/v1/auth/logout": {
             "post": {
                 "description": "Clear session cookie and revoke all issued tokens for the user",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -135,6 +238,17 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Global Logout",
+                "parameters": [
+                    {
+                        "description": "Logout Request",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LogoutRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -281,6 +395,137 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/logs": {
+            "get": {
+                "description": "Returns a paginated list of audit logs with optional filters.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Logs"
+                ],
+                "summary": "List audit logs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by actor (email or ID)",
+                        "name": "actor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by action",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by target",
+                        "name": "target",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by status (success/fail)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by created_at \u003e= (RFC3339)",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by created_at \u003c= (RFC3339)",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetAuditLogListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/logs/{id}": {
+            "get": {
+                "description": "Returns a single audit log entry.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Logs"
+                ],
+                "summary": "Get audit log by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Log ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PostAuditLogRequest"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users": {
             "get": {
                 "description": "Get a paginated list of all users",
@@ -304,7 +549,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponseList"
+                            "$ref": "#/definitions/dto.UserSimplifiedResponseList"
                         }
                     },
                     "500": {
@@ -447,7 +692,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "Users"
                 ],
                 "summary": "Update user password",
                 "parameters": [
@@ -500,7 +745,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "Users"
                 ],
                 "summary": "Update user status",
                 "parameters": [
@@ -547,7 +792,7 @@ const docTemplate = `{
             "get": {
                 "description": "Validates the authorization request for the user.",
                 "tags": [
-                    "auth"
+                    "Authentication"
                 ],
                 "summary": "Authorize user",
                 "responses": {
@@ -575,57 +820,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/clients/tags": {
-            "get": {
-                "description": "Fetches tags based on limit, page, and keyword filters.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "clients"
-                ],
-                "summary": "Get client tags",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Items per page",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search keyword",
-                        "name": "keyword",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ClientListResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/clients/{id}/secret": {
             "patch": {
                 "description": "Updates the secret key associated with a specific client ID.",
@@ -636,7 +830,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "clients"
+                    "Clients"
                 ],
                 "summary": "Update client secret",
                 "parameters": [
@@ -664,9 +858,46 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}/roles": {
+        "/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns user profile filtered by client allowed roles",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get authenticated user info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/role": {
             "patch": {
-                "description": "Partially updates a user's role set based on the request body.",
+                "description": "Updates a user's role based on the request body.",
                 "consumes": [
                     "application/json"
                 ],
@@ -674,9 +905,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "Users"
                 ],
-                "summary": "Update user roles",
+                "summary": "Update user role",
                 "parameters": [
                     {
                         "type": "string",
@@ -721,7 +952,7 @@ const docTemplate = `{
             "get": {
                 "description": "Fetch active clients with pagination",
                 "tags": [
-                    "ServiceProviders"
+                    "Clients"
                 ],
                 "summary": "List Service Providers",
                 "parameters": [
@@ -760,7 +991,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "ServiceProviders"
+                    "Clients"
                 ],
                 "summary": "Register a new Service Provider with Icon",
                 "parameters": [
@@ -860,7 +1091,7 @@ const docTemplate = `{
             "get": {
                 "description": "Fetch full details including grants and roles",
                 "tags": [
-                    "ServiceProviders"
+                    "Clients"
                 ],
                 "summary": "Get Client Details",
                 "parameters": [
@@ -908,7 +1139,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "ServiceProviders"
+                    "Clients"
                 ],
                 "summary": "Update Client Info",
                 "parameters": [
@@ -943,7 +1174,7 @@ const docTemplate = `{
             },
             "delete": {
                 "tags": [
-                    "ServiceProviders"
+                    "Clients"
                 ],
                 "summary": "Soft Delete Client",
                 "parameters": [
@@ -1180,23 +1411,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.ClientListResponse": {
+        "dto.ClientAccessResponse": {
             "type": "object",
             "properties": {
-                "clients": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.ClientResponse"
-                    }
+                "id": {
+                    "type": "string"
                 },
-                "current_page": {
-                    "type": "integer"
-                },
-                "last_page": {
-                    "type": "integer"
-                },
-                "total_count": {
-                    "type": "integer"
+                "name": {
+                    "type": "string"
                 }
             }
         },
@@ -1238,9 +1460,6 @@ const docTemplate = `{
                 },
                 "redirect_uri": {
                     "type": "string"
-                },
-                "tag": {
-                    "type": "string"
                 }
             }
         },
@@ -1266,6 +1485,27 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.GetAuditLogListResponse": {
+            "type": "object",
+            "properties": {
+                "auditLogs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PostAuditLogRequest"
+                    }
+                },
+                "currentPage": {
+                    "type": "integer"
+                },
+                "lastPage": {
+                    "type": "integer"
+                },
+                "totalCount": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
         "dto.LoginRequest": {
             "type": "object",
             "required": [
@@ -1282,8 +1522,47 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.LogoutRequest": {
+            "type": "object",
+            "required": [
+                "client_id"
+            ],
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PostAuditLogRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "target"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string"
                 },
-                "redirect_uri": {
+                "actor": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "success",
+                        "fail"
+                    ]
+                },
+                "target": {
+                    "type": "string"
+                },
+                "timestamp": {
                     "type": "string"
                 }
             }
@@ -1325,6 +1604,12 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "permission_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "role_name": {
                     "type": "string"
                 }
@@ -1333,6 +1618,12 @@ const docTemplate = `{
         "dto.RoleResponse": {
             "type": "object",
             "properties": {
+                "can_delete": {
+                    "type": "boolean"
+                },
+                "can_edit": {
+                    "type": "boolean"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1341,6 +1632,12 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Permission"
+                    }
                 },
                 "role_name": {
                     "type": "string"
@@ -1419,17 +1716,51 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateUserRoleRequest": {
+        "dto.UpdateUserAccessRequest": {
             "type": "object",
             "required": [
-                "role_ids"
+                "client_ids"
             ],
             "properties": {
-                "role_ids": {
+                "client_ids": {
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "type": "string"
                     }
+                }
+            }
+        },
+        "dto.UpdateUserRoleRequest": {
+            "type": "object",
+            "properties": {
+                "role_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UserInfoResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "middle_name": {
+                    "type": "string"
+                },
+                "name_suffix": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "string"
                 }
             }
         },
@@ -1440,7 +1771,6 @@ const docTemplate = `{
                 "first_name",
                 "last_name",
                 "password",
-                "roles",
                 "status"
             ],
             "properties": {
@@ -1456,20 +1786,17 @@ const docTemplate = `{
                 "middle_name": {
                     "type": "string"
                 },
+                "name_suffix": {
+                    "type": "string"
+                },
                 "password": {
                     "type": "string",
                     "minLength": 8
                 },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "role_id": {
+                    "type": "integer"
                 },
                 "status": {
-                    "type": "string"
-                },
-                "user_name": {
                     "type": "string"
                 }
             }
@@ -1495,19 +1822,16 @@ const docTemplate = `{
                 "middle_name": {
                     "type": "string"
                 },
+                "name_suffix": {
+                    "type": "string"
+                },
                 "roles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UserRoleRepsonse"
-                    }
+                    "$ref": "#/definitions/dto.UserRoleResponse"
                 },
                 "status": {
                     "type": "string"
                 },
                 "updated_at": {
-                    "type": "string"
-                },
-                "user_name": {
                     "type": "string"
                 }
             }
@@ -1532,7 +1856,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UserRoleRepsonse": {
+        "dto.UserRoleResponse": {
             "type": "object",
             "properties": {
                 "description": {
@@ -1546,78 +1870,65 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Client": {
+        "dto.UserSimplifiedResponse": {
             "type": "object",
             "properties": {
-                "allowedRoles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Role"
-                    }
-                },
-                "baseUrl": {
+                "created_at": {
                     "type": "string"
                 },
-                "clientName": {
+                "email": {
                     "type": "string"
                 },
-                "clientSecret": {
+                "first_name": {
                     "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "grants": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "id": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "imageLocation": {
                     "type": "string"
                 },
-                "logoutUri": {
+                "last_name": {
                     "type": "string"
                 },
-                "oldSecret": {
+                "middle_name": {
                     "type": "string"
                 },
-                "redirectUri": {
+                "name_suffix": {
                     "type": "string"
                 },
-                "tag": {
+                "status": {
                     "type": "string"
                 },
-                "updatedAt": {
+                "updated_at": {
                     "type": "string"
                 }
             }
         },
-        "models.Role": {
+        "dto.UserSimplifiedResponseList": {
             "type": "object",
             "properties": {
-                "createdAt": {
-                    "type": "string"
+                "current_page": {
+                    "type": "integer"
                 },
-                "description": {
-                    "type": "string"
+                "last_page": {
+                    "type": "integer"
                 },
+                "total_count": {
+                    "type": "integer"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UserSimplifiedResponse"
+                    }
+                }
+            }
+        },
+        "models.Permission": {
+            "type": "object",
+            "properties": {
                 "id": {
                     "type": "integer"
                 },
-                "roleName": {
-                    "type": "string"
-                },
-                "updatedAt": {
+                "permissionName": {
                     "type": "string"
                 }
             }
@@ -1628,7 +1939,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
+	Host:             "identity-provider.isaxbsit2027.com",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Unified Access Identity Provider API",

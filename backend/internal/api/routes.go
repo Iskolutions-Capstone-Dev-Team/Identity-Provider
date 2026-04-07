@@ -87,8 +87,11 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.PATCH("/:id/status", h.UserHandler.PatchUserStatus)
 			users.PATCH("/:id/password", h.UserHandler.PatchUserPassword)
 			users.PATCH("/:id/role", h.UserHandler.PatchUserRole)
+			users.GET("/access", h.UserHandler.GetUserAccess)
+			users.PUT("/:id/access", h.UserHandler.PutUserAccess)
 			users.DELETE("/:id", h.UserHandler.DeleteUser)
 		}
+
 
 		logs := admin.Group("/logs")
 		{

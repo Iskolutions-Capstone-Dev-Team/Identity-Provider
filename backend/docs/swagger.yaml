@@ -1,17 +1,11 @@
 basePath: /api/v1
 definitions:
-  dto.ClientListResponse:
+  dto.ClientAccessResponse:
     properties:
-      clients:
-        items:
-          $ref: '#/definitions/dto.ClientResponse'
-        type: array
-      current_page:
-        type: integer
-      last_page:
-        type: integer
-      total_count:
-        type: integer
+      id:
+        type: string
+      name:
+        type: string
     type: object
   dto.ClientResponse:
     properties:
@@ -39,8 +33,6 @@ definitions:
         type: string
       redirect_uri:
         type: string
-      tag:
-        type: string
     type: object
   dto.ClientSecretResponse:
     properties:
@@ -56,6 +48,20 @@ definitions:
       error:
         type: string
     type: object
+  dto.GetAuditLogListResponse:
+    properties:
+      auditLogs:
+        items:
+          $ref: '#/definitions/dto.PostAuditLogRequest'
+        type: array
+      currentPage:
+        type: integer
+      lastPage:
+        type: integer
+      totalCount:
+        format: int64
+        type: integer
+    type: object
   dto.LoginRequest:
     properties:
       client_id:
@@ -64,12 +70,38 @@ definitions:
         type: string
       password:
         type: string
-      redirect_uri:
-        type: string
     required:
     - client_id
     - email
     - password
+    type: object
+  dto.LogoutRequest:
+    properties:
+      client_id:
+        type: string
+    required:
+    - client_id
+    type: object
+  dto.PostAuditLogRequest:
+    properties:
+      action:
+        type: string
+      actor:
+        type: string
+      metadata:
+        type: object
+      status:
+        enum:
+        - success
+        - fail
+        type: string
+      target:
+        type: string
+      timestamp:
+        type: string
+    required:
+    - action
+    - target
     type: object
   dto.RefreshRequest:
     properties:
@@ -95,17 +127,29 @@ definitions:
     properties:
       description:
         type: string
+      permission_ids:
+        items:
+          type: integer
+        type: array
       role_name:
         type: string
     type: object
   dto.RoleResponse:
     properties:
+      can_delete:
+        type: boolean
+      can_edit:
+        type: boolean
       created_at:
         type: string
       description:
         type: string
       id:
         type: integer
+      permissions:
+        items:
+          $ref: '#/definitions/models.Permission'
+        type: array
       role_name:
         type: string
       updated_at:
@@ -156,14 +200,36 @@ definitions:
     required:
     - new_status
     type: object
-  dto.UpdateUserRoleRequest:
+  dto.UpdateUserAccessRequest:
     properties:
-      role_ids:
+      client_ids:
         items:
-          type: integer
+          type: string
         type: array
     required:
-    - role_ids
+    - client_ids
+    type: object
+  dto.UpdateUserRoleRequest:
+    properties:
+      role_id:
+        type: integer
+    type: object
+  dto.UserInfoResponse:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      name_suffix:
+        type: string
+      roles:
+        type: string
     type: object
   dto.UserRequest:
     properties:
@@ -175,23 +241,20 @@ definitions:
         type: string
       middle_name:
         type: string
+      name_suffix:
+        type: string
       password:
         minLength: 8
         type: string
-      roles:
-        items:
-          type: string
-        type: array
+      role_id:
+        type: integer
       status:
-        type: string
-      user_name:
         type: string
     required:
     - email
     - first_name
     - last_name
     - password
-    - roles
     - status
     type: object
   dto.UserResponse:
@@ -208,15 +271,13 @@ definitions:
         type: string
       middle_name:
         type: string
+      name_suffix:
+        type: string
       roles:
-        items:
-          $ref: '#/definitions/dto.UserRoleRepsonse'
-        type: array
+        $ref: '#/definitions/dto.UserRoleResponse'
       status:
         type: string
       updated_at:
-        type: string
-      user_name:
         type: string
     type: object
   dto.UserResponseList:
@@ -232,7 +293,7 @@ definitions:
           $ref: '#/definitions/dto.UserResponse'
         type: array
     type: object
-  dto.UserRoleRepsonse:
+  dto.UserRoleResponse:
     properties:
       description:
         type: string
@@ -241,57 +302,48 @@ definitions:
       role_name:
         type: string
     type: object
-  models.Client:
+  dto.UserSimplifiedResponse:
     properties:
-      allowedRoles:
-        items:
-          $ref: '#/definitions/models.Role'
-        type: array
-      baseUrl:
+      created_at:
         type: string
-      clientName:
+      email:
         type: string
-      clientSecret:
+      first_name:
         type: string
-      createdAt:
-        type: string
-      description:
-        type: string
-      grants:
-        items:
-          type: string
-        type: array
       id:
-        items:
-          type: integer
-        type: array
-      imageLocation:
         type: string
-      logoutUri:
+      last_name:
         type: string
-      oldSecret:
+      middle_name:
         type: string
-      redirectUri:
+      name_suffix:
         type: string
-      tag:
+      status:
         type: string
-      updatedAt:
+      updated_at:
         type: string
     type: object
-  models.Role:
+  dto.UserSimplifiedResponseList:
     properties:
-      createdAt:
-        type: string
-      description:
-        type: string
+      current_page:
+        type: integer
+      last_page:
+        type: integer
+      total_count:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/dto.UserSimplifiedResponse'
+        type: array
+    type: object
+  models.Permission:
+    properties:
       id:
         type: integer
-      roleName:
-        type: string
-      updatedAt:
+      permissionName:
         type: string
     type: object
-host: localhost:8080
+host: identity-provider.isaxbsit2027.com
 info:
   contact:
     email: causonmikolorenz@gmail.com
@@ -304,35 +356,101 @@ info:
   title: Unified Access Identity Provider API
   version: "1.0"
 paths:
-  /api/roles:
+  /.well-known/jwks.json:
     get:
-      consumes:
-      - application/json
-      description: Searches for roles matching the provided query parameter.
-      parameters:
-      - description: Search term for role names
-        in: query
-        name: keyword
-        required: true
-        type: string
+      description: Retrieve the JSON Web Key Set for verifying JWT signatures
       produces:
       - application/json
       responses:
         "200":
-          description: Success
+          description: OK
           schema:
-            $ref: '#/definitions/dto.RoleListResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "501":
-          description: Not Implemented
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
-      summary: Search roles by keyword
+      summary: Get JWKS
       tags:
-      - roles
+      - JSON Web Key Set
+  /api/v1/admin/users/{id}/access:
+    put:
+      consumes:
+      - application/json
+      description: Updates user client access mapping within the admin's scope.
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Access data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserAccessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Sync User Client Access
+      tags:
+      - Users
+  /api/v1/admin/users/access:
+    get:
+      description: Fetch all client IDs and names managed by the admin.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ClientAccessResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List Managed Clients
+      tags:
+      - Users
+  /api/v1/admin/users/admins:
+    get:
+      description: Get a paginated list of all accounts that have a role
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponseList'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List Admin Users
+      tags:
+      - Users
   /api/v1/auth/login:
     post:
       consumes:
@@ -373,7 +491,16 @@ paths:
       - Authentication
   /api/v1/auth/logout:
     post:
+      consumes:
+      - application/json
       description: Clear session cookie and revoke all issued tokens for the user
+      parameters:
+      - description: Logout Request
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LogoutRequest'
       produces:
       - application/json
       responses:
@@ -473,6 +600,93 @@ paths:
       summary: Exchange Auth Code
       tags:
       - Authentication
+  /api/v1/logs:
+    get:
+      description: Returns a paginated list of audit logs with optional filters.
+      parameters:
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Filter by actor (email or ID)
+        in: query
+        name: actor
+        type: string
+      - description: Filter by action
+        in: query
+        name: action
+        type: string
+      - description: Filter by target
+        in: query
+        name: target
+        type: string
+      - description: Filter by status (success/fail)
+        in: query
+        name: status
+        type: string
+      - description: Filter by created_at >= (RFC3339)
+        in: query
+        name: from_date
+        type: string
+      - description: Filter by created_at <= (RFC3339)
+        in: query
+        name: to_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GetAuditLogListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List audit logs
+      tags:
+      - Logs
+  /api/v1/logs/{id}:
+    get:
+      description: Returns a single audit log entry.
+      parameters:
+      - description: Log ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PostAuditLogRequest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get audit log by ID
+      tags:
+      - Logs
   /api/v1/users:
     get:
       description: Get a paginated list of all users
@@ -488,7 +702,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.UserResponseList'
+            $ref: '#/definitions/dto.UserSimplifiedResponseList'
         "500":
           description: Internal Server Error
           schema:
@@ -610,7 +824,7 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Update user password
       tags:
-      - users
+      - Users
   /api/v1/users/{id}/status:
     patch:
       consumes:
@@ -645,7 +859,7 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Update user status
       tags:
-      - users
+      - Users
   /auth/authorize:
     get:
       description: Validates the authorization request for the user.
@@ -666,7 +880,7 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Authorize user
       tags:
-      - auth
+      - Authentication
   /clients/{id}/secret:
     patch:
       consumes:
@@ -691,46 +905,35 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Update client secret
       tags:
-      - clients
-  /clients/tags:
+      - Clients
+  /me:
     get:
-      consumes:
-      - application/json
-      description: Fetches tags based on limit, page, and keyword filters.
-      parameters:
-      - default: 10
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Search keyword
-        in: query
-        name: keyword
-        type: string
+      description: Returns user profile filtered by client allowed roles
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.ClientListResponse'
-        "500":
-          description: Internal Server Error
+            $ref: '#/definitions/dto.UserInfoResponse'
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
-      summary: Get client tags
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get authenticated user info
       tags:
-      - clients
-  /users/{id}/roles:
+      - Users
+  /users/{id}/role:
     patch:
       consumes:
       - application/json
-      description: Partially updates a user's role set based on the request body.
+      description: Updates a user's role based on the request body.
       parameters:
       - description: User ID
         in: path
@@ -758,9 +961,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
-      summary: Update user roles
+      summary: Update user role
       tags:
-      - users
+      - Users
   /v1/admin/clients:
     get:
       description: Fetch active clients with pagination
@@ -783,7 +986,7 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: List Service Providers
       tags:
-      - ServiceProviders
+      - Clients
     post:
       consumes:
       - multipart/form-data
@@ -855,7 +1058,7 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Register a new Service Provider with Icon
       tags:
-      - ServiceProviders
+      - Clients
   /v1/admin/clients/{id}:
     delete:
       parameters:
@@ -883,7 +1086,7 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Soft Delete Client
       tags:
-      - ServiceProviders
+      - Clients
     get:
       description: Fetch full details including grants and roles
       parameters:
@@ -911,7 +1114,7 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Get Client Details
       tags:
-      - ServiceProviders
+      - Clients
     put:
       consumes:
       - application/json
@@ -939,7 +1142,7 @@ paths:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Update Client Info
       tags:
-      - ServiceProviders
+      - Clients
   /v1/admin/roles:
     get:
       consumes:
