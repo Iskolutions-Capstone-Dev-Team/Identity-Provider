@@ -205,37 +205,6 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 			Metadata: metadata,
 		})
 
-	var cResp *dto.ClientListResponse
-	var cErr error
-	pStr := strings.Join(permissions, ",")
-	if strings.Contains(pStr, "View all appclients") {
-		cResp, cErr = h.ClientService.GetClientList(ctx, 1000, 1, "")
-	} else {
-		cResp, cErr = h.ClientService.GetBoundClients(
-			ctx,
-			userID,
-			1000,
-			1,
-			"",
-		)
-	}
-
-	if cErr != nil {
-		log.Printf("[GetUserList] Fetch Client List: %v", cErr)
-	} else if cResp != nil {
-		clients := make([]dto.ClientAccessResponse, 0, len(cResp.Clients))
-		for _, cl := range cResp.Clients {
-			if strings.Contains(cl.Name, "Identity Provider") {
-				continue
-			}
-			clients = append(clients, dto.ClientAccessResponse{
-				ID:   cl.ID,
-				Name: cl.Name,
-			})
-		}
-		resp.Clients = clients
-	}
-
 	c.JSON(http.StatusOK, resp)
 }
 
