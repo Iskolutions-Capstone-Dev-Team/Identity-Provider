@@ -907,7 +907,7 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PutUserAccess] sync error: %v", err)
 		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: err.Error()})
+			dto.ErrorResponse{Error: "Failed to sync access"})
 		return
 	}
 
