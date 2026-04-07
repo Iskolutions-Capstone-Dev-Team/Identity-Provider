@@ -251,7 +251,7 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
             ))
           ) : (
             <div className={emptyStateClassName}>
-              {searchTerm ? "No results found" : "No tags available"}
+              {searchTerm ? "No results found" : "No clients available"}
             </div>
           )}
         </div>
