@@ -24,15 +24,20 @@ const (
 	actionUpdatePass   = "update_password"
 	actionUpdateStatus = "update_status"
 	actionUpdateUserRole = "update_user_role"
-	actionDeleteUser   = "delete_user"
-	actionListAdmins   = "list_admins"
+	actionDeleteUser     = "delete_user"
+	actionListAdmins     = "list_admins"
+	actionUpdateAccess   = "update_user_access"
 )
+
 
 // UserHandler handles user management HTTP requests.
 type UserHandler struct {
-	Service    service.UserService
-	LogService service.LogService
+	Service       service.UserService
+	LogService    service.LogService
+	ClientService service.ClientService
+	AccessService service.ClientAllowedUserService
 }
+
 
 
 // PostUser creates a new user in the system
@@ -814,3 +819,115 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		Message: "User deleted successfully",
 	})
 }
+
+// GetUserAccess retrieves a list of allowed clients filtered by admin scope.
+// @Summary List Managed Clients
+// @Description Fetch all client IDs and names managed by the admin.
+// @Tags Users
+// @Produce json
+// @Success 200 {array} dto.ClientAccessResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/v1/admin/users/access [get]
+func (h *UserHandler) GetUserAccess(c *gin.Context) {
+	permissions := c.GetStringSlice("permissions")
+	uIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(uIDStr)
+
+	ctx := c.Request.Context()
+
+	var resp *dto.ClientListResponse
+	var err error
+
+	// 1000 limit is used for selection list population
+	if strings.Contains(strings.Join(permissions, ","), "View all appclients") {
+		resp, err = h.ClientService.GetClientList(ctx, 1000, 1, "")
+	} else {
+		resp, err = h.ClientService.GetBoundClients(ctx, userID, 1000, 1, "")
+	}
+
+	if err != nil {
+		log.Printf("[GetUserAccess] fetch: %v", err)
+		c.JSON(http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Failed to fetch clients"})
+		return
+	}
+
+	result := make([]dto.ClientAccessResponse, 0, len(resp.Clients))
+	for _, cl := range resp.Clients {
+		result = append(result, dto.ClientAccessResponse{
+			ID:   cl.ID,
+			Name: cl.Name,
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// PutUserAccess handles the syncing of user-client access mappings.
+// @Summary Sync User Client Access
+// @Description Updates user client access mapping within the admin's scope.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID (UUID)"
+// @Param request body dto.UpdateUserAccessRequest true "Access data"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/v1/admin/users/{id}/access [put]
+func (h *UserHandler) PutUserAccess(c *gin.Context) {
+	targetIDStr := c.Param("id")
+	targetID, err := uuid.Parse(targetIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid target user id"})
+		return
+	}
+
+	var req dto.UpdateUserAccessRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid request body"})
+		return
+	}
+
+	adminIDStr := c.GetString("user_id")
+	adminID, _ := uuid.Parse(adminIDStr)
+	ctx := c.Request.Context()
+
+	clientIDs := make([][]byte, 0, len(req.ClientIDs))
+	for _, idStr := range req.ClientIDs {
+		cid, err := uuid.Parse(idStr)
+		if err == nil {
+			clientIDs = append(clientIDs, cid[:])
+		}
+	}
+
+	err = h.AccessService.SyncAccess(ctx, targetID[:], clientIDs, adminID[:])
+	if err != nil {
+		log.Printf("[PutUserAccess] sync error: %v", err)
+		c.JSON(http.StatusInternalServerError,
+			dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	actorName, _ := h.LogService.GetUserEmail(ctx, adminID[:])
+	if actorName == "" {
+		actorName = adminIDStr
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
+		&dto.PostAuditLogRequest{
+			Action: actionUpdateAccess,
+			Target: targetIDStr,
+			Status: models.StatusSuccess,
+			Metadata: buildMetadata(map[string]interface{}{
+				"client_ids": req.ClientIDs,
+				"ip":         c.ClientIP(),
+				"user_agent": c.Request.UserAgent(),
+			}),
+		})
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Access synchronized!"})
+}
+
