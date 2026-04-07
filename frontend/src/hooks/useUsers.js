@@ -354,7 +354,7 @@ export function useUsers() {
       }
 
       setUsers([]);
-      setFetchError("Failed to load users. Check the backend connection.");
+      setFetchError("Unable to load users right now.");
       return [];
     } finally {
       if (showLoading && latestFetchRef.current === fetchId) {
