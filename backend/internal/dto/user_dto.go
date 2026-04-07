@@ -66,6 +66,7 @@ type UserSimplifiedResponse struct {
 // UserSimplifiedResponseList is a paginated list of simplified user views.
 type UserSimplifiedResponseList struct {
 	Users       []UserSimplifiedResponse `json:"users"`
+	Clients     []ClientAccessResponse   `json:"clients,omitempty"`
 	TotalCount  int                      `json:"total_count"`
 	CurrentPage int                      `json:"current_page"`
 	LastPage    int                      `json:"last_page"`
