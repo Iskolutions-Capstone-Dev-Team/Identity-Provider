@@ -2,9 +2,16 @@ import axiosInstance from "./axiosInstance";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 100;
+const UUID_PATTERN =
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i;
 
 const normalizeTextValue = (value) =>
   typeof value === "string" ? value.trim() : "";
+
+const normalizeStringList = (values = []) =>
+  (Array.isArray(values) ? values : [])
+    .map((value) => normalizeTextValue(value))
+    .filter(Boolean);
 
 const normalizeRoleId = (value) => {
   if (value === null) {
@@ -15,6 +22,24 @@ const normalizeRoleId = (value) => {
   return Number.isInteger(normalizedValue) && normalizedValue > 0
     ? normalizedValue
     : undefined;
+};
+
+const extractCreatedUserId = (payload = {}) => {
+  const explicitUserId =
+    payload?.created_user_id ??
+    payload?.createdUserId ??
+    payload?.user_id ??
+    payload?.userId ??
+    payload?.id;
+
+  if (typeof explicitUserId === "string" && explicitUserId.trim()) {
+    return explicitUserId.trim();
+  }
+
+  const responseMessage = normalizeTextValue(payload?.message);
+  const matchedUserId = responseMessage.match(UUID_PATTERN);
+
+  return matchedUserId?.[0] ?? "";
 };
 
 export const userService = {
@@ -42,6 +67,11 @@ export const userService = {
     return res.data;
   },
 
+  async getManagedUserAccessClients() {
+    const res = await axiosInstance.get("/admin/users/access");
+    return Array.isArray(res.data) ? res.data : [];
+  },
+
   async createUser(data) {
     const payload = {
       email: normalizeTextValue(data.email),
@@ -58,7 +88,10 @@ export const userService = {
       headers: { "Content-Type": "application/json" },
     });
 
-    return res.data;
+    return {
+      ...(res.data ?? {}),
+      createdUserId: extractCreatedUserId(res.data),
+    };
   },
 
   async updateUserStatus(id, status) {
@@ -87,6 +120,18 @@ export const userService = {
     };
 
     const res = await axiosInstance.patch(`/admin/users/${id}/role`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    return res.data;
+  },
+
+  async updateUserAccess(id, clientIds = []) {
+    const payload = {
+      client_ids: normalizeStringList(clientIds),
+    };
+
+    const res = await axiosInstance.put(`/admin/users/${id}/access`, payload, {
       headers: { "Content-Type": "application/json" },
     });
 
