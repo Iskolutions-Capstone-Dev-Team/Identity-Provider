@@ -51,8 +51,11 @@ func MigrateAndSeed() {
 		"roles",
 		"admin_allowed_clients",
 		"role_permissions",
+		"otps",
+		"invitation_codes",
 		"client_allowed_users",
 	}
+
 
 	for _, tableName := range privilegedTables {
 		err = grantDeleteOnTable(tableName, adminDatabase)
