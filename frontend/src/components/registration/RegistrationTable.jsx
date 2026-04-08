@@ -2,6 +2,16 @@ import TableRowFade from "../TableRowFade";
 
 const headerCellClassName =
   "border-b border-white/10 px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90";
+const MAX_VISIBLE_CLIENT_SLOTS = 5;
+
+function getPreviewClientItems(clientNames = []) {
+  const normalizedClientNames = Array.isArray(clientNames) ? clientNames : [];
+  return normalizedClientNames.slice(0, MAX_VISIBLE_CLIENT_SLOTS);
+}
+
+function getRemainingClientCount(totalClientCount = 0) {
+  return Math.max(0, totalClientCount - MAX_VISIBLE_CLIENT_SLOTS);
+}
 
 function getRowClassName(index, isDarkMode) {
   if (isDarkMode) {
@@ -34,11 +44,14 @@ export default function RegistrationTable({ rows = [], onView, onEdit, colorMode
     ? `${bodyCellClassName} whitespace-nowrap font-semibold text-[#f6eaec]`
     : `${bodyCellClassName} whitespace-nowrap font-semibold text-[#4a1921]`;
   const clientBadgeClassName = isDarkMode
-    ? "inline-flex items-center rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
-    : "inline-flex items-center rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
+    ? "inline-flex items-center whitespace-nowrap rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
+    : "inline-flex items-center whitespace-nowrap rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
   const emptyClientListClassName = isDarkMode
     ? "italic text-[#a58d95]"
     : "italic text-[#8f6f76]";
+  const moreClientsClassName = isDarkMode
+    ? "mt-3 text-center text-xs font-semibold tracking-[0.08em] text-[#c7adb4]"
+    : "mt-3 text-center text-xs font-semibold tracking-[0.08em] text-[#8f6f76]";
   const emptyStateClassName = isDarkMode
     ? "px-6 py-16 text-center text-sm text-[#bda8af]"
     : "px-6 py-16 text-center text-sm text-[#8f6f76]";
@@ -67,49 +80,63 @@ export default function RegistrationTable({ rows = [], onView, onEdit, colorMode
               </tr>
             )}
 
-            {rows.map((row, index) => (
-              <TableRowFade
-                key={row.accountType}
-                keyId={row.accountType}
-                className={getRowClassName(index, isDarkMode)}
-              >
-                <td className={accountTypeCellClassName}>{row.label}</td>
-                <td className={bodyCellClassName}>
-                  {row.clientNames.length > 0 ? (
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {row.clientNames.map((clientName) => (
-                        <span
-                          key={`${row.accountType}-${clientName}`}
-                          className={clientBadgeClassName}
-                        >
-                          {clientName}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className={emptyClientListClassName}>
-                      No pre-approved clients
-                    </span>
-                  )}
-                </td>
-                <td className={bodyCellClassName}>
-                  <div className="flex items-center justify-center gap-2">
-                    <button type="button" aria-label={`View ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onView(row)}>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                      </svg>
-                    </button>
+            {rows.map((row, index) => {
+              const previewClientItems = getPreviewClientItems(row.clientNames);
+              const remainingClientCount = getRemainingClientCount(
+                row.totalClientCount,
+              );
 
-                    <button type="button" aria-label={`Edit ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onEdit(row)}>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a2.25 2.25 0 1 1 3.182 3.182L10.582 17.13a4.5 4.5 0 0 1-1.897 1.13L6 19l.74-2.685a4.5 4.5 0 0 1 1.13-1.897l8.992-8.99Zm0 0L19.5 7.125"/>
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </TableRowFade>
-            ))}
+              return (
+                <TableRowFade
+                  key={row.accountType}
+                  keyId={row.accountType}
+                  className={getRowClassName(index, isDarkMode)}
+                >
+                  <td className={accountTypeCellClassName}>{row.label}</td>
+                  <td className={bodyCellClassName}>
+                    {row.clientNames.length > 0 ? (
+                      <div className="mx-auto max-w-[24rem]">
+                        <div className="grid grid-cols-1 gap-2">
+                          {previewClientItems.map((clientName, previewIndex) => (
+                            <div key={`${row.accountType}-${clientName}-${previewIndex}`} className="flex justify-center">
+                              <span className={clientBadgeClassName}>
+                                {clientName}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        {remainingClientCount > 0 && (
+                          <p className={moreClientsClassName}>
+                            +{remainingClientCount} more{" "}
+                            {remainingClientCount === 1 ? "client" : "clients"}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <span className={emptyClientListClassName}>
+                        No pre-approved clients
+                      </span>
+                    )}
+                  </td>
+                  <td className={bodyCellClassName}>
+                    <div className="flex items-center justify-center gap-2">
+                      <button type="button" aria-label={`View ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onView(row)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                        </svg>
+                      </button>
+
+                      <button type="button" aria-label={`Edit ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onEdit(row)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a2.25 2.25 0 1 1 3.182 3.182L10.582 17.13a4.5 4.5 0 0 1-1.897 1.13L6 19l.74-2.685a4.5 4.5 0 0 1 1.13-1.897l8.992-8.99Zm0 0L19.5 7.125"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </TableRowFade>
+              );
+            })}
           </tbody>
         </table>
       </div>
