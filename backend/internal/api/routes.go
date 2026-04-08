@@ -18,6 +18,7 @@ type Handlers struct {
 	UserHandler       *v1.UserHandler
 	PermissionHandler *v1.PermissionHandler
 	MailHandler       *v1.MailHandler
+	RegistrationHandler *v1.RegistrationHandler
 	UserRepo          repository.UserRepository
 
 	RoleRepo          repository.RoleRepository
@@ -41,6 +42,11 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		auth.POST("/refresh", h.AuthHandler.PostTokenRotate)
 		auth.POST("/logout", h.AuthHandler.Logout)
 		auth.GET("/session", h.AuthHandler.CheckSession)
+	}
+
+	registration := v1Group.Group("/registration")
+	{
+		registration.GET("/config", h.RegistrationHandler.GetRegistrationConfig)
 	}
 
 	// Endpoint for getting user information
@@ -110,6 +116,12 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		{
 			mail.POST("/otp", h.MailHandler.SendOTP)
 			mail.POST("/invitation", h.MailHandler.SendInvitation)
+		}
+
+		registrationAdmin := admin.Group("/registration")
+		{
+			registrationAdmin.PUT("/preapproved", 
+				h.RegistrationHandler.UpdatePreapprovedClients)
 		}
 	}
 }
