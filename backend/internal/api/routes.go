@@ -44,10 +44,6 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		auth.GET("/session", h.AuthHandler.CheckSession)
 	}
 
-	registration := v1Group.Group("/registration")
-	{
-		registration.GET("/config", h.RegistrationHandler.GetRegistrationConfig)
-	}
 
 	// Endpoint for getting user information
 	me := v1Group.Group("/me")
@@ -127,6 +123,10 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			registrationAdmin.PUT(
 				"/preapproved", 
 				h.RegistrationHandler.UpdatePreapprovedClients,
+			)
+			registrationAdmin.GET(
+				"/config/:id", 
+				h.RegistrationHandler.GetClientsByAccountTypeID,
 			)
 		}
 	}

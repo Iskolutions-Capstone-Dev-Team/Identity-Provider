@@ -9,6 +9,8 @@ import (
 
 type RegistrationService interface {
 	GetRegistrationConfig(ctx context.Context) (*dto.RegistrationConfigResponse, error)
+	GetClientsByAccountTypeID(ctx context.Context, 
+		id int) (*dto.AccountTypeConfigResponse, error)
 	UpdatePreapprovedClients(ctx context.Context, 
 		req dto.UpdatePreapprovedClientsRequest) error
 }
@@ -56,6 +58,32 @@ func (s *regService) GetRegistrationConfig(ctx context.Context) (
 	}
 
 	return &resp, nil
+}
+
+func (s *regService) GetClientsByAccountTypeID(ctx context.Context, 
+	id int) (*dto.AccountTypeConfigResponse, error) {
+	rows, err := s.repo.GetClientsByAccountTypeID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rows) == 0 {
+		return &dto.AccountTypeConfigResponse{}, nil
+	}
+
+	clients := make([]dto.PreapprovedClientResponse, 0)
+	for _, row := range rows {
+		clientID, _ := uuid.FromBytes(row.ClientID)
+		clients = append(clients, dto.PreapprovedClientResponse{
+			ID:   clientID,
+			Name: row.ClientName,
+		})
+	}
+
+	return &dto.AccountTypeConfigResponse{
+		AccountType: rows[0].AccountTypeName,
+		Clients:     clients,
+	}, nil
 }
 
 func (s *regService) UpdatePreapprovedClients(ctx context.Context, 

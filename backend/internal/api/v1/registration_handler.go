@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
@@ -20,13 +21,44 @@ type RegistrationHandler struct {
 // @Produce json
 // @Success 200 {object} dto.RegistrationConfigResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/registration/config [get]
+// @Router /api/v1/admin/registration/config [get]
 func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 	config, err := h.Service.GetRegistrationConfig(c.Request.Context())
 	if err != nil {
 		log.Printf("[GetRegistrationConfig] %v", err)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error: "failed to fetch registration config",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, config)
+}
+
+// GetClientsByAccountTypeID returns all clients for a specific account type.
+// @Summary Get Clients By Account Type ID
+// @Description Fetch all clients preapproved for a given account type.
+// @Tags Registration
+// @Param id path int true "Account Type ID"
+// @Produce json
+// @Success 200 {object} dto.AccountTypeConfigResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/v1/admin/registration/config/{id} [get]
+func (h *RegistrationHandler) GetClientsByAccountTypeID(c *gin.Context) {
+	idStr := c.Param("id")
+	var id int
+	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid account type id",
+		})
+		return
+	}
+
+	config, err := h.Service.GetClientsByAccountTypeID(c.Request.Context(), id)
+	if err != nil {
+		log.Printf("[GetClientsByAccountTypeID] %v", err)
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "failed to fetch clients for account type",
 		})
 		return
 	}

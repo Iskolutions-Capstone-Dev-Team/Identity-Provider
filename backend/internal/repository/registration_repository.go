@@ -14,6 +14,8 @@ type AccountTypeClientRow struct {
 
 type RegistrationRepository interface {
 	GetRegistrationConfig(ctx context.Context) ([]AccountTypeClientRow, error)
+	GetClientsByAccountTypeID(ctx context.Context, 
+		id int) ([]AccountTypeClientRow, error)
 	SyncPreapprovedClients(ctx context.Context, accountTypeID int, 
 		clientIDs []uuid.UUID) error
 }
@@ -47,6 +49,24 @@ func (r *regRepo) GetRegistrationConfig(ctx context.Context) (
 	`
 	var rows []AccountTypeClientRow
 	err := r.db.SelectContext(ctx, &rows, query)
+	return rows, err
+}
+
+func (r *regRepo) GetClientsByAccountTypeID(ctx context.Context, 
+	id int) ([]AccountTypeClientRow, error) {
+	query := `
+		SELECT 
+			at.name AS account_type_name,
+			cl.id AS client_id,
+			cl.client_name AS client_name
+		FROM preapproved_clients pc
+		JOIN account_types at ON pc.account_type_id = at.id
+		JOIN clients cl ON pc.client_id = cl.id
+		WHERE pc.account_type_id = ?
+		ORDER BY cl.client_name;
+	`
+	var rows []AccountTypeClientRow
+	err := r.db.SelectContext(ctx, &rows, query, id)
 	return rows, err
 }
 
