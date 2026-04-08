@@ -29,22 +29,21 @@ func NewRegistrationRepository(db *sqlx.DB) RegistrationRepository {
 func (r *regRepo) GetRegistrationConfig(ctx context.Context) (
 	[]AccountTypeClientRow, error) {
 	query := `
-		SELECT 
-			at.name AS account_type_name,
-			c.id AS client_id,
-			IFNULL(c.client_name, '') AS client_name
-		FROM account_types at
-		LEFT JOIN (
+		SELECT account_type_name, client_id, client_name
+		FROM (
 			SELECT 
-				pc.account_type_id,
-				pc.client_id,
-				cl.client_name,
+				at.name AS account_type_name,
+				at.id AS account_type_id,
+				cl.id AS client_id,
+				cl.client_name AS client_name,
 				ROW_NUMBER() OVER (PARTITION BY pc.account_type_id 
 					ORDER BY cl.client_name) as row_num
 			FROM preapproved_clients pc
+			JOIN account_types at ON pc.account_type_id = at.id
 			JOIN clients cl ON pc.client_id = cl.id
-		) c ON at.id = c.account_type_id AND c.row_num <= 5
-		ORDER BY at.id;
+		) t
+		WHERE row_num <= 5
+		ORDER BY account_type_id;
 	`
 	var rows []AccountTypeClientRow
 	err := r.db.SelectContext(ctx, &rows, query)
