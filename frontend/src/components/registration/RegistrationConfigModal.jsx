@@ -17,7 +17,7 @@ function getClientNames(clientIds = [], appClientOptions = []) {
     .filter(Boolean);
 }
 
-export default function RegistrationConfigModal({ open, mode = "view", config = null, appClientOptions = [], isLoadingAppClients = false, onClose, onSave, colorMode = "light" }) {
+export default function RegistrationConfigModal({ open, mode = "view", config = null, appClientOptions = [], isLoadingAppClients = false, appClientsError = "", onClose, onSave, colorMode = "light" }) {
   const [selectedClientIds, setSelectedClientIds] = useState([]);
   const [error, setError] = useState("");
   const isViewMode = mode === "view";
@@ -49,6 +49,11 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
   const emptyListClassName = isDarkMode
     ? "italic text-[#a58d95]"
     : "italic text-[#8f6f76]";
+  const helperErrorClassName = isDarkMode
+    ? "mt-3 text-xs text-[#ffd8dd]"
+    : "mt-3 text-xs text-[#991b1b]";
+  const disabledAccountTypeInputClassName =
+    `${modalReadOnlyInputClassName} disabled:cursor-not-allowed disabled:opacity-100`;
 
   useEffect(() => {
     if (!open) {
@@ -128,7 +133,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
               <div className="space-y-5">
                 <div>
                   <label className={modalLabelClassName}>Account Type</label>
-                  <input type="text" value={config.label} readOnly className={modalReadOnlyInputClassName}/>
+                  <input type="text" value={config.label} readOnly disabled aria-disabled="true" className={disabledAccountTypeInputClassName}/>
                 </div>
 
                 <div>
@@ -171,6 +176,9 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
                         <p className={modalHelperTextClassName}>
                           Loading app clients...
                         </p>
+                      )}
+                      {appClientsError && !isLoadingAppClients && (
+                        <p className={helperErrorClassName}>{appClientsError}</p>
                       )}
                     </>
                   )}

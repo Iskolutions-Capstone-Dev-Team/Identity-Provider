@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import AuditLogsCard from "../components/audit-logs/AuditLogsCard";
 import DataTableSkeleton from "../components/DataTableSkeleton";
@@ -8,105 +8,24 @@ import RegistrationConfigModal from "../components/registration/RegistrationConf
 import RegistrationTable from "../components/registration/RegistrationTable";
 import { useAllAppClients } from "../hooks/useAllAppClients";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
-import { ACCOUNT_TYPE_OPTIONS } from "../utils/accountTypes";
+import { registrationService } from "../services/registrationService";
+import { ACCOUNT_TYPE_OPTIONS, getAccountTypeBackendId } from "../utils/accountTypes";
 import { getAllAppClientSelectOptions } from "../utils/userPoolAccess";
-
-const REGISTRATION_STORAGE_KEY = "idpRegistrationClientSelections";
-
-function createEmptySelections() {
-  return ACCOUNT_TYPE_OPTIONS.reduce((selections, option) => {
-    selections[option.id] = [];
-    return selections;
-  }, {});
-}
-
-function normalizeClientIds(clientIds = [], validClientIds = new Set()) {
-  return Array.from(
-    new Set(
-      (Array.isArray(clientIds) ? clientIds : [])
-        .map((clientId) => (typeof clientId === "string" ? clientId.trim() : ""))
-        .filter(
-          (clientId) =>
-            Boolean(clientId) &&
-            (validClientIds.size === 0 || validClientIds.has(clientId)),
-        ),
-    ),
-  );
-}
-
-function normalizeSelections(value, validClientIds) {
-  const nextSelections = createEmptySelections();
-
-  if (!value || typeof value !== "object") {
-    return nextSelections;
-  }
-
-  ACCOUNT_TYPE_OPTIONS.forEach((option) => {
-    nextSelections[option.id] = normalizeClientIds(
-      value[option.id],
-      validClientIds,
-    );
-  });
-
-  return nextSelections;
-}
-
-function readStoredSelections(validClientIds) {
-  if (typeof window === "undefined") {
-    return createEmptySelections();
-  }
-
-  try {
-    const storedValue = window.localStorage.getItem(REGISTRATION_STORAGE_KEY);
-
-    if (!storedValue) {
-      return createEmptySelections();
-    }
-
-    return normalizeSelections(JSON.parse(storedValue), validClientIds);
-  } catch (error) {
-    console.error("Failed to read registration settings:", error);
-    return createEmptySelections();
-  }
-}
-
-function writeStoredSelections(value) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(
-    REGISTRATION_STORAGE_KEY,
-    JSON.stringify(value),
-  );
-}
 
 export default function Registration() {
   const { colorMode = "light" } = useOutletContext() || {};
   const { appClients, appClientsError, isLoadingAppClients } = useAllAppClients();
-  const [clientSelections, setClientSelections] = useState(createEmptySelections);
+  const [registrationConfigs, setRegistrationConfigs] = useState([]);
+  const [isLoadingRegistration, setIsLoadingRegistration] = useState(true);
+  const [registrationError, setRegistrationError] = useState("");
   const [selectedAccountType, setSelectedAccountType] = useState(null);
   const [modalMode, setModalMode] = useState("view");
   const [successMessage, setSuccessMessage] = useState("");
-  const showLoading = useDelayedLoading(isLoadingAppClients);
+  const showLoading = useDelayedLoading(isLoadingRegistration);
   const isDarkMode = colorMode === "dark";
-  const validClientIds = useMemo(
-    () =>
-      new Set(
-        appClients
-          .map((client) => client?.id)
-          .filter(Boolean),
-      ),
-    [appClients],
-  );
   const appClientOptions = useMemo(
     () => getAllAppClientSelectOptions(appClients),
     [appClients],
-  );
-  const clientLabelLookup = useMemo(
-    () =>
-      new Map(appClientOptions.map((client) => [client.id, client.label])),
-    [appClientOptions],
   );
   const errorBoxClassName = isDarkMode
     ? "rounded-[1.75rem] border border-[#f8d24e]/15 bg-[linear-gradient(180deg,rgba(48,18,24,0.96),rgba(27,16,21,0.96))] px-6 py-12 text-center text-sm font-medium text-[#f2dfe2] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.75)]"
@@ -114,26 +33,66 @@ export default function Registration() {
   const infoBoxClassName = isDarkMode
     ? "rounded-[1.4rem] border border-white/10 bg-white/[0.04] px-5 py-4 text-sm text-[#d6c3c7]"
     : "rounded-[1.4rem] border border-[#7b0d15]/10 bg-white/75 px-5 py-4 text-sm text-[#6f4f56]";
+  const warningBoxClassName = isDarkMode
+    ? "rounded-[1.4rem] border border-[#f8d24e]/20 bg-[#f8d24e]/10 px-5 py-4 text-sm text-[#ffe28a]"
+    : "rounded-[1.4rem] border border-[#f8d24e]/45 bg-[#fff4dc] px-5 py-4 text-sm text-[#7b0d15]";
+
+  const loadRegistrationConfig = useEffectEvent(async () => {
+    try {
+      setIsLoadingRegistration(true);
+      setRegistrationError("");
+
+      const nextConfigs = await Promise.all(
+        ACCOUNT_TYPE_OPTIONS.map(async (option) => {
+          const config = await registrationService.getClientsByAccountTypeId(
+            option.backendId,
+            option.id,
+          );
+
+          return {
+            accountType: option.id,
+            clients: Array.isArray(config?.clients) ? config.clients : [],
+          };
+        }),
+      );
+
+      setRegistrationConfigs(nextConfigs);
+    } catch (error) {
+      console.error("Failed to load registration config:", error);
+      setRegistrationConfigs([]);
+      setRegistrationError(
+        error?.response?.data?.error ||
+          error?.message ||
+          "Failed to load registration settings. Check the backend connection.",
+      );
+    } finally {
+      setIsLoadingRegistration(false);
+    }
+  });
 
   useEffect(() => {
-    setClientSelections(readStoredSelections(validClientIds));
-  }, [validClientIds]);
+    loadRegistrationConfig();
+  }, []);
 
   const rows = useMemo(
     () =>
       ACCOUNT_TYPE_OPTIONS.map((option) => {
-        const selectedClientIds = clientSelections[option.id] || [];
+        const matchedConfig = registrationConfigs.find(
+          (config) => config.accountType === option.id,
+        );
+        const clients = Array.isArray(matchedConfig?.clients)
+          ? matchedConfig.clients
+          : [];
 
         return {
           accountType: option.id,
           label: option.label,
-          clientIds: selectedClientIds,
-          clientNames: selectedClientIds
-            .map((clientId) => clientLabelLookup.get(clientId))
-            .filter(Boolean),
+          clientIds: clients.map((client) => client.id),
+          clientNames: clients.map((client) => client.name),
+          totalClientCount: clients.length,
         };
       }),
-    [clientLabelLookup, clientSelections],
+    [registrationConfigs],
   );
 
   const selectedConfig = useMemo(
@@ -158,16 +117,17 @@ export default function Registration() {
   };
 
   const handleSave = async (nextConfig) => {
-    const nextSelections = normalizeSelections(
-      {
-        ...clientSelections,
-        [nextConfig.accountType]: nextConfig.clientIds,
-      },
-      validClientIds,
-    );
+    const accountTypeId = getAccountTypeBackendId(nextConfig.accountType);
 
-    writeStoredSelections(nextSelections);
-    setClientSelections(nextSelections);
+    if (!accountTypeId) {
+      throw new Error("Unable to match the selected account type.");
+    }
+
+    await registrationService.updatePreapprovedClients({
+      accountTypeId,
+      clientIds: nextConfig.clientIds,
+    });
+    await loadRegistrationConfig();
     setSuccessMessage(
       `Updated pre-approved clients for ${nextConfig.label}.`,
     );
@@ -193,8 +153,8 @@ export default function Registration() {
         ]}
       />
     );
-  } else if (appClientsError) {
-    content = <div className={errorBoxClassName}>{appClientsError}</div>;
+  } else if (registrationError) {
+    content = <div className={errorBoxClassName}>{registrationError}</div>;
   }
 
   return (
@@ -215,7 +175,12 @@ export default function Registration() {
 
         <div className="relative">
           <AuditLogsCard colorMode={colorMode}>
+            {!showLoading && !registrationError && appClientsError && (
+              <div className={warningBoxClassName}>{appClientsError}</div>
+            )}
+
             {!showLoading &&
+              !registrationError &&
               !appClientsError &&
               appClientOptions.length === 0 && (
                 <div className={infoBoxClassName}>
@@ -235,6 +200,7 @@ export default function Registration() {
         config={selectedConfig}
         appClientOptions={appClientOptions}
         isLoadingAppClients={isLoadingAppClients}
+        appClientsError={appClientsError}
         onClose={handleCloseModal}
         onSave={handleSave}
         colorMode={colorMode}
