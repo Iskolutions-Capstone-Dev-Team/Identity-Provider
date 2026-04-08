@@ -48,13 +48,33 @@ func SendInvitationEmail(toEmail string, invitationCode string) error {
 		clientBaseURL, invitationCode)
 
 	from := mail.NewEmail(fromName, fromEmail)
-	subject := "Invitation to Join IskSolutions Identity Provider"
-	to := mail.NewEmail("Invited User", toEmail)
+	subject := "Action Required: Activate Your PUP-Tagui Account"
+	to := mail.NewEmail("Valued User", toEmail)
 	
 	plainText := fmt.Sprintf(
-		"You are invited. Register here: %s", regURL)
+		"Welcome to PUP-Taguig Identity Provider!\n\n"+
+			"You have been invited to activate your account. "+
+			"To get started, please visit the link below:\n\n"+
+			"%s\n\n"+
+			"If you did not expect this, please ignore this email.",
+		regURL)
+
 	htmlContent := fmt.Sprintf(
-		"You are invited. <a href='%s'>Register here</a>", regURL)
+		"<div style='font-family: sans-serif; color: #333;'>"+
+			"<h2>Welcome to PUP-Taguig Identity Provider!</h2>"+
+			"<p>Hello! You have been invited to join the "+
+			"IskSolutions Identity Provider.</p>"+
+			"<p>To activate your account, click the button below:</p>"+
+			"<div style='margin: 25px 0;'>"+
+			"<a href='%s' style='background-color: #800000; "+
+			"color: white; padding: 12px 25px; "+
+			"text-decoration: none; border-radius: 5px; "+
+			"display: inline-block;'>Activate Account</a>"+
+			"</div>"+
+			"<p style='font-size: 12px; color: #777;'>"+
+			"If the button doesn't work, copy and paste this link: "+
+			"<br>%s</p>"+
+			"</div>", regURL, regURL)
 
 	message := mail.NewSingleEmail(from, subject, to, 
 		plainText, htmlContent)
