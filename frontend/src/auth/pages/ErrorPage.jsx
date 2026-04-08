@@ -10,7 +10,7 @@ const ADMIN_ONLY_PATHS = new Set([
   "/roles",
   "/app-client",
   "/audit-logs",
-  "/notifications",
+  "/registration",
 ]);
 
 function getPathname(path = "") {
