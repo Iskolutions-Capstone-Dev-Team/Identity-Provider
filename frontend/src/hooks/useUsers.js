@@ -3,19 +3,12 @@ import { mailService } from "../services/mailService";
 import { userService } from "../services/userService";
 import { generateHiddenInvitationPassword } from "../utils/passwordRules";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, normalizeRoleNames } from "../utils/userPoolAccess";
+import { normalizeAccountType } from "../utils/accountTypes";
 
 const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
 const FETCH_LIMIT = 100;
 const ITEMS_PER_PAGE = 10;
 const INVITATION_ACCOUNT_SETUP = "invitation";
-const VALID_ACCOUNT_TYPES = new Set([
-  "admin",
-  "applicant",
-  "faculty",
-  "guest",
-  "student",
-]);
-
 function normalizeClientIds(clientIds = []) {
   return Array.from(
     new Set(
@@ -67,18 +60,6 @@ function normalizeStatus(status) {
 
   const normalizedStatus = status.trim().toLowerCase();
   return EDITABLE_STATUS_VALUES.has(normalizedStatus) ? normalizedStatus : "";
-}
-
-function normalizeAccountType(value) {
-  if (typeof value !== "string") {
-    return "";
-  }
-
-  const normalizedAccountType = value.trim().toLowerCase();
-
-  return VALID_ACCOUNT_TYPES.has(normalizedAccountType)
-    ? normalizedAccountType
-    : "";
 }
 
 function normalizeRoleId(value) {

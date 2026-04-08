@@ -11,6 +11,7 @@ import UserPoolModalSelect from "./UserPoolModalSelect";
 import InvitationConfirmModal from "./InvitationConfirmModal";
 import { getModalTheme } from "../modalTheme";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions } from "../../utils/userPoolAccess";
+import { ACCOUNT_TYPE_OPTIONS } from "../../utils/accountTypes";
 import { generateTemporaryPassword, getTemporaryPasswordValidationMessage } from "../../utils/passwordRules";
 
 const TEMP_PASSWORD_SETUP_VALUE = "temporary_password";
@@ -25,14 +26,6 @@ const REGULAR_ACCOUNT_SETUP_OPTIONS = [
     value: TEMP_PASSWORD_SETUP_VALUE,
     label: "Set a temporary password",
   },
-];
-
-const ACCOUNT_TYPE_OPTIONS = [
-  { id: "admin", label: "Admin" },
-  { id: "applicant", label: "Applicant" },
-  { id: "faculty", label: "Faculty" },
-  { id: "guest", label: "Guest" },
-  { id: "student", label: "Student" },
 ];
 
 const initialFormData = {

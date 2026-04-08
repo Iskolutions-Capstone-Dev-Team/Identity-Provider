@@ -30,6 +30,7 @@ const mapClientSummary = (client = {}) => {
 export function useAllAppClients() {
   const [appClients, setAppClients] = useState([]);
   const [isLoadingAppClients, setIsLoadingAppClients] = useState(true);
+  const [appClientsError, setAppClientsError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -37,6 +38,7 @@ export function useAllAppClients() {
     const fetchAllAppClients = async () => {
       try {
         setIsLoadingAppClients(true);
+        setAppClientsError("");
 
         const firstPage = await clientService.getClients({
           limit: ITEMS_PER_PAGE,
@@ -116,6 +118,9 @@ export function useAllAppClients() {
 
         if (!cancelled) {
           setAppClients([]);
+          setAppClientsError(
+            "Failed to load app clients. Check the backend connection.",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -133,6 +138,7 @@ export function useAllAppClients() {
 
   return {
     appClients,
+    appClientsError,
     isLoadingAppClients,
   };
 }
