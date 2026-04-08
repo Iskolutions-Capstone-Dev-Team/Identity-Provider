@@ -120,8 +120,14 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 
 		registrationAdmin := admin.Group("/registration")
 		{
-			registrationAdmin.PUT("/preapproved", 
-				h.RegistrationHandler.UpdatePreapprovedClients)
+			registrationAdmin.GET(
+				"/config", 
+				h.RegistrationHandler.GetRegistrationConfig,
+			)
+			registrationAdmin.PUT(
+				"/preapproved", 
+				h.RegistrationHandler.UpdatePreapprovedClients,
+			)
 		}
 	}
 }
