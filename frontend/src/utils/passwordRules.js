@@ -1,16 +1,38 @@
 const MIN_PASSWORD_LENGTH = 8;
 const PASSWORD_CHARSETS = { uppercase: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", lowercase: "abcdefghijklmnopqrstuvwxyz", number: "0123456789", special: "!@#$%^&*" };
 const PASSWORD_CHARACTER_POOL = Object.values(PASSWORD_CHARSETS).join("");
+const MAX_UINT32 = 0x100000000;
+
+function getRandomIndex(maxExclusive) {
+  if (!Number.isInteger(maxExclusive) || maxExclusive <= 0) {
+    return 0;
+  }
+
+  const cryptoApi = globalThis?.crypto;
+
+  if (cryptoApi?.getRandomValues) {
+    const threshold = MAX_UINT32 - (MAX_UINT32 % maxExclusive);
+    const randomValue = new Uint32Array(1);
+
+    do {
+      cryptoApi.getRandomValues(randomValue);
+    } while (randomValue[0] >= threshold);
+
+    return randomValue[0] % maxExclusive;
+  }
+
+  return Math.floor(Math.random() * maxExclusive);
+}
 
 function getRandomCharacter(characters) {
-  return characters[Math.floor(Math.random() * characters.length)] ?? "";
+  return characters[getRandomIndex(characters.length)] ?? "";
 }
 
 function shuffleCharacters(characters = []) {
   const nextCharacters = [...characters];
 
   for (let index = nextCharacters.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
+    const randomIndex = getRandomIndex(index + 1);
     [nextCharacters[index], nextCharacters[randomIndex]] = [
       nextCharacters[randomIndex],
       nextCharacters[index],
@@ -57,4 +79,8 @@ export function generateTemporaryPassword(length = 12) {
   }
 
   return shuffleCharacters(passwordCharacters).join("");
+}
+
+export function generateHiddenInvitationPassword(length = 24) {
+  return generateTemporaryPassword(length);
 }

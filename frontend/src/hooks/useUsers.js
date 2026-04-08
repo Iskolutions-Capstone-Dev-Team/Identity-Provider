@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { mailService } from "../services/mailService";
 import { userService } from "../services/userService";
-import { generateTemporaryPassword } from "../utils/passwordRules";
+import { generateHiddenInvitationPassword } from "../utils/passwordRules";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, normalizeRoleNames } from "../utils/userPoolAccess";
 
 const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
@@ -415,8 +415,9 @@ export function useUsers() {
       ? normalizeAccountType(newUser.accountType)
       : "";
     const nextAccessibleClientIds = normalizeClientIds(newUser.accessibleClientIds);
-    const temporaryPassword = isInvitationFlow
-      ? generateTemporaryPassword()
+    const submissionPassword = isInvitationFlow
+      // Invitation-created users still need a backend password, but it stays hidden from the UI.
+      ? generateHiddenInvitationPassword()
       : newUser.tempPassword;
     let userWasCreated = false;
     let followUpStep = "create_user";
@@ -432,7 +433,7 @@ export function useUsers() {
         middle_name: newUser.middleName,
         last_name: newUser.surname,
         name_suffix: newUser.suffix,
-        password: temporaryPassword,
+        password: submissionPassword,
         status: newUser.status,
         role_id:
           isAdminUser
