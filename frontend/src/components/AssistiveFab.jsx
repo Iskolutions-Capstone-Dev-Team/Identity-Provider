@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { ACCESSIBILITY_READY_EVENT, ACCESSIBILITY_UNAVAILABLE_EVENT, isAccessibilityWidgetReady, toggleAccessibilityMenu } from "./AccessibilityWidget";
-import ContactUsPanel, { ContactUsIcon } from "./ContactUsPanel";
 import OnePortalButton from "./OnePortalButton";
 import { FloatingSpeechInputAction } from "./SpeechInputButton";
 
@@ -49,7 +48,6 @@ function getActionTransitionStyle(actionIndex, actionCount) {
 export default function AssistiveFab({ colorMode = "light" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [areActionsVisible, setAreActionsVisible] = useState(false);
-  const [isContactOpen, setIsContactOpen] = useState(false);
   const [isAccessibilityReady, setIsAccessibilityReady] = useState(() =>
     isAccessibilityWidgetReady(),
   );
@@ -58,11 +56,6 @@ export default function AssistiveFab({ colorMode = "light" }) {
   const handleAccessibilityClick = () => {
     toggleAccessibilityMenu();
   };
-
-  const handleContactToggle = () => {
-    setIsContactOpen((current) => !current);
-  };
-  const isContactPanelOpen = isOpen && isContactOpen;
 
   const fabActions = [
     {
@@ -88,24 +81,6 @@ export default function AssistiveFab({ colorMode = "light" }) {
       content: (
         <button type="button" aria-label="Open web accessibility" title="Open web accessibility" className={FAB_BUTTON_CLASS_NAME} disabled={!isAccessibilityReady} onClick={handleAccessibilityClick}>
           <AccessibilityIcon />
-        </button>
-      ),
-    },
-    {
-      key: "contact-us",
-      tooltipLabel: "Contact Us",
-      content: (
-        <button type="button" aria-expanded={isContactOpen}
-          aria-label={
-            isContactOpen ? "Close contact us form" : "Open contact us form"
-          }
-          title={
-            isContactOpen ? "Close contact us form" : "Open contact us form"
-          }
-          className={FAB_BUTTON_CLASS_NAME}
-          onClick={handleContactToggle}
-        >
-          <ContactUsIcon />
         </button>
       ),
     },
@@ -166,12 +141,6 @@ export default function AssistiveFab({ colorMode = "light" }) {
 
   return (
     <>
-      <ContactUsPanel
-        isOpen={isContactPanelOpen}
-        colorMode={colorMode}
-        onClose={() => setIsContactOpen(false)}
-      />
-
       <div className={FAB_CONTAINER_CLASS_NAME}>
         {fabActions.map((action, actionIndex) => {
           const distanceFromToggle = fabActions.length - actionIndex - 1;
@@ -197,13 +166,7 @@ export default function AssistiveFab({ colorMode = "light" }) {
         })}
 
         <button type="button" aria-expanded={isOpen} aria-label={isOpen ? "Close assistive tools" : "Open assistive tools"} title={isOpen ? "Close assistive tools" : "Open assistive tools"} className={toggleButtonClassName}
-          onClick={() => {
-            if (isOpen) {
-              setIsContactOpen(false);
-            }
-
-            setIsOpen((current) => !current);
-          }}
+          onClick={() => setIsOpen((current) => !current)}
         >
           <ToggleIcon isOpen={isOpen} />
         </button>
