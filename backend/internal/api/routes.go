@@ -17,7 +17,9 @@ type Handlers struct {
 	RoleHandler       *v1.RoleHandler
 	UserHandler       *v1.UserHandler
 	PermissionHandler *v1.PermissionHandler
+	MailHandler       *v1.MailHandler
 	UserRepo          repository.UserRepository
+
 	RoleRepo          repository.RoleRepository
 	PubKey            *rsa.PublicKey
 	CORS              gin.HandlerFunc
@@ -103,5 +105,12 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		{
 			permissions.GET("", h.PermissionHandler.GetAllPermissions)
 		}
+
+		mail := admin.Group("/mail")
+		{
+			mail.POST("/otp", h.MailHandler.SendOTP)
+			mail.POST("/invitation", h.MailHandler.SendInvitation)
+		}
 	}
 }
+

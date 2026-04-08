@@ -14,6 +14,8 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 	userRepo := repository.NewUserRepository(db)
 	logRepo := repository.NewLogRepository(db)
 	permissionRepo := repository.NewPermissionRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
+	invRepo := repository.NewInvitationRepository(db)
 	cauRepo := repository.NewClientAllowedUserRepository(db)
 
 	return service.ServiceContainer{
@@ -29,6 +31,7 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		),
 		LogService:        service.NewLogService(logRepo),
 		PermissionService: service.NewPermissionService(permissionRepo),
+		MailService:       service.NewMailService(otpRepo, invRepo),
 		ClientAllowedUserService: service.NewClientAllowedUserService(
 			cauRepo,
 		),

@@ -7,8 +7,33 @@ import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
+import UserPoolModalSelect from "./UserPoolModalSelect";
+import InvitationConfirmModal from "./InvitationConfirmModal";
 import { getModalTheme } from "../modalTheme";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions } from "../../utils/userPoolAccess";
+import { generateTemporaryPassword, getTemporaryPasswordValidationMessage } from "../../utils/passwordRules";
+
+const TEMP_PASSWORD_SETUP_VALUE = "temporary_password";
+const INVITATION_SETUP_VALUE = "invitation";
+
+const REGULAR_ACCOUNT_SETUP_OPTIONS = [
+  {
+    value: INVITATION_SETUP_VALUE,
+    label: "Send an invitation",
+  },
+  {
+    value: TEMP_PASSWORD_SETUP_VALUE,
+    label: "Set a temporary password",
+  },
+];
+
+const ACCOUNT_TYPE_OPTIONS = [
+  { id: "admin", label: "Admin" },
+  { id: "applicant", label: "Applicant" },
+  { id: "faculty", label: "Faculty" },
+  { id: "guest", label: "Guest" },
+  { id: "student", label: "Student" },
+];
 
 const initialFormData = {
   email: "",
@@ -17,6 +42,8 @@ const initialFormData = {
   surname: "",
   suffix: "",
   tempPassword: "",
+  accountSetupType: TEMP_PASSWORD_SETUP_VALUE,
+  accountType: null,
   selectedAdminRoleId: null,
   accessibleClientIds: [],
 };
@@ -26,6 +53,7 @@ const initialFieldErrors = {
   givenName: "",
   surname: "",
   tempPassword: "",
+  accountType: "",
 };
 
 const extractErrorMessage = (error) =>
@@ -33,6 +61,24 @@ const extractErrorMessage = (error) =>
   error?.response?.data?.message ||
   error?.message ||
   "Unable to create user.";
+
+function PasswordVisibilityIcon({ showPassword }) {
+  if (showPassword) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0 1 12 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 0 1 2.293-3.607M6.72 6.72A9.956 9.956 0 0 1 12 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 0 1-4.563 5.956M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  );
+}
 
 export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", appClientOptions = [], isLoadingAppClients = false, colorMode = "light" }) {
   const availableRoles = useAllRoles();
@@ -44,8 +90,11 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
   const [activeVoiceField, setActiveVoiceField] = useState("givenName");
   const [showTempPassword, setShowTempPassword] = useState(false);
+  const [isInvitationConfirmOpen, setIsInvitationConfirmOpen] = useState(false);
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
+  const isInvitationFlow =
+    !isAdminView && data.accountSetupType === INVITATION_SETUP_VALUE;
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -84,6 +133,28 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const modalHeaderDescriptionSpacingClassName =
     `${modalHeaderDescriptionClassName} !mt-3 max-w-[18rem] leading-relaxed sm:!mt-4 sm:max-w-[28rem]`;
 
+  const getInputClassName = (fieldName, hasActionButton = false) =>
+    `${modalInputClassName} ${hasActionButton ? "pr-12" : ""} ${
+      fieldErrors[fieldName] ? "border-red-400 focus:border-red-500" : ""
+    }`;
+
+  const clearFieldError = (fieldName) => {
+    if (!fieldErrors[fieldName]) {
+      return;
+    }
+
+    setFieldErrors((current) => ({
+      ...current,
+      [fieldName]: "",
+    }));
+  };
+
+  const clearErrorBanner = () => {
+    if (error) {
+      setError("");
+    }
+  };
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -91,47 +162,9 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       ...current,
       [name]: value,
     }));
-
-    if (fieldErrors[name]) {
-      setFieldErrors((current) => ({
-        ...current,
-        [name]: "",
-      }));
-    }
-
-    if (error) {
-      setError("");
-    }
+    clearFieldError(name);
+    clearErrorBanner();
   };
-
-  const generatePassword = () => {
-    const chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-    let password = "";
-
-    for (let index = 0; index < 12; index += 1) {
-      password += chars[Math.floor(Math.random() * chars.length)];
-    }
-
-    setData((current) => ({
-      ...current,
-      tempPassword: password,
-    }));
-    setFieldErrors((current) => ({
-      ...current,
-      tempPassword: "",
-    }));
-    setError("");
-  };
-
-  const toggleShowTempPassword = () => {
-    setShowTempPassword((current) => !current);
-  };
-
-  const getInputClassName = (fieldName, hasActionButton = false) =>
-    `${modalInputClassName} ${hasActionButton ? "pr-12" : ""} ${
-      fieldErrors[fieldName] ? "border-red-400 focus:border-red-500" : ""
-    }`;
 
   const handleFieldValueChange = (name, value) => {
     handleChange({
@@ -142,18 +175,70 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     });
   };
 
+  const handleAccessibleClientsChange = (accessibleClientIds) => {
+    setData((current) => ({
+      ...current,
+      accessibleClientIds,
+    }));
+    clearErrorBanner();
+  };
+
+  const handleAdminRoleChange = (selectedAdminRoleId) => {
+    setData((current) => ({
+      ...current,
+      selectedAdminRoleId,
+    }));
+    clearErrorBanner();
+  };
+
+  const handleAccountSetupChange = (accountSetupType) => {
+    setData((current) => ({
+      ...current,
+      accountSetupType,
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      tempPassword: "",
+    }));
+    clearErrorBanner();
+  };
+
+  const handleAccountTypeChange = (accountType) => {
+    setData((current) => ({
+      ...current,
+      accountType,
+    }));
+    clearFieldError("accountType");
+    clearErrorBanner();
+  };
+
+  const generatePassword = () => {
+    setData((current) => ({
+      ...current,
+      tempPassword: generateTemporaryPassword(),
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      tempPassword: "",
+    }));
+    setShowTempPassword(false);
+    clearErrorBanner();
+  };
+
+  const toggleShowTempPassword = () => {
+    setShowTempPassword((current) => !current);
+  };
+
   const validateStepOne = () => {
     const nextFieldErrors = {
-      email: "",
-      givenName: "",
-      surname: "",
-      tempPassword: fieldErrors.tempPassword,
+      ...initialFieldErrors,
     };
+    const trimmedEmail = data.email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!data.email.trim()) {
+    if (!trimmedEmail) {
       nextFieldErrors.email = "Email is required.";
-    } else if (!emailRegex.test(data.email)) {
+    } else if (!emailRegex.test(trimmedEmail)) {
       nextFieldErrors.email = "Enter a valid email address.";
     }
 
@@ -173,28 +258,35 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       return false;
     }
 
+    setError("");
     return true;
   };
 
   const validateStepTwo = () => {
     const nextFieldErrors = {
-      email: "",
-      givenName: "",
-      surname: "",
-      tempPassword: "",
+      ...initialFieldErrors,
     };
 
-    if (!data.tempPassword.trim()) {
-      nextFieldErrors.tempPassword = "Temporary password is required.";
-    } else if (data.tempPassword.length < 8) {
-      nextFieldErrors.tempPassword =
-        "Temporary password must be at least 8 characters.";
+    if (isInvitationFlow && !data.accountType) {
+      nextFieldErrors.accountType = "Select an account type.";
+    }
+
+    if (!isInvitationFlow) {
+      const trimmedTempPassword = data.tempPassword.trim();
+
+      if (!trimmedTempPassword) {
+        nextFieldErrors.tempPassword = "Temporary password is required.";
+      } else {
+        nextFieldErrors.tempPassword =
+          getTemporaryPasswordValidationMessage(trimmedTempPassword);
+      }
     }
 
     setFieldErrors(nextFieldErrors);
 
-    if (nextFieldErrors.tempPassword) {
-      setError(nextFieldErrors.tempPassword);
+    const firstError = Object.values(nextFieldErrors).find(Boolean);
+    if (firstError) {
+      setError(firstError);
       return false;
     }
 
@@ -222,6 +314,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       setFieldErrors(initialFieldErrors);
       setActiveVoiceField("givenName");
       setShowTempPassword(false);
+      setIsInvitationConfirmOpen(false);
       setError("");
     }
   }, [open]);
@@ -238,10 +331,21 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       return;
     }
 
-    if (step === 2 && activeVoiceField !== "tempPassword") {
+    if (step !== 2) {
+      return;
+    }
+
+    if (isInvitationFlow) {
+      if (activeVoiceField === "tempPassword") {
+        setActiveVoiceField("email");
+      }
+      return;
+    }
+
+    if (activeVoiceField !== "tempPassword") {
       setActiveVoiceField("tempPassword");
     }
-  }, [activeVoiceField, step]);
+  }, [activeVoiceField, isInvitationFlow, step]);
 
   const activeVoiceFieldLabel =
     activeVoiceField === "email"
@@ -260,11 +364,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     handleFieldValueChange(activeVoiceField, transcript);
   };
 
-  const handleSubmit = async () => {
-    if (!validateStepTwo()) {
-      return;
-    }
-
+  const submitUser = async () => {
     const selectedAdminRole = adminRoleOptions.find(
       (role) => role.id === data.selectedAdminRoleId,
     );
@@ -283,6 +383,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         roles: selectedAdminRole ? [selectedAdminRole.role_name] : [],
         accessibleClientIds: data.accessibleClientIds,
         tempPassword: data.tempPassword,
+        accountSetupType: data.accountSetupType,
+        accountType: data.accountType,
         status: "active",
       });
 
@@ -292,13 +394,36 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     }
   };
 
+  const handleSubmit = async () => {
+    if (!validateStepTwo()) {
+      return;
+    }
+
+    if (isInvitationFlow) {
+      setIsInvitationConfirmOpen(true);
+      return;
+    }
+
+    await submitUser();
+  };
+
+  const handleConfirmInvitation = async () => {
+    setIsInvitationConfirmOpen(false);
+    await submitUser();
+  };
+
   if (!open) {
     return null;
   }
 
+  const selectedAccountType = ACCOUNT_TYPE_OPTIONS.find(
+    (option) => option.id === data.accountType,
+  );
+
   return createPortal(
-    <dialog open className={modalOverlayClassName}>
-      <div className={modalBoxClassName}>
+    <>
+      <dialog open className={modalOverlayClassName}>
+        <div className={modalBoxClassName}>
         <div className={modalHeaderSpacingClassName}>
           <div className="flex items-start justify-between gap-4 sm:gap-6">
             <div className={modalHeaderContentClassName}>
@@ -352,7 +477,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
             <ErrorAlert message={error} onClose={() => setError("")} />
 
             <FadeWrapper isVisible={step === 1}>
-              <form id="step1-form" onSubmit={(e) => e.preventDefault()} className="space-y-5">
+              <form id="step1-form" onSubmit={(event) => event.preventDefault()} className="space-y-5">
                 <section className={modalSectionClassName}>
                   <SpeechInputToolbar
                     activeFieldLabel={activeVoiceFieldLabel}
@@ -443,116 +568,139 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
             <FadeWrapper isVisible={step === 2}>
               <form
                 id="step2-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
+                onSubmit={(event) => {
+                  event.preventDefault();
                   handleSubmit();
                 }}
                 className="space-y-5"
               >
-                <section className={modalSectionClassName}>
-                  <label className={modalLabelClassName}>
-                    {isAdminView ? "Role" : "Accessible App Clients"}
-                  </label>
-                  <p className={modalHelperTextClassName}>
-                    {isAdminView
-                      ? "Choose a role for this admin account."
-                      : "Choose which app clients this user can access."}
-                  </p>
-
-                  {isAdminView ? (
+                {isAdminView ? (
+                  <section className={modalSectionClassName}>
+                    <label className={modalLabelClassName}>
+                      Role
+                    </label>
+                    <p className={modalHelperTextClassName}>
+                      Choose a role for this admin account.
+                    </p>
                     <UserPoolRoleRadioGroup
                       options={adminRoleOptions}
                       selectedValue={data.selectedAdminRoleId}
-                      onChange={(selectedAdminRoleId) => {
-                        setData((current) => ({
-                          ...current,
-                          selectedAdminRoleId,
-                        }));
-                        setError(fieldErrors.tempPassword || "");
-                      }}
+                      onChange={handleAdminRoleChange}
                       colorMode={colorMode}
                       name="add-user-role"
                       allowEmpty
                       emptyOptionLabel="No role assigned"
                     />
-                  ) : (
-                    <>
-                      <MultiSelect
-                        options={appClientSelectOptions}
-                        selectedValues={data.accessibleClientIds}
-                        onChange={(accessibleClientIds) => {
-                          setData((current) => ({
-                            ...current,
-                            accessibleClientIds,
-                          }));
-                          if (error) {
-                            setError("");
+                  </section>
+                ) : (
+                  <section className={modalSectionClassName}>
+                    <label className={modalLabelClassName}>
+                      Accessible App Clients
+                    </label>
+                    <p className={modalHelperTextClassName}>
+                      Choose which app clients this user can access.
+                    </p>
+
+                    <MultiSelect
+                      options={appClientSelectOptions}
+                      selectedValues={data.accessibleClientIds}
+                      onChange={handleAccessibleClientsChange}
+                      placeholder="Select app clients"
+                      variant="userpoolModal"
+                      colorMode={colorMode}
+                    />
+                    {isLoadingAppClients && (
+                      <p className={modalHelperTextClassName}>
+                        Loading app clients...
+                      </p>
+                    )}
+                  </section>
+                )}
+
+                {!isAdminView && (
+                  <section className={modalSectionClassName}>
+                    <label className={modalLabelClassName}>
+                      Account Setup
+                    </label>
+                    <p className={modalHelperTextClassName}>
+                      Choose whether to send an invitation or set a temporary password.
+                    </p>
+                    <UserPoolModalSelect
+                      value={data.accountSetupType}
+                      onChange={handleAccountSetupChange}
+                      options={REGULAR_ACCOUNT_SETUP_OPTIONS}
+                      ariaLabel="Select account setup method"
+                      colorMode={colorMode}
+                    />
+                  </section>
+                )}
+
+                {isInvitationFlow && (
+                  <section className={modalSectionClassName}>
+                    <label className={modalLabelClassName}>
+                      Account Type <span className="text-red-500">*</span>
+                    </label>
+                    <p className={modalHelperTextClassName}>
+                      Choose the account type for this regular user.
+                    </p>
+                    <UserPoolRoleRadioGroup
+                      options={ACCOUNT_TYPE_OPTIONS}
+                      selectedValue={data.accountType}
+                      onChange={handleAccountTypeChange}
+                      colorMode={colorMode}
+                      name="add-user-account-type"
+                    />
+                    {fieldErrors.accountType && (
+                      <p className="mt-2 text-xs text-red-500">
+                        {fieldErrors.accountType}
+                      </p>
+                    )}
+                  </section>
+                )}
+
+                {!isInvitationFlow && (
+                  <section className={modalSectionClassName}>
+                    <SpeechInputToolbar
+                      activeFieldLabel={activeVoiceFieldLabel}
+                      onError={setError}
+                      onTranscript={handleVoiceInput}
+                      colorMode={colorMode}
+                    />
+
+                    <label className={modalLabelClassName}>
+                      Temporary Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <div className="relative w-full">
+                        <input type={showTempPassword ? "text" : "password"} name="tempPassword" value={data.tempPassword} onChange={handleChange} onFocus={() => setActiveVoiceField("tempPassword")} placeholder="Temporary password" className={`${getInputClassName("tempPassword")} pr-12`} />
+                        <button
+                          type="button"
+                          onClick={toggleShowTempPassword}
+                          className={passwordVisibilityButtonClassName}
+                          aria-label={
+                            showTempPassword
+                              ? "Hide temporary password"
+                              : "Show temporary password"
                           }
-                        }}
-                        placeholder="Select app clients"
-                        variant="userpoolModal"
-                        colorMode={colorMode}
-                      />
-                      {isLoadingAppClients && (
-                        <p className={modalHelperTextClassName}>
-                          Loading app clients...
-                        </p>
-                      )}
-                    </>
-                  )}
-                </section>
+                        >
+                          <PasswordVisibilityIcon showPassword={showTempPassword} />
+                        </button>
+                      </div>
 
-                <section className={modalSectionClassName}>
-                  <SpeechInputToolbar
-                    activeFieldLabel={activeVoiceFieldLabel}
-                    onError={setError}
-                    onTranscript={handleVoiceInput}
-                    colorMode={colorMode}
-                  />
-
-                  <label className={modalLabelClassName}>
-                    Temporary Password <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <div className="relative w-full">
-                      <input type={showTempPassword ? "text" : "password"} name="tempPassword" value={data.tempPassword} onChange={handleChange} onFocus={() => setActiveVoiceField("tempPassword")} placeholder="Temporary password" className={`${getInputClassName("tempPassword")} pr-12`} />
-                      <button
-                        type="button"
-                        onClick={toggleShowTempPassword}
-                        className={passwordVisibilityButtonClassName}
-                        aria-label={
-                          showTempPassword
-                            ? "Hide temporary password"
-                            : "Show temporary password"
-                        }
-                      >
-                        {showTempPassword ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0 1 12 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 0 1 2.293-3.607M6.72 6.72A9.956 9.956 0 0 1 12 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 0 1-4.563 5.956M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18" />
-                          </svg>
-                        ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        )}
+                      <button type="button" onClick={generatePassword} className={passwordUtilityButtonClassName}>
+                        Generate
                       </button>
                     </div>
-
-                    <button type="button" onClick={generatePassword} className={passwordUtilityButtonClassName}>
-                      Generate
-                    </button>
-                  </div>
-                  {fieldErrors.tempPassword && (
-                    <p className="mt-2 text-xs text-red-500">
-                      {fieldErrors.tempPassword}
+                    {fieldErrors.tempPassword && (
+                      <p className="mt-2 text-xs text-red-500">
+                        {fieldErrors.tempPassword}
+                      </p>
+                    )}
+                    <p className={tempPasswordHintClassName}>
+                      Use at least 8 characters with one uppercase letter, one number, and one special character.
                     </p>
-                  )}
-                  <p className={tempPasswordHintClassName}>
-                    Set a temporary password for this user.
-                  </p>
-                </section>
+                  </section>
+                )}
               </form>
             </FadeWrapper>
           </div>
@@ -585,8 +733,17 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
             )}
           </div>
         </div>
-      </div>
-    </dialog>,
+        </div>
+      </dialog>
+
+      <InvitationConfirmModal
+        open={isInvitationConfirmOpen}
+        accountTypeLabel={selectedAccountType?.label || "Selected"}
+        onCancel={() => setIsInvitationConfirmOpen(false)}
+        onConfirm={handleConfirmInvitation}
+        colorMode={colorMode}
+      />
+    </>,
     document.body,
   );
 }

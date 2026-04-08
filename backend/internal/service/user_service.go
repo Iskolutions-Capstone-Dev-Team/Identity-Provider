@@ -154,27 +154,6 @@ func (s *userService) GetFilteredUserList(
 		return nil, err
 	}
 
-	// Fetch top-level client list for filtering
-	var clients []models.Client
-	if slices.Contains(permissions, "View all users") {
-		clients, err = s.ClientRepo.ListClients(ctx, 100, 0, "")
-	} else {
-		clients, err = s.ClientRepo.ListBoundClients(ctx, 100, 0, "", userID[:])
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("Client Fetch: %w", err)
-	}
-
-	resp.Clients = make([]dto.ClientAccessResponse, 0, len(clients))
-	for _, c := range clients {
-		cUUID, _ := uuid.FromBytes(c.ID)
-		resp.Clients = append(resp.Clients, dto.ClientAccessResponse{
-			ID:   cUUID.String(),
-			Name: c.ClientName,
-		})
-	}
-
 	return resp, nil
 }
 

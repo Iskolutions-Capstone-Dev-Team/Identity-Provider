@@ -94,7 +94,7 @@ func (r *userRepository) GetUserList(ctx context.Context,
 	}
 
 	if err := r.populateClients(ctx, result); err != nil {
-		return nil, fmt.Errorf("[GetBoundList] Prep: %w", err)
+		return nil, fmt.Errorf("[GetUserList] Prep: %w", err)
 	}
 
 	return result, nil
@@ -156,7 +156,7 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 	}
 
 	if err := r.populateClients(ctx, result); err != nil {
-		return nil, fmt.Errorf("[GetBoundList] Prep: %w", err)
+		return nil, fmt.Errorf("[GetAdminUserList] Prep: %w", err)
 	}
 
 	return result, nil
@@ -172,9 +172,9 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 		SELECT id FROM (
 			SELECT u.id 
 			FROM users u
-			JOIN client_allowed_roles car ON u.role_id = car.role_id
+			JOIN client_allowed_users cau ON u.id = cau.user_id
 			JOIN admin_allowed_clients aac 
-				ON car.client_id = aac.client_id
+				ON cau.client_id = aac.client_id
 			WHERE aac.user_id = ? AND u.deleted_at IS NULL
 			UNION
 			SELECT id FROM users 
@@ -275,7 +275,12 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
 		}
 	}
 
-	return &user, nil
+	result := []models.User{user}
+	if err := r.populateClients(ctx, result); err != nil {
+		return nil, fmt.Errorf("[GetUserByEmail] Prep: %w", err)
+	}
+
+	return &result[0], nil
 }
 
 // GetUserById retrieves a specific user by binary UUID including roles.
@@ -311,7 +316,12 @@ func (r *userRepository) GetUserById(ctx context.Context,
 		}
 	}
 
-	return &user, nil
+	result := []models.User{user}
+	if err := r.populateClients(ctx, result); err != nil {
+		return nil, fmt.Errorf("[GetUserById] Prep: %w", err)
+	}
+
+	return &result[0], nil
 }
 
 // CreateUser executes a stored procedure to handle User creation.
@@ -396,9 +406,9 @@ func (r *userRepository) CountBoundUsers(ctx context.Context,
 		SELECT COUNT(id) FROM (
 			SELECT u.id 
 			FROM users u
-			JOIN client_allowed_roles car ON u.role_id = car.role_id
+			JOIN client_allowed_users cau ON u.id = cau.user_id
 			JOIN admin_allowed_clients aac 
-				ON car.client_id = aac.client_id
+				ON cau.client_id = aac.client_id
 			WHERE aac.user_id = ? AND u.deleted_at IS NULL
 			UNION
 			SELECT id FROM users 
@@ -456,7 +466,11 @@ func (r *userRepository) populateClients(ctx context.Context,
 
 	const query = `
 		SELECT cau.user_id, c.id AS client_id, c.client_name
-		FROM client_allowed_users cau
+		FROM (
+			SELECT user_id, client_id FROM client_allowed_users
+			UNION
+			SELECT user_id, client_id FROM admin_allowed_clients
+		) cau
 		JOIN clients c ON cau.client_id = c.id
 		WHERE cau.user_id IN (?)
 	`

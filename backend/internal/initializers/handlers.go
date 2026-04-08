@@ -45,7 +45,12 @@ func InitializeHandlers(db *sqlx.DB,
 		PermissionHandler: &v1.PermissionHandler{
 			Service: service.PermissionService,
 		},
+		MailHandler: &v1.MailHandler{
+			MailService: service.MailService,
+			LogService:  service.LogService,
+		},
 		UserRepo: userRepo,
+
 		RoleRepo: roleRepo,
 		PubKey:   PubKey,
 		CORS:     mw.CORSMiddleware(),

@@ -35,9 +35,9 @@ function SummaryMetric({ title, value, description, icon, loading = false, color
   );
 }
 
-export default function NotificationsSummaryCard({ registrantsCount = 0, contactRequestsCount = 0, loading = false, colorMode = "light" }) {
+export default function NotificationsSummaryCard({ registrantsCount = 0, loading = false, colorMode = "light" }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-4">
       <SummaryMetric
         title="User registrants"
         value={registrantsCount}
@@ -46,19 +46,6 @@ export default function NotificationsSummaryCard({ registrantsCount = 0, contact
         icon={
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
             <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clipRule="evenodd" />
-          </svg>
-        }
-        colorMode={colorMode}
-      />
-      <SummaryMetric
-        title="Request"
-        value={contactRequestsCount}
-        description="Submitted requests awaiting review."
-        loading={loading}
-        icon={
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
-            <path fillRule="evenodd" d="M5.625 1.5H9a3.75 3.75 0 0 1 3.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 0 1 3.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 0 1-1.875-1.875V3.375c0-1.036.84-1.875 1.875-1.875Zm6.905 9.97a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l1.72-1.72V18a.75.75 0 0 0 1.5 0v-4.19l1.72 1.72a.75.75 0 1 0 1.06-1.06l-3-3Z" clipRule="evenodd" />
-            <path d="M14.25 5.25a5.23 5.23 0 0 0-1.279-3.434 9.768 9.768 0 0 1 6.963 6.963A5.23 5.23 0 0 0 16.5 7.5h-1.875a.375.375 0 0 1-.375-.375V5.25Z" />
           </svg>
         }
         colorMode={colorMode}

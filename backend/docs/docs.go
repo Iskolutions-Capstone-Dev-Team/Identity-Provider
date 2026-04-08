@@ -50,35 +50,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/admin/users/access": {
-            "get": {
-                "description": "Fetch all client IDs and names managed by the admin.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "List Managed Clients",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dto.ClientAccessResponse"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/admin/users/admins": {
             "get": {
                 "description": "Get a paginated list of all accounts that have a role",
@@ -103,59 +74,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.UserResponseList"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/admin/users/{id}/access": {
-            "put": {
-                "description": "Updates user client access mapping within the admin's scope.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Sync User Client Access",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID (UUID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Access data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateUserAccessRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
@@ -513,6 +431,98 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/mail/invitation": {
+            "post": {
+                "description": "Generates a secure invitation code and sends it via email.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mail"
+                ],
+                "summary": "Send Invitation Code",
+                "parameters": [
+                    {
+                        "description": "Invitation Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.InvitationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/mail/otp": {
+            "post": {
+                "description": "Generates a 6-digit numeric OTP and sends it via email.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mail"
+                ],
+                "summary": "Send OTP Code",
+                "parameters": [
+                    {
+                        "description": "OTP Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.OTPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -1411,17 +1421,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.ClientAccessResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.ClientResponse": {
             "type": "object",
             "properties": {
@@ -1506,6 +1505,21 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.InvitationRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "invitation_type"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "invitation_type": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.LoginRequest": {
             "type": "object",
             "required": [
@@ -1532,6 +1546,21 @@ const docTemplate = `{
             ],
             "properties": {
                 "client_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.OTPRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "user_id"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -1717,20 +1746,6 @@ const docTemplate = `{
             }
         },
         "dto.UpdateUserAccessRequest": {
-            "type": "object",
-            "required": [
-                "client_ids"
-            ],
-            "properties": {
-                "client_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "dto.UpdateUserRoleRequest": {
             "type": "object",
             "properties": {
                 "role_id": {

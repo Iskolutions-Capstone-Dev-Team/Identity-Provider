@@ -37,3 +37,20 @@ func GenerateRandomString(length int) (string, error) {
 
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
+
+// GenerateOTP returns a random 6-digit numeric string.
+func GenerateOTP() (string, error) {
+	b := make([]byte, 6)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	
+	// Convert bytes to digits 0-9
+	otp := ""
+	for i := 0; i < 6; i++ {
+		otp += fmt.Sprintf("%d", b[i]%10)
+	}
+	
+	return otp, nil
+}
+
