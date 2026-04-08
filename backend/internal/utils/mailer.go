@@ -48,7 +48,8 @@ func SendInvitationEmail(toEmail string, invitationCode string) error {
 		clientBaseURL, invitationCode)
 
 	from := mail.NewEmail(fromName, fromEmail)
-	subject := "Action Required: Activate Your PUP-Tagui Account"
+	subject := "Action Required: Activate Your PUP-Taguig Identity" +
+		" Provider Account"
 	to := mail.NewEmail("Valued User", toEmail)
 	
 	plainText := fmt.Sprintf(
