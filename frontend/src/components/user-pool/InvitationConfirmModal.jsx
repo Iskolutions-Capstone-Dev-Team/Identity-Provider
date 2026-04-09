@@ -1,7 +1,12 @@
 import { createPortal } from "react-dom";
 import { getModalTheme } from "../modalTheme";
 
-export default function InvitationConfirmModal({ open, accountTypeLabel = "selected", onCancel, onConfirm, colorMode = "light" }) {
+function getArticle(label = "") {
+  const normalizedLabel = label.trim().toLowerCase();
+  return ["a", "e", "i", "o", "u"].includes(normalizedLabel[0]) ? "an" : "a";
+}
+
+export default function InvitationConfirmModal({ open, registrationTypeLabel = "selected", onCancel, onConfirm, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const {
     modalBoxClassName,
@@ -24,6 +29,8 @@ export default function InvitationConfirmModal({ open, accountTypeLabel = "selec
     return null;
   }
 
+  const article = getArticle(registrationTypeLabel);
+
   return createPortal(
     <dialog open className={modalOverlayClassName}>
       <form method="dialog" className={`${modalBoxClassName} max-w-lg text-center`}>
@@ -41,7 +48,8 @@ export default function InvitationConfirmModal({ open, accountTypeLabel = "selec
             Send Invitation?
           </h3>
           <p className={descriptionClassName}>
-            This will create the user and send an invitation for a {accountTypeLabel.toLowerCase()} account.
+            This will create the user and send an invitation for {article}{" "}
+            {registrationTypeLabel.toLowerCase()} registration.
           </p>
         </div>
 
