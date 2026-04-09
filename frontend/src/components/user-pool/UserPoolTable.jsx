@@ -79,7 +79,7 @@ function renderActionButton({ label, onClick, children, className }) {
 export default function UserPoolTable({ loading = false, users = [], userType = "regular", appClients = [], onView, onEdit, onDelete, showDeleteAction = false, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
-  const accessColumnLabel = isAdminView ? "Role" : "Accessible App Clients";
+  const accessColumnLabel = isAdminView ? "Role" : "Accessible Clients";
   const emptyStateLabel = isAdminView
     ? "No admin users found"
     : "No regular users found";
@@ -117,19 +117,19 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
   const columnWidths = getColumnWidths(isAdminView);
   const getAccessItems = (user) =>
     isAdminView ? user.roles : getAppClientNamesByIds(user.accessibleClientIds, appClients);
-  const emptyAccessLabel = isAdminView ? "No role assigned" : "No app clients";
+  const emptyAccessLabel = isAdminView ? "No role assigned" : "No clients";
 
   if (loading) {
     return (
       <DataTableSkeleton
         theme={tableTheme}
         columns={[
-          { header: "ID", type: "text", width: "w-16" },
-          { header: "Email", type: "text", width: "w-32" },
-          { header: "Name", type: "stackedText" },
-          { header: accessColumnLabel, type: "badges" },
-          { header: "Status", type: "badge", width: "w-20" },
-          { header: "Actions", type: "actions" },
+          { header: "ID", type: "text", width: "w-16", colClassName: columnWidths[0] },
+          { header: "Email", type: "text", width: "w-32", colClassName: columnWidths[1] },
+          { header: "Name", type: "stackedText", colClassName: columnWidths[2] },
+          { header: accessColumnLabel, type: "badges", colClassName: columnWidths[3] },
+          { header: "Status", type: "badge", width: "w-20", colClassName: columnWidths[4] },
+          { header: "Actions", type: "actions", colClassName: columnWidths[5] },
         ]}
       />
     );

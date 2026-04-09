@@ -108,6 +108,11 @@ export default function DataTableSkeleton({ columns = [], rows = DEFAULT_ROWS, t
     <div className={styles.wrapperClassName} aria-hidden="true">
       <div className="overflow-x-auto">
         <table className={styles.tableClassName}>
+          <colgroup>
+            {columns.map((column, index) => (
+              <col key={`${column.header}-${index}`} className={column.colClassName || ""} />
+            ))}
+          </colgroup>
           <thead>
             <tr className={styles.headerRowClassName}>
               {columns.map((column) => (

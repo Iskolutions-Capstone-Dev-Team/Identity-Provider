@@ -248,7 +248,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     formData.accessibleClientIds,
     appClientOptions,
   );
-  const accessFieldLabel = isAdminView ? "Role" : "Accessible App Clients";
+  const accessFieldLabel = isAdminView ? "Role" : "Accessible Clients";
   const accessItems = isAdminView ? roleAccessItems : regularAccessItems;
 
   return createPortal(
@@ -360,7 +360,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                         </div>
                       ) : (
                         <span className={emptyAccessClassName}>
-                          {isAdminView ? "No role assigned" : "No app clients selected"}
+                          {isAdminView ? "No role assigned" : "No clients selected"}
                         </span>
                       )}
                     </div>
@@ -382,7 +382,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                   ) : (
                     <>
                       <p className={modalHelperTextClassName}>
-                        Choose which app clients this user can access.
+                        Choose which clients this user can access.
                       </p>
                       <MultiSelect
                         options={appClientSelectOptions}
