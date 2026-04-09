@@ -19,6 +19,7 @@ type Handlers struct {
 	PermissionHandler *v1.PermissionHandler
 	MailHandler       *v1.MailHandler
 	RegistrationHandler *v1.RegistrationHandler
+	OTPHandler          *v1.OTPHandler
 	UserRepo          repository.UserRepository
 
 	RoleRepo          repository.RoleRepository
@@ -114,6 +115,12 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		{
 			mail.POST("/otp", h.MailHandler.SendOTP)
 			mail.POST("/invitation", h.MailHandler.SendInvitation)
+		}
+
+		otp := admin.Group("/otp")
+		{
+			otp.POST("/send", h.OTPHandler.SendOTP)
+			otp.POST("/verify", h.OTPHandler.VerifyOTP)
 		}
 
 		registrationAdmin := admin.Group("/registration")
