@@ -1,8 +1,7 @@
 package dto
 
 type OTPRequest struct {
-	UserID string `json:"user_id" binding:"required"`
-	Email  string `json:"email" binding:"required,email"`
+	Email string `json:"email" binding:"required,email"`
 }
 
 type InvitationRequest struct {
