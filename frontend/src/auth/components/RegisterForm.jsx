@@ -1,25 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
+import { registrationFlowService } from "../services/registrationFlowService";
 import { buildLoginPath } from "../utils/loginRoute";
+import { getPasswordRequirementChecks } from "../../utils/passwordRules";
 
 const roleOptions = [
   {
+    id: "student",
     label: "Student",
     Icon: StudentRoleIcon,
   },
   {
+    id: "guest",
     label: "Guest",
     Icon: GuestRoleIcon,
   },
   {
+    id: "applicant",
     label: "Applicant",
     Icon: ApplicantRoleIcon,
   },
 ];
 
 const verificationLength = 6;
-const resendDurationSeconds = 45;
+const resendDurationSeconds = 180;
 
 const initialDetails = {
   firstName: "",
@@ -27,7 +32,7 @@ const initialDetails = {
   middleName: "",
   suffix: "",
   email: "",
-  role: "",
+  accountType: "",
 };
 
 const initialDetailErrors = {
@@ -36,17 +41,27 @@ const initialDetailErrors = {
   middleName: "",
   suffix: "",
   email: "",
-  role: "",
+  accountType: "",
+};
+
+const initialPasswordValues = {
+  password: "",
+  confirmPassword: "",
+};
+
+const initialPasswordErrors = {
+  password: "",
+  confirmPassword: "",
 };
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function getInputClassName(hasError) {
+function getInputClassName(hasError, hasActionButton = false) {
   return `h-12 w-full rounded-2xl border bg-white/95 pl-12 pr-4 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
     hasError
       ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
       : "border-white/20 focus:border-[#ffd700] focus:ring-[#ffd700]/20"
-  }`;
+  } ${hasActionButton ? "pr-12" : ""}`;
 }
 
 function getSelectContainerClassName(hasError) {
@@ -62,7 +77,7 @@ function getFirstErrorMessage(errors) {
 }
 
 function getRoleOption(value) {
-  return roleOptions.find((roleOption) => roleOption.label === value) || null;
+  return roleOptions.find((roleOption) => roleOption.id === value) || null;
 }
 
 function maskEmail(email) {
@@ -114,7 +129,7 @@ function getEmailError(value) {
   return "";
 }
 
-function getRoleError(value) {
+function getAccountTypeError(value) {
   if (!value.trim()) {
     return "Please select a role.";
   }
@@ -130,11 +145,49 @@ function getDetailFieldError(field, details) {
       return getLastNameError(details.lastName);
     case "email":
       return getEmailError(details.email);
-    case "role":
-      return getRoleError(details.role);
+    case "accountType":
+      return getAccountTypeError(details.accountType);
     default:
       return "";
   }
+}
+
+function getPasswordError(value) {
+  if (!value.trim()) {
+    return "Password is required.";
+  }
+
+  const passwordChecks = getPasswordRequirementChecks(value);
+
+  if (!Object.values(passwordChecks).every(Boolean)) {
+    return "Use at least 8 characters with 1 uppercase letter, 1 number, and 1 special character.";
+  }
+
+  return "";
+}
+
+function getConfirmPasswordError(password, confirmPassword) {
+  if (!confirmPassword.trim()) {
+    return "Please confirm your password.";
+  }
+
+  if (password !== confirmPassword) {
+    return "Passwords do not match.";
+  }
+
+  return "";
+}
+
+function getApiErrorMessage(
+  error,
+  fallbackMessage = "Unable to continue registration right now.",
+) {
+  return (
+    error?.response?.data?.error ||
+    error?.response?.data?.message ||
+    error?.message ||
+    fallbackMessage
+  );
 }
 
 function FieldError({ message }) {
@@ -154,20 +207,27 @@ function FormLabel({ children, required = false }) {
   );
 }
 
-export default function RegisterForm({ clientId, onComplete }) {
-  const navigate = useNavigate();
+export default function RegisterForm({ clientId }) {
   const verificationInputsRef = useRef([]);
   const roleDropdownRef = useRef(null);
 
   const [step, setStep] = useState("details");
   const [details, setDetails] = useState(initialDetails);
   const [detailErrors, setDetailErrors] = useState(initialDetailErrors);
+  const [passwordValues, setPasswordValues] = useState(initialPasswordValues);
+  const [passwordErrors, setPasswordErrors] = useState(initialPasswordErrors);
   const [verificationCode, setVerificationCode] = useState(
     Array(verificationLength).fill(""),
   );
   const [verificationError, setVerificationError] = useState("");
   const [resendTimer, setResendTimer] = useState(resendDurationSeconds);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isSubmittingRegistration, setIsSubmittingRegistration] = useState(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [isResendingCode, setIsResendingCode] = useState(false);
   const [error, setError] = useState("");
 
   const loginPath = buildLoginPath(clientId);
@@ -254,14 +314,14 @@ export default function RegisterForm({ clientId, onComplete }) {
   const handleRoleSelect = (role) => {
     setDetails((currentDetails) => ({
       ...currentDetails,
-      role,
+      accountType: role,
     }));
 
     setError("");
     setIsRoleMenuOpen(false);
     setDetailErrors((currentErrors) => ({
       ...currentErrors,
-      role: "",
+      accountType: "",
     }));
   };
 
@@ -272,7 +332,7 @@ export default function RegisterForm({ clientId, onComplete }) {
       middleName: "",
       suffix: "",
       email: getEmailError(details.email),
-      role: getRoleError(details.role),
+      accountType: getAccountTypeError(details.accountType),
     };
 
     setDetailErrors(nextErrors);
@@ -283,7 +343,7 @@ export default function RegisterForm({ clientId, onComplete }) {
     return !validationMessage;
   };
 
-  const handleDetailsSubmit = (event) => {
+  const handleDetailsSubmit = async (event) => {
     event.preventDefault();
     setError("");
 
@@ -291,10 +351,25 @@ export default function RegisterForm({ clientId, onComplete }) {
       return;
     }
 
-    setVerificationCode(Array(verificationLength).fill(""));
-    setVerificationError("");
-    setResendTimer(resendDurationSeconds);
-    setStep("verifyEmail");
+    try {
+      setIsSendingOtp(true);
+      await registrationFlowService.sendOtp({
+        email: details.email,
+      });
+      setVerificationCode(Array(verificationLength).fill(""));
+      setVerificationError("");
+      setResendTimer(resendDurationSeconds);
+      setStep("verifyEmail");
+    } catch (submissionError) {
+      setError(
+        getApiErrorMessage(
+          submissionError,
+          "Unable to send the OTP right now.",
+        ),
+      );
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
   const handleVerificationChange = (index, value) => {
@@ -367,29 +442,144 @@ export default function RegisterForm({ clientId, onComplete }) {
     }
 
     try {
-      if (onComplete) {
-        await onComplete({
-          ...details,
-          verificationCode: verificationCode.join(""),
-        });
+      if (!details.email) {
+        throw new Error("Registration session expired. Please start again.");
       }
 
-      navigate(loginPath, { replace: true });
+      setIsVerifyingCode(true);
+      await registrationFlowService.verifyOtp({
+        email: details.email,
+        otp: verificationCode.join(""),
+      });
+      setPasswordValues(initialPasswordValues);
+      setPasswordErrors(initialPasswordErrors);
+      setStep("setPassword");
     } catch (submissionError) {
-      setError(submissionError?.message || "Registration failed. Please try again.");
+      const errorMessage = getApiErrorMessage(
+        submissionError,
+        "Unable to verify the OTP right now.",
+      );
+      setVerificationError(errorMessage);
+      setError(errorMessage);
+    } finally {
+      setIsVerifyingCode(false);
     }
   };
 
-  const handleResendCode = () => {
-    setVerificationCode(Array(verificationLength).fill(""));
-    setVerificationError("");
+  const handleResendCode = async () => {
+    if (!details.email || resendTimer > 0 || isResendingCode) {
+      return;
+    }
+
+    try {
+      setIsResendingCode(true);
+      setError("");
+      await registrationFlowService.sendOtp({
+        email: details.email,
+      });
+      setVerificationCode(Array(verificationLength).fill(""));
+      setVerificationError("");
+      setResendTimer(resendDurationSeconds);
+      verificationInputsRef.current[0]?.focus();
+    } catch (resendError) {
+      const errorMessage = getApiErrorMessage(
+        resendError,
+        "Unable to resend the OTP right now.",
+      );
+      setVerificationError(errorMessage);
+      setError(errorMessage);
+    } finally {
+      setIsResendingCode(false);
+    }
+  };
+
+  const handlePasswordChange = (field, value) => {
+    setPasswordValues((currentValues) => ({
+      ...currentValues,
+      [field]: value,
+    }));
+
     setError("");
-    setResendTimer(resendDurationSeconds);
-    verificationInputsRef.current[0]?.focus();
+    setPasswordErrors((currentErrors) => ({
+      ...currentErrors,
+      [field]: "",
+      ...(field === "password" ? { confirmPassword: "" } : {}),
+    }));
+  };
+
+  const handlePasswordBlur = (field) => {
+    const nextErrors = {
+      ...passwordErrors,
+      [field]:
+        field === "password"
+          ? getPasswordError(passwordValues.password)
+          : getConfirmPasswordError(
+              passwordValues.password,
+              passwordValues.confirmPassword,
+            ),
+    };
+
+    if (field === "password" && passwordValues.confirmPassword) {
+      nextErrors.confirmPassword = getConfirmPasswordError(
+        passwordValues.password,
+        passwordValues.confirmPassword,
+      );
+    }
+
+    setPasswordErrors(nextErrors);
+  };
+
+  const validatePasswordStep = () => {
+    const nextErrors = {
+      password: getPasswordError(passwordValues.password),
+      confirmPassword: getConfirmPasswordError(
+        passwordValues.password,
+        passwordValues.confirmPassword,
+      ),
+    };
+
+    setPasswordErrors(nextErrors);
+
+    const validationMessage = getFirstErrorMessage(nextErrors);
+    setError(validationMessage);
+
+    return !validationMessage;
+  };
+
+  const handlePasswordSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+
+    if (!validatePasswordStep()) {
+      return;
+    }
+    try {
+      setIsSubmittingRegistration(true);
+
+      await registrationFlowService.registerAccount({
+        firstName: details.firstName,
+        lastName: details.lastName,
+        middleName: details.middleName,
+        suffix: details.suffix,
+        email: details.email,
+        accountType: details.accountType,
+        password: passwordValues.password,
+      });
+      setStep("success");
+    } catch (submissionError) {
+      setError(
+        getApiErrorMessage(
+          submissionError,
+          "Unable to continue registration right now.",
+        ),
+      );
+    } finally {
+      setIsSubmittingRegistration(false);
+    }
   };
 
   const renderDetailsStep = () => {
-    const selectedRoleOption = getRoleOption(details.role);
+    const selectedRoleOption = getRoleOption(details.accountType);
 
     return (
       <form onSubmit={handleDetailsSubmit} noValidate className="space-y-4">
@@ -492,20 +682,21 @@ export default function RegisterForm({ clientId, onComplete }) {
         <div>
           <FormLabel required>Select Your Role</FormLabel>
           <div ref={roleDropdownRef} className={`relative ${isRoleMenuOpen ? "z-[80]" : ""}`}>
-            <div className={getSelectContainerClassName(detailErrors.role)}>
+            <div className={getSelectContainerClassName(detailErrors.accountType)}>
               <button type="button" onClick={() => setIsRoleMenuOpen((currentValue) => !currentValue)}
                 onBlur={() => {
                   window.setTimeout(() => {
                     if (
                       !roleDropdownRef.current?.contains(document.activeElement)
                     ) {
-                      handleDetailBlur("role");
+                      handleDetailBlur("accountType");
                     }
                   }, 0);
                 }}
                 className="flex h-14 w-full items-center justify-between gap-3 bg-transparent pl-4 pr-2 text-left outline-none"
                 aria-haspopup="listbox"
                 aria-expanded={isRoleMenuOpen}
+                disabled={isSendingOtp}
               >
                 <span className="flex min-w-0 items-center gap-3">
                   <span className="shrink-0 text-[#7b0d15]/60">
@@ -517,10 +708,10 @@ export default function RegisterForm({ clientId, onComplete }) {
                   </span>
                   <span
                     className={`truncate text-sm ${
-                      details.role ? "text-slate-800" : "text-slate-400"
+                      details.accountType ? "text-slate-800" : "text-slate-400"
                     }`}
                   >
-                    {details.role || "Select your role"}
+                    {selectedRoleOption?.label || "Select your role"}
                   </span>
                 </span>
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#7b0d15]/15 bg-[#7b0d15]/8 text-[#991b1b]">
@@ -537,7 +728,7 @@ export default function RegisterForm({ clientId, onComplete }) {
               <div className="absolute left-0 right-0 top-[calc(100%-0.15rem)] z-[90] overflow-hidden rounded-[1.35rem] border border-white/20 bg-white/98 shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl" role="listbox" aria-label="Select your role">
                 <button type="button" onClick={() => handleRoleSelect("")}
                   className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition duration-200 ${
-                    details.role
+                    details.accountType
                       ? "text-slate-700 hover:bg-[#fff2d2] hover:text-[#7b0d15]"
                       : "bg-[#fff2d2] font-medium text-[#7b0d15]"
                   }`}
@@ -549,10 +740,10 @@ export default function RegisterForm({ clientId, onComplete }) {
                 </button>
 
                 {roleOptions.map((roleOption) => {
-                  const isSelected = details.role === roleOption.label;
+                  const isSelected = details.accountType === roleOption.id;
 
                   return (
-                    <button key={roleOption.label} type="button" onClick={() => handleRoleSelect(roleOption.label)}
+                    <button key={roleOption.id} type="button" onClick={() => handleRoleSelect(roleOption.id)}
                       className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition duration-200 ${
                         isSelected
                           ? "bg-[#fff2d2] font-medium text-[#7b0d15]"
@@ -569,7 +760,7 @@ export default function RegisterForm({ clientId, onComplete }) {
               </div>
             ) : null}
           </div>
-          <FieldError message={detailErrors.role} />
+          <FieldError message={detailErrors.accountType} />
         </div>
 
         <p className="pt-1 text-sm text-white/80">
@@ -579,8 +770,8 @@ export default function RegisterForm({ clientId, onComplete }) {
           </Link>
         </p>
 
-        <button type="submit" className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.08em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
-          REGISTER
+        <button type="submit" disabled={isSendingOtp} className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.08em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:border-[#f8d24e]/40 disabled:bg-[#f8d24e]/60 disabled:text-[#7b0d15]/70 disabled:shadow-none">
+          {isSendingOtp ? "SENDING OTP..." : "CONTINUE"}
         </button>
       </form>
     );
@@ -620,24 +811,124 @@ export default function RegisterForm({ clientId, onComplete }) {
 
         <p className="text-center text-sm text-white/80">
           Didn&apos;t receive a code?{" "}
-          <button type="button" onClick={handleResendCode} disabled={resendTimer > 0}
+          <button type="button" onClick={handleResendCode} disabled={resendTimer > 0 || isResendingCode}
             className={`font-semibold underline decoration-transparent transition duration-300 ${
-              resendTimer > 0
+              resendTimer > 0 || isResendingCode
                 ? "cursor-not-allowed text-white/45"
                 : "text-[#ffd700] hover:decoration-[#ffd700]"
             }`}
           >
-            Resend
+            {isResendingCode ? "Resending" : "Resend"}
           </button>{" "}
           {resendTimer > 0 ? `in ${resendTimer}s` : "now"}
         </p>
 
-        <button type="submit" className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
-          VERIFY &amp; CONTINUE
+        <button type="submit" disabled={isVerifyingCode} className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:border-[#f8d24e]/40 disabled:bg-[#f8d24e]/60 disabled:text-[#7b0d15]/70 disabled:shadow-none">
+          {isVerifyingCode ? "VERIFYING OTP..." : "VERIFY & CONTINUE"}
         </button>
       </form>
     );
   };
+
+  const renderPasswordStep = () => {
+    return (
+      <form onSubmit={handlePasswordSubmit} noValidate className="space-y-4">
+        <div>
+          <FormLabel required>Password</FormLabel>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
+              <PasswordIcon />
+            </span>
+            <input type={showPassword ? "text" : "password"} value={passwordValues.password}
+              onChange={(event) =>
+                handlePasswordChange("password", event.target.value)
+              }
+              onBlur={() => handlePasswordBlur("password")}
+              autoComplete="new-password"
+              placeholder="Create your password"
+              className={getInputClassName(passwordErrors.password, true)}
+            />
+            <button type="button"
+              onClick={() =>
+                setShowPassword((currentValue) => !currentValue)
+              }
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+            </button>
+          </div>
+          <FieldError message={passwordErrors.password} />
+        </div>
+
+        <div>
+          <FormLabel required>Confirm Password</FormLabel>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
+              <PasswordIcon />
+            </span>
+            <input type={showConfirmPassword ? "text" : "password"} value={passwordValues.confirmPassword}
+              onChange={(event) =>
+                handlePasswordChange("confirmPassword", event.target.value)
+              }
+              onBlur={() => handlePasswordBlur("confirmPassword")}
+              autoComplete="new-password"
+              placeholder="Confirm your password"
+              className={getInputClassName(passwordErrors.confirmPassword, true)}
+            />
+            <button type="button"
+              onClick={() =>
+                setShowConfirmPassword((currentValue) => !currentValue)
+              }
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]"
+              aria-label={
+                showConfirmPassword
+                  ? "Hide confirm password"
+                  : "Show confirm password"
+              }
+            >
+              {showConfirmPassword ? <EyeSlashIcon /> : <EyeIcon />}
+            </button>
+          </div>
+          <FieldError message={passwordErrors.confirmPassword} />
+        </div>
+
+        <p className="pl-1 text-xs font-medium text-white/75">
+          Use at least 8 characters with 1 uppercase letter, 1 number, and 1 special character.
+        </p>
+
+        <button type="submit" disabled={isSubmittingRegistration} className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:border-[#f8d24e]/40 disabled:bg-[#f8d24e]/60 disabled:text-[#7b0d15]/70 disabled:shadow-none">
+          {isSubmittingRegistration ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}
+        </button>
+      </form>
+    );
+  };
+
+  const renderSuccessStep = () => {
+    return (
+      <div className="space-y-5 text-center">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 shadow-[0_20px_45px_-28px_rgba(16,185,129,0.6)]">
+          <CheckIcon />
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-3xl font-bold leading-tight text-white">
+            Account Ready
+          </h2>
+          <p className="mx-auto max-w-sm text-sm font-light leading-6 text-white/80">
+            Your registration is complete. You can now sign in using your email
+            and password.
+          </p>
+        </div>
+
+        <Link to={loginPath} className="flex h-12 w-full items-center justify-center rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
+          Go to Login
+        </Link>
+      </div>
+    );
+  };
+
+  const maskedEmail = details.email ? maskEmail(details.email) : "";
 
   return (
     <div className="relative z-20 w-full max-w-[36rem] px-1 sm:px-0">
@@ -645,7 +936,11 @@ export default function RegisterForm({ clientId, onComplete }) {
         <div className="rounded-[calc(2rem-4px)] bg-[linear-gradient(180deg,rgba(120,12,22,0.72),rgba(60,7,12,0.86))] px-6 py-7 sm:px-8 sm:py-8">
           <div className="space-y-6">
             <div className="space-y-4 text-center">
-              <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="float-logo mx-auto block h-24 object-contain drop-shadow-[0_12px_20px_rgba(248,210,78,0.35)] transition duration-300 hover:scale-105"/>
+              {step !== "success" ? (
+                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/15 text-[#f8d24e] shadow-[0_20px_45px_-28px_rgba(248,210,78,0.55)]">
+                  <PasswordIcon className="h-11 w-11" />
+                </div>
+              ) : null}
 
               {step === "details" ? (
                 <div className="space-y-2">
@@ -670,12 +965,34 @@ export default function RegisterForm({ clientId, onComplete }) {
                   </p>
                 </div>
               ) : null}
+
+              {step === "setPassword" ? (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <h2 className="text-3xl font-bold leading-tight text-white">
+                      Set Your <span className="text-[#f8d24e]">Password</span>
+                    </h2>
+                    <p className="mx-auto max-w-sm text-sm font-light leading-6 text-white/80">
+                      Create your password to finish your registration.
+                    </p>
+                  </div>
+
+                  {maskedEmail ? (
+                    <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/85">
+                      <EmailIcon />
+                      {maskedEmail}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <ErrorAlert message={error} onClose={() => setError("")} />
 
             {step === "details" ? renderDetailsStep() : null}
             {step === "verifyEmail" ? renderVerificationStep() : null}
+            {step === "setPassword" ? renderPasswordStep() : null}
+            {step === "success" ? renderSuccessStep() : null}
           </div>
         </div>
       </div>
@@ -696,6 +1013,40 @@ function EmailIcon() {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
       <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
       <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
+    </svg>
+  );
+}
+
+function PasswordIcon({ className = "size-5" }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-10 w-10">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m9 12 2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+    </svg>
+  );
+}
+
+function EyeSlashIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0 1 12 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 0 1 2.293-3.607M6.72 6.72A9.956 9.956 0 0 1 12 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 0 1-4.563 5.956M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18"/>
     </svg>
   );
 }
