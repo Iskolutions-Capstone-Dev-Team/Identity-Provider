@@ -18,6 +18,7 @@ type RegistrationRepository interface {
 		id int) ([]AccountTypeClientRow, error)
 	SyncPreapprovedClients(ctx context.Context, accountTypeID int, 
 		clientIDs []uuid.UUID) error
+	GetAccountTypeIDByName(ctx context.Context, name string) (int, error)
 }
 
 type regRepo struct {
@@ -101,4 +102,12 @@ func (r *regRepo) SyncPreapprovedClients(ctx context.Context,
 	}
 
 	return tx.Commit()
+}
+
+func (r *regRepo) GetAccountTypeIDByName(ctx context.Context, 
+	name string) (int, error) {
+	var id int
+	query := "SELECT id FROM account_types WHERE name = ?"
+	err := r.db.GetContext(ctx, &id, query, name)
+	return id, err
 }
