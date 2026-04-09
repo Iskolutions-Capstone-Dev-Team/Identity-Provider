@@ -16,5 +16,9 @@ var OtpsMigration = migrations.TableMigration{
 				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 			);`,
 		},
+		{
+			ID: "add-attempts-column",
+			SQL: `ALTER TABLE otps ADD COLUMN attempts INT DEFAULT 0;`,
+		},
 	},
 }
