@@ -21,6 +21,18 @@ function normalizeClientIds(clientIds = []) {
   );
 }
 
+function normalizeClientNames(clientNames = []) {
+  return Array.from(
+    new Set(
+      (Array.isArray(clientNames) ? clientNames : [])
+        .map((clientName) =>
+          typeof clientName === "string" ? clientName.trim() : "",
+        )
+        .filter(Boolean),
+    ),
+  );
+}
+
 function normalizeEmailAddress(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
@@ -40,6 +52,26 @@ function getAccessibleClientIds(user = {}) {
   return normalizeClientIds(
     (Array.isArray(user?.clients) ? user.clients : []).map(
       (client) => client?.id ?? client?.client_id ?? client?.clientId ?? "",
+    ),
+  );
+}
+
+function getAccessibleClientNames(user = {}) {
+  const directClientNames = normalizeClientNames(
+    user?.accessibleClientNames ??
+      user?.accessible_client_names ??
+      user?.clientNames ??
+      user?.client_names,
+  );
+
+  if (directClientNames.length > 0) {
+    return directClientNames;
+  }
+
+  return normalizeClientNames(
+    (Array.isArray(user?.clients) ? user.clients : []).map(
+      (client) =>
+        client?.name ?? client?.client_name ?? client?.clientName ?? "",
     ),
   );
 }
@@ -149,6 +181,7 @@ function mapUserResponse(user = {}, { isAdmin = false } = {}) {
     roleId: getUserRoleId(user),
     roles: normalizeRoleNames(user.roles),
     accessibleClientIds: getAccessibleClientIds(user),
+    accessibleClientNames: getAccessibleClientNames(user),
     isAdmin,
   };
 }
@@ -221,23 +254,7 @@ async function getRegularUsers() {
     userService.getUsers({ page, limit: FETCH_LIMIT }),
   );
 
-  let adminUserIds = new Set();
-
-  try {
-    const adminUsers = await getAllUsersFromEndpoint((page) =>
-      userService.getAdminUsers({ page, limit: FETCH_LIMIT }),
-    );
-
-    adminUserIds = new Set(
-      adminUsers.map((user) => user?.id).filter(Boolean),
-    );
-  } catch (error) {
-    console.error("Failed to load admin users while filtering regular users:", error);
-  }
-
-  return allUsers
-    .filter((user) => !adminUserIds.has(user?.id))
-    .map((user) => mapUserResponse(user, { isAdmin: false }));
+  return allUsers.map((user) => mapUserResponse(user, { isAdmin: false }));
 }
 
 async function getAdminUsers() {
@@ -549,21 +566,10 @@ export function useUsers() {
           : "User successfully updated!",
       );
 
-      if (shouldUpdateStatus || shouldUpdateRole) {
+      if (shouldUpdateStatus || shouldUpdateRole || shouldUpdateAccessibleClients) {
         await fetchUsers(userType, { showLoading: false });
         return;
       }
-
-      setUsers((currentUsers) =>
-        currentUsers.map((user) =>
-          user.id === updatedUser.id
-            ? {
-                ...user,
-                accessibleClientIds: nextAccessibleClientIds,
-              }
-            : user,
-        ),
-      );
     } catch (error) {
       if (accessWasUpdated || roleWasUpdated) {
         await fetchUsers(userType, { showLoading: false });

@@ -46,6 +46,30 @@ function getAccessListClassName() {
   return "flex flex-wrap items-center justify-center gap-2";
 }
 
+function normalizeClientNameList(clientNames = []) {
+  return Array.from(
+    new Set(
+      (Array.isArray(clientNames) ? clientNames : [])
+        .map((clientName) =>
+          typeof clientName === "string" ? clientName.trim() : "",
+        )
+        .filter(Boolean),
+    ),
+  );
+}
+
+function getRegularAccessItems(user, appClients) {
+  const responseClientNames = normalizeClientNameList(
+    user?.accessibleClientNames,
+  );
+
+  if (responseClientNames.length > 0) {
+    return responseClientNames;
+  }
+
+  return getAppClientNamesByIds(user?.accessibleClientIds, appClients);
+}
+
 function getColumnWidths(isAdminView) {
   if (isAdminView) {
     return [
@@ -116,7 +140,7 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
     : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
   const columnWidths = getColumnWidths(isAdminView);
   const getAccessItems = (user) =>
-    isAdminView ? user.roles : getAppClientNamesByIds(user.accessibleClientIds, appClients);
+    isAdminView ? user.roles : getRegularAccessItems(user, appClients);
   const emptyAccessLabel = isAdminView ? "No role assigned" : "No clients";
 
   if (loading) {

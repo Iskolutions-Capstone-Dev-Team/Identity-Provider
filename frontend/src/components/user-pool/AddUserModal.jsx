@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import FadeWrapper from "../FadeWrapper";
 import ModalSteps from "../ModalSteps";
 import ErrorAlert from "../ErrorAlert";
+import MultiSelect from "../MultiSelect";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import { useAllAppClients } from "../../hooks/useAllAppClients";
@@ -10,7 +11,7 @@ import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import InvitationConfirmModal from "./InvitationConfirmModal";
 import { getModalTheme } from "../modalTheme";
-import { ADMIN_USER_TYPE, getAdminRoleOptions } from "../../utils/userPoolAccess";
+import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions } from "../../utils/userPoolAccess";
 import { ACCOUNT_TYPE_OPTIONS } from "../../utils/accountTypes";
 import { generateTemporaryPassword, getTemporaryPasswordValidationMessage } from "../../utils/passwordRules";
 
@@ -29,31 +30,18 @@ const REGULAR_ACCOUNT_SETUP_OPTIONS = [
   },
 ];
 
-function getAppClientLabel(client = {}) {
-  return typeof client?.name === "string" ? client.name.trim() : "";
-}
-
-function getAppClientSelectOptions(appClientOptions = []) {
-  return [
-    {
-      value: "",
-      label: "Select app client",
-    },
-    ...(Array.isArray(appClientOptions) ? appClientOptions : [])
-      .map((client) => ({
-        value: client?.id ?? "",
-        label: getAppClientLabel(client),
-      }))
-      .filter((client) => client.value && client.label),
-  ];
-}
-
-function getSelectedAdminClientIds({
-  adminSignInClientId,
-  adminCrudClientId,
-} = {}) {
+function normalizeSelectedClientIds(clientIds = []) {
   return Array.from(
-    new Set([adminSignInClientId, adminCrudClientId].filter(Boolean)),
+    new Set((Array.isArray(clientIds) ? clientIds : []).filter(Boolean)),
+  );
+}
+
+function getSelectedAdminClientIds({ adminSignInClientIds, adminCrudClientIds } = {}) {
+  return normalizeSelectedClientIds(
+    [
+      ...normalizeSelectedClientIds(adminSignInClientIds),
+      ...normalizeSelectedClientIds(adminCrudClientIds),
+    ],
   );
 }
 
@@ -66,8 +54,8 @@ const initialFormData = {
   tempPassword: "",
   accountSetupType: TEMP_PASSWORD_SETUP_VALUE,
   accountType: "",
-  adminSignInClientId: "",
-  adminCrudClientId: "",
+  adminSignInClientIds: [],
+  adminCrudClientIds: [],
   selectedAdminRoleId: null,
 };
 
@@ -107,13 +95,13 @@ function PasswordVisibilityIcon({ showPassword }) {
 }
 
 export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", colorMode = "light" }) {
-  const availableRoles = useAllRoles({ endpoint: "all" });
+  const availableRoles = useAllRoles();
   const {
     appClients: registrationAppClients,
     isLoadingAppClients: isLoadingRegistrationAppClients,
   } = useAllAppClients();
   const adminRoleOptions = getAdminRoleOptions(availableRoles);
-  const registrationAppClientSelectOptions = getAppClientSelectOptions(
+  const registrationAppClientOptions = getAllAppClientSelectOptions(
     registrationAppClients,
   );
   const [step, setStep] = useState(1);
@@ -227,10 +215,10 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     });
   };
 
-  const handleSelectFieldChange = (fieldName) => (value) => {
+  const handleMultiSelectFieldChange = (fieldName) => (values) => {
     setData((current) => ({
       ...current,
-      [fieldName]: value,
+      [fieldName]: normalizeSelectedClientIds(values),
     }));
     clearFieldError(fieldName);
     clearErrorBanner();
@@ -261,10 +249,10 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     setData((current) => ({
       ...current,
       accountType,
-      adminSignInClientId:
-        accountType === ADMIN_ACCOUNT_CATEGORY ? current.adminSignInClientId : "",
-      adminCrudClientId:
-        accountType === ADMIN_ACCOUNT_CATEGORY ? current.adminCrudClientId : "",
+      adminSignInClientIds:
+        accountType === ADMIN_ACCOUNT_CATEGORY ? current.adminSignInClientIds : [],
+      adminCrudClientIds:
+        accountType === ADMIN_ACCOUNT_CATEGORY ? current.adminCrudClientIds : [],
       selectedAdminRoleId:
         accountType === ADMIN_ACCOUNT_CATEGORY ? current.selectedAdminRoleId : null,
     }));
@@ -337,12 +325,14 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       nextFieldErrors.accountType = "Select an account type.";
     }
 
-    if (showRegularAdminClientFields && !data.adminSignInClientId) {
-      nextFieldErrors.adminSignInClientId = "Select a sign-in app client.";
+    if (showRegularAdminClientFields && data.adminSignInClientIds.length === 0) {
+      nextFieldErrors.adminSignInClientId =
+        "Select at least one sign-in app client.";
     }
 
-    if (showRegularAdminClientFields && !data.adminCrudClientId) {
-      nextFieldErrors.adminCrudClientId = "Select an access app client.";
+    if (showRegularAdminClientFields && data.adminCrudClientIds.length === 0) {
+      nextFieldErrors.adminCrudClientId =
+        "Select at least one access app client.";
     }
 
     if (showRegularAdminRoleField && !data.selectedAdminRoleId) {
@@ -771,16 +761,18 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                       <>
                         <section className={modalSectionClassName}>
                           <label className={modalLabelClassName}>
-                            Sign-In App Client <span className="text-red-500">*</span>
+                            Sign-In App Clients <span className="text-red-500">*</span>
                           </label>
                           <p className={modalHelperTextClassName}>
-                            Used for sign-in.
+                            Choose one or more app clients used for sign-in.
                           </p>
-                          <UserPoolModalSelect
-                            value={data.adminSignInClientId}
-                            onChange={handleSelectFieldChange("adminSignInClientId")}
-                            options={registrationAppClientSelectOptions}
-                            ariaLabel="Select sign-in app client"
+                          <MultiSelect
+                            options={registrationAppClientOptions}
+                            selectedValues={data.adminSignInClientIds}
+                            onChange={handleMultiSelectFieldChange("adminSignInClientIds")}
+                            placeholder="Select sign-in app clients"
+                            variant="userpoolModal"
+                            hasError={Boolean(fieldErrors.adminSignInClientId)}
                             colorMode={colorMode}
                           />
                           {fieldErrors.adminSignInClientId && (
@@ -792,16 +784,18 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
 
                         <section className={modalSectionClassName}>
                           <label className={modalLabelClassName}>
-                            Access App Client <span className="text-red-500">*</span>
+                            Access App Clients <span className="text-red-500">*</span>
                           </label>
                           <p className={modalHelperTextClassName}>
-                            Used to manage user access.
+                            Choose one or more app clients used to manage user access.
                           </p>
-                          <UserPoolModalSelect
-                            value={data.adminCrudClientId}
-                            onChange={handleSelectFieldChange("adminCrudClientId")}
-                            options={registrationAppClientSelectOptions}
-                            ariaLabel="Select user-access app client"
+                          <MultiSelect
+                            options={registrationAppClientOptions}
+                            selectedValues={data.adminCrudClientIds}
+                            onChange={handleMultiSelectFieldChange("adminCrudClientIds")}
+                            placeholder="Select access app clients"
+                            variant="userpoolModal"
+                            hasError={Boolean(fieldErrors.adminCrudClientId)}
                             colorMode={colorMode}
                           />
                           {fieldErrors.adminCrudClientId && (
@@ -843,8 +837,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
 
                     {showAccountSetupAtBottom ? (
                       <>
-                        {tempPasswordSection}
                         {accountSetupSection}
+                        {tempPasswordSection}
                       </>
                     ) : (
                       tempPasswordSection
