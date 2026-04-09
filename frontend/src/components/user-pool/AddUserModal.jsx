@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import MultiSelect from "../MultiSelect";
 import FadeWrapper from "../FadeWrapper";
 import ModalSteps from "../ModalSteps";
 import ErrorAlert from "../ErrorAlert";
@@ -10,23 +9,64 @@ import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import InvitationConfirmModal from "./InvitationConfirmModal";
 import { getModalTheme } from "../modalTheme";
-import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions } from "../../utils/userPoolAccess";
+import { ADMIN_USER_TYPE, getAdminRoleOptions } from "../../utils/userPoolAccess";
 import { ACCOUNT_TYPE_OPTIONS } from "../../utils/accountTypes";
 import { generateTemporaryPassword, getTemporaryPasswordValidationMessage } from "../../utils/passwordRules";
 
 const TEMP_PASSWORD_SETUP_VALUE = "temporary_password";
 const INVITATION_SETUP_VALUE = "invitation";
+const USER_ACCOUNT_CATEGORY = "user";
+const ADMIN_ACCOUNT_CATEGORY = "admin";
 
 const REGULAR_ACCOUNT_SETUP_OPTIONS = [
   {
-    value: INVITATION_SETUP_VALUE,
-    label: "Send an invitation",
+    value: TEMP_PASSWORD_SETUP_VALUE,
+    label: "Temporary Password",
   },
   {
-    value: TEMP_PASSWORD_SETUP_VALUE,
-    label: "Set a temporary password",
+    value: INVITATION_SETUP_VALUE,
+    label: "Invitation",
   },
 ];
+
+const REGULAR_ACCOUNT_CATEGORY_OPTIONS = [
+  {
+    id: USER_ACCOUNT_CATEGORY,
+    label: "User",
+  },
+  {
+    id: ADMIN_ACCOUNT_CATEGORY,
+    label: "Admin",
+  },
+];
+
+function getAppClientLabel(client = {}) {
+  return typeof client?.name === "string" ? client.name.trim() : "";
+}
+
+function getAppClientSelectOptions(appClientOptions = []) {
+  return [
+    {
+      value: "",
+      label: "Select app client",
+    },
+    ...(Array.isArray(appClientOptions) ? appClientOptions : [])
+      .map((client) => ({
+        value: client?.id ?? "",
+        label: getAppClientLabel(client),
+      }))
+      .filter((client) => client.value && client.label),
+  ];
+}
+
+function getSelectedAdminClientIds({
+  adminSignInClientId,
+  adminCrudClientId,
+} = {}) {
+  return Array.from(
+    new Set([adminSignInClientId, adminCrudClientId].filter(Boolean)),
+  );
+}
 
 const initialFormData = {
   email: "",
@@ -36,9 +76,11 @@ const initialFormData = {
   suffix: "",
   tempPassword: "",
   accountSetupType: TEMP_PASSWORD_SETUP_VALUE,
-  accountType: null,
+  accountCategory: USER_ACCOUNT_CATEGORY,
+  registrationType: "",
+  adminSignInClientId: "",
+  adminCrudClientId: "",
   selectedAdminRoleId: null,
-  accessibleClientIds: [],
 };
 
 const initialFieldErrors = {
@@ -46,7 +88,10 @@ const initialFieldErrors = {
   givenName: "",
   surname: "",
   tempPassword: "",
-  accountType: "",
+  registrationType: "",
+  adminSignInClientId: "",
+  adminCrudClientId: "",
+  selectedAdminRoleId: "",
 };
 
 const extractErrorMessage = (error) =>
@@ -76,7 +121,7 @@ function PasswordVisibilityIcon({ showPassword }) {
 export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", appClientOptions = [], isLoadingAppClients = false, colorMode = "light" }) {
   const availableRoles = useAllRoles();
   const adminRoleOptions = getAdminRoleOptions(availableRoles);
-  const appClientSelectOptions = getAllAppClientSelectOptions(appClientOptions);
+  const appClientSelectOptions = getAppClientSelectOptions(appClientOptions);
   const [step, setStep] = useState(1);
   const [data, setData] = useState(initialFormData);
   const [error, setError] = useState("");
@@ -88,6 +133,17 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const isAdminView = userType === ADMIN_USER_TYPE;
   const isInvitationFlow =
     !isAdminView && data.accountSetupType === INVITATION_SETUP_VALUE;
+  const isAdminRegistrationType =
+    !isAdminView && data.registrationType === ADMIN_ACCOUNT_CATEGORY;
+  const showRegistrationTypeField = isInvitationFlow;
+  const showRegularAdminClientFields =
+    isInvitationFlow && isAdminRegistrationType;
+  const showRegularAdminRoleField =
+    isInvitationFlow && isAdminRegistrationType;
+  const showRegularTempPasswordField =
+    !isAdminView && data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
+  const needsExpandedHeaderSpacing =
+    !isAdminView && isInvitationFlow && isAdminRegistrationType;
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -121,10 +177,20 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     ? "mt-3 text-xs text-[#c7adb4]"
     : "mt-3 text-xs text-[#8f6f76]";
   const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} !px-7 !pt-7 !pb-9 sm:!px-8 sm:!pt-8 sm:!pb-10`;
-  const modalHeaderContentClassName = "max-w-xl pr-12 sm:pr-14";
+    `${modalHeaderClassName} !px-7 !pt-7 ${
+      needsExpandedHeaderSpacing
+        ? "!pb-12 sm:!px-8 sm:!pt-8 sm:!pb-14"
+        : "!pb-9 sm:!px-8 sm:!pt-8 sm:!pb-10"
+    }`;
+  const modalHeaderContentClassName = needsExpandedHeaderSpacing
+    ? "max-w-2xl pr-12 sm:pr-14"
+    : "max-w-xl pr-12 sm:pr-14";
   const modalHeaderDescriptionSpacingClassName =
-    `${modalHeaderDescriptionClassName} !mt-3 max-w-[18rem] leading-relaxed sm:!mt-4 sm:max-w-[28rem]`;
+    `${modalHeaderDescriptionClassName} !mt-3 leading-relaxed ${
+      needsExpandedHeaderSpacing
+        ? "max-w-[20rem] sm:!mt-4 sm:max-w-[34rem]"
+        : "max-w-[18rem] sm:!mt-4 sm:max-w-[28rem]"
+    }`;
 
   const getInputClassName = (fieldName, hasActionButton = false) =>
     `${modalInputClassName} ${hasActionButton ? "pr-12" : ""} ${
@@ -168,11 +234,12 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     });
   };
 
-  const handleAccessibleClientsChange = (accessibleClientIds) => {
+  const handleSelectFieldChange = (fieldName) => (value) => {
     setData((current) => ({
       ...current,
-      accessibleClientIds,
+      [fieldName]: value,
     }));
+    clearFieldError(fieldName);
     clearErrorBanner();
   };
 
@@ -181,6 +248,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       ...current,
       selectedAdminRoleId,
     }));
+    clearFieldError("selectedAdminRoleId");
     clearErrorBanner();
   };
 
@@ -192,16 +260,34 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     setFieldErrors((current) => ({
       ...current,
       tempPassword: "",
+      registrationType: "",
+      adminSignInClientId: "",
+      adminCrudClientId: "",
+      selectedAdminRoleId: "",
     }));
     clearErrorBanner();
   };
 
-  const handleAccountTypeChange = (accountType) => {
+  const handleAccountCategoryChange = (accountCategory) => {
     setData((current) => ({
       ...current,
-      accountType,
+      accountCategory,
     }));
-    clearFieldError("accountType");
+    clearErrorBanner();
+  };
+
+  const handleRegistrationTypeChange = (registrationType) => {
+    setData((current) => ({
+      ...current,
+      registrationType,
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      registrationType: "",
+      adminSignInClientId: "",
+      adminCrudClientId: "",
+      selectedAdminRoleId: "",
+    }));
     clearErrorBanner();
   };
 
@@ -260,11 +346,23 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       ...initialFieldErrors,
     };
 
-    if (isInvitationFlow && !data.accountType) {
-      nextFieldErrors.accountType = "Select an account type.";
+    if (showRegistrationTypeField && !data.registrationType) {
+      nextFieldErrors.registrationType = "Select a registration type.";
     }
 
-    if (!isInvitationFlow) {
+    if (showRegularAdminClientFields && !data.adminSignInClientId) {
+      nextFieldErrors.adminSignInClientId = "Select a sign-in app client.";
+    }
+
+    if (showRegularAdminClientFields && !data.adminCrudClientId) {
+      nextFieldErrors.adminCrudClientId = "Select an access app client.";
+    }
+
+    if (showRegularAdminRoleField && !data.selectedAdminRoleId) {
+      nextFieldErrors.selectedAdminRoleId = "Select a role.";
+    }
+
+    if (showRegularTempPasswordField) {
       const trimmedTempPassword = data.tempPassword.trim();
 
       if (!trimmedTempPassword) {
@@ -361,6 +459,12 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     const selectedAdminRole = adminRoleOptions.find(
       (role) => role.id === data.selectedAdminRoleId,
     );
+    const accessibleClientIds = showRegularAdminClientFields
+      ? getSelectedAdminClientIds(data)
+      : [];
+    const registrationType = isInvitationFlow
+      ? data.registrationType
+      : "";
 
     try {
       setError("");
@@ -372,12 +476,16 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         surname: data.surname,
         suffix: data.suffix,
         userType,
-        roleId: isAdminView ? selectedAdminRole?.id ?? null : null,
+        roleId:
+          isAdminView || isAdminRegistrationType
+            ? selectedAdminRole?.id ?? null
+            : null,
         roles: selectedAdminRole ? [selectedAdminRole.role_name] : [],
-        accessibleClientIds: data.accessibleClientIds,
+        accessibleClientIds,
         tempPassword: data.tempPassword,
         accountSetupType: data.accountSetupType,
-        accountType: data.accountType,
+        accountType: registrationType,
+        accountCategory: data.accountCategory,
         status: "active",
       });
 
@@ -409,9 +517,15 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     return null;
   }
 
-  const selectedAccountType = ACCOUNT_TYPE_OPTIONS.find(
-    (option) => option.id === data.accountType,
-  );
+  const selectedRegistrationTypeLabel =
+    ACCOUNT_TYPE_OPTIONS.find(
+      (option) => option.id === data.registrationType,
+    )?.label || "Selected";
+  const modalDescription = isAdminView
+    ? "Create a new admin user account."
+    : isInvitationFlow && data.registrationType
+      ? `Create a new ${selectedRegistrationTypeLabel.toLowerCase()} registration account.`
+      : "Create a new regular user account.";
 
   return createPortal(
     <>
@@ -422,9 +536,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
             <div className={modalHeaderContentClassName}>
               <h3 className={modalHeaderTitleClassName}>Add User</h3>
               <p className={modalHeaderDescriptionSpacingClassName}>
-                {isAdminView
-                  ? "Create a new admin user account."
-                  : "Create a new regular user account."}
+                {modalDescription}
               </p>
             </div>
 
@@ -586,113 +698,180 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                     />
                   </section>
                 ) : (
-                  <section className={modalSectionClassName}>
-                    <label className={modalLabelClassName}>
-                      Accessible App Clients
-                    </label>
-                    <p className={modalHelperTextClassName}>
-                      Choose which app clients this user can access.
-                    </p>
-
-                    <MultiSelect
-                      options={appClientSelectOptions}
-                      selectedValues={data.accessibleClientIds}
-                      onChange={handleAccessibleClientsChange}
-                      placeholder="Select app clients"
-                      variant="userpoolModal"
-                      colorMode={colorMode}
-                    />
-                    {isLoadingAppClients && (
+                  <>
+                    <section className={modalSectionClassName}>
+                      <label className={modalLabelClassName}>
+                        Account Type
+                      </label>
                       <p className={modalHelperTextClassName}>
-                        Loading app clients...
+                        Choose who this account is for.
                       </p>
-                    )}
-                  </section>
-                )}
+                      <UserPoolRoleRadioGroup
+                        options={REGULAR_ACCOUNT_CATEGORY_OPTIONS}
+                        selectedValue={data.accountCategory}
+                        onChange={handleAccountCategoryChange}
+                        colorMode={colorMode}
+                        name="add-user-account-category"
+                      />
+                    </section>
 
-                {!isAdminView && (
-                  <section className={modalSectionClassName}>
-                    <label className={modalLabelClassName}>
-                      Account Setup
-                    </label>
-                    <p className={modalHelperTextClassName}>
-                      Choose whether to send an invitation or set a temporary password.
-                    </p>
-                    <UserPoolModalSelect
-                      value={data.accountSetupType}
-                      onChange={handleAccountSetupChange}
-                      options={REGULAR_ACCOUNT_SETUP_OPTIONS}
-                      ariaLabel="Select account setup method"
-                      colorMode={colorMode}
-                    />
-                  </section>
-                )}
-
-                {isInvitationFlow && (
-                  <section className={modalSectionClassName}>
-                    <label className={modalLabelClassName}>
-                      Account Type <span className="text-red-500">*</span>
-                    </label>
-                    <p className={modalHelperTextClassName}>
-                      Choose the account type for this regular user.
-                    </p>
-                    <UserPoolRoleRadioGroup
-                      options={ACCOUNT_TYPE_OPTIONS}
-                      selectedValue={data.accountType}
-                      onChange={handleAccountTypeChange}
-                      colorMode={colorMode}
-                      name="add-user-account-type"
-                    />
-                    {fieldErrors.accountType && (
-                      <p className="mt-2 text-xs text-red-500">
-                        {fieldErrors.accountType}
+                    <section className={modalSectionClassName}>
+                      <label className={modalLabelClassName}>
+                        Account Setup
+                      </label>
+                      <p className={modalHelperTextClassName}>
+                        Choose how they get access.
                       </p>
+                      <UserPoolModalSelect
+                        value={data.accountSetupType}
+                        onChange={handleAccountSetupChange}
+                        options={REGULAR_ACCOUNT_SETUP_OPTIONS}
+                        ariaLabel="Select account setup method"
+                        colorMode={colorMode}
+                      />
+                    </section>
+
+                    {showRegistrationTypeField && (
+                      <section className={modalSectionClassName}>
+                        <label className={modalLabelClassName}>
+                          Registration Type <span className="text-red-500">*</span>
+                        </label>
+                        <p className={modalHelperTextClassName}>
+                          Choose the registration account.
+                        </p>
+                        <UserPoolRoleRadioGroup
+                          options={ACCOUNT_TYPE_OPTIONS}
+                          selectedValue={data.registrationType}
+                          onChange={handleRegistrationTypeChange}
+                          colorMode={colorMode}
+                          name="add-user-registration-type"
+                        />
+                        {fieldErrors.registrationType && (
+                          <p className="mt-2 text-xs text-red-500">
+                            {fieldErrors.registrationType}
+                          </p>
+                        )}
+                      </section>
                     )}
-                  </section>
-                )}
 
-                {!isInvitationFlow && (
-                  <section className={modalSectionClassName}>
-                    <SpeechInputToolbar
-                      activeFieldLabel={activeVoiceFieldLabel}
-                      onError={setError}
-                      onTranscript={handleVoiceInput}
-                      colorMode={colorMode}
-                    />
+                    {showRegularAdminClientFields && (
+                      <>
+                        <section className={modalSectionClassName}>
+                          <label className={modalLabelClassName}>
+                            Sign-In App Client <span className="text-red-500">*</span>
+                          </label>
+                          <p className={modalHelperTextClassName}>
+                            Used for sign-in.
+                          </p>
+                          <UserPoolModalSelect
+                            value={data.adminSignInClientId}
+                            onChange={handleSelectFieldChange("adminSignInClientId")}
+                            options={appClientSelectOptions}
+                            ariaLabel="Select sign-in app client"
+                            colorMode={colorMode}
+                          />
+                          {fieldErrors.adminSignInClientId && (
+                            <p className="mt-2 text-xs text-red-500">
+                              {fieldErrors.adminSignInClientId}
+                            </p>
+                          )}
+                        </section>
 
-                    <label className={modalLabelClassName}>
-                      Temporary Password <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <div className="relative w-full">
-                        <input type={showTempPassword ? "text" : "password"} name="tempPassword" value={data.tempPassword} onChange={handleChange} onFocus={() => setActiveVoiceField("tempPassword")} placeholder="Temporary password" className={`${getInputClassName("tempPassword")} pr-12`} />
-                        <button
-                          type="button"
-                          onClick={toggleShowTempPassword}
-                          className={passwordVisibilityButtonClassName}
-                          aria-label={
-                            showTempPassword
-                              ? "Hide temporary password"
-                              : "Show temporary password"
-                          }
-                        >
-                          <PasswordVisibilityIcon showPassword={showTempPassword} />
-                        </button>
-                      </div>
-
-                      <button type="button" onClick={generatePassword} className={passwordUtilityButtonClassName}>
-                        Generate
-                      </button>
-                    </div>
-                    {fieldErrors.tempPassword && (
-                      <p className="mt-2 text-xs text-red-500">
-                        {fieldErrors.tempPassword}
-                      </p>
+                        <section className={modalSectionClassName}>
+                          <label className={modalLabelClassName}>
+                            Access App Client <span className="text-red-500">*</span>
+                          </label>
+                          <p className={modalHelperTextClassName}>
+                            Used to manage user access.
+                          </p>
+                          <UserPoolModalSelect
+                            value={data.adminCrudClientId}
+                            onChange={handleSelectFieldChange("adminCrudClientId")}
+                            options={appClientSelectOptions}
+                            ariaLabel="Select user-access app client"
+                            colorMode={colorMode}
+                          />
+                          {fieldErrors.adminCrudClientId && (
+                            <p className="mt-2 text-xs text-red-500">
+                              {fieldErrors.adminCrudClientId}
+                            </p>
+                          )}
+                          {isLoadingAppClients && (
+                            <p className={modalHelperTextClassName}>
+                              Loading app clients...
+                            </p>
+                          )}
+                        </section>
+                      </>
                     )}
-                    <p className={tempPasswordHintClassName}>
-                      Use at least 8 characters with one uppercase letter, one number, and one special character.
-                    </p>
-                  </section>
+
+                    {showRegularAdminRoleField && (
+                      <section className={modalSectionClassName}>
+                        <label className={modalLabelClassName}>
+                          Role <span className="text-red-500">*</span>
+                        </label>
+                        <p className={modalHelperTextClassName}>
+                          Choose the admin role.
+                        </p>
+                        <UserPoolRoleRadioGroup
+                          options={adminRoleOptions}
+                          selectedValue={data.selectedAdminRoleId}
+                          onChange={handleAdminRoleChange}
+                          colorMode={colorMode}
+                          name="add-regular-admin-role"
+                        />
+                        {fieldErrors.selectedAdminRoleId && (
+                          <p className="mt-2 text-xs text-red-500">
+                            {fieldErrors.selectedAdminRoleId}
+                          </p>
+                        )}
+                      </section>
+                    )}
+
+                    {showRegularTempPasswordField && (
+                      <section className={modalSectionClassName}>
+                        <SpeechInputToolbar
+                          activeFieldLabel={activeVoiceFieldLabel}
+                          onError={setError}
+                          onTranscript={handleVoiceInput}
+                          colorMode={colorMode}
+                        />
+
+                        <label className={modalLabelClassName}>
+                          Temporary Password <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                          <div className="relative w-full">
+                            <input type={showTempPassword ? "text" : "password"} name="tempPassword" value={data.tempPassword} onChange={handleChange} onFocus={() => setActiveVoiceField("tempPassword")} placeholder="Temporary password" className={`${getInputClassName("tempPassword")} pr-12`} />
+                            <button
+                              type="button"
+                              onClick={toggleShowTempPassword}
+                              className={passwordVisibilityButtonClassName}
+                              aria-label={
+                                showTempPassword
+                                  ? "Hide temporary password"
+                                  : "Show temporary password"
+                              }
+                            >
+                              <PasswordVisibilityIcon showPassword={showTempPassword} />
+                            </button>
+                          </div>
+
+                          <button type="button" onClick={generatePassword} className={passwordUtilityButtonClassName}>
+                            Generate
+                          </button>
+                        </div>
+                        {fieldErrors.tempPassword && (
+                          <p className="mt-2 text-xs text-red-500">
+                            {fieldErrors.tempPassword}
+                          </p>
+                        )}
+                        <p className={tempPasswordHintClassName}>
+                          Use at least 8 characters with one uppercase letter, one number, and one special character.
+                        </p>
+                      </section>
+                    )}
+                  </>
                 )}
               </form>
             </FadeWrapper>
@@ -731,7 +910,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
 
       <InvitationConfirmModal
         open={isInvitationConfirmOpen}
-        accountTypeLabel={selectedAccountType?.label || "Selected"}
+        registrationTypeLabel={selectedRegistrationTypeLabel}
         onCancel={() => setIsInvitationConfirmOpen(false)}
         onConfirm={handleConfirmInvitation}
         colorMode={colorMode}
