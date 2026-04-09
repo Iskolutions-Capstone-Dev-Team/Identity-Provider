@@ -38,6 +38,8 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		),
 		RegistrationService: service.NewRegistrationService(
 			registrationRepo,
+			invRepo,
+			userRepo,
 		),
 	}
 }

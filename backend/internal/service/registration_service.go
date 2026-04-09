@@ -2,8 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"time"
+
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/google/uuid"
 )
 
@@ -13,14 +18,28 @@ type RegistrationService interface {
 		id int) (*dto.AccountTypeConfigResponse, error)
 	UpdatePreapprovedClients(ctx context.Context, 
 		req dto.UpdatePreapprovedClientsRequest) error
+	ActivateAccount(ctx context.Context, 
+		req dto.ActivateAccountRequest) error
+	CheckInvitation(ctx context.Context, 
+		code string) (bool, error)
 }
 
 type regService struct {
-	repo repository.RegistrationRepository
+	repo         repository.RegistrationRepository
+	invitation   repository.InvitationRepository
+	user         repository.UserRepository
 }
 
-func NewRegistrationService(repo repository.RegistrationRepository) RegistrationService {
-	return &regService{repo: repo}
+func NewRegistrationService(
+	repo repository.RegistrationRepository,
+	invitation repository.InvitationRepository,
+	user repository.UserRepository,
+) RegistrationService {
+	return &regService{
+		repo:       repo,
+		invitation: invitation,
+		user:       user,
+	}
 }
 
 func (s *regService) GetRegistrationConfig(ctx context.Context) (
@@ -97,4 +116,55 @@ func (s *regService) UpdatePreapprovedClients(ctx context.Context,
 		clientIDs = append(clientIDs, id)
 	}
 	return s.repo.SyncPreapprovedClients(ctx, req.AccountTypeID, clientIDs)
+}
+
+func (s *regService) ActivateAccount(ctx context.Context, 
+	req dto.ActivateAccountRequest) error {
+	inv, err := s.invitation.GetInvitationByCode(ctx, req.InvitationCode)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.user.GetUserByEmail(ctx, inv.Email)
+	if err != nil {
+		return err
+	}
+
+	if user == nil {
+		return fmt.Errorf("user not found for invitation")
+	}
+
+	hashed, err := utils.HashSecret(req.Password)
+	if err != nil {
+		return fmt.Errorf("password hashing failed: %w", err)
+	}
+
+	err = s.user.UpdateUserPassword(ctx, &models.User{
+		ID:           user.ID,
+		PasswordHash: hashed,
+	})
+	if err != nil {
+		return err
+	}
+
+	return s.invitation.DeleteInvitation(ctx, inv.Email)
+}
+
+func (s *regService) CheckInvitation(ctx context.Context, 
+	code string) (bool, error) {
+	inv, err := s.invitation.GetInvitationByCode(ctx, code)
+	if err != nil {
+		return false, err
+	}
+
+	if inv == nil {
+		return false, nil
+	}
+
+	// Expiry check: 24 hours
+	if time.Since(inv.CreatedAt) > 24*time.Hour {
+		return false, nil
+	}
+
+	return true, nil
 }
