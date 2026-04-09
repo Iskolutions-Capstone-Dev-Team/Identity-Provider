@@ -10,4 +10,5 @@ type ServiceContainer struct {
 	MailService              MailService
 	ClientAllowedUserService ClientAllowedUserService
 	RegistrationService      RegistrationService
+	OTPService               OTPService
 }
