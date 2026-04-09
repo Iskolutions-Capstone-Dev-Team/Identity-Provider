@@ -115,6 +115,21 @@ func (s *userService) CreateUser(
 		}
 	}
 
+	if len(req.AllowedAppClients) > 0 {
+		clientIDs := make([][]byte, 0, len(req.AllowedAppClients))
+		for _, clientIDStr := range req.AllowedAppClients {
+			cid, err := uuid.Parse(clientIDStr)
+			if err != nil {
+				return userID, fmt.Errorf("Post-Create (UUID): %w", err)
+			}
+			clientIDs = append(clientIDs, cid[:])
+		}
+		err = s.ClientRepo.BatchAdminClientBind(ctx, user.ID, clientIDs)
+		if err != nil {
+			return userID, fmt.Errorf("Post-Create (AdminBind): %w", err)
+		}
+	}
+
 	return userID, nil
 }
 
