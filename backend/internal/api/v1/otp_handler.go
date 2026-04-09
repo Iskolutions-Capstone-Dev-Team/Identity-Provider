@@ -30,7 +30,7 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 		return
 	}
 
-	err := h.OTPService.SendOTP(c.Request.Context(), req.UserID, req.Email)
+	err := h.OTPService.SendOTP(c.Request.Context(), req.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, 
 			dto.ErrorResponse{Error: err.Error()})
@@ -58,7 +58,7 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 		return
 	}
 
-	err := h.OTPService.VerifyOTP(c.Request.Context(), req.UserID, req.OTP)
+	err := h.OTPService.VerifyOTP(c.Request.Context(), req.Email, req.OTP)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, 
 			dto.ErrorResponse{Error: err.Error()})

@@ -34,7 +34,7 @@ func (h *MailHandler) SendOTP(c *gin.Context) {
 	}
 
 	if err := h.OTPService.SendOTP(c.Request.Context(), 
-		req.UserID, req.Email); err != nil {
+		req.Email); err != nil {
 		c.JSON(http.StatusInternalServerError, 
 			dto.ErrorResponse{Error: err.Error()})
 		return
