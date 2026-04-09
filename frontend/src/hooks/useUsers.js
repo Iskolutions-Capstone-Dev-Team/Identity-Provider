@@ -9,6 +9,8 @@ const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
 const FETCH_LIMIT = 100;
 const ITEMS_PER_PAGE = 10;
 const INVITATION_ACCOUNT_SETUP = "invitation";
+const ADMIN_ACCOUNT_CATEGORY = "admin";
+
 function normalizeClientIds(clientIds = []) {
   return Array.from(
     new Set(
@@ -395,6 +397,8 @@ export function useUsers() {
     const accountType = isInvitationFlow
       ? normalizeAccountType(newUser.accountType)
       : "";
+    const shouldAssignAdminRole =
+      isAdminUser || accountType === ADMIN_ACCOUNT_CATEGORY;
     const nextAccessibleClientIds = normalizeClientIds(newUser.accessibleClientIds);
     const submissionPassword = isInvitationFlow
       // Invitation-created users still need a backend password, but it stays hidden from the UI.
@@ -417,7 +421,7 @@ export function useUsers() {
         password: submissionPassword,
         status: newUser.status,
         role_id:
-          isAdminUser
+          shouldAssignAdminRole
             ? normalizeRoleId(newUser.roleId)
             : null,
       };
