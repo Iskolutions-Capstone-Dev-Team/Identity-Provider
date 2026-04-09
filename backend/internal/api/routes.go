@@ -53,6 +53,18 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	me.Use(middleware.AuthMiddleware(h.PubKey))
 	me.GET("", h.UserHandler.GetMe)
 
+	otp := v1Group.Group("/otp")
+	{
+		otp.POST("/send", h.OTPHandler.SendOTP)
+		otp.POST("/verify", h.OTPHandler.VerifyOTP)
+	}
+
+	user := v1Group.Group("/user")
+	user.Use(middleware.APIKeyMiddleware())
+	{
+		user.POST("", h.UserHandler.PostUser)
+	}
+
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
 	admin.Use(middleware.AuthorizeRBAC(h.PubKey, h.UserRepo,
@@ -113,14 +125,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 
 		mail := admin.Group("/mail")
 		{
-			mail.POST("/otp", h.MailHandler.SendOTP)
 			mail.POST("/invitation", h.MailHandler.SendInvitation)
-		}
-
-		otp := admin.Group("/otp")
-		{
-			otp.POST("/send", h.OTPHandler.SendOTP)
-			otp.POST("/verify", h.OTPHandler.VerifyOTP)
 		}
 
 		registrationAdmin := admin.Group("/registration")
