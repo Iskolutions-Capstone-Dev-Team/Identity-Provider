@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
-import RegistrationSuccessStep from "./RegistrationSuccessStep";
 import { buildLoginPath } from "../utils/loginRoute";
 
 const roleOptions = [
@@ -156,6 +155,7 @@ function FormLabel({ children, required = false }) {
 }
 
 export default function RegisterForm({ clientId, onComplete }) {
+  const navigate = useNavigate();
   const verificationInputsRef = useRef([]);
   const roleDropdownRef = useRef(null);
 
@@ -374,7 +374,7 @@ export default function RegisterForm({ clientId, onComplete }) {
         });
       }
 
-      setStep("registrationSuccess");
+      navigate(loginPath, { replace: true });
     } catch (submissionError) {
       setError(submissionError?.message || "Registration failed. Please try again.");
     }
@@ -428,9 +428,6 @@ export default function RegisterForm({ clientId, onComplete }) {
                 className={getInputClassName(false)}
               />
             </div>
-            <p className="pl-1 pt-2 text-xs font-medium uppercase tracking-[0.08em] text-white/65">
-              Optional
-            </p>
           </div>
 
           <div>
@@ -675,18 +672,10 @@ export default function RegisterForm({ clientId, onComplete }) {
               ) : null}
             </div>
 
-            {step !== "registrationSuccess" ? (
-              <ErrorAlert message={error} onClose={() => setError("")} />
-            ) : null}
+            <ErrorAlert message={error} onClose={() => setError("")} />
 
             {step === "details" ? renderDetailsStep() : null}
             {step === "verifyEmail" ? renderVerificationStep() : null}
-            {step === "registrationSuccess" ? (
-              <RegistrationSuccessStep
-                email={details.email}
-                loginPath={loginPath}
-              />
-            ) : null}
           </div>
         </div>
       </div>

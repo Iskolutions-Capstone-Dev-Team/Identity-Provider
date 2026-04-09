@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
+import { isInvitationForbiddenError, registrationActivationService } from "../services/registrationActivationService";
 import { buildLoginPath } from "../utils/loginRoute";
 
 const initialPasswordValues = {
@@ -13,7 +14,7 @@ const initialPasswordErrors = {
   confirmPassword: "",
 };
 
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
 function getInputClassName(hasError, hasActionButton = false) {
   return `h-12 w-full rounded-2xl border bg-white/95 pl-12 ${
@@ -35,13 +36,19 @@ function getPasswordError(value) {
   }
 
   if (!passwordRegex.test(value)) {
-    return "Use at least 8 characters with uppercase, lowercase, and a number.";
+    return "Use at least 8 characters with 1 uppercase letter, 1 number, and 1 special character.";
   }
 
   return "";
 }
 
 function getConfirmPasswordError(password, confirmPassword) {
+  const passwordError = getPasswordError(password);
+
+  if (passwordError) {
+    return passwordError;
+  }
+
   if (!confirmPassword.trim()) {
     return "Please confirm your password.";
   }
@@ -51,6 +58,14 @@ function getConfirmPasswordError(password, confirmPassword) {
   }
 
   return "";
+}
+
+function getApiErrorMessage( error, fallbackMessage = "Unable to save your password right now." ) {
+  return (
+    error?.response?.data?.error ||
+    error?.message ||
+    fallbackMessage
+  );
 }
 
 function maskEmail(email) {
@@ -91,13 +106,14 @@ function FormLabel({ children, required = false }) {
   );
 }
 
-export default function RegisterPasswordSetupForm({ clientId, email = "" }) {
+export default function RegisterPasswordSetupForm({ clientId, email = "", invitationCode = "", onInvalidInvitation }) {
   const [passwordValues, setPasswordValues] = useState(initialPasswordValues);
   const [passwordErrors, setPasswordErrors] = useState(initialPasswordErrors);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [isComplete, setIsComplete] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loginPath = buildLoginPath(clientId);
   const maskedEmail = email ? maskEmail(email) : "";
@@ -155,7 +171,7 @@ export default function RegisterPasswordSetupForm({ clientId, email = "" }) {
     return !validationMessage;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
 
@@ -163,7 +179,45 @@ export default function RegisterPasswordSetupForm({ clientId, email = "" }) {
       return;
     }
 
-    setIsComplete(true);
+    if (!invitationCode) {
+      onInvalidInvitation?.();
+      return;
+    }
+
+    let shouldSkipSubmittingReset = false;
+
+    try {
+      setIsSubmitting(true);
+
+      await registrationActivationService.activateAccount({
+        invitationCode,
+        password: passwordValues.password,
+      });
+
+      setIsComplete(true);
+    } catch (submissionError) {
+      if (isInvitationForbiddenError(submissionError)) {
+        shouldSkipSubmittingReset = true;
+        onInvalidInvitation?.();
+        return;
+      }
+
+      try {
+        await registrationActivationService.checkInvitation(invitationCode);
+      } catch (validationError) {
+        if (isInvitationForbiddenError(validationError)) {
+          shouldSkipSubmittingReset = true;
+          onInvalidInvitation?.();
+          return;
+        }
+      }
+
+      setError(getApiErrorMessage(submissionError));
+    } finally {
+      if (!shouldSkipSubmittingReset) {
+        setIsSubmitting(false);
+      }
+    }
   };
 
   return (
@@ -184,8 +238,7 @@ export default function RegisterPasswordSetupForm({ clientId, email = "" }) {
                     Set Your <span className="text-[#f8d24e]">Password</span>
                   </h2>
                   <p className="mx-auto max-w-sm text-sm font-light leading-6 text-white/80">
-                    Your registration has been verified. Create your password to
-                    finish activating your account.
+                    Create your password to finish activating your account.
                   </p>
                 </div>
 
@@ -267,8 +320,8 @@ export default function RegisterPasswordSetupForm({ clientId, email = "" }) {
                 </div>
 
                 <div className="space-y-3 pt-1">
-                  <button type="submit" className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
-                    SAVE PASSWORD
+                  <button type="submit" disabled={isSubmitting} className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:border-[#f8d24e]/40 disabled:bg-[#f8d24e]/60 disabled:text-[#7b0d15]/70 disabled:shadow-none">
+                    {isSubmitting ? "SAVING..." : "SAVE PASSWORD"}
                   </button>
                 </div>
               </form>
@@ -282,7 +335,7 @@ export default function RegisterPasswordSetupForm({ clientId, email = "" }) {
 
 function PasswordSavedState({ loginPath }) {
   return (
-    <div className="space-y-6 text-center">
+    <div className="space-y-5 text-center">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 shadow-[0_20px_45px_-28px_rgba(16,185,129,0.6)]">
         <CheckIcon />
       </div>
@@ -296,14 +349,6 @@ function PasswordSavedState({ loginPath }) {
         </p>
       </div>
 
-      <section className="rounded-[1.5rem] border border-white/15 bg-white/10 p-5 text-left">
-        <p className="text-sm font-semibold text-white">What changed?</p>
-        <p className="mt-2 text-sm leading-6 text-white/75">
-          Your password setup is complete and your registration can now move to
-          the normal sign-in flow.
-        </p>
-      </section>
-
       <Link to={loginPath} className="flex h-12 w-full items-center justify-center rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
         Go to Login
       </Link>
@@ -313,8 +358,8 @@ function PasswordSavedState({ loginPath }) {
 
 function PasswordIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
-      <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3C17.25 3.85 14.9 1.5 12 1.5Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
+      <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
     </svg>
   );
 }
