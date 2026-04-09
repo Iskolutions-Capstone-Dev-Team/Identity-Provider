@@ -38,14 +38,21 @@ type UserService interface {
 type userService struct {
 	Repo       repository.UserRepository
 	ClientRepo repository.ClientRepository
+	RegRepo    repository.RegistrationRepository
+	CAURepo    repository.ClientAllowedUserRepository
 }
 
-func NewUserService(repo repository.UserRepository,
+func NewUserService(
+	repo repository.UserRepository,
 	clientRepo repository.ClientRepository,
+	regRepo repository.RegistrationRepository,
+	cauRepo repository.ClientAllowedUserRepository,
 ) UserService {
 	return &userService{
 		Repo:       repo,
 		ClientRepo: clientRepo,
+		RegRepo:    regRepo,
+		CAURepo:    cauRepo,
 	}
 }
 
@@ -83,6 +90,29 @@ func (s *userService) CreateUser(
 	err = s.Repo.CreateUser(ctx, &user)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("Database Query (CreateUser): %w", err)
+	}
+
+	if req.AccountType != "" {
+		typeID, err := s.RegRepo.GetAccountTypeIDByName(ctx, req.AccountType)
+		if err != nil {
+			return userID, fmt.Errorf("Post-Create (TypeLookup): %w", err)
+		}
+
+		clients, err := s.RegRepo.GetClientsByAccountTypeID(ctx, typeID)
+		if err != nil {
+			return userID, fmt.Errorf("Post-Create (RegFetch): %w", err)
+		}
+
+		if len(clients) > 0 {
+			clientIDs := make([][]byte, 0, len(clients))
+			for _, c := range clients {
+				clientIDs = append(clientIDs, c.ClientID)
+			}
+			err = s.CAURepo.BatchAssignClientAccess(ctx, user.ID, clientIDs)
+			if err != nil {
+				return userID, fmt.Errorf("Post-Create (Assign): %w", err)
+			}
+		}
 	}
 
 	return userID, nil

@@ -22,7 +22,12 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 	return service.ServiceContainer{
 		ClientService: service.NewClientService(clientRepo, Storage),
 		RoleService:   service.NewRoleService(roleRepo),
-		UserService:   service.NewUserService(userRepo, clientRepo),
+		UserService: service.NewUserService(
+			userRepo,
+			clientRepo,
+			registrationRepo,
+			cauRepo,
+		),
 		AuthService: service.NewAuthService(
 			authRepo,
 			sessionRepo,
