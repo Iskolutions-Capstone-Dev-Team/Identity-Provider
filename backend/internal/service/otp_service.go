@@ -10,12 +10,11 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
-	"github.com/google/uuid"
 )
 
 type OTPService interface {
-	SendOTP(ctx context.Context, userID, email string) error
-	VerifyOTP(ctx context.Context, userID, code string) error
+	SendOTP(ctx context.Context, email string) error
+	VerifyOTP(ctx context.Context, email, code string) error
 }
 
 type otpService struct {
@@ -28,15 +27,10 @@ type otpService struct {
  * cooldown between requests.
  */
 func (s *otpService) SendOTP(ctx context.Context, 
-	userIDStr, email string,
+	email string,
 ) error {
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		return fmt.Errorf("[OTPService] Invalid user ID: %w", err)
-	}
-
 	// Check for cooldown
-	latest, err := s.otpRepo.GetLatestOTPByUserID(ctx, userID[:])
+	latest, err := s.otpRepo.GetLatestOTPByEmail(ctx, email)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("[OTPService] Get latest OTP: %w", err)
 	}
@@ -56,7 +50,7 @@ func (s *otpService) SendOTP(ctx context.Context,
 
 	otp := &models.OTP{
 		OTP:       otpCode,
-		UserID:    userID[:],
+		Email:     email,
 		ExpiresAt: time.Now().Add(5 * time.Minute),
 		Attempts:  0,
 	}
@@ -79,14 +73,9 @@ func (s *otpService) SendOTP(ctx context.Context,
  * user, respecting retry limits.
  */
 func (s *otpService) VerifyOTP(ctx context.Context, 
-	userIDStr, code string,
+	email, code string,
 ) error {
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		return fmt.Errorf("[OTPService] Invalid user ID: %w", err)
-	}
-
-	otp, err := s.otpRepo.GetLatestOTPByUserID(ctx, userID[:])
+	otp, err := s.otpRepo.GetLatestOTPByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errors.New("no OTP found for user")
