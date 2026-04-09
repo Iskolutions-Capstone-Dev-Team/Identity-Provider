@@ -392,14 +392,20 @@ export function useUsers() {
 
   const createUser = async (newUser) => {
     const isAdminUser = newUser.userType === ADMIN_USER_TYPE;
-    const isInvitationFlow =
-      !isAdminUser && newUser.accountSetupType === INVITATION_ACCOUNT_SETUP;
-    const accountType = isInvitationFlow
+    const accountType = !isAdminUser
       ? normalizeAccountType(newUser.accountType)
       : "";
+    const isInvitationFlow =
+      !isAdminUser && newUser.accountSetupType === INVITATION_ACCOUNT_SETUP;
+    const isAdminAccountType = accountType === ADMIN_ACCOUNT_CATEGORY;
     const shouldAssignAdminRole =
-      isAdminUser || accountType === ADMIN_ACCOUNT_CATEGORY;
+      isAdminUser || isAdminAccountType;
     const nextAccessibleClientIds = normalizeClientIds(newUser.accessibleClientIds);
+    const nextAllowedAppClientIds = normalizeClientIds(newUser.allowedAppClientIds);
+    const shouldSyncRegularUserAccess =
+      !isAdminUser &&
+      !isAdminAccountType &&
+      nextAccessibleClientIds.length > 0;
     const submissionPassword = isInvitationFlow
       // Invitation-created users still need a backend password, but it stays hidden from the UI.
       ? generateHiddenInvitationPassword()
@@ -407,7 +413,7 @@ export function useUsers() {
     let userWasCreated = false;
     let followUpStep = "create_user";
 
-    if (isInvitationFlow && !accountType) {
+    if (!isAdminUser && !accountType) {
       throw new Error("Select an account type.");
     }
 
@@ -421,6 +427,7 @@ export function useUsers() {
         password: submissionPassword,
         status: newUser.status,
         account_type: accountType,
+        allowed_appclients: shouldAssignAdminRole ? nextAllowedAppClientIds : [],
         role_id:
           shouldAssignAdminRole
             ? normalizeRoleId(newUser.roleId)
@@ -429,9 +436,9 @@ export function useUsers() {
 
       const createdUserResponse = await userService.createUser(payload);
       userWasCreated = true;
-      followUpStep = "sync_access";
+      followUpStep = shouldSyncRegularUserAccess ? "sync_access" : "complete";
 
-      if (!isAdminUser && nextAccessibleClientIds.length > 0) {
+      if (shouldSyncRegularUserAccess) {
         const createdUserId =
           createdUserResponse?.createdUserId ||
           (await findRegularUserByEmail(newUser.email))?.id;

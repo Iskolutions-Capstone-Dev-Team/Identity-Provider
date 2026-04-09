@@ -6,7 +6,7 @@ function getArticle(label = "") {
   return ["a", "e", "i", "o", "u"].includes(normalizedLabel[0]) ? "an" : "a";
 }
 
-export default function InvitationConfirmModal({ open, registrationTypeLabel = "selected", onCancel, onConfirm, colorMode = "light" }) {
+export default function InvitationConfirmModal({ open, accountTypeLabel = "selected", onCancel, onConfirm, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const {
     modalBoxClassName,
@@ -29,7 +29,7 @@ export default function InvitationConfirmModal({ open, registrationTypeLabel = "
     return null;
   }
 
-  const article = getArticle(registrationTypeLabel);
+  const article = getArticle(accountTypeLabel);
 
   return createPortal(
     <dialog open className={modalOverlayClassName}>
@@ -49,7 +49,7 @@ export default function InvitationConfirmModal({ open, registrationTypeLabel = "
           </h3>
           <p className={descriptionClassName}>
             This will create the user and send an invitation for {article}{" "}
-            {registrationTypeLabel.toLowerCase()} registration.
+            {accountTypeLabel.toLowerCase()} account.
           </p>
         </div>
 

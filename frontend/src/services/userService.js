@@ -84,6 +84,7 @@ export const userService = {
       status: normalizeTextValue(data.status).toLowerCase(),
       role_id: normalizeRoleId(data.role_id) ?? null,
       account_type: normalizeAccountType(data.account_type),
+      allowed_appclients: normalizeStringList(data.allowed_appclients),
     };
 
     const res = await axiosInstance.post("/admin/users", payload, {
