@@ -47,7 +47,7 @@ export function getPasswordRequirementChecks(password = "") {
     length: password.length >= MIN_PASSWORD_LENGTH,
     uppercase: /[A-Z]/.test(password),
     number: /[0-9]/.test(password),
-    special: /[!@#$%^&*]/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
   };
 }
 
