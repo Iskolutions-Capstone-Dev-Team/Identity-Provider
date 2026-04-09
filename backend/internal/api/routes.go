@@ -44,6 +44,8 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		auth.GET("/session", h.AuthHandler.CheckSession)
 	}
 
+	v1Group.POST("/activate", h.RegistrationHandler.ActivateAccount)
+	v1Group.GET("/activate/:code", h.RegistrationHandler.CheckInvitation)
 
 	// Endpoint for getting user information
 	me := v1Group.Group("/me")
