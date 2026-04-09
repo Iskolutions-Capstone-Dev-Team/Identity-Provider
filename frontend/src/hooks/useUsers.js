@@ -420,6 +420,7 @@ export function useUsers() {
         name_suffix: newUser.suffix,
         password: submissionPassword,
         status: newUser.status,
+        account_type: accountType,
         role_id:
           shouldAssignAdminRole
             ? normalizeRoleId(newUser.roleId)

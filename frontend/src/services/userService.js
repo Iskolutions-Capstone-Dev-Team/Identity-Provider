@@ -1,3 +1,4 @@
+import { normalizeAccountType } from "../utils/accountTypes";
 import axiosInstance from "./axiosInstance";
 
 const DEFAULT_PAGE = 1;
@@ -82,6 +83,7 @@ export const userService = {
       password: normalizeTextValue(data.password),
       status: normalizeTextValue(data.status).toLowerCase(),
       role_id: normalizeRoleId(data.role_id) ?? null,
+      account_type: normalizeAccountType(data.account_type),
     };
 
     const res = await axiosInstance.post("/admin/users", payload, {
