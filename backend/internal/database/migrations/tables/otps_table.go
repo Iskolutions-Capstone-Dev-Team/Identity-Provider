@@ -20,5 +20,12 @@ var OtpsMigration = migrations.TableMigration{
 			ID: "add-attempts-column",
 			SQL: `ALTER TABLE otps ADD COLUMN attempts INT DEFAULT 0;`,
 		},
+		{
+			ID: "drop-user-id-and-add-email",
+			SQL: `ALTER TABLE otps 
+                  DROP FOREIGN KEY otps_ibfk_1, 
+                  DROP COLUMN user_id, 
+                  ADD COLUMN email VARCHAR(255) NOT NULL;`,
+		},
 	},
 }
