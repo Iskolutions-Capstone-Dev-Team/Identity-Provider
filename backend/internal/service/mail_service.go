@@ -11,8 +11,7 @@ import (
 )
 
 type MailService interface {
-	SendAndSaveOTP(ctx context.Context, 
-		userID []byte, email string) error
+	SendAndSaveOTP(ctx context.Context, email string) error
 	SendAndSaveInvitation(ctx context.Context, 
 		email string, invType models.InvitationType) error
 }
@@ -24,7 +23,7 @@ type mailService struct {
 
 // SendAndSaveOTP generates, saves and sends an OTP to a user.
 func (s *mailService) SendAndSaveOTP(ctx context.Context, 
-	userID []byte, email string,
+	email string,
 ) error {
 	otpCode, err := utils.GenerateOTP()
 	if err != nil {
@@ -33,7 +32,7 @@ func (s *mailService) SendAndSaveOTP(ctx context.Context,
 
 	otp := &models.OTP{
 		OTP:       otpCode,
-		UserID:    userID,
+		Email:     email,
 		ExpiresAt: time.Now().Add(5 * time.Minute),
 	}
 

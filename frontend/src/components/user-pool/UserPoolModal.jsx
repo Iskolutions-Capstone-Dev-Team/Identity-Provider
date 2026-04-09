@@ -19,6 +19,7 @@ const initialFormData = {
   roleId: null,
   roles: [],
   accessibleClientIds: [],
+  accessibleClientNames: [],
 };
 
 const STATUS_OPTIONS = [
@@ -54,6 +55,17 @@ const normalizeRoleId = (value) => {
 
 const normalizeClientIds = (clientIds) =>
   Array.from(new Set((Array.isArray(clientIds) ? clientIds : []).filter(Boolean)));
+
+const normalizeClientNames = (clientNames) =>
+  Array.from(
+    new Set(
+      (Array.isArray(clientNames) ? clientNames : [])
+        .map((clientName) =>
+          typeof clientName === "string" ? clientName.trim() : "",
+        )
+        .filter(Boolean),
+    ),
+  );
 
 const normalizeRoleNames = (roles) => {
   const normalizedRoles = Array.isArray(roles)
@@ -102,6 +114,7 @@ const createFormData = (user) => ({
   roleId: normalizeRoleId(user?.roleId),
   roles: normalizeRoleNames(user?.roles),
   accessibleClientIds: normalizeClientIds(user?.accessibleClientIds),
+  accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
 });
 
 export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, colorMode = "light" }) {
@@ -248,8 +261,12 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     formData.accessibleClientIds,
     appClientOptions,
   );
-  const accessFieldLabel = isAdminView ? "Role" : "Accessible App Clients";
-  const accessItems = isAdminView ? roleAccessItems : regularAccessItems;
+  const regularAccessDisplayItems =
+    formData.accessibleClientNames.length > 0
+      ? formData.accessibleClientNames
+      : regularAccessItems;
+  const accessFieldLabel = isAdminView ? "Role" : "Accessible Clients";
+  const accessItems = isAdminView ? roleAccessItems : regularAccessDisplayItems;
 
   return createPortal(
     <dialog open className={modalOverlayClassName}>
@@ -360,7 +377,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                         </div>
                       ) : (
                         <span className={emptyAccessClassName}>
-                          {isAdminView ? "No role assigned" : "No app clients selected"}
+                          {isAdminView ? "No role assigned" : "No clients selected"}
                         </span>
                       )}
                     </div>
@@ -382,7 +399,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                   ) : (
                     <>
                       <p className={modalHelperTextClassName}>
-                        Choose which app clients this user can access.
+                        Choose which clients this user can access.
                       </p>
                       <MultiSelect
                         options={appClientSelectOptions}

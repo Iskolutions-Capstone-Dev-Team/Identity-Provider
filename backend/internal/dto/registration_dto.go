@@ -20,3 +20,8 @@ type UpdatePreapprovedClientsRequest struct {
 	AccountTypeID int      `json:"account_type_id"`
 	ClientIDs     []string `json:"client_ids"`
 }
+
+type ActivateAccountRequest struct {
+	InvitationCode string `json:"invitation_code"`
+	Password       string `json:"password"`
+}

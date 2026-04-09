@@ -14,6 +14,10 @@ type ClientAllowedUserRepository interface {
 		adminID []byte) ([]models.ClientAllowedUser, error)
 	SyncUserAccess(ctx context.Context, userID []byte, 
 		clientIDs [][]byte, adminID []byte) error
+	AssignClientAccess(ctx context.Context, userID []byte, 
+		clientID []byte) error
+	BatchAssignClientAccess(ctx context.Context, userID []byte, 
+		clientIDs [][]byte) error
 }
 
 type clientAllowedUserRepository struct {
@@ -101,6 +105,36 @@ func (r *clientAllowedUserRepository) SyncUserAccess(ctx context.Context,
 			if err != nil {
 				return fmt.Errorf("Sync: insert %x: %w", reqID, err)
 			}
+		}
+	}
+
+	return tx.Commit()
+}
+
+// AssignClientAccess directly links a user to a client.
+func (r *clientAllowedUserRepository) AssignClientAccess(ctx context.Context, 
+	userID []byte, clientID []byte,
+) error {
+	query := "INSERT INTO client_allowed_users (client_id, user_id) VALUES (?, ?)"
+	_, err := r.db.ExecContext(ctx, query, clientID, userID)
+	return err
+}
+
+// BatchAssignClientAccess links a user to multiple clients in one transaction.
+func (r *clientAllowedUserRepository) BatchAssignClientAccess(
+	ctx context.Context, userID []byte, clientIDs [][]byte,
+) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := "INSERT INTO client_allowed_users (client_id, user_id) VALUES (?, ?)"
+	for _, clientID := range clientIDs {
+		_, err = tx.ExecContext(ctx, query, clientID, userID)
+		if err != nil {
+			return err
 		}
 	}
 

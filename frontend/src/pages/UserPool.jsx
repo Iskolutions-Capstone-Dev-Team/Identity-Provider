@@ -173,8 +173,6 @@ export default function UserPool() {
               onClose={() => setOpenAddModal(false)}
               onSubmit={createUser}
               userType={userType}
-              appClientOptions={appClients}
-              isLoadingAppClients={isLoadingAppClients}
               colorMode={colorMode}
             />
           </UserPoolCard>

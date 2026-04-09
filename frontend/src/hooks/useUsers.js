@@ -9,11 +9,25 @@ const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
 const FETCH_LIMIT = 100;
 const ITEMS_PER_PAGE = 10;
 const INVITATION_ACCOUNT_SETUP = "invitation";
+const ADMIN_ACCOUNT_CATEGORY = "admin";
+
 function normalizeClientIds(clientIds = []) {
   return Array.from(
     new Set(
       (Array.isArray(clientIds) ? clientIds : [])
         .map((clientId) => (typeof clientId === "string" ? clientId.trim() : ""))
+        .filter(Boolean),
+    ),
+  );
+}
+
+function normalizeClientNames(clientNames = []) {
+  return Array.from(
+    new Set(
+      (Array.isArray(clientNames) ? clientNames : [])
+        .map((clientName) =>
+          typeof clientName === "string" ? clientName.trim() : "",
+        )
         .filter(Boolean),
     ),
   );
@@ -38,6 +52,26 @@ function getAccessibleClientIds(user = {}) {
   return normalizeClientIds(
     (Array.isArray(user?.clients) ? user.clients : []).map(
       (client) => client?.id ?? client?.client_id ?? client?.clientId ?? "",
+    ),
+  );
+}
+
+function getAccessibleClientNames(user = {}) {
+  const directClientNames = normalizeClientNames(
+    user?.accessibleClientNames ??
+      user?.accessible_client_names ??
+      user?.clientNames ??
+      user?.client_names,
+  );
+
+  if (directClientNames.length > 0) {
+    return directClientNames;
+  }
+
+  return normalizeClientNames(
+    (Array.isArray(user?.clients) ? user.clients : []).map(
+      (client) =>
+        client?.name ?? client?.client_name ?? client?.clientName ?? "",
     ),
   );
 }
@@ -147,6 +181,7 @@ function mapUserResponse(user = {}, { isAdmin = false } = {}) {
     roleId: getUserRoleId(user),
     roles: normalizeRoleNames(user.roles),
     accessibleClientIds: getAccessibleClientIds(user),
+    accessibleClientNames: getAccessibleClientNames(user),
     isAdmin,
   };
 }
@@ -219,23 +254,7 @@ async function getRegularUsers() {
     userService.getUsers({ page, limit: FETCH_LIMIT }),
   );
 
-  let adminUserIds = new Set();
-
-  try {
-    const adminUsers = await getAllUsersFromEndpoint((page) =>
-      userService.getAdminUsers({ page, limit: FETCH_LIMIT }),
-    );
-
-    adminUserIds = new Set(
-      adminUsers.map((user) => user?.id).filter(Boolean),
-    );
-  } catch (error) {
-    console.error("Failed to load admin users while filtering regular users:", error);
-  }
-
-  return allUsers
-    .filter((user) => !adminUserIds.has(user?.id))
-    .map((user) => mapUserResponse(user, { isAdmin: false }));
+  return allUsers.map((user) => mapUserResponse(user, { isAdmin: false }));
 }
 
 async function getAdminUsers() {
@@ -390,12 +409,20 @@ export function useUsers() {
 
   const createUser = async (newUser) => {
     const isAdminUser = newUser.userType === ADMIN_USER_TYPE;
-    const isInvitationFlow =
-      !isAdminUser && newUser.accountSetupType === INVITATION_ACCOUNT_SETUP;
-    const accountType = isInvitationFlow
+    const accountType = !isAdminUser
       ? normalizeAccountType(newUser.accountType)
       : "";
+    const isInvitationFlow =
+      !isAdminUser && newUser.accountSetupType === INVITATION_ACCOUNT_SETUP;
+    const isAdminAccountType = accountType === ADMIN_ACCOUNT_CATEGORY;
+    const shouldAssignAdminRole =
+      isAdminUser || isAdminAccountType;
     const nextAccessibleClientIds = normalizeClientIds(newUser.accessibleClientIds);
+    const nextAllowedAppClientIds = normalizeClientIds(newUser.allowedAppClientIds);
+    const shouldSyncRegularUserAccess =
+      !isAdminUser &&
+      !isAdminAccountType &&
+      nextAccessibleClientIds.length > 0;
     const submissionPassword = isInvitationFlow
       // Invitation-created users still need a backend password, but it stays hidden from the UI.
       ? generateHiddenInvitationPassword()
@@ -403,7 +430,7 @@ export function useUsers() {
     let userWasCreated = false;
     let followUpStep = "create_user";
 
-    if (isInvitationFlow && !accountType) {
+    if (!isAdminUser && !accountType) {
       throw new Error("Select an account type.");
     }
 
@@ -416,17 +443,19 @@ export function useUsers() {
         name_suffix: newUser.suffix,
         password: submissionPassword,
         status: newUser.status,
+        account_type: accountType,
+        allowed_appclients: shouldAssignAdminRole ? nextAllowedAppClientIds : [],
         role_id:
-          isAdminUser
+          shouldAssignAdminRole
             ? normalizeRoleId(newUser.roleId)
             : null,
       };
 
       const createdUserResponse = await userService.createUser(payload);
       userWasCreated = true;
-      followUpStep = "sync_access";
+      followUpStep = shouldSyncRegularUserAccess ? "sync_access" : "complete";
 
-      if (!isAdminUser && nextAccessibleClientIds.length > 0) {
+      if (shouldSyncRegularUserAccess) {
         const createdUserId =
           createdUserResponse?.createdUserId ||
           (await findRegularUserByEmail(newUser.email))?.id;
@@ -537,21 +566,10 @@ export function useUsers() {
           : "User successfully updated!",
       );
 
-      if (shouldUpdateStatus || shouldUpdateRole) {
+      if (shouldUpdateStatus || shouldUpdateRole || shouldUpdateAccessibleClients) {
         await fetchUsers(userType, { showLoading: false });
         return;
       }
-
-      setUsers((currentUsers) =>
-        currentUsers.map((user) =>
-          user.id === updatedUser.id
-            ? {
-                ...user,
-                accessibleClientIds: nextAccessibleClientIds,
-              }
-            : user,
-        ),
-      );
     } catch (error) {
       if (accessWasUpdated || roleWasUpdated) {
         await fetchUsers(userType, { showLoading: false });

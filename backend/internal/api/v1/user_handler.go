@@ -49,11 +49,6 @@ type UserHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/users [post]
 func (h *UserHandler) PostUser(c *gin.Context) {
-	if !middleware.HasPermission(c, "Add user") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
-		return
-	}
-
 	var req dto.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostUser] Bind JSON: %v", err)

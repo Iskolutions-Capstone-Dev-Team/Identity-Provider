@@ -33,6 +33,8 @@ type ClientRepository interface {
 	DeleteAndInsertGrants(ctx context.Context, c *models.Client,
 		grants []string) error
 	AdminiClientBind(ctx context.Context, userID, clientID []byte) error
+	BatchAdminClientBind(ctx context.Context, userID []byte, 
+		clientIDs [][]byte) error
 	RemoveAdminClientBind(ctx context.Context, clientID []byte) error
 }
 
@@ -350,6 +352,29 @@ func (r *clientRepository) AdminiClientBind(ctx context.Context,
 
 	_, err := r.db.ExecContext(ctx, query, userID, clientID)
 	return err
+}
+
+func (r *clientRepository) BatchAdminClientBind(ctx context.Context, 
+	userID []byte, clientIDs [][]byte,
+) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := `
+		INSERT INTO admin_allowed_clients (user_id, client_id) 
+		VALUES (?, ?)
+	`
+	for _, clientID := range clientIDs {
+		_, err = tx.ExecContext(ctx, query, userID, clientID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (r *clientRepository) RemoveAdminClientBind(ctx context.Context,

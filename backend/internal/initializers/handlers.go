@@ -48,11 +48,13 @@ func InitializeHandlers(db *sqlx.DB,
 		MailHandler: &v1.MailHandler{
 			MailService: service.MailService,
 			LogService:  service.LogService,
+			OTPService:  service.OTPService,
 		},
 		RegistrationHandler: &v1.RegistrationHandler{
 			Service:    service.RegistrationService,
 			LogService: service.LogService,
 		},
+		OTPHandler: v1.NewOTPHandler(service.OTPService),
 		UserRepo: userRepo,
 
 		RoleRepo: roleRepo,

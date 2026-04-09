@@ -95,3 +95,78 @@ func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Preapproved clients updated successfully"})
 }
+
+// ActivateAccount handles user account activation via invitation code.
+// @Summary Activate Account
+// @Description Set a password for an account using an invitation code.
+// @Tags Registration
+// @Accept json
+// @Produce json
+// @Param req body dto.ActivateAccountRequest true "Activation Request"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/v1/activate [post]
+func (h *RegistrationHandler) ActivateAccount(c *gin.Context) {
+	var req dto.ActivateAccountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid request format",
+		})
+		return
+	}
+
+	err := h.Service.ActivateAccount(c.Request.Context(), req)
+	if err != nil {
+		log.Printf("[ActivateAccount] %v", err)
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "failed to activate account",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "account activated successfully",
+	})
+}
+
+// CheckInvitation checks if an invitation code is valid and not expired.
+// @Summary Check Invitation
+// @Description Validate if an invitation code exists and is within 24h.
+// @Tags Registration
+// @Produce json
+// @Param code path string true "Invitation Code"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/v1/activate/{code} [get]
+func (h *RegistrationHandler) CheckInvitation(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invitation code is required",
+		})
+		return
+	}
+
+	valid, err := h.Service.CheckInvitation(c.Request.Context(), code)
+	if err != nil {
+		log.Printf("[CheckInvitation] %v", err)
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "failed to validate invitation code",
+		})
+		return
+	}
+
+	if !valid {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "invitation code is invalid or expired",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "invitation code is valid",
+	})
+}
