@@ -9,4 +9,5 @@ type ServiceContainer struct {
 	PermissionService        PermissionService
 	MailService              MailService
 	ClientAllowedUserService ClientAllowedUserService
+	RegistrationService      RegistrationService
 }

@@ -10,6 +10,7 @@ const IDP_PROTECTED_PATHS = new Set([
   "/app-client",
   "/profile",
   "/audit-logs",
+  "/registration"
 ]);
 
 function normalizeErrorMessage(message) {
