@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Navigate, Routes, Route } from "react-router-dom";
 import Login from "./auth/pages/Login";
 import Register from "./auth/pages/Register";
 import RegisterPasswordSetup from "./auth/pages/RegisterPasswordSetup";
@@ -6,7 +6,6 @@ import Logout from "./auth/pages/Logout";
 import Callback from "./auth/pages/Callback";
 import AuthorizeRedirect from "./auth/pages/AuthorizeRedirect";
 import ErrorPage from "./auth/pages/ErrorPage";
-import UnauthorizedPage from "./auth/pages/UnauthorizedPage";
 import ProtectedRoute from "./auth/components/ProtectedRoute";
 import PermissionRoute from "./auth/components/PermissionRoute";
 import UserPool from "./pages/UserPool";
@@ -19,6 +18,7 @@ import Placeholder from "./pages/Placeholder";
 import IdpLayout from "./layouts/IdpLayout";
 import { PermissionProvider } from "./context/PermissionContext";
 import { PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "./utils/permissionAccess";
+import { buildUnauthorizedLoginPath, LEGACY_UNAUTHORIZED_PATH } from "./auth/utils/loginRoute";
 
 export default function App() {
   return (
@@ -32,7 +32,7 @@ export default function App() {
         <Route path="/callback" element={<Callback />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/error" element={<ErrorPage />} />
-        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        <Route path={LEGACY_UNAUTHORIZED_PATH} element={<Navigate to={buildUnauthorizedLoginPath()} replace />}/>
         <Route path="/one-portal"
           element={
             <ProtectedRoute>
