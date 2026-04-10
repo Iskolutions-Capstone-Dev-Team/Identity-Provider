@@ -11,24 +11,23 @@ import (
 )
 
 type Handlers struct {
-	LogHandler        *v1.LogHandler
-	AuthHandler       *v1.AuthHandler
-	ClientHandler     *v1.ClientHandler
-	RoleHandler       *v1.RoleHandler
-	UserHandler       *v1.UserHandler
-	PermissionHandler *v1.PermissionHandler
-	MailHandler       *v1.MailHandler
+	LogHandler          *v1.LogHandler
+	AuthHandler         *v1.AuthHandler
+	ClientHandler       *v1.ClientHandler
+	RoleHandler         *v1.RoleHandler
+	UserHandler         *v1.UserHandler
+	PermissionHandler   *v1.PermissionHandler
+	MailHandler         *v1.MailHandler
 	RegistrationHandler *v1.RegistrationHandler
 	OTPHandler          *v1.OTPHandler
-	UserRepo          repository.UserRepository
+	UserRepo            repository.UserRepository
 
-	RoleRepo          repository.RoleRepository
-	PubKey            *rsa.PublicKey
-	CORS              gin.HandlerFunc
+	RoleRepo repository.RoleRepository
+	PubKey   *rsa.PublicKey
+	CORS     gin.HandlerFunc
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
-
 	wellKnown := r.Group("/.well-known")
 	{
 		wellKnown.GET("/jwks.json", h.AuthHandler.GetJWKS)
@@ -111,7 +110,6 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.DELETE("/:id", h.UserHandler.DeleteUser)
 		}
 
-
 		logs := admin.Group("/logs")
 		{
 			logs.GET("", h.LogHandler.GetLogList)
@@ -122,7 +120,16 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 
 		permissions := admin.Group("/permissions")
 		{
-			permissions.GET("", h.PermissionHandler.GetAllPermissions)
+			permissions.GET("/all", h.PermissionHandler.GetAllPermissions)
+
+			protectedPerms := permissions.Group("")
+			protectedPerms.Use(middleware.AuthMiddleware(
+				h.PubKey,
+				h.LogHandler.LogService,
+			))
+			{
+				protectedPerms.GET("", h.PermissionHandler.GetUserPermissions)
+			}
 		}
 
 		mail := admin.Group("/mail")
@@ -133,18 +140,17 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		registrationAdmin := admin.Group("/registration")
 		{
 			registrationAdmin.GET(
-				"/config", 
+				"/config",
 				h.RegistrationHandler.GetRegistrationConfig,
 			)
 			registrationAdmin.PUT(
-				"/preapproved", 
+				"/preapproved",
 				h.RegistrationHandler.UpdatePreapprovedClients,
 			)
 			registrationAdmin.GET(
-				"/config/:id", 
+				"/config/:id",
 				h.RegistrationHandler.GetClientsByAccountTypeID,
 			)
 		}
 	}
 }
-
