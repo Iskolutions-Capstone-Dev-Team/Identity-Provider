@@ -15,7 +15,6 @@ import (
 
 // Action constants for audit logging (logs themselves)
 const (
-	actionListLogs = "list_logs"
 	actionGetLog   = "get_log"
 )
 

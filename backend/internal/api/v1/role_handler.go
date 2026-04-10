@@ -16,7 +16,6 @@ import (
 // Action constants for audit logging
 const (
 	actionCreateRole = "create_role"
-	actionListRoles  = "list_roles"
 	actionGetRole    = "get_role"
 	actionUpdateRole = "update_role"
 	actionDeleteRole = "delete_role"
