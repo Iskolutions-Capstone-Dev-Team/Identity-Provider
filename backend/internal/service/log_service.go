@@ -25,6 +25,18 @@ type LogService interface {
 	GetLogByID(ctx context.Context, id int64) (*dto.PostAuditLogRequest, error)
 	GetLogListWithFilters(ctx context.Context, filters map[string]interface{},
 		limit, page int) ([]dto.PostAuditLogRequest, int64, int, error)
+
+	PostSecurityLog(ctx context.Context, actorID []byte,
+		req *dto.PostAuditLogRequest) error
+	PostSecurityLogWithActorString(ctx context.Context, actor string,
+		req *dto.PostAuditLogRequest) error
+	GetSecurityLog(ctx context.Context, req *dto.GetAuditLogRequest,
+	) (*dto.PostAuditLogRequest, error)
+	GetSecurityLogByID(ctx context.Context,
+		id int64) (*dto.PostAuditLogRequest, error)
+	GetSecurityLogListWithFilters(ctx context.Context,
+		filters map[string]interface{}, limit, page int,
+	) ([]dto.PostAuditLogRequest, int64, int, error)
 }
 
 type logService struct {
@@ -33,10 +45,11 @@ type logService struct {
 }
 
 type logTask struct {
-	actorID  []byte
-	actorStr string
-	isStr    bool
-	request  *dto.PostAuditLogRequest
+	actorID    []byte
+	actorStr   string
+	isStr      bool
+	isSecurity bool
+	request    *dto.PostAuditLogRequest
 }
 
 func NewLogService(repo repository.LogRepository) LogService {
@@ -59,6 +72,18 @@ func (s *logService) PostAuditLog(ctx context.Context, actorID []byte,
 	return nil
 }
 
+// PostSecurityLog handles logic for creating a security log.
+func (s *logService) PostSecurityLog(ctx context.Context, actorID []byte,
+	req *dto.PostAuditLogRequest,
+) error {
+	s.logChan <- &logTask{
+		actorID:    actorID,
+		request:    req,
+		isSecurity: true,
+	}
+	return nil
+}
+
 // GetLog retrieves a single audit log based on DTO filters.
 func (s *logService) GetLog(ctx context.Context,
 	req *dto.GetAuditLogRequest,
@@ -66,6 +91,24 @@ func (s *logService) GetLog(ctx context.Context,
 	res, err := s.Repo.GetLog(ctx, req.Actor, req.Status)
 	if err != nil {
 		return nil, fmt.Errorf("[LogService] GetLog: %w", err)
+	}
+
+	return &dto.PostAuditLogRequest{
+		Actor:    res.Actor,
+		Action:   res.Action,
+		Target:   res.Target,
+		Status:   res.Status,
+		Metadata: json.RawMessage(res.Metadata),
+	}, nil
+}
+
+// GetSecurityLog retrieves a single security log based on DTO filters.
+func (s *logService) GetSecurityLog(ctx context.Context,
+	req *dto.GetAuditLogRequest,
+) (*dto.PostAuditLogRequest, error) {
+	res, err := s.Repo.GetSecurityLog(ctx, req.Actor, req.Status)
+	if err != nil {
+		return nil, fmt.Errorf("[LogService] GetSecurityLog: %w", err)
 	}
 
 	return &dto.PostAuditLogRequest{
@@ -127,6 +170,19 @@ func (s *logService) PostAuditLogWithActorString(ctx context.Context,
 	return nil
 }
 
+// PostSecurityLogWithActorString creates a security log with string actor.
+func (s *logService) PostSecurityLogWithActorString(ctx context.Context,
+	actor string, req *dto.PostAuditLogRequest,
+) error {
+	s.logChan <- &logTask{
+		actorStr:   actor,
+		request:    req,
+		isStr:      true,
+		isSecurity: true,
+	}
+	return nil
+}
+
 func (s *logService) processLogs() {
 	for task := range s.logChan {
 		var actorName string
@@ -147,7 +203,11 @@ func (s *logService) processLogs() {
 			Metadata: task.request.Metadata,
 		}
 
-		_ = s.Repo.CreateLog(context.Background(), log)
+		if task.isSecurity {
+			_ = s.Repo.CreateSecurityLog(context.Background(), log)
+		} else {
+			_ = s.Repo.CreateLog(context.Background(), log)
+		}
 	}
 }
 
@@ -190,6 +250,23 @@ func (s *logService) GetLogByID(ctx context.Context,
 	}, nil
 }
 
+// GetSecurityLogByID retrieves a single security log by its ID.
+func (s *logService) GetSecurityLogByID(ctx context.Context,
+	id int64,
+) (*dto.PostAuditLogRequest, error) {
+	log, err := s.Repo.GetSecurityLogByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("[LogService] GetSecurityLogByID: %w", err)
+	}
+	return &dto.PostAuditLogRequest{
+		Actor:    log.Actor,
+		Action:   log.Action,
+		Target:   log.Target,
+		Status:   log.Status,
+		Metadata: json.RawMessage(log.Metadata),
+	}, nil
+}
+
 // GetLogListWithFilters retrieves logs matching filters.
 func (s *logService) GetLogListWithFilters(ctx context.Context,
 	filters map[string]interface{}, limit, page int,
@@ -208,6 +285,43 @@ func (s *logService) GetLogListWithFilters(ctx context.Context,
 	if err != nil {
 		return nil, 0, 0, fmt.Errorf(
 			"[LogService] GetLogListWithFilters: %w", err,
+		)
+	}
+
+	dtos := make([]dto.PostAuditLogRequest, len(logs))
+	for i, log := range logs {
+		dtos[i] = dto.PostAuditLogRequest{
+			Actor:     log.Actor,
+			Action:    log.Action,
+			Target:    log.Target,
+			Status:    log.Status,
+			Metadata:  json.RawMessage(log.Metadata),
+			CreatedAt: log.CreatedAt,
+		}
+	}
+
+	lastPage := int((total + int64(limit) - 1) / int64(limit))
+	return dtos, total, lastPage, nil
+}
+
+// GetSecurityLogListWithFilters retrieves security logs matching filters.
+func (s *logService) GetSecurityLogListWithFilters(ctx context.Context,
+	filters map[string]interface{}, limit, page int,
+) ([]dto.PostAuditLogRequest, int64, int, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	if page < 1 {
+		page = 1
+	}
+	offset := (page - 1) * limit
+
+	logs, total, err := s.Repo.GetSecurityLogListWithFilters(
+		ctx, filters, limit, offset,
+	)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf(
+			"[LogService] GetSecurityLogListWithFilters: %w", err,
 		)
 	}
 
