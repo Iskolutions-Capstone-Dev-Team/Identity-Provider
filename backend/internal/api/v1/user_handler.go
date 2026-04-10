@@ -45,7 +45,7 @@ type UserHandler struct {
 // @Success 201 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/users [post]
+// @Router /users [post]
 func (h *UserHandler) PostUser(c *gin.Context) {
 	var req dto.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -113,7 +113,7 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 // @Param page query int false "Page number" default(1)
 // @Success 200 {object} dto.UserSimplifiedResponseList
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/users [get]
+// @Router /users [get]
 func (h *UserHandler) GetUserList(c *gin.Context) {
 	const defaultLimit = "10"
 	const defaultPage = "1"
@@ -173,7 +173,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 // @Param page query int false "Page number" default(1)
 // @Success 200 {object} dto.UserResponseList
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/admin/users/admins [get]
+// @Router /admin/users/admins [get]
 func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 	const defaultLimit = "10"
 	const defaultPage = "1"
@@ -191,7 +191,6 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-
 
 	ctx := c.Request.Context()
 	resp, err := h.Service.GetAdminUserList(ctx, limit, page)
@@ -214,7 +213,7 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 // @Success 200 {object} dto.UserResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 440 {object} dto.ErrorResponse
-// @Router /api/v1/users/{id} [get]
+// @Router /users/{id} [get]
 func (h *UserHandler) GetUser(c *gin.Context) {
 	id := c.Param("id")
 	userID, err := uuid.Parse(id)
@@ -282,12 +281,12 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // @Summary      Get authenticated user info
 // @Description  Returns user profile filtered by client allowed roles
 // @Tags         Users
+// @Security     Bearer
 // @Produce      json
 // @Success      200  {object}  dto.UserInfoResponse
 // @Failure      400  {object}  dto.ErrorResponse
 // @Failure      404  {object}  dto.ErrorResponse
 // @Router       /me [get]
-// @Security     BearerAuth
 func (h *UserHandler) GetMe(c *gin.Context) {
 	uVal, uExists := c.Get("user_id")
 	cVal, cExists := c.Get("client_id")
@@ -366,7 +365,7 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 501 {object} dto.ErrorResponse
-// @Router /api/v1/users/{id}/password [patch]
+// @Router /users/{id}/password [patch]
 func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 	id := c.Param("id")
 	userID, err := uuid.Parse(id)
@@ -460,7 +459,7 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 501 {object} dto.ErrorResponse
-// @Router /api/v1/users/{id}/status [patch]
+// @Router /users/{id}/status [patch]
 func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 	id := c.Param("id")
 	userID, err := uuid.Parse(id)
@@ -669,7 +668,7 @@ func (h *UserHandler) PatchUserRole(c *gin.Context) {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/users/{id} [delete]
+// @Router /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	if !middleware.HasPermission(c, "Delete user") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
@@ -743,7 +742,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Produce json
 // @Success 200 {array} dto.ClientAccessResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/admin/users/access [get]
+// @Router /admin/users/access [get]
 func (h *UserHandler) GetUserAccess(c *gin.Context) {
 	permissions := c.GetStringSlice("permissions")
 	uIDStr := c.GetString("user_id")
@@ -793,7 +792,7 @@ func (h *UserHandler) GetUserAccess(c *gin.Context) {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/admin/users/{id}/access [put]
+// @Router /admin/users/{id}/access [put]
 func (h *UserHandler) PutUserAccess(c *gin.Context) {
 	targetIDStr := c.Param("id")
 	targetID, err := uuid.Parse(targetIDStr)

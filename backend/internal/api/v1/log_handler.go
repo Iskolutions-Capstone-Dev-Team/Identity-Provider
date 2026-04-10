@@ -15,14 +15,13 @@ import (
 
 // Action constants for audit logging (logs themselves)
 const (
-	actionGetLog   = "get_log"
+	actionGetLog = "get_log"
 )
 
 // LogHandler handles audit log retrieval HTTP requests.
 type LogHandler struct {
 	LogService service.LogService
 }
-
 
 // GetLogList handles GET /api/v1/logs
 // @Summary List audit logs
@@ -40,7 +39,7 @@ type LogHandler struct {
 // @Success 200 {object} dto.GetAuditLogListResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/logs [get]
+// @Router /logs [get]
 func (h *LogHandler) GetLogList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View audit logs") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
@@ -103,7 +102,7 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/logs/{id} [get]
+// @Router /logs/{id} [get]
 func (h *LogHandler) GetLog(c *gin.Context) {
 	if !middleware.HasPermission(c, "View audit logs") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
@@ -182,7 +181,7 @@ func (h *LogHandler) GetLog(c *gin.Context) {
 // @Success 200 {object} dto.GetAuditLogListResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/logs/security [get]
+// @Router /logs/security [get]
 func (h *LogHandler) GetSecurityLogList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View audit logs") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
@@ -245,7 +244,7 @@ func (h *LogHandler) GetSecurityLogList(c *gin.Context) {
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/logs/security/{id} [get]
+// @Router /logs/security/{id} [get]
 func (h *LogHandler) GetSecurityLog(c *gin.Context) {
 	if !middleware.HasPermission(c, "View audit logs") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})

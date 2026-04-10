@@ -17,7 +17,6 @@ type PermissionHandler struct {
 	RoleRepo repository.RoleRepository
 }
 
-
 /**
  * @Summary Get All Permissions
  * @Description Retrieve a list of all permissions.
@@ -50,7 +49,7 @@ func (h *PermissionHandler) GetAllPermissions(c *gin.Context) {
  * @Failure 401 {object} dto.ErrorResponse
  * @Failure 500 {object} dto.ErrorResponse
  * @Security BearerAuth
- * @Router /api/v1/me/permissions [get]
+ * @Router /me/permissions [get]
  */
 func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
 	uVal, uExists := c.Get("user_id")
