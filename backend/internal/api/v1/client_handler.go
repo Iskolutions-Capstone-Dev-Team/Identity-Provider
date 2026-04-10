@@ -17,7 +17,6 @@ import (
 // Action constants for audit logging
 const (
 	actionCreateClient = "create_client"
-	actionListClients  = "list_clients"
 	actionGetClient    = "get_client"
 	actionUpdateClient = "update_client"
 	actionRotateSecret = "rotate_secret"
@@ -411,19 +410,20 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PatchClientSecret] %v", err)
-		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionRotateSecret,
-				Target: clientName,
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"client_id":   clientIDString,
-					"client_name": clientName,
-					"ip":          c.ClientIP(),
-					"user_agent":  c.Request.UserAgent(),
-					"error":       err.Error(),
-				}),
-			})
+		logReq := &dto.PostAuditLogRequest{
+			Action: actionRotateSecret,
+			Target: clientName,
+			Status: models.StatusFail,
+			Metadata: buildMetadata(map[string]interface{}{
+				"client_id":   clientIDString,
+				"client_name": clientName,
+				"ip":          c.ClientIP(),
+				"user_agent":  c.Request.UserAgent(),
+				"error":       err.Error(),
+			}),
+		}
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+		_ = h.LogService.PostSecurityLog(ctx, userID[:], logReq)
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "failed to rotate secret"},
@@ -431,13 +431,14 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 		return
 	}
 
-	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionRotateSecret,
-			Target:   clientName,
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionRotateSecret,
+		Target:   clientName,
+		Status:   models.StatusSuccess,
+		Metadata: metadata,
+	}
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+	_ = h.LogService.PostSecurityLog(ctx, userID[:], logReq)
 
 	c.JSON(http.StatusOK, resp)
 }

@@ -18,14 +18,12 @@ import (
 // Action constants for audit logging
 const (
 	actionCreateUser     = "create_user"
-	actionListUsers      = "list_users"
 	actionGetUser        = "get_user"
 	actionGetMe          = "get_me"
 	actionUpdatePass     = "update_password"
 	actionUpdateStatus   = "update_status"
 	actionUpdateUserRole = "update_user_role"
 	actionDeleteUser     = "delete_user"
-	actionListAdmins     = "list_admins"
 	actionUpdateAccess   = "update_user_access"
 )
 
@@ -417,18 +415,19 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PatchUserPassword] %v", err)
-		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionUpdatePass,
-				Target: id,
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"target_id":  id,
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
+		logReq := &dto.PostAuditLogRequest{
+			Action: actionUpdatePass,
+			Target: id,
+			Status: models.StatusFail,
+			Metadata: buildMetadata(map[string]interface{}{
+				"target_id":  id,
+				"ip":         c.ClientIP(),
+				"user_agent": c.Request.UserAgent(),
+				"error":      err.Error(),
+			}),
+		}
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+		_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Update failed"},
@@ -436,13 +435,14 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 		return
 	}
 
-	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionUpdatePass,
-			Target:   id,
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionUpdatePass,
+		Target:   id,
+		Status:   models.StatusSuccess,
+		Metadata: metadata,
+	}
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+	_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Password Updated Successfully!",
@@ -510,19 +510,20 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PatchUserStatus] %v", err)
-		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionUpdateStatus,
-				Target: id,
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"target_id":  id,
-					"new_status": req.NewStatus,
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
+		logReq := &dto.PostAuditLogRequest{
+			Action: actionUpdateStatus,
+			Target: id,
+			Status: models.StatusFail,
+			Metadata: buildMetadata(map[string]interface{}{
+				"target_id":  id,
+				"new_status": req.NewStatus,
+				"ip":         c.ClientIP(),
+				"user_agent": c.Request.UserAgent(),
+				"error":      err.Error(),
+			}),
+		}
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+		_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
 		if strings.Contains(err.Error(), "Status Validation") {
 			c.JSON(
 				http.StatusBadRequest,
@@ -537,13 +538,14 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 		return
 	}
 
-	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionUpdateStatus,
-			Target:   id,
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionUpdateStatus,
+		Target:   id,
+		Status:   models.StatusSuccess,
+		Metadata: metadata,
+	}
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+	_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Status Updated Successfully!",
@@ -615,19 +617,20 @@ func (h *UserHandler) PatchUserRole(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PatchUserRole] %v", err)
-		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionUpdateUserRole,
-				Target: id,
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"target_id":  id,
-					"role_id":    req.RoleID,
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
+		logReq := &dto.PostAuditLogRequest{
+			Action: actionUpdateUserRole,
+			Target: id,
+			Status: models.StatusFail,
+			Metadata: buildMetadata(map[string]interface{}{
+				"target_id":  id,
+				"role_id":    req.RoleID,
+				"ip":         c.ClientIP(),
+				"user_agent": c.Request.UserAgent(),
+				"error":      err.Error(),
+			}),
+		}
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+		_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
 		if strings.Contains(err.Error(), "permitted") {
 			c.JSON(
 				http.StatusForbidden,
@@ -644,13 +647,14 @@ func (h *UserHandler) PatchUserRole(c *gin.Context) {
 		return
 	}
 
-	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionUpdateUserRole,
-			Target:   id,
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionUpdateUserRole,
+		Target:   id,
+		Status:   models.StatusSuccess,
+		Metadata: metadata,
+	}
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+	_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "role updated successfully!",
