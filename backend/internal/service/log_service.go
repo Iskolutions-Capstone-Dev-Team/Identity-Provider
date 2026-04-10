@@ -28,28 +28,35 @@ type LogService interface {
 }
 
 type logService struct {
-	Repo repository.LogRepository
+	Repo    repository.LogRepository
+	logChan chan *logTask
+}
+
+type logTask struct {
+	actorID  []byte
+	actorStr string
+	isStr    bool
+	request  *dto.PostAuditLogRequest
 }
 
 func NewLogService(repo repository.LogRepository) LogService {
-	return &logService{Repo: repo}
+	s := &logService{
+		Repo:    repo,
+		logChan: make(chan *logTask, 100),
+	}
+	go s.processLogs()
+	return s
 }
 
 // PostAuditLog handles logic for creating an audit log.
 func (s *logService) PostAuditLog(ctx context.Context, actorID []byte,
 	req *dto.PostAuditLogRequest,
 ) error {
-	actorName := s.resolveActor(ctx, actorID)
-
-	log := &models.AuditLog{
-		Actor:    &actorName,
-		Action:   req.Action,
-		Target:   req.Target,
-		Status:   req.Status,
-		Metadata: req.Metadata,
+	s.logChan <- &logTask{
+		actorID: actorID,
+		request: req,
 	}
-
-	return s.Repo.CreateLog(ctx, log)
+	return nil
 }
 
 // GetLog retrieves a single audit log based on DTO filters.
@@ -112,14 +119,36 @@ func (s *logService) resolveActor(ctx context.Context, id []byte) string {
 func (s *logService) PostAuditLogWithActorString(ctx context.Context,
 	actor string, req *dto.PostAuditLogRequest,
 ) error {
-	log := &models.AuditLog{
-		Actor:    &actor,
-		Action:   req.Action,
-		Target:   req.Target,
-		Status:   req.Status,
-		Metadata: req.Metadata,
+	s.logChan <- &logTask{
+		actorStr: actor,
+		request:  req,
+		isStr:    true,
 	}
-	return s.Repo.CreateLog(ctx, log)
+	return nil
+}
+
+func (s *logService) processLogs() {
+	for task := range s.logChan {
+		var actorName string
+		if task.isStr {
+			actorName = task.actorStr
+		} else {
+			actorName = s.resolveActor(
+				context.Background(),
+				task.actorID,
+			)
+		}
+
+		log := &models.AuditLog{
+			Actor:    &actorName,
+			Action:   task.request.Action,
+			Target:   task.request.Target,
+			Status:   task.request.Status,
+			Metadata: task.request.Metadata,
+		}
+
+		_ = s.Repo.CreateLog(context.Background(), log)
+	}
 }
 
 // ResolveClientName returns a human-readable client name.
@@ -173,9 +202,13 @@ func (s *logService) GetLogListWithFilters(ctx context.Context,
 	}
 	offset := (page - 1) * limit
 
-	logs, total, err := s.Repo.GetLogListWithFilters(ctx, filters, limit, offset)
+	logs, total, err := s.Repo.GetLogListWithFilters(
+		ctx, filters, limit, offset,
+	)
 	if err != nil {
-		return nil, 0, 0, fmt.Errorf("[LogService] GetLogListWithFilters: %w", err)
+		return nil, 0, 0, fmt.Errorf(
+			"[LogService] GetLogListWithFilters: %w", err,
+		)
 	}
 
 	dtos := make([]dto.PostAuditLogRequest, len(logs))
