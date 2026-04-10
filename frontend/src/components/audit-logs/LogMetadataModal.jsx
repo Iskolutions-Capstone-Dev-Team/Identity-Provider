@@ -95,7 +95,6 @@ export default function LogMetadataModal({ open, log, loading, error, onClose, c
           <div className={modalBodyStackClassName}>
             <section className={modalSectionClassName}>
               <div className="grid gap-4 md:grid-cols-2">
-                <DetailField label="Log ID" value={log?.id} colorMode={colorMode} />
                 <DetailField label="Timestamp" value={log?.timestamp} colorMode={colorMode} />
                 <DetailField label="Actor" value={log?.actor} colorMode={colorMode} />
                 <DetailField label="Target" value={log?.target} colorMode={colorMode} />
