@@ -8,6 +8,7 @@ import AuthorizeRedirect from "./auth/pages/AuthorizeRedirect";
 import ErrorPage from "./auth/pages/ErrorPage";
 import UnauthorizedPage from "./auth/pages/UnauthorizedPage";
 import ProtectedRoute from "./auth/components/ProtectedRoute";
+import PermissionRoute from "./auth/components/PermissionRoute";
 import UserPool from "./pages/UserPool";
 import Roles from "./pages/Roles";
 import AppClient from "./pages/AppClient";
@@ -16,6 +17,8 @@ import Registration from "./pages/Registration";
 import Profile from "./pages/Profile";
 import Placeholder from "./pages/Placeholder";
 import IdpLayout from "./layouts/IdpLayout";
+import { PermissionProvider } from "./context/PermissionContext";
+import { PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "./utils/permissionAccess";
 
 export default function App() {
   return (
@@ -42,15 +45,47 @@ export default function App() {
         <Route
           element={
             <ProtectedRoute>
-              <IdpLayout />
+              <PermissionProvider>
+                <IdpLayout />
+              </PermissionProvider>
             </ProtectedRoute>
           }
         >
-          <Route path="/user-pool" element={<UserPool />} />
-          <Route path="/roles" element={<Roles />} />
-          <Route path="/audit-logs" element={<AuditLogs />} />
-          <Route path="/app-client" element={<AppClient />} />
-          <Route path="/registration" element={<Registration />} />
+          <Route path="/user-pool"
+            element={
+              <PermissionRoute requiredPermissions={USER_POOL_PAGE_PERMISSIONS}>
+                <UserPool />
+              </PermissionRoute>
+            }
+          />
+          <Route path="/roles"
+            element={
+              <PermissionRoute requiredPermissions={[PERMISSIONS.VIEW_ROLES]}>
+                <Roles />
+              </PermissionRoute>
+            }
+          />
+          <Route path="/audit-logs"
+            element={
+              <PermissionRoute requiredPermissions={[PERMISSIONS.VIEW_AUDIT_LOGS]}>
+                <AuditLogs />
+              </PermissionRoute>
+            }
+          />
+          <Route path="/app-client"
+            element={
+              <PermissionRoute requiredPermissions={[PERMISSIONS.VIEW_ALL_APPCLIENTS]}>
+                <AppClient />
+              </PermissionRoute>
+            }
+          />
+          <Route path="/registration"
+            element={
+              <PermissionRoute requiredPermissions={REGISTRATION_PAGE_PERMISSIONS}>
+                <Registration />
+              </PermissionRoute>
+            }
+          />
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
