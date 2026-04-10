@@ -79,7 +79,7 @@ export default function LogMetadataModal({ open, log, loading, error, onClose, c
             <div className="max-w-2xl">
               <h3 className={modalHeaderTitleClassName}>Log Metadata</h3>
               <p className={modalHeaderDescriptionClassName}>
-                View the selected transaction log details.
+                View the selected log details.
               </p>
             </div>
 
