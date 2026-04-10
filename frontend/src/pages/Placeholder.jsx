@@ -21,7 +21,7 @@ export default function OnePortalPlaceholderPage() {
       <div className="relative flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
         <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="float-logo w-28 sm:w-32"/>
         <p className="max-w-sm text-base font-medium leading-7 text-white/90 sm:text-lg">
-          Sorry, Currently working on this page.
+          Sorry, currently working on this page.
         </p>
         <button type="button" onClick={handleReturn} className="btn h-12 min-w-56 rounded-lg border-[#ffd700] bg-[#ffd700] px-6 text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
           Return
