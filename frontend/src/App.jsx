@@ -14,6 +14,7 @@ import AppClient from "./pages/AppClient";
 import AuditLogs from "./pages/AuditLogs";
 import Registration from "./pages/Registration";
 import Profile from "./pages/Profile";
+import Placeholder from "./pages/Placeholder";
 import IdpLayout from "./layouts/IdpLayout";
 
 export default function App() {
@@ -29,6 +30,13 @@ export default function App() {
         <Route path="/logout" element={<Logout />} />
         <Route path="/error" element={<ErrorPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        <Route path="/one-portal"
+          element={
+            <ProtectedRoute>
+              <Placeholder />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Protected Route */}
         <Route
