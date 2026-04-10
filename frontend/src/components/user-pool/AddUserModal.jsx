@@ -693,12 +693,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                       <label className={modalLabelClassName}>
                         Middle Name
                       </label>
-                      <label className={`${modalInputClassName} flex items-center gap-2 px-4`}>
-                        <input type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" className="grow bg-transparent" />
-                        <span className={modalOptionalBadgeClassName}>
-                          Optional
-                        </span>
-                      </label>
+                      <input type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" className={modalInputClassName} />
                     </div>
 
                     <div className="space-y-1">

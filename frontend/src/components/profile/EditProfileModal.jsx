@@ -212,7 +212,6 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                 <div>
                   <label className={modalLabelClassName}>Middle Name</label>
                   <input type="text"  name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className={modalInputClassName}/>
-                  <p className={`${modalHelperTextClassName} mt-2`}>Optional</p>
                 </div>
 
                 <div>
