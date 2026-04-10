@@ -192,7 +192,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                 colorMode={colorMode}
               />
 
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-5 md:grid-cols-2">
                 <div>
                   <label className={modalLabelClassName}>
                     First Name <span className="text-red-500">*</span>
@@ -210,11 +210,6 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                 </div>
 
                 <div>
-                  <label className={modalLabelClassName}>Middle Name</label>
-                  <input type="text"  name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className={modalInputClassName}/>
-                </div>
-
-                <div>
                   <label className={modalLabelClassName}>
                     Last Name <span className="text-red-500">*</span>
                   </label>
@@ -226,6 +221,11 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                       Max 50 characters
                     </p>
                   )}
+                </div>
+
+                <div>
+                  <label className={modalLabelClassName}>Middle Name</label>
+                  <input type="text"  name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className={modalInputClassName}/>
                 </div>
 
                 <div>
