@@ -2,8 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "../services/authService";
 import { storeTokenResponse } from "../utils/authCookies";
-import { buildLoginPath } from "../utils/loginRoute";
-import { UNAUTHORIZED_PAGE_PATH } from "../utils/unauthorizedPage";
+import { buildLoginPath, buildUnauthorizedLoginPath } from "../utils/loginRoute";
 import { DEFAULT_AUTHENTICATED_PATH } from "../utils/authAccess";
 
 export default function Callback() {
@@ -37,7 +36,7 @@ export default function Callback() {
         }, 1000);
       } catch (err) {
         console.error(err);
-        navigate(UNAUTHORIZED_PAGE_PATH, { replace: true });
+        navigate(buildUnauthorizedLoginPath(), { replace: true });
       }
     };
 

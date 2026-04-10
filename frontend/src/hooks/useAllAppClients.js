@@ -27,12 +27,19 @@ const mapClientSummary = (client = {}) => {
   };
 };
 
-export function useAllAppClients() {
+export function useAllAppClients({ enabled = true } = {}) {
   const [appClients, setAppClients] = useState([]);
-  const [isLoadingAppClients, setIsLoadingAppClients] = useState(true);
+  const [isLoadingAppClients, setIsLoadingAppClients] = useState(enabled);
   const [appClientsError, setAppClientsError] = useState("");
 
   useEffect(() => {
+    if (!enabled) {
+      setAppClients([]);
+      setAppClientsError("");
+      setIsLoadingAppClients(false);
+      return undefined;
+    }
+
     let cancelled = false;
 
     const fetchAllAppClients = async () => {
@@ -134,7 +141,7 @@ export function useAllAppClients() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   return {
     appClients,

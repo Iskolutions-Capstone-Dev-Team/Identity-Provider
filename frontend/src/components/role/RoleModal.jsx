@@ -147,6 +147,25 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
         .filter(Boolean),
     [permissionOptions],
   );
+  const rolePermissionFallbackMap = useMemo(() => {
+    const rolePermissionIds = Array.isArray(role?.permissionIds)
+      ? role.permissionIds
+      : [];
+    const rolePermissionLabels = Array.isArray(role?.permissionLabels)
+      ? role.permissionLabels
+      : [];
+    const fallbackMap = new Map();
+
+    rolePermissionIds.forEach((permissionId, index) => {
+      const label = rolePermissionLabels[index];
+
+      if (permissionId && typeof label === "string" && label.trim()) {
+        fallbackMap.set(permissionId, label.trim());
+      }
+    });
+
+    return fallbackMap;
+  }, [role]);
   const mergedPermissionOptions = useMemo(() => {
     const optionMap = new Map(
       normalizedPermissionOptions.map((permission) => [permission.id, permission]),
@@ -156,13 +175,19 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
       if (!optionMap.has(permissionId)) {
         optionMap.set(permissionId, {
           id: permissionId,
-          permission: `Permission #${permissionId}`,
+          permission:
+            rolePermissionFallbackMap.get(permissionId) ||
+            `Permission #${permissionId}`,
         });
       }
     });
 
     return Array.from(optionMap.values());
-  }, [normalizedPermissionOptions, selectedPermissionIds]);
+  }, [
+    normalizedPermissionOptions,
+    rolePermissionFallbackMap,
+    selectedPermissionIds,
+  ]);
 
   const readOnlyTextAreaClassName =
     `${modalReadOnlyInputClassName} min-h-28 whitespace-pre-wrap`;

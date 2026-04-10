@@ -4,7 +4,7 @@ import ConnectedAppClientTable from "./ConnectedAppClientTable";
 import ResultsCount from "../ResultsCount";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 
-export default function ConnectedAppClientCard({ loading = false, clients, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate, onRotateSecret, colorMode = "light" }) {
+export default function ConnectedAppClientCard({ loading = false, clients, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate, onRotateSecret, showCreateAction = true, showEditAction = true, showDeleteAction = true, showRotateSecretAction = true, colorMode = "light" }) {
     const isDarkMode = colorMode === "dark";
     const containerClassName = `flex flex-col gap-5 border-b pb-6 lg:flex-row lg:items-end lg:justify-between ${
         isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
@@ -65,13 +65,15 @@ export default function ConnectedAppClientCard({ loading = false, clients, total
                         />
                     </label>
                 </div>
-                <div className="flex justify-end lg:justify-start">
-                    <button type="button" onClick={onCreate} className={createButtonClassName}>
-                        + Add Client
-                    </button>
-                </div>
+                {showCreateAction && (
+                    <div className="flex justify-end lg:justify-start">
+                        <button type="button" onClick={onCreate} className={createButtonClassName}>
+                            + Add Client
+                        </button>
+                    </div>
+                )}
             </div>
-            <ConnectedAppClientTable loading={loading} clients={clients} onView={onView} onEdit={onEdit} onDelete={onDelete} onRotateSecret={onRotateSecret} colorMode={colorMode} />
+            <ConnectedAppClientTable loading={loading} clients={clients} onView={onView} onEdit={onEdit} onDelete={onDelete} onRotateSecret={onRotateSecret} showEditAction={showEditAction} showDeleteAction={showDeleteAction} showRotateSecretAction={showRotateSecretAction} colorMode={colorMode} />
             {!loading && (
                 <div className={footerClassName}>
                     <ResultsCount

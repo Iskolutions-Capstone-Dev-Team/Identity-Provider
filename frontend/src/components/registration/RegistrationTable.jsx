@@ -29,7 +29,7 @@ function getRowClassName(index, isDarkMode) {
   }`;
 }
 
-export default function RegistrationTable({ rows = [], onView, onEdit, colorMode = "light" }) {
+export default function RegistrationTable({ rows = [], onView, onEdit, showEditAction = true, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const wrapperClassName = isDarkMode
     ? "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(28,18,29,0.92))] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.82)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
@@ -127,11 +127,13 @@ export default function RegistrationTable({ rows = [], onView, onEdit, colorMode
                         </svg>
                       </button>
 
-                      <button type="button" aria-label={`Edit ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onEdit(row)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a2.25 2.25 0 1 1 3.182 3.182L10.582 17.13a4.5 4.5 0 0 1-1.897 1.13L6 19l.74-2.685a4.5 4.5 0 0 1 1.13-1.897l8.992-8.99Zm0 0L19.5 7.125"/>
-                        </svg>
-                      </button>
+                      {showEditAction && (
+                        <button type="button" aria-label={`Edit ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onEdit(row)}>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a2.25 2.25 0 1 1 3.182 3.182L10.582 17.13a4.5 4.5 0 0 1-1.897 1.13L6 19l.74-2.685a4.5 4.5 0 0 1 1.13-1.897l8.992-8.99Zm0 0L19.5 7.125"/>
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </TableRowFade>

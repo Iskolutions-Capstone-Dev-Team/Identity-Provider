@@ -67,12 +67,22 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
   }, [open, config]);
 
   const displayedClientNames = useMemo(
-    () =>
-      getClientNames(
-        isViewMode ? config?.clientIds : selectedClientIds,
-        appClientOptions,
-      ),
-    [appClientOptions, config?.clientIds, isViewMode, selectedClientIds],
+    () => {
+      if (isViewMode) {
+        return Array.isArray(config?.clientNames) && config.clientNames.length > 0
+          ? config.clientNames
+          : getClientNames(config?.clientIds, appClientOptions);
+      }
+
+      return getClientNames(selectedClientIds, appClientOptions);
+    },
+    [
+      appClientOptions,
+      config?.clientIds,
+      config?.clientNames,
+      isViewMode,
+      selectedClientIds,
+    ],
   );
 
   const handleSubmit = async (event) => {

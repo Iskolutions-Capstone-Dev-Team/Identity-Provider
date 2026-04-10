@@ -1,5 +1,6 @@
 import { useOutletContext } from "react-router-dom";
 import { useState } from "react";
+import { usePermissionAccess } from "../context/PermissionContext";
 import { useAppClients } from "../hooks/useAppClients";
 import ConnectedAppClientCard from "../components/app-client/ConnectedAppClientCard";
 import AppClientModal from "../components/app-client/AppClientModal";
@@ -10,11 +11,13 @@ import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
+import { PERMISSIONS } from "../utils/permissionAccess";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function AppClient() {
     const { colorMode = "light" } = useOutletContext();
+    const { hasPermission } = usePermissionAccess();
     const {
         search, setSearch, page, setPage,
         paginatedClients, totalPages, totalResults,
@@ -33,6 +36,10 @@ export default function AppClient() {
     const [showSecretConfirm, setShowSecretConfirm] = useState(false);
     const [secretTarget, setSecretTarget] = useState(null);
     const showLoading = useDelayedLoading(loading);
+    const canCreateClient = hasPermission(PERMISSIONS.ADD_APPCLIENT);
+    const canEditClient = hasPermission(PERMISSIONS.EDIT_APPCLIENT);
+    const canDeleteClient = hasPermission(PERMISSIONS.DELETE_APPCLIENT);
+    const canRotateClientSecret = canEditClient;
 
     const handleCreateClient = async (payload) => {
         const res = await createClient(payload);
@@ -47,7 +54,13 @@ export default function AppClient() {
         });
     };
 
-    const openCreate = () => setCreateOpen(true);
+    const openCreate = () => {
+        if (!canCreateClient) {
+            return;
+        }
+
+        setCreateOpen(true);
+    };
 
     const openView = (client) => {
         setMode("view");
@@ -56,12 +69,20 @@ export default function AppClient() {
     };
 
     const openEdit = (client) => {
+        if (!canEditClient) {
+            return;
+        }
+
         setMode("edit");
         setActiveClient(client);
         setEditViewOpen(true);
     };
 
     const handleDeleteClick = (clientId) => {
+        if (!canDeleteClient) {
+            return;
+        }
+
         setDeleteTarget(clientId);
         setShowDeleteAlert(true);
     };
@@ -73,6 +94,10 @@ export default function AppClient() {
     };
 
     const handleRotateClick = (client) => {
+        if (!canRotateClientSecret) {
+            return;
+        }
+
         setSecretTarget(client || null);
         setShowSecretConfirm(true);
     };
@@ -131,6 +156,10 @@ export default function AppClient() {
                         onDelete={handleDeleteClick}
                         onCreate={openCreate}
                         onRotateSecret={handleRotateClick}
+                        showCreateAction={canCreateClient}
+                        showEditAction={canEditClient}
+                        showDeleteAction={canDeleteClient}
+                        showRotateSecretAction={canRotateClientSecret}
                         colorMode={colorMode}
                     />
                 </div>

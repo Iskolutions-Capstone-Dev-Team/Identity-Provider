@@ -1,7 +1,7 @@
 import { Navigate, useSearchParams } from "react-router-dom";
 import AuthLayout from "../layouts/AuthLayout";
 import LoginForm from "../components/LoginForm";
-import { buildLoginPath, getLoginClientId } from "../utils/loginRoute";
+import { buildLoginPath, getLoginClientId, getLoginErrorCode, getLoginErrorMessage } from "../utils/loginRoute";
 
 const infoCards = [
   {
@@ -37,9 +37,16 @@ const infoCards = [
 export default function Login() {
   const [searchParams] = useSearchParams();
   const clientId = getLoginClientId(searchParams);
+  const loginErrorCode = getLoginErrorCode(searchParams);
+  const loginErrorMessage = getLoginErrorMessage(searchParams);
 
   if (!searchParams.get("client_id") && clientId) {
-    return <Navigate to={buildLoginPath(clientId)} replace />;
+    return (
+      <Navigate
+        to={buildLoginPath(clientId, { authError: loginErrorCode })}
+        replace
+      />
+    );
   }
 
   return (
@@ -78,7 +85,7 @@ export default function Login() {
         </section>
 
         <section className="flex w-full justify-center xl:justify-end">
-          <LoginForm clientId={clientId} />
+          <LoginForm clientId={clientId} initialError={loginErrorMessage} />
         </section>
       </div>
     </AuthLayout>

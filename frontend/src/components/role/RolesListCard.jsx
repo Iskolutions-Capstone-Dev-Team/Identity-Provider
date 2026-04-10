@@ -4,7 +4,7 @@ import RolesListTable from "./RolesListTable";
 import ResultsCount from "../ResultsCount";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 
-export default function RolesListCard({ loading = false, roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate, colorMode = "light" }) {
+export default function RolesListCard({ loading = false, roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate, showCreateAction = true, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const filtersClassName = `flex flex-col gap-5 border-b pb-6 lg:flex-row lg:items-end lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
@@ -66,11 +66,13 @@ export default function RolesListCard({ loading = false, roles, totalResults, it
           </label>
         </div>
 
-        <div className="flex justify-end lg:justify-start">
-          <button type="button" onClick={onCreate} className={createButtonClassName}>
-            + Add Role
-          </button>
-        </div>
+        {showCreateAction && (
+          <div className="flex justify-end lg:justify-start">
+            <button type="button" onClick={onCreate} className={createButtonClassName}>
+              + Add Role
+            </button>
+          </div>
+        )}
       </div>
 
       <RolesListTable

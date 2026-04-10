@@ -43,7 +43,9 @@ func InitializeHandlers(db *sqlx.DB,
 			LogService: service.LogService,
 		},
 		PermissionHandler: &v1.PermissionHandler{
-			Service: service.PermissionService,
+			Service:  service.PermissionService,
+			UserRepo: userRepo,
+			RoleRepo: roleRepo,
 		},
 		MailHandler: &v1.MailHandler{
 			MailService: service.MailService,

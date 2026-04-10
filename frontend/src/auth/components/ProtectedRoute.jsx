@@ -3,8 +3,7 @@ import { Navigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import { clearAuthState } from "../utils/authCookies";
 import { ensureValidAccessToken } from "../utils/tokenRefresh";
-import { buildLoginPath } from "../utils/loginRoute";
-import { UNAUTHORIZED_PAGE_PATH } from "../utils/unauthorizedPage";
+import { buildLoginPath, buildUnauthorizedLoginPath } from "../utils/loginRoute";
 import { userService } from "../../services/userService";
 import { hasAssignedRoles } from "../utils/authAccess";
 
@@ -77,7 +76,7 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (authState === "unauthorized") {
-    return <Navigate to={UNAUTHORIZED_PAGE_PATH} replace />;
+    return <Navigate to={buildUnauthorizedLoginPath()} replace />;
   }
 
   return children;

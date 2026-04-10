@@ -44,12 +44,15 @@ function UserTypeIcon({ userType }) {
   );
 }
 
-export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, onCreate, colorMode = "light" }) {
+export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, onCreate, showCreateAction = true, showAdminUserType = true, colorMode = "light" }) {
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState(null);
   const statusDropdownRef = useRef(null);
   const selectedStatusLabel = getStatusLabel(status);
   const isDarkMode = colorMode === "dark";
+  const visibleUserTypeOptions = showAdminUserType
+    ? userTypeOptions
+    : userTypeOptions.filter((option) => option.value !== ADMIN_USER_TYPE);
   const containerClassName = `flex flex-col gap-5 border-b pb-6 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(14rem,18rem)_auto_auto] lg:items-end ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
@@ -215,7 +218,7 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
       <div className="min-w-0 lg:justify-self-start">
         <label className={labelClassName}>Account Type</label>
         <div className={userTypeGroupClassName} role="tablist" aria-label="Account Type">
-          {userTypeOptions.map((option) => {
+          {visibleUserTypeOptions.map((option) => {
             const isSelected = option.value === userType;
 
             return (
@@ -253,11 +256,13 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
         </div>
       </div>
 
-      <div className="flex justify-end lg:justify-start">
-        <button type="button" onClick={onCreate} className={createButtonClassName}>
-          + Add User
-        </button>
-      </div>
+      {showCreateAction && (
+        <div className="flex justify-end lg:justify-start">
+          <button type="button" onClick={onCreate} className={createButtonClassName}>
+            + Add User
+          </button>
+        </div>
+      )}
     </div>
   );
 }
