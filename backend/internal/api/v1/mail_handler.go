@@ -28,7 +28,7 @@ type MailHandler struct {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/mail/otp [post]
+// @Router /mail/otp [post]
 func (h *MailHandler) SendOTP(c *gin.Context) {
 	var req dto.OTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -38,11 +38,11 @@ func (h *MailHandler) SendOTP(c *gin.Context) {
 
 	reqCtx := c.Request.Context()
 	err := h.OTPService.SendOTP(reqCtx, req.Email)
-	
+
 	logReq := &dto.PostAuditLogRequest{
-		Action:   "send_otp",
-		Target:   req.Email,
-		Status:   models.StatusSuccess,
+		Action: "send_otp",
+		Target: req.Email,
+		Status: models.StatusSuccess,
 		Metadata: buildMetadata(map[string]interface{}{
 			"ip":         c.ClientIP(),
 			"user_agent": c.Request.UserAgent(),
@@ -59,7 +59,7 @@ func (h *MailHandler) SendOTP(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
 		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
 
-		c.JSON(http.StatusInternalServerError, 
+		c.JSON(http.StatusInternalServerError,
 			dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -80,7 +80,7 @@ func (h *MailHandler) SendOTP(c *gin.Context) {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/mail/invitation [post]
+// @Router /mail/invitation [post]
 func (h *MailHandler) SendInvitation(c *gin.Context) {
 	var req dto.InvitationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -89,9 +89,9 @@ func (h *MailHandler) SendInvitation(c *gin.Context) {
 	}
 
 	reqCtx := c.Request.Context()
-	err := h.MailService.SendAndSaveInvitation(reqCtx, 
+	err := h.MailService.SendAndSaveInvitation(reqCtx,
 		req.Email, models.InvitationType(req.InvitationType))
-	
+
 	actorIDStr := c.GetString("user_id")
 	actorID, _ := uuid.Parse(actorIDStr)
 	actorName, _ := h.LogService.GetUserEmail(reqCtx, actorID[:])
@@ -100,9 +100,9 @@ func (h *MailHandler) SendInvitation(c *gin.Context) {
 	}
 
 	logReq := &dto.PostAuditLogRequest{
-		Action:   actionSendInvitation,
-		Target:   req.Email,
-		Status:   models.StatusSuccess,
+		Action: actionSendInvitation,
+		Target: req.Email,
+		Status: models.StatusSuccess,
 		Metadata: buildMetadata(map[string]interface{}{
 			"ip":         c.ClientIP(),
 			"user_agent": c.Request.UserAgent(),
@@ -119,7 +119,7 @@ func (h *MailHandler) SendInvitation(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
 		_ = h.LogService.PostSecurityLog(reqCtx, actorID[:], logReq)
 
-		c.JSON(http.StatusInternalServerError, 
+		c.JSON(http.StatusInternalServerError,
 			dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -127,6 +127,6 @@ func (h *MailHandler) SendInvitation(c *gin.Context) {
 	_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
 	_ = h.LogService.PostSecurityLog(reqCtx, actorID[:], logReq)
 
-	c.JSON(http.StatusOK, 
+	c.JSON(http.StatusOK,
 		dto.SuccessResponse{Message: "Invitation sent successfully"})
 }

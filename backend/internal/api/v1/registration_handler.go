@@ -30,7 +30,7 @@ type RegistrationHandler struct {
 // @Produce json
 // @Success 200 {object} dto.RegistrationConfigResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/admin/registration/config [get]
+// @Router /admin/registration/config [get]
 func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 	config, err := h.Service.GetRegistrationConfig(c.Request.Context())
 	if err != nil {
@@ -52,7 +52,7 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 // @Success 200 {object} dto.AccountTypeConfigResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/admin/registration/config/{id} [get]
+// @Router /admin/registration/config/{id} [get]
 func (h *RegistrationHandler) GetClientsByAccountTypeID(c *gin.Context) {
 	idStr := c.Param("id")
 	var id int
@@ -84,7 +84,7 @@ func (h *RegistrationHandler) GetClientsByAccountTypeID(c *gin.Context) {
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/admin/registration/preapproved [put]
+// @Router /admin/registration/preapproved [put]
 func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
 	var req dto.UpdatePreapprovedClientsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -105,9 +105,9 @@ func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
 	err := h.Service.UpdatePreapprovedClients(reqCtx, req)
 
 	logReq := &dto.PostAuditLogRequest{
-		Action:   actionUpdatePreapprovedClients,
-		Target:   fmt.Sprintf("account_type_%d", req.AccountTypeID),
-		Status:   models.StatusSuccess,
+		Action: actionUpdatePreapprovedClients,
+		Target: fmt.Sprintf("account_type_%d", req.AccountTypeID),
+		Status: models.StatusSuccess,
 		Metadata: buildMetadata(map[string]interface{}{
 			"ip":         c.ClientIP(),
 			"user_agent": c.Request.UserAgent(),
@@ -148,7 +148,7 @@ func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/activate [post]
+// @Router /activate [post]
 func (h *RegistrationHandler) ActivateAccount(c *gin.Context) {
 	var req dto.ActivateAccountRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -164,9 +164,9 @@ func (h *RegistrationHandler) ActivateAccount(c *gin.Context) {
 	actor := req.InvitationCode
 
 	logReq := &dto.PostAuditLogRequest{
-		Action:   actionActivateAccount,
-		Target:   req.InvitationCode,
-		Status:   models.StatusSuccess,
+		Action: actionActivateAccount,
+		Target: req.InvitationCode,
+		Status: models.StatusSuccess,
 		Metadata: buildMetadata(map[string]interface{}{
 			"ip":         c.ClientIP(),
 			"user_agent": c.Request.UserAgent(),
@@ -207,7 +207,7 @@ func (h *RegistrationHandler) ActivateAccount(c *gin.Context) {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 401 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/activate/{code} [get]
+// @Router /activate/{code} [get]
 func (h *RegistrationHandler) CheckInvitation(c *gin.Context) {
 	code := c.Param("code")
 	if code == "" {
@@ -221,9 +221,9 @@ func (h *RegistrationHandler) CheckInvitation(c *gin.Context) {
 	valid, err := h.Service.CheckInvitation(reqCtx, code)
 
 	logReq := &dto.PostAuditLogRequest{
-		Action:   actionCheckInvitation,
-		Target:   code,
-		Status:   models.StatusSuccess,
+		Action: actionCheckInvitation,
+		Target: code,
+		Status: models.StatusSuccess,
 		Metadata: buildMetadata(map[string]interface{}{
 			"ip":         c.ClientIP(),
 			"user_agent": c.Request.UserAgent(),

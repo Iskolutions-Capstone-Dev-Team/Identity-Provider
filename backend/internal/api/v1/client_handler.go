@@ -47,7 +47,7 @@ type ClientHandler struct {
 // @Success 201 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/clients [post]
+// @Router /admin/clients [post]
 func (h *ClientHandler) PostClient(c *gin.Context) {
 	if !middleware.HasPermission(c, "Add appclient") {
 		c.JSON(
@@ -139,7 +139,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 // @Param limit query int false "Pagination Limit" default(10)
 // @Success 200 {array} dto.ClientResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/clients [get]
+// @Router /admin/clients [get]
 func (h *ClientHandler) GetClientList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View all appclients") {
 		c.JSON(
@@ -198,7 +198,7 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/clients/{id} [get]
+// @Router /admin/clients/{id} [get]
 func (h *ClientHandler) GetClient(c *gin.Context) {
 	idParam := c.Param("id")
 	clientUUID, err := uuid.Parse(idParam)
@@ -275,7 +275,7 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/clients/{id} [put]
+// @Router /admin/clients/{id} [put]
 func (h *ClientHandler) PutClient(c *gin.Context) {
 	if !middleware.HasPermission(c, "Edit appclient") {
 		c.JSON(
@@ -451,7 +451,7 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/clients/{id} [delete]
+// @Router /admin/clients/{id} [delete]
 func (h *ClientHandler) DeleteClient(c *gin.Context) {
 	if !middleware.HasPermission(c, "Delete appclient") {
 		c.JSON(

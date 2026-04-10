@@ -32,12 +32,11 @@ type AuthHandler struct {
 	LogService    service.LogService
 }
 
-
-
 // GetAuthorize initiates the authorization flow for the user.
 // @Summary Authorize user
 // @Description Validates the authorization request for the user.
 // @Tags Authentication
+// @Param client_id query string true "Client ID"
 // @Success 302
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
@@ -148,7 +147,7 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 // @Failure 401 {object} dto.ErrorResponse
 // @Failure 403 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/auth/login [post]
+// @Router /auth/login [post]
 func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -249,7 +248,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/auth/logout [post]
+// @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req dto.LogoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -367,7 +366,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 401 {object} dto.ErrorResponse
-// @Router /api/v1/auth/session [get]
+// @Router /auth/session [get]
 func (h *AuthHandler) CheckSession(c *gin.Context) {
 	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
 	if err != nil {
@@ -406,7 +405,7 @@ func (h *AuthHandler) CheckSession(c *gin.Context) {
 		actorName = uID.String()
 	}
 	_ = h.LogService.PostAuditLogWithActorString(
-		c.Request.Context(), 
+		c.Request.Context(),
 		actorName,
 		&dto.PostAuditLogRequest{
 			Action: actionSessionCheck,
@@ -427,10 +426,11 @@ func (h *AuthHandler) CheckSession(c *gin.Context) {
 
 // GetJWKS handles the retrieval of public keys for token verification
 // @Summary Get JWKS
+// @Security Bearer
 // @Description Retrieve the JSON Web Key Set for verifying JWT signatures
 // @Tags JSON Web Key Set
 // @Produce json
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} service.JWKS
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /.well-known/jwks.json [get]
 func (h *AuthHandler) GetJWKS(c *gin.Context) {
@@ -457,7 +457,7 @@ func (h *AuthHandler) GetJWKS(c *gin.Context) {
 
 	// Log success
 	_ = h.LogService.PostAuditLogWithActorString(
-		c.Request.Context(), 
+		c.Request.Context(),
 		"",
 		&dto.PostAuditLogRequest{
 			Action: actionJWKS,
@@ -476,6 +476,7 @@ func (h *AuthHandler) GetJWKS(c *gin.Context) {
 // @Summary Exchange Auth Code
 // @Description Validates the code and client secret to issue JWT and Refresh
 // @Tags Authentication
+// @Security 
 // @Accept json
 // @Produce json
 // @Param req body dto.TokenExchangeRequest true "Exchange Request"
@@ -484,7 +485,7 @@ func (h *AuthHandler) GetJWKS(c *gin.Context) {
 // @Failure 401 {object} dto.ErrorResponse
 // @Failure 403 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/auth/token [post]
+// @Router /auth/token [post]
 func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	var req dto.TokenExchangeRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -497,7 +498,7 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 
 	// Resolve client name
 	clientName := h.LogService.ResolveClientName(
-		c.Request.Context(), 
+		c.Request.Context(),
 		req.ClientID,
 	)
 
@@ -586,7 +587,7 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 // @Success 200 {object} dto.TokenResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/auth/refresh [post]
+// @Router /auth/refresh [post]
 func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 	var req dto.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

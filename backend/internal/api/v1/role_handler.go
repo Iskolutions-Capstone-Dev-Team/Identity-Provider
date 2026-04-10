@@ -38,7 +38,7 @@ type RoleHandler struct {
 // @Success 201 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/roles [post]
+// @Router /admin/roles [post]
 func (h *RoleHandler) PostRole(c *gin.Context) {
 	if !middleware.HasPermission(c, "Add Roles") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
@@ -114,7 +114,7 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 // @Param page query int false "Page number" default(1)
 // @Success 200 {object} dto.RoleListResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/roles [get]
+// @Router /admin/roles [get]
 func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View roles") {
 		c.JSON(
@@ -173,7 +173,7 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 // @Param page query int false "Page number" default(1)
 // @Success 200 {object} dto.RoleListResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/roles [get]
+// @Router /admin/roles [get]
 func (h *RoleHandler) GetAllRoles(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	keyword := c.DefaultQuery("keyword", "")
@@ -208,7 +208,7 @@ func (h *RoleHandler) GetAllRoles(c *gin.Context) {
 // @Param id path int true "Role ID"
 // @Success 200 {object} dto.RoleResponse
 // @Failure 404 {object} dto.ErrorResponse
-// @Router /v1/admin/roles/{id} [get]
+// @Router /admin/roles/{id} [get]
 func (h *RoleHandler) GetRole(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -277,7 +277,7 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 // @Param body body dto.RoleRequest true "Updated role data"
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
-// @Router /v1/admin/roles/{id} [put]
+// @Router /admin/roles/{id} [put]
 func (h *RoleHandler) PutRole(c *gin.Context) {
 	if !middleware.HasPermission(c, "Edit Roles") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
@@ -357,7 +357,7 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 // @Param id path int true "Role ID"
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /v1/admin/roles/{id} [delete]
+// @Router /admin/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	if !middleware.HasPermission(c, "Delete Roles") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})

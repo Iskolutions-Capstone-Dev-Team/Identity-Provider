@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,7 +29,7 @@ type OTPHandler struct {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/v1/otp/send [post]
+// @Router /otp/send [post]
 func (h *OTPHandler) SendOTP(c *gin.Context) {
 	var req dto.OTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -39,11 +39,11 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 
 	reqCtx := c.Request.Context()
 	err := h.OTPService.SendOTP(reqCtx, req.Email)
-	
+
 	logReq := &dto.PostAuditLogRequest{
-		Action:   actionSendOTP,
-		Target:   req.Email,
-		Status:   models.StatusSuccess,
+		Action: actionSendOTP,
+		Target: req.Email,
+		Status: models.StatusSuccess,
 		Metadata: buildMetadata(map[string]interface{}{
 			"ip":         c.ClientIP(),
 			"user_agent": c.Request.UserAgent(),
@@ -60,7 +60,7 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
 		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
 
-		c.JSON(http.StatusInternalServerError, 
+		c.JSON(http.StatusInternalServerError,
 			dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -81,7 +81,7 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 401 {object} dto.ErrorResponse
-// @Router /api/v1/otp/verify [post]
+// @Router /otp/verify [post]
 func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 	var req dto.VerifyOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -93,9 +93,9 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 	err := h.OTPService.VerifyOTP(reqCtx, req.Email, req.OTP)
 
 	logReq := &dto.PostAuditLogRequest{
-		Action:   actionVerifyOTP,
-		Target:   req.Email,
-		Status:   models.StatusSuccess,
+		Action: actionVerifyOTP,
+		Target: req.Email,
+		Status: models.StatusSuccess,
 		Metadata: buildMetadata(map[string]interface{}{
 			"ip":         c.ClientIP(),
 			"user_agent": c.Request.UserAgent(),
@@ -112,7 +112,7 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
 		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
 
-		c.JSON(http.StatusUnauthorized, 
+		c.JSON(http.StatusUnauthorized,
 			dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -120,7 +120,7 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 	_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
 	_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
 
-	c.JSON(http.StatusOK, 
+	c.JSON(http.StatusOK,
 		dto.SuccessResponse{Message: "OTP verified successfully"})
 }
 
