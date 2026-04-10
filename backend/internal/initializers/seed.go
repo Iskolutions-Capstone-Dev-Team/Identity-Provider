@@ -71,7 +71,7 @@ func seedSuperAdminRole(db *sqlx.DB) (int, error) {
 	roleRepo := repository.NewRoleRepository(db)
 	permissionRepo := repository.NewPermissionRepository(db)
 
-	roleName := "IDP:superadmin"
+	roleName := "Superadmin"
 	var existingID int
 	query := "SELECT id FROM roles WHERE role_name = ? AND deleted_at IS NULL"
 	err := db.Get(&existingID, query, roleName)
@@ -187,7 +187,7 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 		RedirectUri:   cCallback,
 		LogoutUri:     cBase,
 		Description:   "Identity Provider",
-		ImageLocation: "",
+		ImageLocation: "idp.png",
 	}
 
 	adminEmail := os.Getenv("ADMIN_EMAIL")
