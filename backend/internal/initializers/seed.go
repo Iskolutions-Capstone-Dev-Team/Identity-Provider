@@ -71,7 +71,7 @@ func seedSuperAdminRole(db *sqlx.DB) (int, error) {
 	roleRepo := repository.NewRoleRepository(db)
 	permissionRepo := repository.NewPermissionRepository(db)
 
-	roleName := "IDP:superadmin"
+	roleName := "Superadmin"
 	var existingID int
 	query := "SELECT id FROM roles WHERE role_name = ? AND deleted_at IS NULL"
 	err := db.Get(&existingID, query, roleName)
