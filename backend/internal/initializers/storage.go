@@ -31,7 +31,11 @@ func NewS3Storage() error {
 	if publicEndpoint == "" {
 		signedEndpoint = endpoint
 	}
+	
 	client, err := createClient(signedEndpoint, accessKey, secretKey, useSSL)
+	if err != nil {
+		return fmt.Errorf("[StorageInit] Client Creation: %v", err)
+	}
 
 	// 4. Assign to global variable
 	Storage = &storage.S3Provider{
