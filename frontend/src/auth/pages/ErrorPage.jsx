@@ -2,8 +2,10 @@ import { useNavigate } from "react-router-dom";
 import { clearIdpErrorMessage, clearIdpErrorReturnPath, getIdpErrorMessage, getIdpErrorReturnPath } from "../utils/idpErrorPage";
 import { userService } from "../../services/userService";
 import { resolveUserIsAdmin } from "../../utils/userPoolAccess";
+import { buildLoginPath } from "../utils/loginRoute";
 
-const DEFAULT_ERROR_RETURN_PATH = "/profile";
+const DEFAULT_AUTHENTICATED_RETURN_PATH = "/profile";
+const DEFAULT_SIGNED_OUT_RETURN_PATH = buildLoginPath();
 const URL_PARSE_FALLBACK_ORIGIN = "https://idp.invalid";
 const ADMIN_ONLY_PATHS = new Set([
   "/user-pool",
@@ -41,7 +43,7 @@ function resolveSafeReturnPath(path = "", currentUser = {}) {
   const pathname = getPathname(normalizedPath);
 
   if (!normalizedPath || !pathname) {
-    return DEFAULT_ERROR_RETURN_PATH;
+    return DEFAULT_AUTHENTICATED_RETURN_PATH;
   }
 
   if (!ADMIN_ONLY_PATHS.has(pathname)) {
@@ -50,7 +52,7 @@ function resolveSafeReturnPath(path = "", currentUser = {}) {
 
   return resolveUserIsAdmin(currentUser)
     ? normalizedPath
-    : DEFAULT_ERROR_RETURN_PATH;
+    : DEFAULT_AUTHENTICATED_RETURN_PATH;
 }
 
 export default function ErrorPage() {
@@ -69,7 +71,7 @@ export default function ErrorPage() {
         replace: true,
       });
     } catch {
-      navigate(DEFAULT_ERROR_RETURN_PATH, { replace: true });
+      navigate(DEFAULT_SIGNED_OUT_RETURN_PATH, { replace: true });
     }
   };
 
