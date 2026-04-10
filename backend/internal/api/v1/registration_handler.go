@@ -4,9 +4,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+const (
+	actionUpdatePreapprovedClients = "update_preapproved_clients"
+	actionActivateAccount          = "activate_account"
+	actionCheckInvitation          = "check_invitation"
 )
 
 type RegistrationHandler struct {
@@ -85,14 +94,46 @@ func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
 		return
 	}
 
-	err := h.Service.UpdatePreapprovedClients(c.Request.Context(), req)
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+	actorName, _ := h.LogService.GetUserEmail(c.Request.Context(), userID[:])
+	if actorName == "" {
+		actorName = userIDStr
+	}
+
+	reqCtx := c.Request.Context()
+	err := h.Service.UpdatePreapprovedClients(reqCtx, req)
+
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionUpdatePreapprovedClients,
+		Target:   fmt.Sprintf("account_type_%d", req.AccountTypeID),
+		Status:   models.StatusSuccess,
+		Metadata: buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+		}),
+	}
+
 	if err != nil {
 		log.Printf("[UpdatePreapprovedClients] %v", err)
+		logReq.Status = models.StatusFail
+		logReq.Metadata = buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+			"error":      err.Error(),
+		})
+		_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
+		_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
+
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error: "failed to update preapproved clients",
 		})
 		return
 	}
+
+	_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
+	_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
+
 	c.JSON(http.StatusOK, gin.H{"message": "Preapproved clients updated successfully"})
 }
 
@@ -117,14 +158,40 @@ func (h *RegistrationHandler) ActivateAccount(c *gin.Context) {
 		return
 	}
 
-	err := h.Service.ActivateAccount(c.Request.Context(), req)
+	reqCtx := c.Request.Context()
+	err := h.Service.ActivateAccount(reqCtx, req)
+
+	actor := req.InvitationCode
+
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionActivateAccount,
+		Target:   req.InvitationCode,
+		Status:   models.StatusSuccess,
+		Metadata: buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+		}),
+	}
+
 	if err != nil {
 		log.Printf("[ActivateAccount] %v", err)
+		logReq.Status = models.StatusFail
+		logReq.Metadata = buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+			"error":      err.Error(),
+		})
+		_ = h.LogService.PostAuditLogWithActorString(reqCtx, actor, logReq)
+		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, actor, logReq)
+
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error: "failed to activate account",
 		})
 		return
 	}
+
+	_ = h.LogService.PostAuditLogWithActorString(reqCtx, actor, logReq)
+	_ = h.LogService.PostSecurityLogWithActorString(reqCtx, actor, logReq)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "account activated successfully",
@@ -150,9 +217,30 @@ func (h *RegistrationHandler) CheckInvitation(c *gin.Context) {
 		return
 	}
 
-	valid, err := h.Service.CheckInvitation(c.Request.Context(), code)
+	reqCtx := c.Request.Context()
+	valid, err := h.Service.CheckInvitation(reqCtx, code)
+
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionCheckInvitation,
+		Target:   code,
+		Status:   models.StatusSuccess,
+		Metadata: buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+		}),
+	}
+
 	if err != nil {
 		log.Printf("[CheckInvitation] %v", err)
+		logReq.Status = models.StatusFail
+		logReq.Metadata = buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+			"error":      err.Error(),
+		})
+		_ = h.LogService.PostAuditLogWithActorString(reqCtx, code, logReq)
+		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, code, logReq)
+
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error: "failed to validate invitation code",
 		})
@@ -160,11 +248,23 @@ func (h *RegistrationHandler) CheckInvitation(c *gin.Context) {
 	}
 
 	if !valid {
+		logReq.Status = models.StatusFail
+		logReq.Metadata = buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+			"error":      "invalid or expired",
+		})
+		_ = h.LogService.PostAuditLogWithActorString(reqCtx, code, logReq)
+		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, code, logReq)
+
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
 			Error: "invitation code is invalid or expired",
 		})
 		return
 	}
+
+	_ = h.LogService.PostAuditLogWithActorString(reqCtx, code, logReq)
+	_ = h.LogService.PostSecurityLogWithActorString(reqCtx, code, logReq)
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "invitation code is valid",
