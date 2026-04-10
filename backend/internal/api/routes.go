@@ -115,6 +115,8 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		logs := admin.Group("/logs")
 		{
 			logs.GET("", h.LogHandler.GetLogList)
+			logs.GET("/security", h.LogHandler.GetSecurityLogList)
+			logs.GET("/security/:id", h.LogHandler.GetSecurityLog)
 			logs.GET("/:id", h.LogHandler.GetLog)
 		}
 
