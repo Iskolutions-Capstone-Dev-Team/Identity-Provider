@@ -35,6 +35,14 @@ import (
 // @license.url https://opensource.org/licenses/MIT
 // @host identity-provider.isaxbsit2027.com
 // @BasePath /api/v1
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Type 'Bearer ' followed by your token.
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-API-Key
+// @description Your custom API Key for identification.
 func initSwagger() {
 	originalDoc := docs.SwaggerInfo.ReadDoc()
 	
@@ -61,13 +69,9 @@ func initSwagger() {
 	externalPaths := make(map[string]interface{})
 	for path, methods := range paths {
 		isExternal := false
-		// Criteria for external documentation:
-		// 1. JWKS (Identity Provider public keys)
-		// 2. Auth routes EXCEPT login and session
-		// 3. User profile information (/me)
-		if strings.Contains(path, "jwks.json") || path == "/api/v1/me" {
+		if strings.Contains(path, "jwks.json") || path == "/me" {
 			isExternal = true
-		} else if strings.HasPrefix(path, "/api/v1/auth/") {
+		} else if strings.Contains(path, "auth/") {
 			if (!strings.Contains(path, "/login") &&
 				!strings.Contains(path, "/session")) {
 				isExternal = true

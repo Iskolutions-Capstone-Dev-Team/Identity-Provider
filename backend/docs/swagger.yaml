@@ -62,6 +62,7 @@ definitions:
   dto.ErrorResponse:
     properties:
       error:
+        example: Error description
         type: string
     type: object
   dto.GetAuditLogListResponse:
@@ -423,6 +424,28 @@ definitions:
       permissionName:
         type: string
     type: object
+  service.JWK:
+    properties:
+      alg:
+        type: string
+      e:
+        type: string
+      kid:
+        type: string
+      kty:
+        type: string
+      "n":
+        type: string
+      use:
+        type: string
+    type: object
+  service.JWKS:
+    properties:
+      keys:
+        items:
+          $ref: '#/definitions/service.JWK'
+        type: array
+    type: object
 host: identity-provider.isaxbsit2027.com
 info:
   contact:
@@ -445,16 +468,17 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/service.JWKS'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - Bearer: []
       summary: Get JWKS
       tags:
       - JSON Web Key Set
-  /api/v1/activate:
+  /activate:
     post:
       consumes:
       - application/json
@@ -490,7 +514,7 @@ paths:
       summary: Activate Account
       tags:
       - Registration
-  /api/v1/activate/{code}:
+  /activate/{code}:
     get:
       description: Validate if an invitation code exists and is within 24h.
       parameters:
@@ -517,880 +541,7 @@ paths:
       summary: Check Invitation
       tags:
       - Registration
-  /api/v1/admin/registration/config:
-    get:
-      description: Fetch account types and their top 5 preapproved clients.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.RegistrationConfigResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Get Registration Config
-      tags:
-      - Registration
-  /api/v1/admin/registration/config/{id}:
-    get:
-      description: Fetch all clients preapproved for a given account type.
-      parameters:
-      - description: Account Type ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.AccountTypeConfigResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Get Clients By Account Type ID
-      tags:
-      - Registration
-  /api/v1/admin/registration/preapproved:
-    put:
-      consumes:
-      - application/json
-      description: Add/Remove client IDs for a specific account type.
-      parameters:
-      - description: Update Request
-        in: body
-        name: req
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdatePreapprovedClientsRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Update Preapproved Clients
-      tags:
-      - Registration
-  /api/v1/admin/users/{id}/access:
-    put:
-      consumes:
-      - application/json
-      description: Updates user client access mapping within the admin's scope.
-      parameters:
-      - description: User ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Access data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdateUserAccessRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Sync User Client Access
-      tags:
-      - Users
-  /api/v1/admin/users/access:
-    get:
-      description: Fetch all client IDs and names managed by the admin.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dto.ClientAccessResponse'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: List Managed Clients
-      tags:
-      - Users
-  /api/v1/admin/users/admins:
-    get:
-      description: Get a paginated list of all accounts that have a role
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.UserResponseList'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: List Admin Users
-      tags:
-      - Users
-  /api/v1/auth/login:
-    post:
-      consumes:
-      - application/json
-      description: Authenticate user and return a redirect URL with auth code
-      parameters:
-      - description: Login Credentials
-        in: body
-        name: login
-        required: true
-        schema:
-          $ref: '#/definitions/dto.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Login and Authorize
-      tags:
-      - Authentication
-  /api/v1/auth/logout:
-    post:
-      consumes:
-      - application/json
-      description: Clear session cookie and revoke all issued tokens for the user
-      parameters:
-      - description: Logout Request
-        in: body
-        name: req
-        required: true
-        schema:
-          $ref: '#/definitions/dto.LogoutRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Global Logout
-      tags:
-      - Authentication
-  /api/v1/auth/refresh:
-    post:
-      consumes:
-      - application/json
-      description: Invalidates old refresh token and issues a new pair
-      parameters:
-      - description: Refresh Request
-        in: body
-        name: req
-        required: true
-        schema:
-          $ref: '#/definitions/dto.RefreshRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.TokenResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Rotate Refresh Token
-      tags:
-      - Authentication
-  /api/v1/auth/session:
-    get:
-      description: Validate the idp_session cookie against the database
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Check Session
-      tags:
-      - Authentication
-  /api/v1/auth/token:
-    post:
-      consumes:
-      - application/json
-      description: Validates the code and client secret to issue JWT and Refresh
-      parameters:
-      - description: Exchange Request
-        in: body
-        name: req
-        required: true
-        schema:
-          $ref: '#/definitions/dto.TokenExchangeRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.TokenResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Exchange Auth Code
-      tags:
-      - Authentication
-  /api/v1/logs:
-    get:
-      description: Returns a paginated list of audit logs with optional filters.
-      parameters:
-      - default: 10
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Filter by actor (email or ID)
-        in: query
-        name: actor
-        type: string
-      - description: Filter by action
-        in: query
-        name: action
-        type: string
-      - description: Filter by target
-        in: query
-        name: target
-        type: string
-      - description: Filter by status (success/fail)
-        in: query
-        name: status
-        type: string
-      - description: Filter by created_at >= (RFC3339)
-        in: query
-        name: from_date
-        type: string
-      - description: Filter by created_at <= (RFC3339)
-        in: query
-        name: to_date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GetAuditLogListResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: List audit logs
-      tags:
-      - Logs
-  /api/v1/logs/{id}:
-    get:
-      description: Returns a single audit log entry.
-      parameters:
-      - description: Log ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.PostAuditLogRequest'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Get audit log by ID
-      tags:
-      - Logs
-  /api/v1/logs/security:
-    get:
-      description: Returns a paginated list of security logs with optional filters.
-      parameters:
-      - default: 10
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Filter by actor (email or ID)
-        in: query
-        name: actor
-        type: string
-      - description: Filter by action
-        in: query
-        name: action
-        type: string
-      - description: Filter by target
-        in: query
-        name: target
-        type: string
-      - description: Filter by status (success/fail)
-        in: query
-        name: status
-        type: string
-      - description: Filter by created_at >= (RFC3339)
-        in: query
-        name: from_date
-        type: string
-      - description: Filter by created_at <= (RFC3339)
-        in: query
-        name: to_date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GetAuditLogListResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: List security logs
-      tags:
-      - Logs
-  /api/v1/logs/security/{id}:
-    get:
-      description: Returns a single security log entry.
-      parameters:
-      - description: Log ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.PostAuditLogRequest'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Get security log by ID
-      tags:
-      - Logs
-  /api/v1/mail/invitation:
-    post:
-      consumes:
-      - application/json
-      description: Generates a secure invitation code and sends it via email.
-      parameters:
-      - description: Invitation Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.InvitationRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Send Invitation Code
-      tags:
-      - mail
-  /api/v1/mail/otp:
-    post:
-      consumes:
-      - application/json
-      description: Generates a 6-digit numeric OTP and sends it via email.
-      parameters:
-      - description: OTP Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.OTPRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Send OTP Code
-      tags:
-      - mail
-  /api/v1/otp/send:
-    post:
-      consumes:
-      - application/json
-      description: Generates a 6-digit numeric OTP and sends it via email.
-      parameters:
-      - description: OTP Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.OTPRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Send OTP Code
-      tags:
-      - otp
-  /api/v1/otp/verify:
-    post:
-      consumes:
-      - application/json
-      description: Verifies a 6-digit numeric OTP for a user.
-      parameters:
-      - description: Verify OTP Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.VerifyOTPRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Verify OTP Code
-      tags:
-      - otp
-  /api/v1/users:
-    get:
-      description: Get a paginated list of all users
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.UserSimplifiedResponseList'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: List Users
-      tags:
-      - Users
-    post:
-      consumes:
-      - application/json
-      description: Register a new user with roles and encrypted password
-      parameters:
-      - description: User Data
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UserRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Create User
-      tags:
-      - Users
-  /api/v1/users/{id}:
-    delete:
-      description: Mark a user as deleted by ID
-      parameters:
-      - description: User ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Delete User
-      tags:
-      - Users
-    get:
-      description: Fetch user details using their unique ID
-      parameters:
-      - description: User ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.UserResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "440":
-          description: ""
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Get User
-      tags:
-      - Users
-  /api/v1/users/{id}/password:
-    patch:
-      consumes:
-      - application/json
-      description: Updates the password for a specific user identified by ID.
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Password Update Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdatePasswordRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "501":
-          description: Not Implemented
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Update user password
-      tags:
-      - Users
-  /api/v1/users/{id}/status:
-    patch:
-      consumes:
-      - application/json
-      description: Modifies the status (e.g., active, disabled) of a user by ID.
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Status Update Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdateStatusRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "501":
-          description: Not Implemented
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Update user status
-      tags:
-      - Users
-  /auth/authorize:
-    get:
-      description: Validates the authorization request for the user.
-      responses:
-        "302":
-          description: Found
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Authorize user
-      tags:
-      - Authentication
-  /clients/{id}/secret:
-    patch:
-      consumes:
-      - application/json
-      description: Updates the secret key associated with a specific client ID.
-      parameters:
-      - description: Client ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.ClientSecretResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Update client secret
-      tags:
-      - Clients
-  /me:
-    get:
-      description: Returns user profile filtered by client allowed roles
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.UserInfoResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get authenticated user info
-      tags:
-      - Users
-  /users/{id}/role:
-    patch:
-      consumes:
-      - application/json
-      description: Updates a user's role based on the request body.
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Role update data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdateUserRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Update user role
-      tags:
-      - Users
-  /v1/admin/clients:
+  /admin/clients:
     get:
       description: Fetch active clients with pagination
       parameters:
@@ -1485,7 +636,7 @@ paths:
       summary: Register a new Service Provider with Icon
       tags:
       - Clients
-  /v1/admin/clients/{id}:
+  /admin/clients/{id}:
     delete:
       parameters:
       - description: Client UUID
@@ -1569,7 +720,83 @@ paths:
       summary: Update Client Info
       tags:
       - Clients
-  /v1/admin/roles:
+  /admin/registration/config:
+    get:
+      description: Fetch account types and their top 5 preapproved clients.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RegistrationConfigResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get Registration Config
+      tags:
+      - Registration
+  /admin/registration/config/{id}:
+    get:
+      description: Fetch all clients preapproved for a given account type.
+      parameters:
+      - description: Account Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AccountTypeConfigResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get Clients By Account Type ID
+      tags:
+      - Registration
+  /admin/registration/preapproved:
+    put:
+      consumes:
+      - application/json
+      description: Add/Remove client IDs for a specific account type.
+      parameters:
+      - description: Update Request
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePreapprovedClientsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update Preapproved Clients
+      tags:
+      - Registration
+  /admin/roles:
     get:
       consumes:
       - application/json
@@ -1623,7 +850,7 @@ paths:
       summary: Create a new role
       tags:
       - Roles
-  /v1/admin/roles/{id}:
+  /admin/roles/{id}:
     delete:
       description: Marks a role as deleted in the audit trail
       parameters:
@@ -1698,4 +925,819 @@ paths:
       summary: Update an existing role
       tags:
       - Roles
+  /admin/users/{id}/access:
+    put:
+      consumes:
+      - application/json
+      description: Updates user client access mapping within the admin's scope.
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Access data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserAccessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Sync User Client Access
+      tags:
+      - Users
+  /admin/users/access:
+    get:
+      description: Fetch all client IDs and names managed by the admin.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ClientAccessResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List Managed Clients
+      tags:
+      - Users
+  /admin/users/admins:
+    get:
+      description: Get a paginated list of all accounts that have a role
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponseList'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List Admin Users
+      tags:
+      - Users
+  /auth/authorize:
+    get:
+      description: Validates the authorization request for the user.
+      parameters:
+      - description: Client ID
+        in: query
+        name: client_id
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Authorize user
+      tags:
+      - Authentication
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return a redirect URL with auth code
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Login and Authorize
+      tags:
+      - Authentication
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Clear session cookie and revoke all issued tokens for the user
+      parameters:
+      - description: Logout Request
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Global Logout
+      tags:
+      - Authentication
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Invalidates old refresh token and issues a new pair
+      parameters:
+      - description: Refresh Request
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Rotate Refresh Token
+      tags:
+      - Authentication
+  /auth/session:
+    get:
+      description: Validate the idp_session cookie against the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Check Session
+      tags:
+      - Authentication
+  /auth/token:
+    post:
+      consumes:
+      - application/json
+      description: Validates the code and client secret to issue JWT and Refresh
+      parameters:
+      - description: Exchange Request
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TokenExchangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security: []
+      summary: Exchange Auth Code
+      tags:
+      - Authentication
+  /clients/{id}/secret:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the secret key associated with a specific client ID.
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientSecretResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update client secret
+      tags:
+      - Clients
+  /logs:
+    get:
+      description: Returns a paginated list of audit logs with optional filters.
+      parameters:
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Filter by actor (email or ID)
+        in: query
+        name: actor
+        type: string
+      - description: Filter by action
+        in: query
+        name: action
+        type: string
+      - description: Filter by target
+        in: query
+        name: target
+        type: string
+      - description: Filter by status (success/fail)
+        in: query
+        name: status
+        type: string
+      - description: Filter by created_at >= (RFC3339)
+        in: query
+        name: from_date
+        type: string
+      - description: Filter by created_at <= (RFC3339)
+        in: query
+        name: to_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GetAuditLogListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List audit logs
+      tags:
+      - Logs
+  /logs/{id}:
+    get:
+      description: Returns a single audit log entry.
+      parameters:
+      - description: Log ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PostAuditLogRequest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get audit log by ID
+      tags:
+      - Logs
+  /logs/security:
+    get:
+      description: Returns a paginated list of security logs with optional filters.
+      parameters:
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Filter by actor (email or ID)
+        in: query
+        name: actor
+        type: string
+      - description: Filter by action
+        in: query
+        name: action
+        type: string
+      - description: Filter by target
+        in: query
+        name: target
+        type: string
+      - description: Filter by status (success/fail)
+        in: query
+        name: status
+        type: string
+      - description: Filter by created_at >= (RFC3339)
+        in: query
+        name: from_date
+        type: string
+      - description: Filter by created_at <= (RFC3339)
+        in: query
+        name: to_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GetAuditLogListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List security logs
+      tags:
+      - Logs
+  /logs/security/{id}:
+    get:
+      description: Returns a single security log entry.
+      parameters:
+      - description: Log ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PostAuditLogRequest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get security log by ID
+      tags:
+      - Logs
+  /mail/invitation:
+    post:
+      consumes:
+      - application/json
+      description: Generates a secure invitation code and sends it via email.
+      parameters:
+      - description: Invitation Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.InvitationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Send Invitation Code
+      tags:
+      - mail
+  /mail/otp:
+    post:
+      consumes:
+      - application/json
+      description: Generates a 6-digit numeric OTP and sends it via email.
+      parameters:
+      - description: OTP Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.OTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Send OTP Code
+      tags:
+      - mail
+  /me:
+    get:
+      description: Returns user profile filtered by client allowed roles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Get authenticated user info
+      tags:
+      - Users
+  /otp/send:
+    post:
+      consumes:
+      - application/json
+      description: Generates a 6-digit numeric OTP and sends it via email.
+      parameters:
+      - description: OTP Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.OTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Send OTP Code
+      tags:
+      - otp
+  /otp/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verifies a 6-digit numeric OTP for a user.
+      parameters:
+      - description: Verify OTP Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Verify OTP Code
+      tags:
+      - otp
+  /users:
+    get:
+      description: Get a paginated list of all users
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserSimplifiedResponseList'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List Users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with roles and encrypted password
+      parameters:
+      - description: User Data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Create User
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      description: Mark a user as deleted by ID
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Delete User
+      tags:
+      - Users
+    get:
+      description: Fetch user details using their unique ID
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "440":
+          description: ""
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get User
+      tags:
+      - Users
+  /users/{id}/password:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the password for a specific user identified by ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Password Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update user password
+      tags:
+      - Users
+  /users/{id}/role:
+    patch:
+      consumes:
+      - application/json
+      description: Updates a user's role based on the request body.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update user role
+      tags:
+      - Users
+  /users/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Modifies the status (e.g., active, disabled) of a user by ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update user status
+      tags:
+      - Users
+securityDefinitions:
+  ApiKeyAuth:
+    description: Your custom API Key for identification.
+    in: header
+    name: X-API-Key
+    type: apiKey
+  Bearer:
+    description: Type 'Bearer ' followed by your token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
