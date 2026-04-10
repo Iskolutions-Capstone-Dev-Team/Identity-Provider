@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { usePermissionAccess } from "../context/PermissionContext";
 import { useRoles } from "../hooks/useRoles";
 import { usePermissions } from "../hooks/usePermissions";
 import RolesListCard from "../components/role/RolesListCard";
@@ -8,11 +9,13 @@ import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
+import { PERMISSIONS } from "../utils/permissionAccess";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function Roles() {
   const { colorMode = "light" } = useOutletContext() || {};
+  const { hasPermission } = usePermissionAccess();
   const {
     search,
     setSearch,
@@ -28,6 +31,9 @@ export default function Roles() {
     updateRole,
     deleteRole,
   } = useRoles();
+  const canCreateRole = hasPermission(PERMISSIONS.ADD_ROLES);
+  const canEditRole = hasPermission(PERMISSIONS.EDIT_ROLES);
+  const canDeleteRole = hasPermission(PERMISSIONS.DELETE_ROLES);
   const {
     permissions: permissionOptions,
     loading: isPermissionOptionsLoading,
@@ -39,8 +45,17 @@ export default function Roles() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const showLoading = useDelayedLoading(loading);
+  const visibleRoles = paginatedRoles.map((role) => ({
+    ...role,
+    canEdit: canEditRole && role.canEdit,
+    canDelete: canDeleteRole && role.canDelete,
+  }));
 
   const openCreate = () => {
+    if (!canCreateRole) {
+      return;
+    }
+
     setMode("create");
     setActiveRole(null);
     setModalOpen(true);
@@ -53,12 +68,20 @@ export default function Roles() {
   };
 
   const openEdit = (role) => {
+    if (!canEditRole) {
+      return;
+    }
+
     setMode("edit");
     setActiveRole(role);
     setModalOpen(true);
   };
 
   const handleDeleteClick = (id) => {
+    if (!canDeleteRole) {
+      return;
+    }
+
     setDeleteTarget(id);
     setShowDeleteAlert(true);
   };
@@ -97,7 +120,7 @@ export default function Roles() {
         <div className="relative">
           <RolesListCard
             loading={showLoading}
-            roles={paginatedRoles}
+            roles={visibleRoles}
             totalResults={totalResults}
             itemsPerPage={ITEMS_PER_PAGE}
             search={search}
@@ -109,6 +132,7 @@ export default function Roles() {
             onEdit={openEdit}
             onDelete={handleDeleteClick}
             onCreate={openCreate}
+            showCreateAction={canCreateRole}
             colorMode={colorMode}
           />
         </div>
