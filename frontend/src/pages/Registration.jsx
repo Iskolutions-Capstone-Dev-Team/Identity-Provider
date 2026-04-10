@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { usePermissionAccess } from "../context/PermissionContext";
 import AuditLogsCard from "../components/audit-logs/AuditLogsCard";
 import DataTableSkeleton from "../components/DataTableSkeleton";
 import PageHeader from "../components/PageHeader";
@@ -10,11 +11,16 @@ import { useAllAppClients } from "../hooks/useAllAppClients";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { registrationService } from "../services/registrationService";
 import { ACCOUNT_TYPE_OPTIONS, getAccountTypeBackendId } from "../utils/accountTypes";
+import { REGISTRATION_EDIT_PERMISSIONS } from "../utils/permissionAccess";
 import { getAllAppClientSelectOptions } from "../utils/userPoolAccess";
 
 export default function Registration() {
   const { colorMode = "light" } = useOutletContext() || {};
-  const { appClients, appClientsError, isLoadingAppClients } = useAllAppClients();
+  const { hasAnyPermission } = usePermissionAccess();
+  const canEditRegistration = hasAnyPermission(REGISTRATION_EDIT_PERMISSIONS);
+  const { appClients, appClientsError, isLoadingAppClients } = useAllAppClients({
+    enabled: canEditRegistration,
+  });
   const [registrationConfigs, setRegistrationConfigs] = useState([]);
   const [isLoadingRegistration, setIsLoadingRegistration] = useState(true);
   const [registrationError, setRegistrationError] = useState("");
@@ -107,6 +113,10 @@ export default function Registration() {
   };
 
   const handleOpenEdit = (row) => {
+    if (!canEditRegistration) {
+      return;
+    }
+
     setSelectedAccountType(row.accountType);
     setModalMode("edit");
   };
@@ -138,6 +148,7 @@ export default function Registration() {
       rows={rows}
       onView={handleOpenView}
       onEdit={handleOpenEdit}
+      showEditAction={canEditRegistration}
       colorMode={colorMode}
     />
   );
