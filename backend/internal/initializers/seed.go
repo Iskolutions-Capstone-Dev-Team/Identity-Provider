@@ -187,7 +187,7 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 		RedirectUri:   cCallback,
 		LogoutUri:     cBase,
 		Description:   "Identity Provider",
-		ImageLocation: "",
+		ImageLocation: "idp.png",
 	}
 
 	adminEmail := os.Getenv("ADMIN_EMAIL")
