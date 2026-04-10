@@ -118,7 +118,8 @@ const createFormData = (user) => ({
 });
 
 export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, colorMode = "light" }) {
-  const availableRoles = useAllRoles({ endpoint: "all" });
+  const rolesEndpoint = userType === ADMIN_USER_TYPE ? "default" : "all";
+  const availableRoles = useAllRoles({ endpoint: rolesEndpoint });
   const adminRoleOptions = getAdminRoleOptions(availableRoles);
   const appClientSelectOptions = getAllAppClientSelectOptions(appClientOptions);
   const isViewMode = mode === "view";
@@ -338,12 +339,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                       <label className={modalLabelClassName}>
                         Middle Name
                       </label>
-                      <label className={`${modalReadOnlyInputClassName} flex items-center gap-2`}>
-                        <input type="text" value={formData.middleName} readOnly className="grow bg-transparent outline-none" />
-                        <span className={modalOptionalBadgeClassName}>
-                          Optional
-                        </span>
-                      </label>
+                      <input type="text" value={formData.middleName} readOnly className={modalReadOnlyInputClassName}/>
                     </div>
 
                     <div>
