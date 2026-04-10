@@ -54,7 +54,7 @@ func InitializeHandlers(db *sqlx.DB,
 			Service:    service.RegistrationService,
 			LogService: service.LogService,
 		},
-		OTPHandler: v1.NewOTPHandler(service.OTPService),
+		OTPHandler: v1.NewOTPHandler(service.OTPService, service.LogService),
 		UserRepo: userRepo,
 
 		RoleRepo: roleRepo,
