@@ -8,6 +8,28 @@ import { formatTimestamp } from "../utils/formatTimestamp";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 
 const ITEMS_PER_PAGE = 10;
+const TRANSACTION_LOG_TYPE = "transaction";
+const SECURITY_LOG_TYPE = "security";
+
+function getLogTypeLabel(logType) {
+  return logType === SECURITY_LOG_TYPE ? "Security" : "Transaction";
+}
+
+async function getLogsByType(logType, params) {
+  if (logType === SECURITY_LOG_TYPE) {
+    return logService.getSecurityLogs(params);
+  }
+
+  return logService.getLogs(params);
+}
+
+async function getLogByType(logType, id) {
+  if (logType === SECURITY_LOG_TYPE) {
+    return logService.getSecurityLogById(id);
+  }
+
+  return logService.getLogById(id);
+}
 
 function getPayloadValue(payload, keys) {
   for (const key of keys) {
@@ -120,6 +142,7 @@ function getTotalPages(payload) {
 
 export default function AuditLogs() {
   const { colorMode = "light" } = useOutletContext() || {};
+  const [logType, setLogType] = useState(TRANSACTION_LOG_TYPE);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [logs, setLogs] = useState([]);
@@ -132,6 +155,7 @@ export default function AuditLogs() {
   const [isMetadataLoading, setIsMetadataLoading] = useState(false);
   const [metadataError, setMetadataError] = useState("");
   const showLoading = useDelayedLoading(loading);
+  const selectedLogTypeLabel = getLogTypeLabel(logType);
 
   useEffect(() => {
     let ignore = false;
@@ -141,7 +165,7 @@ export default function AuditLogs() {
         setLoading(true);
         setError("");
 
-        const payload = await logService.getLogs({
+        const payload = await getLogsByType(logType, {
           page,
           limit: ITEMS_PER_PAGE,
           actor: search,
@@ -167,9 +191,9 @@ export default function AuditLogs() {
         setTotalPages(1);
 
         if (fetchError?.response?.status === 404) {
-          setError("Audit log endpoint is not available in the current backend.");
+          setError(`${selectedLogTypeLabel} log endpoint is not available in the current backend.`);
         } else {
-          setError("Failed to load audit logs. Check the backend connection.");
+          setError(`Failed to load ${selectedLogTypeLabel.toLowerCase()} logs. Check the backend connection.`);
         }
       } finally {
         if (!ignore) {
@@ -183,7 +207,7 @@ export default function AuditLogs() {
     return () => {
       ignore = true;
     };
-  }, [page, search]);
+  }, [logType, page, search, selectedLogTypeLabel]);
 
   useEffect(() => {
     if (page > totalPages) {
@@ -204,7 +228,7 @@ export default function AuditLogs() {
     try {
       setIsMetadataLoading(true);
 
-      const payload = await logService.getLogById(log.id);
+      const payload = await getLogByType(logType, log.id);
       const detailedLog = normalizeLog(
         {
           id: log.id,
@@ -234,12 +258,22 @@ export default function AuditLogs() {
     setSelectedLog(null);
   };
 
+  const handleLogTypeChange = (nextLogType) => {
+    if (nextLogType === logType) {
+      return;
+    }
+
+    closeMetadataModal();
+    setLogType(nextLogType);
+    setPage(1);
+  };
+
   return (
     <>
       <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
         <PageHeader
           title="Audit Logs"
-          description="Track user actions and transaction history"
+          description="Track transaction and security activity"
           colorMode={colorMode}
           icon={
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-20 w-20 sm:h-24 sm:w-24">
@@ -264,6 +298,8 @@ export default function AuditLogs() {
             loading={showLoading}
             error={error}
             onView={handleViewLog}
+            logType={logType}
+            onLogTypeChange={handleLogTypeChange}
             colorMode={colorMode}
           />
         </div>

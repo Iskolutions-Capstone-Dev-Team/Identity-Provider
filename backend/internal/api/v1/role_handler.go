@@ -16,7 +16,6 @@ import (
 // Action constants for audit logging
 const (
 	actionCreateRole = "create_role"
-	actionListRoles  = "list_roles"
 	actionGetRole    = "get_role"
 	actionUpdateRole = "update_role"
 	actionDeleteRole = "delete_role"
@@ -133,7 +132,6 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		page = 1
 	}
 
-	role := c.GetString("role")
 	uIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
@@ -145,19 +143,6 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
-	if actorName == "" {
-		actorName = uIDStr
-	}
-
-	metadata := buildMetadata(map[string]interface{}{
-		"limit":      limit,
-		"page":       page,
-		"keyword":    keyword,
-		"privilege":  role,
-		"ip":         c.ClientIP(),
-		"user_agent": c.Request.UserAgent(),
-	})
 
 	permissions := c.GetStringSlice("permissions")
 	resp, err := h.Service.GetFilteredRoleList(
@@ -170,34 +155,11 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetRoleList] %v", err)
-		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionListRoles,
-				Target: "role_list",
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"limit":      limit,
-					"page":       page,
-					"keyword":    keyword,
-					"privilege":  role,
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error: "failed to retrieve roles",
 		})
 		return
 	}
-
-	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionListRoles,
-			Target:   "role_list",
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
 
 	c.JSON(http.StatusOK, resp)
 }

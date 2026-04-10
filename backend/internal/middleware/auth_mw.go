@@ -2,11 +2,13 @@ package middleware
 
 import (
 	"crypto/rsa"
+	"encoding/json"
 	"log"
 	"net/http"
 	"slices"
 	"strings"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
@@ -14,14 +16,34 @@ import (
 	"github.com/google/uuid"
 )
 
+func buildMetadataForMW(m map[string]interface{}) json.RawMessage {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return json.RawMessage(`{}`)
+	}
+	return json.RawMessage(b)
+}
+
 // AuthMiddleware validates the RSA JWT from the Authorization Header.
-func AuthMiddleware(publicKey *rsa.PublicKey) gin.HandlerFunc {
+func AuthMiddleware(publicKey *rsa.PublicKey, logService service.LogService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		parts := strings.Split(authHeader, " ")
 
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			log.Printf("[AuthMiddleware] Token Extraction: invalid format")
+			if logService != nil {
+				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), c.ClientIP(), &dto.PostAuditLogRequest{
+					Action:   "invalid_token_usage",
+					Target:   "auth_header",
+					Status:   models.StatusFail,
+					Metadata: buildMetadataForMW(map[string]interface{}{
+						"ip":         c.ClientIP(),
+						"user_agent": c.Request.UserAgent(),
+						"error":      "invalid authorization header format",
+					}),
+				})
+			}
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -29,6 +51,18 @@ func AuthMiddleware(publicKey *rsa.PublicKey) gin.HandlerFunc {
 		token, err := service.GetParsedToken(parts[1], publicKey)
 		if err != nil {
 			log.Printf("[AuthMiddleware] Token Validation: %v", err)
+			if logService != nil {
+				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), c.ClientIP(), &dto.PostAuditLogRequest{
+					Action:   "invalid_token_usage",
+					Target:   "auth_header",
+					Status:   models.StatusFail,
+					Metadata: buildMetadataForMW(map[string]interface{}{
+						"ip":         c.ClientIP(),
+						"user_agent": c.Request.UserAgent(),
+						"error":      err.Error(),
+					}),
+				})
+			}
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -45,11 +79,24 @@ func AuthMiddleware(publicKey *rsa.PublicKey) gin.HandlerFunc {
 func AuthorizeRBAC(publicKey *rsa.PublicKey,
 	userRepo repository.UserRepository,
 	roleRepo repository.RoleRepository,
+	logService service.LogService,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := c.Cookie("access_token")
 		if err != nil {
 			log.Printf("[AuthorizeRBAC] Token Extraction: cookie missing")
+			if logService != nil {
+				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), c.ClientIP(), &dto.PostAuditLogRequest{
+					Action:   "invalid_token_usage",
+					Target:   "access_token_cookie",
+					Status:   models.StatusFail,
+					Metadata: buildMetadataForMW(map[string]interface{}{
+						"ip":         c.ClientIP(),
+						"user_agent": c.Request.UserAgent(),
+						"error":      "missing token cookie",
+					}),
+				})
+			}
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -57,6 +104,18 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 		token, err := service.GetParsedToken(tokenStr, publicKey)
 		if err != nil {
 			log.Printf("[AuthorizeRBAC] Token Validation: %v", err)
+			if logService != nil {
+				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), c.ClientIP(), &dto.PostAuditLogRequest{
+					Action:   "invalid_token_usage",
+					Target:   "access_token_cookie",
+					Status:   models.StatusFail,
+					Metadata: buildMetadataForMW(map[string]interface{}{
+						"ip":         c.ClientIP(),
+						"user_agent": c.Request.UserAgent(),
+						"error":      err.Error(),
+					}),
+				})
+			}
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}

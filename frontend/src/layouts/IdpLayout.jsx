@@ -150,6 +150,7 @@ export default function IdpLayout() {
         open={openTerms}
         onClose={handleClose}
         onContinue={handleContinue}
+        colorMode={colorMode}
         privacyHref="/privacy"
         termsHref="/terms"
       />

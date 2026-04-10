@@ -190,14 +190,14 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 			"user_agent":  c.Request.UserAgent(),
 			"error":       err.Error(),
 		})
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(),
-			req.Email,
-			&dto.PostAuditLogRequest{
-				Action:   actionLogin,
-				Target:   req.ClientID,
-				Status:   models.StatusFail,
-				Metadata: metadataWithErr,
-			})
+		logReq := &dto.PostAuditLogRequest{
+			Action:   actionLogin,
+			Target:   req.ClientID,
+			Status:   models.StatusFail,
+			Metadata: metadataWithErr,
+		}
+		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), req.Email, logReq)
+		_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), req.Email, logReq)
 
 		status := http.StatusInternalServerError
 		msg := "internal error"
@@ -216,14 +216,14 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	}
 
 	// Log success with the email that just logged in
-	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(),
-		req.Email,
-		&dto.PostAuditLogRequest{
-			Action:   actionLogin,
-			Target:   req.ClientID,
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionLogin,
+		Target:   req.ClientID,
+		Status:   models.StatusSuccess,
+		Metadata: metadata,
+	}
+	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), req.Email, logReq)
+	_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), req.Email, logReq)
 
 	// Set session cookie
 	maxAge := int(time.Hour.Seconds() * 24 * service.SESSION_DAYS)
@@ -296,18 +296,18 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	if err != nil {
 		log.Printf("[Logout] ValidateSession: %v", err)
 		// Log failure with session ID as actor
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(),
-			sessionID,
-			&dto.PostAuditLogRequest{
-				Action: actionLogout,
-				Target: "global",
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
+		logReq := &dto.PostAuditLogRequest{
+			Action: actionLogout,
+			Target: "global",
+			Status: models.StatusFail,
+			Metadata: buildMetadata(map[string]interface{}{
+				"ip":         c.ClientIP(),
+				"user_agent": c.Request.UserAgent(),
+				"error":      err.Error(),
+			}),
+		}
+		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), sessionID, logReq)
+		_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), sessionID, logReq)
 		h.AuthService.RevokeCookies(c)
 		c.Redirect(http.StatusFound, logoutURL)
 		return
@@ -317,17 +317,18 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	err = h.AuthService.Logout(c.Request.Context(), sessionID)
 	if err != nil {
 		log.Printf("[Logout] %v", err)
-		_ = h.LogService.PostAuditLog(c.Request.Context(), session.UserId,
-			&dto.PostAuditLogRequest{
-				Action: actionLogout,
-				Target: "global",
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
+		logReq := &dto.PostAuditLogRequest{
+			Action: actionLogout,
+			Target: "global",
+			Status: models.StatusFail,
+			Metadata: buildMetadata(map[string]interface{}{
+				"ip":         c.ClientIP(),
+				"user_agent": c.Request.UserAgent(),
+				"error":      err.Error(),
+			}),
+		}
+		_ = h.LogService.PostAuditLog(c.Request.Context(), session.UserId, logReq)
+		_ = h.LogService.PostSecurityLog(c.Request.Context(), session.UserId, logReq)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error: "logout failed",
 		})
@@ -344,18 +345,17 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		uID, _ := uuid.FromBytes(session.UserId)
 		actorName = uID.String()
 	}
-	_ = h.LogService.PostAuditLogWithActorString(
-		c.Request.Context(), 
-		actorName,
-		&dto.PostAuditLogRequest{
-			Action: actionLogout,
-			Target: "global",
-			Status: models.StatusSuccess,
-			Metadata: buildMetadata(map[string]interface{}{
-				"ip":         c.ClientIP(),
-				"user_agent": c.Request.UserAgent(),
-			}),
-		})
+	logReq := &dto.PostAuditLogRequest{
+		Action: actionLogout,
+		Target: "global",
+		Status: models.StatusSuccess,
+		Metadata: buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+		}),
+	}
+	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), actorName, logReq)
+	_ = h.LogService.PostSecurityLog(c.Request.Context(), session.UserId, logReq)
 
 	c.Redirect(http.StatusFound, logoutURL)
 }
@@ -523,14 +523,14 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 			"error":       err.Error(),
 		})
 		// Log failure with client name as actor
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(),
-			clientName,
-			&dto.PostAuditLogRequest{
-				Action:   actionTokenExchange,
-				Target:   req.ClientID,
-				Status:   models.StatusFail,
-				Metadata: metadataWithErr,
-			})
+		logReq := &dto.PostAuditLogRequest{
+			Action:   actionTokenExchange,
+			Target:   req.ClientID,
+			Status:   models.StatusFail,
+			Metadata: metadataWithErr,
+		}
+		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), clientName, logReq)
+		_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), clientName, logReq)
 
 		status := http.StatusInternalServerError
 		errorMsg := "server_error"
@@ -548,14 +548,14 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	}
 
 	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(),
-		clientName,
-		&dto.PostAuditLogRequest{
-			Action:   actionTokenExchange,
-			Target:   req.ClientID,
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionTokenExchange,
+		Target:   req.ClientID,
+		Status:   models.StatusSuccess,
+		Metadata: metadata,
+	}
+	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), clientName, logReq)
+	_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), clientName, logReq)
 
 	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
 	if err != nil {
@@ -617,13 +617,14 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 			"user_agent":         c.Request.UserAgent(),
 			"error":              err.Error(),
 		})
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), "",
-			&dto.PostAuditLogRequest{
-				Action:   actionTokenRotate,
-				Target:   "refresh_token",
-				Status:   models.StatusFail,
-				Metadata: metadataWithErr,
-			})
+		logReq := &dto.PostAuditLogRequest{
+			Action:   actionTokenRotate,
+			Target:   "refresh_token",
+			Status:   models.StatusFail,
+			Metadata: metadataWithErr,
+		}
+		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), "", logReq)
+		_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), "", logReq)
 
 		status := http.StatusInternalServerError
 		errorMsg := "server_error"
@@ -639,15 +640,14 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 	}
 
 	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(
-		c.Request.Context(), 
-		"",
-		&dto.PostAuditLogRequest{
-			Action:   actionTokenRotate,
-			Target:   "refresh_token",
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionTokenRotate,
+		Target:   "refresh_token",
+		Status:   models.StatusSuccess,
+		Metadata: metadata,
+	}
+	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), "", logReq)
+	_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), "", logReq)
 
 	c.JSON(http.StatusOK, resp)
 }

@@ -79,7 +79,7 @@ export default function LogMetadataModal({ open, log, loading, error, onClose, c
             <div className="max-w-2xl">
               <h3 className={modalHeaderTitleClassName}>Log Metadata</h3>
               <p className={modalHeaderDescriptionClassName}>
-                View the selected transaction log details.
+                View the selected log details.
               </p>
             </div>
 
@@ -95,7 +95,6 @@ export default function LogMetadataModal({ open, log, loading, error, onClose, c
           <div className={modalBodyStackClassName}>
             <section className={modalSectionClassName}>
               <div className="grid gap-4 md:grid-cols-2">
-                <DetailField label="Log ID" value={log?.id} colorMode={colorMode} />
                 <DetailField label="Timestamp" value={log?.timestamp} colorMode={colorMode} />
                 <DetailField label="Actor" value={log?.actor} colorMode={colorMode} />
                 <DetailField label="Target" value={log?.target} colorMode={colorMode} />

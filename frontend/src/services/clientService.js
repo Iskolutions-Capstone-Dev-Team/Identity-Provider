@@ -8,6 +8,102 @@ const normalizeStringList = (values = []) =>
     (value) => typeof value === "string" && value.trim().length > 0,
   );
 
+function parseJsonChunk(chunk) {
+  try {
+    return JSON.parse(chunk);
+  } catch {
+    return null;
+  }
+}
+
+function extractJsonChunks(value) {
+  if (typeof value !== "string") {
+    return [];
+  }
+
+  const chunks = [];
+  const trimmedValue = value.trim();
+  let chunkStart = -1;
+  let depth = 0;
+  let isInsideString = false;
+  let isEscaping = false;
+
+  for (let index = 0; index < trimmedValue.length; index += 1) {
+    const character = trimmedValue[index];
+
+    if (isEscaping) {
+      isEscaping = false;
+      continue;
+    }
+
+    if (character === "\\") {
+      isEscaping = true;
+      continue;
+    }
+
+    if (character === "\"") {
+      isInsideString = !isInsideString;
+      continue;
+    }
+
+    if (isInsideString) {
+      continue;
+    }
+
+    if (character === "{" || character === "[") {
+      if (depth === 0) {
+        chunkStart = index;
+      }
+
+      depth += 1;
+      continue;
+    }
+
+    if (character === "}" || character === "]") {
+      depth -= 1;
+
+      if (depth === 0 && chunkStart >= 0) {
+        chunks.push(trimmedValue.slice(chunkStart, index + 1));
+        chunkStart = -1;
+      }
+    }
+  }
+
+  return chunks;
+}
+
+function normalizeResponsePayload(payload) {
+  if (typeof payload !== "string") {
+    return payload ?? {};
+  }
+
+  const trimmedPayload = payload.trim();
+
+  if (!trimmedPayload) {
+    return {};
+  }
+
+  const parsedPayload = parseJsonChunk(trimmedPayload);
+
+  if (parsedPayload) {
+    return parsedPayload;
+  }
+
+  const parsedChunks = extractJsonChunks(trimmedPayload)
+    .map(parseJsonChunk)
+    .filter(Boolean);
+
+  if (parsedChunks.length === 0) {
+    return {};
+  }
+
+  const payloadWithClients = parsedChunks.find(
+    (item) => getClientItems(item).length > 0,
+  );
+
+  return payloadWithClients ?? parsedChunks[parsedChunks.length - 1];
+}
+
 const getClientItems = (payload = {}) => {
   if (Array.isArray(payload)) {
     return payload;
@@ -89,7 +185,7 @@ export const clientService = {
       },
     });
 
-    const payload = response.data ?? {};
+    const payload = normalizeResponsePayload(response.data);
     const items = getClientItems(payload);
     const total =
       payload.total_count ??

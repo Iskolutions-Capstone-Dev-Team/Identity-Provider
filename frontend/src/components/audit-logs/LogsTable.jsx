@@ -40,7 +40,7 @@ function getRowClassName(index, isDarkMode) {
   }`;
 }
 
-export default function TransactionLogsTable({ logs, onView, colorMode = "light" }) {
+export default function LogsTable({ logs, onView, colorMode = "light", emptyMessage = "No logs found", logTypeLabel = "log" }) {
   const isDarkMode = colorMode === "dark";
   const wrapperClassName = isDarkMode
     ? "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(28,18,29,0.92))] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.82)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
@@ -78,7 +78,7 @@ export default function TransactionLogsTable({ logs, onView, colorMode = "light"
               <th className={headerCellClassName}>Target</th>
               <th className={headerCellClassName}>Status</th>
               <th className={headerCellClassName}>Action</th>
-              <th className={headerCellClassName}>View</th>
+              <th className={headerCellClassName}>Actions</th>
             </tr>
           </thead>
 
@@ -86,7 +86,7 @@ export default function TransactionLogsTable({ logs, onView, colorMode = "light"
             {logs.length === 0 && (
               <tr>
                 <td colSpan={6} className={emptyStateClassName}>
-                  No transaction logs found
+                  {emptyMessage}
                 </td>
               </tr>
             )}
@@ -97,9 +97,7 @@ export default function TransactionLogsTable({ logs, onView, colorMode = "light"
                 keyId={log.rowKey ?? log.id ?? `${log.timestamp}-${index}`}
                 className={getRowClassName(index, isDarkMode)}
               >
-                <td className={timestampCellClassName}>
-                  {log.timestamp}
-                </td>
+                <td className={timestampCellClassName}>{log.timestamp}</td>
                 <td className={actorCellClassName} title={log.actor}>
                   {log.actor}
                 </td>
@@ -111,16 +109,16 @@ export default function TransactionLogsTable({ logs, onView, colorMode = "light"
                     {log.status}
                   </span>
                 </td>
-                <td className={actionCellClassName}>
-                  {log.action}
-                </td>
+                <td className={actionCellClassName}>{log.action}</td>
                 <td className={bodyCellClassName}>
-                  <button type="button" aria-label={`View ${log.actor} log details`} className={actionButtonClassName} onClick={() => onView(log)}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                    </svg>
-                  </button>
+                  <div className="flex items-center justify-center">
+                    <button type="button" aria-label={`View ${log.actor} ${logTypeLabel} details`} className={actionButtonClassName} onClick={() => onView(log)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                      </svg>
+                    </button>
+                  </div>
                 </td>
               </TableRowFade>
             ))}
