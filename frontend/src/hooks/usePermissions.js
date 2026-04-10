@@ -8,9 +8,17 @@ const toPositiveInt = (value) => {
 
 function normalizePermission(permission = {}) {
   const id = toPositiveInt(
-    permission?.id ?? permission?.permission_id ?? permission?.permissionId,
+    permission?.id ??
+      permission?.permission_id ??
+      permission?.permissionId ??
+      permission?.ID,
   );
-  const name = permission?.permission ?? permission?.name ?? "";
+  const name =
+    permission?.permission ??
+    permission?.permission_name ??
+    permission?.name ??
+    permission?.PermissionName ??
+    "";
   const label = typeof name === "string" ? name.trim() : "";
 
   if (id === null || !label) {
@@ -23,11 +31,17 @@ function normalizePermission(permission = {}) {
   };
 }
 
-export function usePermissions() {
+export function usePermissions({ enabled = true } = {}) {
   const [permissions, setPermissions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   useEffect(() => {
+    if (!enabled) {
+      setPermissions([]);
+      setLoading(false);
+      return undefined;
+    }
+
     let cancelled = false;
 
     const fetchPermissions = async () => {
@@ -59,7 +73,7 @@ export function usePermissions() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   return { permissions, loading };
 }
