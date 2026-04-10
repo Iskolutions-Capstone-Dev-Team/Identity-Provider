@@ -94,12 +94,12 @@ function PasswordVisibilityIcon({ showPassword }) {
   );
 }
 
-export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", colorMode = "light" }) {
-  const availableRoles = useAllRoles();
+export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, colorMode = "light" }) {
+  const availableRoles = useAllRoles({ endpoint: "all" });
   const {
     appClients: registrationAppClients,
     isLoadingAppClients: isLoadingRegistrationAppClients,
-  } = useAllAppClients();
+  } = useAllAppClients({ enabled: canManageUserAccess });
   const adminRoleOptions = getAdminRoleOptions(availableRoles);
   const registrationAppClientOptions = getAllAppClientSelectOptions(
     registrationAppClients,
@@ -113,13 +113,20 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const [isInvitationConfirmOpen, setIsInvitationConfirmOpen] = useState(false);
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
+  const availableAccountTypeOptions =
+    canAssignRoles || canManageUserAccess
+      ? ACCOUNT_TYPE_OPTIONS
+      : ACCOUNT_TYPE_OPTIONS.filter(
+          (option) => option.id !== ADMIN_ACCOUNT_CATEGORY,
+        );
   const isAdminAccountType =
     !isAdminView && data.accountType === ADMIN_ACCOUNT_CATEGORY;
   const isInvitationFlow =
     !isAdminView && data.accountSetupType === INVITATION_SETUP_VALUE;
   const showAccountTypeField = !isAdminView;
-  const showRegularAdminClientFields = isAdminAccountType;
-  const showRegularAdminRoleField = isAdminAccountType;
+  const showRegularAdminClientFields =
+    isAdminAccountType && canManageUserAccess;
+  const showRegularAdminRoleField = isAdminAccountType && canAssignRoles;
   const showAccountSetupAtBottom = isAdminAccountType;
   const showRegularTempPasswordField =
     !isAdminView && data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
@@ -494,7 +501,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   }
 
   const selectedAccountTypeLabel =
-    ACCOUNT_TYPE_OPTIONS.find(
+    availableAccountTypeOptions.find(
       (option) => option.id === data.accountType,
     )?.label || "Selected";
   const modalDescription = isAdminView
@@ -528,7 +535,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         Choose the account type.
       </p>
       <UserPoolRoleRadioGroup
-        options={ACCOUNT_TYPE_OPTIONS}
+        options={availableAccountTypeOptions}
         selectedValue={data.accountType}
         onChange={handleAccountTypeChange}
         colorMode={colorMode}
@@ -738,18 +745,26 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                     <label className={modalLabelClassName}>
                       Role
                     </label>
-                    <p className={modalHelperTextClassName}>
-                      Choose a role for this admin account.
-                    </p>
-                    <UserPoolRoleRadioGroup
-                      options={adminRoleOptions}
-                      selectedValue={data.selectedAdminRoleId}
-                      onChange={handleAdminRoleChange}
-                      colorMode={colorMode}
-                      name="add-user-role"
-                      allowEmpty
-                      emptyOptionLabel="No role assigned"
-                    />
+                    {canAssignRoles ? (
+                      <>
+                        <p className={modalHelperTextClassName}>
+                          Choose a role for this admin account.
+                        </p>
+                        <UserPoolRoleRadioGroup
+                          options={adminRoleOptions}
+                          selectedValue={data.selectedAdminRoleId}
+                          onChange={handleAdminRoleChange}
+                          colorMode={colorMode}
+                          name="add-user-role"
+                          allowEmpty
+                          emptyOptionLabel="No role assigned"
+                        />
+                      </>
+                    ) : (
+                      <p className={modalHelperTextClassName}>
+                        No role assignment permission is available for this account.
+                      </p>
+                    )}
                   </section>
                 ) : (
                   <>

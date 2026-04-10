@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { usePermissionAccess } from "../context/PermissionContext";
 import { useUsers } from "../hooks/useUsers";
 import UserPoolCard from "../components/user-pool/UserPoolCard";
 import UserPoolFilters from "../components/user-pool/UserPoolFilters";
@@ -12,13 +13,12 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ResultsCount from "../components/ResultsCount";
 import PageHeader from "../components/PageHeader";
 import ErrorAlert from "../components/ErrorAlert";
-import { EMPTY_CURRENT_USER, hasCurrentUserRole } from "../hooks/useCurrentUser";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { useManagedUserAccessClients } from "../hooks/useManagedUserAccessClients";
-import { REGULAR_USER_TYPE } from "../utils/userPoolAccess";
+import { ADMIN_USER_TYPE, REGULAR_USER_TYPE } from "../utils/userPoolAccess";
+import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS, USER_STATUS_EDIT_PERMISSIONS } from "../utils/permissionAccess";
 
 const ITEMS_PER_PAGE = 10;
-const SUPERADMIN_ROLE = "idp:superadmin";
 
 function getUserLabel(user) {
   return user?.displayName || user?.email || "User";
@@ -26,8 +26,8 @@ function getUserLabel(user) {
 
 export default function UserPool() {
   const outletContext = useOutletContext() || {};
-  const currentUser = outletContext.currentUser || EMPTY_CURRENT_USER;
   const colorMode = outletContext.colorMode || "light";
+  const { hasAnyPermission, hasPermission } = usePermissionAccess();
   const isDarkMode = colorMode === "dark";
   const {
     search,
@@ -60,7 +60,16 @@ export default function UserPool() {
   const showLoading = useDelayedLoading(
     loading || (userType === REGULAR_USER_TYPE && isLoadingAppClients),
   );
-  const canDeleteUsers = hasCurrentUserRole(currentUser, SUPERADMIN_ROLE);
+  const canAddUsers = hasPermission(PERMISSIONS.ADD_USER);
+  const canDeleteUsers = hasPermission(PERMISSIONS.DELETE_USER);
+  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ALL_USERS);
+  const canEditUserStatus = hasAnyPermission(USER_STATUS_EDIT_PERMISSIONS);
+  const canEditUserRole = hasAnyPermission(USER_ROLE_EDIT_PERMISSIONS);
+  const canEditUserAccess = hasAnyPermission(USER_ACCESS_EDIT_PERMISSIONS);
+  const canEditAdminUsers = canEditUserStatus || canEditUserRole;
+  const canEditRegularUsers = canEditUserStatus || canEditUserAccess;
+  const canEditCurrentUserType =
+    userType === ADMIN_USER_TYPE ? canEditAdminUsers : canEditRegularUsers;
   const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
@@ -72,6 +81,10 @@ export default function UserPool() {
   };
 
   const handleEdit = (user) => {
+    if (!canEditCurrentUserType) {
+      return;
+    }
+
     setSelectedUser(user);
     setModalMode("edit");
     setOpenViewEditModal(true);
@@ -125,6 +138,8 @@ export default function UserPool() {
               status={status}
               setStatus={setStatus}
               onCreate={() => setOpenAddModal(true)}
+              showCreateAction={canAddUsers}
+              showAdminUserType={canViewAdminUsers}
               colorMode={colorMode}
             />
             <UserPoolTable
@@ -135,6 +150,7 @@ export default function UserPool() {
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
+              showEditAction={canEditCurrentUserType}
               showDeleteAction={canDeleteUsers}
               colorMode={colorMode}
             />
@@ -157,24 +173,33 @@ export default function UserPool() {
                 />
               </div>
             )}
-            <UserPoolModal
-              open={openViewEditModal}
-              mode={modalMode}
-              user={selectedUser}
-              userType={userType}
-              appClientOptions={appClients}
-              isLoadingAppClients={isLoadingAppClients}
-              onSubmit={updateUser}
-              onClose={() => setOpenViewEditModal(false)}
-              colorMode={colorMode}
-            />
-            <AddUserModal
-              open={openAddModal}
-              onClose={() => setOpenAddModal(false)}
-              onSubmit={createUser}
-              userType={userType}
-              colorMode={colorMode}
-            />
+            {openViewEditModal && (
+              <UserPoolModal
+                open={openViewEditModal}
+                mode={modalMode}
+                user={selectedUser}
+                userType={userType}
+                appClientOptions={appClients}
+                isLoadingAppClients={isLoadingAppClients}
+                onSubmit={updateUser}
+                onClose={() => setOpenViewEditModal(false)}
+                canEditStatus={canEditUserStatus}
+                canEditRole={canEditUserRole}
+                canEditAccess={canEditUserAccess}
+                colorMode={colorMode}
+              />
+            )}
+            {canAddUsers && openAddModal && (
+              <AddUserModal
+                open={openAddModal}
+                onClose={() => setOpenAddModal(false)}
+                onSubmit={createUser}
+                userType={userType}
+                canAssignRoles={canEditUserRole}
+                canManageUserAccess={canEditUserAccess}
+                colorMode={colorMode}
+              />
+            )}
           </UserPoolCard>
         </div>
       </div>

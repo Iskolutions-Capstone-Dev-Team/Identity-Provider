@@ -117,14 +117,18 @@ const createFormData = (user) => ({
   accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
 });
 
-export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, colorMode = "light" }) {
-  const availableRoles = useAllRoles();
+export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, colorMode = "light" }) {
+  const availableRoles = useAllRoles({ endpoint: "all" });
   const adminRoleOptions = getAdminRoleOptions(availableRoles);
   const appClientSelectOptions = getAllAppClientSelectOptions(appClientOptions);
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
+  const canEditThisUser = isAdminView
+    ? canEditStatus || canEditRole
+    : canEditStatus || canEditAccess;
+  const canEditAccessField = isAdminView ? canEditRole : canEditAccess;
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -220,7 +224,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (isViewMode) {
+    if (isViewMode || !canEditThisUser) {
       onClose();
       return;
     }
@@ -365,7 +369,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                     {accessFieldLabel}
                   </label>
 
-                  {isViewMode ? (
+                  {isViewMode || !canEditAccessField ? (
                     <div className={readOnlyAccessClassName}>
                       {accessItems.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
@@ -422,7 +426,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                   <label className={modalLabelClassName}>
                     Status {!isViewMode && <span className="text-red-500">*</span>}
                   </label>
-                  {isViewMode ? (
+                  {isViewMode || !canEditStatus ? (
                     <input type="text" value={getStatusDisplayLabel(formData.status)} readOnly className={modalReadOnlyInputClassName} />
                   ) : (
                     <UserPoolModalSelect
@@ -446,7 +450,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
               {isViewMode ? "Close" : "Cancel"}
             </button>
 
-            {!isViewMode && (
+            {!isViewMode && canEditThisUser && (
               <button form="user-pool-form" type="submit" className={modalPrimaryButtonClassName}>
                 Save
               </button>
