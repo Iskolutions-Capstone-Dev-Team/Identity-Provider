@@ -135,7 +135,6 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		page = 1
 	}
 
-	role := c.GetString("role")
 	uIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
@@ -148,19 +147,6 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
-	if actorName == "" {
-		actorName = uIDStr
-	}
-
-	metadata := buildMetadata(map[string]interface{}{
-		"limit":      limit,
-		"page":       page,
-		"privilege":  role,
-		"ip":         c.ClientIP(),
-		"user_agent": c.Request.UserAgent(),
-	})
-
 	permissions := c.GetStringSlice("permissions")
 	resp, err := h.Service.GetFilteredUserList(
 		ctx,
@@ -171,34 +157,12 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetUserList] Service Execution: %v", err)
-		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionListUsers,
-				Target: "user_list",
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"limit":      limit,
-					"page":       page,
-					"privilege":  role,
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
 		c.JSON(
 			http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Failed to retrieve user list"},
 		)
 		return
 	}
-
-	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionListUsers,
-			Target:   "user_list",
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -230,59 +194,15 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 		page = 1
 	}
 
-	role := c.GetString("role")
-	uIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(uIDStr)
-	if err != nil {
-		log.Printf("[GetAdminUserList] UUID Parsing: %v", err)
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Identity parse error"})
-		return
-	}
 
 	ctx := c.Request.Context()
-	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
-	if actorName == "" {
-		actorName = uIDStr
-	}
-
-	metadata := buildMetadata(map[string]interface{}{
-		"limit":      limit,
-		"page":       page,
-		"privilege":  role,
-		"ip":         c.ClientIP(),
-		"user_agent": c.Request.UserAgent(),
-	})
-
 	resp, err := h.Service.GetAdminUserList(ctx, limit, page)
 	if err != nil {
 		log.Printf("[GetAdminUserList] Service Execution: %v", err)
-		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionListAdmins,
-				Target: "admin_list",
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"limit":      limit,
-					"page":       page,
-					"privilege":  role,
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
 		c.JSON(http.StatusInternalServerError,
 			dto.ErrorResponse{Error: "Failed to retrieve admin list"})
 		return
 	}
-
-	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionListAdmins,
-			Target:   "admin_list",
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
 
 	c.JSON(http.StatusOK, resp)
 }

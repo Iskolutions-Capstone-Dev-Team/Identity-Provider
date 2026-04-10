@@ -157,7 +157,6 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	}
 	keyword := c.Query("keyword")
 
-	role := c.GetString("role")
 	uIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
@@ -169,20 +168,6 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
-	if actorName == "" {
-		actorName = uIDStr
-	}
-
-	metadata := buildMetadata(map[string]interface{}{
-		"limit":      limit,
-		"page":       page,
-		"keyword":    keyword,
-		"privilege":  role,
-		"ip":         c.ClientIP(),
-		"user_agent": c.Request.UserAgent(),
-	})
-
 	permissions := c.GetStringSlice("permissions")
 	resp, err := h.Service.GetFilteredClientList(
 		ctx,
@@ -194,34 +179,13 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetClientList] %v", err)
-		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionListClients,
-				Target: "client_list",
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"limit":      limit,
-					"page":       page,
-					"keyword":    keyword,
-					"privilege":  role,
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error: "failed to retrieve clients",
 		})
 		return
 	}
 
-	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionListClients,
-			Target:   "client_list",
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
+	c.JSON(http.StatusOK, resp)
 
 	c.JSON(http.StatusOK, resp)
 }

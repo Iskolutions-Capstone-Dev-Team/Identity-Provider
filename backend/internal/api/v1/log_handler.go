@@ -74,53 +74,16 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 		filters["to_date"] = to
 	}
 
-	userIDStr := c.GetString("user_id")
-	userID, _ := uuid.Parse(userIDStr)
 	ctx := c.Request.Context()
-	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
-	if actorName == "" {
-		actorName = userIDStr
-	}
-
-	metadata := buildMetadata(map[string]interface{}{
-		"limit":      limit,
-		"page":       page,
-		"filters":    filters,
-		"ip":         c.ClientIP(),
-		"user_agent": c.Request.UserAgent(),
-	})
-
 	logs, total, lastPage, err := h.LogService.GetLogListWithFilters(
 		ctx, filters, limit, page)
 	if err != nil {
 		log.Printf("[GetLogList] Service Execution: %v", err)
-		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-			&dto.PostAuditLogRequest{
-				Action: actionListLogs,
-				Target: "log_list",
-				Status: models.StatusFail,
-				Metadata: buildMetadata(map[string]interface{}{
-					"limit":      limit,
-					"page":       page,
-					"filters":    filters,
-					"ip":         c.ClientIP(),
-					"user_agent": c.Request.UserAgent(),
-					"error":      err.Error(),
-				}),
-			})
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error: "Failed to retrieve logs",
 		})
 		return
 	}
-
-	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
-		&dto.PostAuditLogRequest{
-			Action:   actionListLogs,
-			Target:   "log_list",
-			Status:   models.StatusSuccess,
-			Metadata: metadata,
-		})
 
 	resp := dto.GetAuditLogListResponse{
 		AuditLogs:   logs,
