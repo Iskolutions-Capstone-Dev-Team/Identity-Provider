@@ -64,6 +64,10 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		user.POST("", h.UserHandler.PostUser)
 	}
 
+	v1Group.GET("/users/:id/access", middleware.APIKeyMiddleware(),
+		h.UserHandler.GetUserDetailedAccess)
+
+
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
 	admin.Use(middleware.AuthorizeRBAC(h.PubKey, h.UserRepo,
