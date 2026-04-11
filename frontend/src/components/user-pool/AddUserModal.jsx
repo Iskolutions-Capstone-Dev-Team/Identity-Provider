@@ -95,7 +95,7 @@ function PasswordVisibilityIcon({ showPassword }) {
 }
 
 export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, colorMode = "light" }) {
-  const availableRoles = useAllRoles({ endpoint: "all" });
+  const availableRoles = useAllRoles({ endpoint: "default" });
   const {
     appClients: registrationAppClients,
     isLoadingAppClients: isLoadingRegistrationAppClients,
@@ -128,8 +128,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     isAdminAccountType && canManageUserAccess;
   const showRegularAdminRoleField = isAdminAccountType && canAssignRoles;
   const showAccountSetupAtBottom = isAdminAccountType;
-  const showRegularTempPasswordField =
-    !isAdminView && data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
+  const showTempPasswordField =
+    isAdminView || data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
   const needsExpandedHeaderSpacing =
     !isAdminView && isAdminAccountType;
   const {
@@ -346,7 +346,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       nextFieldErrors.selectedAdminRoleId = "Select a role.";
     }
 
-    if (showRegularTempPasswordField) {
+    if (showTempPasswordField) {
       const trimmedTempPassword = data.tempPassword.trim();
 
       if (!trimmedTempPassword) {
@@ -410,7 +410,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       return;
     }
 
-    if (!showRegularTempPasswordField) {
+    if (!showTempPasswordField) {
       if (activeVoiceField === "tempPassword") {
         setActiveVoiceField("email");
       }
@@ -420,7 +420,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     if (activeVoiceField !== "tempPassword") {
       setActiveVoiceField("tempPassword");
     }
-  }, [activeVoiceField, showRegularTempPasswordField, step]);
+  }, [activeVoiceField, showTempPasswordField, step]);
 
   const activeVoiceFieldLabel =
     activeVoiceField === "email"
@@ -548,7 +548,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       )}
     </section>
   ) : null;
-  const tempPasswordSection = showRegularTempPasswordField ? (
+  const tempPasswordSection = showTempPasswordField ? (
     <section className={modalSectionClassName}>
       <SpeechInputToolbar
         activeFieldLabel={activeVoiceFieldLabel}
@@ -736,31 +736,35 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                 className="space-y-5"
               >
                 {isAdminView ? (
-                  <section className={modalSectionClassName}>
-                    <label className={modalLabelClassName}>
-                      Role
-                    </label>
-                    {canAssignRoles ? (
-                      <>
+                  <>
+                    <section className={modalSectionClassName}>
+                      <label className={modalLabelClassName}>
+                        Role
+                      </label>
+                      {canAssignRoles ? (
+                        <>
+                          <p className={modalHelperTextClassName}>
+                            Choose a role for this admin account.
+                          </p>
+                          <UserPoolRoleRadioGroup
+                            options={adminRoleOptions}
+                            selectedValue={data.selectedAdminRoleId}
+                            onChange={handleAdminRoleChange}
+                            colorMode={colorMode}
+                            name="add-user-role"
+                            allowEmpty
+                            emptyOptionLabel="No role assigned"
+                          />
+                        </>
+                      ) : (
                         <p className={modalHelperTextClassName}>
-                          Choose a role for this admin account.
+                          No role assignment permission is available for this account.
                         </p>
-                        <UserPoolRoleRadioGroup
-                          options={adminRoleOptions}
-                          selectedValue={data.selectedAdminRoleId}
-                          onChange={handleAdminRoleChange}
-                          colorMode={colorMode}
-                          name="add-user-role"
-                          allowEmpty
-                          emptyOptionLabel="No role assigned"
-                        />
-                      </>
-                    ) : (
-                      <p className={modalHelperTextClassName}>
-                        No role assignment permission is available for this account.
-                      </p>
-                    )}
-                  </section>
+                      )}
+                    </section>
+
+                    {tempPasswordSection}
+                  </>
                 ) : (
                   <>
                     {accountTypeSection}
