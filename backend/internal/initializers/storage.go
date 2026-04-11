@@ -27,12 +27,7 @@ func NewS3Storage() error {
 	}
 
 	// 3. Create the client
-	signedEndpoint := publicEndpoint
-	if publicEndpoint == "" {
-		signedEndpoint = endpoint
-	}
-	
-	client, err := createClient(signedEndpoint, accessKey, secretKey, useSSL)
+	client, err := createClient(endpoint, accessKey, secretKey, useSSL)
 	if err != nil {
 		return fmt.Errorf("[StorageInit] Client Creation: %v", err)
 	}

@@ -100,7 +100,9 @@ func main() {
 	godotenv.Load()
 	initSwagger()
 	initializers.LoadRSAKeys()
-	initializers.NewS3Storage()
+	if err := initializers.NewS3Storage(); err != nil {
+		log.Printf("[Main] S3 Storage Warning: %v", err)
+	}
 
 	doMigrate := flag.Bool("migrate", false, "Run database migration first")
 	flag.Parse()
