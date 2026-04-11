@@ -183,8 +183,13 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 		})
 		return
 	}
-
-	c.JSON(http.StatusOK, resp)
+	if resp == nil {
+		log.Printf("[GetClientList] %v", err)
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "null clients",
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, resp)
 }
