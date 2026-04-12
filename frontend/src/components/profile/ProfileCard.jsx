@@ -22,7 +22,7 @@ function getProfileInitials(profile = {}) {
   return initials || "P";
 }
 
-export default function ProfileCard({ profile, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
+export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const [isEditOpen, setEditOpen] = useState(false);
   const [isPasswordOpen, setPasswordOpen] = useState(false);
@@ -42,11 +42,14 @@ export default function ProfileCard({ profile, addAuditLog, allowEmailEdit = fal
 
     await userService.updateUserName(profileId, updatedProfile);
 
-    setCurrentProfile((currentProfileData) => ({
-      ...currentProfileData,
+    const nextProfile = {
+      ...currentProfile,
       ...updatedProfile,
       id: profileId,
-    }));
+    };
+
+    setCurrentProfile(nextProfile);
+    updateCurrentUser?.(nextProfile);
     setToastMessage("Profile updated successfully!");
     setTimeout(() => setToastMessage(""), 2000);
   };

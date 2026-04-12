@@ -40,6 +40,7 @@ const INITIAL_AUDIT_LOGS = [
 export default function Profile() {
   const outletContext = useOutletContext();
   const profile = outletContext?.currentUser || EMPTY_CURRENT_USER;
+  const updateCurrentUser = outletContext?.updateCurrentUser;
   const colorMode = outletContext?.colorMode || "light";
   const [logs, setLogs] = useState(INITIAL_AUDIT_LOGS);
 
@@ -52,6 +53,7 @@ export default function Profile() {
       <div className="grid gap-6">
         <ProfileCard
           profile={profile}
+          updateCurrentUser={updateCurrentUser}
           addAuditLog={handleAddAuditLog}
           allowEmailEdit={false}
           colorMode={colorMode}
