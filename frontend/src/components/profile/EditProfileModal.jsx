@@ -20,6 +20,15 @@ const createProfileState = (profileData = {}) => ({
   email: profileData.email || "",
 });
 
+const sanitizeProfile = (profileData = {}) => ({
+  ...profileData,
+  firstName: (profileData.firstName || "").trim(),
+  middleName: (profileData.middleName || "").trim(),
+  lastName: (profileData.lastName || "").trim(),
+  suffix: (profileData.suffix || "").trim(),
+  email: (profileData.email || "").trim(),
+});
+
 function validateProfile(profile, allowEmailEdit) {
   const nextFieldErrors = { ...initialFieldErrors };
 
@@ -38,11 +47,27 @@ function validateProfile(profile, allowEmailEdit) {
   return nextFieldErrors;
 }
 
+function getProfileUpdateErrorMessage(error) {
+  const responseMessage =
+    error?.response?.data?.error || error?.response?.data?.message;
+
+  if (typeof responseMessage === "string" && responseMessage.trim()) {
+    return responseMessage.trim();
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  return "Unable to update profile right now. Please try again.";
+}
+
 export default function EditProfileModal({ open, onClose, profileData, updateProfile, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
   const [profile, setProfile] = useState(createProfileState());
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
   const [activeVoiceField, setActiveVoiceField] = useState("firstName");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -53,6 +78,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
     setErrorMessage("");
     setProfile(createProfileState(profileData));
     setActiveVoiceField("firstName");
+    setIsSaving(false);
   }, [open, profileData]);
 
   const updateProfileField = (name, value) => {
@@ -80,15 +106,21 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
     updateProfileField(name, value);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const nextFieldErrors = validateProfile(profile, allowEmailEdit);
+    if (isSaving) {
+      return;
+    }
+
+    const nextProfile = sanitizeProfile(profile);
+    const nextFieldErrors = validateProfile(nextProfile, allowEmailEdit);
     const firstError =
       nextFieldErrors.firstName ||
       nextFieldErrors.lastName ||
       nextFieldErrors.email;
 
+    setProfile(nextProfile);
     setFieldErrors(nextFieldErrors);
 
     if (firstError) {
@@ -96,20 +128,29 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
       return;
     }
 
-    if (updateProfile) {
-      updateProfile(profile);
-    }
+    try {
+      setIsSaving(true);
 
-    if (addAuditLog) {
-      addAuditLog({
-        timestamp: formatTimestamp(new Date().toISOString()),
-        action: "PROFILE_UPDATE",
-        details: "Updated profile information",
-        color: "blue",
-      });
-    }
+      if (updateProfile) {
+        await updateProfile(nextProfile);
+      }
 
-    onClose();
+      if (addAuditLog) {
+        addAuditLog({
+          timestamp: formatTimestamp(new Date().toISOString()),
+          action: "PROFILE_UPDATE",
+          details: "Updated profile information",
+          color: "blue",
+        });
+      }
+
+      onClose();
+    } catch (error) {
+      console.error("Update profile error:", error);
+      setErrorMessage(getProfileUpdateErrorMessage(error));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const activeVoiceFieldLabel =
@@ -154,8 +195,13 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
   const requiredNoteClassName = isDarkMode
     ? "text-sm text-[#c7adb4]"
     : "text-sm text-[#8f6f76]";
+  const disabledButtonClassName = isSaving
+    ? "cursor-not-allowed opacity-70"
+    : "";
   const getInputClassName = (hasError) =>
-    `${modalInputClassName} ${hasError ? "border-red-400 focus:border-red-500" : ""}`;
+    `${modalInputClassName} ${
+      hasError ? "border-red-400 focus:border-red-500" : ""
+    }`;
 
   return createPortal(
     <dialog open className={modalOverlayClassName}>
@@ -169,7 +215,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
               </p>
             </div>
 
-            <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
+            <button type="button" className={`${modalCloseButtonClassName} ${disabledButtonClassName}`} onClick={onClose} disabled={isSaving}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
@@ -197,7 +243,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                   <label className={modalLabelClassName}>
                     First Name <span className="text-red-500">*</span>
                   </label>
-                  <input type="text" name="firstName" value={profile.firstName} onChange={handleChange} onFocus={() => setActiveVoiceField("firstName")} placeholder="Enter first name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.firstName))}/>
+                  <input type="text" name="firstName" value={profile.firstName} onChange={handleChange} onFocus={() => setActiveVoiceField("firstName")} placeholder="Enter first name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.firstName))} disabled={isSaving}/>
                   {fieldErrors.firstName ? (
                     <p className={fieldErrorClassName}>
                       {fieldErrors.firstName}
@@ -213,7 +259,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                   <label className={modalLabelClassName}>
                     Last Name <span className="text-red-500">*</span>
                   </label>
-                  <input type="text" name="lastName" value={profile.lastName} onChange={handleChange} onFocus={() => setActiveVoiceField("lastName")} placeholder="Enter last name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.lastName))}/>
+                  <input type="text" name="lastName" value={profile.lastName} onChange={handleChange} onFocus={() => setActiveVoiceField("lastName")} placeholder="Enter last name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.lastName))} disabled={isSaving}/>
                   {fieldErrors.lastName ? (
                     <p className={fieldErrorClassName}>{fieldErrors.lastName}</p>
                   ) : (
@@ -225,12 +271,12 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
 
                 <div>
                   <label className={modalLabelClassName}>Middle Name</label>
-                  <input type="text"  name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className={modalInputClassName}/>
+                  <input type="text" name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className={modalInputClassName} disabled={isSaving}/>
                 </div>
 
                 <div>
                   <label className={modalLabelClassName}>Suffix</label>
-                  <input type="text" name="suffix" value={profile.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" maxLength={20} className={modalInputClassName}/>
+                  <input type="text" name="suffix" value={profile.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" maxLength={20} className={modalInputClassName} disabled={isSaving}/>
                   <p className={`${modalHelperTextClassName} mt-2`}>Optional</p>
                 </div>
               </div>
@@ -242,7 +288,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                   <label className={modalLabelClassName}>
                     Email Address <span className="text-red-500">*</span>
                   </label>
-                  <input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className={getInputClassName(Boolean(fieldErrors.email))}/>
+                  <input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className={getInputClassName(Boolean(fieldErrors.email))} disabled={isSaving}/>
                   {fieldErrors.email ? (
                     <p className={fieldErrorClassName}>{fieldErrors.email}</p>
                   ) : (
@@ -263,12 +309,12 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
 
         <div className={modalFooterClassName}>
           <div className={modalFooterActionsClassName}>
-            <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
+            <button type="button" className={`${modalSecondaryButtonClassName} ${disabledButtonClassName}`} onClick={onClose} disabled={isSaving}>
               Cancel
             </button>
 
-            <button form="edit-profile-form" type="submit" className={modalPrimaryButtonClassName}>
-              Save Changes
+            <button form="edit-profile-form" type="submit" className={`${modalPrimaryButtonClassName} ${disabledButtonClassName}`} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </div>

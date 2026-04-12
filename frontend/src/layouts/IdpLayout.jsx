@@ -34,7 +34,8 @@ export default function IdpLayout() {
       ? "dark"
       : "light";
   });
-  const { currentUser, isLoadingCurrentUser } = useCurrentUser();
+  const { currentUser, isLoadingCurrentUser, updateCurrentUser } =
+    useCurrentUser();
   const showColorModeToggle = true;
   const isDarkThemeRoute = colorMode === "dark";
 
@@ -177,6 +178,7 @@ export default function IdpLayout() {
               context={{
                 currentUser,
                 isLoadingCurrentUser,
+                updateCurrentUser,
                 colorMode,
                 userPoolColorMode: colorMode,
                 appClientColorMode: colorMode,

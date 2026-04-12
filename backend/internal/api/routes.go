@@ -25,6 +25,7 @@ type Handlers struct {
 	RoleRepo repository.RoleRepository
 	PubKey   *rsa.PublicKey
 	CORS     gin.HandlerFunc
+	ClientCORS gin.HandlerFunc
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
@@ -62,6 +63,16 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	user.Use(middleware.APIKeyMiddleware())
 	{
 		user.POST("", h.UserHandler.PostUser)
+		user.PATCH("/:id/name", h.UserHandler.PatchUserName)
+	}
+
+	internalUser := v1Group.Group("/internal/user")
+	internalUser.Use(h.ClientCORS)
+	{
+		internalUser.POST("", h.UserHandler.PostUser)
+		internalUser.PATCH("/:id/name", h.UserHandler.PatchUserName)
+		internalUser.PATCH("/:id/password", h.UserHandler.PatchUserPassword)
+
 	}
 
 	v1Group.GET("/users/access",
@@ -109,7 +120,6 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.GET("/admins", h.UserHandler.GetAdminUserList)
 			users.GET("/:id", h.UserHandler.GetUser)
 			users.PATCH("/:id/status", h.UserHandler.PatchUserStatus)
-			users.PATCH("/:id/password", h.UserHandler.PatchUserPassword)
 			users.PATCH("/:id/role", h.UserHandler.PatchUserRole)
 			users.GET("/access", h.UserHandler.GetUserAccess)
 			users.PUT("/:id/access", h.UserHandler.PutUserAccess)

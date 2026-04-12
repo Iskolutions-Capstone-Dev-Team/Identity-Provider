@@ -58,10 +58,10 @@ func InitializeHandlers(db *sqlx.DB,
 		},
 		OTPHandler: v1.NewOTPHandler(service.OTPService, service.LogService),
 		UserRepo: userRepo,
-
-		RoleRepo: roleRepo,
-		PubKey:   PubKey,
-		CORS:     mw.CORSMiddleware(),
+		RoleRepo:   roleRepo,
+		PubKey:     PubKey,
+		CORS:       mw.CORSMiddleware(),
+		ClientCORS: mw.ClientCORSMiddleware(),
 	}
 }
 
