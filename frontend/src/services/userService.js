@@ -124,7 +124,7 @@ export const userService = {
       allowed_appclients: normalizeStringList(data.allowed_appclients),
     };
 
-    const res = await axiosInstance.post("/admin/users", payload, {
+    const res = await axiosInstance.post("/internal/user", payload, {
       headers: { "Content-Type": "application/json" },
     });
 
