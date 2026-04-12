@@ -101,13 +101,26 @@ export default function UserPool() {
   const canEditUserAccess = hasAnyPermission(USER_ACCESS_EDIT_PERMISSIONS);
   const canEditAdminUsers = canEditUserStatus || canEditUserRole;
   const canEditRegularUsers = canEditUserStatus || canEditUserAccess;
+  const canManageAdminUsers = isCurrentUserSuperAdmin;
+  const canViewCurrentUserType =
+    userType === ADMIN_USER_TYPE ? canManageAdminUsers : true;
   const canEditCurrentUserType =
-    userType === ADMIN_USER_TYPE ? canEditAdminUsers : canEditRegularUsers;
+    userType === ADMIN_USER_TYPE
+      ? canManageAdminUsers && canEditAdminUsers
+      : canEditRegularUsers;
+  const canDeleteCurrentUserType =
+    userType === ADMIN_USER_TYPE
+      ? canManageAdminUsers && canDeleteUsers
+      : canDeleteUsers;
   const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
 
   const handleView = (user) => {
+    if (!canViewCurrentUserType) {
+      return;
+    }
+
     setSelectedUser(user);
     setModalMode("view");
     setOpenViewEditModal(true);
@@ -124,7 +137,7 @@ export default function UserPool() {
   };
 
   const handleDeleteClick = (user) => {
-    if (!canDeleteUsers) {
+    if (!canDeleteCurrentUserType) {
       return;
     }
 
@@ -183,8 +196,9 @@ export default function UserPool() {
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
+              showViewAction={canViewCurrentUserType}
               showEditAction={canEditCurrentUserType}
-              showDeleteAction={canDeleteUsers}
+              showDeleteAction={canDeleteCurrentUserType}
               colorMode={colorMode}
             />
             {!showLoading && (
