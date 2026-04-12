@@ -14,16 +14,6 @@ const normalizeStringList = (values = []) =>
     .map((value) => normalizeTextValue(value))
     .filter(Boolean);
 
-const getBackendApiKey = () => {
-  const apiKey = normalizeTextValue(import.meta.env.VITE_BACKEND_API_KEY);
-
-  if (!apiKey) {
-    throw new Error("Profile update is unavailable right now.");
-  }
-
-  return apiKey;
-};
-
 const normalizeRoleId = (value) => {
   if (value === null) {
     return null;
@@ -102,12 +92,15 @@ export const userService = {
       throw new Error("Last name is required.");
     }
 
-    const res = await axiosInstance.patch(`/user/${userId}/name`, payload, {
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": getBackendApiKey(),
+    const res = await axiosInstance.patch(
+      `/internal/user/${userId}/name`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     return res.data;
   },
