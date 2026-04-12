@@ -5,6 +5,7 @@ import ProfileDetails from "./ProfileDetails";
 import EmailStatus from "./EmailStatus";
 import ActionButtons from "./ActionButtons";
 import SuccessAlert from "../SuccessAlert";
+import { userService } from "../../services/userService";
 
 function formatProfileName(profile = {}) {
   return [profile.firstName, profile.middleName, profile.lastName, profile.suffix]
@@ -21,7 +22,7 @@ function getProfileInitials(profile = {}) {
   return initials || "P";
 }
 
-export default function ProfileCard({ profile, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
+export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const [isEditOpen, setEditOpen] = useState(false);
   const [isPasswordOpen, setPasswordOpen] = useState(false);
@@ -32,8 +33,23 @@ export default function ProfileCard({ profile, addAuditLog, allowEmailEdit = fal
     setCurrentProfile(profile);
   }, [profile]);
 
-  const handleProfileUpdate = (updatedProfile) => {
-    setCurrentProfile(updatedProfile);
+  const handleProfileUpdate = async (updatedProfile) => {
+    const profileId = updatedProfile?.id || currentProfile?.id;
+
+    if (!profileId) {
+      throw new Error("User profile is unavailable.");
+    }
+
+    await userService.updateUserName(profileId, updatedProfile);
+
+    const nextProfile = {
+      ...currentProfile,
+      ...updatedProfile,
+      id: profileId,
+    };
+
+    setCurrentProfile(nextProfile);
+    updateCurrentUser?.(nextProfile);
     setToastMessage("Profile updated successfully!");
     setTimeout(() => setToastMessage(""), 2000);
   };

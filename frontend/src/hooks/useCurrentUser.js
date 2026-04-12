@@ -90,6 +90,18 @@ export function useCurrentUser() {
   const [currentUser, setCurrentUser] = useState(EMPTY_CURRENT_USER);
   const [isLoadingCurrentUser, setIsLoadingCurrentUser] = useState(true);
 
+  const updateCurrentUser = (updates = {}) => {
+    setCurrentUser((currentUserData) => ({
+      ...currentUserData,
+      id: updates.id || currentUserData.id,
+      firstName: updates.firstName ?? currentUserData.firstName,
+      middleName: updates.middleName ?? currentUserData.middleName,
+      lastName: updates.lastName ?? currentUserData.lastName,
+      suffix: updates.suffix ?? currentUserData.suffix,
+      email: updates.email ?? currentUserData.email,
+    }));
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -127,5 +139,6 @@ export function useCurrentUser() {
   return {
     currentUser,
     isLoadingCurrentUser,
+    updateCurrentUser,
   };
 }

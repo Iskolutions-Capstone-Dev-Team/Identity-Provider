@@ -68,6 +68,43 @@ export const userService = {
     return res.data;
   },
 
+  async updateUserName(id, data = {}) {
+    const userId = normalizeTextValue(id);
+
+    if (!userId) {
+      throw new Error("User ID is required.");
+    }
+
+    const payload = {
+      first_name: normalizeTextValue(data.firstName ?? data.first_name),
+      middle_name: normalizeTextValue(data.middleName ?? data.middle_name),
+      last_name: normalizeTextValue(data.lastName ?? data.last_name),
+      name_suffix: normalizeTextValue(
+        data.suffix ?? data.nameSuffix ?? data.name_suffix,
+      ),
+    };
+
+    if (!payload.first_name) {
+      throw new Error("First name is required.");
+    }
+
+    if (!payload.last_name) {
+      throw new Error("Last name is required.");
+    }
+
+    const res = await axiosInstance.patch(
+      `/internal/user/${userId}/name`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    return res.data;
+  },
+
   async getManagedUserAccessClients() {
     const res = await axiosInstance.get("/admin/users/access");
     return Array.isArray(res.data) ? res.data : [];

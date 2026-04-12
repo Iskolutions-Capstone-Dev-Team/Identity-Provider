@@ -32,6 +32,13 @@ type UpdateUserAccessRequest struct {
 	ClientIDs []string `json:"client_ids" binding:"required"`
 }
 
+type UpdateUserNameRequest struct {
+	FirstName  string `json:"first_name" binding:"required"`
+	MiddleName string `json:"middle_name"`
+	LastName   string `json:"last_name" binding:"required"`
+	NameSuffix string `json:"name_suffix"`
+}
+
 type ClientAccessResponse struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`

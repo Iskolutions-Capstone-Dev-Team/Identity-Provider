@@ -22,6 +22,7 @@ type UserRepository interface {
 	UpdateUserPassword(ctx context.Context, user *models.User) error
 	UpdateUserRole(ctx context.Context, userID []byte,
 		roleID sql.NullInt64) error
+	UpdateUserName(ctx context.Context, user *models.User) error
 	SoftDelete(ctx context.Context, id []byte) error
 	CountUsers(ctx context.Context) (int, error)
 	CountAdminUsers(ctx context.Context) (int, error)
@@ -370,6 +371,22 @@ func (r *userRepository) UpdateUserRole(ctx context.Context,
 	_, err := r.db.ExecContext(ctx, query, roleID, userID)
 	if err != nil {
 		return fmt.Errorf("failed to update user role: %w", err)
+	}
+	return nil
+}
+
+// UpdateUserName updates the name fields of a specific user.
+func (r *userRepository) UpdateUserName(ctx context.Context,
+	user *models.User,
+) error {
+	query := `UPDATE users SET first_name = ?, middle_name = ?, 
+	          last_name = ?, name_suffix = ?, updated_at = NOW() 
+	          WHERE id = ?`
+
+	_, err := r.db.ExecContext(ctx, query, user.FirstName, user.MiddleName,
+		user.LastName, user.NameSuffix, user.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update user name: %w", err)
 	}
 	return nil
 }
