@@ -93,7 +93,7 @@ function PasswordVisibilityIcon({ showPassword }) {
   );
 }
 
-export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, appClientOptions = [], isLoadingAppClients = false, colorMode = "light" }) {
+export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, appClientOptions = [], isLoadingAppClients = false, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState(initialFormData);
   const [error, setError] = useState("");
@@ -125,7 +125,9 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     endpoint: rolesEndpoint,
     enabled: shouldLoadRoleOptions,
   });
-  const adminRoleOptions = getAdminRoleOptions(availableRoles);
+  const adminRoleOptions = getAdminRoleOptions(availableRoles, {
+    includeSuperAdmin: includeSuperAdminRoleOptions,
+  });
   const registrationAppClientOptions = getAllAppClientSelectOptions(
     appClientOptions,
   );
