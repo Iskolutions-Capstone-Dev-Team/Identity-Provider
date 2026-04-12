@@ -6,7 +6,6 @@ import ErrorAlert from "../ErrorAlert";
 import MultiSelect from "../MultiSelect";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { useAllRoles } from "../../hooks/useAllRoles";
-import { useAllAppClients } from "../../hooks/useAllAppClients";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import InvitationConfirmModal from "./InvitationConfirmModal";
@@ -94,16 +93,7 @@ function PasswordVisibilityIcon({ showPassword }) {
   );
 }
 
-export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, colorMode = "light" }) {
-  const availableRoles = useAllRoles({ endpoint: "default" });
-  const {
-    appClients: registrationAppClients,
-    isLoadingAppClients: isLoadingRegistrationAppClients,
-  } = useAllAppClients({ enabled: canManageUserAccess });
-  const adminRoleOptions = getAdminRoleOptions(availableRoles);
-  const registrationAppClientOptions = getAllAppClientSelectOptions(
-    registrationAppClients,
-  );
+export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, appClientOptions = [], isLoadingAppClients = false, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState(initialFormData);
   const [error, setError] = useState("");
@@ -113,12 +103,12 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const [isInvitationConfirmOpen, setIsInvitationConfirmOpen] = useState(false);
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
-  const availableAccountTypeOptions =
-    canAssignRoles || canManageUserAccess
-      ? ACCOUNT_TYPE_OPTIONS
-      : ACCOUNT_TYPE_OPTIONS.filter(
-          (option) => option.id !== ADMIN_ACCOUNT_CATEGORY,
-        );
+  const canCreateAdminAccount = canAssignRoles || canManageUserAccess;
+  const availableAccountTypeOptions = canCreateAdminAccount
+    ? ACCOUNT_TYPE_OPTIONS
+    : ACCOUNT_TYPE_OPTIONS.filter(
+        (option) => option.id !== ADMIN_ACCOUNT_CATEGORY,
+      );
   const isAdminAccountType =
     !isAdminView && data.accountType === ADMIN_ACCOUNT_CATEGORY;
   const isInvitationFlow =
@@ -127,6 +117,20 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const showRegularAdminClientFields =
     isAdminAccountType && canManageUserAccess;
   const showRegularAdminRoleField = isAdminAccountType && canAssignRoles;
+  const rolesEndpoint =
+    isAdminView || isAdminAccountType ? "all" : "default";
+  const shouldLoadRoleOptions =
+    open && ((isAdminView && canAssignRoles) || showRegularAdminRoleField);
+  const availableRoles = useAllRoles({
+    endpoint: rolesEndpoint,
+    enabled: shouldLoadRoleOptions,
+  });
+  const adminRoleOptions = getAdminRoleOptions(availableRoles, {
+    includeSuperAdmin: includeSuperAdminRoleOptions,
+  });
+  const registrationAppClientOptions = getAllAppClientSelectOptions(
+    appClientOptions,
+  );
   const showAccountSetupAtBottom = isAdminAccountType;
   const showTempPasswordField =
     isAdminView || data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
@@ -817,7 +821,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                               {fieldErrors.adminCrudClientId}
                             </p>
                           )}
-                          {isLoadingRegistrationAppClients && (
+                          {isLoadingAppClients && (
                             <p className={modalHelperTextClassName}>
                               Loading app clients...
                             </p>

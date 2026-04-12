@@ -17,7 +17,7 @@ import Profile from "./pages/Profile";
 import Placeholder from "./pages/Placeholder";
 import IdpLayout from "./layouts/IdpLayout";
 import { PermissionProvider } from "./context/PermissionContext";
-import { PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "./utils/permissionAccess";
+import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "./utils/permissionAccess";
 import { buildUnauthorizedLoginPath, LEGACY_UNAUTHORIZED_PATH } from "./auth/utils/loginRoute";
 
 export default function App() {
@@ -74,7 +74,7 @@ export default function App() {
           />
           <Route path="/app-client"
             element={
-              <PermissionRoute requiredPermissions={[PERMISSIONS.VIEW_ALL_APPCLIENTS]}>
+              <PermissionRoute requiredPermissions={APP_CLIENT_PAGE_PERMISSIONS}>
                 <AppClient />
               </PermissionRoute>
             }

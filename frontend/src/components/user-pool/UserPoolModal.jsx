@@ -117,19 +117,26 @@ const createFormData = (user) => ({
   accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
 });
 
-export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, colorMode = "light" }) {
-  const rolesEndpoint = userType === ADMIN_USER_TYPE ? "default" : "all";
-  const availableRoles = useAllRoles({ endpoint: rolesEndpoint });
-  const adminRoleOptions = getAdminRoleOptions(availableRoles);
-  const appClientSelectOptions = getAllAppClientSelectOptions(appClientOptions);
+export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
+  const rolesEndpoint =
+    isAdminView && includeSuperAdminRoleOptions ? "all" : userType === ADMIN_USER_TYPE ? "default" : "all";
   const canEditThisUser = isAdminView
     ? canEditStatus || canEditRole
     : canEditStatus || canEditAccess;
   const canEditAccessField = isAdminView ? canEditRole : canEditAccess;
+  const shouldLoadRoleOptions = open && isAdminView;
+  const availableRoles = useAllRoles({
+    endpoint: rolesEndpoint,
+    enabled: shouldLoadRoleOptions,
+  });
+  const adminRoleOptions = getAdminRoleOptions(availableRoles, {
+    includeSuperAdmin: includeSuperAdminRoleOptions,
+  });
+  const appClientSelectOptions = getAllAppClientSelectOptions(appClientOptions);
   const {
     modalBodyClassName,
     modalBodyStackClassName,

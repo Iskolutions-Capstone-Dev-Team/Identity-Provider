@@ -70,6 +70,16 @@ export function isAdminRoleName(roleName) {
   return ADMIN_ROLE_NAMES.has(normalizeLowerText(roleName));
 }
 
+function isSuperAdminRoleName(roleName) {
+  return normalizeLowerText(roleName).includes("superadmin");
+}
+
+export function hasSuperAdminRole(roleNames = []) {
+  return normalizeRoleNames(roleNames).some((roleName) =>
+    isSuperAdminRoleName(roleName),
+  );
+}
+
 export function resolveUserIsAdmin(user = {}) {
   const explicitIsAdmin = normalizeBoolean(user?.is_admin ?? user?.isAdmin);
 
@@ -191,13 +201,17 @@ export function deriveRolesFromAppClients( selectedClientIds = [], appClients = 
   };
 }
 
-export function getAdminRoleOptions(roles = []) {
+export function getAdminRoleOptions(
+  roles = [],
+  { includeSuperAdmin = false } = {},
+) {
   return (Array.isArray(roles) ? roles : []).filter(
     (role) =>
       Number.isInteger(role?.id) &&
       role.id > 0 &&
       typeof role?.role_name === "string" &&
-      role.role_name.trim().length > 0,
+      role.role_name.trim().length > 0 &&
+      (includeSuperAdmin || !isSuperAdminRoleName(role.role_name)),
   );
 }
 

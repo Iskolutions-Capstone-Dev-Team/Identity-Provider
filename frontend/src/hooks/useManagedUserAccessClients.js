@@ -11,11 +11,17 @@ function mapManagedClient(client = {}) {
   };
 }
 
-export function useManagedUserAccessClients() {
+export function useManagedUserAccessClients({ enabled = true } = {}) {
   const [appClients, setAppClients] = useState([]);
-  const [isLoadingAppClients, setIsLoadingAppClients] = useState(true);
+  const [isLoadingAppClients, setIsLoadingAppClients] = useState(enabled);
 
   useEffect(() => {
+    if (!enabled) {
+      setAppClients([]);
+      setIsLoadingAppClients(false);
+      return undefined;
+    }
+
     let cancelled = false;
 
     const fetchManagedClients = async () => {
@@ -60,7 +66,7 @@ export function useManagedUserAccessClients() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   return {
     appClients,

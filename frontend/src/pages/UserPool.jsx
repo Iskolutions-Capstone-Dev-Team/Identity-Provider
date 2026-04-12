@@ -14,8 +14,9 @@ import ResultsCount from "../components/ResultsCount";
 import PageHeader from "../components/PageHeader";
 import ErrorAlert from "../components/ErrorAlert";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
+import { useAllAppClients } from "../hooks/useAllAppClients";
 import { useManagedUserAccessClients } from "../hooks/useManagedUserAccessClients";
-import { ADMIN_USER_TYPE, REGULAR_USER_TYPE } from "../utils/userPoolAccess";
+import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS, USER_STATUS_EDIT_PERMISSIONS } from "../utils/permissionAccess";
 
 const ITEMS_PER_PAGE = 10;
@@ -27,8 +28,37 @@ function getUserLabel(user) {
 export default function UserPool() {
   const outletContext = useOutletContext() || {};
   const colorMode = outletContext.colorMode || "light";
+  const currentUser = outletContext.currentUser || {};
+  const isLoadingCurrentUser = Boolean(outletContext.isLoadingCurrentUser);
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
   const isDarkMode = colorMode === "dark";
+  const isCurrentUserSuperAdmin = hasSuperAdminRole(currentUser?.roles);
+  const shouldLoadAllAppClients =
+    !isLoadingCurrentUser && isCurrentUserSuperAdmin;
+  const shouldLoadManagedAppClients =
+    !isLoadingCurrentUser && !isCurrentUserSuperAdmin;
+  const {
+    appClients: allAppClients,
+    isLoadingAppClients: isLoadingAllAppClients,
+  } = useAllAppClients({
+    enabled: shouldLoadAllAppClients,
+  });
+  const {
+    appClients: managedAppClients,
+    isLoadingAppClients: isLoadingManagedAppClients,
+  } = useManagedUserAccessClients({
+    enabled: shouldLoadManagedAppClients,
+  });
+  const appClientOptions = isCurrentUserSuperAdmin
+    ? allAppClients
+    : managedAppClients;
+  const isLoadingAppClients = isCurrentUserSuperAdmin
+    ? isLoadingAllAppClients
+    : isLoadingManagedAppClients;
+  const shouldShowAllRegularUsers = isCurrentUserSuperAdmin;
+  const visibleClientIds = shouldShowAllRegularUsers
+    ? []
+    : appClientOptions.map((client) => client?.id).filter(Boolean);
   const {
     search,
     setSearch,
@@ -49,8 +79,9 @@ export default function UserPool() {
     createUser,
     updateUser,
     deleteUser,
-  } = useUsers();
-  const { appClients, isLoadingAppClients } = useManagedUserAccessClients();
+  } = useUsers({
+    visibleClientIds,
+  });
   const [openViewEditModal, setOpenViewEditModal] = useState(false);
   const [modalMode, setModalMode] = useState("view");
   const [selectedUser, setSelectedUser] = useState(null);
@@ -58,7 +89,9 @@ export default function UserPool() {
   const [openDelete, setOpenDelete] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const showLoading = useDelayedLoading(
-    loading || (userType === REGULAR_USER_TYPE && isLoadingAppClients),
+    loading ||
+      (userType === REGULAR_USER_TYPE &&
+        (isLoadingAppClients || isLoadingCurrentUser)),
   );
   const canAddUsers = hasPermission(PERMISSIONS.ADD_USER);
   const canDeleteUsers = hasPermission(PERMISSIONS.DELETE_USER);
@@ -68,13 +101,26 @@ export default function UserPool() {
   const canEditUserAccess = hasAnyPermission(USER_ACCESS_EDIT_PERMISSIONS);
   const canEditAdminUsers = canEditUserStatus || canEditUserRole;
   const canEditRegularUsers = canEditUserStatus || canEditUserAccess;
+  const canManageAdminUsers = isCurrentUserSuperAdmin;
+  const canViewCurrentUserType =
+    userType === ADMIN_USER_TYPE ? canManageAdminUsers : true;
   const canEditCurrentUserType =
-    userType === ADMIN_USER_TYPE ? canEditAdminUsers : canEditRegularUsers;
+    userType === ADMIN_USER_TYPE
+      ? canManageAdminUsers && canEditAdminUsers
+      : canEditRegularUsers;
+  const canDeleteCurrentUserType =
+    userType === ADMIN_USER_TYPE
+      ? canManageAdminUsers && canDeleteUsers
+      : canDeleteUsers;
   const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
 
   const handleView = (user) => {
+    if (!canViewCurrentUserType) {
+      return;
+    }
+
     setSelectedUser(user);
     setModalMode("view");
     setOpenViewEditModal(true);
@@ -91,7 +137,7 @@ export default function UserPool() {
   };
 
   const handleDeleteClick = (user) => {
-    if (!canDeleteUsers) {
+    if (!canDeleteCurrentUserType) {
       return;
     }
 
@@ -146,12 +192,13 @@ export default function UserPool() {
               loading={showLoading}
               users={paginatedUsers}
               userType={userType}
-              appClients={appClients}
+              appClients={appClientOptions}
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
+              showViewAction={canViewCurrentUserType}
               showEditAction={canEditCurrentUserType}
-              showDeleteAction={canDeleteUsers}
+              showDeleteAction={canDeleteCurrentUserType}
               colorMode={colorMode}
             />
             {!showLoading && (
@@ -179,13 +226,14 @@ export default function UserPool() {
                 mode={modalMode}
                 user={selectedUser}
                 userType={userType}
-                appClientOptions={appClients}
+                appClientOptions={appClientOptions}
                 isLoadingAppClients={isLoadingAppClients}
                 onSubmit={updateUser}
                 onClose={() => setOpenViewEditModal(false)}
                 canEditStatus={canEditUserStatus}
                 canEditRole={canEditUserRole}
                 canEditAccess={canEditUserAccess}
+                includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
                 colorMode={colorMode}
               />
             )}
@@ -197,6 +245,9 @@ export default function UserPool() {
                 userType={userType}
                 canAssignRoles={canEditUserRole}
                 canManageUserAccess={canEditUserAccess}
+                appClientOptions={appClientOptions}
+                isLoadingAppClients={isLoadingAppClients}
+                includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
                 colorMode={colorMode}
               />
             )}
