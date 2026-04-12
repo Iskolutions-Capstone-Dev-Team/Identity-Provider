@@ -64,7 +64,9 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		user.POST("", h.UserHandler.PostUser)
 	}
 
-	v1Group.GET("/users/:id/access", middleware.APIKeyMiddleware(),
+	v1Group.GET("/users/access",
+		middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+		middleware.APIKeyMiddleware(),
 		h.UserHandler.GetUserDetailedAccess)
 
 

@@ -854,16 +854,26 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 // @Description Fetch all client details including base URLs.
 // @Tags Users
 // @Security ApiKeyAuth
+// @Security Bearer
 // @Produce json
-// @Param id path string true "User ID (UUID)"
 // @Success 200 {array} dto.ClientDetailedAccessResponse
+// @Failure 401 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /users/{id}/access [get]
+// @Router /users/access [get]
 func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
+	uIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(uIDStr)
+	if err != nil {
+		log.Printf("[GetUserDetailedAccess] UUID Parse: %v", err)
+		c.JSON(http.StatusUnauthorized,
+			dto.ErrorResponse{Error: "Invalid session or identity"})
+		return
+	}
+
 	ctx := c.Request.Context()
 
-	// Fetch all clients (limit 1000 for list population)
-	resp, err := h.ClientService.GetClientList(ctx, 1000, 1, "")
+	// Fetch bound clients (limit 1000 for list population)
+	resp, err := h.ClientService.GetBoundClients(ctx, userID, 1000, 1, "")
 	if err != nil {
 		log.Printf("[GetUserDetailedAccess] fetch: %v", err)
 		c.JSON(http.StatusInternalServerError,
