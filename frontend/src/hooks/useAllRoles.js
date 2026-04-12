@@ -23,10 +23,15 @@ function getRolePageFetcher(endpoint) {
   return endpoint === "all" ? roleService.getAllRolesPage : roleService.getRoles;
 }
 
-export function useAllRoles({ endpoint = "default" } = {}) {
+export function useAllRoles({ endpoint = "default", enabled = true } = {}) {
   const [roles, setRoles] = useState([]);
 
   useEffect(() => {
+    if (!enabled) {
+      setRoles([]);
+      return undefined;
+    }
+
     let cancelled = false;
 
     const fetchRolesByEndpoint = async (selectedEndpoint) => {
@@ -67,11 +72,7 @@ export function useAllRoles({ endpoint = "default" } = {}) {
 
     const fetchAll = async () => {
       try {
-        let nextRoles = await fetchRolesByEndpoint(endpoint);
-
-        if (endpoint === "all" && nextRoles.length === 0) {
-          nextRoles = await fetchRolesByEndpoint("default");
-        }
+        const nextRoles = await fetchRolesByEndpoint(endpoint);
 
         if (!cancelled) {
           setRoles(nextRoles);
@@ -89,7 +90,7 @@ export function useAllRoles({ endpoint = "default" } = {}) {
     return () => {
       cancelled = true;
     };
-  }, [endpoint]);
+  }, [enabled, endpoint]);
 
   return roles;
 }

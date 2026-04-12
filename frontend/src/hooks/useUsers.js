@@ -223,6 +223,20 @@ function matchesUserSearch(user, searchValue) {
   );
 }
 
+function userHasVisibleClient(user = {}, visibleClientLookup) {
+  if (!(visibleClientLookup instanceof Set) || visibleClientLookup.size === 0) {
+    return true;
+  }
+
+  const accessibleClientIds = normalizeClientIds(user?.accessibleClientIds);
+
+  if (accessibleClientIds.length === 0) {
+    return false;
+  }
+
+  return accessibleClientIds.some((clientId) => visibleClientLookup.has(clientId));
+}
+
 async function getAllUsersFromEndpoint(fetchPage) {
   const firstPage = await fetchPage(1);
   const collectedUsers = Array.isArray(firstPage?.users) ? [...firstPage.users] : [];
@@ -301,7 +315,7 @@ async function findRegularUserByEmail(email) {
   );
 }
 
-export function useUsers() {
+export function useUsers({ visibleClientIds = [] } = {}) {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [userType, setUserType] = useState(REGULAR_USER_TYPE);
@@ -312,6 +326,7 @@ export function useUsers() {
   const [loading, setLoading] = useState(true);
   const latestFetchRef = useRef(0);
   const regularUserAccessSelectionsRef = useRef({});
+  const visibleClientLookup = new Set(normalizeClientIds(visibleClientIds));
 
   const saveRegularUserAccessSelection = (user, accessibleClientIds = []) => {
     const nextSelections = { ...regularUserAccessSelectionsRef.current };
@@ -595,8 +610,11 @@ export function useUsers() {
   const filteredUsers = users.filter((user) => {
     const matchesSearch = matchesUserSearch(user, search);
     const matchesStatus = status ? user.status === status : true;
+    const matchesVisibleClients =
+      userType !== REGULAR_USER_TYPE ||
+      userHasVisibleClient(user, visibleClientLookup);
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesVisibleClients;
   });
 
   const totalResults = filteredUsers.length;
