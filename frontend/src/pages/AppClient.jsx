@@ -2,6 +2,7 @@ import { useOutletContext } from "react-router-dom";
 import { useState } from "react";
 import { usePermissionAccess } from "../context/PermissionContext";
 import { useAppClients } from "../hooks/useAppClients";
+import { useManagedUserAccessClients } from "../hooks/useManagedUserAccessClients";
 import ConnectedAppClientCard from "../components/app-client/ConnectedAppClientCard";
 import AppClientModal from "../components/app-client/AppClientModal";
 import AppClientCreateModal from "../components/app-client/AppClientCreateModal";
@@ -18,6 +19,21 @@ const ITEMS_PER_PAGE = 10;
 export default function AppClient() {
     const { colorMode = "light" } = useOutletContext();
     const { hasPermission } = usePermissionAccess();
+    const canCreateClient = hasPermission(PERMISSIONS.ADD_APPCLIENT);
+    const canEditClient = hasPermission(PERMISSIONS.EDIT_APPCLIENT);
+    const canDeleteClient = hasPermission(PERMISSIONS.DELETE_APPCLIENT);
+    const canViewAllClients = hasPermission(PERMISSIONS.VIEW_ALL_APPCLIENTS);
+    const shouldUseManagedClients =
+        !canViewAllClients && (canEditClient || canDeleteClient);
+    const { appClients: managedClients, isLoadingAppClients: isLoadingManagedClients } =
+        useManagedUserAccessClients({ enabled: shouldUseManagedClients });
+    const scopedClients = canViewAllClients
+        ? null
+        : shouldUseManagedClients
+            ? managedClients
+            : [];
+    const isScopedClientListLoading =
+        shouldUseManagedClients && isLoadingManagedClients;
     const {
         search, setSearch, page, setPage,
         paginatedClients, totalPages, totalResults,
@@ -26,7 +42,10 @@ export default function AppClient() {
         createClient, updateClient, deleteClient,
         getClientDetails,
         rotateClientSecret, secretModal, setSecretModal,
-    } = useAppClients();
+    } = useAppClients({
+        managedClients: scopedClients,
+        isManagedClientsLoading: isScopedClientListLoading,
+    });
     const [createOpen, setCreateOpen] = useState(false);
     const [editViewOpen, setEditViewOpen] = useState(false);
     const [mode, setMode] = useState("create");
@@ -35,10 +54,7 @@ export default function AppClient() {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [showSecretConfirm, setShowSecretConfirm] = useState(false);
     const [secretTarget, setSecretTarget] = useState(null);
-    const showLoading = useDelayedLoading(loading);
-    const canCreateClient = hasPermission(PERMISSIONS.ADD_APPCLIENT);
-    const canEditClient = hasPermission(PERMISSIONS.EDIT_APPCLIENT);
-    const canDeleteClient = hasPermission(PERMISSIONS.DELETE_APPCLIENT);
+    const showLoading = useDelayedLoading(loading || isScopedClientListLoading);
     const canRotateClientSecret = canEditClient;
 
     const handleCreateClient = async (payload) => {

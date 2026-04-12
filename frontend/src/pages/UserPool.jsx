@@ -24,11 +24,25 @@ function getUserLabel(user) {
   return user?.displayName || user?.email || "User";
 }
 
+function hasSuperAdminRole(roleNames = []) {
+  return (Array.isArray(roleNames) ? roleNames : []).some((roleName) =>
+    typeof roleName === "string" &&
+    roleName.trim().toLowerCase().includes("superadmin"),
+  );
+}
+
 export default function UserPool() {
   const outletContext = useOutletContext() || {};
   const colorMode = outletContext.colorMode || "light";
+  const currentUser = outletContext.currentUser || {};
+  const isLoadingCurrentUser = Boolean(outletContext.isLoadingCurrentUser);
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
   const isDarkMode = colorMode === "dark";
+  const { appClients, isLoadingAppClients } = useManagedUserAccessClients();
+  const shouldShowAllRegularUsers = hasSuperAdminRole(currentUser?.roles);
+  const visibleClientIds = shouldShowAllRegularUsers
+    ? []
+    : appClients.map((client) => client?.id).filter(Boolean);
   const {
     search,
     setSearch,
@@ -49,8 +63,9 @@ export default function UserPool() {
     createUser,
     updateUser,
     deleteUser,
-  } = useUsers();
-  const { appClients, isLoadingAppClients } = useManagedUserAccessClients();
+  } = useUsers({
+    visibleClientIds,
+  });
   const [openViewEditModal, setOpenViewEditModal] = useState(false);
   const [modalMode, setModalMode] = useState("view");
   const [selectedUser, setSelectedUser] = useState(null);
@@ -58,7 +73,9 @@ export default function UserPool() {
   const [openDelete, setOpenDelete] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const showLoading = useDelayedLoading(
-    loading || (userType === REGULAR_USER_TYPE && isLoadingAppClients),
+    loading ||
+      (userType === REGULAR_USER_TYPE &&
+        (isLoadingAppClients || isLoadingCurrentUser)),
   );
   const canAddUsers = hasPermission(PERMISSIONS.ADD_USER);
   const canDeleteUsers = hasPermission(PERMISSIONS.DELETE_USER);
@@ -197,6 +214,8 @@ export default function UserPool() {
                 userType={userType}
                 canAssignRoles={canEditUserRole}
                 canManageUserAccess={canEditUserAccess}
+                appClientOptions={appClients}
+                isLoadingAppClients={isLoadingAppClients}
                 colorMode={colorMode}
               />
             )}

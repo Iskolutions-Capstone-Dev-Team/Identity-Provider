@@ -119,9 +119,6 @@ const createFormData = (user) => ({
 
 export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, colorMode = "light" }) {
   const rolesEndpoint = userType === ADMIN_USER_TYPE ? "default" : "all";
-  const availableRoles = useAllRoles({ endpoint: rolesEndpoint });
-  const adminRoleOptions = getAdminRoleOptions(availableRoles);
-  const appClientSelectOptions = getAllAppClientSelectOptions(appClientOptions);
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
   const isDarkMode = colorMode === "dark";
@@ -130,6 +127,13 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     ? canEditStatus || canEditRole
     : canEditStatus || canEditAccess;
   const canEditAccessField = isAdminView ? canEditRole : canEditAccess;
+  const shouldLoadRoleOptions = open && isAdminView;
+  const availableRoles = useAllRoles({
+    endpoint: rolesEndpoint,
+    enabled: shouldLoadRoleOptions,
+  });
+  const adminRoleOptions = getAdminRoleOptions(availableRoles);
+  const appClientSelectOptions = getAllAppClientSelectOptions(appClientOptions);
   const {
     modalBodyClassName,
     modalBodyStackClassName,
