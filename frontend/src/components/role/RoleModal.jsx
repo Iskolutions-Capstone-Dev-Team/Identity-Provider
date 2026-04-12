@@ -402,7 +402,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                       )}
                     </div>
                   ) : (
-                    <input type="text" required value={roleName} onChange={(event) => handleRoleNameChange(event.target.value)} onBlur={() => setFieldTouched("name")} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., system:admin)" autoCapitalize="none"
+                    <input type="text" required value={roleName} onChange={(event) => handleRoleNameChange(event.target.value)} onBlur={() => setFieldTouched("name")} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., admin)" autoCapitalize="none"
                       className={getEditableInputClassName(
                         touched.name && Boolean(fieldErrors.name),
                       )}
