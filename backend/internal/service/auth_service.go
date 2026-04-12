@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
@@ -251,15 +252,19 @@ func (s *authService) ExchangeCodeForToken(
 		return nil, fmt.Errorf("Token Generation: %w", err)
 	}
 
-	refreshStr, _ := utils.GenerateRandomString(SECRET_ENTROPY)
-	err = s.Repo.StoreRefreshToken(
-		ctx,
-		refreshStr,
-		authCode.UserId,
-		clientIDBin,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("Database Query (StoreRefresh): %w", err)
+	grants, _ := s.ClientRepo.GetGrantTypes(ctx, clientIDBin)
+	var refreshStr string
+	if slices.Contains(grants, "refresh_token") {
+		refreshStr, _ = utils.GenerateRandomString(SECRET_ENTROPY)
+		err = s.Repo.StoreRefreshToken(
+			ctx,
+			refreshStr,
+			authCode.UserId,
+			clientIDBin,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("Database Query (StoreRefresh): %w", err)
+		}
 	}
 
 	return &dto.TokenResponse{
@@ -281,6 +286,12 @@ func (s *authService) RotateRefreshToken(
 	uID, cID, err := s.Repo.GetIDsFromToken(ctx, oldToken)
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (TokenLookup): %w", err)
+	}
+
+	// 1.1 Verify Client Grant Type
+	grants, _ := s.ClientRepo.GetGrantTypes(ctx, cID)
+	if !slices.Contains(grants, "refresh_token") {
+		return nil, fmt.Errorf("Client Verification: missing refresh_token grant")
 	}
 
 	// 2. Generate and persist new Refresh Token
