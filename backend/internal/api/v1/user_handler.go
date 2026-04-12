@@ -848,3 +848,50 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Access synchronized!"})
 }
+
+// GetUserDetailedAccess retrieves all clients with descriptions and images.
+// @Summary List All Clients for User
+// @Description Fetch all client details including base URLs.
+// @Tags Users
+// @Security ApiKeyAuth
+// @Security Bearer
+// @Produce json
+// @Success 200 {array} dto.ClientDetailedAccessResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /users/access [get]
+func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
+	uIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(uIDStr)
+	if err != nil {
+		log.Printf("[GetUserDetailedAccess] UUID Parse: %v", err)
+		c.JSON(http.StatusUnauthorized,
+			dto.ErrorResponse{Error: "Invalid session or identity"})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	// Fetch bound clients (limit 1000 for list population)
+	resp, err := h.ClientService.GetBoundClients(ctx, userID, 1000, 1, "")
+	if err != nil {
+		log.Printf("[GetUserDetailedAccess] fetch: %v", err)
+		c.JSON(http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Failed to fetch clients"})
+		return
+	}
+
+	result := make([]dto.ClientDetailedAccessResponse, 0, len(resp.Clients))
+	for _, cl := range resp.Clients {
+		result = append(result, dto.ClientDetailedAccessResponse{
+			ID:            cl.ID,
+			Name:          cl.Name,
+			Description:   cl.Description,
+			ImageLocation: cl.ImageLocation,
+			BaseURL:       cl.BaseURL,
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+

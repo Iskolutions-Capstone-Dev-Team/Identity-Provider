@@ -37,6 +37,14 @@ type ClientAccessResponse struct {
 	Name string `json:"name"`
 }
 
+type ClientDetailedAccessResponse struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	ImageLocation string `json:"image_location"`
+	BaseURL       string `json:"base_url"`
+}
+
 // UserResponse provides a safe view of user data, hiding the password hash.
 
 type UserResponse struct {

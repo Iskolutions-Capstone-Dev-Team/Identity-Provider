@@ -23,6 +23,19 @@ definitions:
       name:
         type: string
     type: object
+  dto.ClientDetailedAccessResponse:
+    properties:
+      base_url:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      image_location:
+        type: string
+      name:
+        type: string
+    type: object
   dto.ClientResponse:
     properties:
       allowed_roles:
@@ -1727,6 +1740,32 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Update user status
+      tags:
+      - Users
+  /users/access:
+    get:
+      description: Fetch all client details including base URLs.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ClientDetailedAccessResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      - Bearer: []
+      summary: List All Clients for User
       tags:
       - Users
 securityDefinitions:
