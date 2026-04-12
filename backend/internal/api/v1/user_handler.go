@@ -25,6 +25,7 @@ const (
 	actionUpdateUserRole = "update_user_role"
 	actionDeleteUser     = "delete_user"
 	actionUpdateAccess   = "update_user_access"
+	actionUpdateName     = "update_user_name"
 )
 
 // UserHandler handles user management HTTP requests.
@@ -657,6 +658,87 @@ func (h *UserHandler) PatchUserRole(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "role updated successfully!",
+	})
+}
+
+// PatchUserName updates the name fields for a specific user.
+// @Summary Update user name
+// @Description Updates first, middle, last names and suffix of a user.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param request body dto.UpdateUserNameRequest true "Name update data"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /user/{id}/name [patch]
+func (h *UserHandler) PatchUserName(c *gin.Context) {
+	id := c.Param("id")
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		log.Printf("[PatchUserName] UUID Parse: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "Invalid ID Format"},
+		)
+		return
+	}
+
+	var req dto.UpdateUserNameRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PatchUserName] Bind JSON: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid request body"},
+		)
+		return
+	}
+
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	metadata := buildMetadata(map[string]interface{}{
+		"target_id": id,
+		"ip":        c.ClientIP(),
+	})
+
+	err = h.Service.UpdateUserName(ctx, userID, req)
+	if err != nil {
+		log.Printf("[PatchUserName] %v", err)
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionUpdateName,
+				Target: id,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_id": id,
+					"ip":        c.ClientIP(),
+					"error":     err.Error(),
+				}),
+			})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Update failed"},
+		)
+		return
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionUpdateName,
+			Target:   id,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "User Name Updated Successfully!",
 	})
 }
 

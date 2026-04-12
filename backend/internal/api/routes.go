@@ -62,6 +62,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	user.Use(middleware.APIKeyMiddleware())
 	{
 		user.POST("", h.UserHandler.PostUser)
+		user.PATCH("/:id/name", h.UserHandler.PatchUserName)
 	}
 
 	v1Group.GET("/users/access",

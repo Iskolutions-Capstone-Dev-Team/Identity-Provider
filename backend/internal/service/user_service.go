@@ -32,6 +32,8 @@ type UserService interface {
 		newStatus string) error
 	UpdateUserRole(ctx context.Context, id uuid.UUID, roleID *int,
 		adminID uuid.UUID, permissions []string) error
+	UpdateUserName(ctx context.Context, id uuid.UUID,
+		req dto.UpdateUserNameRequest) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
@@ -362,6 +364,30 @@ func (s *userService) UpdateUserRole(
 	}
 
 	return fmt.Errorf("Permission Validation: unauthorized to update roles")
+}
+
+/**
+ * UpdateUserName modifies the name fields of a specific user.
+ */
+func (s *userService) UpdateUserName(
+	ctx context.Context,
+	id uuid.UUID,
+	req dto.UpdateUserNameRequest,
+) error {
+	user := models.User{
+		ID:         id[:],
+		FirstName:  req.FirstName,
+		MiddleName: req.MiddleName,
+		LastName:   req.LastName,
+		NameSuffix: req.NameSuffix,
+	}
+
+	err := s.Repo.UpdateUserName(ctx, &user)
+	if err != nil {
+		return fmt.Errorf("Database Query (UpdateUserName): %w", err)
+	}
+
+	return nil
 }
 
 /**
