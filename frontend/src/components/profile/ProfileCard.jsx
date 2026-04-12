@@ -5,6 +5,7 @@ import ProfileDetails from "./ProfileDetails";
 import EmailStatus from "./EmailStatus";
 import ActionButtons from "./ActionButtons";
 import SuccessAlert from "../SuccessAlert";
+import { userService } from "../../services/userService";
 
 function formatProfileName(profile = {}) {
   return [profile.firstName, profile.middleName, profile.lastName, profile.suffix]
@@ -32,8 +33,20 @@ export default function ProfileCard({ profile, addAuditLog, allowEmailEdit = fal
     setCurrentProfile(profile);
   }, [profile]);
 
-  const handleProfileUpdate = (updatedProfile) => {
-    setCurrentProfile(updatedProfile);
+  const handleProfileUpdate = async (updatedProfile) => {
+    const profileId = updatedProfile?.id || currentProfile?.id;
+
+    if (!profileId) {
+      throw new Error("User profile is unavailable.");
+    }
+
+    await userService.updateUserName(profileId, updatedProfile);
+
+    setCurrentProfile((currentProfileData) => ({
+      ...currentProfileData,
+      ...updatedProfile,
+      id: profileId,
+    }));
     setToastMessage("Profile updated successfully!");
     setTimeout(() => setToastMessage(""), 2000);
   };

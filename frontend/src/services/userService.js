@@ -14,6 +14,16 @@ const normalizeStringList = (values = []) =>
     .map((value) => normalizeTextValue(value))
     .filter(Boolean);
 
+const getBackendApiKey = () => {
+  const apiKey = normalizeTextValue(import.meta.env.VITE_BACKEND_API_KEY);
+
+  if (!apiKey) {
+    throw new Error("Profile update is unavailable right now.");
+  }
+
+  return apiKey;
+};
+
 const normalizeRoleId = (value) => {
   if (value === null) {
     return null;
@@ -65,6 +75,40 @@ export const userService = {
 
   async getUser(id) {
     const res = await axiosInstance.get(`/admin/users/${id}`);
+    return res.data;
+  },
+
+  async updateUserName(id, data = {}) {
+    const userId = normalizeTextValue(id);
+
+    if (!userId) {
+      throw new Error("User ID is required.");
+    }
+
+    const payload = {
+      first_name: normalizeTextValue(data.firstName ?? data.first_name),
+      middle_name: normalizeTextValue(data.middleName ?? data.middle_name),
+      last_name: normalizeTextValue(data.lastName ?? data.last_name),
+      name_suffix: normalizeTextValue(
+        data.suffix ?? data.nameSuffix ?? data.name_suffix,
+      ),
+    };
+
+    if (!payload.first_name) {
+      throw new Error("First name is required.");
+    }
+
+    if (!payload.last_name) {
+      throw new Error("Last name is required.");
+    }
+
+    const res = await axiosInstance.patch(`/user/${userId}/name`, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": getBackendApiKey(),
+      },
+    });
+
     return res.data;
   },
 
