@@ -1,3 +1,5 @@
+import { clearAuthorizeReturnPath } from "./authorizeFlow";
+
 const ACCESS_TOKEN_COOKIE = "access_token";
 const REFRESH_TOKEN_COOKIE = "refresh_token";
 const TERMS_STORAGE_KEY = "termsAccepted";
@@ -91,6 +93,7 @@ export function clearAuthState() {
   expireCookie(ACCESS_TOKEN_COOKIE);
   expireCookie(REFRESH_TOKEN_COOKIE);
   expireCookie("token");
+  clearAuthorizeReturnPath();
 
   if (typeof sessionStorage !== "undefined") {
     sessionStorage.removeItem(TERMS_STORAGE_KEY);
