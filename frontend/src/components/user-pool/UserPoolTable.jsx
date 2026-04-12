@@ -219,7 +219,7 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
                 </td>
 
                 <td className={sharedBodyCellClassName}>
-                  <div className="whitespace-nowrap leading-6">
+                  <div className="break-words whitespace-normal leading-6">
                     {getFullName(user)}
                   </div>
                 </td>
