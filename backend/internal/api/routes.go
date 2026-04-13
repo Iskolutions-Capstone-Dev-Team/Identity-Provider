@@ -127,7 +127,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		// User Maintenance
 		users := admin.Group("/users")
 		{
-			users.POST("", h.UserHandler.PostUser)
+			users.POST("", h.UserHandler.PostAdminUser)
 			users.GET("", h.UserHandler.GetUserList)
 			users.GET("/admins", h.UserHandler.GetAdminUserList)
 			users.GET("/:id", h.UserHandler.GetUser)
