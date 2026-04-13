@@ -106,6 +106,76 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, dto.SuccessResponse{Message: message})
 }
 
+// PostAdminUser creates a new user with account type ID.
+// @Summary Create Admin User
+// @Description Register a new user with an account type ID.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body dto.PostAdminUserRequest true "User Data"
+// @Success 201 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users [post]
+func (h *UserHandler) PostAdminUser(c *gin.Context) {
+	var req dto.PostAdminUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PostAdminUser] Bind JSON: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid request payload"},
+		)
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
+	if actorName == "" {
+		actorName = userIDStr
+	}
+
+	metadata := buildMetadata(map[string]interface{}{
+		"target_email": req.Email,
+		"ip":           c.ClientIP(),
+		"user_agent":   c.Request.UserAgent(),
+	})
+
+	createdID, err := h.Service.CreateAdminUser(ctx, req)
+	if err != nil {
+		log.Printf("[PostAdminUser] %v", err)
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionCreateUser,
+				Target: req.Email,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_email": req.Email,
+					"ip":           c.ClientIP(),
+					"user_agent":   c.Request.UserAgent(),
+					"error":        err.Error(),
+				}),
+			})
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "failed to create user"},
+		)
+		return
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionCreateUser,
+			Target:   req.Email,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
+
+	message := fmt.Sprintf("Created user with the id %s", createdID)
+	c.JSON(http.StatusCreated, dto.SuccessResponse{Message: message})
+}
+
 // GetUserList retrieves a paginated list of users
 // @Summary List Users
 // @Description Get a paginated list of all users
