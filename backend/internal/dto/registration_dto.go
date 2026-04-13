@@ -8,12 +8,13 @@ type PreapprovedClientResponse struct {
 }
 
 type AccountTypeConfigResponse struct {
-	AccountType string                      `json:"account_type" binding:"required"`
-	Clients     []PreapprovedClientResponse `json:"clients" binding:"required"`
+	ID          int                         `json:"id"`
+	AccountType string                      `json:"account_type"`
+	Clients     []PreapprovedClientResponse `json:"clients"`
 }
 
 type RegistrationConfigResponse struct {
-	AccountTypes []AccountTypeConfigResponse `json:"account_types" binding:"required"`
+	AccountTypes []AccountTypeConfigResponse `json:"account_types"`
 }
 
 type UpsertAccountTypeRequest struct {
