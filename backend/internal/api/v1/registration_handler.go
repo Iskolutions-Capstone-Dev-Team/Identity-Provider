@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
@@ -33,13 +32,6 @@ type RegistrationHandler struct {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /admin/registration/config [get]
 func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
-	if !middleware.HasPermission(c, "View Registration Config") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
-		})
-		return
-	}
-
 	config, err := h.Service.GetRegistrationConfig(c.Request.Context())
 	if err != nil {
 		log.Printf("[GetRegistrationConfig] %v", err)
@@ -62,13 +54,6 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /admin/registration/config/{id} [get]
 func (h *RegistrationHandler) GetClientsByAccountTypeID(c *gin.Context) {
-	if !middleware.HasPermission(c, "View Registration Config") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
-		})
-		return
-	}
-
 	idStr := c.Param("id")
 	var id int
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
@@ -101,13 +86,6 @@ func (h *RegistrationHandler) GetClientsByAccountTypeID(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /admin/registration/preapproved [put]
 func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
-	if !middleware.HasPermission(c, "Edit Registration Config") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
-		})
-		return
-	}
-
 	var req dto.UpdatePreapprovedClientsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{

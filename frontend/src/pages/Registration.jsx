@@ -18,9 +18,8 @@ export default function Registration() {
   const { colorMode = "light" } = useOutletContext() || {};
   const { hasAnyPermission } = usePermissionAccess();
   const canEditRegistration = hasAnyPermission(REGISTRATION_EDIT_PERMISSIONS);
-  const shouldLoadEditableAppClients = canEditRegistration;
   const { appClients, appClientsError, isLoadingAppClients } = useAllAppClients({
-    enabled: shouldLoadEditableAppClients,
+    enabled: canEditRegistration,
   });
   const [registrationConfigs, setRegistrationConfigs] = useState([]);
   const [isLoadingRegistration, setIsLoadingRegistration] = useState(true);
@@ -188,14 +187,11 @@ export default function Registration() {
         <div className="relative">
           <AuditLogsCard colorMode={colorMode}>
             {!showLoading && !registrationError && appClientsError && (
-              shouldLoadEditableAppClients ? (
-                <div className={warningBoxClassName}>{appClientsError}</div>
-              ) : null
+              <div className={warningBoxClassName}>{appClientsError}</div>
             )}
 
             {!showLoading &&
               !registrationError &&
-              shouldLoadEditableAppClients &&
               !appClientsError &&
               appClientOptions.length === 0 && (
                 <div className={infoBoxClassName}>
