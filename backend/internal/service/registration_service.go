@@ -16,8 +16,11 @@ type RegistrationService interface {
 	GetRegistrationConfig(ctx context.Context) (*dto.RegistrationConfigResponse, error)
 	GetClientsByAccountTypeID(ctx context.Context, 
 		id int) (*dto.AccountTypeConfigResponse, error)
-	UpdatePreapprovedClients(ctx context.Context, 
-		req dto.UpdatePreapprovedClientsRequest) error
+	CreateAccountType(ctx context.Context, 
+		req dto.UpsertAccountTypeRequest) error
+	UpdateAccountType(ctx context.Context, 
+		req dto.UpsertAccountTypeRequest) error
+	DeleteAccountType(ctx context.Context, id int) error
 	ActivateAccount(ctx context.Context, 
 		req dto.ActivateAccountRequest) error
 	CheckInvitation(ctx context.Context, 
@@ -105,17 +108,46 @@ func (s *regService) GetClientsByAccountTypeID(ctx context.Context,
 	}, nil
 }
 
-func (s *regService) UpdatePreapprovedClients(ctx context.Context, 
-	req dto.UpdatePreapprovedClientsRequest) error {
+func (s *regService) CreateAccountType(ctx context.Context, 
+	req dto.UpsertAccountTypeRequest) error {
+	id, err := s.repo.CreateAccountType(ctx, req.Name)
+	if err != nil {
+		return err
+	}
+
 	var clientIDs []uuid.UUID
 	for _, idStr := range req.ClientIDs {
-		id, err := uuid.Parse(idStr)
+		clientID, err := uuid.Parse(idStr)
 		if err != nil {
 			return err
 		}
-		clientIDs = append(clientIDs, id)
+		clientIDs = append(clientIDs, clientID)
 	}
-	return s.repo.SyncPreapprovedClients(ctx, req.AccountTypeID, clientIDs)
+
+	return s.repo.SyncPreapprovedClients(ctx, id, clientIDs)
+}
+
+func (s *regService) UpdateAccountType(ctx context.Context, 
+	req dto.UpsertAccountTypeRequest) error {
+	err := s.repo.UpdateAccountType(ctx, req.ID, req.Name)
+	if err != nil {
+		return err
+	}
+
+	var clientIDs []uuid.UUID
+	for _, idStr := range req.ClientIDs {
+		clientID, err := uuid.Parse(idStr)
+		if err != nil {
+			return err
+		}
+		clientIDs = append(clientIDs, clientID)
+	}
+
+	return s.repo.SyncPreapprovedClients(ctx, req.ID, clientIDs)
+}
+
+func (s *regService) DeleteAccountType(ctx context.Context, id int) error {
+	return s.repo.DeleteAccountType(ctx, id)
 }
 
 func (s *regService) ActivateAccount(ctx context.Context, 
