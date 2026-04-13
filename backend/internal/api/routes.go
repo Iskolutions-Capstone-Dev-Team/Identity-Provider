@@ -171,13 +171,21 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 				"/config",
 				h.RegistrationHandler.GetRegistrationConfig,
 			)
+			registrationAdmin.POST(
+				"/config",
+				h.RegistrationHandler.PostAccountType,
+			)
 			registrationAdmin.PUT(
-				"/preapproved",
-				h.RegistrationHandler.UpdatePreapprovedClients,
+				"/config",
+				h.RegistrationHandler.PutAccountType,
 			)
 			registrationAdmin.GET(
 				"/config/:id",
 				h.RegistrationHandler.GetClientsByAccountTypeID,
+			)
+			registrationAdmin.DELETE(
+				"/config/:id",
+				h.RegistrationHandler.DeleteAccountType,
 			)
 		}
 	}
