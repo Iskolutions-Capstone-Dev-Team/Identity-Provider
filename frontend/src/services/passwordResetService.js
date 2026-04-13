@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getAccessToken } from "../auth/utils/authCookies";
 
 function normalizeTextValue(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -26,6 +27,21 @@ function getJsonRequestConfig() {
   return {
     headers: {
       "Content-Type": "application/json",
+    },
+  };
+}
+
+function getAuthorizedJsonRequestConfig() {
+  const accessToken = normalizeTextValue(getAccessToken());
+
+  if (!accessToken) {
+    throw new Error("You need to sign in again before changing your password.");
+  }
+
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
     },
   };
 }
@@ -61,14 +77,27 @@ export const passwordResetService = {
     return response.data;
   },
 
-  async updatePassword({ email, newPassword } = {}) {
+  async updateForgotPassword({ email, newPassword } = {}) {
     const response = await passwordResetApi.patch(
-      "/internal/user/password",
+      "/internal/user/password/forgot",
       {
         email: getRequiredTextValue(email, "Email address"),
         new_password: getRequiredTextValue(newPassword, "New password"),
       },
       getJsonRequestConfig(),
+    );
+
+    return response.data;
+  },
+
+  async changePassword({ currentPassword, newPassword } = {}) {
+    const response = await passwordResetApi.patch(
+      "/internal/user/password/change",
+      {
+        old_password: getRequiredTextValue(currentPassword, "Current password"),
+        new_password: getRequiredTextValue(newPassword, "New password"),
+      },
+      getAuthorizedJsonRequestConfig(),
     );
 
     return response.data;
