@@ -38,7 +38,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	auth := v1Group.Group("/auth")
 	{
 		auth.GET("/authorize", h.AuthHandler.Authorize)
-		auth.POST("/login", h.AuthHandler.LoginAndAuthorize)
+		auth.POST("/login", h.ClientCORS, h.AuthHandler.LoginAndAuthorize)
 		auth.POST("/token", h.AuthHandler.PostTokenExchange)
 		auth.POST("/refresh", h.AuthHandler.PostTokenRotate)
 		auth.POST("/logout", h.AuthHandler.Logout)
