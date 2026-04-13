@@ -53,12 +53,14 @@ func (s *regService) GetRegistrationConfig(ctx context.Context) (
 	}
 
 	configMap := make(map[string][]dto.PreapprovedClientResponse)
+	idMap := make(map[string]int)
 	var order []string
 
 	for _, row := range rows {
 		if _, ok := configMap[row.AccountTypeName]; !ok {
 			order = append(order, row.AccountTypeName)
 			configMap[row.AccountTypeName] = []dto.PreapprovedClientResponse{}
+			idMap[row.AccountTypeName] = row.AccountTypeID
 		}
 		if len(row.ClientID) > 0 {
 			id, _ := uuid.FromBytes(row.ClientID)
@@ -73,6 +75,7 @@ func (s *regService) GetRegistrationConfig(ctx context.Context) (
 	var resp dto.RegistrationConfigResponse
 	for _, name := range order {
 		cfg := dto.AccountTypeConfigResponse{
+			ID:          idMap[name],
 			AccountType: name,
 			Clients:     configMap[name],
 		}
@@ -103,6 +106,7 @@ func (s *regService) GetClientsByAccountTypeID(ctx context.Context,
 	}
 
 	return &dto.AccountTypeConfigResponse{
+		ID:          rows[0].AccountTypeID,
 		AccountType: rows[0].AccountTypeName,
 		Clients:     clients,
 	}, nil
