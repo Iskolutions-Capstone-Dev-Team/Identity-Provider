@@ -55,6 +55,7 @@ func MigrateAndSeed() {
 		"invitation_codes",
 		"client_allowed_users",
 		"preapproved_clients",
+		"account_types",
 	}
 
 
