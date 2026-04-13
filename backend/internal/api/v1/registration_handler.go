@@ -14,9 +14,11 @@ import (
 )
 
 const (
-	actionUpdatePreapprovedClients = "update_preapproved_clients"
-	actionActivateAccount          = "activate_account"
-	actionCheckInvitation          = "check_invitation"
+	actionPostAccountType   = "post_account_type"
+	actionPutAccountType    = "put_account_type"
+	actionDeleteAccountType = "delete_account_type"
+	actionActivateAccount   = "activate_account"
+	actionCheckInvitation   = "check_invitation"
 )
 
 type RegistrationHandler struct {
@@ -89,18 +91,18 @@ func (h *RegistrationHandler) GetClientsByAccountTypeID(c *gin.Context) {
 	c.JSON(http.StatusOK, config)
 }
 
-// UpdatePreapprovedClients updates the preapproved clients list for a specific account type.
-// @Summary Update Preapproved Clients
-// @Description Add/Remove client IDs for a specific account type.
+// PostAccountType creates a new account type and handles initial config.
+// @Summary Create Account Type
+// @Description Create an account type with preapproved clients.
 // @Tags Registration
 // @Accept json
 // @Produce json
-// @Param req body dto.UpdatePreapprovedClientsRequest true "Update Request"
+// @Param req body dto.UpsertAccountTypeRequest true "Create Request"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /admin/registration/preapproved [put]
-func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
+// @Router /admin/registration/config [post]
+func (h *RegistrationHandler) PostAccountType(c *gin.Context) {
 	if !middleware.HasPermission(c, "Edit Registration Config") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
 			Error: "Unauthorized",
@@ -108,7 +110,7 @@ func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
 		return
 	}
 
-	var req dto.UpdatePreapprovedClientsRequest
+	var req dto.UpsertAccountTypeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Error: "invalid request format",
@@ -124,11 +126,11 @@ func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
 	}
 
 	reqCtx := c.Request.Context()
-	err := h.Service.UpdatePreapprovedClients(reqCtx, req)
+	err := h.Service.CreateAccountType(reqCtx, req)
 
 	logReq := &dto.PostAuditLogRequest{
-		Action: actionUpdatePreapprovedClients,
-		Target: fmt.Sprintf("account_type_%d", req.AccountTypeID),
+		Action: actionPostAccountType,
+		Target: fmt.Sprintf("account_type_%s", req.Name),
 		Status: models.StatusSuccess,
 		Metadata: buildMetadata(map[string]interface{}{
 			"ip":         c.ClientIP(),
@@ -137,7 +139,7 @@ func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
 	}
 
 	if err != nil {
-		log.Printf("[UpdatePreapprovedClients] %v", err)
+		log.Printf("[PostAccountType] %v", err)
 		logReq.Status = models.StatusFail
 		logReq.Metadata = buildMetadata(map[string]interface{}{
 			"ip":         c.ClientIP(),
@@ -148,7 +150,7 @@ func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
 		_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
 
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to update preapproved clients",
+			Error: "failed to create account type",
 		})
 		return
 	}
@@ -156,7 +158,147 @@ func (h *RegistrationHandler) UpdatePreapprovedClients(c *gin.Context) {
 	_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
 	_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Preapproved clients updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Account type created successfully"})
+}
+
+// PutAccountType updates an account type and its preapproved clients.
+// @Summary Update Account Type
+// @Description Update name and preapproved clients for an account type.
+// @Tags Registration
+// @Accept json
+// @Produce json
+// @Param req body dto.UpsertAccountTypeRequest true "Update Request"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/registration/config [put]
+func (h *RegistrationHandler) PutAccountType(c *gin.Context) {
+	if !middleware.HasPermission(c, "Edit Registration Config") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "Unauthorized",
+		})
+		return
+	}
+
+	var req dto.UpsertAccountTypeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid request format",
+		})
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+	actorName, _ := h.LogService.GetUserEmail(c.Request.Context(), userID[:])
+	if actorName == "" {
+		actorName = userIDStr
+	}
+
+	reqCtx := c.Request.Context()
+	err := h.Service.UpdateAccountType(reqCtx, req)
+
+	logReq := &dto.PostAuditLogRequest{
+		Action: actionPutAccountType,
+		Target: fmt.Sprintf("account_type_%d", req.ID),
+		Status: models.StatusSuccess,
+		Metadata: buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+		}),
+	}
+
+	if err != nil {
+		log.Printf("[PutAccountType] %v", err)
+		logReq.Status = models.StatusFail
+		logReq.Metadata = buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+			"error":      err.Error(),
+		})
+		_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
+		_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
+
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "failed to update account type",
+		})
+		return
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
+	_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Account type updated successfully"})
+}
+
+// DeleteAccountType deletes an account type.
+// @Summary Delete Account Type
+// @Description Delete an account type and its client associations.
+// @Tags Registration
+// @Param id path int true "Account Type ID"
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/registration/config/{id} [delete]
+func (h *RegistrationHandler) DeleteAccountType(c *gin.Context) {
+	if !middleware.HasPermission(c, "Edit Registration Config") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "Unauthorized",
+		})
+		return
+	}
+
+	idStr := c.Param("id")
+	var id int
+	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid account type id",
+		})
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+	actorName, _ := h.LogService.GetUserEmail(c.Request.Context(), userID[:])
+	if actorName == "" {
+		actorName = userIDStr
+	}
+
+	reqCtx := c.Request.Context()
+	err := h.Service.DeleteAccountType(reqCtx, id)
+
+	logReq := &dto.PostAuditLogRequest{
+		Action: actionDeleteAccountType,
+		Target: fmt.Sprintf("account_type_%d", id),
+		Status: models.StatusSuccess,
+		Metadata: buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+		}),
+	}
+
+	if err != nil {
+		log.Printf("[DeleteAccountType] %v", err)
+		logReq.Status = models.StatusFail
+		logReq.Metadata = buildMetadata(map[string]interface{}{
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+			"error":      err.Error(),
+		})
+		_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
+		_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
+
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "failed to delete account type",
+		})
+		return
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
+	_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Account type deleted successfully"})
 }
 
 // ActivateAccount handles user account activation via invitation code.
