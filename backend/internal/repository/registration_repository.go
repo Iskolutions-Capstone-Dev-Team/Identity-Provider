@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -112,8 +114,9 @@ func (r *regRepo) SyncPreapprovedClients(ctx context.Context,
 func (r *regRepo) GetAccountTypeIDByName(ctx context.Context, 
 	name string) (int, error) {
 	var id int
-	query := "SELECT id FROM account_types WHERE name = ?"
-	err := r.db.GetContext(ctx, &id, query, name)
+	lowerName := strings.ToLower(name)
+	query := "SELECT id FROM account_types WHERE lower(name) = ?"
+	err := r.db.GetContext(ctx, &id, query, lowerName)
 	return id, err
 }
 
