@@ -71,7 +71,7 @@ function getDisabledPrimaryButtonClassName(isDarkMode) {
     : "cursor-not-allowed border-[#7b0d15]/12 bg-[#cdb7bb] text-white/70 hover:border-[#7b0d15]/12 hover:bg-[#cdb7bb]";
 }
 
-export default function ChangePasswordModal({ isOpen, onClose, showCurrentPassword = true, addAuditLog, setToastMessage, enableSuccessAlert = false, colorMode = "light", emailAddress = "", userId = "" }) {
+export default function ChangePasswordModal({ isOpen, onClose, showCurrentPassword = true, addAuditLog, setToastMessage, enableSuccessAlert = false, colorMode = "light", emailAddress = "" }) {
   const isForgotPasswordFlow = !showCurrentPassword;
   const [step, setStep] = useState(() => getInitialStep(showCurrentPassword));
   const [recoveryEmail, setRecoveryEmail] = useState("");
@@ -93,7 +93,6 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     [form],
   );
   const trimmedRecoveryEmail = normalizeTextValue(recoveryEmail);
-  const normalizedUserId = normalizeTextValue(userId);
   const normalizedEmailAddress = normalizeTextValue(emailAddress);
   const isRecoveryEmailValid = EMAIL_REGEX.test(trimmedRecoveryEmail);
 
@@ -228,9 +227,9 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     }
 
     if (isForgotPasswordFlow) {
-      if (!normalizedUserId) {
+      if (!trimmedRecoveryEmail) {
         setPasswordError(
-          "Password reset is unavailable because the account ID is missing for this email.",
+          "Email address is required.",
         );
         return;
       }
@@ -240,7 +239,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
 
       try {
         await passwordResetService.updatePassword({
-          userId: normalizedUserId,
+          email: trimmedRecoveryEmail,
           newPassword: form.newPassword,
         });
         logPasswordChange();

@@ -61,14 +61,11 @@ export const passwordResetService = {
     return response.data;
   },
 
-  async updatePassword({ userId, newPassword } = {}) {
-    const normalizedUserId = encodeURIComponent(
-      getRequiredTextValue(userId, "User ID"),
-    );
-
+  async updatePassword({ email, newPassword } = {}) {
     const response = await passwordResetApi.patch(
-      `/internal/user/${normalizedUserId}/password`,
+      "/internal/user/password",
       {
+        email: getRequiredTextValue(email, "Email address"),
         new_password: getRequiredTextValue(newPassword, "New password"),
       },
       getJsonRequestConfig(),
