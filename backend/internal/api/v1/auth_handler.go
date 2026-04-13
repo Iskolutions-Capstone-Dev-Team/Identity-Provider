@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -154,6 +155,23 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		log.Printf("[LoginAndAuthorize] Bind JSON: %v", err)
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Error: "Invalid request format",
+		})
+		return
+	}
+
+	// Verify client grant type
+	cID, err := uuid.Parse(req.ClientID)
+	if err != nil {
+		log.Printf("[LoginAndAuthorize] UUID Parse: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid client_id format",
+		})
+		return
+	}
+	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID)
+	if err != nil || !slices.Contains(client.Grants, "authorization_code") {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{
+			Error: "missing grant type",
 		})
 		return
 	}
@@ -496,6 +514,23 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		return
 	}
 
+	// Verify client grant type
+	cID, err := uuid.Parse(req.ClientID)
+	if err != nil {
+		log.Printf("[PostTokenExchange] UUID Parse: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid client_id format",
+		})
+		return
+	}
+	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID)
+	if err != nil || !slices.Contains(client.Grants, "client_credentials") {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{
+			Error: "missing grant type",
+		})
+		return
+	}
+
 	// Resolve client name
 	clientName := h.LogService.ResolveClientName(
 		c.Request.Context(),
@@ -632,6 +667,8 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 
 		if strings.Contains(err.Error(), "TokenLookup") {
 			status, errorMsg = http.StatusUnauthorized, "invalid_token"
+		} else if strings.Contains(err.Error(), "missing refresh_token grant") {
+			status, errorMsg = http.StatusForbidden, "missing grant type"
 		} else if strings.Contains(err.Error(), "RotateToken") {
 			status, errorMsg = http.StatusInternalServerError, "rotate_fail"
 		}
