@@ -53,5 +53,13 @@ var PermissionsMigration = migrations.TableMigration{
 				('Edit Registration Config')
 			;`,
 		},
+		{
+			ID: "remove-obsolete-registration-permissions",
+			SQL: `DELETE FROM permissions WHERE permission IN (
+				'Approve registration request',
+				'Reject registration request',
+				'View registration requests'
+			);`,
+		},
 	},
 }
