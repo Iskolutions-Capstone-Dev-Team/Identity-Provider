@@ -19,6 +19,12 @@ type UpdatePasswordRequest struct {
 	NewPassword string `json:"new_password" binding:"required"`
 }
 
+// ChangePasswordRequest handles user password change with verification
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
 // UpdatePasswordByEmailRequest handles patch data for updating password by email
 type UpdatePasswordByEmailRequest struct {
 	Email       string `json:"email" binding:"required,email"`
