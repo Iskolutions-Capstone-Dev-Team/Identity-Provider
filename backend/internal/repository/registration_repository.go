@@ -19,6 +19,9 @@ type RegistrationRepository interface {
 	SyncPreapprovedClients(ctx context.Context, accountTypeID int, 
 		clientIDs []uuid.UUID) error
 	GetAccountTypeIDByName(ctx context.Context, name string) (int, error)
+	CreateAccountType(ctx context.Context, name string) (int, error)
+	UpdateAccountType(ctx context.Context, id int, name string) error
+	DeleteAccountType(ctx context.Context, id int) error
 }
 
 type regRepo struct {
@@ -110,4 +113,42 @@ func (r *regRepo) GetAccountTypeIDByName(ctx context.Context,
 	query := "SELECT id FROM account_types WHERE name = ?"
 	err := r.db.GetContext(ctx, &id, query, name)
 	return id, err
+}
+
+func (r *regRepo) CreateAccountType(ctx context.Context, name string) (int, error) {
+	query := "INSERT INTO account_types (name) VALUES (?)"
+	res, err := r.db.ExecContext(ctx, query, name)
+	if err != nil {
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	return int(id), err
+}
+
+func (r *regRepo) UpdateAccountType(ctx context.Context, id int, name string) error {
+	query := "UPDATE account_types SET name = ? WHERE id = ?"
+	_, err := r.db.ExecContext(ctx, query, name, id)
+	return err
+}
+
+func (r *regRepo) DeleteAccountType(ctx context.Context, id int) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Delete preapproved clients first to avoid constraint issues
+	_, err = tx.ExecContext(ctx, 
+		"DELETE FROM preapproved_clients WHERE account_type_id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM account_types WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
