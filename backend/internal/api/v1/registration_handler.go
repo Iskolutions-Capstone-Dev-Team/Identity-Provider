@@ -103,7 +103,7 @@ func (h *RegistrationHandler) GetClientsByAccountTypeID(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /admin/registration/config [post]
 func (h *RegistrationHandler) PostAccountType(c *gin.Context) {
-	if !middleware.HasPermission(c, "Edit Registration Config") {
+	if !middleware.HasPermission(c, "Create Registration Config") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
 			Error: "Unauthorized",
 		})
@@ -242,7 +242,7 @@ func (h *RegistrationHandler) PutAccountType(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /admin/registration/config/{id} [delete]
 func (h *RegistrationHandler) DeleteAccountType(c *gin.Context) {
-	if !middleware.HasPermission(c, "Edit Registration Config") {
+	if !middleware.HasPermission(c, "Delete Registration Config") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
 			Error: "Unauthorized",
 		})
