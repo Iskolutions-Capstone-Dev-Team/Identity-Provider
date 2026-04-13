@@ -15,6 +15,8 @@ import (
 
 type UserService interface {
 	CreateUser(ctx context.Context, req dto.UserRequest) (uuid.UUID, error)
+	CreateAdminUser(ctx context.Context,
+		req dto.PostAdminUserRequest) (uuid.UUID, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
 	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
 	GetFilteredUserList(ctx context.Context, permissions []string,
@@ -105,6 +107,79 @@ func (s *userService) CreateUser(
 		}
 
 		clients, err := s.RegRepo.GetClientsByAccountTypeID(ctx, typeID)
+		if err != nil {
+			return userID, fmt.Errorf("Post-Create (RegFetch): %w", err)
+		}
+
+		if len(clients) > 0 {
+			clientIDs := make([][]byte, 0, len(clients))
+			for _, c := range clients {
+				clientIDs = append(clientIDs, c.ClientID)
+			}
+			err = s.CAURepo.BatchAssignClientAccess(ctx, user.ID, clientIDs)
+			if err != nil {
+				return userID, fmt.Errorf("Post-Create (Assign): %w", err)
+			}
+		}
+	}
+
+	if len(req.AllowedAppClients) > 0 {
+		clientIDs := make([][]byte, 0, len(req.AllowedAppClients))
+		for _, clientIDStr := range req.AllowedAppClients {
+			cid, err := uuid.Parse(clientIDStr)
+			if err != nil {
+				return userID, fmt.Errorf("Post-Create (UUID): %w", err)
+			}
+			clientIDs = append(clientIDs, cid[:])
+		}
+		err = s.ClientRepo.BatchAdminClientBind(ctx, user.ID, clientIDs)
+		if err != nil {
+			return userID, fmt.Errorf("Post-Create (AdminBind): %w", err)
+		}
+	}
+
+	return userID, nil
+}
+
+/**
+ * CreateAdminUser handles user registration using a specific account type ID.
+ */
+func (s *userService) CreateAdminUser(
+	ctx context.Context,
+	req dto.PostAdminUserRequest,
+) (uuid.UUID, error) {
+	userID := uuid.New()
+
+	passwordHash, err := utils.HashSecret(req.Password)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("Secret Hashing: %w", err)
+	}
+
+	user := models.User{
+		ID:           userID[:],
+		FirstName:    req.FirstName,
+		MiddleName:   req.MiddleName,
+		LastName:     req.LastName,
+		NameSuffix:   req.NameSuffix,
+		Email:        req.Email,
+		PasswordHash: passwordHash,
+		Status:       models.StatusActive,
+		RoleID: sql.NullInt64{
+			Valid: req.RoleID != nil,
+		},
+	}
+	if req.RoleID != nil {
+		user.RoleID.Int64 = int64(*req.RoleID)
+	}
+
+	err = s.Repo.CreateUser(ctx, &user)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("Database Query (CreateAdminUser): %w", err)
+	}
+
+	if req.AccountTypeID != 0 {
+		clients, err := s.RegRepo.GetClientsByAccountTypeID(ctx,
+			req.AccountTypeID)
 		if err != nil {
 			return userID, fmt.Errorf("Post-Create (RegFetch): %w", err)
 		}
