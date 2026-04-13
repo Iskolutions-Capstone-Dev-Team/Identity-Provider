@@ -1,21 +1,17 @@
 import axios from "axios";
-import {
-  clearAuthState,
-  getAccessToken,
-  getRefreshToken,
-  hasRefreshToken,
-  storeTokenResponse,
-} from "./authCookies";
+import { clearAuthState, getAccessToken, getRefreshToken, hasRefreshToken, storeTokenResponse } from "./authCookies";
 import {
   isIdpProtectedPath,
   redirectToIdpErrorPage,
 } from "./idpErrorPage";
 
 const TOKEN_EXPIRY_LEEWAY_SECONDS = 30;
+const REQUEST_TIMEOUT_MS = 10000;
 
 const refreshClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true,
+  timeout: REQUEST_TIMEOUT_MS,
 });
 
 let refreshPromise = null;

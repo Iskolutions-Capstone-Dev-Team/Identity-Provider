@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import AuthLayout from "../layouts/AuthLayout";
 import LoginForm from "../components/LoginForm";
-import { authService } from "../services/authService";
 import { buildLoginPath, getLoginClientId, getLoginErrorCode, getLoginErrorMessage } from "../utils/loginRoute";
 import { DEFAULT_AUTHENTICATED_PATH } from "../utils/authAccess";
-import { redirectToAuthorize } from "../utils/authorizeFlow";
+import { hasStoredAccessToken } from "../utils/authRecovery";
 
 const infoCards = [
   {
@@ -29,54 +28,28 @@ const infoCards = [
 ];
 
 export default function Login() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const clientId = getLoginClientId(searchParams);
   const loginErrorCode = getLoginErrorCode(searchParams);
   const loginErrorMessage = getLoginErrorMessage(searchParams);
-  const [isCheckingSession, setIsCheckingSession] = useState(
+  const [isResolvingAccess, setIsResolvingAccess] = useState(
     Boolean(clientId) && !loginErrorCode,
   );
 
   useEffect(() => {
     if (!clientId || loginErrorCode) {
-      setIsCheckingSession(false);
+      setIsResolvingAccess(false);
       return;
     }
 
-    let isActive = true;
-    setIsCheckingSession(true);
+    if (hasStoredAccessToken()) {
+      navigate(DEFAULT_AUTHENTICATED_PATH, { replace: true });
+      return;
+    }
 
-    const checkExistingSession = async () => {
-      try {
-        await authService.checkSession();
-
-        if (!isActive) {
-          return;
-        }
-
-        const didRedirect = redirectToAuthorize(
-          clientId,
-          DEFAULT_AUTHENTICATED_PATH,
-        );
-
-        if (didRedirect) {
-          return;
-        }
-      } catch {
-        // No active session. Let the login form render normally.
-      }
-
-      if (isActive) {
-        setIsCheckingSession(false);
-      }
-    };
-
-    checkExistingSession();
-
-    return () => {
-      isActive = false;
-    };
-  }, [clientId, loginErrorCode]);
+    setIsResolvingAccess(false);
+  }, [clientId, loginErrorCode, navigate]);
 
   if (!searchParams.get("client_id") && clientId) {
     return (
@@ -87,7 +60,7 @@ export default function Login() {
     );
   }
 
-  if (isCheckingSession) {
+  if (isResolvingAccess) {
     return (
       <div className="relative min-h-screen overflow-hidden bg-[#250508] font-[Poppins] text-white">
         <div className="absolute inset-0">
@@ -100,7 +73,7 @@ export default function Login() {
         <div className="relative flex min-h-screen flex-col items-center justify-center gap-5 px-4 text-center">
           <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="w-28 sm:w-32 float-logo"/>
           <p className="text-xs font-medium uppercase tracking-[0.28em] text-white/75 sm:text-sm">
-            Checking Session...
+            Preparing Sign-In...
           </p>
         </div>
       </div>
