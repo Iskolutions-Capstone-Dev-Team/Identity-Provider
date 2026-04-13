@@ -29,7 +29,7 @@ function getRowClassName(index, isDarkMode) {
   }`;
 }
 
-export default function RegistrationTable({ rows = [], onView, onEdit, showEditAction = true, colorMode = "light" }) {
+export default function RegistrationTable({ rows = [], onView, onEdit, onDelete, showEditAction = true, showDeleteAction = true, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const wrapperClassName = isDarkMode
     ? "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(28,18,29,0.92))] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.82)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
@@ -131,6 +131,14 @@ export default function RegistrationTable({ rows = [], onView, onEdit, showEditA
                         <button type="button" aria-label={`Edit ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onEdit(row)}>
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a2.25 2.25 0 1 1 3.182 3.182L10.582 17.13a4.5 4.5 0 0 1-1.897 1.13L6 19l.74-2.685a4.5 4.5 0 0 1 1.13-1.897l8.992-8.99Zm0 0L19.5 7.125"/>
+                          </svg>
+                        </button>
+                      )}
+
+                      {showDeleteAction && row.canDelete !== false && (
+                        <button type="button" aria-label={`Delete ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onDelete(row)}>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673A2.25 2.25 0 0 1 15.916 21.75H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0V4.875c0-1.242-.91-2.281-2.133-2.438a49.403 49.403 0 0 0-3.734 0C8.66 2.594 7.75 3.633 7.75 4.875v.518m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                           </svg>
                         </button>
                       )}

@@ -3,6 +3,8 @@ import { useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../context/PermissionContext";
 import AuditLogsCard from "../components/audit-logs/AuditLogsCard";
 import DataTableSkeleton from "../components/DataTableSkeleton";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import ErrorAlert from "../components/ErrorAlert";
 import PageHeader from "../components/PageHeader";
 import SuccessAlert from "../components/SuccessAlert";
 import RegistrationConfigModal from "../components/registration/RegistrationConfigModal";
@@ -10,29 +12,112 @@ import RegistrationTable from "../components/registration/RegistrationTable";
 import { useAllAppClients } from "../hooks/useAllAppClients";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { registrationService } from "../services/registrationService";
-import { ACCOUNT_TYPE_OPTIONS, getAccountTypeBackendId } from "../utils/accountTypes";
-import { REGISTRATION_EDIT_PERMISSIONS } from "../utils/permissionAccess";
+import { mergeAccountTypeOptions } from "../utils/accountTypes";
+import { PERMISSIONS } from "../utils/permissionAccess";
 import { getAllAppClientSelectOptions } from "../utils/userPoolAccess";
+
+function createEmptyConfig() {
+  return {
+    accountType: "",
+    accountTypeValue: "",
+    label: "",
+    backendId: null,
+    clientIds: [],
+    clientNames: [],
+    totalClientCount: 0,
+  };
+}
+
+function getClientSummary(clients = []) {
+  const normalizedClients = Array.isArray(clients) ? clients : [];
+
+  return {
+    clientIds: normalizedClients.map((client) => client.id).filter(Boolean),
+    clientNames: normalizedClients.map((client) => client.name).filter(Boolean),
+    totalClientCount: normalizedClients.length,
+  };
+}
+
+function buildRegistrationRows(registrationConfigs = [], accountTypeOptions = []) {
+  const registrationConfigMap = new Map(
+    registrationConfigs.map((config) => [config.accountTypeValue, config]),
+  );
+
+  return accountTypeOptions.map((option) => {
+    const matchedConfig = registrationConfigMap.get(option.value);
+    const clients = Array.isArray(matchedConfig?.clients)
+      ? matchedConfig.clients
+      : [];
+    const { clientIds, clientNames, totalClientCount } = getClientSummary(clients);
+    const backendId = option.backendId ?? matchedConfig?.backendId ?? null;
+
+    return {
+      accountType: option.id,
+      accountTypeValue: option.value,
+      label: option.label,
+      backendId,
+      clientIds,
+      clientNames,
+      totalClientCount,
+    };
+  });
+}
+
+function getRegistrationActionError(error, fallbackMessage) {
+  return (
+    error?.response?.data?.error ||
+    error?.response?.data?.message ||
+    error?.message ||
+    fallbackMessage
+  );
+}
 
 export default function Registration() {
   const { colorMode = "light" } = useOutletContext() || {};
-  const { hasAnyPermission } = usePermissionAccess();
-  const canEditRegistration = hasAnyPermission(REGISTRATION_EDIT_PERMISSIONS);
-  const shouldLoadEditableAppClients = canEditRegistration;
+  const { hasPermission } = usePermissionAccess();
+  const canCreateRegistration = hasPermission(
+    PERMISSIONS.CREATE_REGISTRATION_CONFIG,
+  );
+  const canEditRegistration = hasPermission(
+    PERMISSIONS.EDIT_REGISTRATION_CONFIG,
+  );
+  const canDeleteRegistration = hasPermission(
+    PERMISSIONS.DELETE_REGISTRATION_CONFIG,
+  );
+  const shouldLoadEditableAppClients =
+    canCreateRegistration || canEditRegistration;
   const { appClients, appClientsError, isLoadingAppClients } = useAllAppClients({
     enabled: shouldLoadEditableAppClients,
   });
   const [registrationConfigs, setRegistrationConfigs] = useState([]);
   const [isLoadingRegistration, setIsLoadingRegistration] = useState(true);
   const [registrationError, setRegistrationError] = useState("");
-  const [selectedAccountType, setSelectedAccountType] = useState(null);
+  const [actionError, setActionError] = useState("");
+  const [selectedConfig, setSelectedConfig] = useState(null);
   const [modalMode, setModalMode] = useState("view");
   const [successMessage, setSuccessMessage] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const showLoading = useDelayedLoading(isLoadingRegistration);
   const isDarkMode = colorMode === "dark";
   const appClientOptions = useMemo(
     () => getAllAppClientSelectOptions(appClients),
     [appClients],
+  );
+  const registrationAccountTypeOptions = useMemo(
+    () =>
+      mergeAccountTypeOptions(
+        registrationConfigs.map((config) => ({
+          value: config.accountTypeValue,
+          label: config.label,
+          backendId: config.backendId,
+        })),
+      ),
+    [registrationConfigs],
+  );
+  const rows = useMemo(
+    () => buildRegistrationRows(registrationConfigs, registrationAccountTypeOptions),
+    [registrationAccountTypeOptions, registrationConfigs],
   );
   const errorBoxClassName = isDarkMode
     ? "rounded-[1.75rem] border border-[#f8d24e]/15 bg-[linear-gradient(180deg,rgba(48,18,24,0.96),rgba(27,16,21,0.96))] px-6 py-12 text-center text-sm font-medium text-[#f2dfe2] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.75)]"
@@ -43,34 +128,32 @@ export default function Registration() {
   const warningBoxClassName = isDarkMode
     ? "rounded-[1.4rem] border border-[#f8d24e]/20 bg-[#f8d24e]/10 px-5 py-4 text-sm text-[#ffe28a]"
     : "rounded-[1.4rem] border border-[#f8d24e]/45 bg-[#fff4dc] px-5 py-4 text-sm text-[#7b0d15]";
+  const toolbarClassName = `flex flex-col gap-4 border-b pb-6 lg:flex-row lg:items-end lg:justify-between ${
+    isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
+  }`;
+  const toolbarCopyClassName = isDarkMode
+    ? "text-sm text-[#c7adb4]"
+    : "text-sm text-[#8f6f76]";
+  const createButtonClassName = isDarkMode
+    ? "inline-flex h-14 items-center justify-center rounded-2xl border border-[#f8d24e]/30 bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(2,6,23,0.75)] transition-[background-color,background-image,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-none hover:bg-[#f8d24e] hover:text-[#7b0d15]"
+    : "inline-flex h-14 items-center justify-center rounded-2xl border border-[#7b0d15] bg-[#7b0d15] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(123,13,21,0.6)] transition-[background-color,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-[#f8d24e] hover:text-[#7b0d15]";
 
   const loadRegistrationConfig = useEffectEvent(async () => {
     try {
       setIsLoadingRegistration(true);
       setRegistrationError("");
 
-      const nextConfigs = await Promise.all(
-        ACCOUNT_TYPE_OPTIONS.map(async (option) => {
-          const config = await registrationService.getClientsByAccountTypeId(
-            option.backendId,
-            option.id,
-          );
-
-          return {
-            accountType: option.id,
-            clients: Array.isArray(config?.clients) ? config.clients : [],
-          };
-        }),
-      );
+      const nextConfigs = await registrationService.getRegistrationConfig();
 
       setRegistrationConfigs(nextConfigs);
     } catch (error) {
       console.error("Failed to load registration config:", error);
       setRegistrationConfigs([]);
       setRegistrationError(
-        error?.response?.data?.error ||
-          error?.message ||
+        getRegistrationActionError(
+          error,
           "Failed to load registration settings. Check the backend connection.",
+        ),
       );
     } finally {
       setIsLoadingRegistration(false);
@@ -81,61 +164,131 @@ export default function Registration() {
     loadRegistrationConfig();
   }, []);
 
-  const rows = useMemo(
-    () =>
-      ACCOUNT_TYPE_OPTIONS.map((option) => {
-        const matchedConfig = registrationConfigs.find(
-          (config) => config.accountType === option.id,
-        );
-        const clients = Array.isArray(matchedConfig?.clients)
-          ? matchedConfig.clients
-          : [];
+  const resolveAccountTypeId = useEffectEvent(async (config) => {
+    if (Number.isInteger(config?.backendId) && config.backendId > 0) {
+      return config.backendId;
+    }
 
-        return {
-          accountType: option.id,
-          label: option.label,
-          clientIds: clients.map((client) => client.id),
-          clientNames: clients.map((client) => client.name),
-          totalClientCount: clients.length,
-        };
-      }),
-    [registrationConfigs],
-  );
+    return registrationService.resolveAccountTypeIdByName(
+      config?.accountTypeValue || config?.label || config?.name,
+    );
+  });
 
-  const selectedConfig = useMemo(
-    () =>
-      rows.find((row) => row.accountType === selectedAccountType) || null,
-    [rows, selectedAccountType],
-  );
+  const handleOpenCreate = () => {
+    if (!canCreateRegistration) {
+      return;
+    }
+
+    setActionError("");
+    setSelectedConfig(createEmptyConfig());
+    setModalMode("create");
+  };
 
   const handleOpenView = (row) => {
-    setSelectedAccountType(row.accountType);
+    setActionError("");
+    setSelectedConfig(row);
     setModalMode("view");
   };
 
-  const handleOpenEdit = (row) => {
+  const handleOpenEdit = async (row) => {
     if (!canEditRegistration) {
       return;
     }
 
-    setSelectedAccountType(row.accountType);
+    setActionError("");
+
+    const backendId = await resolveAccountTypeId(row);
+
+    if (!backendId) {
+      setActionError("Unable to edit this account type right now.");
+      return;
+    }
+
+    let nextConfig = {
+      ...row,
+      backendId,
+    };
+
+    try {
+      const fullConfig = await registrationService.getClientsByAccountTypeId(
+        backendId,
+        row.accountTypeValue,
+      );
+      const { clientIds, clientNames, totalClientCount } = getClientSummary(
+        fullConfig.clients,
+      );
+
+      nextConfig = {
+        ...row,
+        accountType: fullConfig.accountType || row.accountType,
+        accountTypeValue: fullConfig.accountTypeValue || row.accountTypeValue,
+        backendId,
+        clientIds,
+        clientNames,
+        totalClientCount,
+      };
+    } catch (error) {
+      console.error("Failed to load full registration config:", error);
+    }
+
+    setSelectedConfig(nextConfig);
     setModalMode("edit");
   };
 
+  const handleDeleteClick = async (row) => {
+    if (!canDeleteRegistration) {
+      return;
+    }
+
+    setActionError("");
+
+    const backendId = await resolveAccountTypeId(row);
+
+    if (!backendId) {
+      setActionError("Unable to delete this account type right now.");
+      return;
+    }
+
+    setDeleteTarget({
+      ...row,
+      backendId,
+    });
+    setIsDeleteConfirmOpen(true);
+  };
+
   const handleCloseModal = () => {
-    setSelectedAccountType(null);
+    setSelectedConfig(null);
     setModalMode("view");
   };
 
   const handleSave = async (nextConfig) => {
-    const accountTypeId = getAccountTypeBackendId(nextConfig.accountType);
+    const accountTypeName = nextConfig?.name || nextConfig?.label || "";
 
-    if (!accountTypeId) {
-      throw new Error("Unable to match the selected account type.");
+    if (modalMode === "create") {
+      await registrationService.createAccountType({
+        name: accountTypeName,
+        clientIds: nextConfig.clientIds,
+      });
+
+      await resolveAccountTypeId({
+        ...nextConfig,
+        name: accountTypeName,
+        label: accountTypeName,
+      });
+      await loadRegistrationConfig();
+      setSuccessMessage(`Created ${accountTypeName} account type.`);
+      return;
     }
 
-    await registrationService.updatePreapprovedClients({
-      accountTypeId,
+    const backendId = nextConfig?.backendId ?? (await resolveAccountTypeId(nextConfig));
+
+    if (!backendId) {
+      throw new Error("Unable to update this account type right now.");
+    }
+
+    await registrationService.updateAccountType({
+      accountTypeId: backendId,
+      name: accountTypeName,
       clientIds: nextConfig.clientIds,
     });
     await loadRegistrationConfig();
@@ -144,12 +297,41 @@ export default function Registration() {
     );
   };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    try {
+      setActionError("");
+      await registrationService.deleteAccountType(
+        deleteTarget.backendId,
+        deleteTarget.accountTypeValue,
+      );
+      await loadRegistrationConfig();
+      setSuccessMessage(`Deleted ${deleteTarget.label} account type.`);
+    } catch (error) {
+      console.error("Failed to delete account type:", error);
+      setActionError(
+        getRegistrationActionError(
+          error,
+          "Unable to delete this account type.",
+        ),
+      );
+    } finally {
+      setDeleteTarget(null);
+      setIsDeleteConfirmOpen(false);
+    }
+  };
+
   let content = (
     <RegistrationTable
       rows={rows}
       onView={handleOpenView}
       onEdit={handleOpenEdit}
+      onDelete={handleDeleteClick}
       showEditAction={canEditRegistration}
+      showDeleteAction={canDeleteRegistration}
       colorMode={colorMode}
     />
   );
@@ -187,6 +369,32 @@ export default function Registration() {
 
         <div className="relative">
           <AuditLogsCard colorMode={colorMode}>
+            {!showLoading && !registrationError && (
+              <div className={toolbarClassName}>
+                <div className="space-y-1">
+                  <h2 className="text-lg font-semibold text-[#7b0d15] transition-colors duration-500 ease-out dark:text-[#f7dadd]">
+                    Account Types
+                  </h2>
+                  <p className={toolbarCopyClassName}>
+                    Manage account types and their pre-approved app clients.
+                  </p>
+                </div>
+
+                {canCreateRegistration && (
+                  <div className="flex justify-end lg:justify-start">
+                    <button type="button" onClick={handleOpenCreate} className={createButtonClassName}>
+                      + Add Account Type
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <ErrorAlert
+              message={actionError}
+              onClose={() => setActionError("")}
+            />
+
             {!showLoading && !registrationError && appClientsError && (
               shouldLoadEditableAppClients ? (
                 <div className={warningBoxClassName}>{appClientsError}</div>
@@ -219,6 +427,18 @@ export default function Registration() {
         onClose={handleCloseModal}
         onSave={handleSave}
         colorMode={colorMode}
+      />
+
+      <DeleteConfirmModal
+        open={isDeleteConfirmOpen}
+        message={`Delete ${deleteTarget?.label || "this"} account type?`}
+        theme="glass"
+        colorMode={colorMode}
+        onCancel={() => {
+          setDeleteTarget(null);
+          setIsDeleteConfirmOpen(false);
+        }}
+        onConfirm={handleConfirmDelete}
       />
 
       <SuccessAlert

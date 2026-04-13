@@ -127,7 +127,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		// User Maintenance
 		users := admin.Group("/users")
 		{
-			users.POST("", h.UserHandler.PostUser)
+			users.POST("", h.UserHandler.PostAdminUser)
 			users.GET("", h.UserHandler.GetUserList)
 			users.GET("/admins", h.UserHandler.GetAdminUserList)
 			users.GET("/:id", h.UserHandler.GetUser)
@@ -171,13 +171,21 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 				"/config",
 				h.RegistrationHandler.GetRegistrationConfig,
 			)
+			registrationAdmin.POST(
+				"/config",
+				h.RegistrationHandler.PostAccountType,
+			)
 			registrationAdmin.PUT(
-				"/preapproved",
-				h.RegistrationHandler.UpdatePreapprovedClients,
+				"/config",
+				h.RegistrationHandler.PutAccountType,
 			)
 			registrationAdmin.GET(
 				"/config/:id",
 				h.RegistrationHandler.GetClientsByAccountTypeID,
+			)
+			registrationAdmin.DELETE(
+				"/config/:id",
+				h.RegistrationHandler.DeleteAccountType,
 			)
 		}
 	}

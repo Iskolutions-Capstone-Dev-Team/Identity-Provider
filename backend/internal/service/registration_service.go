@@ -16,8 +16,11 @@ type RegistrationService interface {
 	GetRegistrationConfig(ctx context.Context) (*dto.RegistrationConfigResponse, error)
 	GetClientsByAccountTypeID(ctx context.Context, 
 		id int) (*dto.AccountTypeConfigResponse, error)
-	UpdatePreapprovedClients(ctx context.Context, 
-		req dto.UpdatePreapprovedClientsRequest) error
+	CreateAccountType(ctx context.Context, 
+		req dto.UpsertAccountTypeRequest) error
+	UpdateAccountType(ctx context.Context, 
+		req dto.UpsertAccountTypeRequest) error
+	DeleteAccountType(ctx context.Context, id int) error
 	ActivateAccount(ctx context.Context, 
 		req dto.ActivateAccountRequest) error
 	CheckInvitation(ctx context.Context, 
@@ -50,12 +53,14 @@ func (s *regService) GetRegistrationConfig(ctx context.Context) (
 	}
 
 	configMap := make(map[string][]dto.PreapprovedClientResponse)
+	idMap := make(map[string]int)
 	var order []string
 
 	for _, row := range rows {
 		if _, ok := configMap[row.AccountTypeName]; !ok {
 			order = append(order, row.AccountTypeName)
 			configMap[row.AccountTypeName] = []dto.PreapprovedClientResponse{}
+			idMap[row.AccountTypeName] = row.AccountTypeID
 		}
 		if len(row.ClientID) > 0 {
 			id, _ := uuid.FromBytes(row.ClientID)
@@ -70,6 +75,7 @@ func (s *regService) GetRegistrationConfig(ctx context.Context) (
 	var resp dto.RegistrationConfigResponse
 	for _, name := range order {
 		cfg := dto.AccountTypeConfigResponse{
+			ID:          idMap[name],
 			AccountType: name,
 			Clients:     configMap[name],
 		}
@@ -92,6 +98,9 @@ func (s *regService) GetClientsByAccountTypeID(ctx context.Context,
 
 	clients := make([]dto.PreapprovedClientResponse, 0)
 	for _, row := range rows {
+		if len(row.ClientID) == 0 {
+			continue
+		}
 		clientID, _ := uuid.FromBytes(row.ClientID)
 		clients = append(clients, dto.PreapprovedClientResponse{
 			ID:   clientID,
@@ -100,22 +109,52 @@ func (s *regService) GetClientsByAccountTypeID(ctx context.Context,
 	}
 
 	return &dto.AccountTypeConfigResponse{
+		ID:          rows[0].AccountTypeID,
 		AccountType: rows[0].AccountTypeName,
 		Clients:     clients,
 	}, nil
 }
 
-func (s *regService) UpdatePreapprovedClients(ctx context.Context, 
-	req dto.UpdatePreapprovedClientsRequest) error {
+func (s *regService) CreateAccountType(ctx context.Context, 
+	req dto.UpsertAccountTypeRequest) error {
+	id, err := s.repo.CreateAccountType(ctx, req.Name)
+	if err != nil {
+		return err
+	}
+
 	var clientIDs []uuid.UUID
 	for _, idStr := range req.ClientIDs {
-		id, err := uuid.Parse(idStr)
+		clientID, err := uuid.Parse(idStr)
 		if err != nil {
 			return err
 		}
-		clientIDs = append(clientIDs, id)
+		clientIDs = append(clientIDs, clientID)
 	}
-	return s.repo.SyncPreapprovedClients(ctx, req.AccountTypeID, clientIDs)
+
+	return s.repo.SyncPreapprovedClients(ctx, id, clientIDs)
+}
+
+func (s *regService) UpdateAccountType(ctx context.Context, 
+	req dto.UpsertAccountTypeRequest) error {
+	err := s.repo.UpdateAccountType(ctx, req.ID, req.Name)
+	if err != nil {
+		return err
+	}
+
+	var clientIDs []uuid.UUID
+	for _, idStr := range req.ClientIDs {
+		clientID, err := uuid.Parse(idStr)
+		if err != nil {
+			return err
+		}
+		clientIDs = append(clientIDs, clientID)
+	}
+
+	return s.repo.SyncPreapprovedClients(ctx, req.ID, clientIDs)
+}
+
+func (s *regService) DeleteAccountType(ctx context.Context, id int) error {
+	return s.repo.DeleteAccountType(ctx, id)
 }
 
 func (s *regService) ActivateAccount(ctx context.Context, 

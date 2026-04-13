@@ -2,11 +2,14 @@ package repository
 
 import (
 	"context"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
 type AccountTypeClientRow struct {
+	AccountTypeID   int    `db:"account_type_id"`
 	AccountTypeName string `db:"account_type_name"`
 	ClientID        []byte `db:"client_id"`
 	ClientName      string `db:"client_name"`
@@ -19,6 +22,9 @@ type RegistrationRepository interface {
 	SyncPreapprovedClients(ctx context.Context, accountTypeID int, 
 		clientIDs []uuid.UUID) error
 	GetAccountTypeIDByName(ctx context.Context, name string) (int, error)
+	CreateAccountType(ctx context.Context, name string) (int, error)
+	UpdateAccountType(ctx context.Context, id int, name string) error
+	DeleteAccountType(ctx context.Context, id int) error
 }
 
 type regRepo struct {
@@ -32,18 +38,18 @@ func NewRegistrationRepository(db *sqlx.DB) RegistrationRepository {
 func (r *regRepo) GetRegistrationConfig(ctx context.Context) (
 	[]AccountTypeClientRow, error) {
 	query := `
-		SELECT account_type_name, client_id, client_name
+		SELECT account_type_id, account_type_name, client_id, client_name
 		FROM (
 			SELECT 
-				at.name AS account_type_name,
 				at.id AS account_type_id,
+				at.name AS account_type_name,
 				cl.id AS client_id,
-				cl.client_name AS client_name,
-				ROW_NUMBER() OVER (PARTITION BY pc.account_type_id 
+				COALESCE(cl.client_name, '') AS client_name,
+				ROW_NUMBER() OVER (PARTITION BY at.id 
 					ORDER BY cl.client_name) as row_num
-			FROM preapproved_clients pc
-			JOIN account_types at ON pc.account_type_id = at.id
-			JOIN clients cl ON pc.client_id = cl.id
+			FROM account_types at
+			LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
+			LEFT JOIN clients cl ON pc.client_id = cl.id
 		) t
 		WHERE row_num <= 5
 		ORDER BY account_type_id;
@@ -57,13 +63,14 @@ func (r *regRepo) GetClientsByAccountTypeID(ctx context.Context,
 	id int) ([]AccountTypeClientRow, error) {
 	query := `
 		SELECT 
+			at.id AS account_type_id,
 			at.name AS account_type_name,
 			cl.id AS client_id,
-			cl.client_name AS client_name
-		FROM preapproved_clients pc
-		JOIN account_types at ON pc.account_type_id = at.id
-		JOIN clients cl ON pc.client_id = cl.id
-		WHERE pc.account_type_id = ?
+			COALESCE(cl.client_name, '') AS client_name
+		FROM account_types at
+		LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
+		LEFT JOIN clients cl ON pc.client_id = cl.id
+		WHERE at.id = ?
 		ORDER BY cl.client_name;
 	`
 	var rows []AccountTypeClientRow
@@ -107,7 +114,46 @@ func (r *regRepo) SyncPreapprovedClients(ctx context.Context,
 func (r *regRepo) GetAccountTypeIDByName(ctx context.Context, 
 	name string) (int, error) {
 	var id int
-	query := "SELECT id FROM account_types WHERE name = ?"
-	err := r.db.GetContext(ctx, &id, query, name)
+	lowerName := strings.ToLower(name)
+	query := "SELECT id FROM account_types WHERE lower(name) = ?"
+	err := r.db.GetContext(ctx, &id, query, lowerName)
 	return id, err
+}
+
+func (r *regRepo) CreateAccountType(ctx context.Context, name string) (int, error) {
+	query := "INSERT INTO account_types (name) VALUES (?)"
+	res, err := r.db.ExecContext(ctx, query, name)
+	if err != nil {
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	return int(id), err
+}
+
+func (r *regRepo) UpdateAccountType(ctx context.Context, id int, name string) error {
+	query := "UPDATE account_types SET name = ? WHERE id = ?"
+	_, err := r.db.ExecContext(ctx, query, name, id)
+	return err
+}
+
+func (r *regRepo) DeleteAccountType(ctx context.Context, id int) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Delete preapproved clients first to avoid constraint issues
+	_, err = tx.ExecContext(ctx, 
+		"DELETE FROM preapproved_clients WHERE account_type_id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM account_types WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
