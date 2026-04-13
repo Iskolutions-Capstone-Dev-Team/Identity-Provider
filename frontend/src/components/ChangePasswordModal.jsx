@@ -94,7 +94,10 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   );
   const trimmedRecoveryEmail = normalizeTextValue(recoveryEmail);
   const normalizedEmailAddress = normalizeTextValue(emailAddress);
+  const otpTargetEmail = trimmedRecoveryEmail || normalizedEmailAddress;
   const isRecoveryEmailValid = EMAIL_REGEX.test(trimmedRecoveryEmail);
+  const isCurrentPasswordMissing =
+    showCurrentPassword && !normalizeTextValue(form.currentPassword);
 
   useEffect(() => {
     if (step !== "otp") {
@@ -226,6 +229,11 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
       return;
     }
 
+    if (isCurrentPasswordMissing) {
+      setPasswordError("Current password is required.");
+      return;
+    }
+
     if (isForgotPasswordFlow) {
       if (!trimmedRecoveryEmail) {
         setPasswordError(
@@ -238,7 +246,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
       setIsUpdatingPassword(true);
 
       try {
-        await passwordResetService.updatePassword({
+        await passwordResetService.updateForgotPassword({
           email: trimmedRecoveryEmail,
           newPassword: form.newPassword,
         });
@@ -258,9 +266,27 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
       return;
     }
 
+    if (!otpTargetEmail) {
+      setPasswordError("Email address is required.");
+      return;
+    }
+
     setPasswordError("");
     setOtpError("");
-    setStep("otp");
+    setIsSendingOtp(true);
+
+    try {
+      await passwordResetService.sendOtp({ email: otpTargetEmail });
+      setOtp(EMPTY_OTP);
+      setStep("otp");
+      restartOtpTimer();
+    } catch (error) {
+      setPasswordError(
+        getRequestErrorMessage(error, "Unable to send the OTP right now."),
+      );
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
   const handleRecoveryEmailChange = (value) => {
@@ -280,18 +306,15 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   };
 
   const handleResend = async () => {
-    if (!isForgotPasswordFlow) {
-      setOtp(EMPTY_OTP);
-      setOtpError("");
-      setEmailError("");
-      setPasswordError("");
-      setStep(getInitialStep(showCurrentPassword));
-      return;
-    }
-
-    if (!trimmedRecoveryEmail) {
+    if (!otpTargetEmail) {
       setOtpError("Email address is required.");
-      setStep("email");
+
+      if (isForgotPasswordFlow) {
+        setStep("email");
+      } else {
+        setStep("password");
+      }
+
       return;
     }
 
@@ -302,7 +325,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     setIsSendingOtp(true);
 
     try {
-      await passwordResetService.sendOtp({ email: trimmedRecoveryEmail });
+      await passwordResetService.sendOtp({ email: otpTargetEmail });
       restartOtpTimer();
     } catch (error) {
       setOtpError(
@@ -321,31 +344,50 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
       return;
     }
 
-    setOtpError("");
-
-    if (isForgotPasswordFlow) {
-      setIsVerifyingOtp(true);
-
-      try {
-        await passwordResetService.verifyOtp({
-          email: trimmedRecoveryEmail,
-          otp: code,
-        });
-        setPasswordError("");
-        setStep("password");
-      } catch (error) {
-        setOtpError(
-          getRequestErrorMessage(error, "Unable to verify the OTP right now."),
-        );
-      } finally {
-        setIsVerifyingOtp(false);
-      }
-
+    if (!otpTargetEmail) {
+      setOtpError("Email address is required.");
       return;
     }
 
-    logPasswordChange();
-    setStep("success");
+    setOtpError("");
+    setIsVerifyingOtp(true);
+
+    try {
+      await passwordResetService.verifyOtp({
+        email: otpTargetEmail,
+        otp: code,
+      });
+
+      if (isForgotPasswordFlow) {
+        setPasswordError("");
+        setStep("password");
+        return;
+      }
+
+      try {
+        await passwordResetService.changePassword({
+          currentPassword: form.currentPassword,
+          newPassword: form.newPassword,
+        });
+        logPasswordChange();
+        setStep("success");
+      } catch (error) {
+        setOtp(EMPTY_OTP);
+        setPasswordError(
+          getRequestErrorMessage(
+            error,
+            "Unable to change the password right now.",
+          ),
+        );
+        setStep("password");
+      }
+    } catch (error) {
+      setOtpError(
+        getRequestErrorMessage(error, "Unable to verify the OTP right now."),
+      );
+    } finally {
+      setIsVerifyingOtp(false);
+    }
   };
 
   if (!isOpen) {
@@ -353,8 +395,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   }
 
   const currentStepMeta = getStepMeta(step, showCurrentPassword);
-  const otpEmailAddress =
-    trimmedRecoveryEmail || normalizedEmailAddress || "your email address";
+  const otpEmailAddress = otpTargetEmail || "your email address";
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -383,17 +424,24 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     step === "email"
       ? isSendingOtp
       : step === "password"
-        ? !passwordValidation.isValid || isUpdatingPassword
+        ? !passwordValidation.isValid ||
+          isCurrentPasswordMissing ||
+          isSendingOtp ||
+          isUpdatingPassword
         : isVerifyingOtp;
   const primaryButtonLabel =
     step === "email"
       ? isSendingOtp
         ? "Sending OTP..."
         : "Continue"
-      : isForgotPasswordFlow
-        ? isUpdatingPassword
-          ? "Changing Password..."
-          : "Change Password"
+      : step === "password"
+        ? isForgotPasswordFlow
+          ? isUpdatingPassword
+            ? "Changing Password..."
+            : "Change Password"
+          : isSendingOtp
+            ? "Sending OTP..."
+            : "Continue"
         : "Continue";
   const otpButtonLabel = isForgotPasswordFlow
     ? isVerifyingOtp

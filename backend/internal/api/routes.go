@@ -64,7 +64,10 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	{
 		user.POST("", h.UserHandler.PostUser)
 		user.PATCH("/:id/name", h.UserHandler.PatchUserName)
-		user.PATCH("/password", h.UserHandler.PatchUserPasswordByEmail)
+		user.PATCH("/password/forgot", h.UserHandler.PatchUserPasswordByEmail)
+		user.PATCH("/password/change",
+			middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+			h.UserHandler.PatchChangePassword)
 	}
 
 	internalUser := v1Group.Group("/internal/user")
@@ -74,8 +77,13 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		internalUser.PATCH("/:id/name", h.UserHandler.PatchUserName)
 		internalUser.PATCH("/:id/password", h.UserHandler.PatchUserPassword)
 		internalUser.PATCH(
-			"/password",
+			"/password/forgot",
 			h.UserHandler.PatchUserPasswordByEmail,
+		)
+		internalUser.PATCH(
+			"/password/change",
+			middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+			h.UserHandler.PatchChangePassword,
 		)
 	}
 
