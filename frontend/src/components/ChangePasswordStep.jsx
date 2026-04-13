@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ErrorAlert from "./ErrorAlert";
 import { getModalTheme } from "./modalTheme";
 
 function PasswordVisibilityIcon({ isVisible }) {
@@ -61,7 +62,7 @@ export function getPasswordValidationState(form) {
   };
 }
 
-export default function ChangePasswordStep({ form, setForm, showCurrentPassword = true, colorMode = "light" }) {
+export default function ChangePasswordStep({ form, setForm, showCurrentPassword = true, colorMode = "light", errorMessage = "", onClearError }) {
   const [showPassword, setShowPassword] = useState({
     currentPassword: false,
     newPassword: false,
@@ -85,6 +86,10 @@ export default function ChangePasswordStep({ form, setForm, showCurrentPassword 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((currentForm) => ({ ...currentForm, [name]: value }));
+
+    if (errorMessage) {
+      onClearError?.();
+    }
   };
 
   const toggleShowPassword = (field) => {
@@ -95,65 +100,69 @@ export default function ChangePasswordStep({ form, setForm, showCurrentPassword 
   };
 
   return (
-    <section className={modalSectionClassName}>
-      <div className="space-y-4">
-        {fields.map((field) => (
-          <div className="space-y-2" key={field}>
-            <label className={modalLabelClassName}>
-              {field === "currentPassword"
-                ? "Current Password"
-                : field === "newPassword"
-                  ? "New Password"
-                  : "Confirm New Password"}{" "}
-              <span className="text-red-500">*</span>
-            </label>
+    <div className="space-y-5">
+      <ErrorAlert message={errorMessage} onClose={onClearError} />
 
-            <div className="relative">
-              <input value={form[field]} type={showPassword[field] ? "text" : "password"} name={field}
-                placeholder={
-                  field === "currentPassword"
-                    ? "Enter current password"
-                    : field === "newPassword"
-                      ? "Enter new password"
-                      : "Confirm new password"
-                }
-                className={`${modalInputClassName} pr-12`}
-                onChange={handleChange}
-                required
-              />
+      <section className={modalSectionClassName}>
+        <div className="space-y-4">
+          {fields.map((field) => (
+            <div className="space-y-2" key={field}>
+              <label className={modalLabelClassName}>
+                {field === "currentPassword"
+                  ? "Current Password"
+                  : field === "newPassword"
+                    ? "New Password"
+                    : "Confirm New Password"}{" "}
+                <span className="text-red-500">*</span>
+              </label>
 
-              <button type="button" className={visibilityButtonClassName} onClick={() => toggleShowPassword(field)}>
-                <PasswordVisibilityIcon isVisible={showPassword[field]} />
-              </button>
-            </div>
+              <div className="relative">
+                <input value={form[field]} type={showPassword[field] ? "text" : "password"} name={field}
+                  placeholder={
+                    field === "currentPassword"
+                      ? "Enter current password"
+                      : field === "newPassword"
+                        ? "Enter new password"
+                        : "Confirm new password"
+                  }
+                  className={`${modalInputClassName} pr-12`}
+                  onChange={handleChange}
+                  required
+                />
 
-            {field === "newPassword" && (
-              <div className="mt-3 flex flex-col items-start gap-1.5">
-                <PasswordRuleItem
-                  isMet={validation.checks.length}
-                  label="At least 8 characters"
-                  colorMode={colorMode}
-                />
-                <PasswordRuleItem
-                  isMet={validation.checks.uppercase}
-                  label="One uppercase letter"
-                  colorMode={colorMode}
-                />
-                <PasswordRuleItem
-                  isMet={validation.checks.number}
-                  label="One number"
-                  colorMode={colorMode}
-                />
-                <PasswordRuleItem
-                  isMet={validation.checks.special}
-                  label="One special character"
-                  colorMode={colorMode}
-                />
+                <button type="button" className={visibilityButtonClassName} onClick={() => toggleShowPassword(field)}>
+                  <PasswordVisibilityIcon isVisible={showPassword[field]} />
+                </button>
               </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
+
+              {field === "newPassword" && (
+                <div className="mt-3 flex flex-col items-start gap-1.5">
+                  <PasswordRuleItem
+                    isMet={validation.checks.length}
+                    label="At least 8 characters"
+                    colorMode={colorMode}
+                  />
+                  <PasswordRuleItem
+                    isMet={validation.checks.uppercase}
+                    label="One uppercase letter"
+                    colorMode={colorMode}
+                  />
+                  <PasswordRuleItem
+                    isMet={validation.checks.number}
+                    label="One number"
+                    colorMode={colorMode}
+                  />
+                  <PasswordRuleItem
+                    isMet={validation.checks.special}
+                    label="One special character"
+                    colorMode={colorMode}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }
