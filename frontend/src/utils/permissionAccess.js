@@ -4,9 +4,8 @@ export const PERMISSIONS = Object.freeze({
   DELETE_USER: "Delete user",
   VIEW_ALL_USERS: "View all users",
   VIEW_USERS_BY_APPCLIENT: "View users based on appclient",
-  APPROVE_REGISTRATION_REQUEST: "Approve registration request",
-  REJECT_REGISTRATION_REQUEST: "Reject registration request",
-  VIEW_REGISTRATION_REQUESTS: "View registration requests",
+  VIEW_REGISTRATION_CONFIG: "View Registration Config",
+  EDIT_REGISTRATION_CONFIG: "Edit Registration Config",
   ADD_APPCLIENT: "Add appclient",
   EDIT_APPCLIENT: "Edit appclient",
   DELETE_APPCLIENT: "Delete appclient",
@@ -47,14 +46,11 @@ export const USER_ACCESS_EDIT_PERMISSIONS = Object.freeze([
 ]);
 
 export const REGISTRATION_PAGE_PERMISSIONS = Object.freeze([
-  PERMISSIONS.VIEW_REGISTRATION_REQUESTS,
-  PERMISSIONS.APPROVE_REGISTRATION_REQUEST,
-  PERMISSIONS.REJECT_REGISTRATION_REQUEST,
+  PERMISSIONS.VIEW_REGISTRATION_CONFIG,
 ]);
 
 export const REGISTRATION_EDIT_PERMISSIONS = Object.freeze([
-  PERMISSIONS.APPROVE_REGISTRATION_REQUEST,
-  PERMISSIONS.REJECT_REGISTRATION_REQUEST,
+  PERMISSIONS.EDIT_REGISTRATION_CONFIG,
 ]);
 
 export const APP_CLIENT_PAGE_PERMISSIONS = Object.freeze([
