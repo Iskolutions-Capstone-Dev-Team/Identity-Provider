@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { buildLoginPath } from "../utils/loginRoute";
-import { DEFAULT_AUTHENTICATED_PATH } from "../utils/authAccess";
 import { hasStoredAccessToken } from "../utils/authRecovery";
-import { redirectToAuthorize } from "../utils/authorizeFlow";
+import { getAuthorizeReturnPath, redirectToAuthorize } from "../utils/authorizeFlow";
 
 const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 
@@ -16,14 +15,16 @@ export default function AuthorizeRedirect() {
     hasRun.current = true;
 
     const redirectToNextPage = () => {
+      const returnPath = getAuthorizeReturnPath();
+
       if (hasStoredAccessToken()) {
-        navigate(DEFAULT_AUTHENTICATED_PATH, { replace: true });
+        navigate(returnPath, { replace: true });
         return;
       }
 
       const didRedirect = redirectToAuthorize(
         authClientId,
-        DEFAULT_AUTHENTICATED_PATH,
+        returnPath,
       );
 
       if (didRedirect) {
