@@ -28,6 +28,8 @@ type UserService interface {
 		page int) (*dto.UserResponseList, error)
 	UpdateUserPassword(ctx context.Context, id uuid.UUID,
 		newPassword string) error
+	UpdateUserPasswordByEmail(ctx context.Context, email string,
+		newPassword string) error
 	UpdateUserStatus(ctx context.Context, id uuid.UUID,
 		newStatus string) error
 	UpdateUserRole(ctx context.Context, id uuid.UUID, roleID *int,
@@ -309,6 +311,26 @@ func (s *userService) UpdateUserPassword(
 	}
 
 	return nil
+}
+
+/**
+ * UpdateUserPasswordByEmail finds user by email and updates password.
+ */
+func (s *userService) UpdateUserPasswordByEmail(
+	ctx context.Context,
+	email string,
+	newPassword string,
+) error {
+	user, err := s.Repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("Database Query (GetUserByEmail): %w", err)
+	}
+	if user == nil {
+		return fmt.Errorf("user not found")
+	}
+
+	userID, _ := uuid.FromBytes(user.ID)
+	return s.UpdateUserPassword(ctx, userID, newPassword)
 }
 
 /**
