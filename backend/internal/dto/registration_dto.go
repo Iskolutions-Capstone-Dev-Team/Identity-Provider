@@ -8,20 +8,21 @@ type PreapprovedClientResponse struct {
 }
 
 type AccountTypeConfigResponse struct {
-	AccountType string                      `json:"account_type"`
-	Clients     []PreapprovedClientResponse `json:"clients"`
+	AccountType string                      `json:"account_type" binding:"required"`
+	Clients     []PreapprovedClientResponse `json:"clients" binding:"required"`
 }
 
 type RegistrationConfigResponse struct {
-	AccountTypes []AccountTypeConfigResponse `json:"account_types"`
+	AccountTypes []AccountTypeConfigResponse `json:"account_types" binding:"required"`
 }
 
-type UpdatePreapprovedClientsRequest struct {
-	AccountTypeID int      `json:"account_type_id"`
-	ClientIDs     []string `json:"client_ids"`
+type UpsertAccountTypeRequest struct {
+	ID        int      `json:"id" binding:"required"`
+	Name      string   `json:"name" binding:"required"`
+	ClientIDs []string `json:"client_ids" binding:"required"`
 }
 
 type ActivateAccountRequest struct {
-	InvitationCode string `json:"invitation_code"`
-	Password       string `json:"password"`
+	InvitationCode string `json:"invitation_code" binding:"required"`
+	Password       string `json:"password" binding:"required"`
 }
