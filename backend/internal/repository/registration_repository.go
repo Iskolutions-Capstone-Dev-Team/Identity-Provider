@@ -42,12 +42,12 @@ func (r *regRepo) GetRegistrationConfig(ctx context.Context) (
 				at.id AS account_type_id,
 				at.name AS account_type_name,
 				cl.id AS client_id,
-				cl.client_name AS client_name,
-				ROW_NUMBER() OVER (PARTITION BY pc.account_type_id 
+				COALESCE(cl.client_name, '') AS client_name,
+				ROW_NUMBER() OVER (PARTITION BY at.id 
 					ORDER BY cl.client_name) as row_num
-			FROM preapproved_clients pc
-			JOIN account_types at ON pc.account_type_id = at.id
-			JOIN clients cl ON pc.client_id = cl.id
+			FROM account_types at
+			LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
+			LEFT JOIN clients cl ON pc.client_id = cl.id
 		) t
 		WHERE row_num <= 5
 		ORDER BY account_type_id;
@@ -64,11 +64,11 @@ func (r *regRepo) GetClientsByAccountTypeID(ctx context.Context,
 			at.id AS account_type_id,
 			at.name AS account_type_name,
 			cl.id AS client_id,
-			cl.client_name AS client_name
-		FROM preapproved_clients pc
-		JOIN account_types at ON pc.account_type_id = at.id
-		JOIN clients cl ON pc.client_id = cl.id
-		WHERE pc.account_type_id = ?
+			COALESCE(cl.client_name, '') AS client_name
+		FROM account_types at
+		LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
+		LEFT JOIN clients cl ON pc.client_id = cl.id
+		WHERE at.id = ?
 		ORDER BY cl.client_name;
 	`
 	var rows []AccountTypeClientRow
