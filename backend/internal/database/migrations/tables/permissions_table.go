@@ -46,5 +46,20 @@ var PermissionsMigration = migrations.TableMigration{
 				('View security logs')
 			;`,
 		},
+		{
+			ID: "add-registration-permissions",
+			SQL: `INSERT IGNORE INTO permissions (permission) VALUES 
+				('View Registration Config'),
+				('Edit Registration Config')
+			;`,
+		},
+		{
+			ID: "remove-obsolete-registration-permissions",
+			SQL: `DELETE FROM permissions WHERE permission IN (
+				'Approve registration request',
+				'Reject registration request',
+				'View registration requests'
+			);`,
+		},
 	},
 }
