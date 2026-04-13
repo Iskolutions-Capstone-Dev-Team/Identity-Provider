@@ -98,6 +98,9 @@ func (s *regService) GetClientsByAccountTypeID(ctx context.Context,
 
 	clients := make([]dto.PreapprovedClientResponse, 0)
 	for _, row := range rows {
+		if len(row.ClientID) == 0 {
+			continue
+		}
 		clientID, _ := uuid.FromBytes(row.ClientID)
 		clients = append(clients, dto.PreapprovedClientResponse{
 			ID:   clientID,
