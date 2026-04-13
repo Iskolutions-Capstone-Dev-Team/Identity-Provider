@@ -1,38 +1,29 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { authService } from "../services/authService";
 import { clearAuthState } from "../utils/authCookies";
-import { ensureValidAccessToken } from "../utils/tokenRefresh";
 import { buildLoginPath, buildUnauthorizedLoginPath } from "../utils/loginRoute";
 import { userService } from "../../services/userService";
 import { hasAssignedRoles } from "../utils/authAccess";
-import { getCurrentReturnPath, redirectToAuthorize } from "../utils/authorizeFlow";
-
-const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
+import { hasStoredAuthTokens } from "../utils/authRecovery";
 
 export default function ProtectedRoute({ children }) {
   const [authState, setAuthState] = useState("loading");
 
   useEffect(() => {
+    let isActive = true;
+
     const validate = async () => {
+      if (!hasStoredAuthTokens()) {
+        setAuthState("redirect-to-sso");
+        return;
+      }
+
       try {
-        await authService.checkSession();
-        const accessToken = await ensureValidAccessToken();
+        const currentUser = await userService.getMe();
 
-        if (!accessToken) {
-          const didRedirect = redirectToAuthorize(
-            authClientId,
-            getCurrentReturnPath(),
-          );
-
-          if (!didRedirect) {
-            setAuthState("denied");
-          }
-
+        if (!isActive) {
           return;
         }
-
-        const currentUser = await userService.getMe();
 
         if (!hasAssignedRoles(currentUser)) {
           clearAuthState();
@@ -42,17 +33,26 @@ export default function ProtectedRoute({ children }) {
 
         setAuthState("allowed");
       } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
         if (error.response?.status === 403) {
           clearAuthState();
           setAuthState("unauthorized");
           return;
         }
 
+        clearAuthState();
         setAuthState("denied");
       }
     };
 
     validate();
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   if (authState === "loading") {
@@ -77,6 +77,10 @@ export default function ProtectedRoute({ children }) {
 
   if (authState === "denied") {
     return <Navigate to={buildLoginPath()} replace />;
+  }
+
+  if (authState === "redirect-to-sso") {
+    return <Navigate to="/" replace />;
   }
 
   if (authState === "unauthorized") {

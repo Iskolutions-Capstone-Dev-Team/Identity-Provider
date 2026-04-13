@@ -1,17 +1,16 @@
 import axios from "axios";
 import { clearAuthState, getAccessToken } from "../auth/utils/authCookies";
 import { refreshAccessToken } from "../auth/utils/tokenRefresh";
-import {
-  IDP_ERROR_PAGE_PATH,
-  isIdpProtectedPath,
-  redirectToIdpErrorPage,
-} from "../auth/utils/idpErrorPage";
+import { IDP_ERROR_PAGE_PATH, isIdpProtectedPath, redirectToIdpErrorPage } from "../auth/utils/idpErrorPage";
 import { buildLoginPath } from "../auth/utils/loginRoute";
 import { showForbiddenAlert } from "../utils/forbiddenAlert";
+
+const REQUEST_TIMEOUT_MS = 10000;
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true,
+  timeout: REQUEST_TIMEOUT_MS,
 });
 
 function redirectAfterUnauthorized(error) {

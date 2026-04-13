@@ -8,6 +8,7 @@ import OtpVerificationStep from "./OtpVerificationStep";
 import SuccessStep from "./SuccessStep";
 import SuccessAlert from "./SuccessAlert";
 import { getModalTheme } from "./modalTheme";
+import { passwordResetService } from "../services/passwordResetService";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMPTY_OTP = ["", "", "", "", "", ""];
@@ -16,6 +17,17 @@ const EMPTY_PASSWORD_FORM = {
   newPassword: "",
   confirmPassword: "",
 };
+
+function normalizeTextValue(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function getRequestErrorMessage(error, fallbackMessage) {
+  const responseMessage = normalizeTextValue(error?.response?.data?.error);
+  const errorMessage = normalizeTextValue(error?.message);
+
+  return responseMessage || errorMessage || fallbackMessage;
+}
 
 function getInitialStep(showCurrentPassword = true) {
   return showCurrentPassword ? "password" : "email";
@@ -67,14 +79,22 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   const [form, setForm] = useState(EMPTY_PASSWORD_FORM);
   const [otp, setOtp] = useState(EMPTY_OTP);
   const [otpError, setOtpError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [otpTimerKey, setOtpTimerKey] = useState(0);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const passwordValidation = useMemo(
     () => getPasswordValidationState(form),
     [form],
   );
+  const trimmedRecoveryEmail = normalizeTextValue(recoveryEmail);
+  const normalizedEmailAddress = normalizeTextValue(emailAddress);
+  const isRecoveryEmailValid = EMAIL_REGEX.test(trimmedRecoveryEmail);
 
   useEffect(() => {
     if (step !== "otp") {
@@ -97,7 +117,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [step]);
+  }, [step, otpTimerKey]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -107,7 +127,12 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
       setForm(EMPTY_PASSWORD_FORM);
       setOtp(EMPTY_OTP);
       setOtpError("");
+      setPasswordError("");
       setSuccessMessage("");
+      setOtpTimerKey(0);
+      setIsSendingOtp(false);
+      setIsVerifyingOtp(false);
+      setIsUpdatingPassword(false);
     }
   }, [isOpen, showCurrentPassword]);
 
@@ -139,8 +164,13 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     }
   }, [step, setToastMessage, enableSuccessAlert]);
 
-  const trimmedRecoveryEmail = recoveryEmail.trim();
-  const isRecoveryEmailValid = EMAIL_REGEX.test(trimmedRecoveryEmail);
+  useEffect(() => {
+    if (!isOpen || !isForgotPasswordFlow || !normalizedEmailAddress) {
+      return;
+    }
+
+    setRecoveryEmail(normalizedEmailAddress);
+  }, [isOpen, isForgotPasswordFlow, normalizedEmailAddress]);
 
   const logPasswordChange = () => {
     if (!addAuditLog) {
@@ -157,7 +187,11 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     });
   };
 
-  const handleEmailContinue = () => {
+  const restartOtpTimer = () => {
+    setOtpTimerKey((currentKey) => currentKey + 1);
+  };
+
+  const handleEmailContinue = async () => {
     if (!trimmedRecoveryEmail) {
       setEmailError("Email address is required.");
       return;
@@ -170,20 +204,61 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
 
     setEmailError("");
     setOtpError("");
-    setStep("otp");
+    setPasswordError("");
+    setIsSendingOtp(true);
+
+    try {
+      await passwordResetService.sendOtp({ email: trimmedRecoveryEmail });
+      setOtp(EMPTY_OTP);
+      setStep("otp");
+      restartOtpTimer();
+    } catch (error) {
+      setEmailError(
+        getRequestErrorMessage(error, "Unable to send the OTP right now."),
+      );
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
-  const handlePasswordContinue = () => {
+  const handlePasswordContinue = async () => {
     if (!passwordValidation.isValid) {
       return;
     }
 
     if (isForgotPasswordFlow) {
-      logPasswordChange();
-      setStep("success");
+      if (!trimmedRecoveryEmail) {
+        setPasswordError(
+          "Email address is required.",
+        );
+        return;
+      }
+
+      setPasswordError("");
+      setIsUpdatingPassword(true);
+
+      try {
+        await passwordResetService.updatePassword({
+          email: trimmedRecoveryEmail,
+          newPassword: form.newPassword,
+        });
+        logPasswordChange();
+        setStep("success");
+      } catch (error) {
+        setPasswordError(
+          getRequestErrorMessage(
+            error,
+            "Unable to change the password right now.",
+          ),
+        );
+      } finally {
+        setIsUpdatingPassword(false);
+      }
+
       return;
     }
 
+    setPasswordError("");
     setOtpError("");
     setStep("otp");
   };
@@ -204,14 +279,41 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
+    if (!isForgotPasswordFlow) {
+      setOtp(EMPTY_OTP);
+      setOtpError("");
+      setEmailError("");
+      setPasswordError("");
+      setStep(getInitialStep(showCurrentPassword));
+      return;
+    }
+
+    if (!trimmedRecoveryEmail) {
+      setOtpError("Email address is required.");
+      setStep("email");
+      return;
+    }
+
     setOtp(EMPTY_OTP);
     setOtpError("");
     setEmailError("");
-    setStep(getInitialStep(showCurrentPassword));
+    setPasswordError("");
+    setIsSendingOtp(true);
+
+    try {
+      await passwordResetService.sendOtp({ email: trimmedRecoveryEmail });
+      restartOtpTimer();
+    } catch (error) {
+      setOtpError(
+        getRequestErrorMessage(error, "Unable to resend the OTP right now."),
+      );
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
-  const verifyOTP = () => {
+  const verifyOTP = async () => {
     const code = otp.join("");
 
     if (code.length !== 6 || !/^\d+$/.test(code)) {
@@ -222,7 +324,23 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     setOtpError("");
 
     if (isForgotPasswordFlow) {
-      setStep("password");
+      setIsVerifyingOtp(true);
+
+      try {
+        await passwordResetService.verifyOtp({
+          email: trimmedRecoveryEmail,
+          otp: code,
+        });
+        setPasswordError("");
+        setStep("password");
+      } catch (error) {
+        setOtpError(
+          getRequestErrorMessage(error, "Unable to verify the OTP right now."),
+        );
+      } finally {
+        setIsVerifyingOtp(false);
+      }
+
       return;
     }
 
@@ -236,7 +354,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
 
   const currentStepMeta = getStepMeta(step, showCurrentPassword);
   const otpEmailAddress =
-    trimmedRecoveryEmail || emailAddress || "your email address";
+    trimmedRecoveryEmail || normalizedEmailAddress || "your email address";
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -262,13 +380,26 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     }`;
   const isFormStep = step === "email" || step === "password";
   const isPrimaryDisabled =
-    step === "password" ? !passwordValidation.isValid : false;
+    step === "email"
+      ? isSendingOtp
+      : step === "password"
+        ? !passwordValidation.isValid || isUpdatingPassword
+        : isVerifyingOtp;
   const primaryButtonLabel =
     step === "email"
-      ? "Continue"
+      ? isSendingOtp
+        ? "Sending OTP..."
+        : "Continue"
       : isForgotPasswordFlow
-        ? "Change Password"
+        ? isUpdatingPassword
+          ? "Changing Password..."
+          : "Change Password"
         : "Continue";
+  const otpButtonLabel = isForgotPasswordFlow
+    ? isVerifyingOtp
+      ? "Verifying OTP..."
+      : "Verify OTP"
+    : "Verify & Change Password";
 
   return (
     <>
@@ -314,6 +445,8 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
                     setForm={setForm}
                     showCurrentPassword={showCurrentPassword}
                     colorMode={colorMode}
+                    errorMessage={passwordError}
+                    onClearError={() => setPasswordError("")}
                   />
                 )}
 
@@ -368,10 +501,8 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
               ) : (
                 <div className={modalFooterActionsClassName}>
                   {step === "otp" && (
-                    <button type="button" className={modalPrimaryButtonClassName} onClick={verifyOTP}>
-                      {isForgotPasswordFlow
-                        ? "Verify OTP"
-                        : "Verify & Change Password"}
+                    <button type="button" disabled={isPrimaryDisabled} className={getPrimaryButtonClassName(isPrimaryDisabled)} onClick={verifyOTP}>
+                      {otpButtonLabel}
                     </button>
                   )}
 

@@ -449,6 +449,94 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 	})
 }
 
+// PatchUserPasswordByEmail updates a user's password using their email.
+// @Summary Update user password by email
+// @Description Updates the password for a user identified by email.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param email path string false "User Email"
+// @Param request body dto.UpdatePasswordByEmailRequest true "Update Data"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /internal/user/{email}/password [patch]
+func (h *UserHandler) PatchUserPasswordByEmail(c *gin.Context) {
+	email := c.Param("email")
+
+	var req dto.UpdatePasswordByEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PatchUserPasswordByEmail] Bind JSON: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid request body"},
+		)
+		return
+	}
+
+	if email == "" {
+		email = req.Email
+	}
+
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	metadata := buildMetadata(map[string]interface{}{
+		"target_email": email,
+		"ip":           c.ClientIP(),
+		"user_agent":   c.Request.UserAgent(),
+	})
+
+	err := h.Service.UpdateUserPasswordByEmail(
+		ctx,
+		email,
+		req.NewPassword,
+	)
+	if err != nil {
+		log.Printf("[PatchUserPasswordByEmail] Service: %v", err)
+		logReq := &dto.PostAuditLogRequest{
+			Action: actionUpdatePass,
+			Target: email,
+			Status: models.StatusFail,
+			Metadata: buildMetadata(map[string]interface{}{
+				"target_email": email,
+				"ip":           c.ClientIP(),
+				"user_agent":   c.Request.UserAgent(),
+				"error":        err.Error(),
+			}),
+		}
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+		if actorID != uuid.Nil {
+			_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
+		}
+		c.JSON(
+			http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "Update failed"},
+		)
+		return
+	}
+
+	logReq := &dto.PostAuditLogRequest{
+		Action:   actionUpdatePass,
+		Target:   email,
+		Status:   models.StatusSuccess,
+		Metadata: metadata,
+	}
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+	if actorID != uuid.Nil {
+		_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Password Updated Successfully!",
+	})
+}
+
 // PatchUserStatus updates the operational status of a user.
 // @Summary Update user status
 // @Description Modifies the status (e.g., active, disabled) of a user by ID.

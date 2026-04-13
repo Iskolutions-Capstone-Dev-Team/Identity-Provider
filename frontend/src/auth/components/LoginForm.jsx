@@ -307,6 +307,7 @@ export default function LoginForm({ clientId, initialError = "" }) {
         isOpen={isForgotOpen}
         onClose={() => setForgotOpen(false)}
         showCurrentPassword={false}
+        emailAddress={email}
       />
     </>
   );
