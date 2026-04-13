@@ -77,8 +77,13 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		internalUser.PATCH("/:id/name", h.UserHandler.PatchUserName)
 		internalUser.PATCH("/:id/password", h.UserHandler.PatchUserPassword)
 		internalUser.PATCH(
-			"/password",
+			"/password/forgot",
 			h.UserHandler.PatchUserPasswordByEmail,
+		)
+		internalUser.PATCH(
+			"/password/change",
+			middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+			h.UserHandler.PatchChangePassword,
 		)
 	}
 
