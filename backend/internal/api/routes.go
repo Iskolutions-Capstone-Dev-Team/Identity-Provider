@@ -73,7 +73,10 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		internalUser.POST("", h.UserHandler.PostUser)
 		internalUser.PATCH("/:id/name", h.UserHandler.PatchUserName)
 		internalUser.PATCH("/:id/password", h.UserHandler.PatchUserPassword)
-		internalUser.PATCH("/:email/password", h.UserHandler.PatchUserPasswordByEmail)
+		internalUser.PATCH(
+			"/password",
+			h.UserHandler.PatchUserPasswordByEmail,
+		)
 	}
 
 	v1Group.GET("/users/access",
