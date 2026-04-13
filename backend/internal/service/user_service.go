@@ -36,6 +36,8 @@ type UserService interface {
 		adminID uuid.UUID, permissions []string) error
 	UpdateUserName(ctx context.Context, id uuid.UUID,
 		req dto.UpdateUserNameRequest) error
+	ChangePassword(ctx context.Context, id uuid.UUID,
+		oldPassword, newPassword string) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
@@ -413,8 +415,36 @@ func (s *userService) UpdateUserName(
 }
 
 /**
- * DeleteUser performs a soft-delete on a user record.
+ * ChangePassword verifies the old password before applying the new one.
  */
+func (s *userService) ChangePassword(
+	ctx context.Context,
+	id uuid.UUID,
+	oldPassword,
+	newPassword string,
+) error {
+	// 1. Get user to retrieve email
+	user, err := s.Repo.GetUserById(ctx, id[:])
+	if err != nil || user == nil {
+		return fmt.Errorf("User Identification: not found")
+	}
+
+	// 2. Get user data with hash using email
+	userData, err := s.Repo.GetUserByEmail(ctx, user.Email)
+	if err != nil || userData == nil {
+		return fmt.Errorf("User Verification: lookup failed")
+	}
+
+	// 3. Compare old password
+	err = utils.CompareSecret(userData.PasswordHash, oldPassword)
+	if err != nil {
+		return fmt.Errorf("User Verification: invalid credentials")
+	}
+
+	// 4. Update with new password
+	return s.UpdateUserPassword(ctx, id, newPassword)
+}
+
 func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	if err := s.Repo.SoftDelete(ctx, id[:]); err != nil {
 		return fmt.Errorf("Database Query (SoftDelete): %w", err)
