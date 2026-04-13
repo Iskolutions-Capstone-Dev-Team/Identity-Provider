@@ -32,6 +32,7 @@ type AuthService interface {
 		oldToken string) (*dto.TokenResponse, error)
 	GetSessionToken(ctx context.Context, userID uuid.UUID,
 		ipAddress, userAgent string) (string, error)
+	RevokeAllUserTokens(ctx context.Context, userID uuid.UUID) error
 	RevokeCookies(c *gin.Context)
 }
 
@@ -46,7 +47,8 @@ type authService struct {
 func NewAuthService(repo repository.AuthCodeRepository,
 	sessionRepo repository.SessionRepository,
 	clientRepo repository.ClientRepository,
-	privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey) AuthService {
+	privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey,
+) AuthService {
 	return &authService{
 		Repo:        repo,
 		SessionRepo: sessionRepo,
@@ -168,6 +170,16 @@ func (s *authService) Logout(
 	_ = s.SessionRepo.Delete(ctx, sessionID)
 
 	return nil
+}
+
+/**
+ * RevokeAllUserTokens invalidates all active tokens for a specific user.
+ */
+func (s *authService) RevokeAllUserTokens(
+	ctx context.Context,
+	userID uuid.UUID,
+) error {
+	return s.Repo.RevokeTokens(ctx, userID[:])
 }
 
 /**
@@ -375,4 +387,3 @@ func (s *authService) RevokeCookies(c *gin.Context) {
 		true,
 	)
 }
-

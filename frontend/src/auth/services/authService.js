@@ -1,6 +1,8 @@
 import axiosInstance from "../../services/axiosInstance";
 
 const authClientId = import.meta.env.VITE_CLIENT_ID;
+const normalizeTextValue = (value) =>
+  typeof value === "string" ? value.trim() : "";
 
 function getLoginRedirectUrl(data) {
   if (typeof data === "string") {
@@ -43,9 +45,17 @@ export const authService = {
     return response.data;
   },
 
-  async logout() {
-    return axiosInstance.post("/auth/logout", {
-      client_id: authClientId,
+  async logout({ clientId = authClientId, userId = "" } = {}) {
+    const normalizedClientId = normalizeTextValue(clientId);
+    const normalizedUserId = normalizeTextValue(userId);
+
+    if (!normalizedClientId || !normalizedUserId) {
+      throw new Error("Client ID and user ID are required for logout.");
+    }
+
+    return axiosInstance.post("/internal/logout", {
+      client_id: normalizedClientId,
+      user_id: normalizedUserId,
     }, {
       skipAuthRefresh: true,
     });

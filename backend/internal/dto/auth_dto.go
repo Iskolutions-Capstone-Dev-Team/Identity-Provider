@@ -27,3 +27,8 @@ type RefreshRequest struct {
 type LogoutRequest struct {
 	ClientID string `json:"client_id" binding:"required"`
 }
+
+type InternalLogoutRequest struct {
+	ClientID string `json:"client_id" binding:"required"`
+	UserID   string `json:"user_id" binding:"required"`
+}

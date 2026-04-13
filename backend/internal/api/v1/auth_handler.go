@@ -261,32 +261,41 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 // @Summary Global Logout
 // @Description Clear session cookie and revoke all issued tokens for the user
 // @Tags Authentication
+// @Security Bearer
 // @Accept json
-// @Param req body dto.LogoutRequest true "Logout Request"
+// @Param req body dto.LogoutRequest false "Logout Request"
+// @Param client_id query string false "Client ID"
 // @Produce json
-// @Success 200 {object} dto.SuccessResponse
+// @Success 302
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req dto.LogoutRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("[Logout] Bind JSON: %v", err)
+	if err := c.ShouldBind(&req); err != nil {
+		req.ClientID = c.Query("client_id")
+	}
+
+	uIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(uIDStr)
+	if err != nil {
+		log.Printf("[Logout] User ID Parse: %v", err)
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Invalid request format",
+			Error: "invalid user context",
 		})
 		return
 	}
 
-	// Get logout URL
-	clientID, err := uuid.Parse(req.ClientID)
+	cID, err := uuid.Parse(req.ClientID)
 	if err != nil {
-		log.Printf("[Logout] UUID Parse: %v", err)
+		log.Printf("[Logout] Client ID Parse: %v", err)
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid client_id format",
+			Error: "invalid client_id",
 		})
 		return
 	}
-	client, err := h.ClientService.GetClientByID(c.Request.Context(), clientID)
+
+	// 1. Get client by id
+	_, err = h.ClientService.GetClientByID(c.Request.Context(), cID)
 	if err != nil {
 		log.Printf("[Logout] Client Lookup: %v", err)
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{
@@ -294,87 +303,95 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		})
 		return
 	}
-	logoutURL := client.LogoutURI
 
-	// Redirect to IdP
-	c.Redirect(http.StatusFound, os.Getenv("CLIENT_BASE_URL"))
-
-	// Retrieve all cookies
-	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
+	// 2. Revoke all user tokens
+	err = h.AuthService.RevokeAllUserTokens(c.Request.Context(), userID)
 	if err != nil {
-		c.Redirect(http.StatusFound, logoutURL)
+		log.Printf("[Logout] Token Revocation: %v", err)
 	}
 
-	// Get the session to know the user ID for audit logging
-	session, err := h.AuthService.ValidateSession(
-		c.Request.Context(),
-		sessionID,
-	)
-	if err != nil {
-		log.Printf("[Logout] ValidateSession: %v", err)
-		// Log failure with session ID as actor
-		logReq := &dto.PostAuditLogRequest{
-			Action: actionLogout,
-			Target: "global",
-			Status: models.StatusFail,
-			Metadata: buildMetadata(map[string]interface{}{
-				"ip":         c.ClientIP(),
-				"user_agent": c.Request.UserAgent(),
-				"error":      err.Error(),
-			}),
-		}
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), sessionID, logReq)
-		_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), sessionID, logReq)
-		h.AuthService.RevokeCookies(c)
-		c.Redirect(http.StatusFound, logoutURL)
-		return
-	}
+	// metadata for logging
+	metadata := buildMetadata(map[string]interface{}{
+		"client_id": req.ClientID,
+		"ip":        c.ClientIP(),
+	})
 
-	// Perform logout
-	err = h.AuthService.Logout(c.Request.Context(), sessionID)
-	if err != nil {
-		log.Printf("[Logout] %v", err)
-		logReq := &dto.PostAuditLogRequest{
-			Action: actionLogout,
-			Target: "global",
-			Status: models.StatusFail,
-			Metadata: buildMetadata(map[string]interface{}{
-				"ip":         c.ClientIP(),
-				"user_agent": c.Request.UserAgent(),
-				"error":      err.Error(),
-			}),
-		}
-		_ = h.LogService.PostAuditLog(c.Request.Context(), session.UserId, logReq)
-		_ = h.LogService.PostSecurityLog(c.Request.Context(), session.UserId, logReq)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "logout failed",
+	_ = h.LogService.PostAuditLog(c.Request.Context(), userID[:],
+		&dto.PostAuditLogRequest{
+			Action:   actionLogout,
+			Target:   "global",
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
 		})
-		h.AuthService.RevokeCookies(c)
-		return
-	}
-	h.AuthService.RevokeCookies(c)
 
-	// Log success (resolve user email for better readability)
-	userEmail, _ := h.LogService.GetUserEmail(c.Request.Context(), session.UserId)
-	actorName := userEmail
-	if actorName == "" {
-		// fallback to UUID string
-		uID, _ := uuid.FromBytes(session.UserId)
-		actorName = uID.String()
-	}
-	logReq := &dto.PostAuditLogRequest{
-		Action: actionLogout,
-		Target: "global",
-		Status: models.StatusSuccess,
-		Metadata: buildMetadata(map[string]interface{}{
-			"ip":         c.ClientIP(),
-			"user_agent": c.Request.UserAgent(),
-		}),
-	}
-	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), actorName, logReq)
-	_ = h.LogService.PostSecurityLog(c.Request.Context(), session.UserId, logReq)
+	logoutURL := os.Getenv("CLIENT_BASE_URL") + "/logout?client_id=" +
+		req.ClientID + "&user_id=" + uIDStr
 
 	c.Redirect(http.StatusFound, logoutURL)
+}
+
+// InternalLogout handles server-side logout for specific users.
+func (h *AuthHandler) InternalLogout(c *gin.Context) {
+	var req dto.InternalLogoutRequest
+	if err := c.ShouldBind(&req); err != nil {
+		log.Printf("[InternalLogout] Bind: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid request payload",
+		})
+		return
+	}
+
+	uID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		log.Printf("[InternalLogout] User UUID Parse: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid user_id",
+		})
+		return
+	}
+
+	cID, err := uuid.Parse(req.ClientID)
+	if err != nil {
+		log.Printf("[InternalLogout] Client UUID Parse: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid client_id",
+		})
+		return
+	}
+
+	// 1. Get client by id
+	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID)
+	if err != nil {
+		log.Printf("[InternalLogout] Client Lookup: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "client not found",
+		})
+		return
+	}
+
+	// 2. Revoke all user tokens (backend)
+	err = h.AuthService.RevokeAllUserTokens(c.Request.Context(), uID)
+	if err != nil {
+		log.Printf("[InternalLogout] Token Revocation: %v", err)
+	}
+
+	// 3. Clear session and access token cookies
+	h.AuthService.RevokeCookies(c)
+
+	// Audit Log
+	_ = h.LogService.PostAuditLog(c.Request.Context(), uID[:],
+		&dto.PostAuditLogRequest{
+			Action: actionLogout,
+			Target: "internal",
+			Status: models.StatusSuccess,
+			Metadata: buildMetadata(map[string]interface{}{
+				"client_id": req.ClientID,
+				"ip":        c.ClientIP(),
+			}),
+		})
+
+	// 4. Redirect based on client_id's logout uri
+	c.Redirect(http.StatusFound, client.LogoutURI)
 }
 
 // CheckSession verifies if the current session cookie is valid
@@ -494,7 +511,7 @@ func (h *AuthHandler) GetJWKS(c *gin.Context) {
 // @Summary Exchange Auth Code
 // @Description Validates the code and client secret to issue JWT and Refresh
 // @Tags Authentication
-// @Security 
+// @Security
 // @Accept json
 // @Produce json
 // @Param req body dto.TokenExchangeRequest true "Exchange Request"

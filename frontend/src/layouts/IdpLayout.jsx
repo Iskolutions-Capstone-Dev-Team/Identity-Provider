@@ -152,6 +152,7 @@ export default function IdpLayout() {
         onClose={handleClose}
         onContinue={handleContinue}
         colorMode={colorMode}
+        currentUser={currentUser}
         privacyHref="/privacy"
         termsHref="/terms"
       />
@@ -161,6 +162,7 @@ export default function IdpLayout() {
           isOpen={sidebarOpen}
           toggleSidebar={toggleSidebar}
           activeColorMode={colorMode}
+          currentUser={currentUser}
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
