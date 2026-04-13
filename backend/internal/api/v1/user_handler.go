@@ -455,8 +455,8 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param email path string true "User Email"
-// @Param request body dto.UpdatePasswordRequest true "Password Update Data"
+// @Param email path string false "User Email"
+// @Param request body dto.UpdatePasswordByEmailRequest true "Update Data"
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
@@ -464,7 +464,7 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 func (h *UserHandler) PatchUserPasswordByEmail(c *gin.Context) {
 	email := c.Param("email")
 
-	var req dto.UpdatePasswordRequest
+	var req dto.UpdatePasswordByEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchUserPasswordByEmail] Bind JSON: %v", err)
 		c.JSON(
@@ -472,6 +472,10 @@ func (h *UserHandler) PatchUserPasswordByEmail(c *gin.Context) {
 			dto.ErrorResponse{Error: "invalid request body"},
 		)
 		return
+	}
+
+	if email == "" {
+		email = req.Email
 	}
 
 	actorIDStr := c.GetString("user_id")
