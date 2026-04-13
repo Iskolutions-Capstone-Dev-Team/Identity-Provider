@@ -22,9 +22,9 @@ type Handlers struct {
 	OTPHandler          *v1.OTPHandler
 	UserRepo            repository.UserRepository
 
-	RoleRepo repository.RoleRepository
-	PubKey   *rsa.PublicKey
-	CORS     gin.HandlerFunc
+	RoleRepo   repository.RoleRepository
+	PubKey     *rsa.PublicKey
+	CORS       gin.HandlerFunc
 	ClientCORS gin.HandlerFunc
 }
 
@@ -41,12 +41,16 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		auth.POST("/login", h.ClientCORS, h.AuthHandler.LoginAndAuthorize)
 		auth.POST("/token", h.AuthHandler.PostTokenExchange)
 		auth.POST("/refresh", h.AuthHandler.PostTokenRotate)
-		auth.POST("/logout", h.AuthHandler.Logout)
+		auth.POST("/logout",
+			middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+			h.AuthHandler.Logout)
 		auth.GET("/session", h.AuthHandler.CheckSession)
 	}
 
 	v1Group.POST("/activate", h.RegistrationHandler.ActivateAccount)
 	v1Group.GET("/activate/:code", h.RegistrationHandler.CheckInvitation)
+	v1Group.POST("/internal/logout", h.ClientCORS,
+		h.AuthHandler.InternalLogout)
 
 	// Endpoint for getting user information
 	me := v1Group.Group("/me")
@@ -91,7 +95,6 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
 		middleware.APIKeyMiddleware(),
 		h.UserHandler.GetUserDetailedAccess)
-
 
 	// Protected Admin Endpoints
 	admin := v1Group.Group("/admin")
