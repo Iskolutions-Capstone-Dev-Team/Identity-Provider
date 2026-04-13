@@ -2,12 +2,12 @@ const ACCOUNT_TYPE_STORAGE_KEY = "idp.registration.accountTypes";
 
 const DEFAULT_ACCOUNT_TYPE_OPTIONS = Object.freeze([
   {
-    id: "admin",
-    value: "system administrator",
-    label: "Admin",
+    id: "System Administrator",
+    value: "System Administrator",
+    label: "System Administrator",
     backendId: 1,
     isAdminType: true,
-    aliases: ["admin", "system administrator"],
+    aliases: ["Admin", "System Administrator"],
   },
   {
     id: "applicant",
@@ -297,7 +297,13 @@ export function getAccountTypeLabel(value, options = ACCOUNT_TYPE_OPTIONS) {
 }
 
 export function getAccountTypeValue(value, options = ACCOUNT_TYPE_OPTIONS) {
-  return getAccountTypeOption(value, options)?.value || normalizeAccountType(value);
+  const matchedOption = getAccountTypeOption(value, options);
+
+  if (matchedOption?.value) {
+    return matchedOption.value;
+  }
+
+  return typeof value === "string" ? value.trim() : "";
 }
 
 export function getAccountTypeBackendId(value, options = ACCOUNT_TYPE_OPTIONS) {

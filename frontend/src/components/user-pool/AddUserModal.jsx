@@ -12,13 +12,18 @@ import InvitationConfirmModal from "./InvitationConfirmModal";
 import { getModalTheme } from "../modalTheme";
 import { usePermissionAccess } from "../../context/PermissionContext";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions } from "../../utils/userPoolAccess";
-import { getAccountTypeOption, isAdminAccountType } from "../../utils/accountTypes";
+import {
+  getAccountTypeBackendId,
+  getAccountTypeOption,
+  isAdminAccountType,
+} from "../../utils/accountTypes";
 import { generateTemporaryPassword, getTemporaryPasswordValidationMessage } from "../../utils/passwordRules";
 import { useRegistrationAccountTypes } from "../../hooks/useRegistrationAccountTypes";
 import { PERMISSIONS } from "../../utils/permissionAccess";
 
 const TEMP_PASSWORD_SETUP_VALUE = "temporary_password";
 const INVITATION_SETUP_VALUE = "invitation";
+const SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE = "System Administrator";
 
 const REGULAR_ACCOUNT_SETUP_OPTIONS = [
   {
@@ -472,6 +477,18 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     const selectedAccountType = !isAdminView
       ? selectedAccountTypeOption?.value || data.accountType
       : "";
+    const selectedAccountTypeId = isAdminView
+      ? getAccountTypeBackendId(SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE)
+      : selectedAccountTypeOption?.backendId ?? null;
+
+    if (!Number.isInteger(selectedAccountTypeId) || selectedAccountTypeId <= 0) {
+      setError(
+        isAdminView
+          ? "System Administrator account type is unavailable right now."
+          : "Unable to use this account type right now.",
+      );
+      return;
+    }
 
     try {
       setError("");
@@ -492,6 +509,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         tempPassword: data.tempPassword,
         accountSetupType: data.accountSetupType,
         accountType: selectedAccountType,
+        accountTypeId: selectedAccountTypeId,
         status: "active",
       });
 

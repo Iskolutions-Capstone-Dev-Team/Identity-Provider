@@ -111,7 +111,10 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
       return;
     }
 
-    const nextAccountTypeName = accountTypeName.trim() || config?.label?.trim() || "";
+    const normalizedAccountTypeName = accountTypeName.trim();
+    const nextAccountTypeName = isLockedDefaultAccountType
+      ? normalizedAccountTypeName || config?.label?.trim() || ""
+      : normalizedAccountTypeName;
 
     if (!nextAccountTypeName) {
       setAccountTypeNameError("Account type name is required.");

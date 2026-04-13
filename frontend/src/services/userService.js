@@ -1,4 +1,3 @@
-import { normalizeAccountType } from "../utils/accountTypes";
 import axiosInstance from "./axiosInstance";
 
 const DEFAULT_PAGE = 1;
@@ -19,6 +18,13 @@ const normalizeRoleId = (value) => {
     return null;
   }
 
+  const normalizedValue = Number.parseInt(value, 10);
+  return Number.isInteger(normalizedValue) && normalizedValue > 0
+    ? normalizedValue
+    : undefined;
+};
+
+const normalizeAccountTypeId = (value) => {
   const normalizedValue = Number.parseInt(value, 10);
   return Number.isInteger(normalizedValue) && normalizedValue > 0
     ? normalizedValue
@@ -111,6 +117,12 @@ export const userService = {
   },
 
   async createUser(data) {
+    const accountTypeId = normalizeAccountTypeId(data.account_type_id);
+
+    if (!accountTypeId) {
+      throw new Error("Account type is required.");
+    }
+
     const payload = {
       email: normalizeTextValue(data.email),
       first_name: normalizeTextValue(data.first_name),
@@ -120,11 +132,11 @@ export const userService = {
       password: normalizeTextValue(data.password),
       status: normalizeTextValue(data.status).toLowerCase(),
       role_id: normalizeRoleId(data.role_id) ?? null,
-      account_type: normalizeAccountType(data.account_type),
+      account_type_id: accountTypeId,
       allowed_appclients: normalizeStringList(data.allowed_appclients),
     };
 
-    const res = await axiosInstance.post("/internal/user", payload, {
+    const res = await axiosInstance.post("/admin/users", payload, {
       headers: { "Content-Type": "application/json" },
     });
 

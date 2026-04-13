@@ -3,13 +3,18 @@ import { mailService } from "../services/mailService";
 import { userService } from "../services/userService";
 import { generateHiddenInvitationPassword } from "../utils/passwordRules";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, normalizeRoleNames } from "../utils/userPoolAccess";
-import { normalizeAccountType } from "../utils/accountTypes";
+import {
+  getAccountTypeBackendId,
+  getAccountTypeValue,
+  normalizeAccountType,
+} from "../utils/accountTypes";
 
 const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
 const FETCH_LIMIT = 100;
 const ITEMS_PER_PAGE = 10;
 const INVITATION_ACCOUNT_SETUP = "invitation";
-const ADMIN_ACCOUNT_CATEGORY = "admin";
+const ADMIN_ACCOUNT_CATEGORY = "system administrator";
+const SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE = "System Administrator";
 
 function normalizeClientIds(clientIds = []) {
   return Array.from(
@@ -97,6 +102,17 @@ function normalizeStatus(status) {
 }
 
 function normalizeRoleId(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const normalizedValue = Number.parseInt(value, 10);
+  return Number.isInteger(normalizedValue) && normalizedValue > 0
+    ? normalizedValue
+    : null;
+}
+
+function normalizeAccountTypeId(value) {
   if (value === null || value === undefined || value === "") {
     return null;
   }
@@ -424,12 +440,17 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
   const createUser = async (newUser) => {
     const isAdminUser = newUser.userType === ADMIN_USER_TYPE;
-    const accountType = !isAdminUser
-      ? normalizeAccountType(newUser.accountType)
-      : "";
+    const accountType = isAdminUser
+      ? getAccountTypeValue(SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE)
+      : getAccountTypeValue(newUser.accountType);
+    const accountTypeId = isAdminUser
+      ? normalizeAccountTypeId(newUser.accountTypeId) ??
+        getAccountTypeBackendId(SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE)
+      : normalizeAccountTypeId(newUser.accountTypeId);
+    const normalizedAccountType = normalizeAccountType(accountType);
     const isInvitationFlow =
       !isAdminUser && newUser.accountSetupType === INVITATION_ACCOUNT_SETUP;
-    const isAdminAccountType = accountType === ADMIN_ACCOUNT_CATEGORY;
+    const isAdminAccountType = normalizedAccountType === ADMIN_ACCOUNT_CATEGORY;
     const shouldAssignAdminRole =
       isAdminUser || isAdminAccountType;
     const nextAccessibleClientIds = normalizeClientIds(newUser.accessibleClientIds);
@@ -445,7 +466,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     let userWasCreated = false;
     let followUpStep = "create_user";
 
-    if (!isAdminUser && !accountType) {
+    if (!normalizedAccountType || !accountTypeId) {
       throw new Error("Select an account type.");
     }
 
@@ -458,7 +479,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         name_suffix: newUser.suffix,
         password: submissionPassword,
         status: newUser.status,
-        account_type: accountType,
+        account_type_id: accountTypeId,
         allowed_appclients: shouldAssignAdminRole ? nextAllowedAppClientIds : [],
         role_id:
           shouldAssignAdminRole
