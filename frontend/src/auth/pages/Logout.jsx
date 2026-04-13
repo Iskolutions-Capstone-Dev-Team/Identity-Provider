@@ -1,12 +1,16 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "../services/authService";
 import { clearAuthState } from "../utils/authCookies";
 import { buildLoginPath } from "../utils/loginRoute";
+import { getLogoutClientId, getLogoutUserId } from "../utils/logoutRoute";
 
 export default function Logout() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const hasRun = useRef(false);
+  const clientId = getLogoutClientId(searchParams);
+  const userId = getLogoutUserId(searchParams);
 
   useEffect(() => {
     if (hasRun.current) return;
@@ -14,17 +18,24 @@ export default function Logout() {
 
     const doLogout = async () => {
       try {
-        await authService.logout();
+        if (clientId && userId) {
+          await authService.logout({
+            clientId,
+            userId,
+          });
+        } else {
+          console.warn("Skipping logout API call because logout query params are incomplete.");
+        }
       } catch (err) {
         console.error("Logout failed", err);
       } finally {
         clearAuthState();
-        setTimeout(() => navigate(buildLoginPath(), { replace: true }), 500);
+        setTimeout(() => navigate(buildLoginPath(clientId), { replace: true }), 500);
       }
     };
 
     doLogout();
-  }, [navigate]);
+  }, [clientId, navigate, userId]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#250508] font-[Poppins] text-white">

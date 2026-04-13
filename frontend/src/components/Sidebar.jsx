@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePermissionAccess } from "../context/PermissionContext";
+import { buildLogoutPath } from "../auth/utils/logoutRoute";
 import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "../utils/permissionAccess";
 
 const menuSections = [
@@ -154,7 +155,7 @@ function SidebarMenuItem({ isOpen, item, isActive, onClick, isDarkMode, theme })
   );
 }
 
-export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "light" }) {
+export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "light", currentUser = null }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { hasAnyPermission, isLoadingPermissions } = usePermissionAccess();
@@ -175,7 +176,12 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
   const mobileMenuItems = visibleMenuSections.flatMap((section) => section.items);
 
   const handleLogout = () => {
-    navigate("/logout", { replace: true });
+    navigate(
+      buildLogoutPath({
+        userId: currentUser?.id,
+      }),
+      { replace: true },
+    );
   };
 
   return (

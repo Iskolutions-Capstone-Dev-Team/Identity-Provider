@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { buildLogoutPath } from "../auth/utils/logoutRoute";
 import { getModalTheme } from "./modalTheme";
 
-export default function TermsAgreementModal({ open, onClose, onContinue, colorMode = "light" }) {
+export default function TermsAgreementModal({ open, onClose, onContinue, colorMode = "light", currentUser = null }) {
   const navigate = useNavigate();
   const [agreed, setAgreed] = useState(false);
   const isDarkMode = colorMode === "dark";
@@ -54,7 +55,12 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
 
   const handleCancel = () => {
     onClose?.();
-    navigate("/logout", { replace: true });
+    navigate(
+      buildLogoutPath({
+        userId: currentUser?.id,
+      }),
+      { replace: true },
+    );
   };
 
   const handleContinue = () => {
