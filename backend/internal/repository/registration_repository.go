@@ -7,6 +7,7 @@ import (
 )
 
 type AccountTypeClientRow struct {
+	AccountTypeID   int    `db:"account_type_id"`
 	AccountTypeName string `db:"account_type_name"`
 	ClientID        []byte `db:"client_id"`
 	ClientName      string `db:"client_name"`
@@ -35,11 +36,11 @@ func NewRegistrationRepository(db *sqlx.DB) RegistrationRepository {
 func (r *regRepo) GetRegistrationConfig(ctx context.Context) (
 	[]AccountTypeClientRow, error) {
 	query := `
-		SELECT account_type_name, client_id, client_name
+		SELECT account_type_id, account_type_name, client_id, client_name
 		FROM (
 			SELECT 
-				at.name AS account_type_name,
 				at.id AS account_type_id,
+				at.name AS account_type_name,
 				cl.id AS client_id,
 				cl.client_name AS client_name,
 				ROW_NUMBER() OVER (PARTITION BY pc.account_type_id 
@@ -60,6 +61,7 @@ func (r *regRepo) GetClientsByAccountTypeID(ctx context.Context,
 	id int) ([]AccountTypeClientRow, error) {
 	query := `
 		SELECT 
+			at.id AS account_type_id,
 			at.name AS account_type_name,
 			cl.id AS client_id,
 			cl.client_name AS client_name
