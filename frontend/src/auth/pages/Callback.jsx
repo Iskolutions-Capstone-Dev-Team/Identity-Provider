@@ -26,8 +26,8 @@ export default function Callback() {
       try {
         const tokenResponse = await authService.exchangeCode(code);
 
-        if (!tokenResponse?.access_token || !tokenResponse?.refresh_token) {
-          throw new Error("Token exchange did not return both tokens.");
+        if (!tokenResponse?.access_token) {
+          throw new Error("Token exchange did not return an access token.");
         }
 
         storeTokenResponse(tokenResponse);

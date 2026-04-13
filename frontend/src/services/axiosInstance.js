@@ -1,11 +1,12 @@
 import axios from "axios";
 import { clearAuthState, getAccessToken } from "../auth/utils/authCookies";
-import { refreshAccessToken } from "../auth/utils/tokenRefresh";
-import { IDP_ERROR_PAGE_PATH, isIdpProtectedPath, redirectToIdpErrorPage } from "../auth/utils/idpErrorPage";
+import { getCurrentReturnPath, redirectToAuthorize } from "../auth/utils/authorizeFlow";
+import { IDP_ERROR_PAGE_PATH, isIdpProtectedPath } from "../auth/utils/idpErrorPage";
 import { buildLoginPath } from "../auth/utils/loginRoute";
 import { showForbiddenAlert } from "../utils/forbiddenAlert";
 
 const REQUEST_TIMEOUT_MS = 10000;
+const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -13,25 +14,34 @@ const axiosInstance = axios.create({
   timeout: REQUEST_TIMEOUT_MS,
 });
 
-function redirectAfterUnauthorized(error) {
+function redirectAfterUnauthorized() {
   if (typeof window === "undefined") {
-    return;
-  }
-
-  if (isIdpProtectedPath(window.location.pathname)) {
-    redirectToIdpErrorPage(error);
     return;
   }
 
   const publicPaths = new Set([
     "/",
     "/login",
+    "/register",
+    "/register/set-password",
     "/callback",
+    "/logout",
     IDP_ERROR_PAGE_PATH,
   ]);
 
-  if (!publicPaths.has(window.location.pathname)) {
-    window.location.replace(buildLoginPath());
+  if (publicPaths.has(window.location.pathname)) {
+    return;
+  }
+
+  clearAuthState();
+
+  const didRedirect = redirectToAuthorize(
+    authClientId,
+    getCurrentReturnPath(),
+  );
+
+  if (!didRedirect) {
+    window.location.replace(buildLoginPath(authClientId));
   }
 }
 
@@ -80,30 +90,12 @@ axiosInstance.interceptors.response.use(
     }
 
     if (!originalRequest || originalRequest.skipAuthRefresh || originalRequest._retry) {
-      redirectAfterUnauthorized(error);
+      redirectAfterUnauthorized();
       return Promise.reject(error);
     }
 
-    originalRequest._retry = true;
-
-    try {
-      const accessToken = await refreshAccessToken();
-
-      if (!accessToken) {
-        clearAuthState();
-        redirectAfterUnauthorized(error);
-        return Promise.reject(error);
-      }
-
-      originalRequest.headers = originalRequest.headers ?? {};
-      originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-
-      return axiosInstance(originalRequest);
-    } catch (refreshError) {
-      clearAuthState();
-      redirectAfterUnauthorized(refreshError);
-      return Promise.reject(refreshError);
-    }
+    redirectAfterUnauthorized();
+    return Promise.reject(error);
   },
 );
 

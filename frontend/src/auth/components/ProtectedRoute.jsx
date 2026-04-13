@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { clearAuthState } from "../utils/authCookies";
+import { rememberAuthorizeReturnPath } from "../utils/authorizeFlow";
 import { buildLoginPath, buildUnauthorizedLoginPath } from "../utils/loginRoute";
 import { userService } from "../../services/userService";
 import { hasAssignedRoles } from "../utils/authAccess";
@@ -8,12 +9,16 @@ import { hasStoredAuthTokens } from "../utils/authRecovery";
 
 export default function ProtectedRoute({ children }) {
   const [authState, setAuthState] = useState("loading");
+  const location = useLocation();
 
   useEffect(() => {
     let isActive = true;
+    const returnPath =
+      `${location.pathname}${location.search}${location.hash}` || "/";
 
     const validate = async () => {
       if (!hasStoredAuthTokens()) {
+        rememberAuthorizeReturnPath(returnPath);
         setAuthState("redirect-to-sso");
         return;
       }
@@ -44,6 +49,13 @@ export default function ProtectedRoute({ children }) {
         }
 
         clearAuthState();
+        rememberAuthorizeReturnPath(returnPath);
+
+        if (error.response?.status === 401) {
+          setAuthState("redirect-to-sso");
+          return;
+        }
+
         setAuthState("denied");
       }
     };
@@ -53,7 +65,7 @@ export default function ProtectedRoute({ children }) {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [location.hash, location.pathname, location.search]);
 
   if (authState === "loading") {
     return (

@@ -1,19 +1,24 @@
 import { clearAuthorizeReturnPath } from "./authorizeFlow";
 
 const ACCESS_TOKEN_COOKIE = "access_token";
-const REFRESH_TOKEN_COOKIE = "refresh_token";
+const LEGACY_REFRESH_TOKEN_COOKIE = "refresh_token";
 const TERMS_STORAGE_KEY = "termsAccepted";
 const DEFAULT_ACCESS_TOKEN_MAX_AGE_SECONDS = 3600;
-const REFRESH_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
-function getCookieValue(name) {
+function getCookieRow(name) {
   if (typeof document === "undefined") {
     return "";
   }
 
-  const cookie = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith(`${name}=`));
+  return (
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(`${name}=`)) ?? ""
+  );
+}
+
+function getCookieValue(name) {
+  const cookie = getCookieRow(name);
 
   if (!cookie) {
     return "";
@@ -54,12 +59,12 @@ export function getAccessToken() {
   return getCookieValue(ACCESS_TOKEN_COOKIE);
 }
 
-export function getRefreshToken() {
-  return getCookieValue(REFRESH_TOKEN_COOKIE);
-}
+export function clearLegacyRefreshTokenCookie() {
+  if (!getCookieRow(LEGACY_REFRESH_TOKEN_COOKIE)) {
+    return;
+  }
 
-export function hasRefreshToken() {
-  return Boolean(getRefreshToken());
+  expireCookie(LEGACY_REFRESH_TOKEN_COOKIE);
 }
 
 export function storeTokenResponse(tokenResponse) {
@@ -68,7 +73,6 @@ export function storeTokenResponse(tokenResponse) {
   }
 
   const accessToken = tokenResponse.access_token;
-  const refreshToken = tokenResponse.refresh_token;
   const expiresIn =
     Number(tokenResponse.expires_in) || DEFAULT_ACCESS_TOKEN_MAX_AGE_SECONDS;
 
@@ -80,18 +84,13 @@ export function storeTokenResponse(tokenResponse) {
     );
   }
 
-  if (refreshToken) {
-    document.cookie = buildCookie(
-      REFRESH_TOKEN_COOKIE,
-      refreshToken,
-      REFRESH_TOKEN_MAX_AGE_SECONDS,
-    );
-  }
+  // Refresh tokens must stay server-managed, not in JS-readable storage.
+  clearLegacyRefreshTokenCookie();
 }
 
 export function clearAuthState() {
   expireCookie(ACCESS_TOKEN_COOKIE);
-  expireCookie(REFRESH_TOKEN_COOKIE);
+  clearLegacyRefreshTokenCookie();
   expireCookie("token");
   clearAuthorizeReturnPath();
 
