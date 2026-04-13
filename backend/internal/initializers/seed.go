@@ -75,13 +75,10 @@ func seedSuperAdminRole(db *sqlx.DB) (int, error) {
 	var existingID int
 	query := "SELECT id FROM roles WHERE role_name = ? AND deleted_at IS NULL"
 	err := db.Get(&existingID, query, roleName)
-	if err == nil {
-		return existingID, nil
-	}
 
-	allPerms, err := permissionRepo.GetAllPermissions(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("[Seed] Failed to fetch permissions: %v", err)
+	allPerms, errPerms := permissionRepo.GetAllPermissions(ctx)
+	if errPerms != nil {
+		return 0, fmt.Errorf("[Seed] Failed to fetch permissions: %v", errPerms)
 	}
 
 	var selectedPerms []models.Permission
@@ -95,6 +92,16 @@ func seedSuperAdminRole(db *sqlx.DB) (int, error) {
 		RoleName:    roleName,
 		Description: "Super Administrator with full system access.",
 		Permissions: selectedPerms,
+	}
+
+	if err == nil {
+		// Sync permissions for existing role
+		role.ID = existingID
+		err = roleRepo.UpdateRole(ctx, role)
+		if err != nil {
+			return existingID, fmt.Errorf("[Seed] Failed to update superadmin role: %v", err)
+		}
+		return existingID, nil
 	}
 
 	result, err := roleRepo.CreateRole(ctx, role)
