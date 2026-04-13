@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import ErrorAlert from "../ErrorAlert";
 import MultiSelect from "../MultiSelect";
 import { getModalTheme } from "../modalTheme";
+import { ACCOUNT_TYPE_OPTIONS, getAccountTypeOption } from "../../utils/accountTypes";
 
 function getClientNames(clientIds = [], appClientOptions = []) {
   const clientLabelLookup = new Map(
@@ -18,10 +19,21 @@ function getClientNames(clientIds = [], appClientOptions = []) {
 }
 
 export default function RegistrationConfigModal({ open, mode = "view", config = null, appClientOptions = [], isLoadingAppClients = false, appClientsError = "", onClose, onSave, colorMode = "light" }) {
+  const [accountTypeName, setAccountTypeName] = useState("");
   const [selectedClientIds, setSelectedClientIds] = useState([]);
   const [error, setError] = useState("");
+  const [accountTypeNameError, setAccountTypeNameError] = useState("");
+  const isCreateMode = mode === "create";
   const isViewMode = mode === "view";
   const isDarkMode = colorMode === "dark";
+  const isLockedDefaultAccountType =
+    !isCreateMode &&
+    Boolean(
+      getAccountTypeOption(
+        config?.accountTypeValue ?? config?.accountType ?? config?.label,
+        ACCOUNT_TYPE_OPTIONS,
+      ),
+    );
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -33,6 +45,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
     modalHeaderDescriptionClassName,
     modalHeaderTitleClassName,
     modalHelperTextClassName,
+    modalInputClassName,
     modalLabelClassName,
     modalOverlayClassName,
     modalPrimaryButtonClassName,
@@ -54,16 +67,21 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
     : "mt-3 text-xs text-[#991b1b]";
   const disabledAccountTypeInputClassName =
     `${modalReadOnlyInputClassName} disabled:cursor-not-allowed disabled:opacity-100`;
+  const accountTypeInputClassName = `${modalInputClassName} ${
+    accountTypeNameError ? "border-red-400 focus:border-red-500" : ""
+  }`;
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
+    setAccountTypeName(config?.label ?? "");
     setSelectedClientIds(
       Array.isArray(config?.clientIds) ? config.clientIds : [],
     );
     setError("");
+    setAccountTypeNameError("");
   }, [open, config]);
 
   const displayedClientNames = useMemo(
@@ -93,10 +111,21 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
       return;
     }
 
+    const nextAccountTypeName = accountTypeName.trim() || config?.label?.trim() || "";
+
+    if (!nextAccountTypeName) {
+      setAccountTypeNameError("Account type name is required.");
+      setError("Account type name is required.");
+      return;
+    }
+
     try {
       setError("");
+      setAccountTypeNameError("");
       await onSave({
         ...config,
+        name: nextAccountTypeName,
+        label: nextAccountTypeName,
         clientIds: selectedClientIds,
       });
       onClose();
@@ -107,7 +136,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
     }
   };
 
-  if (!open || !config) {
+  if (!open || (!config && !isCreateMode)) {
     return null;
   }
 
@@ -118,10 +147,16 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
           <div className="flex items-start justify-between gap-4 sm:gap-6">
             <div className="max-w-xl pr-12 sm:pr-14">
               <h3 className={modalHeaderTitleClassName}>
-                {isViewMode ? "View Registration" : "Edit Registration"}
+                {isCreateMode
+                  ? "Create Registration"
+                  : isViewMode
+                    ? "View Registration"
+                    : "Edit Registration"}
               </h3>
               <p className={`${modalHeaderDescriptionClassName} max-w-[28rem] leading-relaxed`}>
-                {isViewMode
+                {isCreateMode
+                  ? "Create an account type and assign its pre-approved app clients."
+                  : isViewMode
                   ? "Review the pre-approved app clients for this account type."
                   : "Update the pre-approved app clients for this account type."}
               </p>
@@ -142,8 +177,53 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
             <section className={modalSectionClassName}>
               <div className="space-y-5">
                 <div>
-                  <label className={modalLabelClassName}>Account Type</label>
-                  <input type="text" value={config.label} readOnly disabled aria-disabled="true" className={disabledAccountTypeInputClassName}/>
+                  <label className={modalLabelClassName}>
+                    Account Type
+                    {!isViewMode && !isLockedDefaultAccountType && (
+                      <span className="text-red-500"> *</span>
+                    )}
+                  </label>
+                  {isViewMode || isLockedDefaultAccountType ? (
+                    <>
+                      {!isViewMode && isLockedDefaultAccountType && (
+                        <p className={modalHelperTextClassName}>
+                          Default account type names cannot be changed.
+                        </p>
+                      )}
+                      <input
+                        type="text"
+                        value={accountTypeName || config?.label || ""}
+                        readOnly
+                        disabled
+                        aria-disabled="true"
+                        className={disabledAccountTypeInputClassName}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <p className={modalHelperTextClassName}>
+                        {isCreateMode
+                          ? "Enter the account type name."
+                          : "Update the account type name."}
+                      </p>
+                      <input
+                        type="text"
+                        value={accountTypeName}
+                        onChange={(event) => {
+                          setAccountTypeName(event.target.value);
+                          setAccountTypeNameError("");
+                          setError("");
+                        }}
+                        placeholder="Enter account type"
+                        className={accountTypeInputClassName}
+                      />
+                      {accountTypeNameError && (
+                        <p className="mt-2 text-xs text-red-500">
+                          {accountTypeNameError}
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 <div>
@@ -206,7 +286,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
 
             {!isViewMode && (
               <button type="button" className={modalPrimaryButtonClassName} onClick={handleSubmit}>
-                Save
+                {isCreateMode ? "Create" : "Save"}
               </button>
             )}
           </div>

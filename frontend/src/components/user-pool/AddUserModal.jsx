@@ -10,13 +10,15 @@ import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import InvitationConfirmModal from "./InvitationConfirmModal";
 import { getModalTheme } from "../modalTheme";
+import { usePermissionAccess } from "../../context/PermissionContext";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions } from "../../utils/userPoolAccess";
-import { ACCOUNT_TYPE_OPTIONS } from "../../utils/accountTypes";
+import { getAccountTypeOption, isAdminAccountType } from "../../utils/accountTypes";
 import { generateTemporaryPassword, getTemporaryPasswordValidationMessage } from "../../utils/passwordRules";
+import { useRegistrationAccountTypes } from "../../hooks/useRegistrationAccountTypes";
+import { PERMISSIONS } from "../../utils/permissionAccess";
 
 const TEMP_PASSWORD_SETUP_VALUE = "temporary_password";
 const INVITATION_SETUP_VALUE = "invitation";
-const ADMIN_ACCOUNT_CATEGORY = "admin";
 
 const REGULAR_ACCOUNT_SETUP_OPTIONS = [
   {
@@ -94,6 +96,7 @@ function PasswordVisibilityIcon({ showPassword }) {
 }
 
 export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, appClientOptions = [], isLoadingAppClients = false, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
+  const { hasPermission } = usePermissionAccess();
   const [step, setStep] = useState(1);
   const [data, setData] = useState(initialFormData);
   const [error, setError] = useState("");
@@ -104,21 +107,32 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
   const canCreateAdminAccount = canAssignRoles || canManageUserAccess;
+  const canViewRegistrationConfig = hasPermission(
+    PERMISSIONS.VIEW_REGISTRATION_CONFIG,
+  );
+  const { accountTypeOptions, isLoadingAccountTypes } =
+    useRegistrationAccountTypes({
+      enabled: open && !isAdminView && canViewRegistrationConfig,
+    });
   const availableAccountTypeOptions = canCreateAdminAccount
-    ? ACCOUNT_TYPE_OPTIONS
-    : ACCOUNT_TYPE_OPTIONS.filter(
-        (option) => option.id !== ADMIN_ACCOUNT_CATEGORY,
-      );
-  const isAdminAccountType =
-    !isAdminView && data.accountType === ADMIN_ACCOUNT_CATEGORY;
+    ? accountTypeOptions
+    : accountTypeOptions.filter((option) => !option?.isAdminType);
+  const selectedAccountTypeOption = getAccountTypeOption(
+    data.accountType,
+    availableAccountTypeOptions,
+  );
+  const selectedAccountTypeIsAdmin =
+    !isAdminView &&
+    isAdminAccountType(data.accountType, availableAccountTypeOptions);
   const isInvitationFlow =
     !isAdminView && data.accountSetupType === INVITATION_SETUP_VALUE;
   const showAccountTypeField = !isAdminView;
   const showRegularAdminClientFields =
-    isAdminAccountType && canManageUserAccess;
-  const showRegularAdminRoleField = isAdminAccountType && canAssignRoles;
+    selectedAccountTypeIsAdmin && canManageUserAccess;
+  const showRegularAdminRoleField =
+    selectedAccountTypeIsAdmin && canAssignRoles;
   const rolesEndpoint =
-    isAdminView || isAdminAccountType ? "all" : "default";
+    isAdminView || selectedAccountTypeIsAdmin ? "all" : "default";
   const shouldLoadRoleOptions =
     open && ((isAdminView && canAssignRoles) || showRegularAdminRoleField);
   const availableRoles = useAllRoles({
@@ -131,11 +145,11 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const registrationAppClientOptions = getAllAppClientSelectOptions(
     appClientOptions,
   );
-  const showAccountSetupAtBottom = isAdminAccountType;
+  const showAccountSetupAtBottom = selectedAccountTypeIsAdmin;
   const showTempPasswordField =
     isAdminView || data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
   const needsExpandedHeaderSpacing =
-    !isAdminView && isAdminAccountType;
+    !isAdminView && selectedAccountTypeIsAdmin;
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -257,15 +271,20 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   };
 
   const handleAccountTypeChange = (accountType) => {
+    const nextIsAdminAccountType = isAdminAccountType(
+      accountType,
+      availableAccountTypeOptions,
+    );
+
     setData((current) => ({
       ...current,
       accountType,
       adminSignInClientIds:
-        accountType === ADMIN_ACCOUNT_CATEGORY ? current.adminSignInClientIds : [],
+        nextIsAdminAccountType ? current.adminSignInClientIds : [],
       adminCrudClientIds:
-        accountType === ADMIN_ACCOUNT_CATEGORY ? current.adminCrudClientIds : [],
+        nextIsAdminAccountType ? current.adminCrudClientIds : [],
       selectedAdminRoleId:
-        accountType === ADMIN_ACCOUNT_CATEGORY ? current.selectedAdminRoleId : null,
+        nextIsAdminAccountType ? current.selectedAdminRoleId : null,
     }));
     setFieldErrors((current) => ({
       ...current,
@@ -451,7 +470,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       ? getSelectedAdminClientIds(data)
       : [];
     const selectedAccountType = !isAdminView
-      ? data.accountType
+      ? selectedAccountTypeOption?.value || data.accountType
       : "";
 
     try {
@@ -465,7 +484,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         suffix: data.suffix,
         userType,
         roleId:
-          isAdminView || isAdminAccountType
+          isAdminView || selectedAccountTypeIsAdmin
             ? selectedAdminRole?.id ?? null
             : null,
         roles: selectedAdminRole ? [selectedAdminRole.role_name] : [],
@@ -505,9 +524,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   }
 
   const selectedAccountTypeLabel =
-    availableAccountTypeOptions.find(
-      (option) => option.id === data.accountType,
-    )?.label || "Selected";
+    selectedAccountTypeOption?.label || "Selected";
   const modalDescription = isAdminView
     ? "Create a new admin user account."
     : data.accountType
@@ -545,6 +562,11 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         colorMode={colorMode}
         name="add-user-account-type"
       />
+      {isLoadingAccountTypes && canViewRegistrationConfig && (
+        <p className={modalHelperTextClassName}>
+          Loading latest account types...
+        </p>
+      )}
       {fieldErrors.accountType && (
         <p className="mt-2 text-xs text-red-500">
           {fieldErrors.accountType}
