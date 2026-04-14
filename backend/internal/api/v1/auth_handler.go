@@ -168,7 +168,11 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		})
 		return
 	}
-	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID)
+	uIDStr := c.GetString("user_id")
+	uID, _ := uuid.Parse(uIDStr)
+	perms := c.GetStringSlice("permissions")
+
+	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID, uID, perms)
 	if err != nil || !slices.Contains(client.Grants, "authorization_code") {
 		c.JSON(http.StatusForbidden, dto.ErrorResponse{
 			Error: "missing grant type",
@@ -294,8 +298,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
+	actorPerms := c.GetStringSlice("permissions")
+
 	// 1. Get client by id
-	_, err = h.ClientService.GetClientByID(c.Request.Context(), cID)
+	_, err = h.ClientService.GetClientByID(c.Request.Context(), cID, userID, actorPerms)
 	if err != nil {
 		log.Printf("[Logout] Client Lookup: %v", err)
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{
@@ -359,8 +365,11 @@ func (h *AuthHandler) InternalLogout(c *gin.Context) {
 		return
 	}
 
-	// 1. Get client by id
-	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID)
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	actorPerms := c.GetStringSlice("permissions")
+
+	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID, actorID, actorPerms)
 	if err != nil {
 		log.Printf("[InternalLogout] Client Lookup: %v", err)
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{
@@ -540,7 +549,11 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		})
 		return
 	}
-	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID)
+	uIDStr := c.GetString("user_id")
+	uID, _ := uuid.Parse(uIDStr)
+	perms := c.GetStringSlice("permissions")
+
+	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID, uID, perms)
 	if err != nil || !slices.Contains(client.Grants, "client_credentials") {
 		c.JSON(http.StatusForbidden, dto.ErrorResponse{
 			Error: "missing grant type",
