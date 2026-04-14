@@ -8,6 +8,8 @@ definitions:
         items:
           $ref: '#/definitions/dto.PreapprovedClientResponse'
         type: array
+      id:
+        type: integer
     type: object
   dto.ActivateAccountRequest:
     properties:
@@ -15,6 +17,20 @@ definitions:
         type: string
       password:
         type: string
+    required:
+    - invitation_code
+    - password
+    type: object
+  dto.ChangePasswordRequest:
+    properties:
+      new_password:
+        minLength: 8
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - old_password
     type: object
   dto.ClientAccessResponse:
     properties:
@@ -94,13 +110,13 @@ definitions:
     type: object
   dto.InvitationRequest:
     properties:
+      account_type_id:
+        type: integer
       email:
         type: string
-      invitation_type:
-        type: string
     required:
+    - account_type_id
     - email
-    - invitation_type
     type: object
   dto.LoginRequest:
     properties:
@@ -128,6 +144,38 @@ definitions:
         type: string
     required:
     - email
+    type: object
+  dto.PostAdminUserRequest:
+    properties:
+      account_type_id:
+        type: integer
+      allowed_appclients:
+        items:
+          type: string
+        type: array
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      name_suffix:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      role_id:
+        type: integer
+      status:
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    - status
     type: object
   dto.PostAuditLogRequest:
     properties:
@@ -247,21 +295,22 @@ definitions:
       token_type:
         type: string
     type: object
+  dto.UpdatePasswordByEmailRequest:
+    properties:
+      email:
+        type: string
+      new_password:
+        type: string
+    required:
+    - email
+    - new_password
+    type: object
   dto.UpdatePasswordRequest:
     properties:
       new_password:
         type: string
     required:
     - new_password
-    type: object
-  dto.UpdatePreapprovedClientsRequest:
-    properties:
-      account_type_id:
-        type: integer
-      client_ids:
-        items:
-          type: string
-        type: array
     type: object
   dto.UpdateStatusRequest:
     properties:
@@ -279,10 +328,39 @@ definitions:
     required:
     - client_ids
     type: object
+  dto.UpdateUserNameRequest:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      name_suffix:
+        type: string
+    required:
+    - first_name
+    - last_name
+    type: object
   dto.UpdateUserRoleRequest:
     properties:
       role_id:
         type: integer
+    type: object
+  dto.UpsertAccountTypeRequest:
+    properties:
+      client_ids:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+    required:
+    - client_ids
+    - id
+    - name
     type: object
   dto.UserInfoResponse:
     properties:
@@ -750,7 +828,97 @@ paths:
       summary: Get Registration Config
       tags:
       - Registration
+    post:
+      consumes:
+      - application/json
+      description: Create an account type with preapproved clients.
+      parameters:
+      - description: Create Request
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpsertAccountTypeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Create Account Type
+      tags:
+      - Registration
+    put:
+      consumes:
+      - application/json
+      description: Update name and preapproved clients for an account type.
+      parameters:
+      - description: Update Request
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpsertAccountTypeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update Account Type
+      tags:
+      - Registration
   /admin/registration/config/{id}:
+    delete:
+      description: Delete an account type and its client associations.
+      parameters:
+      - description: Account Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Delete Account Type
+      tags:
+      - Registration
     get:
       description: Fetch all clients preapproved for a given account type.
       parameters:
@@ -775,38 +943,6 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Get Clients By Account Type ID
-      tags:
-      - Registration
-  /admin/registration/preapproved:
-    put:
-      consumes:
-      - application/json
-      description: Add/Remove client IDs for a specific account type.
-      parameters:
-      - description: Update Request
-        in: body
-        name: req
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdatePreapprovedClientsRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Update Preapproved Clients
       tags:
       - Registration
   /admin/roles:
@@ -938,6 +1074,36 @@ paths:
       summary: Update an existing role
       tags:
       - Roles
+  /admin/users:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with an account type ID.
+      parameters:
+      - description: User Data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PostAdminUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Create Admin User
+      tags:
+      - Users
   /admin/users/{id}/access:
     put:
       consumes:
@@ -1089,20 +1255,23 @@ paths:
       - description: Logout Request
         in: body
         name: req
-        required: true
         schema:
           $ref: '#/definitions/dto.LogoutRequest'
+      - description: Client ID
+        in: query
+        name: client_id
+        type: string
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SuccessResponse'
+        "302":
+          description: Found
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - Bearer: []
       summary: Global Logout
       tags:
       - Authentication
@@ -1217,6 +1386,40 @@ paths:
       summary: Update client secret
       tags:
       - Clients
+  /internal/user/{email}/password:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the password for a user identified by email.
+      parameters:
+      - description: User Email
+        in: path
+        name: email
+        type: string
+      - description: Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePasswordByEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update user password by email
+      tags:
+      - Users
   /logs:
     get:
       description: Returns a paginated list of audit logs with optional filters.
@@ -1534,6 +1737,77 @@ paths:
       summary: Verify OTP Code
       tags:
       - otp
+  /user/{id}/name:
+    patch:
+      consumes:
+      - application/json
+      description: Updates first, middle, last names and suffix of a user.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Name update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update user name
+      tags:
+      - Users
+  /user/password/change:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the password for the currently authenticated user.
+      parameters:
+      - description: Password Change Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Change user password
+      tags:
+      - Users
   /users:
     get:
       description: Get a paginated list of all users
