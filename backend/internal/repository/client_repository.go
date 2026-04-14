@@ -33,9 +33,10 @@ type ClientRepository interface {
 	DeleteAndInsertGrants(ctx context.Context, c *models.Client,
 		grants []string) error
 	AdminiClientBind(ctx context.Context, userID, clientID []byte) error
-	BatchAdminClientBind(ctx context.Context, userID []byte, 
+	BatchAdminClientBind(ctx context.Context, userID []byte,
 		clientIDs [][]byte) error
 	RemoveAdminClientBind(ctx context.Context, clientID []byte) error
+	IsClientAllowed(ctx context.Context, userID, clientID []byte) (bool, error)
 }
 
 type clientRepository struct {
@@ -387,6 +388,19 @@ func (r *clientRepository) RemoveAdminClientBind(ctx context.Context,
 
 	_, err := r.db.ExecContext(ctx, query, clientID)
 	return err
+}
+
+func (r *clientRepository) IsClientAllowed(ctx context.Context,
+	userID, clientID []byte,
+) (bool, error) {
+	var allowed bool
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM admin_allowed_clients 
+			WHERE user_id = ? AND client_id = ?
+		)`
+	err := r.db.GetContext(ctx, &allowed, query, userID, clientID)
+	return allowed, err
 }
 
 func NewClientRepository(db *sqlx.DB) ClientRepository {
