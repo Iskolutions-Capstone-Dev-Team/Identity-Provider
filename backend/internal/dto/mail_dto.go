@@ -5,6 +5,6 @@ type OTPRequest struct {
 }
 
 type InvitationRequest struct {
-	Email          string `json:"email" binding:"required,email"`
-	InvitationType string `json:"invitation_type" binding:"required"`
+	Email         string `json:"email" binding:"required,email"`
+	AccountTypeID int    `json:"account_type_id" binding:"required"`
 }
