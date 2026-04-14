@@ -13,6 +13,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -51,8 +52,18 @@ func AuthMiddleware(publicKey *rsa.PublicKey, logService service.LogService) gin
 		token, err := service.GetParsedToken(parts[1], publicKey)
 		if err != nil {
 			log.Printf("[AuthMiddleware] Token Validation: %v", err)
+			
+			status := http.StatusUnauthorized
+			errorMsg := "invalid_token"
+			
+			// Specifically handle expired tokens for frontend auto-refresh
+			if strings.Contains(err.Error(), jwt.ErrTokenExpired.Error()) {
+				errorMsg = "token_expired"
+			}
+
 			if logService != nil {
-				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), c.ClientIP(), &dto.PostAuditLogRequest{
+				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), 
+					c.ClientIP(), &dto.PostAuditLogRequest{
 					Action:   "invalid_token_usage",
 					Target:   "auth_header",
 					Status:   models.StatusFail,
@@ -63,7 +74,7 @@ func AuthMiddleware(publicKey *rsa.PublicKey, logService service.LogService) gin
 					}),
 				})
 			}
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(status, dto.ErrorResponse{Error: errorMsg})
 			return
 		}
 
@@ -104,8 +115,17 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 		token, err := service.GetParsedToken(tokenStr, publicKey)
 		if err != nil {
 			log.Printf("[AuthorizeRBAC] Token Validation: %v", err)
+
+			status := http.StatusUnauthorized
+			errorMsg := "invalid_token"
+			
+			if strings.Contains(err.Error(), jwt.ErrTokenExpired.Error()) {
+				errorMsg = "token_expired"
+			}
+
 			if logService != nil {
-				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), c.ClientIP(), &dto.PostAuditLogRequest{
+				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), 
+					c.ClientIP(), &dto.PostAuditLogRequest{
 					Action:   "invalid_token_usage",
 					Target:   "access_token_cookie",
 					Status:   models.StatusFail,
@@ -116,7 +136,7 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 					}),
 				})
 			}
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(status, dto.ErrorResponse{Error: errorMsg})
 			return
 		}
 

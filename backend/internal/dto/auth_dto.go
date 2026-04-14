@@ -24,6 +24,10 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
+type InternalRefreshRequest struct {
+	ClientID string `json:"client_id" binding:"required"`
+}
+
 type LogoutRequest struct {
 	ClientID string `json:"client_id" binding:"required"`
 }

@@ -706,3 +706,67 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
+
+// PostInternalRefresh handles session-based refresh for the primary SPA client.
+func (h *AuthHandler) PostInternalRefresh(c *gin.Context) {
+	var req dto.InternalRefreshRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PostInternalRefresh] Bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid_request",
+		})
+		return
+	}
+
+	// Verify that the client is indeed the primary internal client
+	if req.ClientID != os.Getenv("CLIENT_ID") {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{
+			Error: "client_not_allowed_for_session_refresh",
+		})
+		return
+	}
+
+	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "session_required",
+		})
+		return
+	}
+
+	resp, err := h.AuthService.RefreshBySession(
+		c.Request.Context(),
+		sessionID,
+		req.ClientID,
+	)
+	if err != nil {
+		log.Printf("[PostInternalRefresh] Service Error: %v", err)
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "refresh_fail",
+		})
+		return
+	}
+
+	// Resolve client name for logging
+	clientName := h.LogService.ResolveClientName(
+		c.Request.Context(),
+		req.ClientID,
+	)
+
+	// Log success
+	logReq := &dto.PostAuditLogRequest{
+		Action: actionTokenRotate,
+		Target: "session_refresh",
+		Status: models.StatusSuccess,
+		Metadata: buildMetadata(map[string]interface{}{
+			"client_id":   req.ClientID,
+			"client_name": clientName,
+			"ip":          c.ClientIP(),
+			"user_agent":  c.Request.UserAgent(),
+		}),
+	}
+	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(),
+		clientName, logReq)
+
+	c.JSON(http.StatusOK, resp)
+}

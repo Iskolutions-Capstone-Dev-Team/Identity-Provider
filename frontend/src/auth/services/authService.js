@@ -66,4 +66,14 @@ export const authService = {
       skipAuthRefresh: true,
     });
   },
+
+  async refreshSession(clientId) {
+    const response = await axiosInstance.post("/internal/auth/refresh", {
+      client_id: clientId,
+    }, {
+      skipAuthRefresh: true,
+    });
+
+    return response.data;
+  },
 };
