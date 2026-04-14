@@ -25,8 +25,11 @@ export default function AppClient() {
     const canViewAllClients = hasPermission(PERMISSIONS.VIEW_ALL_APPCLIENTS);
     const shouldUseManagedClients =
         !canViewAllClients && (canEditClient || canDeleteClient);
-    const { appClients: managedClients, isLoadingAppClients: isLoadingManagedClients } =
-        useManagedUserAccessClients({ enabled: shouldUseManagedClients });
+    const {
+        appClients: managedClients,
+        isLoadingAppClients: isLoadingManagedClients,
+        refreshAppClients: refreshManagedClients,
+    } = useManagedUserAccessClients({ enabled: shouldUseManagedClients });
     const scopedClients = canViewAllClients
         ? null
         : shouldUseManagedClients
@@ -59,6 +62,11 @@ export default function AppClient() {
 
     const handleCreateClient = async (payload) => {
         const res = await createClient(payload);
+
+        if (shouldUseManagedClients) {
+            refreshManagedClients({ showLoading: false });
+        }
+
         setSecretModal({
             open: true,
             title: "Client secret created",
@@ -103,10 +111,21 @@ export default function AppClient() {
         setShowDeleteAlert(true);
     };
 
-    const confirmDelete = () => {
-        deleteClient(deleteTarget);
-        setShowDeleteAlert(false);
-        setDeleteTarget(null);
+    const confirmDelete = async () => {
+        if (!deleteTarget) {
+            return;
+        }
+
+        try {
+            await deleteClient(deleteTarget);
+
+            if (shouldUseManagedClients) {
+                refreshManagedClients({ showLoading: false });
+            }
+        } finally {
+            setShowDeleteAlert(false);
+            setDeleteTarget(null);
+        }
     };
 
     const handleRotateClick = (client) => {

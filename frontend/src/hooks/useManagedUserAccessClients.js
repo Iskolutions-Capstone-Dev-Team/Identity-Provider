@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { userService } from "../services/userService";
 
 function mapManagedClient(client = {}) {
@@ -14,6 +14,8 @@ function mapManagedClient(client = {}) {
 export function useManagedUserAccessClients({ enabled = true } = {}) {
   const [appClients, setAppClients] = useState([]);
   const [isLoadingAppClients, setIsLoadingAppClients] = useState(enabled);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const skipNextLoadingRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) {
@@ -23,10 +25,14 @@ export function useManagedUserAccessClients({ enabled = true } = {}) {
     }
 
     let cancelled = false;
+    const shouldShowLoading = !skipNextLoadingRef.current;
+    skipNextLoadingRef.current = false;
 
     const fetchManagedClients = async () => {
       try {
-        setIsLoadingAppClients(true);
+        if (shouldShowLoading) {
+          setIsLoadingAppClients(true);
+        }
 
         const managedClients = await userService.getManagedUserAccessClients();
         const clientMap = new Map();
@@ -66,10 +72,25 @@ export function useManagedUserAccessClients({ enabled = true } = {}) {
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, refreshKey]);
+
+  const refreshAppClients = ({ showLoading = true } = {}) => {
+    if (!enabled) {
+      setAppClients([]);
+      setIsLoadingAppClients(false);
+      return;
+    }
+
+    if (!showLoading) {
+      skipNextLoadingRef.current = true;
+    }
+
+    setRefreshKey((currentValue) => currentValue + 1);
+  };
 
   return {
     appClients,
     isLoadingAppClients,
+    refreshAppClients,
   };
 }
