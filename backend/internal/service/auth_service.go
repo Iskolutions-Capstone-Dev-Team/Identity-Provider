@@ -33,6 +33,8 @@ type AuthService interface {
 	GetSessionToken(ctx context.Context, userID uuid.UUID,
 		ipAddress, userAgent string) (string, error)
 	RevokeAllUserTokens(ctx context.Context, userID uuid.UUID) error
+	RefreshBySession(ctx context.Context, sessionID string, 
+		clientID string) (*dto.TokenResponse, error)
 	RevokeCookies(c *gin.Context)
 }
 
@@ -267,15 +269,21 @@ func (s *authService) ExchangeCodeForToken(
 	grants, _ := s.ClientRepo.GetGrantTypes(ctx, clientIDBin)
 	var refreshStr string
 	if slices.Contains(grants, "refresh_token") {
-		refreshStr, _ = utils.GenerateRandomString(SECRET_ENTROPY)
-		err = s.Repo.StoreRefreshToken(
-			ctx,
-			refreshStr,
-			authCode.UserId,
-			clientIDBin,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("Database Query (StoreRefresh): %w", err)
+		// Optimization: If this is the primary IDP client, skip DB storage.
+		// The frontend will use the session cookie for refresh.
+		if req.ClientID == os.Getenv("CLIENT_ID") {
+			refreshStr = "internal_session_managed"
+		} else {
+			refreshStr, _ = utils.GenerateRandomString(SECRET_ENTROPY)
+			err = s.Repo.StoreRefreshToken(
+				ctx,
+				refreshStr,
+				authCode.UserId,
+				clientIDBin,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("Database Query (StoreRefresh): %w", err)
+			}
 		}
 	}
 
@@ -339,6 +347,54 @@ func (s *authService) RotateRefreshToken(
 		RefreshToken: newToken,
 		ExpiresIn:    ACCESS_TOKEN_EXPIRY,
 		TokenType:    "Bearer",
+	}, nil
+}
+
+/**
+ * RefreshBySession issues a new access token based on a valid session ID.
+ */
+func (s *authService) RefreshBySession(
+	ctx context.Context,
+	sessionID string,
+	clientIDStr string,
+) (*dto.TokenResponse, error) {
+	// 1. Validate Session
+	session, err := s.SessionRepo.GetByID(ctx, sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (GetSession): %w", err)
+	}
+
+	if time.Now().After(session.ExpiresAt) {
+		return nil, fmt.Errorf("Session Validation: expired")
+	}
+
+	// 2. Validate Client
+	cUUID, err := uuid.Parse(clientIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("UUID Parse: %w", err)
+	}
+
+	client, err := s.ClientRepo.GetByID(ctx, cUUID[:])
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (GetClient): %w", err)
+	}
+
+	// 3. Retrieve Identity
+	claims, err := s.Repo.GetClaimsByID(ctx, session.UserId)
+	if err != nil {
+		return nil, fmt.Errorf("Database Query (GetClaims): %w", err)
+	}
+
+	// 4. Mint new Access Token
+	accessToken, err := GenerateToken(s.PrivateKey, client, *claims)
+	if err != nil {
+		return nil, fmt.Errorf("Token Generation (JWT): %w", err)
+	}
+
+	return &dto.TokenResponse{
+		AccessToken: accessToken,
+		ExpiresIn:   ACCESS_TOKEN_EXPIRY,
+		TokenType:   "Bearer",
 	}, nil
 }
 
