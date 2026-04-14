@@ -516,7 +516,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         followUpStep = "send_invitation";
         await mailService.sendInvitation({
           email: newUser.email,
-          invitationType: accountType,
+          accountTypeId: accountTypeId,
         });
       }
 
