@@ -141,7 +141,8 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /admin/clients [get]
 func (h *ClientHandler) GetClientList(c *gin.Context) {
-	if !middleware.HasPermission(c, "View all appclients") {
+	if !middleware.HasPermission(c, "View all appclients") &&
+		!middleware.HasPermission(c, "View connected appclients") {
 		c.JSON(
 			http.StatusUnauthorized,
 			dto.ErrorResponse{Error: "Unauthorized"},
@@ -221,6 +222,7 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
+	permissions := c.GetStringSlice("permissions")
 	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
@@ -236,6 +238,8 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	client, err := h.Service.GetClientByID(
 		ctx,
 		clientUUID,
+		userID,
+		permissions,
 	)
 	if err != nil {
 		log.Printf("[GetClient] %v", err)
@@ -302,6 +306,7 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
+	permissions := c.GetStringSlice("permissions")
 	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
@@ -338,6 +343,8 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		req,
 		file,
 		header,
+		userID,
+		permissions,
 	)
 	if err != nil {
 		log.Printf("[PutClient] %v", err)
@@ -397,6 +404,7 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
+	permissions := c.GetStringSlice("permissions")
 	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
@@ -412,6 +420,8 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 	resp, err := h.Service.RotateClientSecret(
 		ctx,
 		clientID,
+		userID,
+		permissions,
 	)
 	if err != nil {
 		log.Printf("[PatchClientSecret] %v", err)
@@ -482,6 +492,7 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
+	permissions := c.GetStringSlice("permissions")
 	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
 	if actorName == "" {
 		actorName = userIDStr
@@ -494,7 +505,7 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 		"user_agent":  c.Request.UserAgent(),
 	})
 
-	err = h.Service.DeleteClient(ctx, clientUUID)
+	err = h.Service.DeleteClient(ctx, clientUUID, userID, permissions)
 	if err != nil {
 		log.Printf("[DeleteClient] %v", err)
 		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
