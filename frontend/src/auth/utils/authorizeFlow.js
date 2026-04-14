@@ -1,7 +1,12 @@
 import { DEFAULT_AUTHENTICATED_PATH } from "./authAccess";
 
 const DEFAULT_CLIENT_ID = import.meta.env.VITE_CLIENT_ID ?? "";
-const AUTHORIZE_RETURN_PATH_STORAGE_KEY = "authorizeReturnPath";
+const IDP_STORAGE_PREFIX = "idp";
+const AUTHORIZE_RETURN_PATH_STORAGE_KEY =
+  `${IDP_STORAGE_PREFIX}.authorizeReturnPath`;
+const AUTHORIZE_ATTEMPT_STORAGE_KEY =
+  `${IDP_STORAGE_PREFIX}.authorizeAttempt`;
+const AUTHORIZE_ATTEMPT_WINDOW_MS = 5000;
 const NON_RETURNABLE_PATHS = new Set([
   "/",
   "/login",
@@ -88,6 +93,79 @@ export function clearAuthorizeReturnPath() {
   sessionStorage.removeItem(AUTHORIZE_RETURN_PATH_STORAGE_KEY);
 }
 
+function readAuthorizeAttempt() {
+  if (typeof sessionStorage === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue = sessionStorage.getItem(AUTHORIZE_ATTEMPT_STORAGE_KEY);
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    const timestamp = Number(parsedValue?.timestamp);
+    const clientId = normalizeClientId(parsedValue?.clientId);
+
+    if (!Number.isFinite(timestamp) || !clientId) {
+      return null;
+    }
+
+    return {
+      timestamp,
+      clientId,
+    };
+  } catch (error) {
+    console.error("Unable to read authorize attempt:", error);
+    return null;
+  }
+}
+
+function rememberAuthorizeAttempt(clientId = DEFAULT_CLIENT_ID) {
+  if (typeof sessionStorage === "undefined") {
+    return;
+  }
+
+  const normalizedClientId = normalizeClientId(clientId);
+
+  if (!normalizedClientId) {
+    return;
+  }
+
+  sessionStorage.setItem(
+    AUTHORIZE_ATTEMPT_STORAGE_KEY,
+    JSON.stringify({
+      clientId: normalizedClientId,
+      timestamp: Date.now(),
+    }),
+  );
+}
+
+export function clearAuthorizeAttempt() {
+  if (typeof sessionStorage === "undefined") {
+    return;
+  }
+
+  sessionStorage.removeItem(AUTHORIZE_ATTEMPT_STORAGE_KEY);
+}
+
+export function hasRecentAuthorizeAttempt(clientId = DEFAULT_CLIENT_ID) {
+  const normalizedClientId = normalizeClientId(clientId);
+  const attempt = readAuthorizeAttempt();
+
+  if (!normalizedClientId || !attempt) {
+    return false;
+  }
+
+  if (attempt.clientId !== normalizedClientId) {
+    return false;
+  }
+
+  return Date.now() - attempt.timestamp < AUTHORIZE_ATTEMPT_WINDOW_MS;
+}
+
 export function consumeAuthorizeReturnPath() {
   const returnPath = getAuthorizeReturnPath();
 
@@ -116,13 +194,19 @@ export function redirectToAuthorize( clientId = DEFAULT_CLIENT_ID, returnPath = 
     return false;
   }
 
+  const normalizedClientId = normalizeClientId(clientId);
   const authorizeUrl = buildAuthorizeUrl(clientId);
 
-  if (!authorizeUrl) {
+  if (!normalizedClientId || !authorizeUrl) {
+    return false;
+  }
+
+  if (hasRecentAuthorizeAttempt(normalizedClientId)) {
     return false;
   }
 
   rememberAuthorizeReturnPath(returnPath);
+  rememberAuthorizeAttempt(normalizedClientId);
   window.location.replace(authorizeUrl);
 
   return true;

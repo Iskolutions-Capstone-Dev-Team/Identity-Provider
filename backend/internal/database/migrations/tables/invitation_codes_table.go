@@ -15,5 +15,27 @@ var InvitationCodesMigration = migrations.TableMigration{
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			);`,
 		},
+		{
+			ID: "refactor-to-account-type-id",
+			SQL: `
+			ALTER TABLE invitation_codes 
+			ADD COLUMN account_type_id INT;
+
+			UPDATE invitation_codes ic
+			JOIN account_types at ON (
+				CASE 
+					WHEN ic.invitation_type = 'admin' THEN 'System Administrator'
+					ELSE ic.invitation_type 
+				END
+			) = at.name
+			SET ic.account_type_id = at.id;
+
+			ALTER TABLE invitation_codes 
+			DROP COLUMN invitation_type,
+			MODIFY COLUMN account_type_id INT NOT NULL,
+			ADD CONSTRAINT fk_invitation_account_type 
+				FOREIGN KEY (account_type_id) REFERENCES account_types(id);
+			`,
+		},
 	},
 }

@@ -13,7 +13,7 @@ import (
 type MailService interface {
 	SendAndSaveOTP(ctx context.Context, email string) error
 	SendAndSaveInvitation(ctx context.Context, 
-		email string, invType models.InvitationType) error
+		email string, accountTypeID int) error
 }
 
 type mailService struct {
@@ -51,7 +51,7 @@ func (s *mailService) SendAndSaveOTP(ctx context.Context,
 
 // SendAndSaveInvitation generates, saves and sends an invitation code.
 func (s *mailService) SendAndSaveInvitation(ctx context.Context, 
-	email string, invType models.InvitationType,
+	email string, accountTypeID int,
 ) error {
 	code, err := utils.GenerateAuthorizationCode()
 	if err != nil {
@@ -59,8 +59,8 @@ func (s *mailService) SendAndSaveInvitation(ctx context.Context,
 	}
 
 	inv := &models.InvitationCode{
-		Email:          email,
-		InvitationType: invType,
+		Email:         email,
+		AccountTypeID: accountTypeID,
 		InvitationCode: code,
 	}
 

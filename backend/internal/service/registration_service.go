@@ -31,17 +31,20 @@ type regService struct {
 	repo         repository.RegistrationRepository
 	invitation   repository.InvitationRepository
 	user         repository.UserRepository
+	cau          repository.ClientAllowedUserRepository
 }
 
 func NewRegistrationService(
 	repo repository.RegistrationRepository,
 	invitation repository.InvitationRepository,
 	user repository.UserRepository,
+	cau repository.ClientAllowedUserRepository,
 ) RegistrationService {
 	return &regService{
 		repo:       repo,
 		invitation: invitation,
 		user:       user,
+		cau:        cau,
 	}
 }
 
@@ -184,6 +187,22 @@ func (s *regService) ActivateAccount(ctx context.Context,
 	})
 	if err != nil {
 		return err
+	}
+
+	// Automate client access based on account type
+	if inv.AccountTypeID != 0 {
+		clients, err := s.repo.GetClientsByAccountTypeID(ctx, inv.AccountTypeID)
+		if err == nil && len(clients) > 0 {
+			clientIDs := make([][]byte, 0, len(clients))
+			for _, c := range clients {
+				if len(c.ClientID) > 0 {
+					clientIDs = append(clientIDs, c.ClientID)
+				}
+			}
+			if len(clientIDs) > 0 {
+				_ = s.cau.BatchAssignClientAccess(ctx, user.ID, clientIDs)
+			}
+		}
 	}
 
 	return s.invitation.DeleteInvitation(ctx, inv.Email)

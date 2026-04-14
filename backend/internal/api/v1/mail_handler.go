@@ -90,7 +90,7 @@ func (h *MailHandler) SendInvitation(c *gin.Context) {
 
 	reqCtx := c.Request.Context()
 	err := h.MailService.SendAndSaveInvitation(reqCtx,
-		req.Email, models.InvitationType(req.InvitationType))
+		req.Email, req.AccountTypeID)
 
 	actorIDStr := c.GetString("user_id")
 	actorID, _ := uuid.Parse(actorIDStr)

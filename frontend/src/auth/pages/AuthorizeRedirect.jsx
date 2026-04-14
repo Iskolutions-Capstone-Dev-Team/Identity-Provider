@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { buildLoginPath } from "../utils/loginRoute";
 import { hasStoredAccessToken } from "../utils/authRecovery";
-import { getAuthorizeReturnPath, redirectToAuthorize } from "../utils/authorizeFlow";
+import { clearAuthorizeAttempt, getAuthorizeReturnPath, redirectToAuthorize } from "../utils/authorizeFlow";
 
 const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 
@@ -18,6 +18,7 @@ export default function AuthorizeRedirect() {
       const returnPath = getAuthorizeReturnPath();
 
       if (hasStoredAccessToken()) {
+        clearAuthorizeAttempt();
         navigate(returnPath, { replace: true });
         return;
       }
