@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "../services/authService";
 import { storeTokenResponse } from "../utils/authCookies";
 import { buildLoginPath, buildUnauthorizedLoginPath } from "../utils/loginRoute";
-import { clearAuthorizeReturnPath, consumeAuthorizeReturnPath } from "../utils/authorizeFlow";
+import { clearAuthorizeAttempt, clearAuthorizeReturnPath, consumeAuthorizeReturnPath } from "../utils/authorizeFlow";
 
 export default function Callback() {
   const [searchParams] = useSearchParams();
@@ -18,6 +18,7 @@ export default function Callback() {
       const code = searchParams.get("code");
 
       if (!code) {
+        clearAuthorizeAttempt();
         clearAuthorizeReturnPath();
         navigate(buildLoginPath(), { replace: true });
         return;
@@ -31,6 +32,7 @@ export default function Callback() {
         }
 
         storeTokenResponse(tokenResponse);
+        clearAuthorizeAttempt();
         sessionStorage.removeItem("termsAccepted");
         const returnPath = consumeAuthorizeReturnPath();
 
@@ -39,6 +41,7 @@ export default function Callback() {
         }, 1000);
       } catch (err) {
         console.error(err);
+        clearAuthorizeAttempt();
         clearAuthorizeReturnPath();
         navigate(buildUnauthorizedLoginPath(), { replace: true });
       }
