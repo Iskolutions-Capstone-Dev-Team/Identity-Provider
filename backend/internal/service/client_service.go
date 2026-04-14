@@ -26,12 +26,15 @@ type ClientService interface {
 		keyword string) (*dto.ClientListResponse, error)
 	GetBoundClients(ctx context.Context, userID uuid.UUID, limit, page int,
 		keyword string) (*dto.ClientListResponse, error)
-	GetClientByID(ctx context.Context, id uuid.UUID) (*dto.ClientResponse, error)
+	GetClientByID(ctx context.Context, id uuid.UUID,
+		userID uuid.UUID, permissions []string) (*dto.ClientResponse, error)
 	UpdateClient(ctx context.Context, id uuid.UUID, req dto.CreateClientRequest,
-		file multipart.File, header *multipart.FileHeader) error
-	RotateClientSecret(ctx context.Context,
-		id uuid.UUID) (*dto.ClientSecretResponse, error)
-	DeleteClient(ctx context.Context, id uuid.UUID) error
+		file multipart.File, header *multipart.FileHeader,
+		userID uuid.UUID, permissions []string) error
+	RotateClientSecret(ctx context.Context, id uuid.UUID,
+		userID uuid.UUID, permissions []string) (*dto.ClientSecretResponse, error)
+	DeleteClient(ctx context.Context, id uuid.UUID,
+		userID uuid.UUID, permissions []string) error
 }
 
 type clientService struct {
@@ -117,7 +120,38 @@ func (s *clientService) GetFilteredClientList(
 		return s.GetClientList(ctx, limit, page, keyword)
 	}
 
-	return nil, fmt.Errorf("Privilege Validation: unauthorized level")
+	if slices.Contains(permissions, "View connected appclients") {
+		return s.GetBoundClients(ctx, userID, limit, page, keyword)
+	}
+
+	return nil, fmt.Errorf("Privilege Validation: restricted level")
+}
+
+func (s *clientService) checkClientAccess(
+	ctx context.Context,
+	userID uuid.UUID,
+	clientID uuid.UUID,
+	permissions []string,
+) error {
+	// If global admin permission is present, skip check.
+	if slices.Contains(permissions, "View all appclients") {
+		return nil
+	}
+
+	// If scoped permission is present, enforce check.
+	if slices.Contains(permissions, "View connected appclients") {
+		allowed, err := s.Repo.IsClientAllowed(ctx, userID[:], clientID[:])
+		if err != nil {
+			return fmt.Errorf("Repository Check: %w", err)
+		}
+		if !allowed {
+			return fmt.Errorf("Authorization: client is outside of your scope")
+		}
+		return nil
+	}
+
+	// Default: if no scoping rule is activated, default to global behavior.
+	return nil
 }
 
 /**
@@ -241,7 +275,13 @@ func (s *clientService) GetBoundClients(
 func (s *clientService) GetClientByID(
 	ctx context.Context,
 	id uuid.UUID,
+	userID uuid.UUID,
+	permissions []string,
 ) (*dto.ClientResponse, error) {
+	if err := s.checkClientAccess(ctx, userID, id, permissions); err != nil {
+		return nil, err
+	}
+
 	cl, err := s.Repo.GetByID(ctx, id[:])
 	if err != nil {
 		return nil, fmt.Errorf("Database Query (GetByID): %w", err)
@@ -296,7 +336,13 @@ func (s *clientService) UpdateClient(
 	req dto.CreateClientRequest,
 	file multipart.File,
 	header *multipart.FileHeader,
+	userID uuid.UUID,
+	permissions []string,
 ) error {
+	if err := s.checkClientAccess(ctx, userID, id, permissions); err != nil {
+		return err
+	}
+
 	existing, err := s.Repo.GetByID(ctx, id[:])
 	if err != nil {
 		return fmt.Errorf("Database Query (Search): %w", err)
@@ -342,7 +388,13 @@ func (s *clientService) UpdateClient(
 func (s *clientService) RotateClientSecret(
 	ctx context.Context,
 	id uuid.UUID,
+	userID uuid.UUID,
+	permissions []string,
 ) (*dto.ClientSecretResponse, error) {
+	if err := s.checkClientAccess(ctx, userID, id, permissions); err != nil {
+		return nil, err
+	}
+
 	// 1. Generate High-Entropy Secret
 	newSecret, err := utils.GenerateRandomString(SECRET_ENTROPY)
 	if err != nil {
@@ -375,7 +427,13 @@ func (s *clientService) RotateClientSecret(
 func (s *clientService) DeleteClient(
 	ctx context.Context,
 	id uuid.UUID,
+	userID uuid.UUID,
+	permissions []string,
 ) error {
+	if err := s.checkClientAccess(ctx, userID, id, permissions); err != nil {
+		return err
+	}
+
 	cl, err := s.Repo.GetByID(ctx, id[:])
 	if err != nil {
 		return fmt.Errorf("Database Query (Search): %w", err)
