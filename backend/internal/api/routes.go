@@ -51,6 +51,8 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	v1Group.GET("/activate/:code", h.RegistrationHandler.CheckInvitation)
 	v1Group.POST("/internal/logout", h.ClientCORS,
 		h.AuthHandler.InternalLogout)
+	v1Group.POST("/internal/auth/refresh", h.ClientCORS,
+		h.AuthHandler.PostInternalRefresh)
 
 	// Endpoint for getting user information
 	me := v1Group.Group("/me")
