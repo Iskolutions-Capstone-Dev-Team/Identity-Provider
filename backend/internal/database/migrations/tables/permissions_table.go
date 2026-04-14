@@ -68,5 +68,11 @@ var PermissionsMigration = migrations.TableMigration{
 				('Delete Registration Config')
 			;`,
 		},
+		{
+			ID: "add-scoped-client-permissions",
+			SQL: `INSERT IGNORE INTO permissions (permission) VALUES 
+				('View connected appclients')
+			;`,
+		},
 	},
 }
