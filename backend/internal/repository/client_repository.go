@@ -116,7 +116,7 @@ func (r *clientRepository) ListBoundClients(ctx context.Context,
 			c.description, c.image_location,
 			c.base_url, c.redirect_uri, c.logout_uri, c.created_at
 		FROM clients c
-		JOIN client_allowed_user a ON c.id = a.client_id
+		JOIN client_allowed_users a ON c.id = a.client_id
 		WHERE a.user_id = ?
 			AND c.deleted_at IS NULL
 			AND c.client_name LIKE ?
