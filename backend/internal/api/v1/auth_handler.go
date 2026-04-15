@@ -554,7 +554,8 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	perms := c.GetStringSlice("permissions")
 
 	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID, uID, perms)
-	if err != nil || !slices.Contains(client.Grants, "client_credentials") {
+	if err != nil || (!slices.Contains(client.Grants, "client_credentials") &&
+		!slices.Contains(client.Grants, "authorization_code")) {
 		c.JSON(http.StatusForbidden, dto.ErrorResponse{
 			Error: "missing grant type",
 		})
