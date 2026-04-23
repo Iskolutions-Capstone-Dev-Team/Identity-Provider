@@ -502,7 +502,7 @@ func (r *userRepository) populateClients(ctx context.Context,
 	var rows []clientAccessRow
 	err = r.db.SelectContext(ctx, &rows, fullQuery, args...)
 	if err != nil {
-		return fmt.Errorf("Database Map Fetch: %w", err)
+		return fmt.Errorf("database map fetch: %w", err)
 	}
 
 	clientMap := make(map[string][]models.Client)

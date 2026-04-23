@@ -39,7 +39,7 @@ func MapStatus(status string) (UserStatus, error) {
 	case string(StatusDeleted):
 		s = StatusDeleted
 	default:
-		return "", fmt.Errorf("Invalid status string: %s", status)
+		return "", fmt.Errorf("invalid status string: %s", status)
 	}
 
 	return s, nil

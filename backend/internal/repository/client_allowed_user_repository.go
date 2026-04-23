@@ -69,11 +69,11 @@ func (r *clientAllowedUserRepository) SyncUserAccess(ctx context.Context,
 	scopeQuery := "SELECT client_id FROM admin_allowed_clients WHERE user_id = ?"
 	err = tx.SelectContext(ctx, &scopedClients, scopeQuery, adminID)
 	if err != nil {
-		return fmt.Errorf("Sync: fetch scope: %w", err)
+		return fmt.Errorf("sync: fetch scope: %w", err)
 	}
 
 	if len(scopedClients) == 0 {
-		return fmt.Errorf("Sync: admin has no managed clients")
+		return fmt.Errorf("sync: admin has no managed clients")
 	}
 
 	// 2. Clear current user mappings THAT FALL WITHIN admin's scope
@@ -83,12 +83,12 @@ func (r *clientAllowedUserRepository) SyncUserAccess(ctx context.Context,
 		userID, scopedClients,
 	)
 	if err != nil {
-		return fmt.Errorf("Sync: delete query prep: %w", err)
+		return fmt.Errorf("sync: delete query prep: %w", err)
 	}
 	deleteQuery = r.db.Rebind(deleteQuery)
 	_, err = tx.ExecContext(ctx, deleteQuery, args...)
 	if err != nil {
-		return fmt.Errorf("Sync: delete execution: %w", err)
+		return fmt.Errorf("sync: delete execution: %w", err)
 	}
 
 	// 3. Insert new mappings (only if provided clientID is within scope)
@@ -103,7 +103,7 @@ func (r *clientAllowedUserRepository) SyncUserAccess(ctx context.Context,
 			                VALUES (?, ?)`
 			_, err = tx.ExecContext(ctx, insertQuery, reqID, userID)
 			if err != nil {
-				return fmt.Errorf("Sync: insert %x: %w", reqID, err)
+				return fmt.Errorf("sync: insert %x: %w", reqID, err)
 			}
 		}
 	}

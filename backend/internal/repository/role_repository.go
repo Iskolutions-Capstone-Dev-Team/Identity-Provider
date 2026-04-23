@@ -239,7 +239,7 @@ func (r *roleRepository) UpdateRole(ctx context.Context,
 		return err
 	}
 	if rows == 0 {
-		return errors.New("Forbidden role_name change or role not found.")
+		return errors.New("forbidden role_name change or role not found")
 	}
 
 	if _, err := tx.ExecContext(ctx,
