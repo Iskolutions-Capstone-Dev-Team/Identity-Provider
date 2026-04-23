@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePermissionAccess } from "../context/PermissionContext";
 import { buildLogoutPath } from "../auth/utils/logoutRoute";
@@ -9,6 +12,7 @@ const menuSections = [
     items: [
       {
         name: "User Pool",
+        tooltipLabel: "User Pool",
         path: "/user-pool",
         requiredPermissions: USER_POOL_PAGE_PERMISSIONS,
         iconPath:
@@ -16,6 +20,7 @@ const menuSections = [
       },
       {
         name: "Roles",
+        tooltipLabel: "Roles",
         path: "/roles",
         requiredPermissions: [PERMISSIONS.VIEW_ROLES],
         iconPath:
@@ -23,6 +28,7 @@ const menuSections = [
       },
       {
         name: "App Client",
+        tooltipLabel: "App Client",
         path: "/app-client",
         requiredPermissions: APP_CLIENT_PAGE_PERMISSIONS,
         iconPath:
@@ -35,6 +41,7 @@ const menuSections = [
     items: [
       {
         name: "Audit Logs",
+        tooltipLabel: "Audit Logs",
         path: "/audit-logs",
         requiredPermissions: [PERMISSIONS.VIEW_AUDIT_LOGS],
         iconPath:
@@ -42,6 +49,7 @@ const menuSections = [
       },
       {
         name: "Registration",
+        tooltipLabel: "Registration",
         path: "/registration",
         requiredPermissions: REGISTRATION_PAGE_PERMISSIONS,
         icon: ({ className }) => (
@@ -125,24 +133,73 @@ function SidebarIcon({ item, isActive, isDarkMode }) {
   return renderSidebarMenuIcon(item, iconClassName);
 }
 
-function SidebarTooltip({ label, className }) {
-  return (
-    <span className={`pointer-events-none absolute left-full top-1/2 ml-3 hidden -translate-y-1/2 rounded-xl border px-3 py-2 text-sm font-medium opacity-0 transition duration-200 group-hover:opacity-100 lg:block ${className}`}>
-      {label}
-    </span>
+function SidebarTooltip({ tooltip, className }) {
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
+    <AnimatePresence>
+      {tooltip ? (
+        <motion.span
+          key={tooltip.label}
+          initial={{ opacity: 0, x: -10, scale: 0.96 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: -6, scale: 0.98 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className={`pointer-events-none fixed z-[60] hidden -translate-y-1/2 whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-medium lg:block ${className}`}
+          role="tooltip"
+          style={{
+            top: `${tooltip.top}px`,
+            left: `${tooltip.left}px`,
+            transformOrigin: "left center",
+          }}
+        >
+          {tooltip.label}
+        </motion.span>
+      ) : null}
+    </AnimatePresence>,
+    document.body,
   );
 }
 
-function SidebarMenuItem({ isOpen, item, isActive, onClick, isDarkMode, theme }) {
+function getSidebarTooltipPosition(buttonElement) {
+  const buttonRect = buttonElement.getBoundingClientRect();
+
+  return {
+    left: buttonRect.right + 12,
+    top: buttonRect.top + buttonRect.height / 2,
+  };
+}
+
+function SidebarMenuItem({ isOpen, item, isActive, onClick, isDarkMode, theme, onTooltipChange }) {
   const alignmentClassName = isOpen ? "justify-start px-3" : "justify-center px-0";
   const surfaceClassName = isActive ? theme.activeItem : theme.inactiveItem;
+  const tooltipLabel = item.tooltipLabel ?? item.name;
   const labelClassName = `min-w-0 overflow-hidden whitespace-nowrap text-left text-sm font-semibold tracking-[0.01em] transition-all duration-300 ${
     isOpen ? "ml-3 max-w-40 opacity-100" : "ml-0 max-w-0 opacity-0"
   }`;
+  const handleShowTooltip = (buttonElement) => {
+    if (isOpen || !onTooltipChange) {
+      return;
+    }
+
+    onTooltipChange({
+      label: tooltipLabel,
+      ...getSidebarTooltipPosition(buttonElement),
+    });
+  };
+  const handleHideTooltip = () => {
+    onTooltipChange?.(null);
+  };
+  const handleClick = () => {
+    handleHideTooltip();
+    onClick();
+  };
 
   return (
-    <li className="group relative">
-      <button type="button" onClick={onClick} className={`flex h-14 w-full items-center overflow-hidden rounded-[1.35rem] border transition-all duration-300 ${alignmentClassName} ${surfaceClassName}`}>
+    <li className="relative">
+      <button type="button" onClick={handleClick} onMouseEnter={(event) => handleShowTooltip(event.currentTarget)} onMouseLeave={handleHideTooltip} onFocus={(event) => handleShowTooltip(event.currentTarget)} onBlur={handleHideTooltip} aria-label={item.name} className={`flex h-14 w-full items-center overflow-hidden rounded-[1.35rem] border transition-all duration-300 ${alignmentClassName} ${surfaceClassName}`}>
         <SidebarIcon
           item={item}
           isActive={isActive}
@@ -150,7 +207,6 @@ function SidebarMenuItem({ isOpen, item, isActive, onClick, isDarkMode, theme })
         />
         <span className={labelClassName}>{item.name}</span>
       </button>
-      {!isOpen ? <SidebarTooltip label={item.name} className={theme.tooltip} /> : null}
     </li>
   );
 }
@@ -159,6 +215,7 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
   const navigate = useNavigate();
   const location = useLocation();
   const { hasAnyPermission, isLoadingPermissions } = usePermissionAccess();
+  const [hoveredTooltip, setHoveredTooltip] = useState(null);
   const isDarkMode = activeColorMode === "dark";
   const theme = isDarkMode ? darkSidebarTheme : lightSidebarTheme;
   const railWidthClassName = isOpen ? "w-80" : "w-32";
@@ -183,6 +240,12 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
       { replace: true },
     );
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      setHoveredTooltip(null);
+    }
+  }, [isOpen]);
 
   return (
     <>
@@ -244,6 +307,7 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
                             onClick={() => navigate(item.path)}
                             isDarkMode={isDarkMode}
                             theme={theme}
+                            onTooltipChange={setHoveredTooltip}
                           />
                         );
                       })}
@@ -259,6 +323,7 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
                   isOpen={isOpen}
                   item={{
                     name: "Logout",
+                    tooltipLabel: "Logout",
                     iconPath:
                       "M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15",
                   }}
@@ -266,12 +331,15 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
                   onClick={handleLogout}
                   isDarkMode={isDarkMode}
                   theme={theme}
+                  onTooltipChange={setHoveredTooltip}
                 />
               </ul>
             </div>
           </div>
         </aside>
       </div>
+
+      <SidebarTooltip tooltip={!isOpen ? hoveredTooltip : null} className={theme.tooltip} />
 
       <div className="fixed bottom-5 left-1/2 z-40 w-[calc(100%-1.5rem)] max-w-[28rem] -translate-x-1/2 lg:hidden">
         <div className={`relative overflow-hidden rounded-[2rem] border p-2 backdrop-blur-2xl ${theme.mobileShell}`}>
