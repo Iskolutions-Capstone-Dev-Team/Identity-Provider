@@ -138,7 +138,7 @@ export const registrationService = {
     return response.data;
   },
 
-  async deleteAccountType(accountTypeId, accountTypeName = "") {
+  async deleteAccountType(accountTypeId) {
     if (!Number.isInteger(accountTypeId) || accountTypeId <= 0) {
       throw new Error("Account type ID is required.");
     }

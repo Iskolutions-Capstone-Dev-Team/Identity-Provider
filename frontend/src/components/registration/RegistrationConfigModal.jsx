@@ -115,8 +115,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
     },
     [
       appClientOptions,
-      currentConfig?.clientIds,
-      currentConfig?.clientNames,
+      currentConfig,
       isViewMode,
       selectedClientIds,
     ],
