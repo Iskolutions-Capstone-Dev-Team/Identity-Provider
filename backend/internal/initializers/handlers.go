@@ -57,11 +57,10 @@ func InitializeHandlers(db *sqlx.DB,
 			LogService: service.LogService,
 		},
 		OTPHandler: v1.NewOTPHandler(service.OTPService, service.LogService),
-		UserRepo: userRepo,
+		UserRepo:   userRepo,
 		RoleRepo:   roleRepo,
 		PubKey:     PubKey,
 		CORS:       mw.CORSMiddleware(),
 		ClientCORS: mw.ClientCORSMiddleware(),
 	}
 }
-

@@ -56,7 +56,7 @@ func TestGetRoleHandler(t *testing.T) {
 	// 2. Create context and request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	
+
 	c.Params = []gin.Param{{Key: "id", Value: strconv.Itoa(roleID)}}
 	c.Set("user_id", uuid.New().String())
 	c.Request, _ = http.NewRequest("GET", "/admin/roles/1", nil)

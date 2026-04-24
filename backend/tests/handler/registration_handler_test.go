@@ -50,7 +50,7 @@ func TestCheckInvitationHandler(t *testing.T) {
 	// 2. Create context and request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	
+
 	c.Params = []gin.Param{{Key: "code", Value: code}}
 	c.Request, _ = http.NewRequest("GET", "/activate/"+code, nil)
 

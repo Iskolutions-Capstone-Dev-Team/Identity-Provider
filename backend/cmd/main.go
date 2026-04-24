@@ -11,17 +11,17 @@ import (
 	"syscall"
 	"time"
 
+	"encoding/json"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/docs"
+	_ "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/docs"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/initializers"
-	_ "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/docs"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/docs"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/swaggo/swag"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"encoding/json"
+	"github.com/swaggo/swag"
 	"strings"
 )
 
@@ -45,7 +45,7 @@ import (
 // @description Your custom API Key for identification.
 func initSwagger() {
 	originalDoc := docs.SwaggerInfo.ReadDoc()
-	
+
 	// Register Internal Doc (unfiltered)
 	swag.Register("internal", &swag.Spec{
 		InfoInstanceName: "internal",
@@ -72,8 +72,8 @@ func initSwagger() {
 		if strings.Contains(path, "jwks.json") || path == "/me" {
 			isExternal = true
 		} else if strings.Contains(path, "auth/") {
-			if (!strings.Contains(path, "/login") &&
-				!strings.Contains(path, "/session")) {
+			if !strings.Contains(path, "/login") &&
+				!strings.Contains(path, "/session") {
 				isExternal = true
 			}
 		}

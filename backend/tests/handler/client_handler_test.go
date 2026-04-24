@@ -60,7 +60,7 @@ func TestGetClientHandler(t *testing.T) {
 	// 2. Create context and request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	
+
 	c.Params = []gin.Param{{Key: "id", Value: clientID.String()}}
 	c.Set("user_id", uuid.New().String())
 	c.Request, _ = http.NewRequest("GET", "/admin/clients/"+clientID.String(), nil)
@@ -75,7 +75,7 @@ func TestGetClientHandler(t *testing.T) {
 
 	var raw map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &raw)
-	
+
 	// The handler returns c.JSON(http.StatusOK, gin.H{"client": client})
 	clientMap := raw["client"].(map[string]interface{})
 	if clientMap["name"] != clientResp.Name {

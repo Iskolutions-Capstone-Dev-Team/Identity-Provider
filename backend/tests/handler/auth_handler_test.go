@@ -57,7 +57,7 @@ func TestCheckSessionHandler(t *testing.T) {
 	// 2. Create context and request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	
+
 	// Add session cookie
 	c.Request, _ = http.NewRequest("GET", "/auth/session", nil)
 	c.Request.AddCookie(&http.Cookie{

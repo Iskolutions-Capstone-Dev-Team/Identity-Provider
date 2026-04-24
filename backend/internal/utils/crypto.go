@@ -29,11 +29,11 @@ func CompareSecret(hashed, plain string) error {
 }
 
 func GenerateRandomString(length int) (string, error) {
-    b := make([]byte, length)
-    
-    if _, err := rand.Read(b); err != nil {
-        return "", err
-    }
+	b := make([]byte, length)
+
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
 
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
@@ -44,13 +44,12 @@ func GenerateOTP() (string, error) {
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
-	
+
 	// Convert bytes to digits 0-9
 	otp := ""
 	for i := 0; i < 6; i++ {
 		otp += fmt.Sprintf("%d", b[i]%10)
 	}
-	
+
 	return otp, nil
 }
-

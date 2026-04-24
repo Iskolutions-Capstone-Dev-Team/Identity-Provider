@@ -27,7 +27,6 @@ type RoleHandler struct {
 	LogService service.LogService
 }
 
-
 // PostRole handles POST /v1/admin/roles
 // @Summary Create a new role
 // @Description Adds a new global or SP-prefixed role to the system
@@ -118,7 +117,7 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View roles") {
 		c.JSON(
-			http.StatusUnauthorized, 
+			http.StatusUnauthorized,
 			dto.ErrorResponse{Error: "Unauthorized"},
 		)
 		return

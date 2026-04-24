@@ -60,8 +60,8 @@ func ConnectToDB() (*sqlx.DB, error) {
 		db.Close()
 
 		return nil, fmt.Errorf(
-			"error pinging the database at %s: %w", 
-			config.Addr, 
+			"error pinging the database at %s: %w",
+			config.Addr,
 			err,
 		)
 	}

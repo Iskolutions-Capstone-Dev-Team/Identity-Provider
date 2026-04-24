@@ -66,7 +66,7 @@ func (r *userRepository) GetUserList(ctx context.Context,
         LEFT JOIN roles r ON u.role_id = r.id
         WHERE u.id IN (?) AND u.deleted_at IS NULL
         ORDER BY u.created_at DESC`
-	
+
 	fullQuery, args, err := sqlx.In(sql, ids)
 	if err != nil {
 		return nil, fmt.Errorf("[GetUserList] In-Query expansion: %w", err)

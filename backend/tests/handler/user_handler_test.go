@@ -61,7 +61,7 @@ func TestGetUserHandler(t *testing.T) {
 	// 2. Create context and request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	
+
 	c.Params = []gin.Param{{Key: "id", Value: userID.String()}}
 	c.Set("user_id", uuid.New().String()) // Actor ID
 	c.Request, _ = http.NewRequest("GET", "/users/"+userID.String(), nil)

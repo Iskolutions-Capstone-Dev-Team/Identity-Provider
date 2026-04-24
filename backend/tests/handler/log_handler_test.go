@@ -41,7 +41,7 @@ func TestGetLogListHandler(t *testing.T) {
 	// 2. Create context and request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	
+
 	c.Request, _ = http.NewRequest("GET", "/logs?limit=10&page=1", nil)
 	c.Set("permissions", []string{"View audit logs"})
 

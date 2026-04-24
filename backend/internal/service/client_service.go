@@ -19,8 +19,8 @@ type ClientService interface {
 	CreateClient(ctx context.Context, req dto.CreateClientRequest,
 		image multipart.File, imageHeader *multipart.FileHeader,
 		userID uuid.UUID) (*dto.ClientSecretResponse, error)
-	GetFilteredClientList(ctx context.Context, permissions []string, 
-		userID uuid.UUID, limit, page int, 
+	GetFilteredClientList(ctx context.Context, permissions []string,
+		userID uuid.UUID, limit, page int,
 		keyword string) (*dto.ClientListResponse, error)
 	GetClientList(ctx context.Context, limit, page int,
 		keyword string) (*dto.ClientListResponse, error)

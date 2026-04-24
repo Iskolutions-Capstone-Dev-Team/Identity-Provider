@@ -35,7 +35,6 @@ var RolesMigration = migrations.TableMigration{
 					'Admin who has some rights to oversee the IdP'
 				);
 			`,
-
 		},
 		{
 			ID: "remove-admin-and-superadmin-roles",

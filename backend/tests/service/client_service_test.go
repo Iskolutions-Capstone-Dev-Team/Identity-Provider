@@ -19,7 +19,7 @@ func TestGetClientByID(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockClientRepository(ctrl)
-	
+
 	// S3Provider is a struct and hard to mock without extra layers.
 	// Since GetClientByID ignores its error, we can pass nil here for simplicity.
 	clientService := service.NewClientService(mockRepo, nil)

@@ -33,7 +33,7 @@ type AuthService interface {
 	GetSessionToken(ctx context.Context, userID uuid.UUID,
 		ipAddress, userAgent string) (string, error)
 	RevokeAllUserTokens(ctx context.Context, userID uuid.UUID) error
-	RefreshBySession(ctx context.Context, sessionID string, 
+	RefreshBySession(ctx context.Context, sessionID string,
 		clientID string) (*dto.TokenResponse, error)
 	RevokeCookies(c *gin.Context)
 }

@@ -24,7 +24,7 @@ type otpRepository struct {
 func (r *otpRepository) CreateOTP(ctx context.Context, otp *models.OTP) error {
 	query := `INSERT INTO otps (otp, email, expires_at, attempts) 
               VALUES (?, ?, ?, ?)`
-	_, err := r.db.ExecContext(ctx, query, otp.OTP, otp.Email, 
+	_, err := r.db.ExecContext(ctx, query, otp.OTP, otp.Email,
 		otp.ExpiresAt, otp.Attempts)
 	if err != nil {
 		return fmt.Errorf("[CreateOTP]: %w", err)
@@ -45,7 +45,7 @@ func (r *otpRepository) GetOTP(ctx context.Context,
 	return &otp, nil
 }
 
-func (r *otpRepository) GetLatestOTPByEmail(ctx context.Context, 
+func (r *otpRepository) GetLatestOTPByEmail(ctx context.Context,
 	email string,
 ) (*models.OTP, error) {
 	var otp models.OTP
@@ -58,7 +58,7 @@ func (r *otpRepository) GetLatestOTPByEmail(ctx context.Context,
 	return &otp, nil
 }
 
-func (r *otpRepository) IncrementAttempts(ctx context.Context, 
+func (r *otpRepository) IncrementAttempts(ctx context.Context,
 	code string,
 ) error {
 	query := `UPDATE otps SET attempts = attempts + 1 WHERE otp = ?`

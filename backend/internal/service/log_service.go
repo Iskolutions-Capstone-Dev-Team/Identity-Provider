@@ -340,4 +340,3 @@ func (s *logService) GetSecurityLogListWithFilters(ctx context.Context,
 	lastPage := int((total + int64(limit) - 1) / int64(limit))
 	return dtos, total, lastPage, nil
 }
-

@@ -22,14 +22,14 @@ func TestCheckInvitation(t *testing.T) {
 	mockInvRepo := mocks.NewMockInvitationRepository(ctrl)
 	mockUserRepo := mocks.NewMockUserRepository(ctrl)
 	mockCauRepo := mocks.NewMockClientAllowedUserRepository(ctrl)
-	
+
 	regService := service.NewRegistrationService(mockRegRepo, mockInvRepo, mockUserRepo, mockCauRepo)
 
 	code := "invitation-code"
 	inv := &models.InvitationCode{
-		Email: "test@example.com",
-		InvitationCode:  code,
-		CreatedAt: time.Now(),
+		Email:          "test@example.com",
+		InvitationCode: code,
+		CreatedAt:      time.Now(),
 	}
 
 	// 1. Setup mock expectations

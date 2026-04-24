@@ -83,14 +83,14 @@ func GetPresignedURL(ctx context.Context,
 		internalHost = endpointURL.Host
 		isMinio = strings.Contains(internalHost, "minio")
 	}
-    
-    if isMinio {
-        publicURL := fmt.Sprintf("http://%s/%s/%s", 
-            storage.PublicEndpoint, 
-            storage.BucketName, 
-            object)
-        return publicURL, nil
-    }
+
+	if isMinio {
+		publicURL := fmt.Sprintf("http://%s/%s/%s",
+			storage.PublicEndpoint,
+			storage.BucketName,
+			object)
+		return publicURL, nil
+	}
 
 	presignedURL, err := storage.Client.PresignedGetObject(
 		ctx,

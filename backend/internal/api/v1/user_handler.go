@@ -1220,4 +1220,3 @@ func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
-
