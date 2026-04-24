@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
 function formatMetadata(metadata) {
   if (metadata == null) {
@@ -38,7 +39,9 @@ function DetailField({ label, value, colorMode = "light" }) {
 }
 
 export default function LogMetadataModal({ open, log, loading, error, onClose, colorMode = "light" }) {
-  if (!open) {
+  const { shouldRender, isClosing } = useModalTransition(open);
+
+  if (!shouldRender) {
     return null;
   }
 
@@ -72,7 +75,7 @@ export default function LogMetadataModal({ open, log, loading, error, onClose, c
     : "max-h-96 overflow-auto rounded-[1.25rem] bg-[#2b0307] p-4 text-xs leading-6 text-[#fff8f3] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[background-color,color] duration-500 ease-out";
 
   return createPortal(
-    <dialog open className={modalOverlayClassName}>
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
         <div className={modalHeaderSpacingClassName}>
           <div className="flex items-start justify-between gap-4">
