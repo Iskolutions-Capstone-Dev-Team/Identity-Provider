@@ -20,7 +20,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.26'
 
       - name: Backend - Format Check
         run: |
@@ -40,7 +40,12 @@ jobs:
       - name: Backend - Unit Tests
         run: |
           cd backend
-          go test ./...
+          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Backend - Build Check
+        run: |
+          cd backend
+          go build ./...
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -52,6 +57,11 @@ jobs:
           cd frontend
           npm install
           npm run lint
+
+      - name: Frontend - Build Check
+        run: |
+          cd frontend
+          npm run build
 
   build-and-push:
     if: github.event_name == 'push' && github.ref == 'refs/heads/development'
