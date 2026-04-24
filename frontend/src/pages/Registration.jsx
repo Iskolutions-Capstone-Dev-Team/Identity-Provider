@@ -128,12 +128,9 @@ export default function Registration() {
   const warningBoxClassName = isDarkMode
     ? "rounded-[1.4rem] border border-[#f8d24e]/20 bg-[#f8d24e]/10 px-5 py-4 text-sm text-[#ffe28a]"
     : "rounded-[1.4rem] border border-[#f8d24e]/45 bg-[#fff4dc] px-5 py-4 text-sm text-[#7b0d15]";
-  const toolbarClassName = `flex flex-col gap-4 border-b pb-6 lg:flex-row lg:items-end lg:justify-between ${
+  const toolbarClassName = `flex justify-end border-b pb-6 ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
-  const toolbarCopyClassName = isDarkMode
-    ? "text-sm text-[#c7adb4]"
-    : "text-sm text-[#8f6f76]";
   const createButtonClassName = isDarkMode
     ? "inline-flex h-14 items-center justify-center rounded-2xl border border-[#f8d24e]/30 bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(2,6,23,0.75)] transition-[background-color,background-image,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-none hover:bg-[#f8d24e] hover:text-[#7b0d15]"
     : "inline-flex h-14 items-center justify-center rounded-2xl border border-[#7b0d15] bg-[#7b0d15] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(123,13,21,0.6)] transition-[background-color,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-[#f8d24e] hover:text-[#7b0d15]";
@@ -369,24 +366,11 @@ export default function Registration() {
 
         <div className="relative">
           <AuditLogsCard colorMode={colorMode}>
-            {!showLoading && !registrationError && (
+            {!showLoading && !registrationError && canCreateRegistration && (
               <div className={toolbarClassName}>
-                <div className="space-y-1">
-                  <h2 className="text-lg font-semibold text-[#7b0d15] transition-colors duration-500 ease-out dark:text-[#f7dadd]">
-                    Account Types
-                  </h2>
-                  <p className={toolbarCopyClassName}>
-                    Manage account types and their pre-approved app clients.
-                  </p>
-                </div>
-
-                {canCreateRegistration && (
-                  <div className="flex justify-end lg:justify-start">
-                    <button type="button" onClick={handleOpenCreate} className={createButtonClassName}>
-                      + Add Account Type
-                    </button>
-                  </div>
-                )}
+                <button type="button" onClick={handleOpenCreate} className={createButtonClassName}>
+                  + Add Account Type
+                </button>
               </div>
             )}
 
