@@ -72,9 +72,13 @@ const lightSidebarTheme = {
   brandTitle: "text-white",
   sectionLabel: "text-[#f8d24e]/70",
   activeItem:
-    "border-[#f8d24e]/40 bg-[linear-gradient(135deg,rgba(248,210,78,0.96),rgba(255,215,0,0.86))] text-[#5a0b12] shadow-[0_22px_40px_-26px_rgba(248,210,78,0.95)]",
+    "text-[#f8d24e]",
   inactiveItem:
-    "border-white/8 bg-white/[0.03] text-white/80 hover:border-white/16 hover:bg-white/[0.1] hover:text-white",
+    "text-white/80 hover:bg-white/[0.07] hover:text-white",
+  activeIndicator:
+    "bg-[linear-gradient(180deg,#ffe78f_0%,#ffd233_100%)] shadow-[0_0_10px_rgba(248,210,78,0.24)]",
+  inactiveIndicator:
+    "bg-white/30 shadow-[0_0_6px_rgba(255,255,255,0.08)]",
   tooltip:
     "border-white/10 bg-[linear-gradient(135deg,rgba(123,13,21,0.96),rgba(43,3,7,0.98))] text-white shadow-[0_18px_40px_-24px_rgba(15,23,42,0.95)]",
   mobileShell:
@@ -97,9 +101,13 @@ const darkSidebarTheme = {
   brandTitle: "text-slate-100",
   sectionLabel: "text-[#f8d24e]/72",
   activeItem:
-    "border-[#f8d24e]/30 bg-[linear-gradient(135deg,rgba(111,21,30,0.94),rgba(55,20,31,0.98))] text-[#f8d24e] shadow-[0_22px_40px_-26px_rgba(123,13,21,0.72)]",
+    "text-[#f8d24e]",
   inactiveItem:
-    "border-white/8 bg-white/[0.03] text-slate-200/78 hover:border-white/14 hover:bg-white/[0.07] hover:text-slate-100",
+    "text-slate-200/78 hover:bg-white/[0.06] hover:text-slate-100",
+  activeIndicator:
+    "bg-[linear-gradient(180deg,#ffe58a_0%,#ffcf2a_100%)] shadow-[0_0_10px_rgba(248,210,78,0.22)]",
+  inactiveIndicator:
+    "bg-white/24 shadow-[0_0_6px_rgba(255,255,255,0.07)]",
   tooltip:
     "border-white/8 bg-[linear-gradient(135deg,rgba(27,39,56,0.98),rgba(16,24,37,0.99))] text-slate-100 shadow-[0_18px_40px_-24px_rgba(2,6,23,0.92)]",
   mobileShell:
@@ -124,10 +132,9 @@ function renderSidebarMenuIcon(item, className) {
   );
 }
 
-function SidebarIcon({ item, isActive, isDarkMode }) {
-  const activeIconClassName = isDarkMode ? "text-[#f8d24e]" : "text-[#5a0b12]";
-  const iconClassName = `h-5 w-5 shrink-0 transition duration-300 ${
-    isActive ? activeIconClassName : "text-current"
+function SidebarIcon({ item, isActive }) {
+  const iconClassName = `h-5 w-5 shrink-0 text-current transition duration-300 ${
+    isActive ? "scale-[1.04]" : ""
   }`;
 
   return renderSidebarMenuIcon(item, iconClassName);
@@ -172,9 +179,13 @@ function getSidebarTooltipPosition(buttonElement) {
   };
 }
 
-function SidebarMenuItem({ isOpen, item, isActive, onClick, isDarkMode, theme, onTooltipChange }) {
+function SidebarMenuItem({ isOpen, item, isActive, onClick, theme, onTooltipChange }) {
   const alignmentClassName = isOpen ? "justify-start px-3" : "justify-center px-0";
   const surfaceClassName = isActive ? theme.activeItem : theme.inactiveItem;
+  const indicatorClassName = isActive ? theme.activeIndicator : theme.inactiveIndicator;
+  const indicatorVisibilityClassName = isActive
+    ? "opacity-100"
+    : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100";
   const tooltipLabel = item.tooltipLabel ?? item.name;
   const labelClassName = `min-w-0 overflow-hidden whitespace-nowrap text-left text-sm font-semibold tracking-[0.01em] transition-all duration-300 ${
     isOpen ? "ml-3 max-w-40 opacity-100" : "ml-0 max-w-0 opacity-0"
@@ -198,12 +209,17 @@ function SidebarMenuItem({ isOpen, item, isActive, onClick, isDarkMode, theme, o
   };
 
   return (
-    <li className="relative">
-      <button type="button" onClick={handleClick} onMouseEnter={(event) => handleShowTooltip(event.currentTarget)} onMouseLeave={handleHideTooltip} onFocus={(event) => handleShowTooltip(event.currentTarget)} onBlur={handleHideTooltip} aria-label={item.name} className={`flex h-14 w-full items-center overflow-hidden rounded-[1.35rem] border transition-all duration-300 ${alignmentClassName} ${surfaceClassName}`}>
+    <li className="group relative">
+      <span aria-hidden="true" className={`pointer-events-none absolute -left-5 top-1/2 h-9 w-4 -translate-y-1/2 rounded-full transition-all duration-300 ${indicatorClassName} ${indicatorVisibilityClassName}`} />
+      <span aria-hidden="true" className={`pointer-events-none absolute -left-[1.35rem] top-1/2 h-11 w-6 -translate-y-1/2 rounded-full blur-[7px] transition-all duration-300 ${
+        isActive
+          ? "bg-[#f8d24e]/12 opacity-100"
+          : "bg-white/6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+      }`} />
+      <button type="button" onClick={handleClick} onMouseEnter={(event) => handleShowTooltip(event.currentTarget)} onMouseLeave={handleHideTooltip} onFocus={(event) => handleShowTooltip(event.currentTarget)} onBlur={handleHideTooltip} aria-label={item.name} className={`relative flex h-14 w-full items-center overflow-hidden rounded-[1.35rem] transition-all duration-300 focus-visible:bg-white/[0.08] ${alignmentClassName} ${surfaceClassName}`}>
         <SidebarIcon
           item={item}
           isActive={isActive}
-          isDarkMode={isDarkMode}
         />
         <span className={labelClassName}>{item.name}</span>
       </button>
@@ -305,7 +321,6 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
                             item={item}
                             isActive={isActive}
                             onClick={() => navigate(item.path)}
-                            isDarkMode={isDarkMode}
                             theme={theme}
                             onTooltipChange={setHoveredTooltip}
                           />
@@ -329,7 +344,6 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
                   }}
                   isActive={false}
                   onClick={handleLogout}
-                  isDarkMode={isDarkMode}
                   theme={theme}
                   onTooltipChange={setHoveredTooltip}
                 />
