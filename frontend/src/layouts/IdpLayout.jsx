@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useLocation, useOutlet } from "react-router-dom";
 import AssistiveFab from "../components/AssistiveFab";
 import AccessibilityWidget from "../components/AccessibilityWidget";
 import ErrorAlert from "../components/ErrorAlert";
 import Navbar from "../components/Navbar";
+import PageTransition from "../components/PageTransition";
 import Sidebar from "../components/Sidebar";
 import useSidebarState from "../hooks/useSidebarState";
 import TermsAgreementModal from "../components/TermAgreementModal";
@@ -11,6 +12,7 @@ import { useCurrentUser } from "../hooks/useCurrentUser";
 import { DEFAULT_FORBIDDEN_ALERT_MESSAGE, IDP_FORBIDDEN_ALERT_EVENT } from "../utils/forbiddenAlert";
 
 export default function IdpLayout() {
+  const location = useLocation();
   const { sidebarOpen, toggleSidebar } = useSidebarState();
   const [openTerms, setOpenTerms] = useState(false);
   const [forbiddenMessage, setForbiddenMessage] = useState("");
@@ -90,10 +92,17 @@ export default function IdpLayout() {
   const handleToggleColorMode = () => {
     setColorMode((current) => (current === "dark" ? "light" : "dark"));
   };
+  const outlet = useOutlet({
+    currentUser,
+    isLoadingCurrentUser,
+    updateCurrentUser,
+    colorMode,
+    userPoolColorMode: colorMode,
+    appClientColorMode: colorMode,
+  });
 
   return (
-    <div
-      className={`relative min-h-screen overflow-hidden font-[Poppins] transition-[background-color,color] duration-500 ease-out ${
+    <div className={`relative min-h-screen overflow-hidden font-[Poppins] transition-[background-color,color] duration-500 ease-out ${
         isDarkThemeRoute
           ? "bg-[#182434] text-slate-100"
           : "bg-[#fff8f3] text-slate-800"
@@ -176,16 +185,9 @@ export default function IdpLayout() {
           />
 
           <main className="flex-1 px-4 pb-32 pt-28 sm:px-6 sm:pb-32 sm:pt-32 lg:px-6 lg:pb-8 lg:pt-36">
-            <Outlet
-              context={{
-                currentUser,
-                isLoadingCurrentUser,
-                updateCurrentUser,
-                colorMode,
-                userPoolColorMode: colorMode,
-                appClientColorMode: colorMode,
-              }}
-            />
+            <PageTransition pageKey={location.pathname}>
+              {outlet}
+            </PageTransition>
           </main>
         </div>
       </div>
