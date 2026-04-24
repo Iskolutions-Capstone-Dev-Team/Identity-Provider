@@ -3,9 +3,11 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { buildLogoutPath } from "../auth/utils/logoutRoute";
 import { getModalTheme } from "./modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "./modalTransition";
 
 export default function TermsAgreementModal({ open, onClose, onContinue, colorMode = "light", currentUser = null }) {
   const navigate = useNavigate();
+  const { shouldRender, isClosing } = useModalTransition(open);
   const [agreed, setAgreed] = useState(false);
   const isDarkMode = colorMode === "dark";
   const {
@@ -72,12 +74,12 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
     onClose?.();
   };
 
-  if (!open) {
+  if (!shouldRender) {
     return null;
   }
 
   return createPortal(
-    <dialog open className={modalOverlayClassName} aria-labelledby="terms-modal-title">
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)} aria-labelledby="terms-modal-title">
       <div className={`${modalBoxClassName} max-w-2xl`}>
         <div className={`${modalHeaderClassName} !pb-7 sm:!pb-8`}>
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
