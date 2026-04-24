@@ -18,7 +18,7 @@ var UserRolesMigration = migrations.TableMigration{
 			);`,
 		},
 		{
-			ID: "drop-user-roles-table",
+			ID:  "drop-user-roles-table",
 			SQL: `DROP TABLE IF EXISTS user_roles;`,
 		},
 	},

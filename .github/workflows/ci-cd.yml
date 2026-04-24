@@ -1,0 +1,159 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - development
+      - main
+  push:
+    branches:
+      - development
+      - main
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Backend - Format Check
+        run: |
+          cd backend
+          if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
+            echo "The following files are not formatted:"
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: Backend - Staticcheck
+        run: |
+          cd backend
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          $(go env GOPATH)/bin/staticcheck ./...
+
+      - name: Backend - Unit Tests
+        run: |
+          cd backend
+          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Backend - Build Check
+        run: |
+          cd backend
+          go build ./...
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Frontend - Lint
+        run: |
+          cd frontend
+          npm install
+          npm run lint
+
+      - name: Frontend - Build Check
+        run: |
+          cd frontend
+          npm run build
+
+  build-and-push:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+    needs: quality-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GH_USERNAME }}
+          password: ${{ secrets.GH_PAT }}
+
+      - name: Build and Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/iskolutions/idp-backend:latest
+
+      - name: Build and Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ghcr.io/iskolutions/idp-frontend:latest
+
+  deploy-staging:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy Compose file to Staging
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STAGING_IP }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_PK }}
+          source: "docker-compose.ghcr.yml"
+          target: "~/Identity-Provider"
+
+      - name: Deploy to Staging
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_IP }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_PK }}
+          script: |
+            cd ~/Identity-Provider
+            git pull origin development
+            echo "${{ secrets.STAGING_ENV }}" > .env
+            echo "${{ secrets.GH_PAT }}" | \
+              docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
+              --password-stdin
+            docker compose -f docker-compose.ghcr.yml pull
+            docker compose -f docker-compose.ghcr.yml up -d
+
+  deploy-production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: quality-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy Compose file to Production
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.ghcr.yml"
+          target: "~/Identity-Provider"
+
+      - name: Deploy to Production
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/Identity-Provider
+            git pull origin main
+            echo "${{ secrets.ENV_FILE }}" > .env
+            echo "${{ secrets.GH_PAT }}" | \
+              docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
+              --password-stdin
+            docker compose -f docker-compose.ghcr.yml pull
+            docker compose -f docker-compose.ghcr.yml up -d

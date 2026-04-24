@@ -8,6 +8,7 @@ import OtpVerificationStep from "./OtpVerificationStep";
 import SuccessStep from "./SuccessStep";
 import SuccessAlert from "./SuccessAlert";
 import { getModalTheme } from "./modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "./modalTransition";
 import { passwordResetService } from "../services/passwordResetService";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -73,6 +74,7 @@ function getDisabledPrimaryButtonClassName(isDarkMode) {
 
 export default function ChangePasswordModal({ isOpen, onClose, showCurrentPassword = true, addAuditLog, setToastMessage, enableSuccessAlert = false, colorMode = "light", emailAddress = "" }) {
   const isForgotPasswordFlow = !showCurrentPassword;
+  const { shouldRender, isClosing } = useModalTransition(isOpen);
   const [step, setStep] = useState(() => getInitialStep(showCurrentPassword));
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -123,7 +125,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   }, [step, otpTimerKey]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!shouldRender) {
       setStep(getInitialStep(showCurrentPassword));
       setRecoveryEmail("");
       setEmailError("");
@@ -137,7 +139,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
       setIsVerifyingOtp(false);
       setIsUpdatingPassword(false);
     }
-  }, [isOpen, showCurrentPassword]);
+  }, [shouldRender, showCurrentPassword]);
 
   useEffect(() => {
     if (step !== "success") {
@@ -390,7 +392,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     }
   };
 
-  if (!isOpen) {
+  if (!shouldRender) {
     return null;
   }
 
@@ -452,7 +454,12 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   return (
     <>
       {createPortal(
-        <dialog open className={modalOverlayClassName}>
+        <dialog open
+          className={getModalTransitionClassName(
+            modalOverlayClassName,
+            isClosing,
+          )}
+        >
           <div className={passwordModalBoxClassName}>
             <div className={modalHeaderClassName}>
               <div className="flex items-start justify-between gap-4">

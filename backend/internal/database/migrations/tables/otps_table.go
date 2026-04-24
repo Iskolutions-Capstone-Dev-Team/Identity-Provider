@@ -17,7 +17,7 @@ var OtpsMigration = migrations.TableMigration{
 			);`,
 		},
 		{
-			ID: "add-attempts-column",
+			ID:  "add-attempts-column",
 			SQL: `ALTER TABLE otps ADD COLUMN attempts INT DEFAULT 0;`,
 		},
 		{

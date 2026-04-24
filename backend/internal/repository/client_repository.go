@@ -355,7 +355,7 @@ func (r *clientRepository) AdminiClientBind(ctx context.Context,
 	return err
 }
 
-func (r *clientRepository) BatchAdminClientBind(ctx context.Context, 
+func (r *clientRepository) BatchAdminClientBind(ctx context.Context,
 	userID []byte, clientIDs [][]byte,
 ) error {
 	tx, err := r.db.BeginTxx(ctx, nil)

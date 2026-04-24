@@ -19,8 +19,8 @@ type ClientService interface {
 	CreateClient(ctx context.Context, req dto.CreateClientRequest,
 		image multipart.File, imageHeader *multipart.FileHeader,
 		userID uuid.UUID) (*dto.ClientSecretResponse, error)
-	GetFilteredClientList(ctx context.Context, permissions []string, 
-		userID uuid.UUID, limit, page int, 
+	GetFilteredClientList(ctx context.Context, permissions []string,
+		userID uuid.UUID, limit, page int,
 		keyword string) (*dto.ClientListResponse, error)
 	GetClientList(ctx context.Context, limit, page int,
 		keyword string) (*dto.ClientListResponse, error)
@@ -71,7 +71,7 @@ func (s *clientService) CreateClient(
 		s.Storage,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Storage Upload: %w", err)
+		return nil, fmt.Errorf("storage upload: %w", err)
 	}
 
 	// 2. Security & ID Generation
@@ -94,7 +94,7 @@ func (s *clientService) CreateClient(
 	// 4. Persistence
 	err = s.Repo.CreateClient(ctx, clientModel, req.Grants, userID[:])
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (Create): %w", err)
+		return nil, fmt.Errorf("database query (Create): %w", err)
 	}
 
 	return &dto.ClientSecretResponse{
@@ -124,7 +124,7 @@ func (s *clientService) GetFilteredClientList(
 		return s.GetBoundClients(ctx, userID, limit, page, keyword)
 	}
 
-	return nil, fmt.Errorf("Privilege Validation: restricted level")
+	return nil, fmt.Errorf("privilege validation: restricted level")
 }
 
 func (s *clientService) checkClientAccess(
@@ -142,10 +142,10 @@ func (s *clientService) checkClientAccess(
 	if slices.Contains(permissions, "View connected appclients") {
 		allowed, err := s.Repo.IsClientAllowed(ctx, userID[:], clientID[:])
 		if err != nil {
-			return fmt.Errorf("Repository Check: %w", err)
+			return fmt.Errorf("repository check: %w", err)
 		}
 		if !allowed {
-			return fmt.Errorf("Authorization: client is outside of your scope")
+			return fmt.Errorf("authorization: client is outside of your scope")
 		}
 		return nil
 	}
@@ -168,12 +168,12 @@ func (s *clientService) GetClientList(
 
 	total, err := s.Repo.CountClients(ctx, keyword)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (Count): %w", err)
+		return nil, fmt.Errorf("database query (Count): %w", err)
 	}
 
 	clients, err := s.Repo.ListClients(ctx, limit, offset, keyword)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (List): %w", err)
+		return nil, fmt.Errorf("database query (List): %w", err)
 	}
 
 	var res []dto.ClientResponse
@@ -236,12 +236,12 @@ func (s *clientService) GetBoundClients(
 		userID[:],
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (ListBound): %w", err)
+		return nil, fmt.Errorf("database query (ListBound): %w", err)
 	}
 
 	total, err := s.Repo.CountBoundClients(ctx, keyword, userID[:])
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (CountBound): %v", err)
+		return nil, fmt.Errorf("database query (CountBound): %v", err)
 	}
 
 	var res []dto.ClientResponse
@@ -284,14 +284,14 @@ func (s *clientService) GetClientByID(
 
 	cl, err := s.Repo.GetByID(ctx, id[:])
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetByID): %w", err)
+		return nil, fmt.Errorf("database query (GetByID): %w", err)
 	}
 
 	// Fetch associated data
 	grants, _ := s.Repo.GetGrantTypes(ctx, cl.ID)
 	roles, err := s.Repo.GetClientAllowedRoles(ctx, cl.ID)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetRoles): %w", err)
+		return nil, fmt.Errorf("database query (GetRoles): %w", err)
 	}
 
 	// Process image
@@ -345,7 +345,7 @@ func (s *clientService) UpdateClient(
 
 	existing, err := s.Repo.GetByID(ctx, id[:])
 	if err != nil {
-		return fmt.Errorf("Database Query (Search): %w", err)
+		return fmt.Errorf("database query (Search): %w", err)
 	}
 
 	imagePath := existing.ImageLocation
@@ -358,7 +358,7 @@ func (s *clientService) UpdateClient(
 			s.Storage,
 		)
 		if err != nil {
-			return fmt.Errorf("Storage Upload: %w", err)
+			return fmt.Errorf("storage upload: %w", err)
 		}
 		imagePath = newPath
 	}
@@ -375,7 +375,7 @@ func (s *clientService) UpdateClient(
 
 	err = s.Repo.UpdateClient(ctx, clientModel, req.Grants)
 	if err != nil {
-		return fmt.Errorf("Database Query (Update): %w", err)
+		return fmt.Errorf("database query (Update): %w", err)
 	}
 
 	return nil
@@ -398,19 +398,19 @@ func (s *clientService) RotateClientSecret(
 	// 1. Generate High-Entropy Secret
 	newSecret, err := utils.GenerateRandomString(SECRET_ENTROPY)
 	if err != nil {
-		return nil, fmt.Errorf("Secret Generation: %w", err)
+		return nil, fmt.Errorf("secret generation: %w", err)
 	}
 
 	// 2. Secure Hashing
 	newSecretHash, err := utils.HashSecret(newSecret)
 	if err != nil {
-		return nil, fmt.Errorf("Secret Hashing: %w", err)
+		return nil, fmt.Errorf("secret hashing: %w", err)
 	}
 
 	// 3. Persistence
 	err = s.Repo.ChangeSecret(ctx, id[:], newSecretHash)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (ChangeSecret): %w", err)
+		return nil, fmt.Errorf("database query (ChangeSecret): %w", err)
 	}
 
 	return &dto.ClientSecretResponse{
@@ -436,18 +436,18 @@ func (s *clientService) DeleteClient(
 
 	cl, err := s.Repo.GetByID(ctx, id[:])
 	if err != nil {
-		return fmt.Errorf("Database Query (Search): %w", err)
+		return fmt.Errorf("database query (Search): %w", err)
 	}
 
 	// 1. Cleanup Cloud Storage
 	err = DeleteImage(ctx, cl.ImageLocation, s.Storage)
 	if err != nil {
-		return fmt.Errorf("Storage Delete: %w", err)
+		return fmt.Errorf("storage delete: %w", err)
 	}
 
 	// 2. Soft Delete Client Record
 	if err := s.Repo.SoftDelete(ctx, id[:]); err != nil {
-		return fmt.Errorf("Database Query (SoftDelete): %w", err)
+		return fmt.Errorf("database query (SoftDelete): %w", err)
 	}
 
 	return nil

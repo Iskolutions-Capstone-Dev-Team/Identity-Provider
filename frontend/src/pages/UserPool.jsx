@@ -220,24 +220,22 @@ export default function UserPool() {
                 />
               </div>
             )}
-            {openViewEditModal && (
-              <UserPoolModal
-                open={openViewEditModal}
-                mode={modalMode}
-                user={selectedUser}
-                userType={userType}
-                appClientOptions={appClientOptions}
-                isLoadingAppClients={isLoadingAppClients}
-                onSubmit={updateUser}
-                onClose={() => setOpenViewEditModal(false)}
-                canEditStatus={canEditUserStatus}
-                canEditRole={canEditUserRole}
-                canEditAccess={canEditUserAccess}
-                includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
-                colorMode={colorMode}
-              />
-            )}
-            {canAddUsers && openAddModal && (
+            <UserPoolModal
+              open={openViewEditModal}
+              mode={modalMode}
+              user={selectedUser}
+              userType={userType}
+              appClientOptions={appClientOptions}
+              isLoadingAppClients={isLoadingAppClients}
+              onSubmit={updateUser}
+              onClose={() => setOpenViewEditModal(false)}
+              canEditStatus={canEditUserStatus}
+              canEditRole={canEditUserRole}
+              canEditAccess={canEditUserAccess}
+              includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
+              colorMode={colorMode}
+            />
+            {canAddUsers && (
               <AddUserModal
                 open={openAddModal}
                 onClose={() => setOpenAddModal(false)}

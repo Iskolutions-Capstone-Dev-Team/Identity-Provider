@@ -10,13 +10,13 @@ import (
 
 type ClientAllowedUserRepository interface {
 	GetAll(ctx context.Context) ([]models.ClientAllowedUser, error)
-	GetByAdmin(ctx context.Context, 
+	GetByAdmin(ctx context.Context,
 		adminID []byte) ([]models.ClientAllowedUser, error)
-	SyncUserAccess(ctx context.Context, userID []byte, 
+	SyncUserAccess(ctx context.Context, userID []byte,
 		clientIDs [][]byte, adminID []byte) error
-	AssignClientAccess(ctx context.Context, userID []byte, 
+	AssignClientAccess(ctx context.Context, userID []byte,
 		clientID []byte) error
-	BatchAssignClientAccess(ctx context.Context, userID []byte, 
+	BatchAssignClientAccess(ctx context.Context, userID []byte,
 		clientIDs [][]byte) error
 }
 
@@ -37,7 +37,7 @@ func (r *clientAllowedUserRepository) GetAll(ctx context.Context,
 }
 
 // GetByAdmin retrieves all mappings for clients that a specific admin manages.
-func (r *clientAllowedUserRepository) GetByAdmin(ctx context.Context, 
+func (r *clientAllowedUserRepository) GetByAdmin(ctx context.Context,
 	adminID []byte,
 ) ([]models.ClientAllowedUser, error) {
 	var mappings []models.ClientAllowedUser
@@ -55,7 +55,7 @@ func (r *clientAllowedUserRepository) GetByAdmin(ctx context.Context,
 }
 
 // SyncUserAccess updates a user's client access within the scope of an admin.
-func (r *clientAllowedUserRepository) SyncUserAccess(ctx context.Context, 
+func (r *clientAllowedUserRepository) SyncUserAccess(ctx context.Context,
 	userID []byte, clientIDs [][]byte, adminID []byte,
 ) error {
 	tx, err := r.db.BeginTxx(ctx, nil)
@@ -69,11 +69,11 @@ func (r *clientAllowedUserRepository) SyncUserAccess(ctx context.Context,
 	scopeQuery := "SELECT client_id FROM admin_allowed_clients WHERE user_id = ?"
 	err = tx.SelectContext(ctx, &scopedClients, scopeQuery, adminID)
 	if err != nil {
-		return fmt.Errorf("Sync: fetch scope: %w", err)
+		return fmt.Errorf("sync: fetch scope: %w", err)
 	}
 
 	if len(scopedClients) == 0 {
-		return fmt.Errorf("Sync: admin has no managed clients")
+		return fmt.Errorf("sync: admin has no managed clients")
 	}
 
 	// 2. Clear current user mappings THAT FALL WITHIN admin's scope
@@ -83,12 +83,12 @@ func (r *clientAllowedUserRepository) SyncUserAccess(ctx context.Context,
 		userID, scopedClients,
 	)
 	if err != nil {
-		return fmt.Errorf("Sync: delete query prep: %w", err)
+		return fmt.Errorf("sync: delete query prep: %w", err)
 	}
 	deleteQuery = r.db.Rebind(deleteQuery)
 	_, err = tx.ExecContext(ctx, deleteQuery, args...)
 	if err != nil {
-		return fmt.Errorf("Sync: delete execution: %w", err)
+		return fmt.Errorf("sync: delete execution: %w", err)
 	}
 
 	// 3. Insert new mappings (only if provided clientID is within scope)
@@ -103,7 +103,7 @@ func (r *clientAllowedUserRepository) SyncUserAccess(ctx context.Context,
 			                VALUES (?, ?)`
 			_, err = tx.ExecContext(ctx, insertQuery, reqID, userID)
 			if err != nil {
-				return fmt.Errorf("Sync: insert %x: %w", reqID, err)
+				return fmt.Errorf("sync: insert %x: %w", reqID, err)
 			}
 		}
 	}
@@ -112,7 +112,7 @@ func (r *clientAllowedUserRepository) SyncUserAccess(ctx context.Context,
 }
 
 // AssignClientAccess directly links a user to a client.
-func (r *clientAllowedUserRepository) AssignClientAccess(ctx context.Context, 
+func (r *clientAllowedUserRepository) AssignClientAccess(ctx context.Context,
 	userID []byte, clientID []byte,
 ) error {
 	query := "INSERT INTO client_allowed_users (client_id, user_id) VALUES (?, ?)"

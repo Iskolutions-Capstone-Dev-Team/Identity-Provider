@@ -17,9 +17,9 @@ type AccountTypeClientRow struct {
 
 type RegistrationRepository interface {
 	GetRegistrationConfig(ctx context.Context) ([]AccountTypeClientRow, error)
-	GetClientsByAccountTypeID(ctx context.Context, 
+	GetClientsByAccountTypeID(ctx context.Context,
 		id int) ([]AccountTypeClientRow, error)
-	SyncPreapprovedClients(ctx context.Context, accountTypeID int, 
+	SyncPreapprovedClients(ctx context.Context, accountTypeID int,
 		clientIDs []uuid.UUID) error
 	GetAccountTypeIDByName(ctx context.Context, name string) (int, error)
 	CreateAccountType(ctx context.Context, name string) (int, error)
@@ -59,7 +59,7 @@ func (r *regRepo) GetRegistrationConfig(ctx context.Context) (
 	return rows, err
 }
 
-func (r *regRepo) GetClientsByAccountTypeID(ctx context.Context, 
+func (r *regRepo) GetClientsByAccountTypeID(ctx context.Context,
 	id int) ([]AccountTypeClientRow, error) {
 	query := `
 		SELECT 
@@ -78,7 +78,7 @@ func (r *regRepo) GetClientsByAccountTypeID(ctx context.Context,
 	return rows, err
 }
 
-func (r *regRepo) SyncPreapprovedClients(ctx context.Context, 
+func (r *regRepo) SyncPreapprovedClients(ctx context.Context,
 	accountTypeID int, clientIDs []uuid.UUID) error {
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
@@ -86,8 +86,8 @@ func (r *regRepo) SyncPreapprovedClients(ctx context.Context,
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, 
-		"DELETE FROM preapproved_clients WHERE account_type_id = ?", 
+	_, err = tx.ExecContext(ctx,
+		"DELETE FROM preapproved_clients WHERE account_type_id = ?",
 		accountTypeID)
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ func (r *regRepo) SyncPreapprovedClients(ctx context.Context,
 	return tx.Commit()
 }
 
-func (r *regRepo) GetAccountTypeIDByName(ctx context.Context, 
+func (r *regRepo) GetAccountTypeIDByName(ctx context.Context,
 	name string) (int, error) {
 	var id int
 	lowerName := strings.ToLower(name)
@@ -144,7 +144,7 @@ func (r *regRepo) DeleteAccountType(ctx context.Context, id int) error {
 	defer tx.Rollback()
 
 	// Delete preapproved clients first to avoid constraint issues
-	_, err = tx.ExecContext(ctx, 
+	_, err = tx.ExecContext(ctx,
 		"DELETE FROM preapproved_clients WHERE account_type_id = ?", id)
 	if err != nil {
 		return err

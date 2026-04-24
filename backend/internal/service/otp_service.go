@@ -26,7 +26,7 @@ type otpService struct {
  * SendOTP generates and sends an OTP to the user, enforcing a 3-minute
  * cooldown between requests.
  */
-func (s *otpService) SendOTP(ctx context.Context, 
+func (s *otpService) SendOTP(ctx context.Context,
 	email string,
 ) error {
 	// Check for cooldown
@@ -69,10 +69,10 @@ func (s *otpService) SendOTP(ctx context.Context,
 }
 
 /**
- * VerifyOTP checks if the provided OTP matches the latest OTP for the 
+ * VerifyOTP checks if the provided OTP matches the latest OTP for the
  * user, respecting retry limits.
  */
-func (s *otpService) VerifyOTP(ctx context.Context, 
+func (s *otpService) VerifyOTP(ctx context.Context,
 	email, code string,
 ) error {
 	otp, err := s.otpRepo.GetLatestOTPByEmail(ctx, email)
@@ -111,7 +111,7 @@ func (s *otpService) VerifyOTP(ctx context.Context,
 	return nil
 }
 
-func NewOTPService(orp repository.OTPRepository, 
+func NewOTPService(orp repository.OTPRepository,
 	ms MailService,
 ) OTPService {
 	return &otpService{

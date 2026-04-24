@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
 export default function ClientSecretModal({ open, clientName, clientId, secret, loading = false, hasError = false, onClose, colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
   const [copied, setCopied] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
   const isDarkMode = colorMode === "dark";
@@ -44,11 +46,11 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
     : "btn h-12 w-12 rounded-[1rem] border border-[#7b0d15]/15 bg-white/85 px-0 text-[#7b0d15] shadow-none transition hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
 
   useEffect(() => {
-    if (!open) {
+    if (!shouldRender) {
       setCopied(false);
       setShowSecret(false);
     }
-  }, [open]);
+  }, [shouldRender]);
 
   const handleCopy = async () => {
     if (!secret) return;
@@ -62,12 +64,12 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
     }
   };
 
-  if (!open) return null;
+  if (!shouldRender) return null;
 
   const displayName = clientName || clientId || "this client";
 
   return createPortal(
-    <dialog open className={modalOverlayClassName}>
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
         <div className={modalHeaderClassName}>
           <div className="max-w-2xl pb-5 sm:pb-10">

@@ -114,14 +114,15 @@ func (r *logRepository) GetLog(ctx context.Context, actor *string,
 	return r.getLogInternal(ctx, "audit_logs", actor, status)
 }
 
-// GetSecurityLog retrieves a single security log entry based on specific filters.
+// GetSecurityLog retrieves a single security log entry based on filters.
 func (r *logRepository) GetSecurityLog(ctx context.Context, actor *string,
 	status string,
 ) (*models.AuditLog, error) {
 	return r.getLogInternal(ctx, "security_logs", actor, status)
 }
 
-func (r *logRepository) getLogListInternal(ctx context.Context, table string, limit,
+func (r *logRepository) getLogListInternal(ctx context.Context,
+	table string, limit,
 	offset int,
 ) ([]models.AuditLog, error) {
 	query := fmt.Sprintf(`SELECT id, actor, action, target, status, metadata, created_at 
@@ -143,7 +144,7 @@ func (r *logRepository) GetLogList(ctx context.Context, limit,
 	return r.getLogListInternal(ctx, "audit_logs", limit, offset)
 }
 
-// GetSecurityLogList retrieves a slice of security logs with pagination support.
+// GetSecurityLogList retrieves a slice of security logs with pagination.
 func (r *logRepository) GetSecurityLogList(ctx context.Context, limit,
 	offset int,
 ) ([]models.AuditLog, error) {
@@ -236,7 +237,8 @@ func (r *logRepository) getLogListWithFiltersInternal(ctx context.Context,
 func (r *logRepository) GetLogListWithFilters(ctx context.Context,
 	filters map[string]interface{}, limit, offset int,
 ) ([]models.AuditLog, int64, error) {
-	return r.getLogListWithFiltersInternal(ctx, "audit_logs", filters, limit, offset)
+	return r.getLogListWithFiltersInternal(ctx, "audit_logs", filters,
+		limit, offset)
 }
 
 // GetSecurityLogListWithFilters retrieves a slice of security logs with filtering.

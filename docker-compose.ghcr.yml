@@ -1,0 +1,120 @@
+services:
+  # Identity Provider Backend (GHCR Image)
+  backend:
+    image: ghcr.io/iskolutions/idp-backend:latest
+    container_name: idp_backend
+    restart: always
+    env_file: ./.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "localhost:host-gateway"
+    environment:
+      - GODEBUG=http2debug=0,asyncpreemptoff=1
+    ports:
+      - "8080:8080"
+    volumes:
+      - .env:/app/.env
+      - ./certs:/app/certs:ro
+    working_dir: /app
+    networks:
+      - identity_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Identity Provider Frontend (GHCR Image)
+  frontend:
+    image: ghcr.io/iskolutions/idp-frontend:latest
+    container_name: idp_frontend
+    restart: always
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      VITE_CLIENT_ID: ${VITE_CLIENT_ID}
+      VITE_REDIRECT_URI: ${VITE_REDIRECT_URI}
+      VITE_CLIENT_SECRET: ${VITE_CLIENT_SECRET}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}
+      VITE_BACKEND_API_KEY: ${VITE_BACKEND_API_KEY}
+      VITE_ONE_PORTAL_URL: ${VITE_ONE_PORTAL_URL}
+      BACKEND_PROXY_TARGET: ${BACKEND_PROXY_TARGET}
+    ports:
+      - "5173:5173"
+    networks:
+      - identity_network
+    depends_on:
+      - backend
+
+  # Database Service
+  db:
+    image: mysql:8.4
+    container_name: unified_access_database
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DB_NAME: ${MYSQL_DB_NAME}
+      ADMIN_SQL_USER: ${ADMIN_SQL_USER}
+      ADMIN_SQL_PASSWORD: ${ADMIN_SQL_PASSWORD}
+      APP_USER: ${APP_USER}
+      APP_PASSWORD: ${APP_PASSWORD}
+    ports:
+      - "3360:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./scripts/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    networks:
+      - identity_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Minio (S3-Like storage)
+  minio:
+    image: minio/minio:latest
+    container_name: idp_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - identity_network
+      
+  # Minio Setup Service
+  minio_init:
+    image: quay.io/minio/mc:latest
+    container_name: idp_minio_setup
+    depends_on:
+      - minio
+    networks:
+      - identity_network
+    environment:
+      - S3_KEY=${S3_KEY}
+      - S3_SECRET=${S3_SECRET}
+      - S3_BUCKET=${S3_BUCKET}
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set local http://minio:9000 ${S3_KEY} ${S3_SECRET};
+      mc mb local/${S3_BUCKET} --ignore-existing;
+      mc anonymous set download local/${S3_BUCKET};
+      JSON='[{\"AllowedOrigins\":[\"*\"],\"AllowedMethods\":[\"GET\"]}';
+      JSON=\"${JSON},\"'\"AllowedHeaders\":[\"*\"]}]';
+      echo \$JSON > /tmp/cors.json;
+      mc cors set local/${S3_BUCKET} /tmp/cors.json;
+      exit 0;
+      "
+
+volumes:
+  db_data:
+  minio_data:
+
+networks:
+  identity_network:
+    driver: bridge

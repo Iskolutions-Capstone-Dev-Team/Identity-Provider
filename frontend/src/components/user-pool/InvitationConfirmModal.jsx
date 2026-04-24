@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
 function getArticle(label = "") {
   const normalizedLabel = label.trim().toLowerCase();
@@ -7,6 +8,7 @@ function getArticle(label = "") {
 }
 
 export default function InvitationConfirmModal({ open, accountTypeLabel = "selected", onCancel, onConfirm, colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
   const isDarkMode = colorMode === "dark";
   const {
     modalBoxClassName,
@@ -25,14 +27,14 @@ export default function InvitationConfirmModal({ open, accountTypeLabel = "selec
     ? "mt-2 text-sm text-[#c7adb4]"
     : "mt-2 text-sm text-[#7d5c62]";
 
-  if (!open) {
+  if (!shouldRender) {
     return null;
   }
 
   const article = getArticle(accountTypeLabel);
 
   return createPortal(
-    <dialog open className={modalOverlayClassName}>
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <form method="dialog" className={`${modalBoxClassName} max-w-lg text-center`}>
         <div className="px-6 py-8 sm:px-8">
           <div className="mb-6 flex justify-center">

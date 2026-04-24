@@ -23,7 +23,7 @@ func SendOTPEmail(toEmail string, otp string) error {
 	to := mail.NewEmail("User", toEmail)
 	plainTextContent := fmt.Sprintf("Your OTP code is: %s", otp)
 	htmlContent := fmt.Sprintf("<strong>Your OTP code is: %s</strong>", otp)
-	message := mail.NewSingleEmail(from, subject, to, 
+	message := mail.NewSingleEmail(from, subject, to,
 		plainTextContent, htmlContent)
 	client := sendgrid.NewSendClient(apiKey)
 	_, err := client.Send(message)
@@ -44,14 +44,14 @@ func SendInvitationEmail(toEmail string, invitationCode string) error {
 		return fmt.Errorf("mailer: missing sendgrid configuration")
 	}
 
-	regURL := fmt.Sprintf("%s/register?invitation_code=%s", 
+	regURL := fmt.Sprintf("%s/register?invitation_code=%s",
 		clientBaseURL, invitationCode)
 
 	from := mail.NewEmail(fromName, fromEmail)
 	subject := "Action Required: Activate Your PUP-Taguig Identity" +
 		" Provider Account"
 	to := mail.NewEmail("Valued User", toEmail)
-	
+
 	plainText := fmt.Sprintf(
 		"Welcome to PUP-Taguig Identity Provider!\n\n"+
 			"You have been invited to activate your account. "+
@@ -77,7 +77,7 @@ func SendInvitationEmail(toEmail string, invitationCode string) error {
 			"<br>%s</p>"+
 			"</div>", regURL, regURL)
 
-	message := mail.NewSingleEmail(from, subject, to, 
+	message := mail.NewSingleEmail(from, subject, to,
 		plainText, htmlContent)
 	client := sendgrid.NewSendClient(apiKey)
 	_, err := client.Send(message)
@@ -86,4 +86,3 @@ func SendInvitationEmail(toEmail string, invitationCode string) error {
 	}
 	return nil
 }
-
