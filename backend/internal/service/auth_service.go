@@ -71,36 +71,39 @@ func (s *authService) Authorize(
 ) (string, error) {
 	clientID, err := uuid.Parse(clientIDStr)
 	if err != nil {
-		return "", fmt.Errorf("UUID Parse: %w", err)
+		return "", fmt.Errorf("uuid parse: %w", err)
 	}
 
 	// 1. Session Validation
 	session, err := s.SessionRepo.GetByID(ctx, sessionToken)
+	if err != nil {
+		return "", fmt.Errorf("database query (GetSession): %w", err)
+	}
 	if session == nil {
-		return "", fmt.Errorf("No session Found")
+		return "", fmt.Errorf("no session found")
 	}
 
 	currentTime := time.Now()
 	if currentTime.After(session.ExpiresAt) {
-		return "", fmt.Errorf("Expired session")
+		return "", fmt.Errorf("expired session")
 	}
 
 	// 2. Client Verification
 	client, err := s.ClientRepo.GetByID(ctx, clientID[:])
 	if err != nil {
-		return "", fmt.Errorf("Database Query (GetClient): %w", err)
+		return "", fmt.Errorf("database query (GetClient): %w", err)
 	}
 
 	// 3. Code Generation
 	code, err := utils.GenerateAuthorizationCode()
 	if err != nil {
-		return "", fmt.Errorf("Code Generation: %w", err)
+		return "", fmt.Errorf("code generation: %w", err)
 	}
 
 	userID := session.UserId
 	err = s.Repo.StoreCode(ctx, code, userID[:], clientID[:], client.RedirectUri)
 	if err != nil {
-		return "", fmt.Errorf("Code Storage: %w", err)
+		return "", fmt.Errorf("code storage: %w", err)
 	}
 
 	return fmt.Sprintf("%s?code=%s", client.RedirectUri, code), nil
@@ -119,18 +122,18 @@ func (s *authService) LoginAndAuthorize(
 	// 1. Authenticate User
 	claims, storedHash, err := s.Repo.GetUserForAuth(ctx, req.Email)
 	if err != nil {
-		return "", "", fmt.Errorf("Database Query (UserLookup): %w", err)
+		return "", "", fmt.Errorf("database query (UserLookup): %w", err)
 	}
 
 	if err := utils.CompareSecret(storedHash, req.Password); err != nil {
-		return "", "", fmt.Errorf("Secret Verification: invalid credentials")
+		return "", "", fmt.Errorf("secret verification: invalid credentials")
 	}
 
 	// 2. Client Validation
 	clientUUID, _ := uuid.Parse(req.ClientID)
 	regURI, err := s.Repo.GetClientRedirectURI(ctx, clientUUID[:])
 	if err != nil {
-		return "", "", fmt.Errorf("Database Query (ClientLookup): %w", err)
+		return "", "", fmt.Errorf("database query (ClientLookup): %w", err)
 	}
 
 	// 3. Authorization Code Logic
@@ -138,11 +141,14 @@ func (s *authService) LoginAndAuthorize(
 	userID, _ := uuid.Parse(claims.UserID)
 	err = s.Repo.StoreCode(ctx, code, userID[:], clientUUID[:], regURI)
 	if err != nil {
-		return "", "", fmt.Errorf("Database Query (StoreCode): %w", err)
+		return "", "", fmt.Errorf("database query (StoreCode): %w", err)
 	}
 
 	// 4. Session Management
 	sessionID, err := s.GetSessionToken(ctx, userID, ipAddress, userAgent)
+	if err != nil {
+		return "", "", fmt.Errorf("session token generation: %w", err)
+	}
 
 	redirectURL := fmt.Sprintf("%s?code=%s", regURI, code)
 	return redirectURL, sessionID, nil
@@ -159,13 +165,13 @@ func (s *authService) Logout(
 	// 1. Retrieve session to identify the user
 	session, err := s.SessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
-		return fmt.Errorf("Database Query (GetSession): %w", err)
+		return fmt.Errorf("database query (GetSession): %w", err)
 	}
 
 	// 2. Perform global token revocation
 	err = s.Repo.RevokeTokens(ctx, session.UserId)
 	if err != nil {
-		return fmt.Errorf("Database Query (RevokeTokens): %w", err)
+		return fmt.Errorf("database query (RevokeTokens): %w", err)
 	}
 
 	// 3. Optional: Delete the session from DB
@@ -193,11 +199,11 @@ func (s *authService) ValidateSession(
 ) (*models.IdPSession, error) {
 	session, err := s.SessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetSession): %w", err)
+		return nil, fmt.Errorf("database query (GetSession): %w", err)
 	}
 
 	if time.Now().After(session.ExpiresAt) {
-		return nil, fmt.Errorf("Session Validation: expired")
+		return nil, fmt.Errorf("session validation: expired")
 	}
 
 	return session, nil
@@ -225,45 +231,45 @@ func (s *authService) ExchangeCodeForToken(
 ) (*dto.TokenResponse, error) {
 	clientUUID, err := uuid.Parse(req.ClientID)
 	if err != nil {
-		return nil, fmt.Errorf("UUID Parse: %w", err)
+		return nil, fmt.Errorf("uuid parse: %w", err)
 	}
 	clientIDBin := clientUUID[:]
 
 	// 1. Authenticate Client
 	valid, err := s.Repo.VerifyClient(ctx, clientIDBin, req.ClientSecret)
 	if err != nil {
-		return nil, fmt.Errorf("Client Verification: %w", err)
+		return nil, fmt.Errorf("client verification: %w", err)
 	}
 	if !valid {
-		return nil, fmt.Errorf("Client Verification: invalid credentials")
+		return nil, fmt.Errorf("client verification: invalid credentials")
 	}
 
 	// 2. Consume Authorization Code
 	authCode, err := s.Repo.ExchangeCode(ctx, req.Code)
 	if err != nil {
-		return nil, fmt.Errorf("Code Exchange: %w", err)
+		return nil, fmt.Errorf("code exchange: %w", err)
 	}
 
 	// 3. Security Check: Client Mismatch
 	if !bytes.Equal(authCode.ClientId, clientIDBin) {
-		return nil, fmt.Errorf("Client Verification: id mismatch")
+		return nil, fmt.Errorf("client verification: id mismatch")
 	}
 
 	// 4. Identity Retrieval
 	claims, err := s.Repo.GetClaimsByID(ctx, authCode.UserId)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetClaims): %w", err)
+		return nil, fmt.Errorf("database query (GetClaims): %w", err)
 	}
 
 	client, err := s.ClientRepo.GetByID(ctx, clientIDBin)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetClient): %w", err)
+		return nil, fmt.Errorf("database query (GetClient): %w", err)
 	}
 
 	// 5. Token Generation
 	accessToken, err := GenerateToken(s.PrivateKey, client, *claims)
 	if err != nil {
-		return nil, fmt.Errorf("Token Generation: %w", err)
+		return nil, fmt.Errorf("token generation: %w", err)
 	}
 
 	grants, _ := s.ClientRepo.GetGrantTypes(ctx, clientIDBin)
@@ -282,7 +288,7 @@ func (s *authService) ExchangeCodeForToken(
 				clientIDBin,
 			)
 			if err != nil {
-				return nil, fmt.Errorf("Database Query (StoreRefresh): %w", err)
+				return nil, fmt.Errorf("database query (StoreRefresh): %w", err)
 			}
 		}
 	}
@@ -305,41 +311,41 @@ func (s *authService) RotateRefreshToken(
 	// 1. Identify User and Client from the existing token
 	uID, cID, err := s.Repo.GetIDsFromToken(ctx, oldToken)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (TokenLookup): %w", err)
+		return nil, fmt.Errorf("database query (TokenLookup): %w", err)
 	}
 
 	// 1.1 Verify Client Grant Type
 	grants, _ := s.ClientRepo.GetGrantTypes(ctx, cID)
 	if !slices.Contains(grants, "refresh_token") {
-		return nil, fmt.Errorf("Client Verification: missing refresh_token grant")
+		return nil, fmt.Errorf("client verification: missing refresh_token grant")
 	}
 
 	// 2. Generate and persist new Refresh Token
 	newToken, err := utils.GenerateRandomString(SECRET_ENTROPY)
 	if err != nil {
-		return nil, fmt.Errorf("Token Generation: %w", err)
+		return nil, fmt.Errorf("token generation: %w", err)
 	}
 
 	err = s.Repo.RotateRefreshToken(ctx, oldToken, newToken)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (RotateToken): %w", err)
+		return nil, fmt.Errorf("database query (RotateToken): %w", err)
 	}
 
 	// 3. Retrieve Identity and Client data
 	claims, err := s.Repo.GetClaimsByID(ctx, uID)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetClaims): %w", err)
+		return nil, fmt.Errorf("database query (GetClaims): %w", err)
 	}
 
 	client, err := s.ClientRepo.GetByID(ctx, cID)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetClient): %w", err)
+		return nil, fmt.Errorf("database query (GetClient): %w", err)
 	}
 
 	// 4. Mint new Access Token
 	accessToken, err := GenerateToken(s.PrivateKey, client, *claims)
 	if err != nil {
-		return nil, fmt.Errorf("Token Generation (JWT): %w", err)
+		return nil, fmt.Errorf("token generation (JWT): %w", err)
 	}
 
 	return &dto.TokenResponse{
@@ -361,34 +367,34 @@ func (s *authService) RefreshBySession(
 	// 1. Validate Session
 	session, err := s.SessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetSession): %w", err)
+		return nil, fmt.Errorf("database query (GetSession): %w", err)
 	}
 
 	if time.Now().After(session.ExpiresAt) {
-		return nil, fmt.Errorf("Session Validation: expired")
+		return nil, fmt.Errorf("session validation: expired")
 	}
 
 	// 2. Validate Client
 	cUUID, err := uuid.Parse(clientIDStr)
 	if err != nil {
-		return nil, fmt.Errorf("UUID Parse: %w", err)
+		return nil, fmt.Errorf("uuid parse: %w", err)
 	}
 
 	client, err := s.ClientRepo.GetByID(ctx, cUUID[:])
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetClient): %w", err)
+		return nil, fmt.Errorf("database query (GetClient): %w", err)
 	}
 
 	// 3. Retrieve Identity
 	claims, err := s.Repo.GetClaimsByID(ctx, session.UserId)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetClaims): %w", err)
+		return nil, fmt.Errorf("database query (GetClaims): %w", err)
 	}
 
 	// 4. Mint new Access Token
 	accessToken, err := GenerateToken(s.PrivateKey, client, *claims)
 	if err != nil {
-		return nil, fmt.Errorf("Token Generation (JWT): %w", err)
+		return nil, fmt.Errorf("token generation (JWT): %w", err)
 	}
 
 	return &dto.TokenResponse{
@@ -417,7 +423,7 @@ func (s *authService) GetSessionToken(ctx context.Context,
 	}
 
 	if err := s.SessionRepo.Create(ctx, session); err != nil {
-		return "", fmt.Errorf("Database Query (CreateSession): %w", err)
+		return "", fmt.Errorf("database query (CreateSession): %w", err)
 	}
 
 	return sessionID, nil

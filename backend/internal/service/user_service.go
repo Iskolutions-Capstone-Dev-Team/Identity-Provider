@@ -75,7 +75,7 @@ func (s *userService) CreateUser(
 
 	passwordHash, err := utils.HashSecret(req.Password)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("Secret Hashing: %w", err)
+		return uuid.Nil, fmt.Errorf("secret hashing: %w", err)
 	}
 
 	user := models.User{
@@ -97,18 +97,18 @@ func (s *userService) CreateUser(
 
 	err = s.Repo.CreateUser(ctx, &user)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("Database Query (CreateUser): %w", err)
+		return uuid.Nil, fmt.Errorf("database query (CreateUser): %w", err)
 	}
 
 	if req.AccountType != "" {
 		typeID, err := s.RegRepo.GetAccountTypeIDByName(ctx, req.AccountType)
 		if err != nil {
-			return userID, fmt.Errorf("Post-Create (TypeLookup): %w", err)
+			return userID, fmt.Errorf("post-create (TypeLookup): %w", err)
 		}
 
 		clients, err := s.RegRepo.GetClientsByAccountTypeID(ctx, typeID)
 		if err != nil {
-			return userID, fmt.Errorf("Post-Create (RegFetch): %w", err)
+			return userID, fmt.Errorf("post-create (RegFetch): %w", err)
 		}
 
 		if len(clients) > 0 {
@@ -118,7 +118,7 @@ func (s *userService) CreateUser(
 			}
 			err = s.CAURepo.BatchAssignClientAccess(ctx, user.ID, clientIDs)
 			if err != nil {
-				return userID, fmt.Errorf("Post-Create (Assign): %w", err)
+				return userID, fmt.Errorf("post-create (Assign): %w", err)
 			}
 		}
 	}
@@ -128,13 +128,13 @@ func (s *userService) CreateUser(
 		for _, clientIDStr := range req.AllowedAppClients {
 			cid, err := uuid.Parse(clientIDStr)
 			if err != nil {
-				return userID, fmt.Errorf("Post-Create (UUID): %w", err)
+				return userID, fmt.Errorf("post-create (UUID): %w", err)
 			}
 			clientIDs = append(clientIDs, cid[:])
 		}
 		err = s.ClientRepo.BatchAdminClientBind(ctx, user.ID, clientIDs)
 		if err != nil {
-			return userID, fmt.Errorf("Post-Create (AdminBind): %w", err)
+			return userID, fmt.Errorf("post-create (AdminBind): %w", err)
 		}
 	}
 
@@ -152,7 +152,7 @@ func (s *userService) CreateAdminUser(
 
 	passwordHash, err := utils.HashSecret(req.Password)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("Secret Hashing: %w", err)
+		return uuid.Nil, fmt.Errorf("secret hashing: %w", err)
 	}
 
 	user := models.User{
@@ -174,14 +174,14 @@ func (s *userService) CreateAdminUser(
 
 	err = s.Repo.CreateUser(ctx, &user)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("Database Query (CreateAdminUser): %w", err)
+		return uuid.Nil, fmt.Errorf("database query (CreateAdminUser): %w", err)
 	}
 
 	if req.AccountTypeID != 0 {
 		clients, err := s.RegRepo.GetClientsByAccountTypeID(ctx,
 			req.AccountTypeID)
 		if err != nil {
-			return userID, fmt.Errorf("Post-Create (RegFetch): %w", err)
+			return userID, fmt.Errorf("post-create (RegFetch): %w", err)
 		}
 
 		if len(clients) > 0 {
@@ -191,7 +191,7 @@ func (s *userService) CreateAdminUser(
 			}
 			err = s.CAURepo.BatchAssignClientAccess(ctx, user.ID, clientIDs)
 			if err != nil {
-				return userID, fmt.Errorf("Post-Create (Assign): %w", err)
+				return userID, fmt.Errorf("post-create (Assign): %w", err)
 			}
 		}
 	}
@@ -201,13 +201,13 @@ func (s *userService) CreateAdminUser(
 		for _, clientIDStr := range req.AllowedAppClients {
 			cid, err := uuid.Parse(clientIDStr)
 			if err != nil {
-				return userID, fmt.Errorf("Post-Create (UUID): %w", err)
+				return userID, fmt.Errorf("post-create (UUID): %w", err)
 			}
 			clientIDs = append(clientIDs, cid[:])
 		}
 		err = s.ClientRepo.BatchAdminClientBind(ctx, user.ID, clientIDs)
 		if err != nil {
-			return userID, fmt.Errorf("Post-Create (AdminBind): %w", err)
+			return userID, fmt.Errorf("post-create (AdminBind): %w", err)
 		}
 	}
 
@@ -223,7 +223,7 @@ func (s *userService) GetUserByID(
 ) (*dto.UserResponse, error) {
 	user, err := s.Repo.GetUserById(ctx, id[:])
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetUserById): %w", err)
+		return nil, fmt.Errorf("database query (GetUserById): %w", err)
 	}
 
 	if user == nil {
@@ -241,7 +241,7 @@ func (s *userService) GetMe(
 ) (*dto.UserInfoResponse, error) {
 	user, err := s.Repo.GetUserById(ctx, userID[:])
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetUser): %w", err)
+		return nil, fmt.Errorf("database query (GetUser): %w", err)
 	}
 
 	return &dto.UserInfoResponse{
@@ -273,7 +273,7 @@ func (s *userService) GetFilteredUserList(
 	} else if slices.Contains(permissions, "View users based on appclient") {
 		resp, err = s.GetBoundUserList(ctx, limit, page, userID)
 	} else {
-		return nil, fmt.Errorf("Privilege Validation: unauthorized level")
+		return nil, fmt.Errorf("privilege validation: unauthorized level")
 	}
 
 	if err != nil {
@@ -295,12 +295,12 @@ func (s *userService) GetUserList(
 
 	users, err := s.Repo.GetUserList(ctx, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetUserList): %w", err)
+		return nil, fmt.Errorf("database query (GetUserList): %w", err)
 	}
 
 	total, err := s.Repo.CountUsers(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (CountUsers): %w", err)
+		return nil, fmt.Errorf("database query (CountUsers): %w", err)
 	}
 
 	var userResponses []dto.UserSimplifiedResponse
@@ -336,12 +336,12 @@ func (s *userService) GetBoundUserList(
 
 	users, err := s.Repo.GetBoundUserList(ctx, limit, offset, userID[:])
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetBound): %w", err)
+		return nil, fmt.Errorf("database query (GetBound): %w", err)
 	}
 
 	total, err := s.Repo.CountBoundUsers(ctx, userID[:])
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (CountBound): %w", err)
+		return nil, fmt.Errorf("database query (CountBound): %w", err)
 	}
 
 	var userResponses []dto.UserSimplifiedResponse
@@ -374,7 +374,7 @@ func (s *userService) UpdateUserPassword(
 ) error {
 	passwordHash, err := utils.HashSecret(newPassword)
 	if err != nil {
-		return fmt.Errorf("Secret Hashing: %w", err)
+		return fmt.Errorf("secret hashing: %w", err)
 	}
 
 	user := models.User{
@@ -384,7 +384,7 @@ func (s *userService) UpdateUserPassword(
 
 	err = s.Repo.UpdateUserPassword(ctx, &user)
 	if err != nil {
-		return fmt.Errorf("Database Query (UpdatePassword): %w", err)
+		return fmt.Errorf("database query (UpdatePassword): %w", err)
 	}
 
 	return nil
@@ -400,7 +400,7 @@ func (s *userService) UpdateUserPasswordByEmail(
 ) error {
 	user, err := s.Repo.GetUserByEmail(ctx, email)
 	if err != nil {
-		return fmt.Errorf("Database Query (GetUserByEmail): %w", err)
+		return fmt.Errorf("database query (GetUserByEmail): %w", err)
 	}
 	if user == nil {
 		return fmt.Errorf("user not found")
@@ -420,7 +420,7 @@ func (s *userService) UpdateUserStatus(
 ) error {
 	status, err := models.MapStatus(newStatus)
 	if err != nil {
-		return fmt.Errorf("Status Validation: %w", err)
+		return fmt.Errorf("status validation: %w", err)
 	}
 
 	user := models.User{
@@ -430,7 +430,7 @@ func (s *userService) UpdateUserStatus(
 
 	err = s.Repo.UpdateStatus(ctx, &user)
 	if err != nil {
-		return fmt.Errorf("Database Query (UpdateStatus): %w", err)
+		return fmt.Errorf("database query (UpdateStatus): %w", err)
 	}
 
 	return nil
@@ -457,12 +457,12 @@ func (s *userService) UpdateUserRole(
 		}
 		err := s.Repo.UpdateUserRole(ctx, id[:], nullRoleID)
 		if err != nil {
-			return fmt.Errorf("Database Query (UpdateUserRole): %w", err)
+			return fmt.Errorf("database query (UpdateUserRole): %w", err)
 		}
 		return nil
 	}
 
-	return fmt.Errorf("Permission Validation: unauthorized to update roles")
+	return fmt.Errorf("permission validation: unauthorized to update roles")
 }
 
 /**
@@ -483,7 +483,7 @@ func (s *userService) UpdateUserName(
 
 	err := s.Repo.UpdateUserName(ctx, &user)
 	if err != nil {
-		return fmt.Errorf("Database Query (UpdateUserName): %w", err)
+		return fmt.Errorf("database query (UpdateUserName): %w", err)
 	}
 
 	return nil
@@ -501,19 +501,19 @@ func (s *userService) ChangePassword(
 	// 1. Get user to retrieve email
 	user, err := s.Repo.GetUserById(ctx, id[:])
 	if err != nil || user == nil {
-		return fmt.Errorf("User Identification: not found")
+		return fmt.Errorf("user identification: not found")
 	}
 
 	// 2. Get user data with hash using email
 	userData, err := s.Repo.GetUserByEmail(ctx, user.Email)
 	if err != nil || userData == nil {
-		return fmt.Errorf("User Verification: lookup failed")
+		return fmt.Errorf("user verification: lookup failed")
 	}
 
 	// 3. Compare old password
 	err = utils.CompareSecret(userData.PasswordHash, oldPassword)
 	if err != nil {
-		return fmt.Errorf("User Verification: invalid credentials")
+		return fmt.Errorf("user verification: invalid credentials")
 	}
 
 	// 4. Update with new password
@@ -522,7 +522,7 @@ func (s *userService) ChangePassword(
 
 func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	if err := s.Repo.SoftDelete(ctx, id[:]); err != nil {
-		return fmt.Errorf("Database Query (SoftDelete): %w", err)
+		return fmt.Errorf("database query (SoftDelete): %w", err)
 	}
 
 	return nil
@@ -605,12 +605,12 @@ func (s *userService) GetAdminUserList(
 
 	users, err := s.Repo.GetAdminUserList(ctx, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetAdminList): %w", err)
+		return nil, fmt.Errorf("database query (GetAdminList): %w", err)
 	}
 
 	total, err := s.Repo.CountAdminUsers(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (CountAdmins): %w", err)
+		return nil, fmt.Errorf("database query (CountAdmins): %w", err)
 	}
 
 	var userResponses []dto.UserResponse

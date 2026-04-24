@@ -54,7 +54,7 @@ func (s *roleService) CreateRole(
 
 	_, err := s.RoleRepo.CreateRole(ctx, role)
 	if err != nil {
-		return fmt.Errorf("Database Query (CreateRole): %w", err)
+		return fmt.Errorf("database query (CreateRole): %w", err)
 	}
 
 	return nil
@@ -75,7 +75,7 @@ func (s *roleService) GetFilteredRoleList(
 		return s.GetRoleList(ctx, limit, page, keyword)
 	}
 
-	return nil, fmt.Errorf("Privilege Validation: level unauthorized")
+	return nil, fmt.Errorf("privilege validation: level unauthorized")
 }
 
 /**
@@ -91,12 +91,12 @@ func (s *roleService) GetRoleList(
 
 	roles, err := s.RoleRepo.ListRoles(ctx, limit, offset, keyword)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (ListRoles): %w", err)
+		return nil, fmt.Errorf("database query (ListRoles): %w", err)
 	}
 
 	total, err := s.RoleRepo.CountRoles(ctx, keyword)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (CountRoles): %w", err)
+		return nil, fmt.Errorf("database query (CountRoles): %w", err)
 	}
 
 	return s.formatRoleListResponse(roles, total, limit, page), nil
@@ -115,12 +115,12 @@ func (s *roleService) GetAllExceptIDP(
 
 	roles, err := s.RoleRepo.ListAllExceptIdP(ctx, limit, offset, keyword)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (ListRoles): %w", err)
+		return nil, fmt.Errorf("database query (ListRoles): %w", err)
 	}
 
 	total, err := s.RoleRepo.CountRoles(ctx, keyword)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (CountRoles): %w", err)
+		return nil, fmt.Errorf("database query (CountRoles): %w", err)
 	}
 
 	return s.formatRoleListResponse(roles, total, limit, page), nil
@@ -146,12 +146,12 @@ func (s *roleService) GetAuthorizedRoles(
 		keyword,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (ListBoundRoles): %w", err)
+		return nil, fmt.Errorf("database query (ListBoundRoles): %w", err)
 	}
 
 	total, err := s.RoleRepo.CountDistinctBoundRoles(ctx, userID[:], keyword)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (CountBoundRoles): %w", err)
+		return nil, fmt.Errorf("database query (CountBoundRoles): %w", err)
 	}
 
 	return s.formatRoleWithMetadataListResponse(roles, total, limit, page), nil
@@ -235,7 +235,7 @@ func (s *roleService) GetRoleByID(
 ) (*dto.RoleResponse, error) {
 	role, err := s.RoleRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (GetByID): %w", err)
+		return nil, fmt.Errorf("database query (GetByID): %w", err)
 	}
 
 	return &dto.RoleResponse{
@@ -257,11 +257,11 @@ func (s *roleService) SearchRoles(
 ) (*dto.RoleListResponse, error) {
 	roles, err := s.RoleRepo.SearchRoles(ctx, keyword)
 	if err != nil {
-		return nil, fmt.Errorf("Database Query (SearchRoles): %w", err)
+		return nil, fmt.Errorf("database query (SearchRoles): %w", err)
 	}
 
 	if len(roles) == 0 {
-		return nil, fmt.Errorf("Database Query (SearchRoles): no records")
+		return nil, fmt.Errorf("database query (SearchRoles): no records")
 	}
 
 	var roleResponses []dto.RoleResponse
@@ -308,7 +308,7 @@ func (s *roleService) UpdateRole(
 	}
 
 	if err := s.RoleRepo.UpdateRole(ctx, role); err != nil {
-		return fmt.Errorf("Database Query (UpdateRole): %w", err)
+		return fmt.Errorf("database query (UpdateRole): %w", err)
 	}
 
 	return nil
@@ -319,7 +319,7 @@ func (s *roleService) UpdateRole(
  */
 func (s *roleService) DeleteRole(ctx context.Context, id int) error {
 	if err := s.RoleRepo.Delete(ctx, id); err != nil {
-		return fmt.Errorf("Database Query (Delete): %w", err)
+		return fmt.Errorf("database query (Delete): %w", err)
 	}
 
 	return nil
