@@ -1,3 +1,5 @@
+import { getModalTransitionClassName, useModalTransition } from "./modalTransition";
+
 const defaultDialogClassName = "modal modal-middle";
 const glassDialogClassName =
   "modal modal-middle px-3 backdrop:bg-[rgba(43,3,7,0.58)] backdrop:backdrop-blur-sm";
@@ -29,6 +31,7 @@ const glassPrimaryButtonClassName =
   "btn h-12 rounded-[1rem] border border-[#7b0d15] bg-[#7b0d15] px-6 text-white transition hover:border-[#5a0b12] hover:bg-[#5a0b12]";
 
 export default function DeleteConfirmModal({ open, message = "Delete this app client?", onCancel, onConfirm, theme = "default", colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
   const isGlassTheme = theme === "glass";
   const isDarkGlassTheme = isGlassTheme && colorMode === "dark";
   const dialogClassName = isGlassTheme
@@ -65,8 +68,17 @@ export default function DeleteConfirmModal({ open, message = "Delete this app cl
       ? glassPrimaryButtonClassName
       : defaultPrimaryButtonClassName;
 
+  if (!shouldRender) {
+    return null;
+  }
+
   return (
-    <dialog className={`${dialogClassName} ${open ? "modal-open" : ""}`}>
+    <dialog open
+      className={getModalTransitionClassName(
+        `${dialogClassName} modal-open`,
+        isClosing,
+      )}
+    >
       <form method="dialog" className={boxClassName}>
         <div className="mb-6 flex justify-center">
           <div className={iconWrapClassName}>
