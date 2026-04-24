@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import EditProfileModal from "./EditProfileModal";
 import ChangePasswordModal from "../ChangePasswordModal";
 import ProfileDetails from "./ProfileDetails";
-import EmailStatus from "./EmailStatus";
 import ActionButtons from "./ActionButtons";
 import SuccessAlert from "../SuccessAlert";
 import { userService } from "../../services/userService";
@@ -148,7 +147,6 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
 
           <div className="space-y-8 px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
             <ProfileDetails profile={currentProfile} colorMode={colorMode} />
-            <EmailStatus colorMode={colorMode} />
             <ActionButtons
               openEdit={() => setEditOpen(true)}
               openPassword={() => setPasswordOpen(true)}
