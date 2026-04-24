@@ -127,6 +127,7 @@ jobs:
 
   deploy-production:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: quality-check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
