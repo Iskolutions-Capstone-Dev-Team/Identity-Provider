@@ -107,7 +107,7 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_PK }}
           source: "docker-compose.ghcr.yml"
-          target: "~/identity-provider"
+          target: "~/Identity-Provider"
 
       - name: Deploy to Staging
         uses: appleboy/ssh-action@v1.0.3
@@ -116,7 +116,8 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_PK }}
           script: |
-            cd ~/identity-provider
+            cd ~/Identity-Provider
+            git pull origin development
             echo "${{ secrets.STAGING_ENV }}" > .env
             echo "${{ secrets.GH_PAT }}" | \
               docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
@@ -138,7 +139,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.ghcr.yml"
-          target: "~/identity-provider"
+          target: "~/Identity-Provider"
 
       - name: Deploy to Production
         uses: appleboy/ssh-action@v1.0.3
@@ -147,7 +148,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/identity-provider
+            cd ~/Identity-Provider
+            git pull origin main
             echo "${{ secrets.ENV_FILE }}" > .env
             echo "${{ secrets.GH_PAT }}" | \
               docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
