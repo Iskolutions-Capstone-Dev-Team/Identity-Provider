@@ -10,6 +10,7 @@ import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import InvitationConfirmModal from "./InvitationConfirmModal";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 import { usePermissionAccess } from "../../context/PermissionContext";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions } from "../../utils/userPoolAccess";
 import {
@@ -102,6 +103,7 @@ function PasswordVisibilityIcon({ showPassword }) {
 
 export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, appClientOptions = [], isLoadingAppClients = false, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const { hasPermission } = usePermissionAccess();
+  const { shouldRender, isClosing } = useModalTransition(open);
   const [step, setStep] = useState(1);
   const [data, setData] = useState(initialFormData);
   const [error, setError] = useState("");
@@ -411,7 +413,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   };
 
   useEffect(() => {
-    if (!open) {
+    if (!shouldRender) {
       setData(initialFormData);
       setStep(1);
       setFieldErrors(initialFieldErrors);
@@ -420,7 +422,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       setIsInvitationConfirmOpen(false);
       setError("");
     }
-  }, [open]);
+  }, [shouldRender]);
 
   useEffect(() => {
     if (step === 1) {
@@ -537,7 +539,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     await submitUser();
   };
 
-  if (!open) {
+  if (!shouldRender) {
     return null;
   }
 
@@ -638,7 +640,12 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
 
   return createPortal(
     <>
-      <dialog open className={modalOverlayClassName}>
+      <dialog open
+        className={getModalTransitionClassName(
+          modalOverlayClassName,
+          isClosing,
+        )}
+      >
         <div className={modalBoxClassName}>
         <div className={modalHeaderSpacingClassName}>
           <div className="flex items-start justify-between gap-4 sm:gap-6">

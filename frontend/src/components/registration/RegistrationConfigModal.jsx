@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import ErrorAlert from "../ErrorAlert";
 import MultiSelect from "../MultiSelect";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 import { ACCOUNT_TYPE_OPTIONS, getAccountTypeOption } from "../../utils/accountTypes";
 
 function getClientNames(clientIds = [], appClientOptions = []) {
@@ -23,14 +24,22 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
   const [selectedClientIds, setSelectedClientIds] = useState([]);
   const [error, setError] = useState("");
   const [accountTypeNameError, setAccountTypeNameError] = useState("");
-  const isCreateMode = mode === "create";
-  const isViewMode = mode === "view";
+  const [cachedConfig, setCachedConfig] = useState(config);
+  const [cachedMode, setCachedMode] = useState(mode);
+  const isModalOpen = open && (Boolean(config) || mode === "create");
+  const { shouldRender, isClosing } = useModalTransition(isModalOpen);
+  const currentConfig = open ? config : cachedConfig;
+  const currentMode = open ? mode : cachedMode;
+  const isCreateMode = currentMode === "create";
+  const isViewMode = currentMode === "view";
   const isDarkMode = colorMode === "dark";
   const isLockedDefaultAccountType =
     !isCreateMode &&
     Boolean(
       getAccountTypeOption(
-        config?.accountTypeValue ?? config?.accountType ?? config?.label,
+        currentConfig?.accountTypeValue ??
+          currentConfig?.accountType ??
+          currentConfig?.label,
         ACCOUNT_TYPE_OPTIONS,
       ),
     );
@@ -72,32 +81,42 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
   }`;
 
   useEffect(() => {
+    if (!isModalOpen) {
+      return;
+    }
+
+    setCachedConfig(config);
+    setCachedMode(mode);
+  }, [config, isModalOpen, mode]);
+
+  useEffect(() => {
     if (!open) {
       return;
     }
 
-    setAccountTypeName(config?.label ?? "");
+    setAccountTypeName(currentConfig?.label ?? "");
     setSelectedClientIds(
-      Array.isArray(config?.clientIds) ? config.clientIds : [],
+      Array.isArray(currentConfig?.clientIds) ? currentConfig.clientIds : [],
     );
     setError("");
     setAccountTypeNameError("");
-  }, [open, config]);
+  }, [currentConfig, open]);
 
   const displayedClientNames = useMemo(
     () => {
       if (isViewMode) {
-        return Array.isArray(config?.clientNames) && config.clientNames.length > 0
-          ? config.clientNames
-          : getClientNames(config?.clientIds, appClientOptions);
+        return Array.isArray(currentConfig?.clientNames) &&
+          currentConfig.clientNames.length > 0
+          ? currentConfig.clientNames
+          : getClientNames(currentConfig?.clientIds, appClientOptions);
       }
 
       return getClientNames(selectedClientIds, appClientOptions);
     },
     [
       appClientOptions,
-      config?.clientIds,
-      config?.clientNames,
+      currentConfig?.clientIds,
+      currentConfig?.clientNames,
       isViewMode,
       selectedClientIds,
     ],
@@ -113,7 +132,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
 
     const normalizedAccountTypeName = accountTypeName.trim();
     const nextAccountTypeName = isLockedDefaultAccountType
-      ? normalizedAccountTypeName || config?.label?.trim() || ""
+      ? normalizedAccountTypeName || currentConfig?.label?.trim() || ""
       : normalizedAccountTypeName;
 
     if (!nextAccountTypeName) {
@@ -126,7 +145,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
       setError("");
       setAccountTypeNameError("");
       await onSave({
-        ...config,
+        ...currentConfig,
         name: nextAccountTypeName,
         label: nextAccountTypeName,
         clientIds: selectedClientIds,
@@ -139,12 +158,12 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
     }
   };
 
-  if (!open || (!config && !isCreateMode)) {
+  if (!shouldRender || (!currentConfig && !isCreateMode)) {
     return null;
   }
 
   return createPortal(
-    <dialog open className={modalOverlayClassName}>
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
         <div className={modalHeaderClassName}>
           <div className="flex items-start justify-between gap-4 sm:gap-6">
@@ -195,7 +214,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
                       )}
                       <input
                         type="text"
-                        value={accountTypeName || config?.label || ""}
+                        value={accountTypeName || currentConfig?.label || ""}
                         readOnly
                         disabled
                         aria-disabled="true"
@@ -238,7 +257,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
                         <div className="flex flex-wrap gap-2">
                           {displayedClientNames.map((clientName) => (
                             <span
-                              key={`${config.accountType}-${clientName}`}
+                              key={`${currentConfig?.accountType || accountTypeName}-${clientName}`}
                               className={clientBadgeClassName}
                             >
                               {clientName}

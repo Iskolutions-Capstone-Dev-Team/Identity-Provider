@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
 const toPositiveInt = (value) => {
   const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
@@ -99,6 +100,7 @@ function getPermissionCardClassName({ isSelected, isViewMode, isDarkMode }) {
 }
 
 export default function RoleModal({ open, mode, role, permissionOptions = [], isPermissionOptionsLoading = false, onClose, onSubmit, colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
   const isCreateMode = mode === "create";
   const isViewMode = mode === "view";
   const isDarkMode = colorMode === "dark";
@@ -332,12 +334,12 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
     });
   };
 
-  if (!open) {
+  if (!shouldRender) {
     return null;
   }
 
   return createPortal(
-    <dialog open className={modalOverlayClassName}>
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
         <div className={`${modalHeaderClassName} !px-8 !pt-8 !pb-24 min-h-[10.5rem] sm:!px-10 sm:!pt-9 sm:!pb-20 sm:min-h-0`}>
           <div className="flex items-start justify-between gap-4 sm:gap-6">

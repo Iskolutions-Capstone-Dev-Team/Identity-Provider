@@ -4,6 +4,7 @@ import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { formatTimestamp } from "../../utils/formatTimestamp";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
 const initialFieldErrors = {
   firstName: "",
@@ -63,6 +64,7 @@ function getProfileUpdateErrorMessage(error) {
 }
 
 export default function EditProfileModal({ open, onClose, profileData, updateProfile, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
   const [profile, setProfile] = useState(createProfileState());
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
   const [activeVoiceField, setActiveVoiceField] = useState("firstName");
@@ -166,7 +168,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
     updateProfileField(activeVoiceField, transcript);
   };
 
-  if (!open) {
+  if (!shouldRender) {
     return null;
   }
 
@@ -204,7 +206,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
     }`;
 
   return createPortal(
-    <dialog open className={modalOverlayClassName}>
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
         <div className={`${modalHeaderClassName} !pb-6 sm:!pb-7`}>
           <div className="flex items-start justify-between gap-4">

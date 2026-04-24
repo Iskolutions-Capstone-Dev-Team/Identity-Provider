@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
@@ -76,6 +77,7 @@ const getGrantClassName = ({ isSelected, isView, isDarkMode }) =>
   }`;
 
 export default function AppClientModal({ open, mode, client, getClientDetails, onClose, onSubmit, colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
   const isView = mode === "view";
   const isDarkMode = colorMode === "dark";
   const {
@@ -185,12 +187,12 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   }, [client, open]);
 
   useEffect(() => {
-    if (!open) {
+    if (!shouldRender) {
       detailsRequestRef.current = { clientId: "", inFlight: false };
       setActiveVoiceField("name");
       setFieldErrors(initialFieldErrors);
     }
-  }, [open]);
+  }, [shouldRender]);
 
   useEffect(() => {
     if (!open || !client || typeof getClientDetails !== "function") return;
@@ -471,11 +473,16 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     }
   };
 
-  if (!open) return null;
+  if (!shouldRender) return null;
 
   return createPortal(
     <>
-      <dialog open className={modalOverlayClassName}>
+      <dialog open
+        className={getModalTransitionClassName(
+          modalOverlayClassName,
+          isClosing,
+        )}
+      >
         <div className={modalBoxClassName}>
           <div className={modalHeaderSpacingClassName}>
             <div className="flex items-start justify-between gap-4 sm:gap-6">
