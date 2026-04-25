@@ -1,7 +1,9 @@
 import { createPortal } from "react-dom";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
 export default function SecretConfirmModal({ open, message = "Generate a new client secret?", onCancel, onConfirm, colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
   const isDarkMode = colorMode === "dark";
   const {
     modalBoxClassName,
@@ -20,10 +22,10 @@ export default function SecretConfirmModal({ open, message = "Generate a new cli
     ? "mt-2 text-sm text-[#c7adb4]"
     : "mt-2 text-sm text-[#7d5c62]";
 
-  if (!open) return null;
+  if (!shouldRender) return null;
 
   return createPortal(
-    <dialog open className={modalOverlayClassName}>
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <form method="dialog" className={`${modalBoxClassName} max-w-lg text-center`}>
         <div className="px-6 py-8 sm:px-8">
           <div className="mb-6 flex justify-center">

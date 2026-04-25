@@ -14,24 +14,24 @@ import (
 
 type RegistrationService interface {
 	GetRegistrationConfig(ctx context.Context) (*dto.RegistrationConfigResponse, error)
-	GetClientsByAccountTypeID(ctx context.Context, 
+	GetClientsByAccountTypeID(ctx context.Context,
 		id int) (*dto.AccountTypeConfigResponse, error)
-	CreateAccountType(ctx context.Context, 
+	CreateAccountType(ctx context.Context,
 		req dto.UpsertAccountTypeRequest) error
-	UpdateAccountType(ctx context.Context, 
+	UpdateAccountType(ctx context.Context,
 		req dto.UpsertAccountTypeRequest) error
 	DeleteAccountType(ctx context.Context, id int) error
-	ActivateAccount(ctx context.Context, 
+	ActivateAccount(ctx context.Context,
 		req dto.ActivateAccountRequest) error
-	CheckInvitation(ctx context.Context, 
+	CheckInvitation(ctx context.Context,
 		code string) (bool, error)
 }
 
 type regService struct {
-	repo         repository.RegistrationRepository
-	invitation   repository.InvitationRepository
-	user         repository.UserRepository
-	cau          repository.ClientAllowedUserRepository
+	repo       repository.RegistrationRepository
+	invitation repository.InvitationRepository
+	user       repository.UserRepository
+	cau        repository.ClientAllowedUserRepository
 }
 
 func NewRegistrationService(
@@ -67,7 +67,7 @@ func (s *regService) GetRegistrationConfig(ctx context.Context) (
 		}
 		if len(row.ClientID) > 0 {
 			id, _ := uuid.FromBytes(row.ClientID)
-			configMap[row.AccountTypeName] = append(configMap[row.AccountTypeName], 
+			configMap[row.AccountTypeName] = append(configMap[row.AccountTypeName],
 				dto.PreapprovedClientResponse{
 					ID:   id,
 					Name: row.ClientName,
@@ -88,7 +88,7 @@ func (s *regService) GetRegistrationConfig(ctx context.Context) (
 	return &resp, nil
 }
 
-func (s *regService) GetClientsByAccountTypeID(ctx context.Context, 
+func (s *regService) GetClientsByAccountTypeID(ctx context.Context,
 	id int) (*dto.AccountTypeConfigResponse, error) {
 	rows, err := s.repo.GetClientsByAccountTypeID(ctx, id)
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *regService) GetClientsByAccountTypeID(ctx context.Context,
 	}, nil
 }
 
-func (s *regService) CreateAccountType(ctx context.Context, 
+func (s *regService) CreateAccountType(ctx context.Context,
 	req dto.UpsertAccountTypeRequest) error {
 	id, err := s.repo.CreateAccountType(ctx, req.Name)
 	if err != nil {
@@ -137,7 +137,7 @@ func (s *regService) CreateAccountType(ctx context.Context,
 	return s.repo.SyncPreapprovedClients(ctx, id, clientIDs)
 }
 
-func (s *regService) UpdateAccountType(ctx context.Context, 
+func (s *regService) UpdateAccountType(ctx context.Context,
 	req dto.UpsertAccountTypeRequest) error {
 	err := s.repo.UpdateAccountType(ctx, req.ID, req.Name)
 	if err != nil {
@@ -160,7 +160,7 @@ func (s *regService) DeleteAccountType(ctx context.Context, id int) error {
 	return s.repo.DeleteAccountType(ctx, id)
 }
 
-func (s *regService) ActivateAccount(ctx context.Context, 
+func (s *regService) ActivateAccount(ctx context.Context,
 	req dto.ActivateAccountRequest) error {
 	inv, err := s.invitation.GetInvitationByCode(ctx, req.InvitationCode)
 	if err != nil {
@@ -208,7 +208,7 @@ func (s *regService) ActivateAccount(ctx context.Context,
 	return s.invitation.DeleteInvitation(ctx, inv.Email)
 }
 
-func (s *regService) CheckInvitation(ctx context.Context, 
+func (s *regService) CheckInvitation(ctx context.Context,
 	code string) (bool, error) {
 	inv, err := s.invitation.GetInvitationByCode(ctx, code)
 	if err != nil {

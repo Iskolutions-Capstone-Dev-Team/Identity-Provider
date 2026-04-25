@@ -25,7 +25,7 @@ func ConnectAdminToDB() (*sqlx.DB, error) {
 
 	db, err := sqlx.Open("mysql", config.FormatDSN())
 	if err != nil {
-		return nil, fmt.Errorf("Error connecting to database: %w", err)
+		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
 	return db, nil
@@ -46,7 +46,7 @@ func ConnectToDB() (*sqlx.DB, error) {
 
 	db, err := sqlx.Open("mysql", config.FormatDSN())
 	if err != nil {
-		return nil, fmt.Errorf("Error connecting to database: %w", err)
+		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
 	maxConnections := 25
@@ -60,8 +60,8 @@ func ConnectToDB() (*sqlx.DB, error) {
 		db.Close()
 
 		return nil, fmt.Errorf(
-			"Error pinging the database at %s: %w", 
-			config.Addr, 
+			"error pinging the database at %s: %w",
+			config.Addr,
 			err,
 		)
 	}

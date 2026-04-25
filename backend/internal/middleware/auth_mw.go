@@ -35,9 +35,9 @@ func AuthMiddleware(publicKey *rsa.PublicKey, logService service.LogService) gin
 			log.Printf("[AuthMiddleware] Token Extraction: invalid format")
 			if logService != nil {
 				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), c.ClientIP(), &dto.PostAuditLogRequest{
-					Action:   "invalid_token_usage",
-					Target:   "auth_header",
-					Status:   models.StatusFail,
+					Action: "invalid_token_usage",
+					Target: "auth_header",
+					Status: models.StatusFail,
 					Metadata: buildMetadataForMW(map[string]interface{}{
 						"ip":         c.ClientIP(),
 						"user_agent": c.Request.UserAgent(),
@@ -52,27 +52,27 @@ func AuthMiddleware(publicKey *rsa.PublicKey, logService service.LogService) gin
 		token, err := service.GetParsedToken(parts[1], publicKey)
 		if err != nil {
 			log.Printf("[AuthMiddleware] Token Validation: %v", err)
-			
+
 			status := http.StatusUnauthorized
 			errorMsg := "invalid_token"
-			
+
 			// Specifically handle expired tokens for frontend auto-refresh
 			if strings.Contains(err.Error(), jwt.ErrTokenExpired.Error()) {
 				errorMsg = "token_expired"
 			}
 
 			if logService != nil {
-				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), 
+				_ = logService.PostSecurityLogWithActorString(c.Request.Context(),
 					c.ClientIP(), &dto.PostAuditLogRequest{
-					Action:   "invalid_token_usage",
-					Target:   "auth_header",
-					Status:   models.StatusFail,
-					Metadata: buildMetadataForMW(map[string]interface{}{
-						"ip":         c.ClientIP(),
-						"user_agent": c.Request.UserAgent(),
-						"error":      err.Error(),
-					}),
-				})
+						Action: "invalid_token_usage",
+						Target: "auth_header",
+						Status: models.StatusFail,
+						Metadata: buildMetadataForMW(map[string]interface{}{
+							"ip":         c.ClientIP(),
+							"user_agent": c.Request.UserAgent(),
+							"error":      err.Error(),
+						}),
+					})
 			}
 			c.AbortWithStatusJSON(status, dto.ErrorResponse{Error: errorMsg})
 			return
@@ -98,9 +98,9 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 			log.Printf("[AuthorizeRBAC] Token Extraction: cookie missing")
 			if logService != nil {
 				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), c.ClientIP(), &dto.PostAuditLogRequest{
-					Action:   "invalid_token_usage",
-					Target:   "access_token_cookie",
-					Status:   models.StatusFail,
+					Action: "invalid_token_usage",
+					Target: "access_token_cookie",
+					Status: models.StatusFail,
 					Metadata: buildMetadataForMW(map[string]interface{}{
 						"ip":         c.ClientIP(),
 						"user_agent": c.Request.UserAgent(),
@@ -118,23 +118,23 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 
 			status := http.StatusUnauthorized
 			errorMsg := "invalid_token"
-			
+
 			if strings.Contains(err.Error(), jwt.ErrTokenExpired.Error()) {
 				errorMsg = "token_expired"
 			}
 
 			if logService != nil {
-				_ = logService.PostSecurityLogWithActorString(c.Request.Context(), 
+				_ = logService.PostSecurityLogWithActorString(c.Request.Context(),
 					c.ClientIP(), &dto.PostAuditLogRequest{
-					Action:   "invalid_token_usage",
-					Target:   "access_token_cookie",
-					Status:   models.StatusFail,
-					Metadata: buildMetadataForMW(map[string]interface{}{
-						"ip":         c.ClientIP(),
-						"user_agent": c.Request.UserAgent(),
-						"error":      err.Error(),
-					}),
-				})
+						Action: "invalid_token_usage",
+						Target: "access_token_cookie",
+						Status: models.StatusFail,
+						Metadata: buildMetadataForMW(map[string]interface{}{
+							"ip":         c.ClientIP(),
+							"user_agent": c.Request.UserAgent(),
+							"error":      err.Error(),
+						}),
+					})
 			}
 			c.AbortWithStatusJSON(status, dto.ErrorResponse{Error: errorMsg})
 			return

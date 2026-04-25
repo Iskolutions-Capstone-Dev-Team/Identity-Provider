@@ -4,6 +4,7 @@ import ModalSteps from "../ModalSteps";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
@@ -67,6 +68,7 @@ const getGrantClassName = ({ isSelected, isDarkMode }) =>
   }`;
 
 export default function AppClientCreateModal({ open, onClose, onSubmit, colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
   const isDarkMode = colorMode === "dark";
   const {
     modalBodyClassName,
@@ -135,7 +137,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     `${modalHeaderDescriptionClassName} !mt-3 max-w-none leading-relaxed sm:!mt-4 sm:max-w-[28rem]`;
 
   useEffect(() => {
-    if (!open) {
+    if (!shouldRender) {
       setStep(1);
       setName("");
       setDescription("");
@@ -151,7 +153,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
       setError("");
       setFieldErrors(initialFieldErrors);
     }
-  }, [open]);
+  }, [shouldRender]);
 
   useEffect(() => {
     if (step === 1) {
@@ -432,11 +434,16 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     }
   };
 
-  if (!open) return null;
+  if (!shouldRender) return null;
 
   return createPortal(
     <>
-      <dialog open className={modalOverlayClassName}>
+      <dialog open
+        className={getModalTransitionClassName(
+          modalOverlayClassName,
+          isClosing,
+        )}
+      >
         <div className={modalBoxClassName}>
           <div className={modalHeaderSpacingClassName}>
             <div className="flex items-start justify-between gap-4 sm:gap-6">

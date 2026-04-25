@@ -21,7 +21,7 @@ func GenerateToken(privateKey *rsa.PrivateKey,
 
 	clientIDStr, err := uuid.FromBytes(client.ID)
 	if err != nil {
-		return "", fmt.Errorf("Failed to get uuid from client bytes: %v", err)
+		return "", fmt.Errorf("failed to get uuid from client bytes: %v", err)
 	}
 
 	claims.AuthorizedParty = clientIDStr.String()

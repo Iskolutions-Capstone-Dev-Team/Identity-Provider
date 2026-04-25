@@ -58,7 +58,6 @@ func MigrateAndSeed() {
 		"account_types",
 	}
 
-
 	for _, tableName := range privilegedTables {
 		err = grantDeleteOnTable(tableName, adminDatabase)
 		if err != nil {

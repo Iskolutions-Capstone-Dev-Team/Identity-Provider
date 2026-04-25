@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database/migrations"
-	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database/migrations/tables"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database/migrations/procedures"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database/migrations/tables"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -30,7 +30,7 @@ func executeTableMigration(db *sqlx.DB, migration migrations.TableMigration) {
 
 			// 3. Record that this step is now finished
 			db.MustExec(
-				"INSERT INTO migration_history (migration_id) VALUES (?)", 
+				"INSERT INTO migration_history (migration_id) VALUES (?)",
 				step.ID,
 			)
 		} else {
@@ -71,8 +71,6 @@ func RunAllMigrations(db *sqlx.DB) {
 		tables.ClientAllowedUsersMigration,
 		tables.PreapprovedClientsMigration,
 	}
-
-
 
 	procedurePlan := []migrations.MigrationPart{
 		procedures.CreateUserProcedure,

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import ErrorAlert from "./ErrorAlert";
 import { getModalTheme } from "./modalTheme";
 
-export default function OtpVerificationStep({ otp, setOtp, timer, canResend, onResend, onVerify, errorMessage = "", onClearError, emailAddress = "your email address", colorMode = "light" }) {
+export default function OtpVerificationStep({ otp, setOtp, timer, canResend, onResend, errorMessage = "", onClearError, emailAddress = "your email address", colorMode = "light" }) {
   const inputsRef = useRef([]);
   const { modalSectionClassName } = getModalTheme(colorMode);
   const isDarkMode = colorMode === "dark";

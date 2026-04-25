@@ -18,7 +18,7 @@ var ClientAllowedRolesMigration = migrations.TableMigration{
 			);`,
 		},
 		{
-			ID: "drop-client-allowed-roles-table",
+			ID:  "drop-client-allowed-roles-table",
 			SQL: `DROP TABLE IF EXISTS client_allowed_roles;`,
 		},
 	},

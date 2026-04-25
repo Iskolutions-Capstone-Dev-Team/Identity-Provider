@@ -10,9 +10,9 @@ import (
 
 type ClientAllowedUserService interface {
 	GetAllMappings(ctx context.Context) ([]models.ClientAllowedUser, error)
-	GetMappingsByAdmin(ctx context.Context, 
+	GetMappingsByAdmin(ctx context.Context,
 		adminID []byte) ([]models.ClientAllowedUser, error)
-	SyncAccess(ctx context.Context, userID []byte, 
+	SyncAccess(ctx context.Context, userID []byte,
 		clientIDs [][]byte, adminID []byte) error
 }
 
@@ -27,14 +27,14 @@ func (s *clientAllowedUserService) GetAllMappings(ctx context.Context,
 }
 
 // GetMappingsByAdmin fetches mappings filtered by admin's managed clients.
-func (s *clientAllowedUserService) GetMappingsByAdmin(ctx context.Context, 
+func (s *clientAllowedUserService) GetMappingsByAdmin(ctx context.Context,
 	adminID []byte,
 ) ([]models.ClientAllowedUser, error) {
 	return s.repo.GetByAdmin(ctx, adminID)
 }
 
 // SyncAccess updates user mapping within the permitted admin scope.
-func (s *clientAllowedUserService) SyncAccess(ctx context.Context, 
+func (s *clientAllowedUserService) SyncAccess(ctx context.Context,
 	userID []byte, clientIDs [][]byte, adminID []byte,
 ) error {
 	// Business logic could be added here (e.g. check permissions)

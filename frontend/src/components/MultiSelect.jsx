@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 
 function getOptionLabel(option) {
   if (!option || typeof option !== "object") {

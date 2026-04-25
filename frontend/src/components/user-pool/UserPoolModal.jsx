@@ -6,6 +6,7 @@ import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../utils/userPoolAccess";
 
 const initialFormData = {
@@ -118,6 +119,7 @@ const createFormData = (user) => ({
 });
 
 export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
   const isDarkMode = colorMode === "dark";
@@ -259,7 +261,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     }
   };
 
-  if (!open) {
+  if (!shouldRender) {
     return null;
   }
 
@@ -281,7 +283,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const accessItems = isAdminView ? roleAccessItems : regularAccessDisplayItems;
 
   return createPortal(
-    <dialog open className={modalOverlayClassName}>
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
         <div className={modalHeaderSpacingClassName}>
           <div className="flex items-start justify-between gap-4 sm:gap-6">
