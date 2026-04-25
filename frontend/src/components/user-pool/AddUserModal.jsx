@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import FadeWrapper from "../FadeWrapper";
-import ModalSteps from "../ModalSteps";
 import ErrorAlert from "../ErrorAlert";
 import MultiSelect from "../MultiSelect";
 import { SpeechInputToolbar } from "../SpeechInputButton";
@@ -9,6 +8,7 @@ import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import InvitationConfirmModal from "./InvitationConfirmModal";
+import UserPoolUserIconBox from "./UserPoolUserIconBox";
 import { getModalTheme } from "../modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 import { usePermissionAccess } from "../../context/PermissionContext";
@@ -101,6 +101,67 @@ function PasswordVisibilityIcon({ showPassword }) {
   );
 }
 
+function AddUserStepIndicator({ currentStep, colorMode = "light" }) {
+  const isDarkMode = colorMode === "dark";
+  const firstStepIsActive = currentStep >= 1;
+  const secondStepIsActive = currentStep >= 2;
+  const activeStepClassName = isDarkMode
+    ? "border-[#f8d24e]/20 bg-[#f8d24e]/10 text-[#ffe28a]"
+    : "border-[#7b0d15]/10 bg-[#f8eef0] text-[#7b0d15]";
+  const inactiveStepClassName = isDarkMode
+    ? "border-white/10 bg-white/[0.04] text-[#cbb8bd]"
+    : "border-[#7b0d15]/10 bg-white/75 text-[#8f6f76]";
+  const activeLabelClassName = isDarkMode ? "text-[#ffe28a]" : "text-[#7b0d15]";
+  const inactiveLabelClassName = isDarkMode ? "text-[#cbb8bd]" : "text-[#8f6f76]";
+  const lineClassName = secondStepIsActive
+    ? isDarkMode
+      ? "border-[#f8d24e]/45"
+      : "border-[#7b0d15]/25"
+    : isDarkMode
+      ? "border-white/15"
+      : "border-[#7b0d15]/15";
+
+  const getStepIconClassName = (isActive) =>
+    `inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] border transition-colors duration-300 ${
+      isActive ? activeStepClassName : inactiveStepClassName
+    }`;
+
+  const getStepLabelClassName = (isActive) =>
+    `text-center text-xs font-semibold leading-tight transition-colors duration-300 sm:text-sm ${
+      isActive ? activeLabelClassName : inactiveLabelClassName
+    }`;
+
+  return (
+    <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(4.5rem,auto)_1fr_minmax(5.75rem,auto)] items-start gap-2 px-3 py-4 sm:gap-3 sm:px-4">
+      <div className="flex min-w-0 flex-col items-center gap-2">
+        <span className={getStepIconClassName(firstStepIsActive)}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+            <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
+          </svg>
+        </span>
+        <span className={getStepLabelClassName(firstStepIsActive)}>
+          <span className="sm:hidden">Info</span>
+          <span className="hidden sm:inline">Basic Info</span>
+        </span>
+      </div>
+
+      <span className={`mt-5 h-px flex-1 border-t-2 border-dotted ${lineClassName}`} aria-hidden="true"/>
+
+      <div className="flex min-w-0 flex-col items-center gap-2">
+        <span className={getStepIconClassName(secondStepIsActive)}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+            <path fillRule="evenodd" d="M10 1.25a3.75 3.75 0 0 0-3.75 3.75v1H5A2.75 2.75 0 0 0 2.25 8.75v6.5A2.75 2.75 0 0 0 5 18h10a2.75 2.75 0 0 0 2.75-2.75v-6.5A2.75 2.75 0 0 0 15 6h-1.25V5A3.75 3.75 0 0 0 10 1.25Zm2.25 4.75V5a2.25 2.25 0 1 0-4.5 0v1h4.5Z" clipRule="evenodd" />
+          </svg>
+        </span>
+        <span className={getStepLabelClassName(secondStepIsActive)}>
+          <span className="sm:hidden">Setup</span>
+          <span className="hidden sm:inline">Account Setup</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function AddUserModal({ open, onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, appClientOptions = [], isLoadingAppClients = false, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const { hasPermission } = usePermissionAccess();
   const { shouldRender, isClosing } = useModalTransition(open);
@@ -152,11 +213,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const registrationAppClientOptions = getAllAppClientSelectOptions(
     appClientOptions,
   );
-  const showAccountSetupAtBottom = selectedAccountTypeIsAdmin;
   const showTempPasswordField =
     isAdminView || data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
-  const needsExpandedHeaderSpacing =
-    !isAdminView && selectedAccountTypeIsAdmin;
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -165,7 +223,6 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     modalFooterActionsClassName,
     modalFooterClassName,
     modalHeaderClassName,
-    modalHeaderDescriptionClassName,
     modalHeaderTitleClassName,
     modalHelperTextClassName,
     modalInputClassName,
@@ -190,20 +247,14 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     ? "mt-3 text-xs text-[#c7adb4]"
     : "mt-3 text-xs text-[#8f6f76]";
   const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} !px-7 !pt-7 ${
-      needsExpandedHeaderSpacing
-        ? "!pb-12 sm:!px-8 sm:!pt-8 sm:!pb-14"
-        : "!pb-9 sm:!px-8 sm:!pt-8 sm:!pb-10"
-    }`;
-  const modalHeaderContentClassName = needsExpandedHeaderSpacing
-    ? "max-w-2xl pr-12 sm:pr-14"
-    : "max-w-xl pr-12 sm:pr-14";
-  const modalHeaderDescriptionSpacingClassName =
-    `${modalHeaderDescriptionClassName} !mt-3 leading-relaxed ${
-      needsExpandedHeaderSpacing
-        ? "max-w-[20rem] sm:!mt-4 sm:max-w-[34rem]"
-        : "max-w-[18rem] sm:!mt-4 sm:max-w-[28rem]"
-    }`;
+    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
+  const modalHeaderContentClassName =
+    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
+  const sectionHeaderClassName = isDarkMode
+    ? "mb-5 border-b border-white/10 pb-4"
+    : "mb-5 border-b border-[#7b0d15]/10 pb-4";
+  const sectionTitleClassName = modalLabelClassName;
+  const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
 
   const getInputClassName = (fieldName, hasActionButton = false) =>
     `${modalInputClassName} ${hasActionButton ? "pr-12" : ""} ${
@@ -545,19 +596,20 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
 
   const selectedAccountTypeLabel =
     selectedAccountTypeOption?.label || "Selected";
-  const modalDescription = isAdminView
-    ? "Create a new admin user account."
-    : data.accountType
-      ? `Create a new ${selectedAccountTypeLabel.toLowerCase()} user account.`
-      : "Create a new regular user account.";
-  const accountSetupSection = (
-    <section className={modalSectionClassName}>
-      <label className={modalLabelClassName}>
-        Account Setup
+  const renderSectionHeader = (title, description, isRequired = false) => (
+    <div className={sectionHeaderClassName}>
+      <label className={sectionTitleClassName}>
+        {title} {isRequired && <span className="text-red-500">*</span>}
       </label>
-      <p className={modalHelperTextClassName}>
-        Choose how they get access.
+      <p className={sectionDescriptionClassName}>
+        {description}
       </p>
+    </div>
+  );
+
+  const accountSetupField = (
+    <div>
+      {renderSectionHeader("Account Setup", "Choose how they get access.", true)}
       <UserPoolModalSelect
         value={data.accountSetupType}
         onChange={handleAccountSetupChange}
@@ -565,16 +617,11 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         ariaLabel="Select account setup method"
         colorMode={colorMode}
       />
-    </section>
+    </div>
   );
   const accountTypeSection = showAccountTypeField ? (
     <section className={modalSectionClassName}>
-      <label className={modalLabelClassName}>
-        Account Type <span className="text-red-500">*</span>
-      </label>
-      <p className={modalHelperTextClassName}>
-        Choose the account type.
-      </p>
+      {renderSectionHeader("Account Type", "Choose the account type.", true)}
       <UserPoolRoleRadioGroup
         options={availableAccountTypeOptions}
         selectedValue={data.accountType}
@@ -594,8 +641,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       )}
     </section>
   ) : null;
-  const tempPasswordSection = showTempPasswordField ? (
-    <section className={modalSectionClassName}>
+  const tempPasswordField = showTempPasswordField ? (
+    <div>
       <SpeechInputToolbar
         activeFieldLabel={activeVoiceFieldLabel}
         onError={setError}
@@ -603,9 +650,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         colorMode={colorMode}
       />
 
-      <label className={modalLabelClassName}>
-        Temporary Password <span className="text-red-500">*</span>
-      </label>
+      {renderSectionHeader("Temporary Password", "Create a temporary password.", true)}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative w-full">
           <input type={showTempPassword ? "text" : "password"} name="tempPassword" value={data.tempPassword} onChange={handleChange} onFocus={() => setActiveVoiceField("tempPassword")} placeholder="Temporary password" className={`${getInputClassName("tempPassword")} pr-12`} />
@@ -635,8 +680,98 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       <p className={tempPasswordHintClassName}>
         Use at least 8 characters with one uppercase letter, one number, and one special character.
       </p>
+    </div>
+  ) : null;
+  const tempPasswordSection = tempPasswordField ? (
+    <section className={modalSectionClassName}>
+      {tempPasswordField}
     </section>
   ) : null;
+  const accountSetupAndPasswordSection = (
+    <section className={modalSectionClassName}>
+      <div className="space-y-6">
+        {accountSetupField}
+        {tempPasswordField}
+      </div>
+    </section>
+  );
+  const adminAccessSection =
+    showRegularAdminClientFields || showRegularAdminRoleField ? (
+      <section className={modalSectionClassName}>
+        <div className="space-y-6">
+          {showRegularAdminClientFields && (
+            <>
+              <div>
+                {renderSectionHeader(
+                  "Sign-In App Clients",
+                  "Choose one or more app clients used for sign-in.",
+                  true,
+                )}
+                <MultiSelect
+                  options={registrationAppClientOptions}
+                  selectedValues={data.adminSignInClientIds}
+                  onChange={handleMultiSelectFieldChange("adminSignInClientIds")}
+                  placeholder="Select sign-in app clients"
+                  variant="userpoolModal"
+                  hasError={Boolean(fieldErrors.adminSignInClientId)}
+                  colorMode={colorMode}
+                />
+                {fieldErrors.adminSignInClientId && (
+                  <p className="mt-2 text-xs text-red-500">
+                    {fieldErrors.adminSignInClientId}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                {renderSectionHeader(
+                  "Access App Clients",
+                  "Choose one or more app clients used to manage user access.",
+                  true,
+                )}
+                <MultiSelect
+                  options={registrationAppClientOptions}
+                  selectedValues={data.adminCrudClientIds}
+                  onChange={handleMultiSelectFieldChange("adminCrudClientIds")}
+                  placeholder="Select access app clients"
+                  variant="userpoolModal"
+                  hasError={Boolean(fieldErrors.adminCrudClientId)}
+                  colorMode={colorMode}
+                />
+                {fieldErrors.adminCrudClientId && (
+                  <p className="mt-2 text-xs text-red-500">
+                    {fieldErrors.adminCrudClientId}
+                  </p>
+                )}
+                {isLoadingAppClients && (
+                  <p className={modalHelperTextClassName}>
+                    Loading app clients...
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          {showRegularAdminRoleField && (
+            <div>
+              {renderSectionHeader("Role", "Choose the admin role.", true)}
+              <UserPoolRoleRadioGroup
+                options={adminRoleOptions}
+                selectedValue={data.selectedAdminRoleId}
+                onChange={handleAdminRoleChange}
+                colorMode={colorMode}
+                name="add-regular-admin-role"
+              />
+              {fieldErrors.selectedAdminRoleId && (
+                <p className="mt-2 text-xs text-red-500">
+                  {fieldErrors.selectedAdminRoleId}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+    ) : null;
 
   return createPortal(
     <>
@@ -647,51 +782,28 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         )}
       >
         <div className={modalBoxClassName}>
-        <div className={modalHeaderSpacingClassName}>
-          <div className="flex items-start justify-between gap-4 sm:gap-6">
-            <div className={modalHeaderContentClassName}>
-              <h3 className={modalHeaderTitleClassName}>Add User</h3>
-              <p className={modalHeaderDescriptionSpacingClassName}>
-                {modalDescription}
-              </p>
-            </div>
+          <div className={modalHeaderSpacingClassName}>
+            <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
+              <div className={modalHeaderContentClassName}>
+                <UserPoolUserIconBox colorMode={colorMode} variant="plain" />
+                <h3 className={modalHeaderTitleClassName}>Add User</h3>
+              </div>
 
-            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+              <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className={modalBodyClassName}>
-          <div className={modalBodyStackClassName}>
-            <div className={modalStepsWrapClassName}>
-              <ModalSteps
-                currentStep={step}
-                colorMode={colorMode}
-                steps={[
-                  <>
-                    <span className="step-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                        <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
-                      </svg>
-                    </span>
-                    Basic Info
-                  </>,
-                  <>
-                    <span className="step-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                        <path fillRule="evenodd" d="M10 1.25a3.75 3.75 0 0 0-3.75 3.75v1H5A2.75 2.75 0 0 0 2.25 8.75v6.5A2.75 2.75 0 0 0 5 18h10a2.75 2.75 0 0 0 2.75-2.75v-6.5A2.75 2.75 0 0 0 15 6h-1.25V5A3.75 3.75 0 0 0 10 1.25Zm2.25 4.75V5a2.25 2.25 0 1 0-4.5 0v1h4.5Z" clipRule="evenodd" />
-                      </svg>
-                    </span>
-                    Account Setup
-                  </>,
-                ]}
-              />
-            </div>
+          <div className={modalBodyClassName}>
+            <div className={modalBodyStackClassName}>
+              <div className={modalStepsWrapClassName}>
+                <AddUserStepIndicator currentStep={step} colorMode={colorMode} />
+              </div>
 
-            <ErrorAlert message={error} onClose={() => setError("")} />
+              <ErrorAlert message={error} onClose={() => setError("")} />
 
             <FadeWrapper isVisible={step === 1}>
               <form id="step1-form" onSubmit={(event) => event.preventDefault()} className="space-y-5">
@@ -703,74 +815,81 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                     colorMode={colorMode}
                   />
 
-                  <label className={modalLabelClassName}>
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <div className="validator w-full">
-                    <label className={`${getInputClassName("email")} flex items-center gap-3 px-4`}>
-                      <span className={emailIconClassName}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
-                          <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
-                          <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
-                        </svg>
-                      </span>
-                      <input type="email" name="email" value={data.email} onChange={handleChange} onFocus={() => setActiveVoiceField("email")} required placeholder="Enter email" className="grow bg-transparent" />
-                    </label>
-                    {fieldErrors.email && (
-                      <p className="mt-2 text-xs text-red-500">
-                        {fieldErrors.email}
-                      </p>
-                    )}
-                  </div>
-                </section>
+                  {renderSectionHeader(
+                    "Personal Information",
+                    "Enter the user's basic details.",
+                  )}
 
-                <section className={modalSectionClassName}>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-1">
+                  <div className="space-y-4">
+                    <div>
                       <label className={modalLabelClassName}>
-                        First Name <span className="text-red-500">*</span>
+                        Email Address <span className="text-red-500">*</span>
                       </label>
                       <div className="validator w-full">
-                        <input type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required placeholder="Enter first name" className={`${getInputClassName("givenName")} validator`} />
-                        {fieldErrors.givenName && (
+                        <label className={`${getInputClassName("email")} flex items-center gap-3 px-4`}>
+                          <span className={emailIconClassName}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
+                              <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
+                              <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
+                            </svg>
+                          </span>
+                          <input type="email" name="email" value={data.email} onChange={handleChange} onFocus={() => setActiveVoiceField("email")} required placeholder="Enter email" className="grow bg-transparent" />
+                        </label>
+                        {fieldErrors.email && (
                           <p className="mt-2 text-xs text-red-500">
-                            {fieldErrors.givenName}
+                            {fieldErrors.email}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <label className={modalLabelClassName}>
-                        Middle Name
-                      </label>
-                      <input type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" className={modalInputClassName} />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className={modalLabelClassName}>
-                        Last Name <span className="text-red-500">*</span>
-                      </label>
-                      <div className="validator w-full">
-                        <input type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required placeholder="Enter last name" className={`${getInputClassName("surname")} validator`} />
-                        {fieldErrors.surname && (
-                          <p className="mt-2 text-xs text-red-500">
-                            {fieldErrors.surname}
-                          </p>
-                        )}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-1">
+                        <label className={modalLabelClassName}>
+                          First Name <span className="text-red-500">*</span>
+                        </label>
+                        <div className="validator w-full">
+                          <input type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required placeholder="Enter first name" className={`${getInputClassName("givenName")} validator`} />
+                          {fieldErrors.givenName && (
+                            <p className="mt-2 text-xs text-red-500">
+                              {fieldErrors.givenName}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-1">
-                      <label className={modalLabelClassName}>
-                        Suffix
-                      </label>
-                      <label className={`${modalInputClassName} flex items-center gap-2 px-4`}>
-                        <input type="text" name="suffix" value={data.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" className="grow bg-transparent" />
-                        <span className={modalOptionalBadgeClassName}>
-                          Optional
-                        </span>
-                      </label>
+                      <div className="space-y-1">
+                        <label className={modalLabelClassName}>
+                          Middle Name
+                        </label>
+                        <input type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" className={modalInputClassName} />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className={modalLabelClassName}>
+                          Last Name <span className="text-red-500">*</span>
+                        </label>
+                        <div className="validator w-full">
+                          <input type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required placeholder="Enter last name" className={`${getInputClassName("surname")} validator`} />
+                          {fieldErrors.surname && (
+                            <p className="mt-2 text-xs text-red-500">
+                              {fieldErrors.surname}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className={modalLabelClassName}>
+                          Suffix
+                        </label>
+                        <label className={`${modalInputClassName} flex items-center gap-2 px-4`}>
+                          <input type="text" name="suffix" value={data.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" className="grow bg-transparent" />
+                          <span className={modalOptionalBadgeClassName}>
+                            Optional
+                          </span>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </section>
@@ -789,14 +908,12 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                 {isAdminView ? (
                   <>
                     <section className={modalSectionClassName}>
-                      <label className={modalLabelClassName}>
-                        Role
-                      </label>
                       {canAssignRoles ? (
                         <>
-                          <p className={modalHelperTextClassName}>
-                            Choose a role for this admin account.
-                          </p>
+                          {renderSectionHeader(
+                            "Role",
+                            "Choose a role for this admin account.",
+                          )}
                           <UserPoolRoleRadioGroup
                             options={adminRoleOptions}
                             selectedValue={data.selectedAdminRoleId}
@@ -808,9 +925,10 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                           />
                         </>
                       ) : (
-                        <p className={modalHelperTextClassName}>
-                          No role assignment permission is available for this account.
-                        </p>
+                        renderSectionHeader(
+                          "Role",
+                          "No role assignment permission is available for this account.",
+                        )
                       )}
                     </section>
 
@@ -820,94 +938,9 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                   <>
                     {accountTypeSection}
 
-                    {!showAccountSetupAtBottom && accountSetupSection}
+                    {adminAccessSection}
 
-                    {showRegularAdminClientFields && (
-                      <>
-                        <section className={modalSectionClassName}>
-                          <label className={modalLabelClassName}>
-                            Sign-In App Clients <span className="text-red-500">*</span>
-                          </label>
-                          <p className={modalHelperTextClassName}>
-                            Choose one or more app clients used for sign-in.
-                          </p>
-                          <MultiSelect
-                            options={registrationAppClientOptions}
-                            selectedValues={data.adminSignInClientIds}
-                            onChange={handleMultiSelectFieldChange("adminSignInClientIds")}
-                            placeholder="Select sign-in app clients"
-                            variant="userpoolModal"
-                            hasError={Boolean(fieldErrors.adminSignInClientId)}
-                            colorMode={colorMode}
-                          />
-                          {fieldErrors.adminSignInClientId && (
-                            <p className="mt-2 text-xs text-red-500">
-                              {fieldErrors.adminSignInClientId}
-                            </p>
-                          )}
-                        </section>
-
-                        <section className={modalSectionClassName}>
-                          <label className={modalLabelClassName}>
-                            Access App Clients <span className="text-red-500">*</span>
-                          </label>
-                          <p className={modalHelperTextClassName}>
-                            Choose one or more app clients used to manage user access.
-                          </p>
-                          <MultiSelect
-                            options={registrationAppClientOptions}
-                            selectedValues={data.adminCrudClientIds}
-                            onChange={handleMultiSelectFieldChange("adminCrudClientIds")}
-                            placeholder="Select access app clients"
-                            variant="userpoolModal"
-                            hasError={Boolean(fieldErrors.adminCrudClientId)}
-                            colorMode={colorMode}
-                          />
-                          {fieldErrors.adminCrudClientId && (
-                            <p className="mt-2 text-xs text-red-500">
-                              {fieldErrors.adminCrudClientId}
-                            </p>
-                          )}
-                          {isLoadingAppClients && (
-                            <p className={modalHelperTextClassName}>
-                              Loading app clients...
-                            </p>
-                          )}
-                        </section>
-                      </>
-                    )}
-
-                    {showRegularAdminRoleField && (
-                      <section className={modalSectionClassName}>
-                        <label className={modalLabelClassName}>
-                          Role <span className="text-red-500">*</span>
-                        </label>
-                        <p className={modalHelperTextClassName}>
-                          Choose the admin role.
-                        </p>
-                        <UserPoolRoleRadioGroup
-                          options={adminRoleOptions}
-                          selectedValue={data.selectedAdminRoleId}
-                          onChange={handleAdminRoleChange}
-                          colorMode={colorMode}
-                          name="add-regular-admin-role"
-                        />
-                        {fieldErrors.selectedAdminRoleId && (
-                          <p className="mt-2 text-xs text-red-500">
-                            {fieldErrors.selectedAdminRoleId}
-                          </p>
-                        )}
-                      </section>
-                    )}
-
-                    {showAccountSetupAtBottom ? (
-                      <>
-                        {accountSetupSection}
-                        {tempPasswordSection}
-                      </>
-                    ) : (
-                      tempPasswordSection
-                    )}
+                    {accountSetupAndPasswordSection}
                   </>
                 )}
               </form>

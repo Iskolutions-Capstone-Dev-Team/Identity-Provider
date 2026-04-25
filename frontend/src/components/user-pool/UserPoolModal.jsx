@@ -5,6 +5,7 @@ import MultiSelect from "../MultiSelect";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
+import UserPoolUserIconBox from "./UserPoolUserIconBox";
 import { getModalTheme } from "../modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../utils/userPoolAccess";
@@ -147,7 +148,6 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     modalFooterActionsClassName,
     modalFooterClassName,
     modalHeaderClassName,
-    modalHeaderDescriptionClassName,
     modalHeaderTitleClassName,
     modalHelperTextClassName,
     modalLabelClassName,
@@ -168,14 +168,9 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     ? "italic text-[#a58d95]"
     : "italic text-[#8f6f76]";
   const modalHeaderSpacingClassName =
-    isViewMode
-      ? `${modalHeaderClassName} !px-7 !pt-7 !pb-14 sm:!px-8 sm:!pt-8 sm:!pb-12`
-      : `${modalHeaderClassName} !px-7 !pt-6 !pb-6 sm:!px-8 sm:!pt-7 sm:!pb-7`;
-  const modalHeaderContentClassName = "max-w-xl pr-12 sm:pr-14";
-  const modalHeaderDescriptionSpacingClassName =
-    isViewMode
-      ? `${modalHeaderDescriptionClassName} !mt-3 max-w-[18rem] leading-relaxed sm:!mt-4 sm:max-w-[28rem]`
-      : `${modalHeaderDescriptionClassName} !mt-2 max-w-[18rem] leading-relaxed sm:!mt-3 sm:max-w-[28rem]`;
+    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
+  const modalHeaderContentClassName =
+    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
 
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
@@ -286,18 +281,12 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
         <div className={modalHeaderSpacingClassName}>
-          <div className="flex items-start justify-between gap-4 sm:gap-6">
+          <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
             <div className={modalHeaderContentClassName}>
+              <UserPoolUserIconBox colorMode={colorMode} variant="plain" />
               <h3 className={modalHeaderTitleClassName}>
                 {isViewMode ? "View User" : "Edit User"}
               </h3>
-              <p className={modalHeaderDescriptionSpacingClassName}>
-                {isViewMode
-                  ? "View the user's account information."
-                  : isAdminView
-                    ? "Update the admin role and account status."
-                    : "Update the account status and app-client access."}
-              </p>
             </div>
 
             <button
