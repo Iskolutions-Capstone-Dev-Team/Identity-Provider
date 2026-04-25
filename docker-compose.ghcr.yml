@@ -1,7 +1,7 @@
 services:
   # Identity Provider Backend (GHCR Image)
   backend:
-    image: ghcr.io/iskolutions/idp-backend:latest
+    image: ghcr.io/iskolutions-capstone-dev-team/idp-backend:latest
     container_name: idp_backend
     restart: always
     env_file: ./.env
@@ -24,7 +24,7 @@ services:
 
   # Identity Provider Frontend (GHCR Image)
   frontend:
-    image: ghcr.io/iskolutions/idp-frontend:latest
+    image: ghcr.io/iskolutions-capstone-dev-team/idp-frontend:latest
     container_name: idp_frontend
     restart: always
     environment:
