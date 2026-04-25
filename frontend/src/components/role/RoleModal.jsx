@@ -99,6 +99,14 @@ function getPermissionCardClassName({ isSelected, isViewMode, isDarkMode }) {
   }`;
 }
 
+function RoleShieldIcon({ className }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M12.516 2.17a.75.75 0 0 0-1.032 0 11.209 11.209 0 0 1-7.877 3.08.75.75 0 0 0-.722.515A12.74 12.74 0 0 0 2.25 9.75c0 5.942 4.064 10.933 9.563 12.348a.749.749 0 0 0 .374 0c5.499-1.415 9.563-6.406 9.563-12.348 0-1.39-.223-2.73-.635-3.985a.75.75 0 0 0-.722-.516l-.143.001c-2.996 0-5.717-1.17-7.734-3.08Zm3.094 8.016a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 export default function RoleModal({ open, mode, role, permissionOptions = [], isPermissionOptionsLoading = false, onClose, onSubmit, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
   const isCreateMode = mode === "create";
@@ -112,7 +120,6 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
     modalFooterActionsClassName,
     modalFooterClassName,
     modalHeaderClassName,
-    modalHeaderDescriptionClassName,
     modalHeaderTitleClassName,
     modalHelperTextClassName,
     modalLabelClassName,
@@ -124,13 +131,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   } = getModalTheme(colorMode);
 
   const modalTitle =
-    mode === "create" ? "Create Role" : mode === "edit" ? "Edit Role" : "View Role";
-  const modalDescription =
-    mode === "create"
-      ? "Define a new role and assign its permissions."
-      : mode === "edit"
-        ? "Modify the role's name, description, and permissions."
-        : "View the role's saved details and permissions.";
+    mode === "create" ? "Add Role" : mode === "edit" ? "Edit Role" : "View Role";
 
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
@@ -205,6 +206,16 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   const permissionCheckboxClassName = isDarkMode
     ? "checkbox h-5 w-5 rounded border-white/20 bg-transparent checked:border-[#f8d24e] checked:bg-[#7b0d15] checked:text-white"
     : "checkbox h-5 w-5 rounded border-[#7b0d15]/20 bg-transparent checked:border-[#7b0d15] checked:bg-[#7b0d15] checked:text-white";
+  const modalHeaderSpacingClassName =
+    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
+  const modalHeaderContentClassName =
+    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
+  const headerIconClassName =
+    colorMode === "dark" ? "h-10 w-10 text-[#ffe28a]" : "h-10 w-10 text-[#fff0a8]";
+  const sectionHeaderClassName = isDarkMode
+    ? "mb-5 border-b border-white/10 pb-4"
+    : "mb-5 border-b border-[#7b0d15]/10 pb-4";
+  const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
 
   const fieldErrors = useMemo(
     () => ({
@@ -338,16 +349,31 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
     return null;
   }
 
+  const roleDetailsDescription = isViewMode
+    ? "View the role name and description."
+    : "Enter the role name and description.";
+  const permissionsDescription = isViewMode
+    ? "View the permissions assigned to this role."
+    : "Select the permissions assigned to this role.";
+  const renderSectionHeader = (title, description) => (
+    <div className={sectionHeaderClassName}>
+      <label className={modalLabelClassName}>
+        {title}
+      </label>
+      <p className={sectionDescriptionClassName}>
+        {description}
+      </p>
+    </div>
+  );
+
   return createPortal(
     <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
-        <div className={`${modalHeaderClassName} !px-8 !pt-8 !pb-24 min-h-[10.5rem] sm:!px-10 sm:!pt-9 sm:!pb-20 sm:min-h-0`}>
-          <div className="flex items-start justify-between gap-4 sm:gap-6">
-            <div className="max-w-2xl pr-14 sm:pr-16">
+        <div className={modalHeaderSpacingClassName}>
+          <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
+            <div className={modalHeaderContentClassName}>
+              <RoleShieldIcon className={headerIconClassName} />
               <h3 className={modalHeaderTitleClassName}>{modalTitle}</h3>
-              <p className={`${modalHeaderDescriptionClassName} !mt-4 max-w-[20rem] leading-relaxed sm:!mt-5 sm:max-w-[34rem]`}>
-                {modalDescription}
-              </p>
             </div>
 
             <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
@@ -383,17 +409,12 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
             )}
 
             <section className={modalSectionClassName}>
+              {renderSectionHeader("Role Details", roleDetailsDescription)}
               <div className="space-y-5">
                 <div>
                   <label className={modalLabelClassName}>
                     Role Name {!isViewMode && <span className="text-red-500">*</span>}
                   </label>
-
-                  {!isViewMode && (
-                    <p className={modalHelperTextClassName}>
-                      Enter the role name exactly as it should be saved.
-                    </p>
-                  )}
 
                   {isViewMode ? (
                     <div className={modalReadOnlyInputClassName}>
@@ -415,50 +436,42 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                     <p className="mt-2 text-xs text-red-500">{fieldErrors.name}</p>
                   )}
                 </div>
-              </div>
-            </section>
 
-            <section className={modalSectionClassName}>
-              <div>
-                <label className={modalLabelClassName}>
-                  Role Description {!isViewMode && <span className="text-red-500">*</span>}
-                </label>
+                <div>
+                  <label className={modalLabelClassName}>
+                    Role Description {!isViewMode && <span className="text-red-500">*</span>}
+                  </label>
 
-                {isViewMode ? (
-                  <div className={readOnlyTextAreaClassName}>
-                    {description.trim() ? (
-                      description
-                    ) : (
-                      <span className={emptyContentClassName}>No content</span>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <textarea required value={description} onChange={(event) => handleDescriptionChange(event.target.value)} onBlur={() => setFieldTouched("description")} onFocus={() => setActiveVoiceField("description")} rows="4" placeholder="Role description"
-                      className={getEditableTextAreaClassName(
-                        touched.description && Boolean(fieldErrors.description),
+                  {isViewMode ? (
+                    <div className={readOnlyTextAreaClassName}>
+                      {description.trim() ? (
+                        description
+                      ) : (
+                        <span className={emptyContentClassName}>No content</span>
                       )}
-                    />
-                    {touched.description && fieldErrors.description && (
-                      <p className="mt-2 text-xs text-red-500">
-                        {fieldErrors.description}
-                      </p>
-                    )}
-                  </>
-                )}
+                    </div>
+                  ) : (
+                    <>
+                      <textarea required value={description} onChange={(event) => handleDescriptionChange(event.target.value)} onBlur={() => setFieldTouched("description")} onFocus={() => setActiveVoiceField("description")} rows="4" placeholder="Role description"
+                        className={getEditableTextAreaClassName(
+                          touched.description && Boolean(fieldErrors.description),
+                        )}
+                      />
+                      {touched.description && fieldErrors.description && (
+                        <p className="mt-2 text-xs text-red-500">
+                          {fieldErrors.description}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </section>
 
             <section className={modalSectionClassName}>
               <div className="space-y-5">
                 <div>
-                  <label className={modalLabelClassName}>Permissions</label>
-
-                  {!isViewMode && (
-                    <p className={modalHelperTextClassName}>
-                      Select the permissions assigned to this role.
-                    </p>
-                  )}
+                  {renderSectionHeader("Permissions", permissionsDescription)}
 
                   {isPermissionOptionsLoading && mergedPermissionOptions.length === 0 ? (
                     <p className={modalHelperTextClassName}>Loading permissions...</p>
