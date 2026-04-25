@@ -63,6 +63,14 @@ function getProfileUpdateErrorMessage(error) {
   return "Unable to update profile right now. Please try again.";
 }
 
+function ProfileIcon({ className }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 export default function EditProfileModal({ open, onClose, profileData, updateProfile, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
   const [profile, setProfile] = useState(createProfileState());
@@ -180,7 +188,6 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
     modalFooterActionsClassName,
     modalFooterClassName,
     modalHeaderClassName,
-    modalHeaderDescriptionClassName,
     modalHeaderTitleClassName,
     modalHelperTextClassName,
     modalInputClassName,
@@ -200,6 +207,12 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
   const disabledButtonClassName = isSaving
     ? "cursor-not-allowed opacity-70"
     : "";
+  const modalHeaderSpacingClassName =
+    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
+  const modalHeaderContentClassName =
+    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
+  const headerIconClassName =
+    colorMode === "dark" ? "h-10 w-10 text-[#ffe28a]" : "h-10 w-10 text-[#fff0a8]";
   const getInputClassName = (hasError) =>
     `${modalInputClassName} ${
       hasError ? "border-red-400 focus:border-red-500" : ""
@@ -208,16 +221,14 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
   return createPortal(
     <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
-        <div className={`${modalHeaderClassName} !pb-6 sm:!pb-7`}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="max-w-2xl">
+        <div className={modalHeaderSpacingClassName}>
+          <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
+            <div className={modalHeaderContentClassName}>
+              <ProfileIcon className={headerIconClassName} />
               <h3 className={modalHeaderTitleClassName}>Edit Profile</h3>
-              <p className={modalHeaderDescriptionClassName}>
-                Update your personal information.
-              </p>
             </div>
 
-            <button type="button" className={`${modalCloseButtonClassName} ${disabledButtonClassName}`} onClick={onClose} disabled={isSaving}>
+            <button type="button" className={`${modalCloseButtonClassName} ${disabledButtonClassName} shrink-0`} onClick={onClose} disabled={isSaving}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
