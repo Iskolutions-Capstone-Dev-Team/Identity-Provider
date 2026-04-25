@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import ModalSteps from "../ModalSteps";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
+import AppClientIconBox, { AppClientIcon } from "./AppClientIconBox";
 import { getModalTheme } from "../modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
@@ -67,6 +67,92 @@ const getGrantClassName = ({ isSelected, isDarkMode }) =>
         : "border-[#7b0d15]/10 bg-white/78 text-[#5d3a41] hover:border-[#f8d24e]/45 hover:bg-[#fffaf2]"
   }`;
 
+function AppClientStepIndicator({ currentStep, colorMode = "light" }) {
+  const isDarkMode = colorMode === "dark";
+  const activeStepClassName = isDarkMode
+    ? "border-[#f8d24e]/20 bg-[#f8d24e]/10 text-[#ffe28a]"
+    : "border-[#7b0d15]/10 bg-[#f8eef0] text-[#7b0d15]";
+  const inactiveStepClassName = isDarkMode
+    ? "border-white/10 bg-white/[0.04] text-[#cbb8bd]"
+    : "border-[#7b0d15]/10 bg-white/75 text-[#8f6f76]";
+  const activeLabelClassName = isDarkMode ? "text-[#ffe28a]" : "text-[#7b0d15]";
+  const inactiveLabelClassName = isDarkMode ? "text-[#cbb8bd]" : "text-[#8f6f76]";
+  const activeLineClassName = isDarkMode
+    ? "border-[#f8d24e]/45"
+    : "border-[#7b0d15]/25";
+  const inactiveLineClassName = isDarkMode
+    ? "border-white/15"
+    : "border-[#7b0d15]/15";
+  const steps = [
+    {
+      label: "Basic Info",
+      shortLabel: "Info",
+      icon: <AppClientIcon className="h-4 w-4" />,
+    },
+    {
+      label: "URLs",
+      shortLabel: "URLs",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+          <path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" />
+          <path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Grants",
+      shortLabel: "Grants",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+          <path fillRule="evenodd" d="M14.5 1A4.5 4.5 0 0 0 10 5.5V9H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1.5V5.5a3 3 0 1 1 6 0v2.75a.75.75 0 0 0 1.5 0V5.5A4.5 4.5 0 0 0 14.5 1Z" clipRule="evenodd" />
+        </svg>
+      ),
+    },
+  ];
+
+  const getStepIconClassName = (isActive) =>
+    `inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] border transition-colors duration-300 ${
+      isActive ? activeStepClassName : inactiveStepClassName
+    }`;
+  const getStepLabelClassName = (isActive) =>
+    `text-center text-xs font-semibold leading-tight transition-colors duration-300 sm:text-sm ${
+      isActive ? activeLabelClassName : inactiveLabelClassName
+    }`;
+
+  return (
+    <div className="mx-auto grid w-full max-w-[38rem] grid-cols-[minmax(4.5rem,auto)_1fr_minmax(4.5rem,auto)_1fr_minmax(4.5rem,auto)] items-start gap-2 px-3 py-4 sm:gap-3 sm:px-4">
+      {steps.map((stepItem, index) => {
+        const stepNumber = index + 1;
+        const isActive = currentStep >= stepNumber;
+        const lineIsActive = currentStep > stepNumber;
+
+        return (
+          <Fragment key={stepItem.label}>
+            <div className="flex min-w-0 flex-col items-center gap-2">
+              <span className={getStepIconClassName(isActive)}>
+                {stepItem.icon}
+              </span>
+              <span className={getStepLabelClassName(isActive)}>
+                <span className="sm:hidden">{stepItem.shortLabel}</span>
+                <span className="hidden sm:inline">{stepItem.label}</span>
+              </span>
+            </div>
+
+            {index < steps.length - 1 && (
+              <span
+                className={`mt-5 h-px flex-1 border-t-2 border-dotted ${
+                  lineIsActive ? activeLineClassName : inactiveLineClassName
+                }`}
+                aria-hidden="true"
+              />
+            )}
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function AppClientCreateModal({ open, onClose, onSubmit, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
   const isDarkMode = colorMode === "dark";
@@ -78,7 +164,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     modalFooterActionsClassName,
     modalFooterClassName,
     modalHeaderClassName,
-    modalHeaderDescriptionClassName,
     modalHeaderTitleClassName,
     modalHelperTextClassName,
     modalInputClassName,
@@ -131,10 +216,13 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     ? "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-[#111827] object-contain shadow-[0_36px_90px_-40px_rgba(2,6,23,0.9)]"
     : "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-white/90 object-contain shadow-[0_36px_90px_-40px_rgba(43,3,7,0.72)]";
   const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} !px-7 !pt-7 !pb-10 sm:!px-8 sm:!pt-8 sm:!pb-12`;
-  const modalHeaderContentClassName = "min-w-0 flex-1 pr-3 sm:max-w-2xl sm:pr-16";
-  const modalHeaderDescriptionSpacingClassName =
-    `${modalHeaderDescriptionClassName} !mt-3 max-w-none leading-relaxed sm:!mt-4 sm:max-w-[28rem]`;
+    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
+  const modalHeaderContentClassName =
+    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
+  const sectionHeaderClassName = isDarkMode
+    ? "mb-5 border-b border-white/10 pb-4"
+    : "mb-5 border-b border-[#7b0d15]/10 pb-4";
+  const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
 
   useEffect(() => {
     if (!shouldRender) {
@@ -436,6 +524,17 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
 
   if (!shouldRender) return null;
 
+  const renderSectionHeader = (title, description, isRequired = false) => (
+    <div className={sectionHeaderClassName}>
+      <label className={modalLabelClassName}>
+        {title} {isRequired && <span className="text-red-500">*</span>}
+      </label>
+      <p className={sectionDescriptionClassName}>
+        {description}
+      </p>
+    </div>
+  );
+
   return createPortal(
     <>
       <dialog open
@@ -446,14 +545,12 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
       >
         <div className={modalBoxClassName}>
           <div className={modalHeaderSpacingClassName}>
-            <div className="flex items-start justify-between gap-4 sm:gap-6">
+            <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
               <div className={modalHeaderContentClassName}>
+                <AppClientIconBox colorMode={colorMode} variant="plain" />
                 <h3 className={modalHeaderTitleClassName}>
                   Create App Client
                 </h3>
-                <p className={modalHeaderDescriptionSpacingClassName}>
-                  Register a new app client.
-                </p>
               </div>
 
               <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
@@ -467,36 +564,7 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
           <div className={modalBodyClassName}>
             <div className={modalBodyStackClassName}>
               <div className={modalStepsWrapClassName}>
-                <ModalSteps currentStep={step}
-                  colorMode={colorMode}
-                  steps={[
-                    <>
-                      <span className="step-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                          <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
-                        </svg>
-                      </span>
-                      Basic Info
-                    </>,
-                    <>
-                      <span className="step-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                          <path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" />
-                          <path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" />
-                        </svg>
-                      </span>
-                      URLs
-                    </>,
-                    <>
-                      <span className="step-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                          <path fillRule="evenodd" d="M14.5 1A4.5 4.5 0 0 0 10 5.5V9H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1.5V5.5a3 3 0 1 1 6 0v2.75a.75.75 0 0 0 1.5 0V5.5A4.5 4.5 0 0 0 14.5 1Z" clipRule="evenodd"/>
-                        </svg>
-                      </span>
-                      Grants
-                    </>,
-                  ]}
-                />
+                <AppClientStepIndicator currentStep={step} colorMode={colorMode} />
               </div>
 
               <ErrorAlert message={error} onClose={() => setError("")} />
@@ -504,9 +572,11 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
               {step === 1 && (
                 <>
                   <section className={modalSectionClassName}>
-                    <label className={modalLabelClassName}>
-                      System Logo <span className="text-red-500">*</span>
-                    </label>
+                    {renderSectionHeader(
+                      "System Logo",
+                      "Upload the app client's system logo.",
+                      true,
+                    )}
                     <div
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
@@ -565,6 +635,11 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                       colorMode={colorMode}
                     />
 
+                    {renderSectionHeader(
+                      "Client Details",
+                      "Enter the app client's name and description.",
+                    )}
+
                     <div>
                       <label className={modalLabelClassName}>
                         Name <span className="text-red-500">*</span>
@@ -611,6 +686,11 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                         onTranscript={handleVoiceInput}
                         colorMode={colorMode}
                       />
+
+                      {renderSectionHeader(
+                        "Application URLs",
+                        "Set the base, redirect, and logout URLs.",
+                      )}
 
                       <div>
                         <label className={modalLabelClassName}>
@@ -710,9 +790,11 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
 
               {step === 3 && (
                 <section className={modalSectionClassName}>
-                  <label className={modalLabelClassName}>
-                    Grants <span className="text-red-500">*</span>
-                  </label>
+                  {renderSectionHeader(
+                    "Grants",
+                    "Select the grant types required for this client.",
+                    true,
+                  )}
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {GRANT_OPTIONS.map((grant) => {
                       const isSelected = grants.includes(grant);
@@ -735,9 +817,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                       At least one grant is required.
                     </p>
                   )}
-                  <p className={`${modalHelperTextClassName} mt-4`}>
-                    Select the grant types required for this client.
-                  </p>
                 </section>
               )}
             </div>

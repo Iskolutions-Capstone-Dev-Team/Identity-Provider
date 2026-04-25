@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
+import AppClientIconBox from "./AppClientIconBox";
 import { getModalTheme } from "../modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
@@ -88,7 +89,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     modalFooterActionsClassName,
     modalFooterClassName,
     modalHeaderClassName,
-    modalHeaderDescriptionClassName,
     modalHeaderTitleClassName,
     modalHelperTextClassName,
     modalInputClassName,
@@ -152,10 +152,13 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     ? "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-[#111827] object-contain shadow-[0_36px_90px_-40px_rgba(2,6,23,0.9)]"
     : "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-white/90 object-contain shadow-[0_36px_90px_-40px_rgba(43,3,7,0.72)]";
   const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} !px-8 !pt-8 !pb-28 min-h-[11.5rem] sm:!px-10 sm:!pt-9 sm:!pb-20 sm:min-h-0`;
-  const modalHeaderContentClassName = "max-w-2xl pr-14 sm:pr-16";
-  const modalHeaderDescriptionSpacingClassName =
-    `${modalHeaderDescriptionClassName} !mt-4 max-w-[20rem] leading-relaxed sm:!mt-5 sm:max-w-[34rem]`;
+    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
+  const modalHeaderContentClassName =
+    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
+  const sectionHeaderClassName = isDarkMode
+    ? "mb-5 border-b border-white/10 pb-4"
+    : "mb-5 border-b border-[#7b0d15]/10 pb-4";
+  const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
 
   const resolveImageSrc = (image) => {
     if (!image) return null;
@@ -475,6 +478,17 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
 
   if (!shouldRender) return null;
 
+  const renderSectionHeader = (title, description, isRequired = false) => (
+    <div className={sectionHeaderClassName}>
+      <label className={modalLabelClassName}>
+        {title} {isRequired && <span className="text-red-500">*</span>}
+      </label>
+      <p className={sectionDescriptionClassName}>
+        {description}
+      </p>
+    </div>
+  );
+
   return createPortal(
     <>
       <dialog open
@@ -485,16 +499,12 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
       >
         <div className={modalBoxClassName}>
           <div className={modalHeaderSpacingClassName}>
-            <div className="flex items-start justify-between gap-4 sm:gap-6">
+            <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
               <div className={modalHeaderContentClassName}>
+                <AppClientIconBox colorMode={colorMode} variant="plain" />
                 <h3 className={modalHeaderTitleClassName}>
                   {isView ? "View App Client" : "Edit App Client"}
                 </h3>
-                <p className={modalHeaderDescriptionSpacingClassName}>
-                  {isView
-                    ? "Application client's configuration details."
-                    : "Update the application client's configuration and settings."}
-                </p>
               </div>
 
               <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
@@ -516,9 +526,13 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
               )}
 
               <section className={modalSectionClassName}>
-                <label className={modalLabelClassName}>
-                  System Logo {!isView && <span className="text-red-500">*</span>}
-                </label>
+                {renderSectionHeader(
+                  "System Logo",
+                  isView
+                    ? "View the app client's system logo."
+                    : "Update the app client's system logo.",
+                  !isView,
+                )}
                 <div
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -575,6 +589,12 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
               </section>
 
               <section className={modalSectionClassName}>
+                {renderSectionHeader(
+                  "Client Details",
+                  isView
+                    ? "View the app client's basic details."
+                    : "Update the app client's name and description.",
+                )}
                 <div className="space-y-5">
                   <div>
                     <label className={modalLabelClassName}>Client Id</label>
@@ -635,6 +655,12 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
               </section>
 
               <section className={modalSectionClassName}>
+                {renderSectionHeader(
+                  "Application URLs",
+                  isView
+                    ? "View the configured application URLs."
+                    : "Update the base, redirect, and logout URLs.",
+                )}
                 <div className="grid gap-5 md:grid-cols-2">
                   <div>
                     <label className={modalLabelClassName}>
@@ -713,9 +739,13 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
               <section className={modalSectionClassName}>
                 <div className="space-y-5">
                   <div>
-                    <label className={modalLabelClassName}>
-                      Grants {!isView && <span className="text-red-500">*</span>}
-                    </label>
+                    {renderSectionHeader(
+                      "Grants",
+                      isView
+                        ? "View the grant types enabled for this client."
+                        : "Select the grant types required for this client.",
+                      !isView,
+                    )}
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                       {GRANT_OPTIONS.map((grant) => {
                         const isSelected = selectedGrants.includes(grant);
