@@ -72,6 +72,14 @@ function getDisabledPrimaryButtonClassName(isDarkMode) {
     : "cursor-not-allowed border-[#7b0d15]/12 bg-[#cdb7bb] text-white/70 hover:border-[#7b0d15]/12 hover:bg-[#cdb7bb]";
 }
 
+function PasswordLockIcon({ className }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 export default function ChangePasswordModal({ isOpen, onClose, showCurrentPassword = true, addAuditLog, setToastMessage, enableSuccessAlert = false, colorMode = "light", emailAddress = "" }) {
   const isForgotPasswordFlow = !showCurrentPassword;
   const { shouldRender, isClosing } = useModalTransition(isOpen);
@@ -406,7 +414,6 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     modalFooterActionsClassName,
     modalFooterClassName,
     modalHeaderClassName,
-    modalHeaderDescriptionClassName,
     modalHeaderTitleClassName,
     modalOverlayClassName,
     modalPrimaryButtonClassName,
@@ -414,6 +421,12 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   } = getModalTheme(colorMode);
   const isDarkMode = colorMode === "dark";
   const passwordModalBoxClassName = `${modalBoxClassName} !max-w-2xl`;
+  const modalHeaderSpacingClassName =
+    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
+  const modalHeaderContentClassName =
+    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
+  const headerIconClassName =
+    colorMode === "dark" ? "h-10 w-10 text-[#ffe28a]" : "h-10 w-10 text-[#fff0a8]";
   const requiredFieldsClassName = isDarkMode
     ? "text-sm text-[#c7adb4]"
     : "text-sm text-[#8f6f76]";
@@ -461,19 +474,17 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
           )}
         >
           <div className={passwordModalBoxClassName}>
-            <div className={modalHeaderClassName}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="max-w-2xl">
+            <div className={modalHeaderSpacingClassName}>
+              <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
+                <div className={modalHeaderContentClassName}>
+                  <PasswordLockIcon className={headerIconClassName} />
                   <h3 className={modalHeaderTitleClassName}>
                     {currentStepMeta.title}
                   </h3>
-                  <p className={modalHeaderDescriptionClassName}>
-                    {currentStepMeta.description}
-                  </p>
                 </div>
 
                 {currentStepMeta.showCloseButton && (
-                  <button type="button" className={modalCloseButtonClassName} onClick={onClose}>
+                  <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
