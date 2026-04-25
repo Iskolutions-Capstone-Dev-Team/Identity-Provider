@@ -188,6 +188,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   const isCreateMode = mode === "create";
   const isViewMode = mode === "view";
   const isDarkMode = colorMode === "dark";
+  const shouldUseSteps = isCreateMode;
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -400,19 +401,23 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   };
 
   const goToPermissionsStep = () => {
-    if (!isViewMode) {
-      setTouched({
-        name: true,
-        description: true,
-      });
+    setTouched({
+      name: true,
+      description: true,
+    });
 
-      if (!validateForm()) {
-        return;
-      }
+    if (!validateForm()) {
+      return;
     }
 
     setError("");
     setStep(2);
+  };
+
+  const handleNextClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    goToPermissionsStep();
   };
 
   const goToDetailsStep = () => {
@@ -428,7 +433,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
       return;
     }
 
-    if (step === 1) {
+    if (isCreateMode && step === 1) {
       goToPermissionsStep();
       return;
     }
@@ -461,6 +466,8 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   const permissionsDescription = isViewMode
     ? "View the permissions assigned to this role."
     : "Select the permissions assigned to this role.";
+  const showRoleDetails = !shouldUseSteps || step === 1;
+  const showPermissions = !shouldUseSteps || step === 2;
   const renderSectionHeader = (title, description) => (
     <div className={sectionHeaderClassName}>
       <label className={modalLabelClassName}>
@@ -492,13 +499,15 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
 
         <form id="role-form" noValidate className={modalBodyClassName} onSubmit={handleSubmit}>
           <div className={modalBodyStackClassName}>
-            <div className={modalStepsWrapClassName}>
-              <RoleStepIndicator currentStep={step} colorMode={colorMode} />
-            </div>
+            {shouldUseSteps && (
+              <div className={modalStepsWrapClassName}>
+                <RoleStepIndicator currentStep={step} colorMode={colorMode} />
+              </div>
+            )}
 
             <ErrorAlert message={error} onClose={() => setError("")} />
 
-            {!isViewMode && step === 1 && (
+            {!isViewMode && (!shouldUseSteps || step === 1) && (
               <SpeechInputToolbar
                 activeFieldLabel={activeVoiceFieldLabel}
                 onError={setError}
@@ -518,7 +527,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
               />
             )}
 
-            {step === 1 && (
+            {showRoleDetails && (
               <>
                 <section className={modalSectionClassName}>
                   {renderSectionHeader("Role Details", roleDetailsDescription)}
@@ -610,7 +619,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
               </>
             )}
 
-            {step === 2 && (
+            {showPermissions && (
               <section className={modalSectionClassName}>
                 <div className="space-y-5">
                   <div>
@@ -651,28 +660,40 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
 
         <div className={modalFooterClassName}>
           <div className={modalFooterActionsClassName}>
-            {step === 1 ? (
-              <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
-                {isViewMode ? "Close" : "Cancel"}
-              </button>
-            ) : (
-              <button type="button" className={modalSecondaryButtonClassName} onClick={goToDetailsStep}>
-                Back
-              </button>
-            )}
+            {isCreateMode ? (
+              <>
+                {step === 1 ? (
+                  <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
+                    Cancel
+                  </button>
+                ) : (
+                  <button type="button" className={modalSecondaryButtonClassName} onClick={goToDetailsStep}>
+                    Back
+                  </button>
+                )}
 
-            {step === 1 ? (
-              <button type="button" className={modalPrimaryButtonClassName} onClick={goToPermissionsStep}>
-                Next
-              </button>
-            ) : isViewMode ? (
-              <button type="button" className={modalPrimaryButtonClassName} onClick={onClose}>
-                Close
-              </button>
+                {step === 1 ? (
+                  <button type="button" className={modalPrimaryButtonClassName} onClick={handleNextClick}>
+                    Next
+                  </button>
+                ) : (
+                  <button form="role-form" type="submit" className={modalPrimaryButtonClassName}>
+                    Create
+                  </button>
+                )}
+              </>
             ) : (
-              <button form="role-form" type="submit" className={modalPrimaryButtonClassName}>
-                {mode === "create" ? "Create" : "Save"}
-              </button>
+              <>
+                <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
+                  {isViewMode ? "Close" : "Cancel"}
+                </button>
+
+                {!isViewMode && (
+                  <button form="role-form" type="submit" className={modalPrimaryButtonClassName}>
+                    Save
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
