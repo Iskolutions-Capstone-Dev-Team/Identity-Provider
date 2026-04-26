@@ -102,7 +102,7 @@ export default function IdpLayout() {
   });
 
   return (
-    <div className={`relative min-h-screen overflow-hidden font-[Poppins] transition-[background-color,color] duration-500 ease-out ${
+    <div className={`relative min-h-screen overflow-x-hidden font-[Poppins] transition-[background-color,color] duration-500 ease-out ${
         isDarkThemeRoute
           ? "bg-[#182434] text-slate-100"
           : "bg-[#fff8f3] text-slate-800"
@@ -176,15 +176,12 @@ export default function IdpLayout() {
 
         <div className="flex min-w-0 flex-1 flex-col">
           <Navbar
-            sidebarOpen={sidebarOpen}
-            currentUser={currentUser}
-            isLoadingCurrentUser={isLoadingCurrentUser}
             activeColorMode={colorMode}
             onToggleColorMode={handleToggleColorMode}
             showColorModeToggle={showColorModeToggle}
           />
 
-          <main className="flex-1 px-4 pb-32 pt-28 sm:px-6 sm:pb-32 sm:pt-32 lg:px-6 lg:pb-8 lg:pt-36">
+          <main className="flex-1 px-4 pb-32 pt-6 sm:px-6 sm:pb-32 sm:pt-7 lg:px-6 lg:pb-8 lg:pt-8">
             <PageTransition pageKey={location.pathname}>
               {outlet}
             </PageTransition>
