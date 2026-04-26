@@ -5,6 +5,7 @@ import MultiSelect from "../MultiSelect";
 import { useAllRoles } from "../../hooks/useAllRoles";
 import UserPoolModalSelect from "./UserPoolModalSelect";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
+import UserPoolUserIconBox from "./UserPoolUserIconBox";
 import { getModalTheme } from "../modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../utils/userPoolAccess";
@@ -147,7 +148,6 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     modalFooterActionsClassName,
     modalFooterClassName,
     modalHeaderClassName,
-    modalHeaderDescriptionClassName,
     modalHeaderTitleClassName,
     modalHelperTextClassName,
     modalLabelClassName,
@@ -168,14 +168,13 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     ? "italic text-[#a58d95]"
     : "italic text-[#8f6f76]";
   const modalHeaderSpacingClassName =
-    isViewMode
-      ? `${modalHeaderClassName} !px-7 !pt-7 !pb-14 sm:!px-8 sm:!pt-8 sm:!pb-12`
-      : `${modalHeaderClassName} !px-7 !pt-6 !pb-6 sm:!px-8 sm:!pt-7 sm:!pb-7`;
-  const modalHeaderContentClassName = "max-w-xl pr-12 sm:pr-14";
-  const modalHeaderDescriptionSpacingClassName =
-    isViewMode
-      ? `${modalHeaderDescriptionClassName} !mt-3 max-w-[18rem] leading-relaxed sm:!mt-4 sm:max-w-[28rem]`
-      : `${modalHeaderDescriptionClassName} !mt-2 max-w-[18rem] leading-relaxed sm:!mt-3 sm:max-w-[28rem]`;
+    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
+  const modalHeaderContentClassName =
+    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
+  const sectionHeaderClassName = isDarkMode
+    ? "mb-5 border-b border-white/10 pb-4"
+    : "mb-5 border-b border-[#7b0d15]/10 pb-4";
+  const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
 
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
@@ -281,23 +280,37 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
       : regularAccessItems;
   const accessFieldLabel = isAdminView ? "Role" : "Accessible Clients";
   const accessItems = isAdminView ? roleAccessItems : regularAccessDisplayItems;
+  const accessFieldDescription = isViewMode
+    ? isAdminView
+      ? "View the role assigned to this admin account."
+      : "View which clients this user can access."
+    : isAdminView
+      ? "Choose the role for this admin account."
+      : "Choose which clients this user can access.";
+  const statusFieldDescription = isViewMode
+    ? "View the user's account status."
+    : "Choose the user's account status.";
+  const renderSectionHeader = (title, description, isRequired = false) => (
+    <div className={sectionHeaderClassName}>
+      <label className={modalLabelClassName}>
+        {title} {isRequired && <span className="text-red-500">*</span>}
+      </label>
+      <p className={sectionDescriptionClassName}>
+        {description}
+      </p>
+    </div>
+  );
 
   return createPortal(
     <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
         <div className={modalHeaderSpacingClassName}>
-          <div className="flex items-start justify-between gap-4 sm:gap-6">
+          <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
             <div className={modalHeaderContentClassName}>
+              <UserPoolUserIconBox colorMode={colorMode} variant="plain" />
               <h3 className={modalHeaderTitleClassName}>
                 {isViewMode ? "View User" : "Edit User"}
               </h3>
-              <p className={modalHeaderDescriptionSpacingClassName}>
-                {isViewMode
-                  ? "View the user's account information."
-                  : isAdminView
-                    ? "Update the admin role and account status."
-                    : "Update the account status and app-client access."}
-              </p>
             </div>
 
             <button
@@ -318,6 +331,10 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
 
             {!isEditMode && (
               <section className={modalSectionClassName}>
+                {renderSectionHeader(
+                  "Personal Information",
+                  "View the user's basic details.",
+                )}
                 <div className="space-y-5">
                   <div>
                     <label className={modalLabelClassName}>User ID</label>
@@ -370,9 +387,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
             <section className={modalSectionClassName}>
               <div className="space-y-5">
                 <div>
-                  <label className={modalLabelClassName}>
-                    {accessFieldLabel}
-                  </label>
+                  {renderSectionHeader(accessFieldLabel, accessFieldDescription)}
 
                   {isViewMode || !canEditAccessField ? (
                     <div className={readOnlyAccessClassName}>
@@ -392,9 +407,6 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                     </div>
                   ) : isAdminView ? (
                     <>
-                      <p className={modalHelperTextClassName}>
-                        Choose the role for this admin account.
-                      </p>
                       <UserPoolRoleRadioGroup
                         options={adminRoleOptions}
                         selectedValue={formData.roleId}
@@ -407,9 +419,6 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                     </>
                   ) : (
                     <>
-                      <p className={modalHelperTextClassName}>
-                        Choose which clients this user can access.
-                      </p>
                       <MultiSelect
                         options={appClientSelectOptions}
                         selectedValues={formData.accessibleClientIds}
@@ -428,9 +437,11 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                 </div>
 
                 <div>
-                  <label className={modalLabelClassName}>
-                    Status {!isViewMode && <span className="text-red-500">*</span>}
-                  </label>
+                  {renderSectionHeader(
+                    "Status",
+                    statusFieldDescription,
+                    !isViewMode,
+                  )}
                   {isViewMode || !canEditStatus ? (
                     <input type="text" value={getStatusDisplayLabel(formData.status)} readOnly className={modalReadOnlyInputClassName} />
                   ) : (

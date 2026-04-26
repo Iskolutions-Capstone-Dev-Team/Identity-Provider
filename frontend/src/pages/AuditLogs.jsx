@@ -308,6 +308,7 @@ export default function AuditLogs() {
       <LogMetadataModal
         open={isMetadataOpen}
         log={selectedLog}
+        logType={logType}
         loading={isMetadataLoading}
         error={metadataError}
         onClose={closeMetadataModal}
