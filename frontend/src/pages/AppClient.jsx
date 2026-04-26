@@ -169,9 +169,8 @@ export default function AppClient() {
                     title="App Client"
                     description="Manage application clients and settings"
                     icon={
-                        <AppClientIcon className="h-20 w-20 sm:h-24 sm:w-24" />
+                        <AppClientIcon className="h-14 w-14 sm:h-16 sm:w-16" />
                     }
-                    variant="hero"
                     colorMode={colorMode}
                 />
                 <div className="relative">
