@@ -83,14 +83,14 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ghcr.io/iskolutions/idp-backend:latest
+          tags: ghcr.io/iskolutions-capstone-dev-team/idp-backend:latest
 
       - name: Build and Push Frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: ghcr.io/iskolutions/idp-frontend:latest
+          tags: ghcr.io/iskolutions-capstone-dev-team/idp-frontend:latest
 
   deploy-staging:
     if: github.event_name == 'push' && github.ref == 'refs/heads/development'
@@ -116,9 +116,8 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_PK }}
           script: |
-            cd ~/Identity-Provider
+            cd Identity-Provider/
             git pull origin development
-            echo "${{ secrets.STAGING_ENV }}" > .env
             echo "${{ secrets.GH_PAT }}" | \
               docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
               --password-stdin
@@ -149,9 +148,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/Identity-Provider
+            cd Identity-Provider/
             git pull origin main
-            echo "${{ secrets.ENV_FILE }}" > .env
             echo "${{ secrets.GH_PAT }}" | \
               docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
               --password-stdin
