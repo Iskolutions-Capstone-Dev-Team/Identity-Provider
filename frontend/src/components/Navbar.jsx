@@ -16,9 +16,8 @@ function MoonIcon() {
   );
 }
 
-export default function Navbar({ sidebarOpen, activeColorMode = "light", onToggleColorMode, showColorModeToggle = false }) {
+export default function Navbar({ activeColorMode = "light", onToggleColorMode, showColorModeToggle = false }) {
   const navigate = useNavigate();
-  const desktopOffsetClassName = sidebarOpen ? "lg:left-80" : "lg:left-32";
   const isDarkMode = activeColorMode === "dark";
   const navbarTheme = isDarkMode
     ? {
@@ -51,7 +50,7 @@ export default function Navbar({ sidebarOpen, activeColorMode = "light", onToggl
     "h-8 w-8 shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.03]";
 
   return (
-    <nav className={`fixed left-4 right-4 top-4 z-20 overflow-hidden rounded-[1.85rem] border backdrop-blur-2xl transition-all duration-300 sm:top-5 lg:right-6 ${desktopOffsetClassName} ${navbarTheme.shell}`}>
+    <nav className={`sticky top-4 z-20 mx-4 mt-4 overflow-hidden rounded-[1.85rem] border backdrop-blur-2xl transition-all duration-300 sm:top-5 sm:mx-6 sm:mt-5 ${navbarTheme.shell}`}>
       <div className={`pointer-events-none absolute inset-0 ${navbarTheme.shellOverlay}`} />
 
       <div className="relative flex min-h-[4.75rem] items-center justify-between gap-4 px-4 py-3 sm:min-h-[5.25rem] sm:px-6">
