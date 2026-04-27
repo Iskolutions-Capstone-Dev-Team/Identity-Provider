@@ -12,6 +12,7 @@ export const PERMISSIONS = Object.freeze({
   EDIT_APPCLIENT: "Edit appclient",
   DELETE_APPCLIENT: "Delete appclient",
   VIEW_ALL_APPCLIENTS: "View all appclients",
+  VIEW_CONNECTED_APPCLIENTS: "View connected appclients",
   VIEW_ROLES: "View roles",
   ASSIGN_ROLES: "Assign Roles",
   EDIT_ROLES: "Edit Roles",
@@ -57,6 +58,7 @@ export const REGISTRATION_EDIT_PERMISSIONS = Object.freeze([
 
 export const APP_CLIENT_PAGE_PERMISSIONS = Object.freeze([
   PERMISSIONS.VIEW_ALL_APPCLIENTS,
+  PERMISSIONS.VIEW_CONNECTED_APPCLIENTS,
   PERMISSIONS.ADD_APPCLIENT,
   PERMISSIONS.EDIT_APPCLIENT,
   PERMISSIONS.DELETE_APPCLIENT,

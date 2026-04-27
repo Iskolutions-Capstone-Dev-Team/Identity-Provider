@@ -15,12 +15,24 @@ const normalizeRoleNames = (roles = []) =>
     ),
   );
 
-const getClientId = (client = {}) => client.id ?? client.client_id ?? client.clientId ?? "";
+const getClientId = (client = {}) =>
+  client.id ?? client.client_id ?? client.clientId ?? "";
 
-const sortClientsByName = (clients = []) =>
-  [...clients].sort((firstClient, secondClient) =>
-    (firstClient?.name ?? "").localeCompare(secondClient?.name ?? ""),
-  );
+const toPositiveInteger = (value, fallbackValue) => {
+  const parsedValue = Number.parseInt(value, 10);
+
+  return Number.isInteger(parsedValue) && parsedValue > 0
+    ? parsedValue
+    : fallbackValue;
+};
+
+const toNonNegativeInteger = (value, fallbackValue) => {
+  const parsedValue = Number.parseInt(value, 10);
+
+  return Number.isInteger(parsedValue) && parsedValue >= 0
+    ? parsedValue
+    : fallbackValue;
+};
 
 const mapClientSummary = (client = {}) => {
   const clientId = getClientId(client);
@@ -56,90 +68,13 @@ const normalizeClientDetailPayload = (payload = {}) => {
   return mapClientSummary(client);
 };
 
-const matchesClientSearch = (client = {}, searchValue = "") => {
-  const normalizedSearch =
-    typeof searchValue === "string" ? searchValue.trim().toLowerCase() : "";
-
-  if (!normalizedSearch) {
-    return true;
-  }
-
-  const clientName =
-    typeof client?.name === "string" ? client.name.toLowerCase() : "";
-  const clientId =
-    typeof client?.clientId === "string" ? client.clientId.toLowerCase() : "";
-
-  return (
-    clientName.includes(normalizedSearch) ||
-    clientId.includes(normalizedSearch)
-  );
-};
-
-const getMatchingClients = async (keyword) => {
-  const matchedClients = [];
-  let nextPage = 1;
-
-  while (true) {
-    const { items } = await clientService.getClients({
-      limit: ITEMS_PER_PAGE,
-      page: nextPage,
-      keyword,
-    });
-
-    if (!Array.isArray(items) || items.length === 0) {
-      break;
-    }
-
-    matchedClients.push(...items);
-
-    if (items.length < ITEMS_PER_PAGE) {
-      break;
-    }
-
-    nextPage += 1;
-  }
-
-  return matchedClients;
-};
-
-const getManagedClients = async (managedClients = []) => {
-  const uniqueManagedClients = Array.from(
-    new Map(
-      (Array.isArray(managedClients) ? managedClients : [])
-        .map((client) => [getClientId(client), client])
-        .filter(([clientId]) => Boolean(clientId)),
-    ).values(),
-  );
-
-  const detailedClients = await Promise.all(
-    uniqueManagedClients.map(async (client) => {
-      const clientId = getClientId(client);
-
-      try {
-        const payload = await clientService.getClientById(clientId);
-        return normalizeClientDetailPayload(payload);
-      } catch (error) {
-        console.error(`Failed to fetch managed app client ${clientId}:`, error);
-        return mapClientSummary(client);
-      }
-    }),
-  );
-
-  return sortClientsByName(
-    detailedClients.filter((client) => Boolean(client?.id)),
-  );
-};
-
-export function useAppClients({
-  managedClients = null,
-  isManagedClientsLoading = false,
-} = {}) {
+export function useAppClients({ enabled = true } = {}) {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalClientCount, setTotalClientCount] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [secretModal, setSecretModal] = useState({
     open: false,
     clientId: "",
@@ -150,10 +85,20 @@ export function useAppClients({
     hasError: false,
   });
 
-  const isManagedMode = Array.isArray(managedClients);
   const searchKeyword = search.trim();
 
-  const fetchPageClients = useCallback(async ({ showLoading = true } = {}) => {
+  const resetClients = useCallback(() => {
+    setClients([]);
+    setTotalClientCount(0);
+    setLoading(false);
+  }, []);
+
+  const fetchClients = useCallback(async ({ showLoading = true } = {}) => {
+    if (!enabled) {
+      resetClients();
+      return;
+    }
+
     try {
       if (showLoading) {
         setLoading(true);
@@ -162,14 +107,19 @@ export function useAppClients({
       const { items, total, lastPage } = await clientService.getClients({
         limit: ITEMS_PER_PAGE,
         page,
+        keyword: searchKeyword,
       });
-      const nextClients = items.map(mapClientSummary);
-      const nextTotalResults =
-        Number.isInteger(total) && total >= 0 ? total : nextClients.length;
-      const nextTotalPages =
-        Number.isInteger(lastPage) && lastPage > 0
-          ? lastPage
-          : Math.max(1, Math.ceil(nextTotalResults / ITEMS_PER_PAGE));
+      const nextClients = Array.isArray(items)
+        ? items.map(mapClientSummary)
+        : [];
+      const nextTotalResults = toNonNegativeInteger(
+        total,
+        nextClients.length,
+      );
+      const nextTotalPages = toPositiveInteger(
+        lastPage,
+        Math.max(1, Math.ceil(nextTotalResults / ITEMS_PER_PAGE)),
+      );
 
       if (page > nextTotalPages) {
         setPage(nextTotalPages);
@@ -187,94 +137,20 @@ export function useAppClients({
         setLoading(false);
       }
     }
-  }, [page]);
-
-  const fetchMatchingClients = useCallback(async ({ showLoading = true } = {}) => {
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-
-      const matchedClients = await getMatchingClients(searchKeyword);
-      setClients(matchedClients.map(mapClientSummary));
-      setTotalClientCount(matchedClients.length);
-    } catch (error) {
-      console.error("Fetch clients error:", error);
-      setClients([]);
-      setTotalClientCount(0);
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-    }
-  }, [searchKeyword]);
-
-  const fetchManagedClients = useCallback(async ({ showLoading = true } = {}) => {
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-
-      const nextClients = await getManagedClients(managedClients);
-      setClients(nextClients);
-      setTotalClientCount(nextClients.length);
-    } catch (error) {
-      console.error("Fetch managed clients error:", error);
-      setClients([]);
-      setTotalClientCount(0);
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-    }
-  }, [managedClients]);
+  }, [enabled, page, resetClients, searchKeyword]);
 
   useEffect(() => {
-    if (isManagedMode) {
-      if (isManagedClientsLoading) {
-        setLoading(true);
-        return;
-      }
-
-      fetchManagedClients();
-      return;
-    }
-
-    if (searchKeyword) {
-      return;
-    }
-
-    fetchPageClients();
-  }, [
-    fetchManagedClients,
-    fetchPageClients,
-    isManagedClientsLoading,
-    isManagedMode,
-    searchKeyword,
-  ]);
-
-  useEffect(() => {
-    if (isManagedMode || !searchKeyword) {
-      return;
-    }
-
-    fetchMatchingClients();
-  }, [fetchMatchingClients, isManagedMode, searchKeyword]);
+    fetchClients();
+  }, [fetchClients]);
 
   const setSearchKeyword = useCallback((value) => {
     const nextValue = typeof value === "string" ? value : "";
+
     setPage(1);
     setSearch(nextValue);
   }, []);
 
-  const visibleClients = isManagedMode
-    ? clients.filter((client) => matchesClientSearch(client, searchKeyword))
-    : clients;
-  const shouldPaginateVisibleClients = isManagedMode || Boolean(searchKeyword);
-  const totalResults = isManagedMode
-    ? visibleClients.length
-    : totalClientCount;
-  const totalPages = Math.max(1, Math.ceil(totalResults / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(totalClientCount / ITEMS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
 
   useEffect(() => {
@@ -283,29 +159,13 @@ export function useAppClients({
     }
   }, [currentPage, page]);
 
-  const paginatedClients = shouldPaginateVisibleClients
-    ? visibleClients.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE,
-      )
-    : visibleClients;
-
   const refreshClients = async ({ showLoading = true } = {}) => {
-    if (isManagedMode) {
-      await fetchManagedClients({ showLoading });
-      return;
-    }
-
-    if (searchKeyword) {
-      await fetchMatchingClients({ showLoading });
-      return;
-    }
-
-    await fetchPageClients({ showLoading });
+    await fetchClients({ showLoading });
   };
 
   const createClient = async (payload) => {
     const response = await clientService.createClient(payload);
+
     setSuccessMessage("App client successfully created!");
     await refreshClients({ showLoading: false });
     return response;
@@ -330,6 +190,7 @@ export function useAppClients({
 
   const getClientDetails = useCallback(async (id) => {
     const payload = await clientService.getClientById(id);
+
     return normalizeClientDetailPayload(payload);
   }, []);
 
@@ -391,9 +252,9 @@ export function useAppClients({
     setSearch: setSearchKeyword,
     page: currentPage,
     setPage,
-    paginatedClients,
+    paginatedClients: clients,
     totalPages,
-    totalResults,
+    totalResults: totalClientCount,
     loading,
     successMessage,
     setSuccessMessage,

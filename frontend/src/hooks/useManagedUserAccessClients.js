@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { userService } from "../services/userService";
 
+let managedUserAccessClientsRequest = null;
+
 function mapManagedClient(client = {}) {
   const id = client?.id ?? client?.client_id ?? client?.clientId ?? "";
   const name = client?.name ?? client?.client_name ?? client?.clientName ?? "";
@@ -9,6 +11,19 @@ function mapManagedClient(client = {}) {
     id,
     name: typeof name === "string" ? name.trim() : "",
   };
+}
+
+function loadManagedUserAccessClients() {
+  if (managedUserAccessClientsRequest) {
+    return managedUserAccessClientsRequest;
+  }
+
+  managedUserAccessClientsRequest =
+    userService.getManagedUserAccessClients().finally(() => {
+      managedUserAccessClientsRequest = null;
+    });
+
+  return managedUserAccessClientsRequest;
 }
 
 export function useManagedUserAccessClients({ enabled = true } = {}) {
@@ -34,7 +49,7 @@ export function useManagedUserAccessClients({ enabled = true } = {}) {
           setIsLoadingAppClients(true);
         }
 
-        const managedClients = await userService.getManagedUserAccessClients();
+        const managedClients = await loadManagedUserAccessClients();
         const clientMap = new Map();
 
         managedClients.forEach((client) => {

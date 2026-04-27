@@ -15,6 +15,7 @@ const ITEMS_PER_PAGE = 10;
 const INVITATION_ACCOUNT_SETUP = "invitation";
 const ADMIN_ACCOUNT_CATEGORY = "system administrator";
 const SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE = "System Administrator";
+const userListRequests = new Map();
 
 function normalizeClientIds(clientIds = []) {
   return Array.from(
@@ -292,27 +293,26 @@ async function getAdminUsers() {
     userService.getAdminUsers({ page, limit: FETCH_LIMIT }),
   );
 
-  const detailedAdminUsers = await Promise.all(
-    adminUsers.map(async (user) => {
-      try {
-        const detailedUser = await userService.getUser(user.id);
-        return mapUserResponse(detailedUser, { isAdmin: true });
-      } catch (error) {
-        console.error(`Failed to load admin user details for ${user.id}:`, error);
-        return mapUserResponse(user, { isAdmin: true });
-      }
-    }),
-  );
-
-  return detailedAdminUsers;
+  return adminUsers.map((user) => mapUserResponse(user, { isAdmin: true }));
 }
 
 async function getUsersByType(userType) {
-  if (userType === ADMIN_USER_TYPE) {
-    return getAdminUsers();
+  const normalizedUserType =
+    userType === ADMIN_USER_TYPE ? ADMIN_USER_TYPE : REGULAR_USER_TYPE;
+  const currentRequest = userListRequests.get(normalizedUserType);
+
+  if (currentRequest) {
+    return currentRequest;
   }
 
-  return getRegularUsers();
+  const nextRequest = (
+    normalizedUserType === ADMIN_USER_TYPE ? getAdminUsers() : getRegularUsers()
+  ).finally(() => {
+    userListRequests.delete(normalizedUserType);
+  });
+
+  userListRequests.set(normalizedUserType, nextRequest);
+  return nextRequest;
 }
 
 async function findRegularUserByEmail(email) {
