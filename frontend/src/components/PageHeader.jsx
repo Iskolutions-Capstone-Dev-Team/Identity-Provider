@@ -4,7 +4,7 @@ export default function PageHeader({ title, description, icon, colorMode = "ligh
   const descriptionClassName = isDarkMode
     ? "text-[#d8c7cb]"
     : "text-[#64748b]";
-  const iconClassName = "text-white";
+  const iconClassName = isDarkMode ? "text-white" : titleClassName;
   const titleClasses = [
     "text-3xl font-black uppercase tracking-[0.02em] sm:text-4xl",
     titleClassName,
