@@ -135,9 +135,12 @@ export default function Registration() {
     ? "inline-flex h-14 items-center justify-center rounded-2xl border border-[#f8d24e]/30 bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(2,6,23,0.75)] transition-[background-color,background-image,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-none hover:bg-[#f8d24e] hover:text-[#7b0d15]"
     : "inline-flex h-14 items-center justify-center rounded-2xl border border-[#7b0d15] bg-[#7b0d15] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(123,13,21,0.6)] transition-[background-color,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-[#f8d24e] hover:text-[#7b0d15]";
 
-  const loadRegistrationConfig = useCallback(async () => {
+  const loadRegistrationConfig = useCallback(async ({ showLoading = true } = {}) => {
     try {
-      setIsLoadingRegistration(true);
+      if (showLoading) {
+        setIsLoadingRegistration(true);
+      }
+
       setRegistrationError("");
 
       const nextConfigs = await registrationService.getRegistrationConfig();
@@ -153,7 +156,9 @@ export default function Registration() {
         ),
       );
     } finally {
-      setIsLoadingRegistration(false);
+      if (showLoading) {
+        setIsLoadingRegistration(false);
+      }
     }
   }, []);
 
@@ -272,7 +277,7 @@ export default function Registration() {
         name: accountTypeName,
         label: accountTypeName,
       });
-      await loadRegistrationConfig();
+      await loadRegistrationConfig({ showLoading: false });
       setSuccessMessage(`Created ${accountTypeName} account type.`);
       return;
     }
@@ -288,7 +293,7 @@ export default function Registration() {
       name: accountTypeName,
       clientIds: nextConfig.clientIds,
     });
-    await loadRegistrationConfig();
+    await loadRegistrationConfig({ showLoading: false });
     setSuccessMessage(
       `Updated pre-approved clients for ${nextConfig.label}.`,
     );
@@ -302,7 +307,7 @@ export default function Registration() {
     try {
       setActionError("");
       await registrationService.deleteAccountType(deleteTarget.backendId);
-      await loadRegistrationConfig();
+      await loadRegistrationConfig({ showLoading: false });
       setSuccessMessage(`Deleted ${deleteTarget.label} account type.`);
     } catch (error) {
       console.error("Failed to delete account type:", error);
