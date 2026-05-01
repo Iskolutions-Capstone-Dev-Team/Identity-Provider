@@ -6,6 +6,7 @@ import DataTableSkeleton from "../components/DataTableSkeleton";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ErrorAlert from "../components/ErrorAlert";
 import PageHeader from "../components/PageHeader";
+import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import SuccessAlert from "../components/SuccessAlert";
 import RegistrationConfigModal from "../components/registration/RegistrationConfigModal";
 import RegistrationTable from "../components/registration/RegistrationTable";
@@ -128,13 +129,6 @@ export default function Registration() {
   const warningBoxClassName = isDarkMode
     ? "rounded-[1.4rem] border border-[#f8d24e]/20 bg-[#f8d24e]/10 px-5 py-4 text-sm text-[#ffe28a]"
     : "rounded-[1.4rem] border border-[#f8d24e]/45 bg-[#fff4dc] px-5 py-4 text-sm text-[#7b0d15]";
-  const toolbarClassName = `flex justify-end border-b pb-6 ${
-    isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
-  }`;
-  const createButtonClassName = isDarkMode
-    ? "inline-flex h-14 items-center justify-center rounded-2xl border border-[#f8d24e]/30 bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(2,6,23,0.75)] transition-[background-color,background-image,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-none hover:bg-[#f8d24e] hover:text-[#7b0d15]"
-    : "inline-flex h-14 items-center justify-center rounded-2xl border border-[#7b0d15] bg-[#7b0d15] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(123,13,21,0.6)] transition-[background-color,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-[#f8d24e] hover:text-[#7b0d15]";
-
   const loadRegistrationConfig = useCallback(async ({ showLoading = true } = {}) => {
     try {
       if (showLoading) {
@@ -353,28 +347,32 @@ export default function Registration() {
   return (
     <>
       <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-        <PageHeader
-          title="Registration"
-          description="Configure pre-approved app clients for each account type."
-          icon={
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-14 w-14 sm:h-16 sm:w-16">
-              <path fillRule="evenodd" d="M9 1.5H5.625c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5Zm6.61 10.936a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 14.47a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"/>
-              <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
-            </svg>
-          }
-          colorMode={colorMode}
-        />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <PageHeader
+              title="Registration"
+              description="Configure pre-approved app clients for each account type."
+              icon={
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-14 w-14 sm:h-16 sm:w-16">
+                  <path fillRule="evenodd" d="M9 1.5H5.625c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5Zm6.61 10.936a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 14.47a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"/>
+                  <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+                </svg>
+              }
+              colorMode={colorMode}
+            />
+          </div>
+
+          {canCreateRegistration && (
+            <div className="self-end sm:self-center">
+              <PageHeaderActionButton colorMode={colorMode} onClick={handleOpenCreate}>
+                + Add Account Type
+              </PageHeaderActionButton>
+            </div>
+          )}
+        </div>
 
         <div className="relative">
           <AuditLogsCard colorMode={colorMode}>
-            {!showLoading && !registrationError && canCreateRegistration && (
-              <div className={toolbarClassName}>
-                <button type="button" onClick={handleOpenCreate} className={createButtonClassName}>
-                  + Add Account Type
-                </button>
-              </div>
-            )}
-
             <ErrorAlert
               message={actionError}
               onClose={() => setActionError("")}
