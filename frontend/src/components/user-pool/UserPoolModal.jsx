@@ -119,6 +119,30 @@ const createFormData = (user) => ({
   accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
 });
 
+const getSelectedClientOptions = (clientIds = [], clientNames = []) =>
+  normalizeClientIds(clientIds).map((clientId, index) => ({
+    id: clientId,
+    label: normalizeText(clientNames[index]) || clientId,
+  }));
+
+const mergeClientOptions = (baseOptions = [], selectedOptions = []) => {
+  const optionMap = new Map();
+
+  baseOptions.forEach((option) => {
+    if (option?.id && option?.label) {
+      optionMap.set(option.id, option);
+    }
+  });
+
+  selectedOptions.forEach((option) => {
+    if (option?.id && option?.label && !optionMap.has(option.id)) {
+      optionMap.set(option.id, option);
+    }
+  });
+
+  return Array.from(optionMap.values());
+};
+
 export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
   const isViewMode = mode === "view";
@@ -139,7 +163,6 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const adminRoleOptions = getAdminRoleOptions(availableRoles, {
     includeSuperAdmin: includeSuperAdminRoleOptions,
   });
-  const appClientSelectOptions = getAllAppClientSelectOptions(appClientOptions);
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -264,6 +287,21 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     return null;
   }
 
+  const editableAppClientOptions = getAllAppClientSelectOptions(appClientOptions);
+  const editableAppClientIdLookup = new Set(
+    editableAppClientOptions.map((client) => client.id).filter(Boolean),
+  );
+  const selectedAppClientOptions = getSelectedClientOptions(
+    formData.accessibleClientIds,
+    formData.accessibleClientNames,
+  );
+  const appClientSelectOptions = mergeClientOptions(
+    editableAppClientOptions,
+    selectedAppClientOptions,
+  );
+  const lockedSelectedClientIds = formData.accessibleClientIds.filter(
+    (clientId) => !editableAppClientIdLookup.has(clientId),
+  );
   const roleAccessItems =
     formData.roles.length > 0
       ? formData.roles
@@ -272,7 +310,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
           .map((role) => role.role_name);
   const regularAccessItems = getAppClientNamesByIds(
     formData.accessibleClientIds,
-    appClientOptions,
+    appClientSelectOptions,
   );
   const regularAccessDisplayItems =
     formData.accessibleClientNames.length > 0
@@ -426,6 +464,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                         placeholder="Select app clients"
                         variant="userpoolModal"
                         colorMode={colorMode}
+                        lockedSelectedValues={lockedSelectedClientIds}
                       />
                       {isLoadingAppClients && (
                         <p className={modalHelperTextClassName}>
