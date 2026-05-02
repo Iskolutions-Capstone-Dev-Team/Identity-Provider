@@ -15,10 +15,13 @@ function getOptionLabel(option) {
   );
 }
 
-export default function MultiSelect({ options, selectedValues, onChange, placeholder, disabled = false, variant = "default", hasError = false, colorMode = "light" }) {
+export default function MultiSelect({ options, selectedValues, onChange, placeholder, disabled = false, variant = "default", hasError = false, colorMode = "light", lockedSelectedValues = [] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef(null);
+  const lockedSelectedLookup = new Set(
+    (Array.isArray(lockedSelectedValues) ? lockedSelectedValues : []).filter(Boolean),
+  );
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -35,7 +38,7 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
   }, [disabled]);
 
   const toggleOption = (id) => {
-    if (disabled) return;
+    if (disabled || lockedSelectedLookup.has(id)) return;
     const newSelection = selectedValues.includes(id)
       ? selectedValues.filter((val) => val !== id)
       : [...selectedValues, id];
@@ -43,7 +46,7 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
   };
 
   const removeTag = (e, id) => {
-    if (disabled) return;
+    if (disabled || lockedSelectedLookup.has(id)) return;
     e.stopPropagation();
     onChange(selectedValues.filter((val) => val !== id));
   };
@@ -51,7 +54,7 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
   const clearAll = (e) => {
     if (disabled) return;
     e.stopPropagation();
-    onChange([]);
+    onChange(selectedValues.filter((id) => lockedSelectedLookup.has(id)));
   };
 
   const selectedItems = options.filter((opt) => selectedValues.includes(opt.id));
@@ -145,6 +148,7 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
     : isUserPoolModalVariant
     ? "group flex cursor-pointer items-center px-4 py-3 hover:bg-[#fff7ef]"
     : "group flex cursor-pointer items-center px-3 py-2 hover:bg-gray-50";
+  const lockedOptionClassName = `${optionClassName} cursor-default opacity-80`;
 
   const optionTextClassName = isDarkUserPoolModalVariant
     ? "text-sm text-[#f4eaea]"
@@ -166,6 +170,9 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
   const checkboxClassName = isDarkUserPoolModalVariant
     ? "checkbox w-5 h-5 rounded border-white/20 bg-transparent checked:border-[#f8d24e] checked:bg-[#7b0d15] checked:text-white focus:ring-0 mr-3 pointer-events-none"
     : "checkbox w-5 h-5 rounded border-gray-300 bg-transparent checked:bg-[#991b1b] checked:border-red-900 checked:text-white focus:ring-0 mr-3 pointer-events-none";
+  const hasClearableSelectedItems = selectedValues.some(
+    (id) => !lockedSelectedLookup.has(id),
+  );
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
@@ -183,7 +190,7 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
           {selectedItems.map((item) => (
             <div key={item.id} className={selectedTagClassName}>
               <span className="truncate">{getOptionLabel(item)}</span>
-              {!disabled && (
+              {!disabled && !lockedSelectedLookup.has(item.id) && (
                 <button type="button" onClick={(e) => removeTag(e, item.id)} className="ml-1 shrink-0 font-bold transition hover:text-[#5a0b12]">
                   x
                 </button>
@@ -206,7 +213,7 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
         </div>
 
         <div className={toolsClassName}>
-          {!disabled && selectedValues.length > 0 && (
+          {!disabled && hasClearableSelectedItems && (
             <button type="button" onClick={clearAll} className={`${clearButtonClassName} shrink-0`}>
               x
             </button>
@@ -231,7 +238,15 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
                 Selected
               </div>
               {selectedItems.map((option) => (
-                <div key={option.id} onClick={() => toggleOption(option.id)} className={optionClassName}>
+                <div
+                  key={option.id}
+                  onClick={() => toggleOption(option.id)}
+                  className={
+                    lockedSelectedLookup.has(option.id)
+                      ? lockedOptionClassName
+                      : optionClassName
+                  }
+                >
                   <input type="checkbox" checked={true} readOnly className={checkboxClassName}/>
                   <span className={selectedOptionTextClassName}>
                     {getOptionLabel(option)}

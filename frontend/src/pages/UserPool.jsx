@@ -12,6 +12,7 @@ import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ResultsCount from "../components/ResultsCount";
 import PageHeader from "../components/PageHeader";
+import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import ErrorAlert from "../components/ErrorAlert";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { useAllAppClients } from "../hooks/useAllAppClients";
@@ -158,16 +159,31 @@ export default function UserPool() {
   return (
     <>
       <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-        <PageHeader
-          title="Users"
-          description="Manage user accounts"
-          icon={
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-14 w-14 sm:h-16 sm:w-16">
-              <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd"/>
-            </svg>
-          }
-          colorMode={colorMode}
-        />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <PageHeader
+              title="Users"
+              description="Manage user accounts"
+              icon={
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-14 w-14 sm:h-16 sm:w-16">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd"/>
+                </svg>
+              }
+              colorMode={colorMode}
+            />
+          </div>
+
+          {canAddUsers && (
+            <div className="self-end sm:self-center">
+              <PageHeaderActionButton
+                colorMode={colorMode}
+                onClick={() => setOpenAddModal(true)}
+              >
+                + Add User
+              </PageHeaderActionButton>
+            </div>
+          )}
+        </div>
 
         <div className="relative">
           <UserPoolCard colorMode={colorMode}>
@@ -182,8 +198,6 @@ export default function UserPool() {
               setUserType={setUserType}
               status={status}
               setStatus={setStatus}
-              onCreate={() => setOpenAddModal(true)}
-              showCreateAction={canAddUsers}
               showAdminUserType={canViewAdminUsers}
               colorMode={colorMode}
             />

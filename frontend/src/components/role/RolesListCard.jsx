@@ -4,9 +4,9 @@ import RolesListTable from "./RolesListTable";
 import ResultsCount from "../ResultsCount";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 
-export default function RolesListCard({ loading = false, roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onCreate, showCreateAction = true, colorMode = "light" }) {
+export default function RolesListCard({ loading = false, roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
-  const filtersClassName = `flex flex-col gap-5 border-b pb-6 lg:flex-row lg:items-end lg:justify-between ${
+  const filtersClassName = `flex flex-col gap-5 border-b pb-6 ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
   const labelClassName = isDarkMode
@@ -21,9 +21,6 @@ export default function RolesListCard({ loading = false, roles, totalResults, it
   const searchInputClassName = isDarkMode
     ? "h-full w-full bg-transparent text-sm text-[#f6eaec] outline-none transition-colors duration-500 ease-out placeholder:text-[#a58d95]"
     : "h-full w-full bg-transparent text-sm text-[#4a1921] outline-none transition-colors duration-500 ease-out placeholder:text-[#9a7b81]";
-  const createButtonClassName = isDarkMode
-    ? "inline-flex h-14 items-center justify-center rounded-2xl border border-[#f8d24e]/30 bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(2,6,23,0.75)] transition-[background-color,background-image,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-none hover:bg-[#f8d24e] hover:text-[#7b0d15]"
-    : "inline-flex h-14 items-center justify-center rounded-2xl border border-[#7b0d15] bg-[#7b0d15] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(123,13,21,0.6)] transition-[background-color,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-[#f8d24e] hover:text-[#7b0d15]";
   const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
@@ -65,14 +62,6 @@ export default function RolesListCard({ loading = false, roles, totalResults, it
             />
           </label>
         </div>
-
-        {showCreateAction && (
-          <div className="flex justify-end lg:justify-start">
-            <button type="button" onClick={onCreate} className={createButtonClassName}>
-              + Add Role
-            </button>
-          </div>
-        )}
       </div>
 
       <RolesListTable

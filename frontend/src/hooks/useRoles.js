@@ -189,7 +189,7 @@ export function useRoles() {
     try {
       await roleService.createRole(data);
       setSuccessMessage("Role successfully created!");
-      fetchRoles(page, { showLoading: false });
+      await fetchRoles(page, { showLoading: false });
     } catch (error) {
       console.error("Create failed:", error);
     }
@@ -199,7 +199,7 @@ export function useRoles() {
     try {
       await roleService.updateRole(data.id, data);
       setSuccessMessage("Role successfully updated!");
-      fetchRoles(page, { showLoading: false });
+      await fetchRoles(page, { showLoading: false });
     } catch (error) {
       console.error("Update failed:", error);
     }
@@ -209,7 +209,7 @@ export function useRoles() {
     try {
       await roleService.deleteRole(id);
       setSuccessMessage("Role successfully deleted!");
-      fetchRoles(page, { showLoading: false });
+      await fetchRoles(page, { showLoading: false });
     } catch (error) {
       console.error("Delete failed:", error);
     }
