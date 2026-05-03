@@ -100,24 +100,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare Staging Directory
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.STAGING_IP }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_PK }}
-          script: |
-            mkdir -p "$HOME/Identity-Provider"
-
       - name: Copy Compose file to Staging
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.STAGING_IP }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_PK }}
-          source: "docker-compose.ghcr.yml"
-          target: "Identity-Provider"
-          debug: true
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_IP }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          STAGING_KEY: ${{ secrets.STAGING_SSH_PK }}
+        run: |
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s' "$STAGING_KEY" > "$HOME/.ssh/staging_key"
+          chmod 600 "$HOME/.ssh/staging_key"
+          ssh -i "$HOME/.ssh/staging_key" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "$STAGING_USER@$STAGING_HOST" \
+            'mkdir -p "$HOME/Identity-Provider" && chmod 755 "$HOME/Identity-Provider" && cat > "$HOME/Identity-Provider/docker-compose.ghcr.yml"' \
+            < docker-compose.ghcr.yml
 
       - name: Deploy to Staging
         uses: appleboy/ssh-action@v1.0.3
@@ -142,24 +139,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare Production Directory
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_IP }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            mkdir -p "$HOME/Identity-Provider"
-
       - name: Copy Compose file to Production
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_IP }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.ghcr.yml"
-          target: "Identity-Provider"
-          debug: true
+        env:
+          PRODUCTION_HOST: ${{ secrets.VPS_IP }}
+          PRODUCTION_USER: ${{ secrets.VPS_USER }}
+          PRODUCTION_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s' "$PRODUCTION_KEY" > "$HOME/.ssh/production_key"
+          chmod 600 "$HOME/.ssh/production_key"
+          ssh -i "$HOME/.ssh/production_key" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "$PRODUCTION_USER@$PRODUCTION_HOST" \
+            'mkdir -p "$HOME/Identity-Provider" && chmod 755 "$HOME/Identity-Provider" && cat > "$HOME/Identity-Provider/docker-compose.ghcr.yml"' \
+            < docker-compose.ghcr.yml
 
       - name: Deploy to Production
         uses: appleboy/ssh-action@v1.0.3
