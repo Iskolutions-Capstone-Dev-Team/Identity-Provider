@@ -100,6 +100,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Prepare Staging Directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_IP }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_PK }}
+          script: |
+            mkdir -p "$HOME/Identity-Provider"
+
       - name: Copy Compose file to Staging
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -107,7 +116,8 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_PK }}
           source: "docker-compose.ghcr.yml"
-          target: "~/Identity-Provider"
+          target: "Identity-Provider"
+          debug: true
 
       - name: Deploy to Staging
         uses: appleboy/ssh-action@v1.0.3
@@ -116,7 +126,7 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_PK }}
           script: |
-            cd Identity-Provider/
+            cd "$HOME/Identity-Provider"
             git pull origin development
             echo "${{ secrets.GH_PAT }}" | \
               docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
@@ -132,6 +142,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Prepare Production Directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            mkdir -p "$HOME/Identity-Provider"
+
       - name: Copy Compose file to Production
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -139,7 +158,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.ghcr.yml"
-          target: "~/Identity-Provider"
+          target: "Identity-Provider"
+          debug: true
 
       - name: Deploy to Production
         uses: appleboy/ssh-action@v1.0.3
@@ -148,7 +168,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd Identity-Provider/
+            cd "$HOME/Identity-Provider"
             git pull origin main
             echo "${{ secrets.GH_PAT }}" | \
               docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
