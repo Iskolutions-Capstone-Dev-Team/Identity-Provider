@@ -44,7 +44,7 @@ function UserTypeIcon({ userType }) {
   );
 }
 
-export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, onCreate, showCreateAction = true, showAdminUserType = true, colorMode = "light" }) {
+export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, showAdminUserType = true, colorMode = "light" }) {
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState(null);
   const statusDropdownRef = useRef(null);
@@ -53,7 +53,7 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
   const visibleUserTypeOptions = showAdminUserType
     ? userTypeOptions
     : userTypeOptions.filter((option) => option.value !== ADMIN_USER_TYPE);
-  const containerClassName = `flex flex-col gap-5 border-b pb-6 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(14rem,18rem)_auto_auto] lg:items-end ${
+  const containerClassName = `flex flex-col gap-5 border-b pb-6 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(14rem,18rem)_auto] lg:items-end ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
   const labelClassName = isDarkMode
@@ -106,9 +106,6 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
   const selectedStatusThemeClassName = isDarkMode
     ? "bg-[#7b0d15]/28 text-[#ffe28a]"
     : selectedStatusOptionClassName;
-  const createButtonClassName = isDarkMode
-    ? "inline-flex h-14 items-center justify-center rounded-2xl border border-[#f8d24e]/30 bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(2,6,23,0.75)] transition-[background-color,background-image,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-none hover:bg-[#f8d24e] hover:text-[#7b0d15]"
-    : "inline-flex h-14 items-center justify-center rounded-2xl border border-[#7b0d15] bg-[#7b0d15] px-5 text-sm font-semibold tracking-[0.02em] text-white shadow-[0_18px_40px_-26px_rgba(123,13,21,0.6)] transition-[background-color,border-color,color,box-shadow,transform] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#f8d24e] hover:bg-[#f8d24e] hover:text-[#7b0d15]";
 
   useEffect(() => {
     if (!isStatusOpen) {
@@ -255,14 +252,6 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
           })}
         </div>
       </div>
-
-      {showCreateAction && (
-        <div className="flex justify-end lg:justify-start">
-          <button type="button" onClick={onCreate} className={createButtonClassName}>
-            + Add User
-          </button>
-        </div>
-      )}
     </div>
   );
 }
