@@ -16,7 +16,6 @@ import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import ErrorAlert from "../components/ErrorAlert";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { useAllAppClients } from "../hooks/useAllAppClients";
-import { useManagedUserAccessClients } from "../hooks/useManagedUserAccessClients";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS, USER_STATUS_EDIT_PERMISSIONS } from "../utils/permissionAccess";
 
@@ -34,28 +33,12 @@ export default function UserPool() {
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
   const isDarkMode = colorMode === "dark";
   const isCurrentUserSuperAdmin = hasSuperAdminRole(currentUser?.roles);
-  const shouldLoadAllAppClients =
-    !isLoadingCurrentUser && isCurrentUserSuperAdmin;
-  const shouldLoadManagedAppClients =
-    !isLoadingCurrentUser && !isCurrentUserSuperAdmin;
   const {
-    appClients: allAppClients,
-    isLoadingAppClients: isLoadingAllAppClients,
+    appClients: appClientOptions,
+    isLoadingAppClients,
   } = useAllAppClients({
-    enabled: shouldLoadAllAppClients,
+    enabled: !isLoadingCurrentUser,
   });
-  const {
-    appClients: managedAppClients,
-    isLoadingAppClients: isLoadingManagedAppClients,
-  } = useManagedUserAccessClients({
-    enabled: shouldLoadManagedAppClients,
-  });
-  const appClientOptions = isCurrentUserSuperAdmin
-    ? allAppClients
-    : managedAppClients;
-  const isLoadingAppClients = isCurrentUserSuperAdmin
-    ? isLoadingAllAppClients
-    : isLoadingManagedAppClients;
   const shouldShowAllRegularUsers = isCurrentUserSuperAdmin;
   const visibleClientIds = shouldShowAllRegularUsers
     ? []
