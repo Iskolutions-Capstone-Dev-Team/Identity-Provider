@@ -75,6 +75,10 @@ function getAccessibleClientIds(user = {}) {
       user?.allowed_appclient_ids ??
       user?.allowedAppClients ??
       user?.allowed_appclients ??
+      user?.managedClientIds ??
+      user?.managed_client_ids ??
+      user?.managedClients ??
+      user?.managed_clients ??
       user?.clientIds ??
       user?.client_ids,
   );
@@ -87,6 +91,8 @@ function getAccessibleClientIds(user = {}) {
     user?.clients,
     user?.allowedAppClients,
     user?.allowed_appclients,
+    user?.managedClients,
+    user?.managed_clients,
   ]) {
     const clientIds = getClientIdsFromList(clientList);
 
@@ -104,6 +110,8 @@ function getAccessibleClientNames(user = {}) {
       user?.accessible_client_names ??
       user?.allowedAppClientNames ??
       user?.allowed_appclient_names ??
+      user?.managedClientNames ??
+      user?.managed_client_names ??
       user?.clientNames ??
       user?.client_names,
   );
@@ -116,6 +124,8 @@ function getAccessibleClientNames(user = {}) {
     user?.clients,
     user?.allowedAppClients,
     user?.allowed_appclients,
+    user?.managedClients,
+    user?.managed_clients,
   ]) {
     const clientNames = getClientNamesFromList(clientList);
 
@@ -625,7 +635,18 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       }
 
       if (shouldUpdateAccessibleClients) {
-        await userService.updateUserAccess(updatedUser.id, nextAccessibleClientIds);
+        if (isAdminUserUpdate) {
+          await userService.updateAdminManagedClients(
+            updatedUser.id,
+            nextAccessibleClientIds,
+          );
+        } else {
+          await userService.updateUserAccess(
+            updatedUser.id,
+            nextAccessibleClientIds,
+          );
+        }
+
         saveUserAccessSelection(updatedUser, nextAccessibleClientIds);
         accessWasUpdated = true;
       }
@@ -641,7 +662,9 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
       setSuccessMessage(
         shouldUpdateAccessibleClients && !shouldUpdateStatus && !shouldUpdateRole
-          ? "App client access updated."
+          ? isAdminUserUpdate
+            ? "Managed app clients updated."
+            : "App client access updated."
           : "User successfully updated!",
       );
 
