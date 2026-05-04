@@ -318,6 +318,20 @@ func (mr *MockClientRepositoryMockRecorder) SoftDelete(ctx, id any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SoftDelete", reflect.TypeOf((*MockClientRepository)(nil).SoftDelete), ctx, id)
 }
 
+// SyncAdminClientBind mocks base method.
+func (m *MockClientRepository) SyncAdminClientBind(ctx context.Context, userID []byte, clientIDs [][]byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncAdminClientBind", ctx, userID, clientIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncAdminClientBind indicates an expected call of SyncAdminClientBind.
+func (mr *MockClientRepositoryMockRecorder) SyncAdminClientBind(ctx, userID, clientIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncAdminClientBind", reflect.TypeOf((*MockClientRepository)(nil).SyncAdminClientBind), ctx, userID, clientIDs)
+}
+
 // UpdateClient mocks base method.
 func (m *MockClientRepository) UpdateClient(ctx context.Context, c *models.Client, grants []string) error {
 	m.ctrl.T.Helper()
