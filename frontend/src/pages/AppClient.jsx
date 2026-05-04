@@ -10,6 +10,7 @@ import SecretConfirmModal from "../components/app-client/SecretConfirmModal";
 import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import PageHeader from "../components/PageHeader";
+import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import { AppClientIcon } from "../components/app-client/AppClientIconBox";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../utils/permissionAccess";
@@ -143,14 +144,26 @@ export default function AppClient() {
     return (
         <>
             <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-                <PageHeader
-                    title="App Client"
-                    description="Manage application clients and settings"
-                    icon={
-                        <AppClientIcon className="h-14 w-14 sm:h-16 sm:w-16" />
-                    }
-                    colorMode={colorMode}
-                />
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                        <PageHeader
+                            title="App Client"
+                            description="Manage application clients and settings"
+                            icon={
+                                <AppClientIcon className="h-14 w-14 sm:h-16 sm:w-16" />
+                            }
+                            colorMode={colorMode}
+                        />
+                    </div>
+
+                    {canCreateClient && (
+                        <div className="self-end sm:self-center">
+                            <PageHeaderActionButton colorMode={colorMode} onClick={openCreate}>
+                                + Add Client
+                            </PageHeaderActionButton>
+                        </div>
+                    )}
+                </div>
                 <div className="relative">
                     <ConnectedAppClientCard
                         loading={showLoading}
@@ -165,9 +178,7 @@ export default function AppClient() {
                         onView={openView}
                         onEdit={openEdit}
                         onDelete={handleDeleteClick}
-                        onCreate={openCreate}
                         onRotateSecret={handleRotateClick}
-                        showCreateAction={canCreateClient}
                         showEditAction={canEditClient}
                         showDeleteAction={canDeleteClient}
                         showRotateSecretAction={canRotateClientSecret}

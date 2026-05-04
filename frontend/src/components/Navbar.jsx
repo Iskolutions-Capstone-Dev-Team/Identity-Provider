@@ -50,7 +50,7 @@ export default function Navbar({ activeColorMode = "light", onToggleColorMode, s
     "h-8 w-8 shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.03]";
 
   return (
-    <nav className={`sticky top-4 z-20 mx-4 mt-4 overflow-hidden rounded-[1.85rem] border backdrop-blur-2xl transition-all duration-300 sm:top-5 sm:mx-6 sm:mt-5 ${navbarTheme.shell}`}>
+    <nav className={`relative z-20 mx-4 mt-4 overflow-hidden rounded-[1.85rem] border backdrop-blur-2xl transition-all duration-300 sm:mx-6 sm:mt-5 ${navbarTheme.shell}`}>
       <div className={`pointer-events-none absolute inset-0 ${navbarTheme.shellOverlay}`} />
 
       <div className="relative flex min-h-[4.75rem] items-center justify-between gap-4 px-4 py-3 sm:min-h-[5.25rem] sm:px-6">
