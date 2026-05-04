@@ -10,7 +10,7 @@ import FAQ_TOPICS from "../components/faq/faqTopics";
 import FAQ_THEME from "../components/faq/faqTheme";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 
-const SKELETON_DELAY_MS = 450;
+const SKELETON_DELAY_MS = 2000;
 
 export default function FAQ() {
   const { colorMode = "light" } = useOutletContext() || {};
