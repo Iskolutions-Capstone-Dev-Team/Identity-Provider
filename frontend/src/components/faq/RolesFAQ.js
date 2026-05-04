@@ -8,32 +8,32 @@ const RolesFAQ = {
       id: "roles-purpose",
       question: "What is the Roles for?",
       answer: [
-        "Roles define sets of permissions that control what an administrator can access and manage in the IDP.",
-        "A user's assigned role permissions affects the pages, buttons, and actions available to them.",
+        "You use Roles to define sets of permissions that control what an administrator can access and manage in the IDP.",
+        "You should assign roles carefully because they affect the pages, buttons, and actions available to a user.",
       ],
     },
     {
       id: "create-role",
       question: "How to create role",
       answer: [
-        "Click Add Role, enter the role name and description, then select the permissions that should belong to that role.",
-        "Review the permission list before saving because the role will control what assigned users can do.",
+        "You click Add Role, enter the role name and description, then select the permissions that should belong to that role.",
+        "You should review the permission list before saving because the role will control what assigned users can do.",
       ],
     },
     {
       id: "edit-role",
       question: "How to edit a role",
       answer: [
-        "Find the role in the Roles, click Edit, then update the role name, description or assigned permissions.",
-        "Save the changes after reviewing them because updates can affect users assigned to that role.",
+        "You find the role in Roles, click Edit, then update the role name, description, or assigned permissions.",
+        "You should save changes only after reviewing them because updates can affect users assigned to that role.",
       ],
     },
     {
       id: "delete-role",
       question: "Can you delete a role?",
       answer: [
-        "A role can only be deleted when the system allows it and it is not currently assigned to any user.",
-        "If a role is already used by a user account, you remove or change its role first before deleting the role.",
+        "You can delete a role only when the system allows it and it is not currently assigned to any user.",
+        "If a role is already used by a user account, you need to remove or change that role first before deleting it.",
       ],
     },
   ],

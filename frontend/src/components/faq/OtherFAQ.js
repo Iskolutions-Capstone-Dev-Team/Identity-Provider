@@ -8,22 +8,22 @@ const OtherFAQ = {
       id: "web-accessibility",
       question: "What does Web Accessibility do?",
       answer: [
-        "Web Accessibility provides display and reading support so you can work through pages, tables, forms, and modals more comfortably.",
+        "You use Web Accessibility to adjust display and reading support while working through pages, tables, forms, and modals.",
       ],
     },
     {
       id: "voice-input",
       question: "What does Voice Input do?",
       answer: [
-        "Voice Input lets you speak into supported text fields, such as search inputs.",
-        "For best results, use earphones or a microphone, and review recognized text before filtering data or saving any form.",
+        "You use Voice Input to speak into supported text fields, such as search inputs.",
+        "You should use earphones or a microphone for better results, then review recognized text before filtering data or saving a form.",
       ],
     },
     {
       id: "one-portal",
       question: "What does One Portal do",
       answer: [
-        "One Portal redirects you to a central system where you can view all app clients accessible to this account.",
+        "You use One Portal to open a central system where you can view all app clients accessible to your account.",
       ],
     },
   ],

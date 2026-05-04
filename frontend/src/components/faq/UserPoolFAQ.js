@@ -8,45 +8,45 @@ const UserPoolFAQ = {
       id: "user-pool-purpose",
       question: "What is the User Pool for?",
       answer: [
-        "User Pool is where authorized admins manage system administrator and user accounts inside the IDP.",
-        "Available account actions depend on the permissions assigned to the signed-in administrator.",
+        "You use User Pool to manage system administrator and user accounts inside the IDP.",
+        "You only see account actions that match the permissions assigned to you.",
       ],
     },
     {
       id: "create-system-administrator",
       question: "How to create System Administrator account",
       answer: [
-        "Click Add User, then select System Administrator as the account type and complete the required account details.",
-        "Assign the needed administrator role or status, review the information, then submit the form.",
+        "You click Add User, select System Administrator as the account type, then complete the required account details.",
+        "You assign the needed administrator role or status, review the information, then submit the form.",
       ],
     },
     {
       id: "create-user-account",
       question: "How to create user account",
       answer: [
-        "Click Add User, then select an account type other than System Administrator and fill in the required user details.",
-        "Assign available app client access when needed, review the information, then submit the form.",
+        "You click Add User, select an account type other than System Administrator, then fill in the required user details.",
+        "You assign available app client access when needed, review the information, then submit the form.",
       ],
     },
     {
       id: "edit-user-account",
       question: "How to edit a user account",
       answer: [
-        "Find the account in User Pool, click Edit, then update the allowed fields such as status, roles, or app client access.",
+        "You find the account in User Pool, click Edit, then update the allowed fields such as status, roles, or app client access.",
       ],
     },
     {
       id: "existing-email-account-reuse",
       question: "Can an existing email account be created again?",
       answer: [
-        "No, an email that already exists in the system cannot be used to create another account.",
+        "No, you cannot use an email that already exists in the system to create another account.",
       ],
     },
     {
       id: "deleted-email-account-reuse",
       question: "Can a deleted email account be created again?",
       answer: [
-        "No, a deleted email account may still be blocked to preserve account history and prevent duplicate identity records.",
+        "No, you may still be blocked from reusing a deleted email account to preserve account history and prevent duplicate identity records.",
       ],
     },
   ],
