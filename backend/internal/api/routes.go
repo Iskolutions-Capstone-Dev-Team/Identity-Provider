@@ -140,6 +140,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.PATCH("/:id/role", h.UserHandler.PatchUserRole)
 			users.GET("/access", h.UserHandler.GetUserDetailedAccess)
 			users.PUT("/:id/access", h.UserHandler.PutUserAccess)
+			users.PUT("/:id/managed-clients", h.UserHandler.PutAdminAccess)
 			users.DELETE("/:id", h.UserHandler.DeleteUser)
 		}
 
