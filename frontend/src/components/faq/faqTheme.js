@@ -18,6 +18,8 @@ const FAQ_THEME = {
     question:
       "border-[#7b0d15]/10 bg-white/72 text-[#4b2027] shadow-[0_18px_45px_-38px_rgba(43,3,7,0.38)]",
     questionOpen: "border-[#f8d24e]/48 bg-[#fffaf0]",
+    chevronButton:
+      "border-[#7b0d15]/15 bg-[#7b0d15]/10 text-[#7b0d15]",
     answer: "text-[#65474e]",
     skeleton: "bg-[#7b0d15]/10",
   },
@@ -40,6 +42,8 @@ const FAQ_THEME = {
     question:
       "border-white/10 bg-white/[0.04] text-[#f6eaec] shadow-[0_18px_45px_-38px_rgba(2,6,23,0.7)]",
     questionOpen: "border-[#f8d24e]/28 bg-[#f8d24e]/8",
+    chevronButton:
+      "border-[#f8d24e]/20 bg-[#f8d24e]/12 text-[#f8d24e]",
     answer: "text-[#d8c7cb]",
     skeleton: "bg-white/10",
   },
