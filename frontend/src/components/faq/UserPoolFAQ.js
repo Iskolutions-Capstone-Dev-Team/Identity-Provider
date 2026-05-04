@@ -35,6 +35,20 @@ const UserPoolFAQ = {
         "Find the account in User Pool, click Edit, then update the allowed fields such as status, roles, or app client access.",
       ],
     },
+    {
+      id: "existing-email-account-reuse",
+      question: "Can an existing email account be created again?",
+      answer: [
+        "No, an email that already exists in the system cannot be used to create another account.",
+      ],
+    },
+    {
+      id: "deleted-email-account-reuse",
+      question: "Can a deleted email account be created again?",
+      answer: [
+        "No, a deleted email account may still be blocked to preserve account history and prevent duplicate identity records.",
+      ],
+    },
   ],
 };
 
