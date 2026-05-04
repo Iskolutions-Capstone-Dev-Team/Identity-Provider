@@ -72,6 +72,21 @@ func (mr *MockClientServiceMockRecorder) DeleteClient(ctx, id, userID, permissio
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClient", reflect.TypeOf((*MockClientService)(nil).DeleteClient), ctx, id, userID, permissions)
 }
 
+// GetAllowedClients mocks base method.
+func (m *MockClientService) GetAllowedClients(ctx context.Context, userID uuid.UUID, limit, page int, keyword string) (*dto.ClientListResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllowedClients", ctx, userID, limit, page, keyword)
+	ret0, _ := ret[0].(*dto.ClientListResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllowedClients indicates an expected call of GetAllowedClients.
+func (mr *MockClientServiceMockRecorder) GetAllowedClients(ctx, userID, limit, page, keyword any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllowedClients", reflect.TypeOf((*MockClientService)(nil).GetAllowedClients), ctx, userID, limit, page, keyword)
+}
+
 // GetBoundClients mocks base method.
 func (m *MockClientService) GetBoundClients(ctx context.Context, userID uuid.UUID, limit, page int, keyword string) (*dto.ClientListResponse, error) {
 	m.ctrl.T.Helper()

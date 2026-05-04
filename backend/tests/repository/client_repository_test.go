@@ -79,3 +79,48 @@ func TestGetClientByID(t *testing.T) {
 		t.Errorf("unmet expectations: %s", err)
 	}
 }
+
+/**
+ * TestListAllowedClients verifies the retrieval of allowed clients for a user.
+ */
+func TestListAllowedClients(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %s", err)
+	}
+	defer db.Close()
+
+	sqlxDB := sqlx.NewDb(db, "mysql")
+	repo := repository.NewClientRepository(sqlxDB)
+
+	userID := uuid.New()
+	clientID := uuid.New()
+	now := time.Now()
+
+	rows := sqlmock.NewRows([]string{
+		"id", "client_name", "description",
+		"image_location", "base_url",
+		"redirect_uri", "logout_uri", "created_at",
+	}).AddRow(
+		clientID[:], "Test Client", "Desc",
+		"/img.png", "http://localhost",
+		"http://localhost/cb", "http://localhost/out", now,
+	)
+
+	mock.ExpectQuery(".*client_allowed_users.*").
+		WithArgs(userID[:], "%Test%", 10, 0).
+		WillReturnRows(rows)
+
+	clients, err := repo.ListAllowedClients(context.Background(), 10, 0, "Test", userID[:])
+
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if len(clients) != 1 {
+		t.Errorf("expected 1 client, got %d", len(clients))
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unmet expectations: %s", err)
+	}
+}

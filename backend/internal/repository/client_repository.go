@@ -14,6 +14,8 @@ type ClientRepository interface {
 		offset int, keyword string) ([]models.Client, error)
 	ListBoundClients(ctx context.Context, limit, offset int,
 		keyword string, userID []byte) ([]models.Client, error)
+	ListAllowedClients(ctx context.Context, limit, offset int,
+		keyword string, userID []byte) ([]models.Client, error)
 	CreateClient(ctx context.Context, client *models.Client,
 		grants []string, userID []byte) error
 	UpdateClient(ctx context.Context, c *models.Client,
@@ -25,6 +27,8 @@ type ClientRepository interface {
 	ListClientBaseURLS(ctx context.Context) ([]string, error)
 	CountClients(ctx context.Context, keyword string) (int, error)
 	CountBoundClients(ctx context.Context, keyword string,
+		userID []byte) (int, error)
+	CountAllowedClients(ctx context.Context, keyword string,
 		userID []byte) (int, error)
 	RotateSecret(ctx context.Context, id []byte, oldSecretHash,
 		newSecretHash string) error
@@ -117,6 +121,30 @@ func (r *clientRepository) ListBoundClients(ctx context.Context,
 			c.base_url, c.redirect_uri, c.logout_uri, c.created_at
 		FROM clients c
 		JOIN admin_allowed_clients a ON c.id = a.client_id
+		WHERE a.user_id = ?
+			AND c.deleted_at IS NULL
+			AND c.client_name LIKE ?
+		LIMIT ? OFFSET ?
+	`
+
+	err := r.db.SelectContext(ctx, &clients, query, userID, searchKeyword,
+		limit, offset)
+	return clients, err
+}
+
+func (r *clientRepository) ListAllowedClients(ctx context.Context,
+	limit int, offset int, keyword string, userID []byte,
+) ([]models.Client, error) {
+	var clients []models.Client
+	searchKeyword := "%" + keyword + "%"
+
+	query := `
+		SELECT
+			c.id, c.client_name,
+			c.description, c.image_location,
+			c.base_url, c.redirect_uri, c.logout_uri, c.created_at
+		FROM clients c
+		JOIN client_allowed_users a ON c.id = a.client_id
 		WHERE a.user_id = ?
 			AND c.deleted_at IS NULL
 			AND c.client_name LIKE ?
@@ -274,6 +302,26 @@ func (r *clientRepository) CountBoundClients(ctx context.Context,
 		SELECT COUNT(*)
 		FROM clients c
 		JOIN admin_allowed_clients a ON c.id = a.client_id
+		WHERE a.user_id = ? 
+			AND c.deleted_at IS NULL 
+			AND c.client_name LIKE ?
+	`
+
+	err := r.db.GetContext(ctx, &count, query, userID, searchKeyword)
+
+	return count, err
+}
+
+func (r *clientRepository) CountAllowedClients(ctx context.Context,
+	keyword string, userID []byte,
+) (int, error) {
+	var count int
+	searchKeyword := "%" + keyword + "%"
+
+	query := `
+		SELECT COUNT(*)
+		FROM clients c
+		JOIN client_allowed_users a ON c.id = a.client_id
 		WHERE a.user_id = ? 
 			AND c.deleted_at IS NULL 
 			AND c.client_name LIKE ?

@@ -1198,8 +1198,8 @@ func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Fetch bound clients (limit 1000 for list population)
-	resp, err := h.ClientService.GetBoundClients(ctx, userID, 1000, 1, "")
+	// Fetch allowed clients (limit 1000 for list population)
+	resp, err := h.ClientService.GetAllowedClients(ctx, userID, 1000, 1, "")
 	if err != nil {
 		log.Printf("[GetUserDetailedAccess] fetch: %v", err)
 		c.JSON(http.StatusInternalServerError,
