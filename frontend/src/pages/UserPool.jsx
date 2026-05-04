@@ -100,7 +100,8 @@ export default function UserPool() {
   const canEditUserStatus = hasAnyPermission(USER_STATUS_EDIT_PERMISSIONS);
   const canEditUserRole = hasAnyPermission(USER_ROLE_EDIT_PERMISSIONS);
   const canEditUserAccess = hasAnyPermission(USER_ACCESS_EDIT_PERMISSIONS);
-  const canEditAdminUsers = canEditUserStatus || canEditUserRole;
+  const canEditAdminUsers =
+    canEditUserStatus || canEditUserRole || canEditUserAccess;
   const canEditRegularUsers = canEditUserStatus || canEditUserAccess;
   const canManageAdminUsers = isCurrentUserSuperAdmin;
   const canViewCurrentUserType =
