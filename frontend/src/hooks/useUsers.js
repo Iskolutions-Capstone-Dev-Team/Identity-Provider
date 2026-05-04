@@ -39,6 +39,30 @@ function normalizeClientNames(clientNames = []) {
   );
 }
 
+function getClientIdsFromList(clients = []) {
+  return normalizeClientIds(
+    (Array.isArray(clients) ? clients : []).map((client) => {
+      if (typeof client === "string") {
+        return client;
+      }
+
+      return client?.id ?? client?.client_id ?? client?.clientId ?? "";
+    }),
+  );
+}
+
+function getClientNamesFromList(clients = []) {
+  return normalizeClientNames(
+    (Array.isArray(clients) ? clients : []).map((client) => {
+      if (typeof client === "string") {
+        return "";
+      }
+
+      return client?.name ?? client?.client_name ?? client?.clientName ?? "";
+    }),
+  );
+}
+
 function normalizeEmailAddress(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
@@ -47,6 +71,10 @@ function getAccessibleClientIds(user = {}) {
   const directClientIds = normalizeClientIds(
     user?.accessibleClientIds ??
       user?.accessible_client_ids ??
+      user?.allowedAppClientIds ??
+      user?.allowed_appclient_ids ??
+      user?.allowedAppClients ??
+      user?.allowed_appclients ??
       user?.clientIds ??
       user?.client_ids,
   );
@@ -55,17 +83,27 @@ function getAccessibleClientIds(user = {}) {
     return directClientIds;
   }
 
-  return normalizeClientIds(
-    (Array.isArray(user?.clients) ? user.clients : []).map(
-      (client) => client?.id ?? client?.client_id ?? client?.clientId ?? "",
-    ),
-  );
+  for (const clientList of [
+    user?.clients,
+    user?.allowedAppClients,
+    user?.allowed_appclients,
+  ]) {
+    const clientIds = getClientIdsFromList(clientList);
+
+    if (clientIds.length > 0) {
+      return clientIds;
+    }
+  }
+
+  return [];
 }
 
 function getAccessibleClientNames(user = {}) {
   const directClientNames = normalizeClientNames(
     user?.accessibleClientNames ??
       user?.accessible_client_names ??
+      user?.allowedAppClientNames ??
+      user?.allowed_appclient_names ??
       user?.clientNames ??
       user?.client_names,
   );
@@ -74,12 +112,19 @@ function getAccessibleClientNames(user = {}) {
     return directClientNames;
   }
 
-  return normalizeClientNames(
-    (Array.isArray(user?.clients) ? user.clients : []).map(
-      (client) =>
-        client?.name ?? client?.client_name ?? client?.clientName ?? "",
-    ),
-  );
+  for (const clientList of [
+    user?.clients,
+    user?.allowedAppClients,
+    user?.allowed_appclients,
+  ]) {
+    const clientNames = getClientNamesFromList(clientList);
+
+    if (clientNames.length > 0) {
+      return clientNames;
+    }
+  }
+
+  return [];
 }
 
 function areSameArrays(first = [], second = []) {
@@ -203,7 +248,7 @@ function mapUserResponse(user = {}, { isAdmin = false } = {}) {
   };
 }
 
-function applyRegularUserAccessSelections(users, accessSelections = {}) {
+function applyUserAccessSelections(users, accessSelections = {}) {
   return users.map((user) => {
     const userIdKey = getUserIdKey(user);
     const userEmailKey = getUserEmailKey(user);
@@ -341,11 +386,11 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   const [fetchError, setFetchError] = useState("");
   const [loading, setLoading] = useState(true);
   const latestFetchRef = useRef(0);
-  const regularUserAccessSelectionsRef = useRef({});
+  const userAccessSelectionsRef = useRef({});
   const visibleClientLookup = new Set(normalizeClientIds(visibleClientIds));
 
-  const saveRegularUserAccessSelection = (user, accessibleClientIds = []) => {
-    const nextSelections = { ...regularUserAccessSelectionsRef.current };
+  const saveUserAccessSelection = (user, accessibleClientIds = []) => {
+    const nextSelections = { ...userAccessSelectionsRef.current };
     const normalizedAccessibleClientIds = normalizeClientIds(accessibleClientIds);
     const userIdKey = getUserIdKey(user);
     const userEmailKey = getUserEmailKey(user);
@@ -368,7 +413,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       }
     }
 
-    regularUserAccessSelectionsRef.current = nextSelections;
+    userAccessSelectionsRef.current = nextSelections;
   };
 
   const fetchUsers = async (
@@ -384,13 +429,10 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       }
 
       const nextUsers = await getUsersByType(selectedUserType);
-      const usersWithLocalSelections =
-        selectedUserType === REGULAR_USER_TYPE
-          ? applyRegularUserAccessSelections(
-              nextUsers,
-              regularUserAccessSelectionsRef.current,
-            )
-          : nextUsers;
+      const usersWithLocalSelections = applyUserAccessSelections(
+        nextUsers,
+        userAccessSelectionsRef.current,
+      );
 
       if (latestFetchRef.current !== fetchId) {
         return;
@@ -449,7 +491,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       : normalizeAccountTypeId(newUser.accountTypeId);
     const normalizedAccountType = normalizeAccountType(accountType);
     const isInvitationFlow =
-      !isAdminUser && newUser.accountSetupType === INVITATION_ACCOUNT_SETUP;
+      newUser.accountSetupType === INVITATION_ACCOUNT_SETUP;
     const isAdminAccountType = normalizedAccountType === ADMIN_ACCOUNT_CATEGORY;
     const shouldAssignAdminRole =
       isAdminUser || isAdminAccountType;
@@ -503,7 +545,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         }
 
         await userService.updateUserAccess(createdUserId, nextAccessibleClientIds);
-        saveRegularUserAccessSelection(
+        saveUserAccessSelection(
           {
             id: createdUserId,
             email: newUser.email,
@@ -570,9 +612,10 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       : null;
     const shouldUpdateStatus = Boolean(nextStatus) && nextStatus !== previousStatus;
     const shouldUpdateRole = isAdminUserUpdate && nextRoleId !== previousRoleId;
-    const shouldUpdateAccessibleClients =
-      !isAdminUserUpdate &&
-      !areSameArrays(nextAccessibleClientIds, previousAccessibleClientIds);
+    const shouldUpdateAccessibleClients = !areSameArrays(
+      nextAccessibleClientIds,
+      previousAccessibleClientIds,
+    );
     let accessWasUpdated = false;
     let roleWasUpdated = false;
 
@@ -583,7 +626,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
       if (shouldUpdateAccessibleClients) {
         await userService.updateUserAccess(updatedUser.id, nextAccessibleClientIds);
-        saveRegularUserAccessSelection(updatedUser, nextAccessibleClientIds);
+        saveUserAccessSelection(updatedUser, nextAccessibleClientIds);
         accessWasUpdated = true;
       }
 

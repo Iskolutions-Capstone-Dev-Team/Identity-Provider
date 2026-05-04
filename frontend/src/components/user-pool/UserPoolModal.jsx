@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
 import MultiSelect from "../MultiSelect";
@@ -152,9 +152,10 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const rolesEndpoint =
     isAdminView && includeSuperAdminRoleOptions ? "all" : userType === ADMIN_USER_TYPE ? "default" : "all";
   const canEditThisUser = isAdminView
-    ? canEditStatus || canEditRole
+    ? canEditStatus || canEditRole || canEditAccess
     : canEditStatus || canEditAccess;
-  const canEditAccessField = isAdminView ? canEditRole : canEditAccess;
+  const canEditRoleField = isAdminView && canEditRole;
+  const canEditAccessField = canEditAccess;
   const shouldLoadRoleOptions = open && isAdminView;
   const availableRoles = useAllRoles({
     endpoint: rolesEndpoint,
@@ -202,6 +203,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
@@ -211,6 +214,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     const nextFormData = createFormData(user);
     setFormData(nextFormData);
     setOriginalUser(nextFormData);
+    setIsSubmitting(false);
+    isSubmittingRef.current = false;
     setError("");
   }, [open, user]);
 
@@ -256,6 +261,10 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     if (isViewMode || !canEditThisUser) {
       onClose();
       return;
@@ -267,6 +276,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     }
 
     try {
+      isSubmittingRef.current = true;
+      setIsSubmitting(true);
       setError("");
 
       await onSubmit(
@@ -280,6 +291,9 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
       onClose();
     } catch (submitError) {
       setError(extractErrorMessage(submitError));
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -308,23 +322,20 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
       : adminRoleOptions
           .filter((role) => role.id === formData.roleId)
           .map((role) => role.role_name);
-  const regularAccessItems = getAppClientNamesByIds(
+  const clientAccessItems = getAppClientNamesByIds(
     formData.accessibleClientIds,
     appClientSelectOptions,
   );
-  const regularAccessDisplayItems =
+  const clientAccessDisplayItems =
     formData.accessibleClientNames.length > 0
       ? formData.accessibleClientNames
-      : regularAccessItems;
-  const accessFieldLabel = isAdminView ? "Role" : "Accessible Clients";
-  const accessItems = isAdminView ? roleAccessItems : regularAccessDisplayItems;
-  const accessFieldDescription = isViewMode
-    ? isAdminView
-      ? "View the role assigned to this admin account."
-      : "View which clients this user can access."
-    : isAdminView
-      ? "Choose the role for this admin account."
-      : "Choose which clients this user can access.";
+      : clientAccessItems;
+  const roleFieldDescription = isViewMode
+    ? "View the role assigned to this admin account."
+    : "Choose the role for this admin account.";
+  const clientAccessDescription = isViewMode
+    ? "View which clients this user can access."
+    : "Choose which clients this user can access.";
   const statusFieldDescription = isViewMode
     ? "View the user's account status."
     : "Choose the user's account status.";
@@ -336,6 +347,21 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
       <p className={sectionDescriptionClassName}>
         {description}
       </p>
+    </div>
+  );
+  const renderReadOnlyAccessItems = (items, emptyLabel) => (
+    <div className={readOnlyAccessClassName}>
+      {items.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {items.map((item, index) => (
+            <span key={`${item}-${index}`} className={roleBadgeClassName}>
+              {item}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <span className={emptyAccessClassName}>{emptyLabel}</span>
+      )}
     </div>
   );
 
@@ -424,27 +450,16 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
 
             <section className={modalSectionClassName}>
               <div className="space-y-5">
-                <div>
-                  {renderSectionHeader(accessFieldLabel, accessFieldDescription)}
+                {isAdminView && (
+                  <div>
+                    {renderSectionHeader("Role", roleFieldDescription)}
 
-                  {isViewMode || !canEditAccessField ? (
-                    <div className={readOnlyAccessClassName}>
-                      {accessItems.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {accessItems.map((item, index) => (
-                            <span key={`${item}-${index}`} className={roleBadgeClassName}>
-                              {item}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className={emptyAccessClassName}>
-                          {isAdminView ? "No role assigned" : "No clients selected"}
-                        </span>
-                      )}
-                    </div>
-                  ) : isAdminView ? (
-                    <>
+                    {isViewMode || !canEditRoleField ? (
+                      renderReadOnlyAccessItems(
+                        roleAccessItems,
+                        "No role assigned",
+                      )
+                    ) : (
                       <UserPoolRoleRadioGroup
                         options={adminRoleOptions}
                         selectedValue={formData.roleId}
@@ -454,7 +469,21 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                         allowEmpty
                         emptyOptionLabel="No role assigned"
                       />
-                    </>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  {renderSectionHeader(
+                    "Accessible Clients",
+                    clientAccessDescription,
+                  )}
+
+                  {isViewMode || !canEditAccessField ? (
+                    renderReadOnlyAccessItems(
+                      clientAccessDisplayItems,
+                      "No clients selected",
+                    )
                   ) : (
                     <>
                       <MultiSelect
@@ -506,8 +535,13 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
             </button>
 
             {!isViewMode && canEditThisUser && (
-              <button form="user-pool-form" type="submit" className={modalPrimaryButtonClassName}>
-                Save
+              <button
+                form="user-pool-form"
+                type="submit"
+                className={modalPrimaryButtonClassName}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Saving..." : "Save"}
               </button>
             )}
           </div>
