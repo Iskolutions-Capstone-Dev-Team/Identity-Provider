@@ -69,6 +69,7 @@ export const ROUTE_PERMISSIONS = Object.freeze({
   "/roles": [PERMISSIONS.VIEW_ROLES],
   "/app-client": APP_CLIENT_PAGE_PERMISSIONS,
   "/audit-logs": [PERMISSIONS.VIEW_AUDIT_LOGS],
+  "/faq": [],
   "/registration": REGISTRATION_PAGE_PERMISSIONS,
 });
 
@@ -76,8 +77,9 @@ const DEFAULT_ACCESSIBLE_PATHS = [
   "/user-pool",
   "/roles",
   "/app-client",
-  "/audit-logs",
   "/registration",
+  "/audit-logs",
+  "/faq",
   "/profile",
 ];
 
