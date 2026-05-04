@@ -1,6 +1,6 @@
 const DEFAULT_ROWS = 5;
 const DEFAULT_TEXT_WIDTH = "w-24";
-const SKELETON_STYLE = { animation: "none" };
+const SKELETON_BLOCK_CLASS_NAME = "animate-pulse";
 
 const TABLE_THEMES = {
   default: {
@@ -9,7 +9,7 @@ const TABLE_THEMES = {
     headerRowClassName: "bg-[#991b1b]",
     headerCellClassName: "text-center text-white",
     bodyCellClassName: "border-gray-200",
-    skeletonToneClassName: "bg-gray-300",
+    skeletonToneClassName: "bg-[#7b0d15]/10",
   },
   userpool: {
     wrapperClassName:
@@ -20,7 +20,7 @@ const TABLE_THEMES = {
     headerCellClassName:
       "border-b border-white/10 px-6 py-4 text-left text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90",
     bodyCellClassName: "border-b border-[#7b0d15]/10 px-6 py-5",
-    skeletonToneClassName: "bg-[#e8d8dc]",
+    skeletonToneClassName: "bg-[#7b0d15]/10",
   },
   userpoolDark: {
     wrapperClassName:
@@ -31,15 +31,19 @@ const TABLE_THEMES = {
     headerCellClassName:
       "border-b border-white/10 px-6 py-4 text-left text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90",
     bodyCellClassName: "border-b border-white/10 px-6 py-5",
-    skeletonToneClassName: "bg-white/12",
+    skeletonToneClassName: "bg-white/10",
   },
 };
+
+function getSkeletonClassName(className) {
+  return `skeleton ${SKELETON_BLOCK_CLASS_NAME} ${className}`;
+}
 
 function renderCellContent(type, width, skeletonToneClassName) {
   if (type === "avatar") {
     return (
       <div className="flex justify-center">
-        <div className={`skeleton h-10 w-10 rounded-full ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
+        <div className={getSkeletonClassName(`h-10 w-10 rounded-full ${skeletonToneClassName}`)} />
       </div>
     );
   }
@@ -47,8 +51,8 @@ function renderCellContent(type, width, skeletonToneClassName) {
   if (type === "stackedText") {
     return (
       <div className="flex flex-col items-center gap-2">
-        <div className={`skeleton h-4 w-20 ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
-        <div className={`skeleton h-4 w-28 ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
+        <div className={getSkeletonClassName(`h-4 w-20 ${skeletonToneClassName}`)} />
+        <div className={getSkeletonClassName(`h-4 w-28 ${skeletonToneClassName}`)} />
       </div>
     );
   }
@@ -56,7 +60,7 @@ function renderCellContent(type, width, skeletonToneClassName) {
   if (type === "badge") {
     return (
       <div className="flex justify-center">
-        <div className={`skeleton h-6 rounded-full ${width || "w-16"} ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
+        <div className={getSkeletonClassName(`h-6 rounded-full ${width || "w-16"} ${skeletonToneClassName}`)} />
       </div>
     );
   }
@@ -64,8 +68,8 @@ function renderCellContent(type, width, skeletonToneClassName) {
   if (type === "badges") {
     return (
       <div className="flex justify-center gap-2">
-        <div className={`skeleton h-6 w-16 rounded-full ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
-        <div className={`skeleton h-6 w-12 rounded-full ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
+        <div className={getSkeletonClassName(`h-6 w-16 rounded-full ${skeletonToneClassName}`)} />
+        <div className={getSkeletonClassName(`h-6 w-12 rounded-full ${skeletonToneClassName}`)} />
       </div>
     );
   }
@@ -73,7 +77,7 @@ function renderCellContent(type, width, skeletonToneClassName) {
   if (type === "button") {
     return (
       <div className="flex justify-center">
-        <div className={`skeleton h-9 w-16 rounded-lg ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
+        <div className={getSkeletonClassName(`h-9 w-16 rounded-lg ${skeletonToneClassName}`)} />
       </div>
     );
   }
@@ -81,7 +85,7 @@ function renderCellContent(type, width, skeletonToneClassName) {
   if (type === "iconButton") {
     return (
       <div className="flex justify-center">
-        <div className={`skeleton h-10 w-10 rounded-xl ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
+        <div className={getSkeletonClassName(`h-10 w-10 rounded-xl ${skeletonToneClassName}`)} />
       </div>
     );
   }
@@ -89,15 +93,15 @@ function renderCellContent(type, width, skeletonToneClassName) {
   if (type === "actions") {
     return (
       <div className="flex justify-center gap-2">
-        <div className={`skeleton h-10 w-10 rounded-xl ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
-        <div className={`skeleton h-10 w-10 rounded-xl ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
-        <div className={`skeleton h-10 w-10 rounded-xl ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
+        <div className={getSkeletonClassName(`h-10 w-10 rounded-xl ${skeletonToneClassName}`)} />
+        <div className={getSkeletonClassName(`h-10 w-10 rounded-xl ${skeletonToneClassName}`)} />
+        <div className={getSkeletonClassName(`h-10 w-10 rounded-xl ${skeletonToneClassName}`)} />
       </div>
     );
   }
 
   return (
-    <div className={`mx-auto skeleton h-4 ${width || DEFAULT_TEXT_WIDTH} ${skeletonToneClassName}`} style={SKELETON_STYLE}/>
+    <div className={getSkeletonClassName(`mx-auto h-4 ${width || DEFAULT_TEXT_WIDTH} ${skeletonToneClassName}`)} />
   );
 }
 

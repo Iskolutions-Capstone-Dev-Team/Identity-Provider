@@ -12,6 +12,7 @@ import UserPool from "./pages/UserPool";
 import Roles from "./pages/Roles";
 import AppClient from "./pages/AppClient";
 import AuditLogs from "./pages/AuditLogs";
+import FAQ from "./pages/FAQ";
 import Registration from "./pages/Registration";
 import Profile from "./pages/Profile";
 import Placeholder from "./pages/Placeholder";
@@ -72,6 +73,7 @@ export default function App() {
               </PermissionRoute>
             }
           />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="/app-client"
             element={
               <PermissionRoute requiredPermissions={APP_CLIENT_PAGE_PERMISSIONS}>
