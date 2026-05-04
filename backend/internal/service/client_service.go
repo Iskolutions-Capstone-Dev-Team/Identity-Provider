@@ -26,6 +26,8 @@ type ClientService interface {
 		keyword string) (*dto.ClientListResponse, error)
 	GetBoundClients(ctx context.Context, userID uuid.UUID, limit, page int,
 		keyword string) (*dto.ClientListResponse, error)
+	GetAllowedClients(ctx context.Context, userID uuid.UUID, limit, page int,
+		keyword string) (*dto.ClientListResponse, error)
 	GetClientByID(ctx context.Context, id uuid.UUID,
 		userID uuid.UUID, permissions []string) (*dto.ClientResponse, error)
 	UpdateClient(ctx context.Context, id uuid.UUID, req dto.CreateClientRequest,
@@ -242,6 +244,59 @@ func (s *clientService) GetBoundClients(
 	total, err := s.Repo.CountBoundClients(ctx, keyword, userID[:])
 	if err != nil {
 		return nil, fmt.Errorf("database query (CountBound): %v", err)
+	}
+
+	var res []dto.ClientResponse
+	for _, cl := range clients {
+		id, _ := uuid.FromBytes(cl.ID)
+		imgURL, _ := GetPresignedURL(ctx, cl.ImageLocation, s.Storage)
+
+		res = append(res, dto.ClientResponse{
+			ID:            id.String(),
+			Name:          cl.ClientName,
+			Description:   cl.Description,
+			ImageLocation: imgURL,
+			BaseURL:       cl.BaseUrl,
+			RedirectURI:   cl.RedirectUri,
+			LogoutURI:     cl.LogoutUri,
+			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
+		})
+	}
+
+	return &dto.ClientListResponse{
+		Clients:     res,
+		CurrentPage: page,
+		TotalCount:  total,
+	}, nil
+}
+
+/**
+ * GetAllowedClients retrieves clients associated with a specific
+ * user, supporting keyword search and pagination.
+ */
+func (s *clientService) GetAllowedClients(
+	ctx context.Context,
+	userID uuid.UUID,
+	limit,
+	page int,
+	keyword string,
+) (*dto.ClientListResponse, error) {
+	offset := (page - 1) * limit
+
+	clients, err := s.Repo.ListAllowedClients(
+		ctx,
+		limit,
+		offset,
+		keyword,
+		userID[:],
+	)
+	if err != nil {
+		return nil, fmt.Errorf("database query (ListAllowed): %w", err)
+	}
+
+	total, err := s.Repo.CountAllowedClients(ctx, keyword, userID[:])
+	if err != nil {
+		return nil, fmt.Errorf("database query (CountAllowed): %v", err)
 	}
 
 	var res []dto.ClientResponse

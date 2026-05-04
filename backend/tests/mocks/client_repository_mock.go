@@ -83,6 +83,21 @@ func (mr *MockClientRepositoryMockRecorder) ChangeSecret(ctx, id, newSecretHash 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeSecret", reflect.TypeOf((*MockClientRepository)(nil).ChangeSecret), ctx, id, newSecretHash)
 }
 
+// CountAllowedClients mocks base method.
+func (m *MockClientRepository) CountAllowedClients(ctx context.Context, keyword string, userID []byte) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAllowedClients", ctx, keyword, userID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountAllowedClients indicates an expected call of CountAllowedClients.
+func (mr *MockClientRepositoryMockRecorder) CountAllowedClients(ctx, keyword, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAllowedClients", reflect.TypeOf((*MockClientRepository)(nil).CountAllowedClients), ctx, keyword, userID)
+}
+
 // CountBoundClients mocks base method.
 func (m *MockClientRepository) CountBoundClients(ctx context.Context, keyword string, userID []byte) (int, error) {
 	m.ctrl.T.Helper()
@@ -199,6 +214,21 @@ func (m *MockClientRepository) IsClientAllowed(ctx context.Context, userID, clie
 func (mr *MockClientRepositoryMockRecorder) IsClientAllowed(ctx, userID, clientID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsClientAllowed", reflect.TypeOf((*MockClientRepository)(nil).IsClientAllowed), ctx, userID, clientID)
+}
+
+// ListAllowedClients mocks base method.
+func (m *MockClientRepository) ListAllowedClients(ctx context.Context, limit, offset int, keyword string, userID []byte) ([]models.Client, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAllowedClients", ctx, limit, offset, keyword, userID)
+	ret0, _ := ret[0].([]models.Client)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAllowedClients indicates an expected call of ListAllowedClients.
+func (mr *MockClientRepositoryMockRecorder) ListAllowedClients(ctx, limit, offset, keyword, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllowedClients", reflect.TypeOf((*MockClientRepository)(nil).ListAllowedClients), ctx, limit, offset, keyword, userID)
 }
 
 // ListBoundClients mocks base method.
