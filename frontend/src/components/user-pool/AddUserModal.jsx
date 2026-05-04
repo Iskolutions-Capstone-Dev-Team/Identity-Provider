@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import FadeWrapper from "../FadeWrapper";
 import ErrorAlert from "../ErrorAlert";
@@ -26,7 +26,7 @@ const TEMP_PASSWORD_SETUP_VALUE = "temporary_password";
 const INVITATION_SETUP_VALUE = "invitation";
 const SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE = "System Administrator";
 
-const REGULAR_ACCOUNT_SETUP_OPTIONS = [
+const ACCOUNT_SETUP_OPTIONS = [
   {
     value: TEMP_PASSWORD_SETUP_VALUE,
     label: "Temporary Password",
@@ -171,7 +171,9 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
   const [activeVoiceField, setActiveVoiceField] = useState("givenName");
   const [showTempPassword, setShowTempPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInvitationConfirmOpen, setIsInvitationConfirmOpen] = useState(false);
+  const isSubmittingRef = useRef(false);
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
   const canCreateAdminAccount = canAssignRoles || canManageUserAccess;
@@ -192,8 +194,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const selectedAccountTypeIsAdmin =
     !isAdminView &&
     isAdminAccountType(data.accountType, availableAccountTypeOptions);
-  const isInvitationFlow =
-    !isAdminView && data.accountSetupType === INVITATION_SETUP_VALUE;
+  const isInvitationFlow = data.accountSetupType === INVITATION_SETUP_VALUE;
   const showAccountTypeField = !isAdminView;
   const showRegularAdminClientFields =
     selectedAccountTypeIsAdmin && canManageUserAccess;
@@ -214,7 +215,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     appClientOptions,
   );
   const showTempPasswordField =
-    isAdminView || data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
+    data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -470,6 +471,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       setFieldErrors(initialFieldErrors);
       setActiveVoiceField("givenName");
       setShowTempPassword(false);
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
       setIsInvitationConfirmOpen(false);
       setError("");
     }
@@ -521,6 +524,10 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   };
 
   const submitUser = async () => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     const selectedAdminRole = adminRoleOptions.find(
       (role) => role.id === data.selectedAdminRoleId,
     );
@@ -544,6 +551,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     }
 
     try {
+      isSubmittingRef.current = true;
+      setIsSubmitting(true);
       setError("");
 
       await onSubmit({
@@ -569,10 +578,17 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       onClose();
     } catch (submitError) {
       setError(extractErrorMessage(submitError));
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
   const handleSubmit = async () => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     if (!validateStepTwo()) {
       return;
     }
@@ -586,6 +602,10 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   };
 
   const handleConfirmInvitation = async () => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     setIsInvitationConfirmOpen(false);
     await submitUser();
   };
@@ -594,8 +614,9 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     return null;
   }
 
-  const selectedAccountTypeLabel =
-    selectedAccountTypeOption?.label || "Selected";
+  const selectedAccountTypeLabel = isAdminView
+    ? SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE
+    : selectedAccountTypeOption?.label || "Selected";
   const renderSectionHeader = (title, description, isRequired = false) => (
     <div className={sectionHeaderClassName}>
       <label className={sectionTitleClassName}>
@@ -613,7 +634,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       <UserPoolModalSelect
         value={data.accountSetupType}
         onChange={handleAccountSetupChange}
-        options={REGULAR_ACCOUNT_SETUP_OPTIONS}
+        options={ACCOUNT_SETUP_OPTIONS}
         ariaLabel="Select account setup method"
         colorMode={colorMode}
       />
@@ -681,11 +702,6 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
         Use at least 8 characters with one uppercase letter, one number, and one special character.
       </p>
     </div>
-  ) : null;
-  const tempPasswordSection = tempPasswordField ? (
-    <section className={modalSectionClassName}>
-      {tempPasswordField}
-    </section>
   ) : null;
   const accountSetupAndPasswordSection = (
     <section className={modalSectionClassName}>
@@ -932,7 +948,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
                       )}
                     </section>
 
-                    {tempPasswordSection}
+                    {accountSetupAndPasswordSection}
                   </>
                 ) : (
                   <>
@@ -969,8 +985,13 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
             )}
 
             {step === 2 && (
-              <button type="button" onClick={handleSubmit} className={modalPrimaryButtonClassName}>
-                Create User
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className={modalPrimaryButtonClassName}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Creating..." : "Create User"}
               </button>
             )}
           </div>
@@ -981,6 +1002,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       <InvitationConfirmModal
         open={isInvitationConfirmOpen}
         accountTypeLabel={selectedAccountTypeLabel}
+        isSubmitting={isSubmitting}
         onCancel={() => setIsInvitationConfirmOpen(false)}
         onConfirm={handleConfirmInvitation}
         colorMode={colorMode}
