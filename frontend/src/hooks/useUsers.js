@@ -16,6 +16,7 @@ const INVITATION_ACCOUNT_SETUP = "invitation";
 const ADMIN_ACCOUNT_CATEGORY = "system administrator";
 const SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE = "System Administrator";
 const userListRequests = new Map();
+const userDetailRequests = new Map();
 
 function normalizeClientIds(clientIds = []) {
   return Array.from(
@@ -63,11 +64,109 @@ function getClientNamesFromList(clients = []) {
   );
 }
 
+function getManagedClientIds(user = {}) {
+  const directClientIds = normalizeClientIds(
+    user?.managedAppClientIds ??
+      user?.managed_appclient_ids ??
+      user?.managed_app_client_ids ??
+      user?.managedClientIds ??
+      user?.managed_client_ids ??
+      user?.manageableAppClientIds ??
+      user?.manageable_appclient_ids ??
+      user?.manageable_app_client_ids ??
+      user?.manageClientIds ??
+      user?.manage_client_ids ??
+      user?.managedAppClients ??
+      user?.managed_appclients ??
+      user?.managed_app_clients ??
+      user?.managedClients ??
+      user?.managed_clients ??
+      user?.manageableAppClients ??
+      user?.manageable_appclients ??
+      user?.manageable_app_clients ??
+      user?.manageClients ??
+      user?.manage_clients,
+  );
+
+  if (directClientIds.length > 0) {
+    return directClientIds;
+  }
+
+  for (const clientList of [
+    user?.managedAppClients,
+    user?.managed_appclients,
+    user?.managed_app_clients,
+    user?.managedClients,
+    user?.managed_clients,
+    user?.manageableAppClients,
+    user?.manageable_appclients,
+    user?.manageable_app_clients,
+    user?.manageClients,
+    user?.manage_clients,
+  ]) {
+    const clientIds = getClientIdsFromList(clientList);
+
+    if (clientIds.length > 0) {
+      return clientIds;
+    }
+  }
+
+  return [];
+}
+
+function getManagedClientNames(user = {}) {
+  const directClientNames = normalizeClientNames(
+    user?.managedAppClientNames ??
+      user?.managed_appclient_names ??
+      user?.managed_app_client_names ??
+      user?.managedClientNames ??
+      user?.managed_client_names ??
+      user?.manageableAppClientNames ??
+      user?.manageable_appclient_names ??
+      user?.manageable_app_client_names ??
+      user?.manageClientNames ??
+      user?.manage_client_names,
+  );
+
+  if (directClientNames.length > 0) {
+    return directClientNames;
+  }
+
+  for (const clientList of [
+    user?.managedAppClients,
+    user?.managed_appclients,
+    user?.managed_app_clients,
+    user?.managedClients,
+    user?.managed_clients,
+    user?.manageableAppClients,
+    user?.manageable_appclients,
+    user?.manageable_app_clients,
+    user?.manageClients,
+    user?.manage_clients,
+  ]) {
+    const clientNames = getClientNamesFromList(clientList);
+
+    if (clientNames.length > 0) {
+      return clientNames;
+    }
+  }
+
+  return [];
+}
+
 function normalizeEmailAddress(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
 
-function getAccessibleClientIds(user = {}) {
+function getAccessibleClientIds(user = {}, { preferManagedClients = false } = {}) {
+  if (preferManagedClients) {
+    const managedClientIds = getManagedClientIds(user);
+
+    if (managedClientIds.length > 0) {
+      return managedClientIds;
+    }
+  }
+
   const directClientIds = normalizeClientIds(
     user?.accessibleClientIds ??
       user?.accessible_client_ids ??
@@ -75,10 +174,26 @@ function getAccessibleClientIds(user = {}) {
       user?.allowed_appclient_ids ??
       user?.allowedAppClients ??
       user?.allowed_appclients ??
+      user?.managedAppClientIds ??
+      user?.managed_appclient_ids ??
+      user?.managed_app_client_ids ??
       user?.managedClientIds ??
       user?.managed_client_ids ??
+      user?.manageableAppClientIds ??
+      user?.manageable_appclient_ids ??
+      user?.manageable_app_client_ids ??
+      user?.managedAppClients ??
+      user?.managed_appclients ??
+      user?.managed_app_clients ??
+      user?.manageClientIds ??
+      user?.manage_client_ids ??
+      user?.manageClients ??
+      user?.manage_clients ??
       user?.managedClients ??
       user?.managed_clients ??
+      user?.manageableAppClients ??
+      user?.manageable_appclients ??
+      user?.manageable_app_clients ??
       user?.clientIds ??
       user?.client_ids,
   );
@@ -91,8 +206,16 @@ function getAccessibleClientIds(user = {}) {
     user?.clients,
     user?.allowedAppClients,
     user?.allowed_appclients,
+    user?.managedAppClients,
+    user?.managed_appclients,
+    user?.managed_app_clients,
+    user?.manageClients,
+    user?.manage_clients,
     user?.managedClients,
     user?.managed_clients,
+    user?.manageableAppClients,
+    user?.manageable_appclients,
+    user?.manageable_app_clients,
   ]) {
     const clientIds = getClientIdsFromList(clientList);
 
@@ -104,14 +227,30 @@ function getAccessibleClientIds(user = {}) {
   return [];
 }
 
-function getAccessibleClientNames(user = {}) {
+function getAccessibleClientNames(user = {}, { preferManagedClients = false } = {}) {
+  if (preferManagedClients) {
+    const managedClientNames = getManagedClientNames(user);
+
+    if (managedClientNames.length > 0) {
+      return managedClientNames;
+    }
+  }
+
   const directClientNames = normalizeClientNames(
     user?.accessibleClientNames ??
       user?.accessible_client_names ??
       user?.allowedAppClientNames ??
       user?.allowed_appclient_names ??
+      user?.managedAppClientNames ??
+      user?.managed_appclient_names ??
+      user?.managed_app_client_names ??
+      user?.manageClientNames ??
+      user?.manage_client_names ??
       user?.managedClientNames ??
       user?.managed_client_names ??
+      user?.manageableAppClientNames ??
+      user?.manageable_appclient_names ??
+      user?.manageable_app_client_names ??
       user?.clientNames ??
       user?.client_names,
   );
@@ -124,8 +263,16 @@ function getAccessibleClientNames(user = {}) {
     user?.clients,
     user?.allowedAppClients,
     user?.allowed_appclients,
+    user?.managedAppClients,
+    user?.managed_appclients,
+    user?.managed_app_clients,
+    user?.manageClients,
+    user?.manage_clients,
     user?.managedClients,
     user?.managed_clients,
+    user?.manageableAppClients,
+    user?.manageable_appclients,
+    user?.manageable_app_clients,
   ]) {
     const clientNames = getClientNamesFromList(clientList);
 
@@ -252,10 +399,45 @@ function mapUserResponse(user = {}, { isAdmin = false } = {}) {
     createdAt: user.created_at,
     roleId: getUserRoleId(user),
     roles: normalizeRoleNames(user.roles),
-    accessibleClientIds: getAccessibleClientIds(user),
-    accessibleClientNames: getAccessibleClientNames(user),
+    accessibleClientIds: getAccessibleClientIds(user, {
+      preferManagedClients: isAdmin,
+    }),
+    accessibleClientNames: getAccessibleClientNames(user, {
+      preferManagedClients: isAdmin,
+    }),
     isAdmin,
   };
+}
+
+function getUserDetailPayload(response = {}) {
+  return response?.user ?? response?.data?.user ?? response?.data ?? response;
+}
+
+async function getUserDetailsById(userId, { isAdmin = false } = {}) {
+  const normalizedUserId = typeof userId === "string" ? userId.trim() : "";
+
+  if (!normalizedUserId) {
+    throw new Error("User ID is required.");
+  }
+
+  const requestKey = `${isAdmin ? ADMIN_USER_TYPE : REGULAR_USER_TYPE}:${normalizedUserId}`;
+  const currentRequest = userDetailRequests.get(requestKey);
+
+  if (currentRequest) {
+    return currentRequest;
+  }
+
+  const nextRequest = userService
+    .getUser(normalizedUserId)
+    .then((response) =>
+      mapUserResponse(getUserDetailPayload(response), { isAdmin }),
+    )
+    .finally(() => {
+      userDetailRequests.delete(requestKey);
+    });
+
+  userDetailRequests.set(requestKey, nextRequest);
+  return nextRequest;
 }
 
 function applyUserAccessSelections(users, accessSelections = {}) {
@@ -488,6 +670,25 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     const nextValue = value === ADMIN_USER_TYPE ? ADMIN_USER_TYPE : REGULAR_USER_TYPE;
     setPage(1);
     setUserType(nextValue);
+  };
+
+  const getUserDetails = async (user) => {
+    const isAdminUser = userType === ADMIN_USER_TYPE || user?.isAdmin === true;
+    const detailedUser = await getUserDetailsById(user?.id, {
+      isAdmin: isAdminUser,
+    });
+    const [userWithLocalSelections] = applyUserAccessSelections(
+      [
+        {
+          ...user,
+          ...detailedUser,
+          isAdmin: isAdminUser,
+        },
+      ],
+      userAccessSelectionsRef.current,
+    );
+
+    return userWithLocalSelections;
   };
 
   const createUser = async (newUser) => {
@@ -736,6 +937,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     loading,
     fetchError,
     setFetchError,
+    getUserDetails,
     createUser,
     updateUser,
     deleteUser,

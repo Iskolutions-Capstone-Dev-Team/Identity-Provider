@@ -143,7 +143,7 @@ const mergeClientOptions = (baseOptions = [], selectedOptions = []) => {
   return Array.from(optionMap.values());
 };
 
-export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
+export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, isLoadingUserDetails = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
@@ -336,6 +336,9 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const clientAccessDescription = isViewMode
     ? "View which clients this user can access."
     : "Choose which clients this user can access.";
+  const clientAccessLoadingMessage = isLoadingUserDetails
+    ? "Loading latest user details..."
+    : "Loading app clients...";
   const statusFieldDescription = isViewMode
     ? "View the user's account status."
     : "Choose the user's account status.";
@@ -480,10 +483,17 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                   )}
 
                   {isViewMode || !canEditAccessField ? (
-                    renderReadOnlyAccessItems(
-                      clientAccessDisplayItems,
-                      "No clients selected",
-                    )
+                    <>
+                      {renderReadOnlyAccessItems(
+                        clientAccessDisplayItems,
+                        "No clients selected",
+                      )}
+                      {isLoadingUserDetails && (
+                        <p className={modalHelperTextClassName}>
+                          {clientAccessLoadingMessage}
+                        </p>
+                      )}
+                    </>
                   ) : (
                     <>
                       <MultiSelect
@@ -495,9 +505,9 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                         colorMode={colorMode}
                         lockedSelectedValues={lockedSelectedClientIds}
                       />
-                      {isLoadingAppClients && (
+                      {(isLoadingAppClients || isLoadingUserDetails) && (
                         <p className={modalHelperTextClassName}>
-                          Loading app clients...
+                          {clientAccessLoadingMessage}
                         </p>
                       )}
                     </>
