@@ -83,6 +83,21 @@ func (mr *MockClientRepositoryMockRecorder) ChangeSecret(ctx, id, newSecretHash 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeSecret", reflect.TypeOf((*MockClientRepository)(nil).ChangeSecret), ctx, id, newSecretHash)
 }
 
+// CountAllowedClients mocks base method.
+func (m *MockClientRepository) CountAllowedClients(ctx context.Context, keyword string, userID []byte) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAllowedClients", ctx, keyword, userID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountAllowedClients indicates an expected call of CountAllowedClients.
+func (mr *MockClientRepositoryMockRecorder) CountAllowedClients(ctx, keyword, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAllowedClients", reflect.TypeOf((*MockClientRepository)(nil).CountAllowedClients), ctx, keyword, userID)
+}
+
 // CountBoundClients mocks base method.
 func (m *MockClientRepository) CountBoundClients(ctx context.Context, keyword string, userID []byte) (int, error) {
 	m.ctrl.T.Helper()
@@ -201,6 +216,21 @@ func (mr *MockClientRepositoryMockRecorder) IsClientAllowed(ctx, userID, clientI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsClientAllowed", reflect.TypeOf((*MockClientRepository)(nil).IsClientAllowed), ctx, userID, clientID)
 }
 
+// ListAllowedClients mocks base method.
+func (m *MockClientRepository) ListAllowedClients(ctx context.Context, limit, offset int, keyword string, userID []byte) ([]models.Client, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAllowedClients", ctx, limit, offset, keyword, userID)
+	ret0, _ := ret[0].([]models.Client)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAllowedClients indicates an expected call of ListAllowedClients.
+func (mr *MockClientRepositoryMockRecorder) ListAllowedClients(ctx, limit, offset, keyword, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllowedClients", reflect.TypeOf((*MockClientRepository)(nil).ListAllowedClients), ctx, limit, offset, keyword, userID)
+}
+
 // ListBoundClients mocks base method.
 func (m *MockClientRepository) ListBoundClients(ctx context.Context, limit, offset int, keyword string, userID []byte) ([]models.Client, error) {
 	m.ctrl.T.Helper()
@@ -286,6 +316,20 @@ func (m *MockClientRepository) SoftDelete(ctx context.Context, id []byte) error 
 func (mr *MockClientRepositoryMockRecorder) SoftDelete(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SoftDelete", reflect.TypeOf((*MockClientRepository)(nil).SoftDelete), ctx, id)
+}
+
+// SyncAdminClientBind mocks base method.
+func (m *MockClientRepository) SyncAdminClientBind(ctx context.Context, userID []byte, clientIDs [][]byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncAdminClientBind", ctx, userID, clientIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncAdminClientBind indicates an expected call of SyncAdminClientBind.
+func (mr *MockClientRepositoryMockRecorder) SyncAdminClientBind(ctx, userID, clientIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncAdminClientBind", reflect.TypeOf((*MockClientRepository)(nil).SyncAdminClientBind), ctx, userID, clientIDs)
 }
 
 // UpdateClient mocks base method.

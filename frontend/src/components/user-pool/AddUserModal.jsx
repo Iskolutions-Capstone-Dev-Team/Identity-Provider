@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import FadeWrapper from "../FadeWrapper";
 import ErrorAlert from "../ErrorAlert";
@@ -26,7 +26,7 @@ const TEMP_PASSWORD_SETUP_VALUE = "temporary_password";
 const INVITATION_SETUP_VALUE = "invitation";
 const SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE = "System Administrator";
 
-const REGULAR_ACCOUNT_SETUP_OPTIONS = [
+const ACCOUNT_SETUP_OPTIONS = [
   {
     value: TEMP_PASSWORD_SETUP_VALUE,
     label: "Temporary Password",
@@ -43,15 +43,6 @@ function normalizeSelectedClientIds(clientIds = []) {
   );
 }
 
-function getSelectedAdminClientIds({ adminSignInClientIds, adminCrudClientIds } = {}) {
-  return normalizeSelectedClientIds(
-    [
-      ...normalizeSelectedClientIds(adminSignInClientIds),
-      ...normalizeSelectedClientIds(adminCrudClientIds),
-    ],
-  );
-}
-
 const initialFormData = {
   email: "",
   givenName: "",
@@ -61,8 +52,8 @@ const initialFormData = {
   tempPassword: "",
   accountSetupType: TEMP_PASSWORD_SETUP_VALUE,
   accountType: "",
-  adminSignInClientIds: [],
-  adminCrudClientIds: [],
+  adminAccessibleClientIds: [],
+  adminManageableClientIds: [],
   selectedAdminRoleId: null,
 };
 
@@ -72,8 +63,8 @@ const initialFieldErrors = {
   surname: "",
   tempPassword: "",
   accountType: "",
-  adminSignInClientId: "",
-  adminCrudClientId: "",
+  adminAccessibleClientId: "",
+  adminManageableClientId: "",
   selectedAdminRoleId: "",
 };
 
@@ -171,7 +162,9 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
   const [activeVoiceField, setActiveVoiceField] = useState("givenName");
   const [showTempPassword, setShowTempPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInvitationConfirmOpen, setIsInvitationConfirmOpen] = useState(false);
+  const isSubmittingRef = useRef(false);
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
   const canCreateAdminAccount = canAssignRoles || canManageUserAccess;
@@ -192,17 +185,16 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   const selectedAccountTypeIsAdmin =
     !isAdminView &&
     isAdminAccountType(data.accountType, availableAccountTypeOptions);
-  const isInvitationFlow =
-    !isAdminView && data.accountSetupType === INVITATION_SETUP_VALUE;
+  const isInvitationFlow = data.accountSetupType === INVITATION_SETUP_VALUE;
   const showAccountTypeField = !isAdminView;
-  const showRegularAdminClientFields =
-    selectedAccountTypeIsAdmin && canManageUserAccess;
-  const showRegularAdminRoleField =
-    selectedAccountTypeIsAdmin && canAssignRoles;
+  const isAdminAccountSetup = isAdminView || selectedAccountTypeIsAdmin;
+  const showAdminClientFields = isAdminAccountSetup && canManageUserAccess;
+  const showAdminRoleField = isAdminAccountSetup && canAssignRoles;
+  const adminRoleIsRequired = selectedAccountTypeIsAdmin && !isAdminView;
   const rolesEndpoint =
     isAdminView || selectedAccountTypeIsAdmin ? "all" : "default";
   const shouldLoadRoleOptions =
-    open && ((isAdminView && canAssignRoles) || showRegularAdminRoleField);
+    open && showAdminRoleField;
   const availableRoles = useAllRoles({
     endpoint: rolesEndpoint,
     enabled: shouldLoadRoleOptions,
@@ -214,7 +206,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     appClientOptions,
   );
   const showTempPasswordField =
-    isAdminView || data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
+    data.accountSetupType === TEMP_PASSWORD_SETUP_VALUE;
   const {
     modalBodyClassName,
     modalBodyStackClassName,
@@ -337,18 +329,18 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     setData((current) => ({
       ...current,
       accountType,
-      adminSignInClientIds:
-        nextIsAdminAccountType ? current.adminSignInClientIds : [],
-      adminCrudClientIds:
-        nextIsAdminAccountType ? current.adminCrudClientIds : [],
+      adminAccessibleClientIds:
+        nextIsAdminAccountType ? current.adminAccessibleClientIds : [],
+      adminManageableClientIds:
+        nextIsAdminAccountType ? current.adminManageableClientIds : [],
       selectedAdminRoleId:
         nextIsAdminAccountType ? current.selectedAdminRoleId : null,
     }));
     setFieldErrors((current) => ({
       ...current,
       accountType: "",
-      adminSignInClientId: "",
-      adminCrudClientId: "",
+      adminAccessibleClientId: "",
+      adminManageableClientId: "",
       selectedAdminRoleId: "",
     }));
     clearErrorBanner();
@@ -413,17 +405,17 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       nextFieldErrors.accountType = "Select an account type.";
     }
 
-    if (showRegularAdminClientFields && data.adminSignInClientIds.length === 0) {
-      nextFieldErrors.adminSignInClientId =
-        "Select at least one sign-in app client.";
+    if (showAdminClientFields && data.adminAccessibleClientIds.length === 0) {
+      nextFieldErrors.adminAccessibleClientId =
+        "Select at least one accessible app client.";
     }
 
-    if (showRegularAdminClientFields && data.adminCrudClientIds.length === 0) {
-      nextFieldErrors.adminCrudClientId =
-        "Select at least one access app client.";
+    if (showAdminClientFields && data.adminManageableClientIds.length === 0) {
+      nextFieldErrors.adminManageableClientId =
+        "Select at least one manageable app client.";
     }
 
-    if (showRegularAdminRoleField && !data.selectedAdminRoleId) {
+    if (showAdminRoleField && adminRoleIsRequired && !data.selectedAdminRoleId) {
       nextFieldErrors.selectedAdminRoleId = "Select a role.";
     }
 
@@ -470,6 +462,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       setFieldErrors(initialFieldErrors);
       setActiveVoiceField("givenName");
       setShowTempPassword(false);
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
       setIsInvitationConfirmOpen(false);
       setError("");
     }
@@ -521,11 +515,18 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   };
 
   const submitUser = async () => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     const selectedAdminRole = adminRoleOptions.find(
       (role) => role.id === data.selectedAdminRoleId,
     );
-    const adminAllowedClientIds = showRegularAdminClientFields
-      ? getSelectedAdminClientIds(data)
+    const adminAccessibleClientIds = showAdminClientFields
+      ? normalizeSelectedClientIds(data.adminAccessibleClientIds)
+      : [];
+    const adminManageableClientIds = showAdminClientFields
+      ? normalizeSelectedClientIds(data.adminManageableClientIds)
       : [];
     const selectedAccountType = !isAdminView
       ? selectedAccountTypeOption?.value || data.accountType
@@ -544,6 +545,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     }
 
     try {
+      isSubmittingRef.current = true;
+      setIsSubmitting(true);
       setError("");
 
       await onSubmit({
@@ -558,7 +561,9 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
             ? selectedAdminRole?.id ?? null
             : null,
         roles: selectedAdminRole ? [selectedAdminRole.role_name] : [],
-        allowedAppClientIds: adminAllowedClientIds,
+        accessibleClientIds: adminAccessibleClientIds,
+        manageableClientIds: adminManageableClientIds,
+        allowedAppClientIds: adminAccessibleClientIds,
         tempPassword: data.tempPassword,
         accountSetupType: data.accountSetupType,
         accountType: selectedAccountType,
@@ -569,10 +574,17 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       onClose();
     } catch (submitError) {
       setError(extractErrorMessage(submitError));
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
   const handleSubmit = async () => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     if (!validateStepTwo()) {
       return;
     }
@@ -586,6 +598,10 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
   };
 
   const handleConfirmInvitation = async () => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     setIsInvitationConfirmOpen(false);
     await submitUser();
   };
@@ -594,8 +610,9 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     return null;
   }
 
-  const selectedAccountTypeLabel =
-    selectedAccountTypeOption?.label || "Selected";
+  const selectedAccountTypeLabel = isAdminView
+    ? SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE
+    : selectedAccountTypeOption?.label || "Selected";
   const renderSectionHeader = (title, description, isRequired = false) => (
     <div className={sectionHeaderClassName}>
       <label className={sectionTitleClassName}>
@@ -613,7 +630,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       <UserPoolModalSelect
         value={data.accountSetupType}
         onChange={handleAccountSetupChange}
-        options={REGULAR_ACCOUNT_SETUP_OPTIONS}
+        options={ACCOUNT_SETUP_OPTIONS}
         ariaLabel="Select account setup method"
         colorMode={colorMode}
       />
@@ -682,11 +699,6 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       </p>
     </div>
   ) : null;
-  const tempPasswordSection = tempPasswordField ? (
-    <section className={modalSectionClassName}>
-      {tempPasswordField}
-    </section>
-  ) : null;
   const accountSetupAndPasswordSection = (
     <section className={modalSectionClassName}>
       <div className="space-y-6">
@@ -696,51 +708,51 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
     </section>
   );
   const adminAccessSection =
-    showRegularAdminClientFields || showRegularAdminRoleField ? (
+    showAdminClientFields || showAdminRoleField ? (
       <section className={modalSectionClassName}>
         <div className="space-y-6">
-          {showRegularAdminClientFields && (
+          {showAdminClientFields && (
             <>
               <div>
                 {renderSectionHeader(
-                  "Sign-In App Clients",
-                  "Choose one or more app clients used for sign-in.",
+                  "Accessible App Clients",
+                  "Choose which clients are accessible for sign-in.",
                   true,
                 )}
                 <MultiSelect
                   options={registrationAppClientOptions}
-                  selectedValues={data.adminSignInClientIds}
-                  onChange={handleMultiSelectFieldChange("adminSignInClientIds")}
-                  placeholder="Select sign-in app clients"
+                  selectedValues={data.adminAccessibleClientIds}
+                  onChange={handleMultiSelectFieldChange("adminAccessibleClientIds")}
+                  placeholder="Select accessible app clients"
                   variant="userpoolModal"
-                  hasError={Boolean(fieldErrors.adminSignInClientId)}
+                  hasError={Boolean(fieldErrors.adminAccessibleClientId)}
                   colorMode={colorMode}
                 />
-                {fieldErrors.adminSignInClientId && (
+                {fieldErrors.adminAccessibleClientId && (
                   <p className="mt-2 text-xs text-red-500">
-                    {fieldErrors.adminSignInClientId}
+                    {fieldErrors.adminAccessibleClientId}
                   </p>
                 )}
               </div>
 
               <div>
                 {renderSectionHeader(
-                  "Access App Clients",
-                  "Choose one or more app clients used to manage user access.",
+                  "Manageable App Clients",
+                  "Choose which clients this admin can manage.",
                   true,
                 )}
                 <MultiSelect
                   options={registrationAppClientOptions}
-                  selectedValues={data.adminCrudClientIds}
-                  onChange={handleMultiSelectFieldChange("adminCrudClientIds")}
-                  placeholder="Select access app clients"
+                  selectedValues={data.adminManageableClientIds}
+                  onChange={handleMultiSelectFieldChange("adminManageableClientIds")}
+                  placeholder="Select manageable app clients"
                   variant="userpoolModal"
-                  hasError={Boolean(fieldErrors.adminCrudClientId)}
+                  hasError={Boolean(fieldErrors.adminManageableClientId)}
                   colorMode={colorMode}
                 />
-                {fieldErrors.adminCrudClientId && (
+                {fieldErrors.adminManageableClientId && (
                   <p className="mt-2 text-xs text-red-500">
-                    {fieldErrors.adminCrudClientId}
+                    {fieldErrors.adminManageableClientId}
                   </p>
                 )}
                 {isLoadingAppClients && (
@@ -752,15 +764,17 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
             </>
           )}
 
-          {showRegularAdminRoleField && (
+          {showAdminRoleField && (
             <div>
-              {renderSectionHeader("Role", "Choose the admin role.", true)}
+              {renderSectionHeader("Role", "Choose the admin role.", adminRoleIsRequired)}
               <UserPoolRoleRadioGroup
                 options={adminRoleOptions}
                 selectedValue={data.selectedAdminRoleId}
                 onChange={handleAdminRoleChange}
                 colorMode={colorMode}
-                name="add-regular-admin-role"
+                name={isAdminView ? "add-admin-user-role" : "add-regular-admin-role"}
+                allowEmpty={isAdminView}
+                emptyOptionLabel="No role assigned"
               />
               {fieldErrors.selectedAdminRoleId && (
                 <p className="mt-2 text-xs text-red-500">
@@ -907,32 +921,8 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
               >
                 {isAdminView ? (
                   <>
-                    <section className={modalSectionClassName}>
-                      {canAssignRoles ? (
-                        <>
-                          {renderSectionHeader(
-                            "Role",
-                            "Choose a role for this admin account.",
-                          )}
-                          <UserPoolRoleRadioGroup
-                            options={adminRoleOptions}
-                            selectedValue={data.selectedAdminRoleId}
-                            onChange={handleAdminRoleChange}
-                            colorMode={colorMode}
-                            name="add-user-role"
-                            allowEmpty
-                            emptyOptionLabel="No role assigned"
-                          />
-                        </>
-                      ) : (
-                        renderSectionHeader(
-                          "Role",
-                          "No role assignment permission is available for this account.",
-                        )
-                      )}
-                    </section>
-
-                    {tempPasswordSection}
+                    {adminAccessSection}
+                    {accountSetupAndPasswordSection}
                   </>
                 ) : (
                   <>
@@ -969,8 +959,13 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
             )}
 
             {step === 2 && (
-              <button type="button" onClick={handleSubmit} className={modalPrimaryButtonClassName}>
-                Create User
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className={modalPrimaryButtonClassName}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Creating..." : "Create User"}
               </button>
             )}
           </div>
@@ -981,6 +976,7 @@ export default function AddUserModal({ open, onClose, onSubmit, userType = "regu
       <InvitationConfirmModal
         open={isInvitationConfirmOpen}
         accountTypeLabel={selectedAccountTypeLabel}
+        isSubmitting={isSubmitting}
         onCancel={() => setIsInvitationConfirmOpen(false)}
         onConfirm={handleConfirmInvitation}
         colorMode={colorMode}

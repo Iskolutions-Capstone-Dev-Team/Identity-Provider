@@ -17,15 +17,16 @@ import (
 
 // Action constants for audit logging
 const (
-	actionCreateUser     = "create_user"
-	actionGetUser        = "get_user"
-	actionGetMe          = "get_me"
-	actionUpdatePass     = "update_password"
-	actionUpdateStatus   = "update_status"
-	actionUpdateUserRole = "update_user_role"
-	actionDeleteUser     = "delete_user"
-	actionUpdateAccess   = "update_user_access"
-	actionUpdateName     = "update_user_name"
+	actionCreateUser      = "create_user"
+	actionSyncAdminAccess = "sync_admin_access"
+	actionGetUser         = "get_user"
+	actionGetMe           = "get_me"
+	actionUpdatePass      = "update_password"
+	actionUpdateStatus    = "update_status"
+	actionUpdateUserRole  = "update_user_role"
+	actionDeleteUser      = "delete_user"
+	actionUpdateAccess    = "update_user_access"
+	actionUpdateName      = "update_user_name"
 )
 
 // UserHandler handles user management HTTP requests.
@@ -344,6 +345,10 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 			Status:   models.StatusSuccess,
 			Metadata: metadata,
 		})
+
+	if !middleware.HasPermission(c, "View all users") {
+		resp.ManagedClients = nil
+	}
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -1175,6 +1180,80 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Access synchronized!"})
 }
 
+// PutAdminAccess handles the synchronization of managed clients for an admin.
+// @Summary Sync Admin Managed Clients
+// @Description Updates the list of app-clients that an administrator can manage.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID (UUID)"
+// @Param request body dto.UpdateUserAccessRequest true "Access data"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users/{id}/managed-clients [put]
+func (h *UserHandler) PutAdminAccess(c *gin.Context) {
+	targetIDStr := c.Param("id")
+	targetID, err := uuid.Parse(targetIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid target user id"})
+		return
+	}
+
+	var req dto.UpdateUserAccessRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest,
+			dto.ErrorResponse{Error: "invalid request body"})
+		return
+	}
+
+	adminIDStr := c.GetString("user_id")
+	adminID, _ := uuid.Parse(adminIDStr)
+	ctx := c.Request.Context()
+	actorEmail, _ := h.LogService.GetUserEmail(ctx, adminID[:])
+	if actorEmail == "" {
+		actorEmail = adminIDStr
+	}
+
+	targetUser, err := h.Service.GetUserByID(ctx, targetID)
+	if err != nil {
+		c.JSON(http.StatusNotFound,
+			dto.ErrorResponse{Error: "target user not found"})
+		return
+	}
+
+	err = h.Service.SyncAdminClientAccess(ctx, targetID, req.ClientIDs)
+	if err != nil {
+		log.Printf("[PutAdminAccess] %v", err)
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorEmail,
+			&dto.PostAuditLogRequest{
+				Action: actionSyncAdminAccess,
+				Target: targetUser.Email,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"error": err.Error(),
+					"ip":    c.ClientIP(),
+				}),
+			})
+		c.JSON(http.StatusInternalServerError,
+			dto.ErrorResponse{Error: "failed to sync admin access"})
+		return
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorEmail,
+		&dto.PostAuditLogRequest{
+			Action: actionSyncAdminAccess,
+			Target: targetUser.Email,
+			Status: models.StatusSuccess,
+			Metadata: buildMetadata(map[string]interface{}{
+				"ip": c.ClientIP(),
+			}),
+		})
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "Admin access synced"})
+}
+
 // GetUserDetailedAccess retrieves all clients with descriptions and images.
 // @Summary List All Clients for User
 // @Description Fetch all client details including base URLs.
@@ -1198,8 +1277,8 @@ func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Fetch bound clients (limit 1000 for list population)
-	resp, err := h.ClientService.GetBoundClients(ctx, userID, 1000, 1, "")
+	// Fetch allowed clients (limit 1000 for list population)
+	resp, err := h.ClientService.GetAllowedClients(ctx, userID, 1000, 1, "")
 	if err != nil {
 		log.Printf("[GetUserDetailedAccess] fetch: %v", err)
 		c.JSON(http.StatusInternalServerError,

@@ -190,6 +190,20 @@ func (mr *MockUserServiceMockRecorder) GetUserList(ctx, limit, page any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserList", reflect.TypeOf((*MockUserService)(nil).GetUserList), ctx, limit, page)
 }
 
+// SyncAdminClientAccess mocks base method.
+func (m *MockUserService) SyncAdminClientAccess(ctx context.Context, id uuid.UUID, clientIDs []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncAdminClientAccess", ctx, id, clientIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncAdminClientAccess indicates an expected call of SyncAdminClientAccess.
+func (mr *MockUserServiceMockRecorder) SyncAdminClientAccess(ctx, id, clientIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncAdminClientAccess", reflect.TypeOf((*MockUserService)(nil).SyncAdminClientAccess), ctx, id, clientIDs)
+}
+
 // UpdateUserName mocks base method.
 func (m *MockUserService) UpdateUserName(ctx context.Context, id uuid.UUID, req dto.UpdateUserNameRequest) error {
 	m.ctrl.T.Helper()

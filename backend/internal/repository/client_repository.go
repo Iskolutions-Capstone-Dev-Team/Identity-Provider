@@ -14,6 +14,8 @@ type ClientRepository interface {
 		offset int, keyword string) ([]models.Client, error)
 	ListBoundClients(ctx context.Context, limit, offset int,
 		keyword string, userID []byte) ([]models.Client, error)
+	ListAllowedClients(ctx context.Context, limit, offset int,
+		keyword string, userID []byte) ([]models.Client, error)
 	CreateClient(ctx context.Context, client *models.Client,
 		grants []string, userID []byte) error
 	UpdateClient(ctx context.Context, c *models.Client,
@@ -26,6 +28,8 @@ type ClientRepository interface {
 	CountClients(ctx context.Context, keyword string) (int, error)
 	CountBoundClients(ctx context.Context, keyword string,
 		userID []byte) (int, error)
+	CountAllowedClients(ctx context.Context, keyword string,
+		userID []byte) (int, error)
 	RotateSecret(ctx context.Context, id []byte, oldSecretHash,
 		newSecretHash string) error
 	ChangeSecret(ctx context.Context, id []byte,
@@ -34,6 +38,8 @@ type ClientRepository interface {
 		grants []string) error
 	AdminiClientBind(ctx context.Context, userID, clientID []byte) error
 	BatchAdminClientBind(ctx context.Context, userID []byte,
+		clientIDs [][]byte) error
+	SyncAdminClientBind(ctx context.Context, userID []byte,
 		clientIDs [][]byte) error
 	RemoveAdminClientBind(ctx context.Context, clientID []byte) error
 	IsClientAllowed(ctx context.Context, userID, clientID []byte) (bool, error)
@@ -117,6 +123,30 @@ func (r *clientRepository) ListBoundClients(ctx context.Context,
 			c.base_url, c.redirect_uri, c.logout_uri, c.created_at
 		FROM clients c
 		JOIN admin_allowed_clients a ON c.id = a.client_id
+		WHERE a.user_id = ?
+			AND c.deleted_at IS NULL
+			AND c.client_name LIKE ?
+		LIMIT ? OFFSET ?
+	`
+
+	err := r.db.SelectContext(ctx, &clients, query, userID, searchKeyword,
+		limit, offset)
+	return clients, err
+}
+
+func (r *clientRepository) ListAllowedClients(ctx context.Context,
+	limit int, offset int, keyword string, userID []byte,
+) ([]models.Client, error) {
+	var clients []models.Client
+	searchKeyword := "%" + keyword + "%"
+
+	query := `
+		SELECT
+			c.id, c.client_name,
+			c.description, c.image_location,
+			c.base_url, c.redirect_uri, c.logout_uri, c.created_at
+		FROM clients c
+		JOIN client_allowed_users a ON c.id = a.client_id
 		WHERE a.user_id = ?
 			AND c.deleted_at IS NULL
 			AND c.client_name LIKE ?
@@ -284,6 +314,26 @@ func (r *clientRepository) CountBoundClients(ctx context.Context,
 	return count, err
 }
 
+func (r *clientRepository) CountAllowedClients(ctx context.Context,
+	keyword string, userID []byte,
+) (int, error) {
+	var count int
+	searchKeyword := "%" + keyword + "%"
+
+	query := `
+		SELECT COUNT(*)
+		FROM clients c
+		JOIN client_allowed_users a ON c.id = a.client_id
+		WHERE a.user_id = ? 
+			AND c.deleted_at IS NULL 
+			AND c.client_name LIKE ?
+	`
+
+	err := r.db.GetContext(ctx, &count, query, userID, searchKeyword)
+
+	return count, err
+}
+
 func (r *clientRepository) RotateSecret(ctx context.Context,
 	id []byte, oldSecretHash, newSecretHash string,
 ) error {
@@ -372,6 +422,42 @@ func (r *clientRepository) BatchAdminClientBind(ctx context.Context,
 		_, err = tx.ExecContext(ctx, query, userID, clientID)
 		if err != nil {
 			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (r *clientRepository) SyncAdminClientBind(ctx context.Context,
+	userID []byte, clientIDs [][]byte,
+) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Clear existing bindings for this admin
+	const deleteQuery = `
+		DELETE FROM admin_allowed_clients 
+		WHERE user_id = ?
+	`
+	_, err = tx.ExecContext(ctx, deleteQuery, userID)
+	if err != nil {
+		return fmt.Errorf("sync admin bind: delete: %w", err)
+	}
+
+	// 2. Insert new bindings
+	if len(clientIDs) > 0 {
+		const insertQuery = `
+			INSERT INTO admin_allowed_clients (user_id, client_id) 
+			VALUES (?, ?)
+		`
+		for _, clientID := range clientIDs {
+			_, err = tx.ExecContext(ctx, insertQuery, userID, clientID)
+			if err != nil {
+				return fmt.Errorf("sync admin bind: insert: %w", err)
+			}
 		}
 	}
 
