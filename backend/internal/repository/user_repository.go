@@ -464,6 +464,7 @@ type clientAccessRow struct {
 	UserID     []byte `db:"user_id"`
 	ClientID   []byte `db:"client_id"`
 	ClientName string `db:"client_name"`
+	Source     string `db:"source"`
 }
 
 /**
@@ -482,11 +483,13 @@ func (r *userRepository) populateClients(ctx context.Context,
 	}
 
 	const query = `
-		SELECT cau.user_id, c.id AS client_id, c.client_name
+		SELECT cau.user_id, c.id AS client_id, c.client_name, cau.source
 		FROM (
-			SELECT user_id, client_id FROM client_allowed_users
-			UNION
-			SELECT user_id, client_id FROM admin_allowed_clients
+			SELECT user_id, client_id, 'allowed' AS source 
+			FROM client_allowed_users
+			UNION ALL
+			SELECT user_id, client_id, 'managed' AS source 
+			FROM admin_allowed_clients
 		) cau
 		JOIN clients c ON cau.client_id = c.id
 		WHERE cau.user_id IN (?)
@@ -505,17 +508,34 @@ func (r *userRepository) populateClients(ctx context.Context,
 		return fmt.Errorf("database map fetch: %w", err)
 	}
 
-	clientMap := make(map[string][]models.Client)
+	allowedMap := make(map[string]map[string]models.Client)
+	managedMap := make(map[string][]models.Client)
 	for _, row := range rows {
 		userKey := string(row.UserID)
-		clientMap[userKey] = append(clientMap[userKey], models.Client{
+		clientKey := string(row.ClientID)
+		client := models.Client{
 			ID:         row.ClientID,
 			ClientName: row.ClientName,
-		})
+		}
+
+		if allowedMap[userKey] == nil {
+			allowedMap[userKey] = make(map[string]models.Client)
+		}
+		allowedMap[userKey][clientKey] = client
+
+		if row.Source == "managed" {
+			managedMap[userKey] = append(managedMap[userKey], client)
+		}
 	}
 
 	for i := range users {
-		users[i].AllowedClients = clientMap[string(users[i].ID)]
+		clients := make([]models.Client, 0,
+			len(allowedMap[string(users[i].ID)]))
+		for _, c := range allowedMap[string(users[i].ID)] {
+			clients = append(clients, c)
+		}
+		users[i].AllowedClients = clients
+		users[i].ManagedClients = managedMap[string(users[i].ID)]
 	}
 
 	return nil

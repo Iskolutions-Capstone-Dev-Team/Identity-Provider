@@ -591,6 +591,15 @@ func (s *userService) mapToUserResponse(
 	}
 
 	resp.Clients = clients
+	var managed []dto.ClientAccessResponse
+	for _, client := range user.ManagedClients {
+		clientUUID, _ := uuid.FromBytes(client.ID)
+		managed = append(managed, dto.ClientAccessResponse{
+			ID:   clientUUID.String(),
+			Name: client.ClientName,
+		})
+	}
+	resp.ManagedClients = managed
 
 	return resp
 }

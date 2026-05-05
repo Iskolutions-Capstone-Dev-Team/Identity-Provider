@@ -346,6 +346,10 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 			Metadata: metadata,
 		})
 
+	if !middleware.HasPermission(c, "View all users") {
+		resp.ManagedClients = nil
+	}
+
 	c.JSON(http.StatusOK, resp)
 }
 
