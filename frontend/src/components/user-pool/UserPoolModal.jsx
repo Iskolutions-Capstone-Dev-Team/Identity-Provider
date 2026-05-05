@@ -22,6 +22,8 @@ const initialFormData = {
   roles: [],
   accessibleClientIds: [],
   accessibleClientNames: [],
+  manageableClientIds: [],
+  manageableClientNames: [],
 };
 
 const STATUS_OPTIONS = [
@@ -117,6 +119,8 @@ const createFormData = (user) => ({
   roles: normalizeRoleNames(user?.roles),
   accessibleClientIds: normalizeClientIds(user?.accessibleClientIds),
   accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
+  manageableClientIds: normalizeClientIds(user?.manageableClientIds),
+  manageableClientNames: normalizeClientNames(user?.manageableClientNames),
 });
 
 const getSelectedClientOptions = (clientIds = [], clientNames = []) =>
@@ -125,7 +129,7 @@ const getSelectedClientOptions = (clientIds = [], clientNames = []) =>
     label: normalizeText(clientNames[index]) || clientId,
   }));
 
-const mergeClientOptions = (baseOptions = [], selectedOptions = []) => {
+const mergeClientOptions = (baseOptions = [], ...selectedOptionLists) => {
   const optionMap = new Map();
 
   baseOptions.forEach((option) => {
@@ -134,7 +138,7 @@ const mergeClientOptions = (baseOptions = [], selectedOptions = []) => {
     }
   });
 
-  selectedOptions.forEach((option) => {
+  selectedOptionLists.flat().forEach((option) => {
     if (option?.id && option?.label && !optionMap.has(option.id)) {
       optionMap.set(option.id, option);
     }
@@ -247,10 +251,21 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     }
   };
 
-  const handleAppClientChange = (accessibleClientIds) => {
+  const handleAccessibleClientChange = (accessibleClientIds) => {
     setFormData((current) => ({
       ...current,
       accessibleClientIds,
+    }));
+
+    if (error) {
+      setError("");
+    }
+  };
+
+  const handleManageableClientChange = (manageableClientIds) => {
+    setFormData((current) => ({
+      ...current,
+      manageableClientIds,
     }));
 
     if (error) {
@@ -309,11 +324,19 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     formData.accessibleClientIds,
     formData.accessibleClientNames,
   );
+  const selectedManageableClientOptions = getSelectedClientOptions(
+    formData.manageableClientIds,
+    formData.manageableClientNames,
+  );
   const appClientSelectOptions = mergeClientOptions(
     editableAppClientOptions,
     selectedAppClientOptions,
+    selectedManageableClientOptions,
   );
   const lockedSelectedClientIds = formData.accessibleClientIds.filter(
+    (clientId) => !editableAppClientIdLookup.has(clientId),
+  );
+  const lockedManageableClientIds = formData.manageableClientIds.filter(
     (clientId) => !editableAppClientIdLookup.has(clientId),
   );
   const roleAccessItems =
@@ -326,16 +349,27 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     formData.accessibleClientIds,
     appClientSelectOptions,
   );
+  const manageableClientItems = getAppClientNamesByIds(
+    formData.manageableClientIds,
+    appClientSelectOptions,
+  );
   const clientAccessDisplayItems =
     formData.accessibleClientNames.length > 0
       ? formData.accessibleClientNames
       : clientAccessItems;
+  const manageableClientDisplayItems =
+    formData.manageableClientNames.length > 0
+      ? formData.manageableClientNames
+      : manageableClientItems;
   const roleFieldDescription = isViewMode
     ? "View the role assigned to this admin account."
     : "Choose the role for this admin account.";
-  const clientAccessDescription = isViewMode
-    ? "View which clients this user can access."
-    : "Choose which clients this user can access.";
+  const accessibleClientDescription = isViewMode
+    ? "View which app clients are accessible for sign-in."
+    : "Choose which clients are accessible for sign-in.";
+  const manageableClientDescription = isViewMode
+    ? "View which app clients this admin can manage."
+    : "Choose which clients this admin can manage.";
   const clientAccessLoadingMessage = isLoadingUserDetails
     ? "Loading latest user details..."
     : "Loading app clients...";
@@ -478,8 +512,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
 
                 <div>
                   {renderSectionHeader(
-                    "Accessible Clients",
-                    clientAccessDescription,
+                    "Accessible App Clients",
+                    accessibleClientDescription,
                   )}
 
                   {isViewMode || !canEditAccessField ? (
@@ -499,8 +533,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                       <MultiSelect
                         options={appClientSelectOptions}
                         selectedValues={formData.accessibleClientIds}
-                        onChange={handleAppClientChange}
-                        placeholder="Select app clients"
+                        onChange={handleAccessibleClientChange}
+                        placeholder="Select accessible app clients"
                         variant="userpoolModal"
                         colorMode={colorMode}
                         lockedSelectedValues={lockedSelectedClientIds}
@@ -516,24 +550,62 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
 
                 <div>
                   {renderSectionHeader(
-                    "Status",
-                    statusFieldDescription,
-                    !isViewMode,
+                    "Manageable App Clients",
+                    manageableClientDescription,
                   )}
-                  {isViewMode || !canEditStatus ? (
-                    <input type="text" value={getStatusDisplayLabel(formData.status)} readOnly className={modalReadOnlyInputClassName} />
+
+                  {isViewMode || !canEditAccessField ? (
+                    <>
+                      {renderReadOnlyAccessItems(
+                        manageableClientDisplayItems,
+                        "No manageable clients selected",
+                      )}
+                      {isLoadingUserDetails && (
+                        <p className={modalHelperTextClassName}>
+                          {clientAccessLoadingMessage}
+                        </p>
+                      )}
+                    </>
                   ) : (
-                    <UserPoolModalSelect
-                      value={formData.status}
-                      onChange={handleStatusChange}
-                      options={STATUS_OPTIONS}
-                      selectedLabel={getStatusDisplayLabel(formData.status)}
-                      ariaLabel="Status"
-                      colorMode={colorMode}
-                    />
+                    <>
+                      <MultiSelect
+                        options={appClientSelectOptions}
+                        selectedValues={formData.manageableClientIds}
+                        onChange={handleManageableClientChange}
+                        placeholder="Select manageable app clients"
+                        variant="userpoolModal"
+                        colorMode={colorMode}
+                        lockedSelectedValues={lockedManageableClientIds}
+                      />
+                      {(isLoadingAppClients || isLoadingUserDetails) && (
+                        <p className={modalHelperTextClassName}>
+                          {clientAccessLoadingMessage}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
+            </section>
+
+            <section className={modalSectionClassName}>
+              {renderSectionHeader(
+                "Status",
+                statusFieldDescription,
+                !isViewMode,
+              )}
+              {isViewMode || !canEditStatus ? (
+                <input type="text" value={getStatusDisplayLabel(formData.status)} readOnly className={modalReadOnlyInputClassName} />
+              ) : (
+                <UserPoolModalSelect
+                  value={formData.status}
+                  onChange={handleStatusChange}
+                  options={STATUS_OPTIONS}
+                  selectedLabel={getStatusDisplayLabel(formData.status)}
+                  ariaLabel="Status"
+                  colorMode={colorMode}
+                />
+              )}
             </section>
           </div>
         </form>

@@ -158,15 +158,7 @@ function normalizeEmailAddress(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
 
-function getAccessibleClientIds(user = {}, { preferManagedClients = false } = {}) {
-  if (preferManagedClients) {
-    const managedClientIds = getManagedClientIds(user);
-
-    if (managedClientIds.length > 0) {
-      return managedClientIds;
-    }
-  }
-
+function getAccessibleClientIds(user = {}) {
   const directClientIds = normalizeClientIds(
     user?.accessibleClientIds ??
       user?.accessible_client_ids ??
@@ -174,26 +166,6 @@ function getAccessibleClientIds(user = {}, { preferManagedClients = false } = {}
       user?.allowed_appclient_ids ??
       user?.allowedAppClients ??
       user?.allowed_appclients ??
-      user?.managedAppClientIds ??
-      user?.managed_appclient_ids ??
-      user?.managed_app_client_ids ??
-      user?.managedClientIds ??
-      user?.managed_client_ids ??
-      user?.manageableAppClientIds ??
-      user?.manageable_appclient_ids ??
-      user?.manageable_app_client_ids ??
-      user?.managedAppClients ??
-      user?.managed_appclients ??
-      user?.managed_app_clients ??
-      user?.manageClientIds ??
-      user?.manage_client_ids ??
-      user?.manageClients ??
-      user?.manage_clients ??
-      user?.managedClients ??
-      user?.managed_clients ??
-      user?.manageableAppClients ??
-      user?.manageable_appclients ??
-      user?.manageable_app_clients ??
       user?.clientIds ??
       user?.client_ids,
   );
@@ -206,16 +178,6 @@ function getAccessibleClientIds(user = {}, { preferManagedClients = false } = {}
     user?.clients,
     user?.allowedAppClients,
     user?.allowed_appclients,
-    user?.managedAppClients,
-    user?.managed_appclients,
-    user?.managed_app_clients,
-    user?.manageClients,
-    user?.manage_clients,
-    user?.managedClients,
-    user?.managed_clients,
-    user?.manageableAppClients,
-    user?.manageable_appclients,
-    user?.manageable_app_clients,
   ]) {
     const clientIds = getClientIdsFromList(clientList);
 
@@ -227,30 +189,12 @@ function getAccessibleClientIds(user = {}, { preferManagedClients = false } = {}
   return [];
 }
 
-function getAccessibleClientNames(user = {}, { preferManagedClients = false } = {}) {
-  if (preferManagedClients) {
-    const managedClientNames = getManagedClientNames(user);
-
-    if (managedClientNames.length > 0) {
-      return managedClientNames;
-    }
-  }
-
+function getAccessibleClientNames(user = {}) {
   const directClientNames = normalizeClientNames(
     user?.accessibleClientNames ??
       user?.accessible_client_names ??
       user?.allowedAppClientNames ??
       user?.allowed_appclient_names ??
-      user?.managedAppClientNames ??
-      user?.managed_appclient_names ??
-      user?.managed_app_client_names ??
-      user?.manageClientNames ??
-      user?.manage_client_names ??
-      user?.managedClientNames ??
-      user?.managed_client_names ??
-      user?.manageableAppClientNames ??
-      user?.manageable_appclient_names ??
-      user?.manageable_app_client_names ??
       user?.clientNames ??
       user?.client_names,
   );
@@ -263,16 +207,6 @@ function getAccessibleClientNames(user = {}, { preferManagedClients = false } = 
     user?.clients,
     user?.allowedAppClients,
     user?.allowed_appclients,
-    user?.managedAppClients,
-    user?.managed_appclients,
-    user?.managed_app_clients,
-    user?.manageClients,
-    user?.manage_clients,
-    user?.managedClients,
-    user?.managed_clients,
-    user?.manageableAppClients,
-    user?.manageable_appclients,
-    user?.manageable_app_clients,
   ]) {
     const clientNames = getClientNamesFromList(clientList);
 
@@ -399,12 +333,10 @@ function mapUserResponse(user = {}, { isAdmin = false } = {}) {
     createdAt: user.created_at,
     roleId: getUserRoleId(user),
     roles: normalizeRoleNames(user.roles),
-    accessibleClientIds: getAccessibleClientIds(user, {
-      preferManagedClients: isAdmin,
-    }),
-    accessibleClientNames: getAccessibleClientNames(user, {
-      preferManagedClients: isAdmin,
-    }),
+    accessibleClientIds: getAccessibleClientIds(user),
+    accessibleClientNames: getAccessibleClientNames(user),
+    manageableClientIds: getManagedClientIds(user),
+    manageableClientNames: getManagedClientNames(user),
     isAdmin,
   };
 }
@@ -440,7 +372,11 @@ async function getUserDetailsById(userId, { isAdmin = false } = {}) {
   return nextRequest;
 }
 
-function applyUserAccessSelections(users, accessSelections = {}) {
+function applyUserClientSelections(
+  users,
+  accessSelections = {},
+  manageableSelections = {},
+) {
   return users.map((user) => {
     const userIdKey = getUserIdKey(user);
     const userEmailKey = getUserEmailKey(user);
@@ -449,10 +385,16 @@ function applyUserAccessSelections(users, accessSelections = {}) {
       accessSelections[userEmailKey] ??
       user.accessibleClientIds ??
       [];
+    const manageableClientIds =
+      manageableSelections[userIdKey] ??
+      manageableSelections[userEmailKey] ??
+      user.manageableClientIds ??
+      [];
 
     return {
       ...user,
       accessibleClientIds: normalizeClientIds(accessibleClientIds),
+      manageableClientIds: normalizeClientIds(manageableClientIds),
     };
   });
 }
@@ -579,15 +521,16 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   const [loading, setLoading] = useState(true);
   const latestFetchRef = useRef(0);
   const userAccessSelectionsRef = useRef({});
+  const userManageableSelectionsRef = useRef({});
   const visibleClientLookup = new Set(normalizeClientIds(visibleClientIds));
 
-  const saveUserAccessSelection = (user, accessibleClientIds = []) => {
-    const nextSelections = { ...userAccessSelectionsRef.current };
-    const normalizedAccessibleClientIds = normalizeClientIds(accessibleClientIds);
+  const saveClientSelection = (selectionRef, user, clientIds = []) => {
+    const nextSelections = { ...selectionRef.current };
+    const normalizedClientIds = normalizeClientIds(clientIds);
     const userIdKey = getUserIdKey(user);
     const userEmailKey = getUserEmailKey(user);
 
-    if (normalizedAccessibleClientIds.length === 0) {
+    if (normalizedClientIds.length === 0) {
       if (userIdKey) {
         delete nextSelections[userIdKey];
       }
@@ -597,15 +540,27 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       }
     } else {
       if (userIdKey) {
-        nextSelections[userIdKey] = normalizedAccessibleClientIds;
+        nextSelections[userIdKey] = normalizedClientIds;
       }
 
       if (userEmailKey) {
-        nextSelections[userEmailKey] = normalizedAccessibleClientIds;
+        nextSelections[userEmailKey] = normalizedClientIds;
       }
     }
 
-    userAccessSelectionsRef.current = nextSelections;
+    selectionRef.current = nextSelections;
+  };
+
+  const saveUserAccessSelection = (user, accessibleClientIds = []) => {
+    saveClientSelection(userAccessSelectionsRef, user, accessibleClientIds);
+  };
+
+  const saveUserManageableSelection = (user, manageableClientIds = []) => {
+    saveClientSelection(
+      userManageableSelectionsRef,
+      user,
+      manageableClientIds,
+    );
   };
 
   const fetchUsers = async (
@@ -621,9 +576,10 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       }
 
       const nextUsers = await getUsersByType(selectedUserType);
-      const usersWithLocalSelections = applyUserAccessSelections(
+      const usersWithLocalSelections = applyUserClientSelections(
         nextUsers,
         userAccessSelectionsRef.current,
+        userManageableSelectionsRef.current,
       );
 
       if (latestFetchRef.current !== fetchId) {
@@ -677,7 +633,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     const detailedUser = await getUserDetailsById(user?.id, {
       isAdmin: isAdminUser,
     });
-    const [userWithLocalSelections] = applyUserAccessSelections(
+    const [userWithLocalSelections] = applyUserClientSelections(
       [
         {
           ...user,
@@ -686,6 +642,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         },
       ],
       userAccessSelectionsRef.current,
+      userManageableSelectionsRef.current,
     );
 
     return userWithLocalSelections;
@@ -708,10 +665,17 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       isAdminUser || isAdminAccountType;
     const nextAccessibleClientIds = normalizeClientIds(newUser.accessibleClientIds);
     const nextAllowedAppClientIds = normalizeClientIds(newUser.allowedAppClientIds);
+    const nextAdminAccessibleClientIds =
+      nextAllowedAppClientIds.length > 0
+        ? nextAllowedAppClientIds
+        : nextAccessibleClientIds;
+    const nextManageableClientIds = normalizeClientIds(newUser.manageableClientIds);
     const shouldSyncRegularUserAccess =
       !isAdminUser &&
       !isAdminAccountType &&
       nextAccessibleClientIds.length > 0;
+    const shouldSyncAdminManagedClients =
+      shouldAssignAdminRole && nextManageableClientIds.length > 0;
     const submissionPassword = isInvitationFlow
       // Invitation-created users still need a backend password, but it stays hidden from the UI.
       ? generateHiddenInvitationPassword()
@@ -733,7 +697,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         password: submissionPassword,
         status: newUser.status,
         account_type_id: accountTypeId,
-        allowed_appclients: shouldAssignAdminRole ? nextAllowedAppClientIds : [],
+        allowed_appclients: shouldAssignAdminRole ? nextAdminAccessibleClientIds : [],
         role_id:
           shouldAssignAdminRole
             ? normalizeRoleId(newUser.roleId)
@@ -742,12 +706,17 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
       const createdUserResponse = await userService.createUser(payload);
       userWasCreated = true;
-      followUpStep = shouldSyncRegularUserAccess ? "sync_access" : "complete";
+      followUpStep =
+        shouldSyncRegularUserAccess || shouldSyncAdminManagedClients
+          ? "sync_access"
+          : "complete";
 
-      if (shouldSyncRegularUserAccess) {
+      if (shouldSyncRegularUserAccess || shouldSyncAdminManagedClients) {
         const createdUserId =
           createdUserResponse?.createdUserId ||
-          (await findRegularUserByEmail(newUser.email))?.id;
+          (!isAdminUser
+            ? (await findRegularUserByEmail(newUser.email))?.id
+            : "");
 
         if (!createdUserId) {
           throw new Error(
@@ -755,14 +724,30 @@ export function useUsers({ visibleClientIds = [] } = {}) {
           );
         }
 
-        await userService.updateUserAccess(createdUserId, nextAccessibleClientIds);
-        saveUserAccessSelection(
-          {
-            id: createdUserId,
-            email: newUser.email,
-          },
-          nextAccessibleClientIds,
-        );
+        if (shouldSyncRegularUserAccess) {
+          await userService.updateUserAccess(createdUserId, nextAccessibleClientIds);
+          saveUserAccessSelection(
+            {
+              id: createdUserId,
+              email: newUser.email,
+            },
+            nextAccessibleClientIds,
+          );
+        }
+
+        if (shouldSyncAdminManagedClients) {
+          await userService.updateAdminManagedClients(
+            createdUserId,
+            nextManageableClientIds,
+          );
+          saveUserManageableSelection(
+            {
+              id: createdUserId,
+              email: newUser.email,
+            },
+            nextManageableClientIds,
+          );
+        }
       }
 
       if (isInvitationFlow) {
@@ -817,6 +802,8 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     const previousStatus = normalizeStatus(originalUser?.status);
     const nextAccessibleClientIds = normalizeClientIds(updatedUser?.accessibleClientIds);
     const previousAccessibleClientIds = normalizeClientIds(originalUser?.accessibleClientIds);
+    const nextManageableClientIds = normalizeClientIds(updatedUser?.manageableClientIds);
+    const previousManageableClientIds = normalizeClientIds(originalUser?.manageableClientIds);
     const nextRoleId = isAdminUserUpdate ? normalizeRoleId(updatedUser?.roleId) : null;
     const previousRoleId = isAdminUserUpdate
       ? normalizeRoleId(originalUser?.roleId)
@@ -827,29 +814,40 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       nextAccessibleClientIds,
       previousAccessibleClientIds,
     );
+    const shouldUpdateManageableClients =
+      isAdminUserUpdate &&
+      !areSameArrays(nextManageableClientIds, previousManageableClientIds);
     let accessWasUpdated = false;
+    let manageableClientsWereUpdated = false;
     let roleWasUpdated = false;
 
     try {
-      if (!shouldUpdateStatus && !shouldUpdateRole && !shouldUpdateAccessibleClients) {
+      if (
+        !shouldUpdateStatus &&
+        !shouldUpdateRole &&
+        !shouldUpdateAccessibleClients &&
+        !shouldUpdateManageableClients
+      ) {
         return;
       }
 
       if (shouldUpdateAccessibleClients) {
-        if (isAdminUserUpdate) {
-          await userService.updateAdminManagedClients(
-            updatedUser.id,
-            nextAccessibleClientIds,
-          );
-        } else {
-          await userService.updateUserAccess(
-            updatedUser.id,
-            nextAccessibleClientIds,
-          );
-        }
+        await userService.updateUserAccess(
+          updatedUser.id,
+          nextAccessibleClientIds,
+        );
 
         saveUserAccessSelection(updatedUser, nextAccessibleClientIds);
         accessWasUpdated = true;
+      }
+
+      if (shouldUpdateManageableClients) {
+        await userService.updateAdminManagedClients(
+          updatedUser.id,
+          nextManageableClientIds,
+        );
+        saveUserManageableSelection(updatedUser, nextManageableClientIds);
+        manageableClientsWereUpdated = true;
       }
 
       if (shouldUpdateRole) {
@@ -862,25 +860,38 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       }
 
       setSuccessMessage(
-        shouldUpdateAccessibleClients && !shouldUpdateStatus && !shouldUpdateRole
-          ? isAdminUserUpdate
-            ? "Managed app clients updated."
+        (shouldUpdateAccessibleClients || shouldUpdateManageableClients) &&
+          !shouldUpdateStatus &&
+          !shouldUpdateRole
+          ? shouldUpdateManageableClients && !shouldUpdateAccessibleClients
+            ? "Manageable app clients updated."
             : "App client access updated."
           : "User successfully updated!",
       );
 
-      if (shouldUpdateStatus || shouldUpdateRole || shouldUpdateAccessibleClients) {
+      if (
+        shouldUpdateStatus ||
+        shouldUpdateRole ||
+        shouldUpdateAccessibleClients ||
+        shouldUpdateManageableClients
+      ) {
         await fetchUsers(userType, { showLoading: false });
         return;
       }
     } catch (error) {
-      if (accessWasUpdated || roleWasUpdated) {
+      if (accessWasUpdated || manageableClientsWereUpdated || roleWasUpdated) {
         await fetchUsers(userType, { showLoading: false });
       }
 
       if (accessWasUpdated && isStatusRequestError(error)) {
         throw new Error(
           "App-client access was updated, but the status could not be saved.",
+        );
+      }
+
+      if (manageableClientsWereUpdated && isStatusRequestError(error)) {
+        throw new Error(
+          "Manageable app clients were updated, but the status could not be saved.",
         );
       }
 
