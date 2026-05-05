@@ -58,3 +58,34 @@ func TestGetUserByID(t *testing.T) {
 		t.Errorf("expected email %s, got %s", user.Email, resp.Email)
 	}
 }
+
+func TestSyncAdminClientAccess(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockUserRepository(ctrl)
+	mockClientRepo := mocks.NewMockClientRepository(ctrl)
+	mockRegRepo := mocks.NewMockRegistrationRepository(ctrl)
+	mockCAURepo := mocks.NewMockClientAllowedUserRepository(ctrl)
+
+	userService := service.NewUserService(
+		mockRepo,
+		mockClientRepo,
+		mockRegRepo,
+		mockCAURepo,
+	)
+
+	userID := uuid.New()
+	clientIDs := []string{uuid.New().String(), uuid.New().String()}
+
+	mockClientRepo.EXPECT().
+		SyncAdminClientBind(gomock.Any(), userID[:], gomock.Any()).
+		Return(nil).
+		Times(1)
+
+	err := userService.SyncAdminClientAccess(context.Background(), userID,
+		clientIDs)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}

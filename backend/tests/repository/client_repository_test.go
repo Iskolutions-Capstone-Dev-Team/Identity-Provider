@@ -79,3 +79,86 @@ func TestGetClientByID(t *testing.T) {
 		t.Errorf("unmet expectations: %s", err)
 	}
 }
+
+/**
+ * TestListAllowedClients verifies the retrieval of allowed clients for a user.
+ */
+func TestListAllowedClients(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %s", err)
+	}
+	defer db.Close()
+
+	sqlxDB := sqlx.NewDb(db, "mysql")
+	repo := repository.NewClientRepository(sqlxDB)
+
+	userID := uuid.New()
+	clientID := uuid.New()
+	now := time.Now()
+
+	rows := sqlmock.NewRows([]string{
+		"id", "client_name", "description",
+		"image_location", "base_url",
+		"redirect_uri", "logout_uri", "created_at",
+	}).AddRow(
+		clientID[:], "Test Client", "Desc",
+		"/img.png", "http://localhost",
+		"http://localhost/cb", "http://localhost/out", now,
+	)
+
+	mock.ExpectQuery(".*client_allowed_users.*").
+		WithArgs(userID[:], "%Test%", 10, 0).
+		WillReturnRows(rows)
+
+	clients, err := repo.ListAllowedClients(context.Background(), 10, 0, "Test", userID[:])
+
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if len(clients) != 1 {
+		t.Errorf("expected 1 client, got %d", len(clients))
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unmet expectations: %s", err)
+	}
+}
+
+func TestSyncAdminClientBind(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %s", err)
+	}
+	defer db.Close()
+
+	sqlxDB := sqlx.NewDb(db, "mysql")
+	repo := repository.NewClientRepository(sqlxDB)
+
+	userID := uuid.New()
+	c1 := uuid.New()
+	c2 := uuid.New()
+	clientIDs := [][]byte{c1[:], c2[:]}
+
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE FROM admin_allowed_clients").
+		WithArgs(userID[:]).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	for _, clientID := range clientIDs {
+		mock.ExpectExec("INSERT INTO admin_allowed_clients").
+			WithArgs(userID[:], clientID).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+	}
+	mock.ExpectCommit()
+
+	err = repo.SyncAdminClientBind(context.Background(), userID[:],
+		clientIDs)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unmet expectations: %s", err)
+	}
+}

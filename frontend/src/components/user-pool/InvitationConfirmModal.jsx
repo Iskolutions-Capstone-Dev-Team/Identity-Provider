@@ -7,7 +7,7 @@ function getArticle(label = "") {
   return ["a", "e", "i", "o", "u"].includes(normalizedLabel[0]) ? "an" : "a";
 }
 
-export default function InvitationConfirmModal({ open, accountTypeLabel = "selected", onCancel, onConfirm, colorMode = "light" }) {
+export default function InvitationConfirmModal({ open, accountTypeLabel = "selected", isSubmitting = false, onCancel, onConfirm, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
   const isDarkMode = colorMode === "dark";
   const {
@@ -57,11 +57,11 @@ export default function InvitationConfirmModal({ open, accountTypeLabel = "selec
 
         <div className={modalFooterClassName}>
           <div className="flex flex-col-reverse justify-center gap-3 sm:flex-row sm:justify-center">
-            <button type="button" className={modalSecondaryButtonClassName} onClick={onCancel}>
+            <button type="button" className={modalSecondaryButtonClassName} onClick={onCancel} disabled={isSubmitting}>
               Cancel
             </button>
-            <button type="button" className={modalPrimaryButtonClassName} onClick={onConfirm}>
-              Send Invitation
+            <button type="button" className={modalPrimaryButtonClassName} onClick={onConfirm} disabled={isSubmitting}>
+              {isSubmitting ? "Sending..." : "Send Invitation"}
             </button>
           </div>
         </div>

@@ -111,11 +111,6 @@ export const userService = {
     return res.data;
   },
 
-  async getManagedUserAccessClients() {
-    const res = await axiosInstance.get("/admin/users/access");
-    return Array.isArray(res.data) ? res.data : [];
-  },
-
   async createUser(data) {
     const accountTypeId = normalizeAccountTypeId(data.account_type_id);
 
@@ -186,6 +181,22 @@ export const userService = {
     const res = await axiosInstance.put(`/admin/users/${id}/access`, payload, {
       headers: { "Content-Type": "application/json" },
     });
+
+    return res.data;
+  },
+
+  async updateAdminManagedClients(id, clientIds = []) {
+    const payload = {
+      client_ids: normalizeStringList(clientIds),
+    };
+
+    const res = await axiosInstance.put(
+      `/admin/users/${id}/managed-clients`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
 
     return res.data;
   },

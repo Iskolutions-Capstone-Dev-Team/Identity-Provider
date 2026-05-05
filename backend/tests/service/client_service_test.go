@@ -60,3 +60,47 @@ func TestGetClientByID(t *testing.T) {
 		t.Errorf("expected name %s, got %s", client.ClientName, resp.Name)
 	}
 }
+
+/**
+ * TestGetAllowedClients verifies retrieval of allowed clients.
+ */
+func TestGetAllowedClients(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockClientRepository(ctrl)
+	clientService := service.NewClientService(mockRepo, nil)
+
+	userID := uuid.New()
+	clientID := uuid.New()
+	client := models.Client{
+		ID:         clientID[:],
+		ClientName: "Test Client",
+	}
+
+	mockRepo.EXPECT().
+		ListAllowedClients(gomock.Any(), 10, 0, "", userID[:]).
+		Return([]models.Client{client}, nil)
+
+	mockRepo.EXPECT().
+		CountAllowedClients(gomock.Any(), "", userID[:]).
+		Return(1, nil)
+
+	resp, err := clientService.GetAllowedClients(context.Background(), userID, 10, 1, "")
+
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	if resp == nil {
+		t.Fatal("expected response, got nil")
+	}
+
+	if resp.TotalCount != 1 {
+		t.Errorf("expected total count 1, got %d", resp.TotalCount)
+	}
+
+	if len(resp.Clients) != 1 {
+		t.Errorf("expected 1 client, got %d", len(resp.Clients))
+	}
+}

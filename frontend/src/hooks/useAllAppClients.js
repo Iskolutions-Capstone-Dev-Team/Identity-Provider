@@ -21,7 +21,7 @@ const mapClientSummary = (client = {}) => {
 
   return {
     id: clientId,
-    name: client.name ?? "",
+    name: client.name ?? client.client_name ?? client.clientName ?? "",
     roleNames: normalizeRoleNames(
       client.allowed_roles ?? client.allowedRoles ?? client.roles,
     ),
