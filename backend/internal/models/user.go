@@ -61,4 +61,5 @@ type User struct {
 	Role   Role          `db:"-"`
 
 	AllowedClients []Client `db:"-"`
+	ManagedClients []Client `db:"-"`
 }

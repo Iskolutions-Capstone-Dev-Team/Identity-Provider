@@ -40,6 +40,8 @@ type UserService interface {
 		req dto.UpdateUserNameRequest) error
 	ChangePassword(ctx context.Context, id uuid.UUID,
 		oldPassword, newPassword string) error
+	SyncAdminClientAccess(ctx context.Context, id uuid.UUID,
+		clientIDs []string) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
@@ -520,6 +522,33 @@ func (s *userService) ChangePassword(
 	return s.UpdateUserPassword(ctx, id, newPassword)
 }
 
+/**
+ * SyncAdminClientAccess handles the synchronization of app-clients managed
+ * by an administrator.
+ */
+func (s *userService) SyncAdminClientAccess(
+	ctx context.Context,
+	id uuid.UUID,
+	clientIDs []string,
+) error {
+	binaryClientIDs := make([][]byte, 0, len(clientIDs))
+	for _, idStr := range clientIDs {
+		cid, err := uuid.Parse(idStr)
+		if err != nil {
+			return fmt.Errorf("sync admin access: invalid client ID %s: %w",
+				idStr, err)
+		}
+		binaryClientIDs = append(binaryClientIDs, cid[:])
+	}
+
+	err := s.ClientRepo.SyncAdminClientBind(ctx, id[:], binaryClientIDs)
+	if err != nil {
+		return fmt.Errorf("sync admin access: database query: %w", err)
+	}
+
+	return nil
+}
+
 func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	if err := s.Repo.SoftDelete(ctx, id[:]); err != nil {
 		return fmt.Errorf("database query (SoftDelete): %w", err)
@@ -562,6 +591,15 @@ func (s *userService) mapToUserResponse(
 	}
 
 	resp.Clients = clients
+	var managed []dto.ClientAccessResponse
+	for _, client := range user.ManagedClients {
+		clientUUID, _ := uuid.FromBytes(client.ID)
+		managed = append(managed, dto.ClientAccessResponse{
+			ID:   clientUUID.String(),
+			Name: client.ClientName,
+		})
+	}
+	resp.ManagedClients = managed
 
 	return resp
 }

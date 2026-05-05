@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ErrorAlert from "../ErrorAlert";
 import MultiSelect from "../MultiSelect";
@@ -22,6 +22,8 @@ const initialFormData = {
   roles: [],
   accessibleClientIds: [],
   accessibleClientNames: [],
+  manageableClientIds: [],
+  manageableClientNames: [],
 };
 
 const STATUS_OPTIONS = [
@@ -117,6 +119,8 @@ const createFormData = (user) => ({
   roles: normalizeRoleNames(user?.roles),
   accessibleClientIds: normalizeClientIds(user?.accessibleClientIds),
   accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
+  manageableClientIds: normalizeClientIds(user?.manageableClientIds),
+  manageableClientNames: normalizeClientNames(user?.manageableClientNames),
 });
 
 const getSelectedClientOptions = (clientIds = [], clientNames = []) =>
@@ -125,7 +129,7 @@ const getSelectedClientOptions = (clientIds = [], clientNames = []) =>
     label: normalizeText(clientNames[index]) || clientId,
   }));
 
-const mergeClientOptions = (baseOptions = [], selectedOptions = []) => {
+const mergeClientOptions = (baseOptions = [], ...selectedOptionLists) => {
   const optionMap = new Map();
 
   baseOptions.forEach((option) => {
@@ -134,7 +138,7 @@ const mergeClientOptions = (baseOptions = [], selectedOptions = []) => {
     }
   });
 
-  selectedOptions.forEach((option) => {
+  selectedOptionLists.flat().forEach((option) => {
     if (option?.id && option?.label && !optionMap.has(option.id)) {
       optionMap.set(option.id, option);
     }
@@ -143,7 +147,7 @@ const mergeClientOptions = (baseOptions = [], selectedOptions = []) => {
   return Array.from(optionMap.values());
 };
 
-export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
+export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, isLoadingUserDetails = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
@@ -152,9 +156,10 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const rolesEndpoint =
     isAdminView && includeSuperAdminRoleOptions ? "all" : userType === ADMIN_USER_TYPE ? "default" : "all";
   const canEditThisUser = isAdminView
-    ? canEditStatus || canEditRole
+    ? canEditStatus || canEditRole || canEditAccess
     : canEditStatus || canEditAccess;
-  const canEditAccessField = isAdminView ? canEditRole : canEditAccess;
+  const canEditRoleField = isAdminView && canEditRole;
+  const canEditAccessField = canEditAccess;
   const shouldLoadRoleOptions = open && isAdminView;
   const availableRoles = useAllRoles({
     endpoint: rolesEndpoint,
@@ -202,6 +207,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
@@ -211,6 +218,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     const nextFormData = createFormData(user);
     setFormData(nextFormData);
     setOriginalUser(nextFormData);
+    setIsSubmitting(false);
+    isSubmittingRef.current = false;
     setError("");
   }, [open, user]);
 
@@ -242,7 +251,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     }
   };
 
-  const handleAppClientChange = (accessibleClientIds) => {
+  const handleAccessibleClientChange = (accessibleClientIds) => {
     setFormData((current) => ({
       ...current,
       accessibleClientIds,
@@ -253,8 +262,23 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     }
   };
 
+  const handleManageableClientChange = (manageableClientIds) => {
+    setFormData((current) => ({
+      ...current,
+      manageableClientIds,
+    }));
+
+    if (error) {
+      setError("");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isSubmittingRef.current) {
+      return;
+    }
 
     if (isViewMode || !canEditThisUser) {
       onClose();
@@ -267,6 +291,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     }
 
     try {
+      isSubmittingRef.current = true;
+      setIsSubmitting(true);
       setError("");
 
       await onSubmit(
@@ -280,6 +306,9 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
       onClose();
     } catch (submitError) {
       setError(extractErrorMessage(submitError));
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -295,11 +324,19 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     formData.accessibleClientIds,
     formData.accessibleClientNames,
   );
+  const selectedManageableClientOptions = getSelectedClientOptions(
+    formData.manageableClientIds,
+    formData.manageableClientNames,
+  );
   const appClientSelectOptions = mergeClientOptions(
     editableAppClientOptions,
     selectedAppClientOptions,
+    selectedManageableClientOptions,
   );
   const lockedSelectedClientIds = formData.accessibleClientIds.filter(
+    (clientId) => !editableAppClientIdLookup.has(clientId),
+  );
+  const lockedManageableClientIds = formData.manageableClientIds.filter(
     (clientId) => !editableAppClientIdLookup.has(clientId),
   );
   const roleAccessItems =
@@ -308,23 +345,34 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
       : adminRoleOptions
           .filter((role) => role.id === formData.roleId)
           .map((role) => role.role_name);
-  const regularAccessItems = getAppClientNamesByIds(
+  const clientAccessItems = getAppClientNamesByIds(
     formData.accessibleClientIds,
     appClientSelectOptions,
   );
-  const regularAccessDisplayItems =
+  const manageableClientItems = getAppClientNamesByIds(
+    formData.manageableClientIds,
+    appClientSelectOptions,
+  );
+  const clientAccessDisplayItems =
     formData.accessibleClientNames.length > 0
       ? formData.accessibleClientNames
-      : regularAccessItems;
-  const accessFieldLabel = isAdminView ? "Role" : "Accessible Clients";
-  const accessItems = isAdminView ? roleAccessItems : regularAccessDisplayItems;
-  const accessFieldDescription = isViewMode
-    ? isAdminView
-      ? "View the role assigned to this admin account."
-      : "View which clients this user can access."
-    : isAdminView
-      ? "Choose the role for this admin account."
-      : "Choose which clients this user can access.";
+      : clientAccessItems;
+  const manageableClientDisplayItems =
+    formData.manageableClientNames.length > 0
+      ? formData.manageableClientNames
+      : manageableClientItems;
+  const roleFieldDescription = isViewMode
+    ? "View the role assigned to this admin account."
+    : "Choose the role for this admin account.";
+  const accessibleClientDescription = isViewMode
+    ? "View which app clients are accessible for sign-in."
+    : "Choose which clients are accessible for sign-in.";
+  const manageableClientDescription = isViewMode
+    ? "View which app clients this admin can manage."
+    : "Choose which clients this admin can manage.";
+  const clientAccessLoadingMessage = isLoadingUserDetails
+    ? "Loading latest user details..."
+    : "Loading app clients...";
   const statusFieldDescription = isViewMode
     ? "View the user's account status."
     : "Choose the user's account status.";
@@ -336,6 +384,21 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
       <p className={sectionDescriptionClassName}>
         {description}
       </p>
+    </div>
+  );
+  const renderReadOnlyAccessItems = (items, emptyLabel) => (
+    <div className={readOnlyAccessClassName}>
+      {items.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {items.map((item, index) => (
+            <span key={`${item}-${index}`} className={roleBadgeClassName}>
+              {item}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <span className={emptyAccessClassName}>{emptyLabel}</span>
+      )}
     </div>
   );
 
@@ -424,27 +487,16 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
 
             <section className={modalSectionClassName}>
               <div className="space-y-5">
-                <div>
-                  {renderSectionHeader(accessFieldLabel, accessFieldDescription)}
+                {isAdminView && (
+                  <div>
+                    {renderSectionHeader("Role", roleFieldDescription)}
 
-                  {isViewMode || !canEditAccessField ? (
-                    <div className={readOnlyAccessClassName}>
-                      {accessItems.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {accessItems.map((item, index) => (
-                            <span key={`${item}-${index}`} className={roleBadgeClassName}>
-                              {item}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className={emptyAccessClassName}>
-                          {isAdminView ? "No role assigned" : "No clients selected"}
-                        </span>
-                      )}
-                    </div>
-                  ) : isAdminView ? (
-                    <>
+                    {isViewMode || !canEditRoleField ? (
+                      renderReadOnlyAccessItems(
+                        roleAccessItems,
+                        "No role assigned",
+                      )
+                    ) : (
                       <UserPoolRoleRadioGroup
                         options={adminRoleOptions}
                         selectedValue={formData.roleId}
@@ -454,21 +506,42 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                         allowEmpty
                         emptyOptionLabel="No role assigned"
                       />
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  {renderSectionHeader(
+                    "Accessible App Clients",
+                    accessibleClientDescription,
+                  )}
+
+                  {isViewMode || !canEditAccessField ? (
+                    <>
+                      {renderReadOnlyAccessItems(
+                        clientAccessDisplayItems,
+                        "No clients selected",
+                      )}
+                      {isLoadingUserDetails && (
+                        <p className={modalHelperTextClassName}>
+                          {clientAccessLoadingMessage}
+                        </p>
+                      )}
                     </>
                   ) : (
                     <>
                       <MultiSelect
                         options={appClientSelectOptions}
                         selectedValues={formData.accessibleClientIds}
-                        onChange={handleAppClientChange}
-                        placeholder="Select app clients"
+                        onChange={handleAccessibleClientChange}
+                        placeholder="Select accessible app clients"
                         variant="userpoolModal"
                         colorMode={colorMode}
                         lockedSelectedValues={lockedSelectedClientIds}
                       />
-                      {isLoadingAppClients && (
+                      {(isLoadingAppClients || isLoadingUserDetails) && (
                         <p className={modalHelperTextClassName}>
-                          Loading app clients...
+                          {clientAccessLoadingMessage}
                         </p>
                       )}
                     </>
@@ -477,24 +550,62 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
 
                 <div>
                   {renderSectionHeader(
-                    "Status",
-                    statusFieldDescription,
-                    !isViewMode,
+                    "Manageable App Clients",
+                    manageableClientDescription,
                   )}
-                  {isViewMode || !canEditStatus ? (
-                    <input type="text" value={getStatusDisplayLabel(formData.status)} readOnly className={modalReadOnlyInputClassName} />
+
+                  {isViewMode || !canEditAccessField ? (
+                    <>
+                      {renderReadOnlyAccessItems(
+                        manageableClientDisplayItems,
+                        "No manageable clients selected",
+                      )}
+                      {isLoadingUserDetails && (
+                        <p className={modalHelperTextClassName}>
+                          {clientAccessLoadingMessage}
+                        </p>
+                      )}
+                    </>
                   ) : (
-                    <UserPoolModalSelect
-                      value={formData.status}
-                      onChange={handleStatusChange}
-                      options={STATUS_OPTIONS}
-                      selectedLabel={getStatusDisplayLabel(formData.status)}
-                      ariaLabel="Status"
-                      colorMode={colorMode}
-                    />
+                    <>
+                      <MultiSelect
+                        options={appClientSelectOptions}
+                        selectedValues={formData.manageableClientIds}
+                        onChange={handleManageableClientChange}
+                        placeholder="Select manageable app clients"
+                        variant="userpoolModal"
+                        colorMode={colorMode}
+                        lockedSelectedValues={lockedManageableClientIds}
+                      />
+                      {(isLoadingAppClients || isLoadingUserDetails) && (
+                        <p className={modalHelperTextClassName}>
+                          {clientAccessLoadingMessage}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
+            </section>
+
+            <section className={modalSectionClassName}>
+              {renderSectionHeader(
+                "Status",
+                statusFieldDescription,
+                !isViewMode,
+              )}
+              {isViewMode || !canEditStatus ? (
+                <input type="text" value={getStatusDisplayLabel(formData.status)} readOnly className={modalReadOnlyInputClassName} />
+              ) : (
+                <UserPoolModalSelect
+                  value={formData.status}
+                  onChange={handleStatusChange}
+                  options={STATUS_OPTIONS}
+                  selectedLabel={getStatusDisplayLabel(formData.status)}
+                  ariaLabel="Status"
+                  colorMode={colorMode}
+                />
+              )}
             </section>
           </div>
         </form>
@@ -506,8 +617,13 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
             </button>
 
             {!isViewMode && canEditThisUser && (
-              <button form="user-pool-form" type="submit" className={modalPrimaryButtonClassName}>
-                Save
+              <button
+                form="user-pool-form"
+                type="submit"
+                className={modalPrimaryButtonClassName}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Saving..." : "Save"}
               </button>
             )}
           </div>

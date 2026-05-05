@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../context/PermissionContext";
 import { useUsers } from "../hooks/useUsers";
@@ -16,7 +16,6 @@ import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import ErrorAlert from "../components/ErrorAlert";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { useAllAppClients } from "../hooks/useAllAppClients";
-import { useManagedUserAccessClients } from "../hooks/useManagedUserAccessClients";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS, USER_STATUS_EDIT_PERMISSIONS } from "../utils/permissionAccess";
 
@@ -34,28 +33,12 @@ export default function UserPool() {
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
   const isDarkMode = colorMode === "dark";
   const isCurrentUserSuperAdmin = hasSuperAdminRole(currentUser?.roles);
-  const shouldLoadAllAppClients =
-    !isLoadingCurrentUser && isCurrentUserSuperAdmin;
-  const shouldLoadManagedAppClients =
-    !isLoadingCurrentUser && !isCurrentUserSuperAdmin;
   const {
-    appClients: allAppClients,
-    isLoadingAppClients: isLoadingAllAppClients,
+    appClients: appClientOptions,
+    isLoadingAppClients,
   } = useAllAppClients({
-    enabled: shouldLoadAllAppClients,
+    enabled: !isLoadingCurrentUser,
   });
-  const {
-    appClients: managedAppClients,
-    isLoadingAppClients: isLoadingManagedAppClients,
-  } = useManagedUserAccessClients({
-    enabled: shouldLoadManagedAppClients,
-  });
-  const appClientOptions = isCurrentUserSuperAdmin
-    ? allAppClients
-    : managedAppClients;
-  const isLoadingAppClients = isCurrentUserSuperAdmin
-    ? isLoadingAllAppClients
-    : isLoadingManagedAppClients;
   const shouldShowAllRegularUsers = isCurrentUserSuperAdmin;
   const visibleClientIds = shouldShowAllRegularUsers
     ? []
@@ -77,6 +60,7 @@ export default function UserPool() {
     fetchError,
     setFetchError,
     loading,
+    getUserDetails,
     createUser,
     updateUser,
     deleteUser,
@@ -86,9 +70,11 @@ export default function UserPool() {
   const [openViewEditModal, setOpenViewEditModal] = useState(false);
   const [modalMode, setModalMode] = useState("view");
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isLoadingSelectedUser, setIsLoadingSelectedUser] = useState(false);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const selectedUserRequestRef = useRef(0);
   const showLoading = useDelayedLoading(
     loading ||
       (userType === REGULAR_USER_TYPE &&
@@ -100,7 +86,8 @@ export default function UserPool() {
   const canEditUserStatus = hasAnyPermission(USER_STATUS_EDIT_PERMISSIONS);
   const canEditUserRole = hasAnyPermission(USER_ROLE_EDIT_PERMISSIONS);
   const canEditUserAccess = hasAnyPermission(USER_ACCESS_EDIT_PERMISSIONS);
-  const canEditAdminUsers = canEditUserStatus || canEditUserRole;
+  const canEditAdminUsers =
+    canEditUserStatus || canEditUserRole || canEditUserAccess;
   const canEditRegularUsers = canEditUserStatus || canEditUserAccess;
   const canManageAdminUsers = isCurrentUserSuperAdmin;
   const canViewCurrentUserType =
@@ -117,24 +104,46 @@ export default function UserPool() {
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
 
-  const handleView = (user) => {
-    if (!canViewCurrentUserType) {
+  const openUserModal = async (user, mode) => {
+    const canOpenModal =
+      mode === "edit" ? canEditCurrentUserType : canViewCurrentUserType;
+
+    if (!canOpenModal) {
       return;
     }
 
+    const requestId = selectedUserRequestRef.current + 1;
+    selectedUserRequestRef.current = requestId;
     setSelectedUser(user);
-    setModalMode("view");
+    setModalMode(mode);
     setOpenViewEditModal(true);
+    setIsLoadingSelectedUser(true);
+
+    try {
+      const detailedUser = await getUserDetails(user);
+
+      if (selectedUserRequestRef.current === requestId) {
+        setSelectedUser(detailedUser);
+      }
+    } catch (error) {
+      console.error("Fetch user details error:", error);
+
+      if (selectedUserRequestRef.current === requestId) {
+        setFetchError("Unable to load the latest user details.");
+      }
+    } finally {
+      if (selectedUserRequestRef.current === requestId) {
+        setIsLoadingSelectedUser(false);
+      }
+    }
+  };
+
+  const handleView = (user) => {
+    openUserModal(user, "view");
   };
 
   const handleEdit = (user) => {
-    if (!canEditCurrentUserType) {
-      return;
-    }
-
-    setSelectedUser(user);
-    setModalMode("edit");
-    setOpenViewEditModal(true);
+    openUserModal(user, "edit");
   };
 
   const handleDeleteClick = (user) => {
@@ -240,8 +249,13 @@ export default function UserPool() {
               userType={userType}
               appClientOptions={appClientOptions}
               isLoadingAppClients={isLoadingAppClients}
+              isLoadingUserDetails={isLoadingSelectedUser}
               onSubmit={updateUser}
-              onClose={() => setOpenViewEditModal(false)}
+              onClose={() => {
+                selectedUserRequestRef.current += 1;
+                setIsLoadingSelectedUser(false);
+                setOpenViewEditModal(false);
+              }}
               canEditStatus={canEditUserStatus}
               canEditRole={canEditUserRole}
               canEditAccess={canEditUserAccess}

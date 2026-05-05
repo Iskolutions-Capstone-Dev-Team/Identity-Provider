@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -81,5 +82,65 @@ func TestGetUserHandler(t *testing.T) {
 
 	if resp.Email != userResp.Email {
 		t.Errorf("expected email %s, got %s", userResp.Email, resp.Email)
+	}
+}
+
+func TestPutAdminAccessHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockUserService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+	mockClientService := mocks.NewMockClientService(ctrl)
+	mockAccessService := mocks.NewMockClientAllowedUserService(ctrl)
+
+	handler := &v1.UserHandler{
+		Service:       mockService,
+		LogService:    mockLogService,
+		ClientService: mockClientService,
+		AccessService: mockAccessService,
+	}
+
+	userID := uuid.New()
+	targetEmail := "target@example.com"
+	clientIDs := []string{uuid.New().String()}
+
+	mockLogService.EXPECT().
+		GetUserEmail(gomock.Any(), gomock.Any()).
+		Return("admin@example.com", nil).
+		AnyTimes()
+
+	mockService.EXPECT().
+		GetUserByID(gomock.Any(), userID).
+		Return(&dto.UserResponse{Email: targetEmail}, nil).
+		Times(1)
+
+	mockService.EXPECT().
+		SyncAdminClientAccess(gomock.Any(), userID, clientIDs).
+		Return(nil).
+		Times(1)
+
+	mockLogService.EXPECT().
+		PostAuditLogWithActorString(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		Times(1)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	c.Params = []gin.Param{{Key: "id", Value: userID.String()}}
+	c.Set("user_id", uuid.New().String())
+
+	body, _ := json.Marshal(dto.UpdateUserAccessRequest{ClientIDs: clientIDs})
+	c.Request, _ = http.NewRequest("PUT", "/admin/users/"+userID.String()+"/managed-clients",
+		bytes.NewBuffer(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PutAdminAccess(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
 	}
 }

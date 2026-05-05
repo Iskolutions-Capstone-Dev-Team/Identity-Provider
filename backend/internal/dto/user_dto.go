@@ -81,17 +81,18 @@ type ClientDetailedAccessResponse struct {
 // UserResponse provides a safe view of user data, hiding the password hash.
 
 type UserResponse struct {
-	ID         string                 `json:"id"`
-	FirstName  string                 `json:"first_name"`
-	MiddleName string                 `json:"middle_name"`
-	LastName   string                 `json:"last_name"`
-	NameSuffix string                 `json:"name_suffix"`
-	Email      string                 `json:"email"`
-	Status     string                 `json:"status"`
-	CreatedAt  string                 `json:"created_at"`
-	UpdatedAt  string                 `json:"updated_at"`
-	Roles      *UserRoleResponse      `json:"roles,omitempty"`
-	Clients    []ClientAccessResponse `json:"clients,omitempty"`
+	ID             string                 `json:"id"`
+	FirstName      string                 `json:"first_name"`
+	MiddleName     string                 `json:"middle_name"`
+	LastName       string                 `json:"last_name"`
+	NameSuffix     string                 `json:"name_suffix"`
+	Email          string                 `json:"email"`
+	Status         string                 `json:"status"`
+	CreatedAt      string                 `json:"created_at"`
+	UpdatedAt      string                 `json:"updated_at"`
+	Roles          *UserRoleResponse      `json:"roles,omitempty"`
+	Clients        []ClientAccessResponse `json:"clients,omitempty"`
+	ManagedClients []ClientAccessResponse `json:"managed_clients,omitempty"`
 }
 
 // UserSimplifiedResponse provides user data without role details.

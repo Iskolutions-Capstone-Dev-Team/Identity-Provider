@@ -39,6 +39,8 @@ type ClientRepository interface {
 	AdminiClientBind(ctx context.Context, userID, clientID []byte) error
 	BatchAdminClientBind(ctx context.Context, userID []byte,
 		clientIDs [][]byte) error
+	SyncAdminClientBind(ctx context.Context, userID []byte,
+		clientIDs [][]byte) error
 	RemoveAdminClientBind(ctx context.Context, clientID []byte) error
 	IsClientAllowed(ctx context.Context, userID, clientID []byte) (bool, error)
 }
@@ -420,6 +422,42 @@ func (r *clientRepository) BatchAdminClientBind(ctx context.Context,
 		_, err = tx.ExecContext(ctx, query, userID, clientID)
 		if err != nil {
 			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (r *clientRepository) SyncAdminClientBind(ctx context.Context,
+	userID []byte, clientIDs [][]byte,
+) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Clear existing bindings for this admin
+	const deleteQuery = `
+		DELETE FROM admin_allowed_clients 
+		WHERE user_id = ?
+	`
+	_, err = tx.ExecContext(ctx, deleteQuery, userID)
+	if err != nil {
+		return fmt.Errorf("sync admin bind: delete: %w", err)
+	}
+
+	// 2. Insert new bindings
+	if len(clientIDs) > 0 {
+		const insertQuery = `
+			INSERT INTO admin_allowed_clients (user_id, client_id) 
+			VALUES (?, ?)
+		`
+		for _, clientID := range clientIDs {
+			_, err = tx.ExecContext(ctx, insertQuery, userID, clientID)
+			if err != nil {
+				return fmt.Errorf("sync admin bind: insert: %w", err)
+			}
 		}
 	}
 
