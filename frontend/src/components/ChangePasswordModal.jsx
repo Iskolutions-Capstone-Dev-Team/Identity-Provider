@@ -13,6 +13,7 @@ import { passwordResetService } from "../services/passwordResetService";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMPTY_OTP = ["", "", "", "", "", ""];
+const OTP_TIMER_SECONDS = 3 * 60;
 const EMPTY_PASSWORD_FORM = {
   currentPassword: "",
   newPassword: "",
@@ -90,7 +91,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   const [otp, setOtp] = useState(EMPTY_OTP);
   const [otpError, setOtpError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [timer, setTimer] = useState(60);
+  const [timer, setTimer] = useState(OTP_TIMER_SECONDS);
   const [canResend, setCanResend] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [otpTimerKey, setOtpTimerKey] = useState(0);
@@ -114,7 +115,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
       return;
     }
 
-    setTimer(60);
+    setTimer(OTP_TIMER_SECONDS);
     setCanResend(false);
 
     const interval = setInterval(() => {
