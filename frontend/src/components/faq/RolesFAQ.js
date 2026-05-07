@@ -24,7 +24,7 @@ const RolesFAQ = {
       id: "edit-role",
       question: "How to edit a role",
       answer: [
-        "You find the role in Roles, click Edit, then update the role name, description, or assigned permissions.",
+        "You find the role in Roles, click Edit, then update the description or assigned permissions. The role name stays locked after creation.",
         "You should save changes only after reviewing them because updates can affect users assigned to that role.",
       ],
     },
