@@ -40,10 +40,21 @@ function getLogTypeConfig(logType) {
   );
 }
 
-export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, loading, error, onView, logType = "transaction", onLogTypeChange, colorMode = "light" }) {
+function getVisibleLogTypeOptions(canViewSecurityLogs) {
+  return canViewSecurityLogs
+    ? LOG_TYPE_OPTIONS
+    : LOG_TYPE_OPTIONS.filter((option) => option.value !== "security");
+}
+
+export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, loading, error, onView, logType = "transaction", onLogTypeChange, canViewSecurityLogs = false, colorMode = "light" }) {
   const [activeTooltip, setActiveTooltip] = useState(null);
   const isDarkMode = colorMode === "dark";
-  const selectedLogType = getLogTypeConfig(logType);
+  const visibleLogTypeOptions = getVisibleLogTypeOptions(canViewSecurityLogs);
+  const selectedLogType =
+    visibleLogTypeOptions.find((option) => option.value === logType) ||
+    visibleLogTypeOptions[0] ||
+    getLogTypeConfig(logType);
+  const showLogTypePicker = visibleLogTypeOptions.length > 1;
   const filtersClassName = `flex flex-col gap-5 border-b pb-6 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
@@ -147,50 +158,52 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
           </label>
         </div>
 
-        <div className="min-w-0 lg:justify-self-end">
-          <label className={labelClassName}>Log Type</label>
-          <div className={logTypeGroupClassName} role="tablist" aria-label="Log Type">
-            {LOG_TYPE_OPTIONS.map((option) => {
-              const isSelected = option.value === logType;
+        {showLogTypePicker && (
+          <div className="min-w-0 lg:justify-self-end">
+            <label className={labelClassName}>Log Type</label>
+            <div className={logTypeGroupClassName} role="tablist" aria-label="Log Type">
+              {visibleLogTypeOptions.map((option) => {
+                const isSelected = option.value === logType;
 
-              return (
-                <div key={option.value} className="relative">
-                  <button type="button" className={getLogTypeButtonClassName(isSelected)}
-                    onClick={() => {
-                      onLogTypeChange(option.value);
-                      setActiveTooltip(null);
-                    }}
-                    onMouseEnter={() => setActiveTooltip(option.value)}
-                    onMouseLeave={() =>
-                      setActiveTooltip((current) =>
-                        current === option.value ? null : current,
-                      )
-                    }
-                    onFocus={() => setActiveTooltip(option.value)}
-                    onBlur={() =>
-                      setActiveTooltip((current) =>
-                        current === option.value ? null : current,
-                      )
-                    }
-                    role="tab"
-                    aria-selected={isSelected}
-                    aria-label={option.label}
-                  >
-                    {option.icon}
-                  </button>
-                  <span
-                    className={`${tooltipBubbleClassName} ${
-                      activeTooltip === option.value ? "opacity-100" : ""
-                    }`}
-                    role="tooltip"
-                  >
-                    {option.label}
-                  </span>
-                </div>
-              );
-            })}
+                return (
+                  <div key={option.value} className="relative">
+                    <button type="button" className={getLogTypeButtonClassName(isSelected)}
+                      onClick={() => {
+                        onLogTypeChange(option.value);
+                        setActiveTooltip(null);
+                      }}
+                      onMouseEnter={() => setActiveTooltip(option.value)}
+                      onMouseLeave={() =>
+                        setActiveTooltip((current) =>
+                          current === option.value ? null : current,
+                        )
+                      }
+                      onFocus={() => setActiveTooltip(option.value)}
+                      onBlur={() =>
+                        setActiveTooltip((current) =>
+                          current === option.value ? null : current,
+                        )
+                      }
+                      role="tab"
+                      aria-selected={isSelected}
+                      aria-label={option.label}
+                    >
+                      {option.icon}
+                    </button>
+                    <span
+                      className={`${tooltipBubbleClassName} ${
+                        activeTooltip === option.value ? "opacity-100" : ""
+                      }`}
+                      role="tooltip"
+                    >
+                      {option.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {content}
