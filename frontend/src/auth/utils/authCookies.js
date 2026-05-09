@@ -2,6 +2,7 @@ import { clearAuthorizeReturnPath } from "./authorizeFlow";
 
 const ACCESS_TOKEN_COOKIE = "access_token";
 const LEGACY_REFRESH_TOKEN_COOKIE = "refresh_token";
+const SESSION_COOKIE = "session_cookie";
 const TERMS_STORAGE_KEY = "termsAccepted";
 const DEFAULT_ACCESS_TOKEN_MAX_AGE_SECONDS = 3600;
 
@@ -90,6 +91,7 @@ export function storeTokenResponse(tokenResponse) {
 
 export function clearAuthState() {
   expireCookie(ACCESS_TOKEN_COOKIE);
+  expireCookie(SESSION_COOKIE);
   clearLegacyRefreshTokenCookie();
   expireCookie("token");
   clearAuthorizeReturnPath();

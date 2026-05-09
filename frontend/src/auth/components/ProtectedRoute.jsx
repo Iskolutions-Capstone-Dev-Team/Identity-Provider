@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { clearAuthState } from "../utils/authCookies";
 import { rememberAuthorizeReturnPath } from "../utils/authorizeFlow";
-import { buildLoginPath, buildUnauthorizedLoginPath } from "../utils/loginRoute";
+import { buildAccessDeniedPath, buildLoginPath } from "../utils/loginRoute";
 import { userService } from "../../services/userService";
 import { hasAssignedRoles } from "../utils/authAccess";
 import { hasStoredAuthTokens } from "../utils/authRecovery";
@@ -31,7 +31,6 @@ export default function ProtectedRoute({ children }) {
         }
 
         if (!hasAssignedRoles(currentUser)) {
-          clearAuthState();
           setAuthState("unauthorized");
           return;
         }
@@ -43,7 +42,6 @@ export default function ProtectedRoute({ children }) {
         }
 
         if (error.response?.status === 403) {
-          clearAuthState();
           setAuthState("unauthorized");
           return;
         }
@@ -96,7 +94,7 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (authState === "unauthorized") {
-    return <Navigate to={buildUnauthorizedLoginPath()} replace />;
+    return <Navigate to={buildAccessDeniedPath()} replace />;
   }
 
   return children;
