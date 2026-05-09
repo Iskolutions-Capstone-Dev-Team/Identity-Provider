@@ -1,6 +1,7 @@
 const defaultClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 const LOGIN_ERROR_QUERY_PARAM = "auth_error";
 export const LOGIN_PATH = "/login";
+export const ACCESS_DENIED_PATH = "/access-denied";
 export const LEGACY_UNAUTHORIZED_PATH = "/unauthorized";
 
 export const LOGIN_ERROR_CODES = {
@@ -14,6 +15,11 @@ const LOGIN_ERROR_MESSAGES = {
 
 export function buildLoginPath(clientId = defaultClientId, options = {}) {
   const { authError = "" } = options;
+
+  if (authError === LOGIN_ERROR_CODES.UNAUTHORIZED) {
+    return buildAccessDeniedPath(clientId);
+  }
+
   const params = new URLSearchParams();
 
   if (clientId) {
@@ -29,10 +35,22 @@ export function buildLoginPath(clientId = defaultClientId, options = {}) {
   return queryString ? `${LOGIN_PATH}?${queryString}` : LOGIN_PATH;
 }
 
+export function buildAccessDeniedPath(clientId = defaultClientId) {
+  const params = new URLSearchParams();
+
+  if (clientId) {
+    params.set("client_id", clientId);
+  }
+
+  const queryString = params.toString();
+
+  return queryString
+    ? `${ACCESS_DENIED_PATH}?${queryString}`
+    : ACCESS_DENIED_PATH;
+}
+
 export function buildUnauthorizedLoginPath(clientId = defaultClientId) {
-  return buildLoginPath(clientId, {
-    authError: LOGIN_ERROR_CODES.UNAUTHORIZED,
-  });
+  return buildAccessDeniedPath(clientId);
 }
 
 export function buildRegisterPasswordSetupPath( clientId = defaultClientId, email = "" ) {
