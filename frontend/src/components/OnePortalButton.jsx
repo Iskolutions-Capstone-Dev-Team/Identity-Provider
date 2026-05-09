@@ -1,12 +1,8 @@
-import { useNavigate } from "react-router-dom";
-
-const ONE_PORTAL_PLACEHOLDER_PATH = "/one-portal";
+const ONE_PORTAL_URL = import.meta.env.VITE_ONE_PORTAL_URL;
 
 export default function OnePortalButton({ className = "" }) {
-  const navigate = useNavigate();
-
   const handleClick = () => {
-    navigate(ONE_PORTAL_PLACEHOLDER_PATH);
+    window.location.href = ONE_PORTAL_URL;
   };
 
   return (
