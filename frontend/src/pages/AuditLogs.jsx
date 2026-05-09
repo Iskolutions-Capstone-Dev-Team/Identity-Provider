@@ -3,9 +3,11 @@ import { useOutletContext } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import AuditLogsListCard from "../components/audit-logs/AuditLogsListCard";
 import LogMetadataModal from "../components/audit-logs/LogMetadataModal";
+import { usePermissionAccess } from "../context/PermissionContext";
 import { logService } from "../services/logService";
 import { formatTimestamp } from "../utils/formatTimestamp";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
+import { PERMISSIONS } from "../utils/permissionAccess";
 
 const ITEMS_PER_PAGE = 10;
 const TRANSACTION_LOG_TYPE = "transaction";
@@ -142,6 +144,8 @@ function getTotalPages(payload) {
 
 export default function AuditLogs() {
   const { colorMode = "light" } = useOutletContext() || {};
+  const { hasPermission } = usePermissionAccess();
+  const canViewSecurityLogs = hasPermission(PERMISSIONS.VIEW_SECURITY_LOGS);
   const [logType, setLogType] = useState(TRANSACTION_LOG_TYPE);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -156,11 +160,28 @@ export default function AuditLogs() {
   const [metadataError, setMetadataError] = useState("");
   const showLoading = useDelayedLoading(loading);
   const selectedLogTypeLabel = getLogTypeLabel(logType);
+  const isSecurityLogType = logType === SECURITY_LOG_TYPE;
+
+  useEffect(() => {
+    if (isSecurityLogType && !canViewSecurityLogs) {
+      setLogType(TRANSACTION_LOG_TYPE);
+      setPage(1);
+    }
+  }, [canViewSecurityLogs, isSecurityLogType]);
 
   useEffect(() => {
     let ignore = false;
 
     const loadLogs = async () => {
+      if (isSecurityLogType && !canViewSecurityLogs) {
+        setLoading(false);
+        setLogs([]);
+        setTotalResults(0);
+        setTotalPages(1);
+        setError("");
+        return;
+      }
+
       try {
         setLoading(true);
         setError("");
@@ -207,7 +228,14 @@ export default function AuditLogs() {
     return () => {
       ignore = true;
     };
-  }, [logType, page, search, selectedLogTypeLabel]);
+  }, [
+    canViewSecurityLogs,
+    isSecurityLogType,
+    logType,
+    page,
+    search,
+    selectedLogTypeLabel,
+  ]);
 
   useEffect(() => {
     if (page > totalPages) {
@@ -216,6 +244,10 @@ export default function AuditLogs() {
   }, [page, totalPages]);
 
   const handleViewLog = async (log) => {
+    if (isSecurityLogType && !canViewSecurityLogs) {
+      return;
+    }
+
     setSelectedLog(log);
     setMetadataError("");
     setIsMetadataOpen(true);
@@ -263,6 +295,10 @@ export default function AuditLogs() {
       return;
     }
 
+    if (nextLogType === SECURITY_LOG_TYPE && !canViewSecurityLogs) {
+      return;
+    }
+
     closeMetadataModal();
     setLogType(nextLogType);
     setPage(1);
@@ -299,6 +335,7 @@ export default function AuditLogs() {
             onView={handleViewLog}
             logType={logType}
             onLogTypeChange={handleLogTypeChange}
+            canViewSecurityLogs={canViewSecurityLogs}
             colorMode={colorMode}
           />
         </div>
