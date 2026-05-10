@@ -1,7 +1,10 @@
 import axiosInstance from "./axiosInstance";
+import { clearCachedRequests, getCachedRequest } from "../utils/requestCache";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 100;
+const USER_CACHE_PREFIX = "user:";
+const CURRENT_USER_CACHE_KEY = `${USER_CACHE_PREFIX}me`;
 const UUID_PATTERN =
   /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i;
 
@@ -49,29 +52,47 @@ const extractCreatedUserId = (payload = {}) => {
   return matchedUserId?.[0] ?? "";
 };
 
+const clearUserCache = () => {
+  clearCachedRequests(USER_CACHE_PREFIX);
+};
+
 export const userService = {
   async getMe() {
-    const res = await axiosInstance.get("/me");
-    return res.data;
+    return getCachedRequest(CURRENT_USER_CACHE_KEY, async () => {
+      const res = await axiosInstance.get("/me");
+      return res.data;
+    });
   },
 
   async getUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = {}) {
-    const res = await axiosInstance.get("/admin/users", {
-      params: { page, limit },
-    });
-    return res.data;
+    return getCachedRequest(
+      `${USER_CACHE_PREFIX}list:${page}:${limit}`,
+      async () => {
+        const res = await axiosInstance.get("/admin/users", {
+          params: { page, limit },
+        });
+        return res.data;
+      },
+    );
   },
 
   async getAdminUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = {}) {
-    const res = await axiosInstance.get("/admin/users/admins", {
-      params: { page, limit },
-    });
-    return res.data;
+    return getCachedRequest(
+      `${USER_CACHE_PREFIX}admins:${page}:${limit}`,
+      async () => {
+        const res = await axiosInstance.get("/admin/users/admins", {
+          params: { page, limit },
+        });
+        return res.data;
+      },
+    );
   },
 
   async getUser(id) {
-    const res = await axiosInstance.get(`/admin/users/${id}`);
-    return res.data;
+    return getCachedRequest(`${USER_CACHE_PREFIX}detail:${id}`, async () => {
+      const res = await axiosInstance.get(`/admin/users/${id}`);
+      return res.data;
+    });
   },
 
   async updateUserName(id, data = {}) {
@@ -108,6 +129,7 @@ export const userService = {
       },
     );
 
+    clearUserCache();
     return res.data;
   },
 
@@ -135,6 +157,7 @@ export const userService = {
       headers: { "Content-Type": "application/json" },
     });
 
+    clearUserCache();
     return {
       ...(res.data ?? {}),
       createdUserId: extractCreatedUserId(res.data),
@@ -157,6 +180,7 @@ export const userService = {
       headers: { "Content-Type": "application/json" },
     });
 
+    clearUserCache();
     return res.data;
   },
 
@@ -170,6 +194,7 @@ export const userService = {
       headers: { "Content-Type": "application/json" },
     });
 
+    clearUserCache();
     return res.data;
   },
 
@@ -182,6 +207,7 @@ export const userService = {
       headers: { "Content-Type": "application/json" },
     });
 
+    clearUserCache();
     return res.data;
   },
 
@@ -198,11 +224,13 @@ export const userService = {
       },
     );
 
+    clearUserCache();
     return res.data;
   },
 
   async deleteUser(id) {
     const res = await axiosInstance.delete(`/admin/users/${id}`);
+    clearUserCache();
     return res.data;
   },
 };

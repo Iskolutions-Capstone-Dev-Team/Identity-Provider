@@ -1,7 +1,9 @@
 import axiosInstance from "./axiosInstance";
 import { buildAccountTypeOption, getAccountTypeBackendId, normalizeAccountType } from "../utils/accountTypes";
+import { clearCachedRequests, getCachedRequest } from "../utils/requestCache";
 
 const REGISTRATION_BASE_PATH = "/admin/registration";
+const REGISTRATION_CACHE_PREFIX = "registration:";
 const CREATE_ACCOUNT_TYPE_PLACEHOLDER_ID = 1;
 
 function normalizeTextValue(value) {
@@ -57,20 +59,22 @@ function normalizeAccountTypeConfig(
 
 export const registrationService = {
   async getRegistrationConfig(requestConfig = {}) {
-    const response = await axiosInstance.get(
-      `${REGISTRATION_BASE_PATH}/config`,
-      requestConfig,
-    );
-    const payload = response.data ?? {};
-    const accountTypes = Array.isArray(payload?.account_types)
-      ? payload.account_types
-      : Array.isArray(payload?.accountTypes)
-        ? payload.accountTypes
-        : [];
+    return getCachedRequest(`${REGISTRATION_CACHE_PREFIX}config`, async () => {
+      const response = await axiosInstance.get(
+        `${REGISTRATION_BASE_PATH}/config`,
+        requestConfig,
+      );
+      const payload = response.data ?? {};
+      const accountTypes = Array.isArray(payload?.account_types)
+        ? payload.account_types
+        : Array.isArray(payload?.accountTypes)
+          ? payload.accountTypes
+          : [];
 
-    return accountTypes
-      .map((config) => normalizeAccountTypeConfig(config))
-      .filter((config) => config.accountTypeValue);
+      return accountTypes
+        .map((config) => normalizeAccountTypeConfig(config))
+        .filter((config) => config.accountTypeValue);
+    });
   },
 
   async getClientsByAccountTypeId(
@@ -78,15 +82,20 @@ export const registrationService = {
     fallbackAccountType = "",
     requestConfig = {},
   ) {
-    const response = await axiosInstance.get(
-      `${REGISTRATION_BASE_PATH}/config/${accountTypeId}`,
-      requestConfig,
-    );
+    return getCachedRequest(
+      `${REGISTRATION_CACHE_PREFIX}config:${accountTypeId}`,
+      async () => {
+        const response = await axiosInstance.get(
+          `${REGISTRATION_BASE_PATH}/config/${accountTypeId}`,
+          requestConfig,
+        );
 
-    return normalizeAccountTypeConfig(
-      response.data,
-      fallbackAccountType,
-      accountTypeId,
+        return normalizeAccountTypeConfig(
+          response.data,
+          fallbackAccountType,
+          accountTypeId,
+        );
+      },
     );
   },
 
@@ -109,6 +118,7 @@ export const registrationService = {
       },
     );
 
+    clearCachedRequests(REGISTRATION_CACHE_PREFIX);
     return response.data;
   },
 
@@ -135,6 +145,7 @@ export const registrationService = {
       },
     );
 
+    clearCachedRequests(REGISTRATION_CACHE_PREFIX);
     return response.data;
   },
 
@@ -147,6 +158,7 @@ export const registrationService = {
       `${REGISTRATION_BASE_PATH}/config/${accountTypeId}`,
     );
 
+    clearCachedRequests(REGISTRATION_CACHE_PREFIX);
     return response.data;
   },
 
