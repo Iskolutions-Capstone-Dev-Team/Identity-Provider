@@ -472,7 +472,10 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
       onClose();
     } catch (submitError) {
       console.error("Submit app client error:", submitError);
-      setError("Unable to save app client. Please review the details and try again.");
+      setError(
+        submitError?.message ||
+          "Unable to save app client. Please review the details and try again.",
+      );
     }
   };
 

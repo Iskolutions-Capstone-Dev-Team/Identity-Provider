@@ -2,6 +2,7 @@ import axiosInstance from "./axiosInstance";
 import { clearCachedRequests, getCachedRequest } from "../utils/requestCache";
 
 const CLIENT_CACHE_PREFIX = "client:";
+const MAX_CLIENT_IMAGE_BYTES = 5 * 1024 * 1024;
 
 const normalizeStringValue = (value) =>
   typeof value === "string" ? value : "";
@@ -10,6 +11,19 @@ const normalizeStringList = (values = []) =>
   (Array.isArray(values) ? values : []).filter(
     (value) => typeof value === "string" && value.trim().length > 0,
   );
+
+function validateClientImageFile(imageFile) {
+  if (!imageFile) {
+    return;
+  }
+
+  if (
+    Number.isFinite(imageFile.size) &&
+    imageFile.size > MAX_CLIENT_IMAGE_BYTES
+  ) {
+    throw new Error("System logo must be 5MB max.");
+  }
+}
 
 function parseJsonChunk(chunk) {
   try {
@@ -145,6 +159,7 @@ const buildClientFormData = (data = {}) => {
   });
 
   if (data.imageFile) {
+    validateClientImageFile(data.imageFile);
     formData.append("image", data.imageFile);
   }
 
