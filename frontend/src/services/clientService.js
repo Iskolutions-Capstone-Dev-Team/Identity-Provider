@@ -1,4 +1,7 @@
-import axiosInstance from "../services/axiosInstance";
+import axiosInstance from "./axiosInstance";
+import { clearCachedRequests, getCachedRequest } from "../utils/requestCache";
+
+const CLIENT_CACHE_PREFIX = "client:";
 
 const normalizeStringValue = (value) =>
   typeof value === "string" ? value : "";
@@ -177,37 +180,44 @@ export const clientService = {
     const normalizedPage =
       Number.isInteger(page) && page > 0 ? page : 1;
 
-    const response = await axiosInstance.get("/admin/clients", {
-      params: {
-        limit,
-        page: normalizedPage,
-        ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
+    return getCachedRequest(
+      `${CLIENT_CACHE_PREFIX}list:${limit}:${normalizedPage}:${normalizedKeyword}`,
+      async () => {
+        const response = await axiosInstance.get("/admin/clients", {
+          params: {
+            limit,
+            page: normalizedPage,
+            ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
+          },
+        });
+
+        const payload = normalizeResponsePayload(response.data);
+        const items = getClientItems(payload);
+        const total =
+          payload.total_count ??
+          payload.total ??
+          payload.count ??
+          payload.totalResults ??
+          items.length;
+        const lastPage =
+          payload.last_page ??
+          payload.lastPage ??
+          Math.max(1, Math.ceil(total / limit));
+
+        return {
+          items,
+          total: Number.isInteger(total) ? total : items.length,
+          lastPage: Number.isInteger(lastPage) && lastPage > 0 ? lastPage : 1,
+        };
       },
-    });
-
-    const payload = normalizeResponsePayload(response.data);
-    const items = getClientItems(payload);
-    const total =
-      payload.total_count ??
-      payload.total ??
-      payload.count ??
-      payload.totalResults ??
-      items.length;
-    const lastPage =
-      payload.last_page ??
-      payload.lastPage ??
-      Math.max(1, Math.ceil(total / limit));
-
-    return {
-      items,
-      total: Number.isInteger(total) ? total : items.length,
-      lastPage: Number.isInteger(lastPage) && lastPage > 0 ? lastPage : 1,
-    };
+    );
   },
 
   async getClientById(id) {
-    const response = await axiosInstance.get(`/admin/clients/${id}`);
-    return response.data;
+    return getCachedRequest(`${CLIENT_CACHE_PREFIX}detail:${id}`, async () => {
+      const response = await axiosInstance.get(`/admin/clients/${id}`);
+      return response.data;
+    });
   },
 
   async createClient(data) {
@@ -216,6 +226,7 @@ export const clientService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
+    clearCachedRequests(CLIENT_CACHE_PREFIX);
     return response.data;
   },
 
@@ -225,16 +236,19 @@ export const clientService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
+    clearCachedRequests(CLIENT_CACHE_PREFIX);
     return response.data;
   },
 
   async deleteClient(id) {
     const response = await axiosInstance.delete(`/admin/clients/${id}`);
+    clearCachedRequests(CLIENT_CACHE_PREFIX);
     return response.data;
   },
 
   async rotateClientSecret(id) {
     const response = await axiosInstance.patch(`/admin/clients/${id}/secret`);
+    clearCachedRequests(CLIENT_CACHE_PREFIX);
     return normalizeRotateSecretPayload(response?.data, id);
   },
 };
