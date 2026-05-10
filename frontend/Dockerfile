@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install dependencies in a clean, deterministic way
-RUN npm install
+RUN npm ci && npm cache clean --force
 
 # Copy the rest of the application source code
 COPY . .
