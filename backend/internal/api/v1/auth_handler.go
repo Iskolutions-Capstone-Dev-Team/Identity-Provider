@@ -223,7 +223,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		status := http.StatusInternalServerError
 		msg := "internal error"
 
-		if strings.Contains(err.Error(), "Verification") ||
+		if strings.Contains(err.Error(), "verification") ||
 			strings.Contains(err.Error(), "UserLookup") {
 			status = http.StatusUnauthorized
 			msg = "invalid credentials"
@@ -602,7 +602,7 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		status := http.StatusInternalServerError
 		errorMsg := "server_error"
 
-		if strings.Contains(err.Error(), "Verification") {
+		if strings.Contains(err.Error(), "verification") {
 			status, errorMsg = http.StatusUnauthorized, "unauthorized"
 		} else if strings.Contains(err.Error(), "Code Exchange") {
 			status, errorMsg = http.StatusBadRequest, "invalid_grant"
