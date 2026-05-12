@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import AuthLayout from "../layouts/AuthLayout";
 import LoginForm from "../components/LoginForm";
-import { buildLoginPath, getLoginClientId, getLoginErrorCode, getLoginErrorMessage } from "../utils/loginRoute";
+import AccessDenied from "./AccessDenied";
+import { buildLoginPath, getLoginClientId, getLoginErrorCode, getLoginErrorMessage, LOGIN_ERROR_CODES } from "../utils/loginRoute";
 import { DEFAULT_AUTHENTICATED_PATH } from "../utils/authAccess";
 import { hasStoredAccessToken } from "../utils/authRecovery";
 
@@ -32,7 +33,10 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const clientId = getLoginClientId(searchParams);
   const loginErrorCode = getLoginErrorCode(searchParams);
-  const loginErrorMessage = getLoginErrorMessage(searchParams);
+  const isAccessDeniedError = loginErrorCode === LOGIN_ERROR_CODES.UNAUTHORIZED;
+  const loginErrorMessage = isAccessDeniedError
+    ? ""
+    : getLoginErrorMessage(searchParams);
   const [isResolvingAccess, setIsResolvingAccess] = useState(
     Boolean(clientId) && !loginErrorCode,
   );
@@ -50,6 +54,10 @@ export default function Login() {
 
     setIsResolvingAccess(false);
   }, [clientId, loginErrorCode, navigate]);
+
+  if (isAccessDeniedError) {
+    return <AccessDenied />;
+  }
 
   if (!searchParams.get("client_id") && clientId) {
     return (

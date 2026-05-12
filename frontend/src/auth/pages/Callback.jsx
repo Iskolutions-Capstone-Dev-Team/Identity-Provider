@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "../services/authService";
 import { storeTokenResponse } from "../utils/authCookies";
-import { buildLoginPath, buildUnauthorizedLoginPath } from "../utils/loginRoute";
+import { buildAccessDeniedPath, buildLoginPath } from "../utils/loginRoute";
 import { clearAuthorizeAttempt, clearAuthorizeReturnPath, consumeAuthorizeReturnPath } from "../utils/authorizeFlow";
 
 export default function Callback() {
@@ -43,7 +43,7 @@ export default function Callback() {
         console.error(err);
         clearAuthorizeAttempt();
         clearAuthorizeReturnPath();
-        navigate(buildUnauthorizedLoginPath(), { replace: true });
+        navigate(buildAccessDeniedPath(), { replace: true });
       }
     };
 

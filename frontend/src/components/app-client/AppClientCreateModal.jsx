@@ -517,7 +517,8 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     } catch (submitError) {
       console.error("Create app client error:", submitError);
       setError(
-        "Unable to create app client. Please review the details and try again.",
+        submitError?.message ||
+          "Unable to create app client. Please review the details and try again.",
       );
     }
   };

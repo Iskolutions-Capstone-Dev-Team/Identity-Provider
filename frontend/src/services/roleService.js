@@ -1,4 +1,7 @@
 import axiosInstance from "./axiosInstance";
+import { clearCachedRequests, getCachedRequest } from "../utils/requestCache";
+
+const ROLE_CACHE_PREFIX = "role:";
 
 const normalizeTextValue = (value) =>
   typeof value === "string" ? value.trim() : "";
@@ -43,39 +46,55 @@ const normalizeClientTagOption = (client = {}) => {
 export const roleService = {
   async getRoles(page = 1, { keyword = "" } = {}) {
     const normalizedKeyword = normalizeTextValue(keyword);
-    const response = await axiosInstance.get("/admin/roles", {
-      params: {
-        page,
-        ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
-      },
-    });
 
-    return response.data;
+    return getCachedRequest(
+      `${ROLE_CACHE_PREFIX}list:${page}:${normalizedKeyword}`,
+      async () => {
+        const response = await axiosInstance.get("/admin/roles", {
+          params: {
+            page,
+            ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
+          },
+        });
+
+        return response.data;
+      },
+    );
   },
 
   async getAllRolesPage(page = 1, { keyword = "" } = {}) {
     const normalizedKeyword = normalizeTextValue(keyword);
-    const response = await axiosInstance.get("/admin/roles/all", {
-      params: {
-        page,
-        ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
-      },
-    });
 
-    return response.data;
+    return getCachedRequest(
+      `${ROLE_CACHE_PREFIX}all:${page}:${normalizedKeyword}`,
+      async () => {
+        const response = await axiosInstance.get("/admin/roles/all", {
+          params: {
+            page,
+            ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
+          },
+        });
+
+        return response.data;
+      },
+    );
   },
 
   async getAllRoles() {
-    const response = await axiosInstance.get("/admin/roles", {
-      params: { page: 1, limit: 10 },
-    });
+    return getCachedRequest(`${ROLE_CACHE_PREFIX}summary`, async () => {
+      const response = await axiosInstance.get("/admin/roles", {
+        params: { page: 1, limit: 10 },
+      });
 
-    return response.data.roles;
+      return response.data.roles;
+    });
   },
 
   async getRoleById(id) {
-    const response = await axiosInstance.get(`/admin/roles/${id}`);
-    return response.data;
+    return getCachedRequest(`${ROLE_CACHE_PREFIX}detail:${id}`, async () => {
+      const response = await axiosInstance.get(`/admin/roles/${id}`);
+      return response.data;
+    });
   },
 
   async getClientTags({ limit = 50, keyword = "" } = {}) {
@@ -131,6 +150,7 @@ export const roleService = {
       buildRolePayload(data),
     );
 
+    clearCachedRequests(ROLE_CACHE_PREFIX);
     return response.data;
   },
 
@@ -140,11 +160,13 @@ export const roleService = {
       buildRolePayload(data),
     );
 
+    clearCachedRequests(ROLE_CACHE_PREFIX);
     return response.data;
   },
 
   async deleteRole(id) {
     const response = await axiosInstance.delete(`/admin/roles/${id}`);
+    clearCachedRequests(ROLE_CACHE_PREFIX);
     return response.data;
   },
 };

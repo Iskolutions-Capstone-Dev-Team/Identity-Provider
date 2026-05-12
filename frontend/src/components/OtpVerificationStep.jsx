@@ -2,6 +2,13 @@ import { useEffect, useRef } from "react";
 import ErrorAlert from "./ErrorAlert";
 import { getModalTheme } from "./modalTheme";
 
+function formatTimer(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
 export default function OtpVerificationStep({ otp, setOtp, timer, canResend, onResend, errorMessage = "", onClearError, emailAddress = "your email address", colorMode = "light" }) {
   const inputsRef = useRef([]);
   const { modalSectionClassName } = getModalTheme(colorMode);
@@ -95,7 +102,7 @@ export default function OtpVerificationStep({ otp, setOtp, timer, canResend, onR
           We've sent a 6-digit verification code to
           <span className={emailClassName}>{emailAddress}</span>
         </p>
-        <p className={noteClassName}>The code will expire in 10 minutes</p>
+        <p className={noteClassName}>The code will expire in 3 minutes</p>
       </section>
 
       <section className={modalSectionClassName}>
@@ -127,7 +134,7 @@ export default function OtpVerificationStep({ otp, setOtp, timer, canResend, onR
             </button>
             <p className={noteClassName}>
               Resend available in <span className={timerClassName}>
-                00:{String(timer).padStart(2, "0")}
+                {formatTimer(timer)}
               </span>
             </p>
           </div>

@@ -1,19 +1,28 @@
 import axiosInstance from "./axiosInstance";
+import { getCachedRequest } from "../utils/requestCache";
+
+const PERMISSION_CACHE_PREFIX = "permission:";
 
 export const permissionService = {
   async getPermissions() {
-    const response = await axiosInstance.get("/admin/permissions/all", {
-      skipForbiddenAlert: true,
+    return getCachedRequest(`${PERMISSION_CACHE_PREFIX}all`, async () => {
+      const response = await axiosInstance.get("/admin/permissions/all", {
+        skipForbiddenAlert: true,
+      });
+
+      return Array.isArray(response.data) ? response.data : [];
     });
-    return Array.isArray(response.data) ? response.data : [];
   },
 
   async getCurrentUserPermissions() {
-    const response = await axiosInstance.get("/admin/permissions", {
-      skipForbiddenAlert: true,
+    return getCachedRequest(`${PERMISSION_CACHE_PREFIX}current`, async () => {
+      const response = await axiosInstance.get("/admin/permissions", {
+        skipForbiddenAlert: true,
+      });
+
+      return Array.isArray(response.data?.permissions)
+        ? response.data.permissions
+        : [];
     });
-    return Array.isArray(response.data?.permissions)
-      ? response.data.permissions
-      : [];
   },
 };

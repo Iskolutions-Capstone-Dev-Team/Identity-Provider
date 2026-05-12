@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import ErrorAlert from "../../components/ErrorAlert";
 import ChangePasswordModal from "../../components/ChangePasswordModal";
-import { getLoginErrorMessageByCode, LOGIN_ERROR_CODES } from "../utils/loginRoute";
+import { buildAccessDeniedPath } from "../utils/loginRoute";
 
 export default function LoginForm({ clientId, initialError = "" }) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -142,9 +143,7 @@ export default function LoginForm({ clientId, initialError = "" }) {
       } else if (status === 401) {
         setError("Invalid email or password.");
       } else if (status === 403) {
-        setError(
-          getLoginErrorMessageByCode(LOGIN_ERROR_CODES.UNAUTHORIZED),
-        );
+        navigate(buildAccessDeniedPath(clientId), { replace: true });
       } else if (status === 500) {
         setError("Server error. Please try again later.");
       } else {
