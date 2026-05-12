@@ -15,7 +15,7 @@ export default function Register() {
   }
 
   return (
-    <AuthLayout allowDesktopScroll>
+    <AuthLayout allowPageScroll>
       <RegisterForm clientId={clientId} />
     </AuthLayout>
   );
