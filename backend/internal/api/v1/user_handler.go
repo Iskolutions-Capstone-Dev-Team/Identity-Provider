@@ -575,8 +575,8 @@ func (h *UserHandler) PatchChangePassword(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PatchChangePassword] %v", err)
 		status := http.StatusInternalServerError
-		if strings.Contains(err.Error(), "Verification") {
-			status = http.StatusBadRequest
+		if strings.Contains(err.Error(), "verification") {
+			status = http.StatusUnauthorized
 		}
 
 		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
