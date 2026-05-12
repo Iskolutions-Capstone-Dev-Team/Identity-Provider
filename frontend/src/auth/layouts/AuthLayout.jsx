@@ -3,26 +3,20 @@ import LoginHeader from "../components/LoginHeader";
 import LoginFooter from "../components/LoginFooter";
 import { clearAccessibilityWidget } from "../../components/AccessibilityWidget";
 
-export default function AuthLayout({ children, allowDesktopScroll = false }) {
+export default function AuthLayout({ children }) {
   useEffect(() => {
     clearAccessibilityWidget();
   }, []);
 
   return (
-    <div className={`relative min-h-screen overflow-x-hidden bg-[#250508] font-[Poppins] text-white ${
-        allowDesktopScroll ? "" : "lg:h-screen lg:overflow-hidden"
-      }`}
-    >
+    <div className="relative min-h-screen overflow-x-hidden bg-[#250508] font-[Poppins] text-white lg:h-screen lg:overflow-hidden">
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-cover bg-center opacity-65" style={{ backgroundImage: "url(/assets/images/pup_bg.png)" }}/>
-        <div className="absolute inset-0 bg-gradient-to-br from-[#210306]/95 via-[#6f0f15]/88 to-[#230407]/96" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_73%_46%,rgba(248,210,78,0.12),transparent_22%),linear-gradient(90deg,rgba(37,5,8,0.08),rgba(37,5,8,0.42))]" />
+        <div className="absolute inset-0 bg-cover bg-center opacity-80" style={{ backgroundImage: "url(/assets/images/pup_bg.png)" }}/>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#210306]/82 via-[#7b0d15]/68 to-[#230407]/86" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_73%_46%,rgba(248,210,78,0.1),transparent_22%),linear-gradient(90deg,rgba(37,5,8,0.04),rgba(37,5,8,0.24))]" />
       </div>
 
-      <div className={`relative mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-5 py-5 sm:px-8 lg:grid lg:grid-cols-[minmax(28rem,1fr)_minmax(27rem,35rem)] lg:items-stretch lg:gap-6 lg:px-10 lg:py-7 xl:grid-cols-[minmax(32rem,1fr)_minmax(30rem,37rem)] xl:gap-8 ${
-          allowDesktopScroll ? "" : "lg:h-screen lg:min-h-0"
-        }`}
-      >
+      <div className="relative mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-5 py-5 sm:px-8 lg:grid lg:h-screen lg:min-h-0 lg:grid-cols-[minmax(28rem,1fr)_minmax(27rem,35rem)] lg:items-stretch lg:gap-6 lg:px-10 lg:py-7 xl:grid-cols-[minmax(32rem,1fr)_minmax(30rem,37rem)] xl:gap-8">
         <aside className="flex min-h-[24rem] flex-col sm:min-h-[27rem] lg:min-h-0">
           <LoginHeader />
 
