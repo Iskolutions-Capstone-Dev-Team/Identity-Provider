@@ -200,7 +200,7 @@ function FieldError({ message }) {
 
 function FormLabel({ children, required = false }) {
   return (
-    <label className="mb-1 block text-[0.64rem] font-semibold uppercase tracking-[0.08em] text-white/90">
+    <label className="mb-2 block text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-white/90">
       {children}
       {required ? <span className="text-red-300"> *</span> : null}
     </label>
