@@ -1,0 +1,730 @@
+time="2026-05-12T14:24:24+08:00" level=warning msg="D:\\Capstone-clone\\Identity-Provider\\tests\\docker-compose.test.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container selenium-hub  Running
+ Container selenium-chrome  Running
+============================= test session starts ==============================
+platform linux -- Python 3.11.15, pytest-7.4.3, pluggy-1.6.0 -- /usr/local/bin/python3.11
+cachedir: .pytest_cache
+metadata: {'Python': '3.11.15', 'Platform': 'Linux-6.6.114.1-microsoft-standard-WSL2-x86_64-with-glibc2.41', 'Packages': {'pytest': '7.4.3', 'pluggy': '1.6.0'}, 'Plugins': {'html': '4.1.1', 'metadata': '3.1.1', 'Faker': '20.1.0', 'timeout': '2.2.0'}}
+rootdir: /app
+plugins: html-4.1.1, metadata-3.1.1, Faker-20.1.0, timeout-2.2.0
+collecting ... collected 9 items
+
+test_login.py::TestReactLogin::test_login_page_loads_correctly 
+📸 Screenshot saved: /app/screenshots/failure_test_login_page_loads_correctly_20260512_062522.png
+FAILED    [ 11%]
+test_login.py::TestReactLogin::test_successful_login_with_go_backend 
+📸 Screenshot saved: /app/screenshots/failure_test_successful_login_with_go_backend_20260512_062532.png
+FAILED [ 22%]
+test_login.py::TestReactLogin::test_login_failure_wrong_credentials 
+📸 Screenshot saved: /app/screenshots/failure_test_login_failure_wrong_credentials_20260512_062545.png
+FAILED [ 33%]
+test_login.py::TestGoAPIDirect::test_backend_is_reachable PASSED         [ 44%]
+test_login.py::TestGoAPIDirect::test_api_endpoint_exists PASSED          [ 55%]
+test_login.py::TestGoAPIDirect::test_login_endpoint_response PASSED      [ 66%]
+test_react_components.py::TestReactComponents::test_navigation_bar_renders 
+📸 Screenshot saved: /app/screenshots/failure_test_navigation_bar_renders_20260512_062556.png
+FAILED [ 77%]
+test_react_components.py::TestReactComponents::test_form_validation 
+📸 Screenshot saved: /app/screenshots/failure_test_form_validation_20260512_062606.png
+FAILED [ 88%]
+test_react_components.py::TestReactComponents::test_password_visibility_toggle 
+📸 Screenshot saved: /app/screenshots/failure_test_password_visibility_toggle_20260512_062618.png
+FAILED [100%]
+
+=================================== FAILURES ===================================
+________________ TestReactLogin.test_login_page_loads_correctly ________________
+
+self = <test_login.TestReactLogin object at 0x7cefb0059410>
+driver = <selenium.webdriver.remote.webdriver.WebDriver (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+base_url = 'http://host.docker.internal:5173', wait_for_services = None
+
+    def test_login_page_loads_correctly(self, driver, base_url, wait_for_services):
+        """Test React login component renders"""
+        driver.get(f"{base_url}/login")
+    
+        # Wait for React to render
+>       WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "form"))
+        )
+
+test_login.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <selenium.webdriver.support.wait.WebDriverWait (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+method = <function presence_of_element_located.<locals>._predicate at 0x7cefb064af20>
+message = ''
+
+    def until(self, method: Callable[[WebDriver], Union[Literal[False], T]], message: str = "") -> T:
+        """Calls the method provided with the driver as an argument until the \
+        return value does not evaluate to ``False``.
+    
+        :param method: callable(WebDriver)
+        :param message: optional message for :exc:`TimeoutException`
+        :returns: the result of the last call to `method`
+        :raises: :exc:`selenium.common.exceptions.TimeoutException` if timeout occurs
+        """
+        screen = None
+        stacktrace = None
+    
+        end_time = time.monotonic() + self._timeout
+        while True:
+            try:
+                value = method(self._driver)
+                if value:
+                    return value
+            except self._ignored_exceptions as exc:
+                screen = getattr(exc, "screen", None)
+                stacktrace = getattr(exc, "stacktrace", None)
+            time.sleep(self._poll)
+            if time.monotonic() > end_time:
+                break
+>       raise TimeoutException(message, screen, stacktrace)
+E       selenium.common.exceptions.TimeoutException: Message: 
+E       Stacktrace:
+E       #0 0x62f591d8bb6a <unknown>
+E       #1 0x62f59178d265 <unknown>
+E       #2 0x62f5917dff76 <unknown>
+E       #3 0x62f5917e01b1 <unknown>
+E       #4 0x62f59182b7d4 <unknown>
+E       #5 0x62f591828969 <unknown>
+E       #6 0x62f5917d35cf <unknown>
+E       #7 0x62f5917d4391 <unknown>
+E       #8 0x62f591d5104b <unknown>
+E       #9 0x62f591d5400d <unknown>
+E       #10 0x62f591d3d808 <unknown>
+E       #11 0x62f591d54ba0 <unknown>
+E       #12 0x62f591d24280 <unknown>
+E       #13 0x62f591d78db8 <unknown>
+E       #14 0x62f591d78f88 <unknown>
+E       #15 0x62f591d8a5de <unknown>
+E       #16 0x739ffe03caa4 <unknown>
+E       #17 0x739ffe0c9a64 __clone
+
+/usr/local/lib/python3.11/site-packages/selenium/webdriver/support/wait.py:101: TimeoutException
+---------------------------- Captured stdout setup -----------------------------
+✓ Go backend is running
+⏳ Waiting for services... (1/20)
+⏳ Waiting for services... (2/20)
+⏳ Waiting for services... (3/20)
+⏳ Waiting for services... (4/20)
+⏳ Waiting for services... (5/20)
+⏳ Waiting for services... (6/20)
+⏳ Waiting for services... (7/20)
+⏳ Waiting for services... (8/20)
+⏳ Waiting for services... (9/20)
+⏳ Waiting for services... (10/20)
+⏳ Waiting for services... (11/20)
+⏳ Waiting for services... (12/20)
+⏳ Waiting for services... (13/20)
+⏳ Waiting for services... (14/20)
+⏳ Waiting for services... (15/20)
+⏳ Waiting for services... (16/20)
+⏳ Waiting for services... (17/20)
+⏳ Waiting for services... (18/20)
+⏳ Waiting for services... (19/20)
+⏳ Waiting for services... (20/20)
+⚠️ Could not connect to frontend. Tests may fail.
+_____________ TestReactLogin.test_successful_login_with_go_backend _____________
+
+self = <test_login.TestReactLogin object at 0x7cefb1638250>
+driver = <selenium.webdriver.remote.webdriver.WebDriver (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+base_url = 'http://host.docker.internal:5173'
+test_user = {'password': 'password123', 'username': 'test@example.com'}
+
+    def test_successful_login_with_go_backend(self, driver, base_url, test_user):
+        """Test complete login flow"""
+        driver.get(f"{base_url}/login")
+    
+        # Find React form inputs
+>       email_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email'], input[name='username']"))
+        )
+
+test_login.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <selenium.webdriver.support.wait.WebDriverWait (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+method = <function presence_of_element_located.<locals>._predicate at 0x7cefb0608ae0>
+message = ''
+
+    def until(self, method: Callable[[WebDriver], Union[Literal[False], T]], message: str = "") -> T:
+        """Calls the method provided with the driver as an argument until the \
+        return value does not evaluate to ``False``.
+    
+        :param method: callable(WebDriver)
+        :param message: optional message for :exc:`TimeoutException`
+        :returns: the result of the last call to `method`
+        :raises: :exc:`selenium.common.exceptions.TimeoutException` if timeout occurs
+        """
+        screen = None
+        stacktrace = None
+    
+        end_time = time.monotonic() + self._timeout
+        while True:
+            try:
+                value = method(self._driver)
+                if value:
+                    return value
+            except self._ignored_exceptions as exc:
+                screen = getattr(exc, "screen", None)
+                stacktrace = getattr(exc, "stacktrace", None)
+            time.sleep(self._poll)
+            if time.monotonic() > end_time:
+                break
+>       raise TimeoutException(message, screen, stacktrace)
+E       selenium.common.exceptions.TimeoutException: Message: 
+E       Stacktrace:
+E       #0 0x62f591d8bb6a <unknown>
+E       #1 0x62f59178d265 <unknown>
+E       #2 0x62f5917dff76 <unknown>
+E       #3 0x62f5917e01b1 <unknown>
+E       #4 0x62f59182b7d4 <unknown>
+E       #5 0x62f591828969 <unknown>
+E       #6 0x62f5917d35cf <unknown>
+E       #7 0x62f5917d4391 <unknown>
+E       #8 0x62f591d5104b <unknown>
+E       #9 0x62f591d5400d <unknown>
+E       #10 0x62f591d3d808 <unknown>
+E       #11 0x62f591d54ba0 <unknown>
+E       #12 0x62f591d24280 <unknown>
+E       #13 0x62f591d78db8 <unknown>
+E       #14 0x62f591d78f88 <unknown>
+E       #15 0x62f591d8a5de <unknown>
+E       #16 0x739ffe03caa4 <unknown>
+E       #17 0x739ffe0c9a64 __clone
+
+/usr/local/lib/python3.11/site-packages/selenium/webdriver/support/wait.py:101: TimeoutException
+_____________ TestReactLogin.test_login_failure_wrong_credentials ______________
+
+self = <test_login.TestReactLogin object at 0x7cefafb31610>
+driver = <selenium.webdriver.remote.webdriver.WebDriver (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+base_url = 'http://host.docker.internal:5173'
+
+    def test_login_failure_wrong_credentials(self, driver, base_url):
+        """Test login failure with wrong credentials"""
+        driver.get(f"{base_url}/login")
+    
+        # Fill with wrong credentials
+>       email_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email'], input[name='username']"))
+        )
+
+test_login.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <selenium.webdriver.support.wait.WebDriverWait (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+method = <function presence_of_element_located.<locals>._predicate at 0x7cefb0608b80>
+message = ''
+
+    def until(self, method: Callable[[WebDriver], Union[Literal[False], T]], message: str = "") -> T:
+        """Calls the method provided with the driver as an argument until the \
+        return value does not evaluate to ``False``.
+    
+        :param method: callable(WebDriver)
+        :param message: optional message for :exc:`TimeoutException`
+        :returns: the result of the last call to `method`
+        :raises: :exc:`selenium.common.exceptions.TimeoutException` if timeout occurs
+        """
+        screen = None
+        stacktrace = None
+    
+        end_time = time.monotonic() + self._timeout
+        while True:
+            try:
+                value = method(self._driver)
+                if value:
+                    return value
+            except self._ignored_exceptions as exc:
+                screen = getattr(exc, "screen", None)
+                stacktrace = getattr(exc, "stacktrace", None)
+            time.sleep(self._poll)
+            if time.monotonic() > end_time:
+                break
+>       raise TimeoutException(message, screen, stacktrace)
+E       selenium.common.exceptions.TimeoutException: Message: 
+E       Stacktrace:
+E       #0 0x62f591d8bb6a <unknown>
+E       #1 0x62f59178d265 <unknown>
+E       #2 0x62f5917dff76 <unknown>
+E       #3 0x62f5917e01b1 <unknown>
+E       #4 0x62f59182b7d4 <unknown>
+E       #5 0x62f591828969 <unknown>
+E       #6 0x62f5917d35cf <unknown>
+E       #7 0x62f5917d4391 <unknown>
+E       #8 0x62f591d5104b <unknown>
+E       #9 0x62f591d5400d <unknown>
+E       #10 0x62f591d3d808 <unknown>
+E       #11 0x62f591d54ba0 <unknown>
+E       #12 0x62f591d24280 <unknown>
+E       #13 0x62f591d78db8 <unknown>
+E       #14 0x62f591d78f88 <unknown>
+E       #15 0x62f591d8a5de <unknown>
+E       #16 0x739ffe03caa4 <unknown>
+E       #17 0x739ffe0c9a64 __clone
+
+/usr/local/lib/python3.11/site-packages/selenium/webdriver/support/wait.py:101: TimeoutException
+_______________ TestReactComponents.test_navigation_bar_renders ________________
+
+self = <test_react_components.TestReactComponents object at 0x7cefafb31bd0>
+driver = <selenium.webdriver.remote.webdriver.WebDriver (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+base_url = 'http://host.docker.internal:5173'
+
+    def test_navigation_bar_renders(self, driver, base_url):
+        """Test React Router navigation"""
+        driver.get(base_url)
+    
+        # Check for navigation links
+>       nav = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "nav"))
+        )
+
+test_react_components.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <selenium.webdriver.support.wait.WebDriverWait (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+method = <function presence_of_element_located.<locals>._predicate at 0x7cefb0609bc0>
+message = ''
+
+    def until(self, method: Callable[[WebDriver], Union[Literal[False], T]], message: str = "") -> T:
+        """Calls the method provided with the driver as an argument until the \
+        return value does not evaluate to ``False``.
+    
+        :param method: callable(WebDriver)
+        :param message: optional message for :exc:`TimeoutException`
+        :returns: the result of the last call to `method`
+        :raises: :exc:`selenium.common.exceptions.TimeoutException` if timeout occurs
+        """
+        screen = None
+        stacktrace = None
+    
+        end_time = time.monotonic() + self._timeout
+        while True:
+            try:
+                value = method(self._driver)
+                if value:
+                    return value
+            except self._ignored_exceptions as exc:
+                screen = getattr(exc, "screen", None)
+                stacktrace = getattr(exc, "stacktrace", None)
+            time.sleep(self._poll)
+            if time.monotonic() > end_time:
+                break
+>       raise TimeoutException(message, screen, stacktrace)
+E       selenium.common.exceptions.TimeoutException: Message: 
+E       Stacktrace:
+E       #0 0x62f591d8bb6a <unknown>
+E       #1 0x62f59178d265 <unknown>
+E       #2 0x62f5917dff76 <unknown>
+E       #3 0x62f5917e01b1 <unknown>
+E       #4 0x62f59182b7d4 <unknown>
+E       #5 0x62f591828969 <unknown>
+E       #6 0x62f5917d35cf <unknown>
+E       #7 0x62f5917d4391 <unknown>
+E       #8 0x62f591d5104b <unknown>
+E       #9 0x62f591d5400d <unknown>
+E       #10 0x62f591d3d808 <unknown>
+E       #11 0x62f591d54ba0 <unknown>
+E       #12 0x62f591d24280 <unknown>
+E       #13 0x62f591d78db8 <unknown>
+E       #14 0x62f591d78f88 <unknown>
+E       #15 0x62f591d8a5de <unknown>
+E       #16 0x739ffe03caa4 <unknown>
+E       #17 0x739ffe0c9a64 __clone
+
+/usr/local/lib/python3.11/site-packages/selenium/webdriver/support/wait.py:101: TimeoutException
+___________________ TestReactComponents.test_form_validation ___________________
+
+self = <test_react_components.TestReactComponents object at 0x7cefafb2c190>
+driver = <selenium.webdriver.remote.webdriver.WebDriver (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+base_url = 'http://host.docker.internal:5173'
+
+    def test_form_validation(self, driver, base_url):
+        """Test React form validation"""
+        driver.get(f"{base_url}/login")
+    
+        # Try to submit empty form
+>       submit_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+
+test_react_components.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <selenium.webdriver.remote.webdriver.WebDriver (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+by = 'css selector', value = "button[type='submit']"
+
+    def find_element(self, by=By.ID, value: Optional[str] = None) -> WebElement:
+        """Find an element given a By strategy and locator.
+    
+        :Usage:
+            ::
+    
+                element = driver.find_element(By.ID, 'foo')
+    
+        :rtype: WebElement
+        """
+        if isinstance(by, RelativeBy):
+            elements = self.find_elements(by=by, value=value)
+            if not elements:
+                raise NoSuchElementException(f"Cannot locate relative element with: {by.root}")
+            return elements[0]
+    
+        if by == By.ID:
+            by = By.CSS_SELECTOR
+            value = f'[id="{value}"]'
+        elif by == By.CLASS_NAME:
+            by = By.CSS_SELECTOR
+            value = f".{value}"
+        elif by == By.NAME:
+            by = By.CSS_SELECTOR
+            value = f'[name="{value}"]'
+    
+>       return self.execute(Command.FIND_ELEMENT, {"using": by, "value": value})["value"]
+
+/usr/local/lib/python3.11/site-packages/selenium/webdriver/remote/webdriver.py:740: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <selenium.webdriver.remote.webdriver.WebDriver (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+driver_command = 'findElement'
+params = {'using': 'css selector', 'value': "button[type='submit']"}
+
+    def execute(self, driver_command: str, params: dict = None) -> dict:
+        """Sends a command to be executed by a command.CommandExecutor.
+    
+        :Args:
+         - driver_command: The name of the command to execute as a string.
+         - params: A dictionary of named parameters to send with the command.
+    
+        :Returns:
+          The command's JSON response loaded into a dictionary object.
+        """
+        params = self._wrap_value(params)
+    
+        if self.session_id:
+            if not params:
+                params = {"sessionId": self.session_id}
+            elif "sessionId" not in params:
+                params["sessionId"] = self.session_id
+    
+        response = self.command_executor.execute(driver_command, params)
+        if response:
+>           self.error_handler.check_response(response)
+
+/usr/local/lib/python3.11/site-packages/selenium/webdriver/remote/webdriver.py:346: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x7cefafb68c10>
+response = {'status': 404, 'value': '{"value":{"error":"no such element","message":"no such element: Unable to locate element: {\...unknown>\\n#15 0x62f591d8a5de \\u003Cunknown>\\n#16 0x739ffe03caa4 \\u003Cunknown>\\n#17 0x739ffe0c9a64 __clone\\n"}}'}
+
+    def check_response(self, response: Dict[str, Any]) -> None:
+        """Checks that a JSON response from the WebDriver does not have an
+        error.
+    
+        :Args:
+         - response - The JSON response from the WebDriver server as a dictionary
+           object.
+    
+        :Raises: If the response contains an error message.
+        """
+        status = response.get("status", None)
+        if not status or status == ErrorCode.SUCCESS:
+            return
+        value = None
+        message = response.get("message", "")
+        screen: str = response.get("screen", "")
+        stacktrace = None
+        if isinstance(status, int):
+            value_json = response.get("value", None)
+            if value_json and isinstance(value_json, str):
+                import json
+    
+                try:
+                    value = json.loads(value_json)
+                    if len(value) == 1:
+                        value = value["value"]
+                    status = value.get("error", None)
+                    if not status:
+                        status = value.get("status", ErrorCode.UNKNOWN_ERROR)
+                        message = value.get("value") or value.get("message")
+                        if not isinstance(message, str):
+                            value = message
+                            message = message.get("message")
+                    else:
+                        message = value.get("message", None)
+                except ValueError:
+                    pass
+    
+        exception_class: Type[WebDriverException]
+        e = ErrorCode()
+        error_codes = [item for item in dir(e) if not item.startswith("__")]
+        for error_code in error_codes:
+            error_info = getattr(ErrorCode, error_code)
+            if isinstance(error_info, list) and status in error_info:
+                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)
+                break
+        else:
+            exception_class = WebDriverException
+    
+        if not value:
+            value = response["value"]
+        if isinstance(value, str):
+            raise exception_class(value)
+        if message == "" and "message" in value:
+            message = value["message"]
+    
+        screen = None  # type: ignore[assignment]
+        if "screen" in value:
+            screen = value["screen"]
+    
+        stacktrace = None
+        st_value = value.get("stackTrace") or value.get("stacktrace")
+        if st_value:
+            if isinstance(st_value, str):
+                stacktrace = st_value.split("\n")
+            else:
+                stacktrace = []
+                try:
+                    for frame in st_value:
+                        line = frame.get("lineNumber", "")
+                        file = frame.get("fileName", "<anonymous>")
+                        if line:
+                            file = f"{file}:{line}"
+                        meth = frame.get("methodName", "<anonymous>")
+                        if "className" in frame:
+                            meth = f"{frame['className']}.{meth}"
+                        msg = "    at %s (%s)"
+                        msg = msg % (meth, file)
+                        stacktrace.append(msg)
+                except TypeError:
+                    pass
+        if exception_class == UnexpectedAlertPresentException:
+            alert_text = None
+            if "data" in value:
+                alert_text = value["data"].get("text")
+            elif "alert" in value:
+                alert_text = value["alert"].get("text")
+            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here
+>       raise exception_class(message, screen, stacktrace)
+E       selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {"method":"css selector","selector":"button[type='submit']"}
+E         (Session info: chrome=147.0.7727.55); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+E       Stacktrace:
+E       #0 0x62f591d8bb6a <unknown>
+E       #1 0x62f59178d265 <unknown>
+E       #2 0x62f5917dff76 <unknown>
+E       #3 0x62f5917e01b1 <unknown>
+E       #4 0x62f59182b7d4 <unknown>
+E       #5 0x62f591828969 <unknown>
+E       #6 0x62f5917d35cf <unknown>
+E       #7 0x62f5917d4391 <unknown>
+E       #8 0x62f591d5104b <unknown>
+E       #9 0x62f591d5400d <unknown>
+E       #10 0x62f591d3d808 <unknown>
+E       #11 0x62f591d54ba0 <unknown>
+E       #12 0x62f591d24280 <unknown>
+E       #13 0x62f591d78db8 <unknown>
+E       #14 0x62f591d78f88 <unknown>
+E       #15 0x62f591d8a5de <unknown>
+E       #16 0x739ffe03caa4 <unknown>
+E       #17 0x739ffe0c9a64 __clone
+
+/usr/local/lib/python3.11/site-packages/selenium/webdriver/remote/errorhandler.py:229: NoSuchElementException
+_____________ TestReactComponents.test_password_visibility_toggle ______________
+
+self = <test_react_components.TestReactComponents object at 0x7cefafb68950>
+driver = <selenium.webdriver.remote.webdriver.WebDriver (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+base_url = 'http://host.docker.internal:5173'
+
+    def test_password_visibility_toggle(self, driver, base_url):
+        """Test React password visibility toggle (common feature)"""
+        driver.get(f"{base_url}/login")
+    
+>       password_input = driver.find_element(By.CSS_SELECTOR, "input[type='password']")
+
+test_react_components.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <selenium.webdriver.remote.webdriver.WebDriver (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+by = 'css selector', value = "input[type='password']"
+
+    def find_element(self, by=By.ID, value: Optional[str] = None) -> WebElement:
+        """Find an element given a By strategy and locator.
+    
+        :Usage:
+            ::
+    
+                element = driver.find_element(By.ID, 'foo')
+    
+        :rtype: WebElement
+        """
+        if isinstance(by, RelativeBy):
+            elements = self.find_elements(by=by, value=value)
+            if not elements:
+                raise NoSuchElementException(f"Cannot locate relative element with: {by.root}")
+            return elements[0]
+    
+        if by == By.ID:
+            by = By.CSS_SELECTOR
+            value = f'[id="{value}"]'
+        elif by == By.CLASS_NAME:
+            by = By.CSS_SELECTOR
+            value = f".{value}"
+        elif by == By.NAME:
+            by = By.CSS_SELECTOR
+            value = f'[name="{value}"]'
+    
+>       return self.execute(Command.FIND_ELEMENT, {"using": by, "value": value})["value"]
+
+/usr/local/lib/python3.11/site-packages/selenium/webdriver/remote/webdriver.py:740: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <selenium.webdriver.remote.webdriver.WebDriver (session="b5a5854afdd1d3c6506f9d8480a174f6")>
+driver_command = 'findElement'
+params = {'using': 'css selector', 'value': "input[type='password']"}
+
+    def execute(self, driver_command: str, params: dict = None) -> dict:
+        """Sends a command to be executed by a command.CommandExecutor.
+    
+        :Args:
+         - driver_command: The name of the command to execute as a string.
+         - params: A dictionary of named parameters to send with the command.
+    
+        :Returns:
+          The command's JSON response loaded into a dictionary object.
+        """
+        params = self._wrap_value(params)
+    
+        if self.session_id:
+            if not params:
+                params = {"sessionId": self.session_id}
+            elif "sessionId" not in params:
+                params["sessionId"] = self.session_id
+    
+        response = self.command_executor.execute(driver_command, params)
+        if response:
+>           self.error_handler.check_response(response)
+
+/usr/local/lib/python3.11/site-packages/selenium/webdriver/remote/webdriver.py:346: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x7cefafb68c10>
+response = {'status': 404, 'value': '{"value":{"error":"no such element","message":"no such element: Unable to locate element: {\...unknown>\\n#15 0x62f591d8a5de \\u003Cunknown>\\n#16 0x739ffe03caa4 \\u003Cunknown>\\n#17 0x739ffe0c9a64 __clone\\n"}}'}
+
+    def check_response(self, response: Dict[str, Any]) -> None:
+        """Checks that a JSON response from the WebDriver does not have an
+        error.
+    
+        :Args:
+         - response - The JSON response from the WebDriver server as a dictionary
+           object.
+    
+        :Raises: If the response contains an error message.
+        """
+        status = response.get("status", None)
+        if not status or status == ErrorCode.SUCCESS:
+            return
+        value = None
+        message = response.get("message", "")
+        screen: str = response.get("screen", "")
+        stacktrace = None
+        if isinstance(status, int):
+            value_json = response.get("value", None)
+            if value_json and isinstance(value_json, str):
+                import json
+    
+                try:
+                    value = json.loads(value_json)
+                    if len(value) == 1:
+                        value = value["value"]
+                    status = value.get("error", None)
+                    if not status:
+                        status = value.get("status", ErrorCode.UNKNOWN_ERROR)
+                        message = value.get("value") or value.get("message")
+                        if not isinstance(message, str):
+                            value = message
+                            message = message.get("message")
+                    else:
+                        message = value.get("message", None)
+                except ValueError:
+                    pass
+    
+        exception_class: Type[WebDriverException]
+        e = ErrorCode()
+        error_codes = [item for item in dir(e) if not item.startswith("__")]
+        for error_code in error_codes:
+            error_info = getattr(ErrorCode, error_code)
+            if isinstance(error_info, list) and status in error_info:
+                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)
+                break
+        else:
+            exception_class = WebDriverException
+    
+        if not value:
+            value = response["value"]
+        if isinstance(value, str):
+            raise exception_class(value)
+        if message == "" and "message" in value:
+            message = value["message"]
+    
+        screen = None  # type: ignore[assignment]
+        if "screen" in value:
+            screen = value["screen"]
+    
+        stacktrace = None
+        st_value = value.get("stackTrace") or value.get("stacktrace")
+        if st_value:
+            if isinstance(st_value, str):
+                stacktrace = st_value.split("\n")
+            else:
+                stacktrace = []
+                try:
+                    for frame in st_value:
+                        line = frame.get("lineNumber", "")
+                        file = frame.get("fileName", "<anonymous>")
+                        if line:
+                            file = f"{file}:{line}"
+                        meth = frame.get("methodName", "<anonymous>")
+                        if "className" in frame:
+                            meth = f"{frame['className']}.{meth}"
+                        msg = "    at %s (%s)"
+                        msg = msg % (meth, file)
+                        stacktrace.append(msg)
+                except TypeError:
+                    pass
+        if exception_class == UnexpectedAlertPresentException:
+            alert_text = None
+            if "data" in value:
+                alert_text = value["data"].get("text")
+            elif "alert" in value:
+                alert_text = value["alert"].get("text")
+            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here
+>       raise exception_class(message, screen, stacktrace)
+E       selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {"method":"css selector","selector":"input[type='password']"}
+E         (Session info: chrome=147.0.7727.55); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+E       Stacktrace:
+E       #0 0x62f591d8bb6a <unknown>
+E       #1 0x62f59178d265 <unknown>
+E       #2 0x62f5917dff76 <unknown>
+E       #3 0x62f5917e01b1 <unknown>
+E       #4 0x62f59182b7d4 <unknown>
+E       #5 0x62f591828969 <unknown>
+E       #6 0x62f5917d35cf <unknown>
+E       #7 0x62f5917d4391 <unknown>
+E       #8 0x62f591d5104b <unknown>
+E       #9 0x62f591d5400d <unknown>
+E       #10 0x62f591d3d808 <unknown>
+E       #11 0x62f591d54ba0 <unknown>
+E       #12 0x62f591d24280 <unknown>
+E       #13 0x62f591d78db8 <unknown>
+E       #14 0x62f591d78f88 <unknown>
+E       #15 0x62f591d8a5de <unknown>
+E       #16 0x739ffe03caa4 <unknown>
+E       #17 0x739ffe0c9a64 __clone
+
+/usr/local/lib/python3.11/site-packages/selenium/webdriver/remote/errorhandler.py:229: NoSuchElementException
+=========================== short test summary info ============================
+FAILED test_login.py::TestReactLogin::test_login_page_loads_correctly - selen...
+FAILED test_login.py::TestReactLogin::test_successful_login_with_go_backend
+FAILED test_login.py::TestReactLogin::test_login_failure_wrong_credentials - ...
+FAILED test_react_components.py::TestReactComponents::test_navigation_bar_renders
+FAILED test_react_components.py::TestReactComponents::test_form_validation - ...
+FAILED test_react_components.py::TestReactComponents::test_password_visibility_toggle
+=================== 6 failed, 3 passed in 112.34s (0:01:52) ====================
+
