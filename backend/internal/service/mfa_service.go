@@ -13,6 +13,10 @@ import (
 )
 
 type MFAService interface {
+	GenerateTOTPSetup(ctx context.Context, 
+		email string) (string, string, error)
+	FinalizeTOTP(ctx context.Context, userID []byte, 
+		secret, code, name string) ([]string, error)
 	SetupTOTP(ctx context.Context, userID []byte, 
 		email string) (string, []string, error)
 	VerifyCode(ctx context.Context, userID []byte, 
@@ -25,6 +29,56 @@ type MFAService interface {
 
 type mfaService struct {
 	mfaRepo repository.MFARepository
+}
+
+func (s *mfaService) GenerateTOTPSetup(ctx context.Context,
+	email string,
+) (string, string, error) {
+	secret, err := utils.GenerateTOTPSecret()
+	if err != nil {
+		return "", "", fmt.Errorf("[MFAService] Secret Gen: %w", err)
+	}
+
+	issuer := "Identity-Provider"
+	uri := fmt.Sprintf("otpauth://totp/%s:%s?secret=%s&issuer=%s",
+		issuer, email, secret, url.QueryEscape(issuer))
+
+	return secret, uri, nil
+}
+
+func (s *mfaService) FinalizeTOTP(ctx context.Context, userID []byte,
+	secret, code, name string,
+) ([]string, error) {
+	// Verify the code first
+	expected, err := utils.ComputeTOTP(secret)
+	if err != nil {
+		return nil, fmt.Errorf("[MFAService] TOTP Compute: %w", err)
+	}
+
+	if expected != code {
+		return nil, fmt.Errorf("invalid verification code")
+	}
+
+	encryptedSecret, err := utils.Encrypt([]byte(secret))
+	if err != nil {
+		return nil, fmt.Errorf("[MFAService] Encrypt: %w", err)
+	}
+
+	id := uuid.New()
+	auth := &models.UserAuthenticator{
+		ID:              id[:],
+		UserID:          userID,
+		Type:            "totp",
+		Name:            name,
+		SecretEncrypted: encryptedSecret,
+	}
+
+	err = s.mfaRepo.InsertAuthenticator(ctx, auth)
+	if err != nil {
+		return nil, fmt.Errorf("[MFAService] DB Insert: %w", err)
+	}
+
+	return s.generateBackupCodes(ctx, userID)
 }
 
 func (s *mfaService) SetupTOTP(ctx context.Context, userID []byte,
