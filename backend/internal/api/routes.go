@@ -69,6 +69,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	mfa := v1Group.Group("/mfa")
 	mfa.Use(middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService))
 	{
+		mfa.GET("/setup", h.MFAHandler.GetTOTPSetup)
 		mfa.POST("/authenticators", h.MFAHandler.PostAuthenticator)
 		mfa.POST("/verify", h.MFAHandler.PostVerifyMFA)
 		mfa.GET("/authenticators", h.MFAHandler.GetAuthenticatorList)
