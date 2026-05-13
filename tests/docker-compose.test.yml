@@ -24,9 +24,11 @@ services:
       - SE_HUB_HOST=selenium-hub
       - SE_HUB_PORT=4444
       - APP_BASE_URL=http://172.31.64.1:5173
-      - API_BASE_URL=http://172.31.64.1:8080
+      - API_BASE_URL=http://172.31.64.1:8080/api/v1
     volumes:
       - ./selenium:/tests
       - ./reports:/tests/reports
       - ./screenshots:/tests/screenshots
     working_dir: /tests
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

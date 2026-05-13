@@ -1,20 +1,19 @@
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+import requests
 import os
+import time
 
 @pytest.fixture(scope="session")
 def driver():
-    hub_host = os.getenv("SE_HUB_HOST", "selenium-hub")
-    hub_port = os.getenv("SE_HUB_PORT", "4444")
-    
     chrome_options = Options()
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     
     driver = webdriver.Remote(
-        command_executor=f"http://{hub_host}:{hub_port}/wd/hub",
+        command_executor="http://selenium-hub:4444/wd/hub",
         options=chrome_options
     )
     driver.implicitly_wait(10)
@@ -29,4 +28,31 @@ def base_url():
 
 @pytest.fixture(scope="session")
 def api_base_url():
-    return os.getenv("API_BASE_URL", "http://172.31.64.1:8080")
+    # This now returns http://172.31.64.1:8080/api/v1
+    return os.getenv("API_BASE_URL", "http://172.31.64.1:8080/api/v1")
+
+@pytest.fixture
+def test_user():
+    return {
+        "email": os.getenv("TEST_USERNAME", "admin@email.com"),
+        "password": os.getenv("TEST_PASSWORD", "adminpass123!")
+    }
+
+@pytest.fixture
+def api_client():
+    session = requests.Session()
+    session.headers.update({"Content-Type": "application/json"})
+    return session
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    if report.when == "call" and report.failed:
+        driver = item.funcargs.get('driver')
+        if driver:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            screenshot_path = f"/tests/screenshots/failure_{item.name}_{timestamp}.png"
+            driver.save_screenshot(screenshot_path)
+            print(f"\n📸 Screenshot saved: {screenshot_path}")
