@@ -57,7 +57,7 @@ const initialPasswordErrors = {
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function getInputClassName(hasError, hasActionButton = false) {
-  return `h-12 w-full rounded-2xl border bg-white/95 pl-12 pr-4 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
+  return `h-12 w-full rounded-xl border bg-white/95 pl-12 pr-4 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
     hasError
       ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
       : "border-white/20 focus:border-[#ffd700] focus:ring-[#ffd700]/20"
@@ -65,7 +65,7 @@ function getInputClassName(hasError, hasActionButton = false) {
 }
 
 function getSelectContainerClassName(hasError) {
-  return `relative rounded-[1.35rem] border bg-white/95 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] transition duration-200 ${
+  return `relative rounded-xl border bg-white/95 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] transition duration-200 ${
     hasError
       ? "border-red-300 focus-within:border-red-300 focus-within:ring-4 focus-within:ring-red-200/70"
       : "border-white/20 focus-within:border-[#ffd700] focus-within:ring-4 focus-within:ring-[#ffd700]/20"
@@ -635,7 +635,7 @@ export default function RegisterForm({ clientId }) {
                 className={getInputClassName(false)}
               />
             </div>
-            <p className="pl-1 pt-2 text-xs font-medium uppercase tracking-[0.08em] text-white/65">
+            <p className="pl-1 pt-1 text-xs font-medium uppercase tracking-[0.08em] text-white/65">
               Optional
             </p>
           </div>
@@ -693,7 +693,7 @@ export default function RegisterForm({ clientId }) {
                     }
                   }, 0);
                 }}
-                className="flex h-14 w-full items-center justify-between gap-3 bg-transparent pl-4 pr-2 text-left outline-none"
+                className="flex h-12 w-full items-center justify-between gap-3 bg-transparent pl-4 pr-2 text-left outline-none"
                 aria-haspopup="listbox"
                 aria-expanded={isRoleMenuOpen}
                 disabled={isSendingOtp}
@@ -714,7 +714,7 @@ export default function RegisterForm({ clientId }) {
                     {selectedRoleOption?.label || "Select your role"}
                   </span>
                 </span>
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#7b0d15]/15 bg-[#7b0d15]/8 text-[#991b1b]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#991b1b]">
                   <ChevronDownIcon
                     className={`h-5 w-5 transition duration-200 ${
                       isRoleMenuOpen ? "rotate-180" : ""
@@ -725,9 +725,9 @@ export default function RegisterForm({ clientId }) {
             </div>
 
             {isRoleMenuOpen ? (
-              <div className="absolute left-0 right-0 top-[calc(100%-0.15rem)] z-[90] overflow-hidden rounded-[1.35rem] border border-white/20 bg-white/98 shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl" role="listbox" aria-label="Select your role">
+              <div className="absolute left-0 right-0 top-[calc(100%+0.25rem)] z-[90] max-h-40 overflow-y-auto rounded-xl border border-white/20 bg-white shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl" role="listbox" aria-label="Select your role">
                 <button type="button" onClick={() => handleRoleSelect("")}
-                  className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition duration-200 ${
+                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition duration-200 ${
                     details.accountType
                       ? "text-slate-700 hover:bg-[#fff2d2] hover:text-[#7b0d15]"
                       : "bg-[#fff2d2] font-medium text-[#7b0d15]"
@@ -744,7 +744,7 @@ export default function RegisterForm({ clientId }) {
 
                   return (
                     <button key={roleOption.id} type="button" onClick={() => handleRoleSelect(roleOption.id)}
-                      className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition duration-200 ${
+                      className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition duration-200 ${
                         isSelected
                           ? "bg-[#fff2d2] font-medium text-[#7b0d15]"
                           : "text-slate-700 hover:bg-[#fff2d2] hover:text-[#7b0d15]"
@@ -763,10 +763,10 @@ export default function RegisterForm({ clientId }) {
           <FieldError message={detailErrors.accountType} />
         </div>
 
-        <p className="pt-1 text-sm text-white/80">
-          Need to login instead?{" "}
+        <p className="pt-1 text-sm text-white/85">
+          Already have an account?{" "}
           <Link to={loginPath} className="font-semibold text-[#ffd700] underline decoration-transparent transition duration-300 hover:decoration-[#ffd700]">
-            Go back to login
+            Sign in
           </Link>
         </p>
 
@@ -931,23 +931,21 @@ export default function RegisterForm({ clientId }) {
   const maskedEmail = details.email ? maskEmail(details.email) : "";
 
   return (
-    <div className="relative z-20 w-full max-w-[36rem] px-1 sm:px-0">
-      <div className="rounded-4xl border border-white/20 bg-white/10 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
-        <div className="rounded-[calc(2rem-4px)] bg-[linear-gradient(180deg,rgba(120,12,22,0.72),rgba(60,7,12,0.86))] px-6 py-7 sm:px-8 sm:py-8">
-          <div className="space-y-6">
-            <div className="space-y-4 text-center">
+    <div className="relative z-20 w-full max-w-[38rem] px-1 sm:px-0">
+      <div className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
+        <div className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 lg:px-10">
+          <div className="space-y-5">
+            <div className="space-y-3 text-center">
               {step !== "success" ? (
-                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/15 text-[#f8d24e] shadow-[0_20px_45px_-28px_rgba(248,210,78,0.55)]">
-                  <PasswordIcon className="h-11 w-11" />
-                </div>
+                <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="float-logo mx-auto block h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)] transition duration-300 hover:scale-105"/>
               ) : null}
 
               {step === "details" ? (
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-bold leading-none text-white">
+                  <h2 className="text-[1.85rem] font-bold leading-none text-white">
                     Join <span className="text-[#f8d24e]">PUPTian!</span>
                   </h2>
-                  <p className="mx-auto max-w-sm text-sm font-light leading-6 text-white/80">
+                  <p className="mx-auto max-w-sm text-base font-light leading-6 text-white/75">
                     Create an account to access PUPT systems.
                   </p>
                 </div>
@@ -1054,7 +1052,7 @@ function EyeSlashIcon() {
 function RoleIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.25-8.25-3.286Zm0 13.036h.008v.008H12v-.008Z"/>
     </svg>
   );
 }
