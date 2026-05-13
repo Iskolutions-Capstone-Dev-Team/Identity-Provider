@@ -41,6 +41,37 @@ func (m *MockMFAService) EXPECT() *MockMFAServiceMockRecorder {
 	return m.recorder
 }
 
+// FinalizeTOTP mocks base method.
+func (m *MockMFAService) FinalizeTOTP(ctx context.Context, userID []byte, secret, code, name string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FinalizeTOTP", ctx, userID, secret, code, name)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FinalizeTOTP indicates an expected call of FinalizeTOTP.
+func (mr *MockMFAServiceMockRecorder) FinalizeTOTP(ctx, userID, secret, code, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeTOTP", reflect.TypeOf((*MockMFAService)(nil).FinalizeTOTP), ctx, userID, secret, code, name)
+}
+
+// GenerateTOTPSetup mocks base method.
+func (m *MockMFAService) GenerateTOTPSetup(ctx context.Context, email string) (string, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateTOTPSetup", ctx, email)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GenerateTOTPSetup indicates an expected call of GenerateTOTPSetup.
+func (mr *MockMFAServiceMockRecorder) GenerateTOTPSetup(ctx, email any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTOTPSetup", reflect.TypeOf((*MockMFAService)(nil).GenerateTOTPSetup), ctx, email)
+}
+
 // GetAuthenticatorList mocks base method.
 func (m *MockMFAService) GetAuthenticatorList(ctx context.Context, userID []byte) ([]models.AuthenticatorMetadata, error) {
 	m.ctrl.T.Helper()

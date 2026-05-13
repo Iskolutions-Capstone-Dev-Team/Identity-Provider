@@ -6,16 +6,34 @@ import (
 	"testing"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 )
 
-func TestSetupTOTP(t *testing.T) {
+func TestGenerateTOTPSetup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	// Set encryption key for test
+	mockRepo := mocks.NewMockMFARepository(ctrl)
+	mfaService := service.NewMFAService(mockRepo)
+
+	secret, uri, err := mfaService.GenerateTOTPSetup(context.Background(),
+		"test@example.com")
+	if err != nil {
+		t.Fatalf("Failed to generate setup: %v", err)
+	}
+
+	if secret == "" || uri == "" {
+		t.Error("Secret or URI is empty")
+	}
+}
+
+func TestFinalizeTOTP(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	os.Setenv("MFA_ENCRYPTION_KEY", 
 		"94f9aae6af350c1f2ccb6f02702d66262a12ccb5aad6ef97f5bb283c4c5927ef")
 
@@ -23,21 +41,17 @@ func TestSetupTOTP(t *testing.T) {
 	mfaService := service.NewMFAService(mockRepo)
 
 	userID := uuid.New()
-	email := "test@example.com"
+	secret := "JBSWY3DPEHPK3PXP"
+	code, _ := utils.ComputeTOTP(secret)
 
-	// Expect 1 TOTP insert + 10 backup code inserts
+	// 1 TOTP + 10 Backup Codes
 	mockRepo.EXPECT().InsertAuthenticator(gomock.Any(), gomock.Any()).
 		Return(nil).Times(11)
 
-	uri, backupCodes, err := mfaService.SetupTOTP(context.Background(),
-		userID[:], email)
-
+	backupCodes, err := mfaService.FinalizeTOTP(context.Background(),
+		userID[:], secret, code, "My Phone")
 	if err != nil {
-		t.Fatalf("Failed to setup TOTP: %v", err)
-	}
-
-	if uri == "" {
-		t.Error("Expected non-empty URI")
+		t.Fatalf("Failed to finalize: %v", err)
 	}
 
 	if len(backupCodes) != 10 {
