@@ -1,0 +1,34 @@
+services:
+  selenium-hub:
+    image: selenium/hub:latest
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"
+
+  chrome:
+    image: selenium/node-chrome:latest
+    container_name: selenium-chrome
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+
+  selenium-tests:
+    build: ./selenium
+    container_name: selenium-test-runner
+    depends_on:
+      - selenium-hub
+      - chrome
+    environment:
+      - SE_HUB_HOST=selenium-hub
+      - SE_HUB_PORT=4444
+      - APP_BASE_URL=http://172.31.64.1:5173
+      - API_BASE_URL=http://172.31.64.1:8080/api/v1
+    volumes:
+      - ./selenium:/tests
+      - ./reports:/tests/reports
+      - ./screenshots:/tests/screenshots
+    working_dir: /tests
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

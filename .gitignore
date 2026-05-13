@@ -43,3 +43,12 @@ CompileDaemon
 # --- Frontend ---
 node_modules
 dist
+
+#--- Tests ---
+/tests/reports/
+/tests/screenshots/
+/tests/.pytest_cache/
+/tests/selenium/__pycache__/
+/tests/selenium/.pytest_cache/
+/tests/test_results.txt
+/tests/*.log
