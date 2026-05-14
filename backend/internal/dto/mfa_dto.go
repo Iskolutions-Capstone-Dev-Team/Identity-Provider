@@ -1,11 +1,16 @@
 package dto
 
+type TOTPSetupRequest struct {
+	Email string `json:"email" binding:"required"`
+}
+
 type TOTPSetupResponse struct {
 	Secret     string `json:"secret"`
 	OTPAuthURI string `json:"otpauth_uri"`
 }
 
 type TOTPFinalizeRequest struct {
+	Email  string `json:"email" binding:"required"`
 	Secret string `json:"secret" binding:"required"`
 	Code   string `json:"code" binding:"required"`
 	Name   string `json:"name" binding:"required"`
@@ -17,9 +22,11 @@ type MFASetupResponse struct {
 }
 
 type MFAVerifyRequest struct {
-	Code string `json:"code" binding:"required"`
+	Email string `json:"email" binding:"required"`
+	Code  string `json:"code" binding:"required"`
 }
 
 type MFADeleteRequest struct {
-	ID string `json:"id" binding:"required"`
+	Email string `json:"email" binding:"required"`
+	ID    string `json:"id" binding:"required"`
 }
