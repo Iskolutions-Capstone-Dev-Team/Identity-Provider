@@ -67,13 +67,13 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	}
 
 	mfa := v1Group.Group("/mfa")
-	mfa.Use(middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService))
+	mfa.Use(h.ClientCORS)
 	{
-		mfa.GET("/setup", h.MFAHandler.GetTOTPSetup)
+		mfa.POST("/setup", h.MFAHandler.GetTOTPSetup)
 		mfa.POST("/authenticators", h.MFAHandler.PostAuthenticator)
 		mfa.POST("/verify", h.MFAHandler.PostVerifyMFA)
 		mfa.GET("/authenticators", h.MFAHandler.GetAuthenticatorList)
-		mfa.DELETE("/authenticators/:id", h.MFAHandler.DeleteAuthenticator)
+		mfa.DELETE("/authenticators", h.MFAHandler.DeleteAuthenticator)
 	}
 
 	user := v1Group.Group("/user")
