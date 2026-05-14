@@ -205,6 +205,21 @@ func (mr *MockUserRepositoryMockRecorder) GetUserList(ctx, limit, offset any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserList", reflect.TypeOf((*MockUserRepository)(nil).GetUserList), ctx, limit, offset)
 }
 
+// GetUsersByAccountTypeID mocks base method.
+func (m *MockUserRepository) GetUsersByAccountTypeID(ctx context.Context, accountTypeID int) ([]models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUsersByAccountTypeID", ctx, accountTypeID)
+	ret0, _ := ret[0].([]models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUsersByAccountTypeID indicates an expected call of GetUsersByAccountTypeID.
+func (mr *MockUserRepositoryMockRecorder) GetUsersByAccountTypeID(ctx, accountTypeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsersByAccountTypeID", reflect.TypeOf((*MockUserRepository)(nil).GetUsersByAccountTypeID), ctx, accountTypeID)
+}
+
 // RemoveClientAdminBind mocks base method.
 func (m *MockUserRepository) RemoveClientAdminBind(ctx context.Context, userID []byte) error {
 	m.ctrl.T.Helper()
