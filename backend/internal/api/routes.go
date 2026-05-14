@@ -72,7 +72,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		mfa.POST("/setup", h.MFAHandler.GetTOTPSetup)
 		mfa.POST("/authenticators", h.MFAHandler.PostAuthenticator)
 		mfa.POST("/verify", h.MFAHandler.PostVerifyMFA)
-		mfa.GET("/authenticators", h.MFAHandler.GetAuthenticatorList)
+		mfa.POST("/authenticators/list", h.MFAHandler.GetAuthenticatorList)
 		mfa.DELETE("/authenticators", h.MFAHandler.DeleteAuthenticator)
 	}
 

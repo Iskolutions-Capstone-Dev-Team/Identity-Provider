@@ -30,3 +30,7 @@ type MFADeleteRequest struct {
 	Email string `json:"email" binding:"required"`
 	ID    string `json:"id" binding:"required"`
 }
+
+type MFAAuthenticatorListRequest struct {
+	Email string `json:"email" binding:"required"`
+}

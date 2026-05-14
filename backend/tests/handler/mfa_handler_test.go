@@ -76,3 +76,31 @@ func TestPostAuthenticatorHandler(t *testing.T) {
 		t.Errorf("Expected status 200, got %d", w.Code)
 	}
 }
+
+func TestGetAuthenticatorListHandler(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockMFAService := mocks.NewMockMFAService(ctrl)
+	mockUserService := mocks.NewMockUserService(ctrl)
+	handler := v1.NewMFAHandler(mockMFAService, mockUserService)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.POST("/mfa/authenticators/list", handler.GetAuthenticatorList)
+
+	mockUserService.EXPECT().GetUserByEmail(gomock.Any(), "test@example.com").
+		Return(&dto.UserResponse{ID: uuid.New().String(), Email: "test@example.com"}, nil)
+
+	mockMFAService.EXPECT().GetAuthenticatorList(gomock.Any(), gomock.Any()).
+		Return(nil, nil)
+
+	body, _ := json.Marshal(dto.MFAAuthenticatorListRequest{Email: "test@example.com"})
+	req, _ := http.NewRequest("POST", "/mfa/authenticators/list", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", w.Code)
+	}
+}

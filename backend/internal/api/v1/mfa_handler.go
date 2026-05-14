@@ -140,15 +140,16 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 
 // GetAuthenticatorList returns the list of registered authenticators.
 func (h *MFAHandler) GetAuthenticatorList(c *gin.Context) {
-	email := c.Query("email")
-	if email == "" {
+	var req dto.MFAAuthenticatorListRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[GetAuthenticatorList] Bind JSON: %v", err)
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Email is required",
+			Error: "Invalid request payload",
 		})
 		return
 	}
 
-	user, err := h.UserService.GetUserByEmail(c.Request.Context(), email)
+	user, err := h.UserService.GetUserByEmail(c.Request.Context(), req.Email)
 	if err != nil {
 		log.Printf("[GetAuthenticatorList] User Lookup: %v", err)
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{
