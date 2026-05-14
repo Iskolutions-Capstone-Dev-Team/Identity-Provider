@@ -25,19 +25,16 @@ func TestGetTOTPSetupHandler(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.Use(func(c *gin.Context) {
-		c.Set("user_id", uuid.New().String())
-		c.Next()
-	})
-	r.GET("/mfa/setup", handler.GetTOTPSetup)
+	r.POST("/mfa/setup", handler.GetTOTPSetup)
 
-	mockUserService.EXPECT().GetUserByID(gomock.Any(), gomock.Any()).
-		Return(&dto.UserResponse{Email: "test@example.com"}, nil)
+	mockUserService.EXPECT().GetUserByEmail(gomock.Any(), "test@example.com").
+		Return(&dto.UserResponse{ID: uuid.New().String(), Email: "test@example.com"}, nil)
 
 	mockMFAService.EXPECT().GenerateTOTPSetup(gomock.Any(), "test@example.com").
 		Return("SECRET", "otpauth://...", nil)
 
-	req, _ := http.NewRequest("GET", "/mfa/setup", nil)
+	body, _ := json.Marshal(dto.TOTPSetupRequest{Email: "test@example.com"})
+	req, _ := http.NewRequest("POST", "/mfa/setup", bytes.NewBuffer(body))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -56,20 +53,17 @@ func TestPostAuthenticatorHandler(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.Use(func(c *gin.Context) {
-		c.Set("user_id", uuid.New().String())
-		c.Next()
-	})
 	r.POST("/mfa/authenticators", handler.PostAuthenticator)
+
+	mockUserService.EXPECT().GetUserByEmail(gomock.Any(), "test@example.com").
+		Return(&dto.UserResponse{ID: uuid.New().String(), Email: "test@example.com"}, nil)
 
 	mockMFAService.EXPECT().FinalizeTOTP(gomock.Any(), gomock.Any(), 
 		"SECRET", "123456", "My Phone").
 		Return([]string{"backup1"}, nil)
 	
-	mockUserService.EXPECT().GetUserByID(gomock.Any(), gomock.Any()).
-		Return(&dto.UserResponse{Email: "test@example.com"}, nil)
-
 	body, _ := json.Marshal(dto.TOTPFinalizeRequest{
+		Email:  "test@example.com",
 		Secret: "SECRET",
 		Code:   "123456",
 		Name:   "My Phone",
