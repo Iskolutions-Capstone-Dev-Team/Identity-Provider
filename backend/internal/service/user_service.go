@@ -192,7 +192,7 @@ func (s *userService) CreateUser(
 			for _, c := range clients {
 				clientIDs = append(clientIDs, c.ClientID)
 			}
-			err = s.CAURepo.BatchAssignClientAccess(ctx, userID[:], clientIDs)
+			err = s.CAURepo.BatchAssignClientAccess(ctx, userID[:], clientIDs, models.SourcePreapproved)
 			if err != nil {
 				return userID, fmt.Errorf("post-create (Assign): %w", err)
 			}
@@ -332,7 +332,7 @@ func (s *userService) CreateAdminUser(
 			for _, c := range clients {
 				clientIDs = append(clientIDs, c.ClientID)
 			}
-			err = s.CAURepo.BatchAssignClientAccess(ctx, userID[:], clientIDs)
+			err = s.CAURepo.BatchAssignClientAccess(ctx, userID[:], clientIDs, models.SourcePreapproved)
 			if err != nil {
 				return userID, fmt.Errorf("post-create (Assign): %w", err)
 			}
