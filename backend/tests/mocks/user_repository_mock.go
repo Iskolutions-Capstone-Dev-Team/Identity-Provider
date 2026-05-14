@@ -42,6 +42,20 @@ func (m *MockUserRepository) EXPECT() *MockUserRepositoryMockRecorder {
 	return m.recorder
 }
 
+// ClearUserRelations mocks base method.
+func (m *MockUserRepository) ClearUserRelations(ctx context.Context, id []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearUserRelations", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearUserRelations indicates an expected call of ClearUserRelations.
+func (mr *MockUserRepositoryMockRecorder) ClearUserRelations(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearUserRelations", reflect.TypeOf((*MockUserRepository)(nil).ClearUserRelations), ctx, id)
+}
+
 // CountAdminUsers mocks base method.
 func (m *MockUserRepository) CountAdminUsers(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()
@@ -146,6 +160,21 @@ func (mr *MockUserRepositoryMockRecorder) GetUserByEmail(ctx, email any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserRepository)(nil).GetUserByEmail), ctx, email)
 }
 
+// GetUserByEmailIncludeDeleted mocks base method.
+func (m *MockUserRepository) GetUserByEmailIncludeDeleted(ctx context.Context, email string) (*models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByEmailIncludeDeleted", ctx, email)
+	ret0, _ := ret[0].(*models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByEmailIncludeDeleted indicates an expected call of GetUserByEmailIncludeDeleted.
+func (mr *MockUserRepositoryMockRecorder) GetUserByEmailIncludeDeleted(ctx, email any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmailIncludeDeleted", reflect.TypeOf((*MockUserRepository)(nil).GetUserByEmailIncludeDeleted), ctx, email)
+}
+
 // GetUserById mocks base method.
 func (m *MockUserRepository) GetUserById(ctx context.Context, id []byte) (*models.User, error) {
 	m.ctrl.T.Helper()
@@ -188,6 +217,20 @@ func (m *MockUserRepository) RemoveClientAdminBind(ctx context.Context, userID [
 func (mr *MockUserRepositoryMockRecorder) RemoveClientAdminBind(ctx, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClientAdminBind", reflect.TypeOf((*MockUserRepository)(nil).RemoveClientAdminBind), ctx, userID)
+}
+
+// RestoreUser mocks base method.
+func (m *MockUserRepository) RestoreUser(ctx context.Context, id []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestoreUser", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RestoreUser indicates an expected call of RestoreUser.
+func (mr *MockUserRepositoryMockRecorder) RestoreUser(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreUser", reflect.TypeOf((*MockUserRepository)(nil).RestoreUser), ctx, id)
 }
 
 // SoftDelete mocks base method.
