@@ -19,21 +19,20 @@ type MFAHandler struct {
 
 // GetTOTPSetup returns the secret and URI for a new TOTP authenticator.
 func (h *MFAHandler) GetTOTPSetup(c *gin.Context) {
-	uIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(uIDStr)
-	if err != nil {
-		log.Printf("[GetTOTPSetup] UUID Parse: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
+	var req dto.TOTPSetupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[GetTOTPSetup] Bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "Invalid request payload",
 		})
 		return
 	}
 
-	user, err := h.UserService.GetUserByID(c.Request.Context(), userID)
+	user, err := h.UserService.GetUserByEmail(c.Request.Context(), req.Email)
 	if err != nil {
 		log.Printf("[GetTOTPSetup] User Lookup: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "Internal Server Error",
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "User not found",
 		})
 		return
 	}
@@ -65,16 +64,16 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 		return
 	}
 
-	uIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(uIDStr)
+	user, err := h.UserService.GetUserByEmail(c.Request.Context(), req.Email)
 	if err != nil {
-		log.Printf("[PostAuthenticator] UUID Parse: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
+		log.Printf("[PostAuthenticator] User Lookup: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "User not found",
 		})
 		return
 	}
 
+	userID, _ := uuid.Parse(user.ID)
 	backupCodes, err := h.MFAService.FinalizeTOTP(c.Request.Context(),
 		userID[:], req.Secret, req.Code, req.Name)
 	if err != nil {
@@ -87,7 +86,6 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 
 	// We return the URI again just in case, plus backup codes
 	issuer := "Identity-Provider"
-	user, _ := h.UserService.GetUserByID(c.Request.Context(), userID)
 	uri := fmt.Sprintf("otpauth://totp/%s:%s?secret=%s&issuer=%s",
 		issuer, user.Email, req.Secret, url.QueryEscape(issuer))
 
@@ -108,16 +106,16 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 		return
 	}
 
-	uIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(uIDStr)
+	user, err := h.UserService.GetUserByEmail(c.Request.Context(), req.Email)
 	if err != nil {
-		log.Printf("[PostVerifyMFA] UUID Parse: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
+		log.Printf("[PostVerifyMFA] User Lookup: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "User not found",
 		})
 		return
 	}
 
+	userID, _ := uuid.Parse(user.ID)
 	success, err := h.MFAService.VerifyCode(c.Request.Context(),
 		userID[:], req.Code)
 	if err != nil {
@@ -142,16 +140,24 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 
 // GetAuthenticatorList returns the list of registered authenticators.
 func (h *MFAHandler) GetAuthenticatorList(c *gin.Context) {
-	uIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(uIDStr)
-	if err != nil {
-		log.Printf("[GetAuthenticatorList] UUID Parse: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
+	email := c.Query("email")
+	if email == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "Email is required",
 		})
 		return
 	}
 
+	user, err := h.UserService.GetUserByEmail(c.Request.Context(), email)
+	if err != nil {
+		log.Printf("[GetAuthenticatorList] User Lookup: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "User not found",
+		})
+		return
+	}
+
+	userID, _ := uuid.Parse(user.ID)
 	list, err := h.MFAService.GetAuthenticatorList(c.Request.Context(),
 		userID[:])
 	if err != nil {
@@ -167,8 +173,16 @@ func (h *MFAHandler) GetAuthenticatorList(c *gin.Context) {
 
 // DeleteAuthenticator removes an authenticator.
 func (h *MFAHandler) DeleteAuthenticator(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	var req dto.MFADeleteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[DeleteAuthenticator] Bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "Invalid request payload",
+		})
+		return
+	}
+
+	id, err := uuid.Parse(req.ID)
 	if err != nil {
 		log.Printf("[DeleteAuthenticator] ID Parse: %v", err)
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -177,16 +191,16 @@ func (h *MFAHandler) DeleteAuthenticator(c *gin.Context) {
 		return
 	}
 
-	uIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(uIDStr)
+	user, err := h.UserService.GetUserByEmail(c.Request.Context(), req.Email)
 	if err != nil {
-		log.Printf("[DeleteAuthenticator] User UUID Parse: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
+		log.Printf("[DeleteAuthenticator] User Lookup: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "User not found",
 		})
 		return
 	}
 
+	userID, _ := uuid.Parse(user.ID)
 	err = h.MFAService.RemoveAuthenticator(c.Request.Context(), id[:],
 		userID[:])
 	if err != nil {
