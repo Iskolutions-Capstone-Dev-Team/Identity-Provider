@@ -18,9 +18,9 @@ type UserAuthenticator struct {
 }
 
 type AuthenticatorMetadata struct {
-	ID         string     `json:"id"`
-	Type       string     `json:"type"`
-	Name       string     `json:"name"`
-	CreatedAt  time.Time  `json:"created_at"`
-	LastUsedAt *time.Time `json:"last_used_at"`
+	ID         []byte     `db:"id" json:"id"`
+	Type       string     `db:"type" json:"type"`
+	Name       string     `db:"name" json:"name"`
+	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
+	LastUsedAt *time.Time `db:"last_used_at" json:"last_used_at"`
 }
