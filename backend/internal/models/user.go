@@ -58,8 +58,9 @@ type User struct {
 	UpdatedAt    time.Time    `db:"updated_at"`
 	DeletedAt    sql.NullTime `db:"deleted_at"`
 
-	RoleID sql.NullInt64 `db:"role_id"`
-	Role   Role          `db:"-"`
+	RoleID        sql.NullInt64 `db:"role_id"`
+	AccountTypeID sql.NullInt64 `db:"account_type_id"`
+	Role          Role          `db:"-"`
 
 	AllowedClients []Client `db:"-"`
 	ManagedClients []Client `db:"-"`

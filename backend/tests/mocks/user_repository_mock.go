@@ -261,6 +261,20 @@ func (mr *MockUserRepositoryMockRecorder) UpdateStatus(ctx, user any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockUserRepository)(nil).UpdateStatus), ctx, user)
 }
 
+// UpdateUserAccountType mocks base method.
+func (m *MockUserRepository) UpdateUserAccountType(ctx context.Context, userID []byte, accountTypeID sql.NullInt64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserAccountType", ctx, userID, accountTypeID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUserAccountType indicates an expected call of UpdateUserAccountType.
+func (mr *MockUserRepositoryMockRecorder) UpdateUserAccountType(ctx, userID, accountTypeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserAccountType", reflect.TypeOf((*MockUserRepository)(nil).UpdateUserAccountType), ctx, userID, accountTypeID)
+}
+
 // UpdateUserName mocks base method.
 func (m *MockUserRepository) UpdateUserName(ctx context.Context, user *models.User) error {
 	m.ctrl.T.Helper()

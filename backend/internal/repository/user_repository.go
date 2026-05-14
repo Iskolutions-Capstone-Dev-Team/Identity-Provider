@@ -26,6 +26,8 @@ type UserRepository interface {
 	UpdateUserPassword(ctx context.Context, user *models.User) error
 	UpdateUserRole(ctx context.Context, userID []byte,
 		roleID sql.NullInt64) error
+	UpdateUserAccountType(ctx context.Context, userID []byte,
+		accountTypeID sql.NullInt64) error
 	UpdateUserName(ctx context.Context, user *models.User) error
 	SoftDelete(ctx context.Context, id []byte) error
 	CountUsers(ctx context.Context) (int, error)
@@ -64,7 +66,7 @@ func (r *userRepository) GetUserList(ctx context.Context,
 	sql := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name, 
                u.name_suffix, u.email, u.status, u.created_at, 
-               u.updated_at, r.id AS role_id, r.role_name AS role_name, 
+               u.updated_at, u.account_type_id, r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
@@ -126,7 +128,7 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 	const sql = `
         SELECT u.id, u.first_name, u.middle_name, u.last_name, 
                u.name_suffix, u.email, u.status, u.created_at, 
-               u.updated_at, r.id AS role_id, r.role_name AS role_name, 
+               u.updated_at, u.account_type_id, r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
@@ -201,7 +203,7 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 	const baseQuery = `
 		SELECT u.id, u.first_name, u.middle_name, 
 		       u.last_name, u.name_suffix, u.email, u.status, u.created_at, 
-		       u.updated_at, r.id AS role_id, 
+		       u.updated_at, u.account_type_id, r.id AS role_id, 
 		       r.role_name AS role_name, 
 		       r.description AS role_description
 		FROM users u
@@ -255,7 +257,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
 	query := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.name_suffix, u.email, u.password_hash, u.status, 
-               u.created_at, u.updated_at, u.deleted_at, r.id AS role_id, 
+               u.created_at, u.updated_at, u.deleted_at, u.account_type_id, r.id AS role_id, 
                r.role_name AS role_name, r.description AS role_description
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
@@ -295,7 +297,7 @@ func (r *userRepository) GetUserByEmailIncludeDeleted(ctx context.Context,
 	query := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.name_suffix, u.email, u.password_hash, u.status, 
-               u.created_at, u.updated_at, u.deleted_at, r.id AS role_id, 
+               u.created_at, u.updated_at, u.deleted_at, u.account_type_id, r.id AS role_id, 
                r.role_name AS role_name, r.description AS role_description
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
@@ -375,7 +377,7 @@ func (r *userRepository) GetUserById(ctx context.Context,
 	query := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.name_suffix, u.email, u.status, u.created_at, 
-               u.updated_at, r.id AS role_id, r.role_name AS role_name, 
+               u.updated_at, u.account_type_id, r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
@@ -410,10 +412,11 @@ func (r *userRepository) GetUserById(ctx context.Context,
 
 // CreateUser executes a stored procedure to handle User creation.
 func (r *userRepository) CreateUser(ctx context.Context, u *models.User) error {
-	query := `CALL CreateUser(?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `CALL CreateUser(?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.db.ExecContext(ctx, query, u.ID, u.FirstName, u.MiddleName,
-		u.LastName, u.NameSuffix, u.Email, u.PasswordHash, u.RoleID)
+		u.LastName, u.NameSuffix, u.Email, u.PasswordHash, u.RoleID,
+		u.AccountTypeID)
 	if err != nil {
 		return fmt.Errorf("failed to execute CreateUser procedure: %w", err)
 	}
@@ -459,6 +462,18 @@ func (r *userRepository) UpdateUserRole(ctx context.Context,
 }
 
 // UpdateUserName updates the name fields of a specific user.
+func (r *userRepository) UpdateUserAccountType(ctx context.Context, userID []byte,
+	accountTypeID sql.NullInt64,
+) error {
+	query := `UPDATE users SET account_type_id = ?, updated_at = NOW() 
+	          WHERE id = ?`
+	_, err := r.db.ExecContext(ctx, query, accountTypeID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update user account type: %w", err)
+	}
+	return nil
+}
+
 func (r *userRepository) UpdateUserName(ctx context.Context,
 	user *models.User,
 ) error {

@@ -76,6 +76,15 @@ func (s *userService) CreateUser(
 	var userID uuid.UUID
 	var passwordHash string
 	var err error
+	var typeID int
+
+	// Lookup account type early if provided
+	if req.AccountType != "" {
+		typeID, err = s.RegRepo.GetAccountTypeIDByName(ctx, req.AccountType)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("pre-create (TypeLookup): %w", err)
+		}
+	}
 
 	// Check for existing user (including deleted)
 	existingUser, err := s.Repo.GetUserByEmailIncludeDeleted(ctx, req.Email)
@@ -87,7 +96,7 @@ func (s *userService) CreateUser(
 		if !existingUser.DeletedAt.Valid {
 			return uuid.Nil,
 				fmt.Errorf("conflict: user with email %s already exists",
-				req.Email)
+					req.Email)
 		}
 
 		// Handle re-registration of deleted user
@@ -123,9 +132,17 @@ func (s *userService) CreateUser(
 		if req.RoleID != nil {
 			roleID = sql.NullInt64{Int64: int64(*req.RoleID), Valid: true}
 		}
-		err = s.Repo.UpdateUserRole(ctx, existingUser.ID, roleID)
-		if err != nil {
+		if err = s.Repo.UpdateUserRole(ctx, existingUser.ID, roleID); err != nil {
 			return uuid.Nil, fmt.Errorf("re-register (UpdateRole): %w", err)
+		}
+
+		// Update account type
+		var atID sql.NullInt64
+		if typeID != 0 {
+			atID = sql.NullInt64{Int64: int64(typeID), Valid: true}
+		}
+		if err = s.Repo.UpdateUserAccountType(ctx, existingUser.ID, atID); err != nil {
+			return uuid.Nil, fmt.Errorf("re-register (UpdateType): %w", err)
 		}
 
 		userID = uID
@@ -148,6 +165,10 @@ func (s *userService) CreateUser(
 			RoleID: sql.NullInt64{
 				Valid: req.RoleID != nil,
 			},
+			AccountTypeID: sql.NullInt64{
+				Valid: typeID != 0,
+				Int64: int64(typeID),
+			},
 		}
 		if req.RoleID != nil {
 			user.RoleID.Int64 = int64(*req.RoleID)
@@ -160,11 +181,7 @@ func (s *userService) CreateUser(
 	}
 
 	if req.AccountType != "" {
-		typeID, err := s.RegRepo.GetAccountTypeIDByName(ctx, req.AccountType)
-		if err != nil {
-			return userID, fmt.Errorf("post-create (TypeLookup): %w", err)
-		}
-
+		// typeID already looked up above
 		clients, err := s.RegRepo.GetClientsByAccountTypeID(ctx, typeID)
 		if err != nil {
 			return userID, fmt.Errorf("post-create (RegFetch): %w", err)
@@ -259,6 +276,15 @@ func (s *userService) CreateAdminUser(
 			return uuid.Nil, fmt.Errorf("re-register (UpdateRole): %w", err)
 		}
 
+		// Update account type
+		var atID sql.NullInt64
+		if req.AccountTypeID != 0 {
+			atID = sql.NullInt64{Int64: int64(req.AccountTypeID), Valid: true}
+		}
+		if err = s.Repo.UpdateUserAccountType(ctx, existingUser.ID, atID); err != nil {
+			return uuid.Nil, fmt.Errorf("re-register (UpdateType): %w", err)
+		}
+
 		userID = uID
 	} else {
 		userID = uuid.New()
@@ -278,6 +304,10 @@ func (s *userService) CreateAdminUser(
 			Status:       models.StatusActive,
 			RoleID: sql.NullInt64{
 				Valid: req.RoleID != nil,
+			},
+			AccountTypeID: sql.NullInt64{
+				Valid: req.AccountTypeID != 0,
+				Int64: int64(req.AccountTypeID),
 			},
 		}
 		if req.RoleID != nil {

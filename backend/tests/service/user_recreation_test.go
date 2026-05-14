@@ -40,6 +40,7 @@ func TestCreateUser_ReRegistration(t *testing.T) {
 		Password:   "newpassword123",
 		FirstName:  "New",
 		LastName:   "Name",
+		AccountType: "student",
 	}
 
 	deletedUser := &models.User{
@@ -53,6 +54,10 @@ func TestCreateUser_ReRegistration(t *testing.T) {
 	}
 
 	t.Run("Successfully re-registers a deleted user", func(t *testing.T) {
+		mockRegRepo.EXPECT().
+			GetAccountTypeIDByName(ctx, req.AccountType).
+			Return(1, nil)
+
 		mockUserRepo.EXPECT().
 			GetUserByEmailIncludeDeleted(ctx, email).
 			Return(deletedUser, nil)
@@ -77,6 +82,14 @@ func TestCreateUser_ReRegistration(t *testing.T) {
 			UpdateUserRole(ctx, deletedUser.ID, gomock.Any()).
 			Return(nil)
 
+		mockUserRepo.EXPECT().
+			UpdateUserAccountType(ctx, deletedUser.ID, gomock.Any()).
+			Return(nil)
+
+		mockRegRepo.EXPECT().
+			GetClientsByAccountTypeID(ctx, 1).
+			Return(nil, nil)
+
 		id, err := userService.CreateUser(ctx, req)
 
 		assert.NoError(t, err)
@@ -92,6 +105,10 @@ func TestCreateUser_ReRegistration(t *testing.T) {
 				Valid: false,
 			},
 		}
+
+		mockRegRepo.EXPECT().
+			GetAccountTypeIDByName(ctx, req.AccountType).
+			Return(1, nil)
 
 		mockUserRepo.EXPECT().
 			GetUserByEmailIncludeDeleted(ctx, email).
