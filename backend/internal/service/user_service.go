@@ -18,6 +18,7 @@ type UserService interface {
 	CreateAdminUser(ctx context.Context,
 		req dto.PostAdminUserRequest) (uuid.UUID, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
+	GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error)
 	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
 	GetFilteredUserList(ctx context.Context, permissions []string,
 		userID uuid.UUID, limit,
@@ -231,6 +232,25 @@ func (s *userService) GetUserByID(
 	if user == nil {
 		return nil, fmt.Errorf("user not found")
 	}
+	return s.mapToUserResponse(*user, id), nil
+}
+
+/**
+ * GetUserByEmail retrieves a single user by their email address.
+ */
+func (s *userService) GetUserByEmail(
+	ctx context.Context,
+	email string,
+) (*dto.UserResponse, error) {
+	user, err := s.Repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, fmt.Errorf("database query (GetUserByEmail): %w", err)
+	}
+
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	id, _ := uuid.FromBytes(user.ID)
 	return s.mapToUserResponse(*user, id), nil
 }
 
