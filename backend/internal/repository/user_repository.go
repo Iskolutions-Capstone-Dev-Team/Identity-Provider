@@ -18,6 +18,8 @@ type UserRepository interface {
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetUserByEmailIncludeDeleted(ctx context.Context,
 		email string) (*models.User, error)
+	GetUsersByAccountTypeID(ctx context.Context,
+		accountTypeID int) ([]models.User, error)
 	GetUserById(ctx context.Context, id []byte) (*models.User, error)
 	CreateUser(ctx context.Context, u *models.User) error
 	RestoreUser(ctx context.Context, id []byte) error
@@ -408,6 +410,46 @@ func (r *userRepository) GetUserById(ctx context.Context,
 	}
 
 	return &result[0], nil
+}
+
+func (r *userRepository) GetUsersByAccountTypeID(ctx context.Context,
+	accountTypeID int,
+) ([]models.User, error) {
+	var rows []userRow
+	query := `
+        SELECT u.id, u.first_name, u.middle_name, u.last_name,
+               u.name_suffix, u.email, u.status, u.created_at, 
+               u.updated_at, u.account_type_id, r.id AS role_id, 
+               r.role_name AS role_name, 
+               r.description AS role_description
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        WHERE u.account_type_id = ? AND u.deleted_at IS NULL`
+
+	err := r.db.SelectContext(ctx, &rows, query, accountTypeID)
+	if err != nil {
+		return nil,
+			fmt.Errorf(
+				"[GetUsersByAccountTypeID] Database Query: %w",
+				err,
+			)
+	}
+
+	result := make([]models.User, 0, len(rows))
+	for _, row := range rows {
+		user := row.User
+		if row.RID.Valid {
+			user.RoleID = row.RID
+			user.Role = models.Role{
+				ID:          int(row.RID.Int64),
+				RoleName:    row.RName.String,
+				Description: row.RDesc.String,
+			}
+		}
+		result = append(result, user)
+	}
+
+	return result, nil
 }
 
 // CreateUser executes a stored procedure to handle User creation.
