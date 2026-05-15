@@ -16,8 +16,10 @@ function getRequiredTextValue(value, label) {
 
 export const mfaService = {
   async getSetup(email) {
-    const response = await axiosInstance.post("/mfa/setup", {
-      email: getRequiredTextValue(email, "Email address"),
+    const response = await axiosInstance.get("/mfa/setup", {
+      params: {
+        email: getRequiredTextValue(email, "Email address"),
+      },
     });
 
     return {
@@ -58,10 +60,12 @@ export const mfaService = {
   },
 
   async getAuthenticators(email) {
-    const response = await axiosInstance.post(
+    const response = await axiosInstance.get(
       "/mfa/authenticators/list",
       {
-        email: getRequiredTextValue(email, "Email address"),
+        params: {
+          email: getRequiredTextValue(email, "Email address"),
+        },
       },
     );
 
