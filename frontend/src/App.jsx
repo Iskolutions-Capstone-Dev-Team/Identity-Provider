@@ -4,6 +4,11 @@ import Register from "./auth/pages/Register";
 import RegisterPasswordSetup from "./auth/pages/RegisterPasswordSetup";
 import Logout from "./auth/pages/Logout";
 import Callback from "./auth/pages/Callback";
+import Mfa from "./auth/pages/Mfa";
+import MfaAuthenticator from "./auth/pages/MfaAuthenticator";
+import MfaBackupCode from "./auth/pages/MfaBackupCode";
+import MfaSetup from "./auth/pages/MfaSetup";
+import MfaSetupConfirm from "./auth/pages/MfaSetupConfirm";
 import AuthorizeRedirect from "./auth/pages/AuthorizeRedirect";
 import ErrorPage from "./auth/pages/ErrorPage";
 import AccessDenied from "./auth/pages/AccessDenied";
@@ -32,6 +37,46 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/register/set-password" element={<RegisterPasswordSetup />}/>
         <Route path="/callback" element={<Callback />} />
+        <Route
+          path="/mfa"
+          element={
+            <ProtectedRoute>
+              <Mfa />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mfa/authenticator"
+          element={
+            <ProtectedRoute>
+              <MfaAuthenticator />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mfa/backup-code"
+          element={
+            <ProtectedRoute>
+              <MfaBackupCode />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mfa/setup"
+          element={
+            <ProtectedRoute>
+              <MfaSetup />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mfa/setup/confirm"
+          element={
+            <ProtectedRoute>
+              <MfaSetupConfirm />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/logout" element={<Logout />} />
         <Route path="/error" element={<ErrorPage />} />
         <Route path={ACCESS_DENIED_PATH} element={<AccessDenied />} />
