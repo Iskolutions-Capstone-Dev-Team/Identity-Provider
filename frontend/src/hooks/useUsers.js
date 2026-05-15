@@ -12,6 +12,7 @@ import {
 const EDITABLE_STATUS_VALUES = new Set(["active", "suspended"]);
 const FETCH_LIMIT = 100;
 const ITEMS_PER_PAGE = 10;
+const FILTER_LOADING_MS = 250;
 const INVITATION_ACCOUNT_SETUP = "invitation";
 const ADMIN_ACCOUNT_CATEGORY = "system administrator";
 const SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE = "System Administrator";
@@ -519,10 +520,24 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   const [successMessage, setSuccessMessage] = useState("");
   const [fetchError, setFetchError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [filterLoading, setFilterLoading] = useState(false);
   const latestFetchRef = useRef(0);
+  const filterLoadingTimeoutRef = useRef(null);
   const userAccessSelectionsRef = useRef({});
   const userManageableSelectionsRef = useRef({});
   const visibleClientLookup = new Set(normalizeClientIds(visibleClientIds));
+
+  const showFilterLoading = () => {
+    if (filterLoadingTimeoutRef.current) {
+      window.clearTimeout(filterLoadingTimeoutRef.current);
+    }
+
+    setFilterLoading(true);
+    filterLoadingTimeoutRef.current = window.setTimeout(() => {
+      setFilterLoading(false);
+      filterLoadingTimeoutRef.current = null;
+    }, FILTER_LOADING_MS);
+  };
 
   const saveClientSelection = (selectionRef, user, clientIds = []) => {
     const nextSelections = { ...selectionRef.current };
@@ -612,12 +627,16 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
   const setSearchKeyword = (value) => {
     const nextValue = typeof value === "string" ? value : "";
+
+    showFilterLoading();
     setPage(1);
     setSearch(nextValue);
   };
 
   const setStatusFilter = (value) => {
     const nextValue = typeof value === "string" ? value : "";
+
+    showFilterLoading();
     setPage(1);
     setStatus(nextValue);
   };
@@ -930,6 +949,14 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     }
   }, [currentPage, page]);
 
+  useEffect(() => {
+    return () => {
+      if (filterLoadingTimeoutRef.current) {
+        window.clearTimeout(filterLoadingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return {
     users,
     search,
@@ -945,7 +972,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     totalResults,
     successMessage,
     setSuccessMessage,
-    loading,
+    loading: loading || filterLoading,
     fetchError,
     setFetchError,
     getUserDetails,
