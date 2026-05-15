@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../context/PermissionContext";
-import AuditLogsCard from "../components/audit-logs/AuditLogsCard";
 import DataTableSkeleton from "../components/DataTableSkeleton";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ErrorAlert from "../components/ErrorAlert";
@@ -9,13 +8,15 @@ import PageHeader from "../components/PageHeader";
 import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import SuccessAlert from "../components/SuccessAlert";
 import RegistrationConfigModal from "../components/registration/RegistrationConfigModal";
-import RegistrationTable from "../components/registration/RegistrationTable";
+import RegistrationListCard from "../components/registration/RegistrationListCard";
 import { useAllAppClients } from "../hooks/useAllAppClients";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { registrationService } from "../services/registrationService";
 import { mergeAccountTypeOptions } from "../utils/accountTypes";
 import { PERMISSIONS } from "../utils/permissionAccess";
 import { getAllAppClientSelectOptions } from "../utils/userPoolAccess";
+
+const ITEMS_PER_PAGE = 10;
 
 function createEmptyConfig() {
   return {
@@ -93,6 +94,10 @@ export default function Registration() {
   const [registrationConfigs, setRegistrationConfigs] = useState([]);
   const [isLoadingRegistration, setIsLoadingRegistration] = useState(true);
   const [registrationError, setRegistrationError] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
   const [actionError, setActionError] = useState("");
   const [selectedConfig, setSelectedConfig] = useState(null);
   const [modalMode, setModalMode] = useState("view");
@@ -101,19 +106,26 @@ export default function Registration() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const showLoading = useDelayedLoading(isLoadingRegistration);
   const isDarkMode = colorMode === "dark";
+  const searchKeyword = search.trim();
   const appClientOptions = useMemo(
     () => getAllAppClientSelectOptions(appClients),
     [appClients],
   );
   const registrationAccountTypeOptions = useMemo(
-    () =>
-      mergeAccountTypeOptions(
-        registrationConfigs.map((config) => ({
-          value: config.accountTypeValue,
-          label: config.label,
-          backendId: config.backendId,
-        })),
-      ),
+    () => {
+      const configOptions = registrationConfigs.map((config) => ({
+        value: config.accountTypeValue,
+        label: config.label,
+        backendId: config.backendId,
+      }));
+      const visibleAccountTypes = new Set(
+        configOptions.map((option) => option.value).filter(Boolean),
+      );
+
+      return mergeAccountTypeOptions(configOptions).filter((option) =>
+        visibleAccountTypes.has(option.value),
+      );
+    },
     [registrationConfigs],
   );
   const rows = useMemo(
@@ -129,6 +141,12 @@ export default function Registration() {
   const warningBoxClassName = isDarkMode
     ? "rounded-[1.4rem] border border-[#f8d24e]/20 bg-[#f8d24e]/10 px-5 py-4 text-sm text-[#ffe28a]"
     : "rounded-[1.4rem] border border-[#f8d24e]/45 bg-[#fff4dc] px-5 py-4 text-sm text-[#7b0d15]";
+  const setSearchKeyword = (value) => {
+    const nextValue = typeof value === "string" ? value : "";
+
+    setPage(1);
+    setSearch(nextValue);
+  };
   const loadRegistrationConfig = useCallback(async ({ showLoading = true } = {}) => {
     try {
       if (showLoading) {
@@ -137,12 +155,36 @@ export default function Registration() {
 
       setRegistrationError("");
 
-      const nextConfigs = await registrationService.getRegistrationConfig();
+      const pageData = await registrationService.getRegistrationConfigPage({
+        limit: ITEMS_PER_PAGE,
+        page,
+        keyword: searchKeyword,
+      });
+      const nextConfigs = Array.isArray(pageData?.configs)
+        ? pageData.configs
+        : [];
+      const nextTotalPages =
+        Number.isInteger(pageData?.lastPage) && pageData.lastPage > 0
+          ? pageData.lastPage
+          : 1;
+      const nextTotalResults =
+        Number.isInteger(pageData?.total) && pageData.total >= 0
+          ? pageData.total
+          : nextConfigs.length;
+
+      if (page > nextTotalPages) {
+        setPage(nextTotalPages);
+        return;
+      }
 
       setRegistrationConfigs(nextConfigs);
+      setTotalPages(nextTotalPages);
+      setTotalResults(nextTotalResults);
     } catch (error) {
       console.error("Failed to load registration config:", error);
       setRegistrationConfigs([]);
+      setTotalPages(1);
+      setTotalResults(0);
       setRegistrationError(
         getRegistrationActionError(
           error,
@@ -154,7 +196,7 @@ export default function Registration() {
         setIsLoadingRegistration(false);
       }
     }
-  }, []);
+  }, [page, searchKeyword]);
 
   useEffect(() => {
     loadRegistrationConfig();
@@ -317,20 +359,11 @@ export default function Registration() {
     }
   };
 
-  let content = (
-    <RegistrationTable
-      rows={rows}
-      onView={handleOpenView}
-      onEdit={handleOpenEdit}
-      onDelete={handleDeleteClick}
-      showEditAction={canEditRegistration}
-      showDeleteAction={canDeleteRegistration}
-      colorMode={colorMode}
-    />
-  );
+  let tableContent = null;
+  let showTableFooter = true;
 
   if (showLoading) {
-    content = (
+    tableContent = (
       <DataTableSkeleton
         theme={isDarkMode ? "userpoolDark" : "userpool"}
         columns={[
@@ -340,8 +373,10 @@ export default function Registration() {
         ]}
       />
     );
+    showTableFooter = false;
   } else if (registrationError) {
-    content = <div className={errorBoxClassName}>{registrationError}</div>;
+    tableContent = <div className={errorBoxClassName}>{registrationError}</div>;
+    showTableFooter = false;
   }
 
   return (
@@ -372,7 +407,25 @@ export default function Registration() {
         </div>
 
         <div className="relative">
-          <AuditLogsCard colorMode={colorMode}>
+          <RegistrationListCard
+            loading={showLoading}
+            rows={rows}
+            totalResults={totalResults}
+            itemsPerPage={ITEMS_PER_PAGE}
+            search={search}
+            setSearch={setSearchKeyword}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            onView={handleOpenView}
+            onEdit={handleOpenEdit}
+            onDelete={handleDeleteClick}
+            tableContent={tableContent}
+            showFooter={showTableFooter}
+            showEditAction={canEditRegistration}
+            showDeleteAction={canDeleteRegistration}
+            colorMode={colorMode}
+          >
             <ErrorAlert
               message={actionError}
               onClose={() => setActionError("")}
@@ -394,9 +447,7 @@ export default function Registration() {
                   configure registration access.
                 </div>
               )}
-
-            {content}
-          </AuditLogsCard>
+          </RegistrationListCard>
         </div>
       </div>
 
