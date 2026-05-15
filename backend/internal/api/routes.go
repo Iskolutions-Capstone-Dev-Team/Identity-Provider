@@ -69,7 +69,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	mfa := v1Group.Group("/mfa")
 	mfa.Use(h.ClientCORS)
 	{
-		mfa.POST("/setup", h.MFAHandler.GetTOTPSetup)
+		mfa.GET("/setup", h.MFAHandler.GetTOTPSetup)
 		mfa.POST("/authenticators", h.MFAHandler.PostAuthenticator)
 		mfa.POST("/verify", h.MFAHandler.PostVerifyMFA)
 		mfa.GET("/authenticators/list", h.MFAHandler.GetAuthenticatorList)
