@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { clearMfaSetup, consumeMfaReturnPath, getMfaSetup, MFA_SETUP_PATH, rememberMfaVerified } from "../utils/mfaFlow";
+import { promotePendingMfaTokenResponse } from "../utils/authCookies";
 import { mfaService } from "../../services/mfaService";
 import ErrorAlert from "../../components/ErrorAlert";
 import MfaSetupConfirmStep from "../components/mfa/MfaSetupConfirmStep";
@@ -38,6 +39,7 @@ export default function MfaSetupConfirm() {
 
   const finishMfa = () => {
     clearMfaSetup();
+    promotePendingMfaTokenResponse();
     rememberMfaVerified();
     navigate(consumeMfaReturnPath(), { replace: true });
   };

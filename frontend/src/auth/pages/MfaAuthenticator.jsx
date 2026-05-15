@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { consumeMfaReturnPath, rememberMfaVerified } from "../utils/mfaFlow";
+import { promotePendingMfaTokenResponse } from "../utils/authCookies";
 import { mfaService } from "../../services/mfaService";
 import { userService } from "../../services/userService";
 import ErrorAlert from "../../components/ErrorAlert";
@@ -75,6 +76,7 @@ export default function MfaAuthenticator() {
     try {
       setIsVerifying(true);
       await mfaService.verifyCode({ email, code });
+      promotePendingMfaTokenResponse();
       rememberMfaVerified();
       navigate(consumeMfaReturnPath(), { replace: true });
     } catch (verifyError) {

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "../services/authService";
-import { storeTokenResponse } from "../utils/authCookies";
+import { storePendingMfaTokenResponse } from "../utils/authCookies";
 import { buildAccessDeniedPath, buildLoginPath } from "../utils/loginRoute";
 import { clearAuthorizeAttempt, clearAuthorizeReturnPath, consumeAuthorizeReturnPath } from "../utils/authorizeFlow";
 import { clearMfaVerified, MFA_PATH, rememberMfaReturnPath } from "../utils/mfaFlow";
@@ -32,7 +32,7 @@ export default function Callback() {
           throw new Error("Token exchange did not return an access token.");
         }
 
-        storeTokenResponse(tokenResponse);
+        storePendingMfaTokenResponse(tokenResponse);
         clearAuthorizeAttempt();
         clearMfaVerified();
         sessionStorage.removeItem("termsAccepted");

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { consumeMfaReturnPath, MFA_AUTHENTICATOR_PATH, MFA_SETUP_PATH, rememberMfaVerified } from "../utils/mfaFlow";
+import { clearAuthState, promotePendingMfaTokenResponse } from "../utils/authCookies";
+import { buildLoginPath } from "../utils/loginRoute";
+import { authService } from "../services/authService";
 import { mfaService } from "../../services/mfaService";
 import { passwordResetService } from "../../services/passwordResetService";
 import { userService } from "../../services/userService";
@@ -19,6 +22,8 @@ function getRequestErrorMessage(error, fallbackMessage) {
   );
 }
 
+const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
+
 export default function Mfa() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -31,6 +36,31 @@ export default function Mfa() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isCheckingAuthenticators, setIsCheckingAuthenticators] =
     useState(false);
+
+  const finishMfa = () => {
+    promotePendingMfaTokenResponse();
+    rememberMfaVerified();
+    navigate(consumeMfaReturnPath(), { replace: true });
+  };
+
+  const handleCancel = async () => {
+    try {
+      const session = await authService.checkSession();
+      const userId = session?.user_id || "";
+
+      if (userId) {
+        await authService.logout({
+          clientId: authClientId,
+          userId,
+        });
+      }
+    } catch (logoutError) {
+      console.error("Unable to clear MFA session:", logoutError);
+    } finally {
+      clearAuthState();
+      navigate(buildLoginPath(authClientId), { replace: true });
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -138,8 +168,7 @@ export default function Mfa() {
         otp: code,
       });
 
-      rememberMfaVerified();
-      navigate(consumeMfaReturnPath(), { replace: true });
+      finishMfa();
     } catch (verifyError) {
       setError(
         getRequestErrorMessage(verifyError, "Unable to verify this code."),
@@ -171,6 +200,7 @@ export default function Mfa() {
           onCodeChange={(value) => setCode(getDigits(value))}
           onSendOtp={handleSendOtp}
           onVerify={handleVerify}
+          onCancel={handleCancel}
         />
       )}
     </MfaShell>

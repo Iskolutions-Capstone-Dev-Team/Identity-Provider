@@ -1,6 +1,6 @@
 import MfaCodeInput from "./MfaCodeInput";
 
-export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSendingOtp, isVerifying, isCheckingAuthenticators, onSelectEmail, onSelectAuthenticator, onCodeChange, onSendOtp, onVerify }) {
+export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSendingOtp, isVerifying, isCheckingAuthenticators, onSelectEmail, onSelectAuthenticator, onCodeChange, onSendOtp, onVerify, onCancel }) {
   const isEmailMode = mode === "email";
   const isAuthenticatorMode = mode === "authenticator";
   const shouldShowCodeInput = isAuthenticatorMode || hasSentOtp;
@@ -87,6 +87,10 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
           ) : null}
         </button>
       </div>
+
+      <button type="button" onClick={onCancel} className="h-11 w-full rounded-lg border border-white/18 bg-white/8 text-sm font-semibold text-white/80 transition hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white">
+        Back to login
+      </button>
     </div>
   );
 }
