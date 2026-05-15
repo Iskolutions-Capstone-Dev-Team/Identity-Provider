@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
@@ -22,7 +23,7 @@ type MFAService interface {
 	VerifyCode(ctx context.Context, userID []byte, 
 		code string) (bool, error)
 	GetAuthenticatorList(ctx context.Context, 
-		userID []byte) ([]models.AuthenticatorMetadata, error)
+		userID []byte) ([]dto.MFAAuthenticatorResponse, error)
 	RemoveAuthenticator(ctx context.Context, 
 		id []byte, userID []byte) error
 }
@@ -204,8 +205,33 @@ func (s *mfaService) VerifyCode(ctx context.Context, userID []byte,
 
 func (s *mfaService) GetAuthenticatorList(ctx context.Context,
 	userID []byte,
-) ([]models.AuthenticatorMetadata, error) {
-	return s.mfaRepo.GetAuthenticatorList(ctx, userID)
+) ([]dto.MFAAuthenticatorResponse, error) {
+	list, err := s.mfaRepo.GetAuthenticatorList(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var response []dto.MFAAuthenticatorResponse
+	for _, auth := range list {
+		// Filter out backup codes from the list
+		if auth.Type == "backup_code" {
+			continue
+		}
+
+		id, err := uuid.FromBytes(auth.ID)
+		if err != nil {
+			continue
+		}
+
+		response = append(response, dto.MFAAuthenticatorResponse{
+			ID:         id.String(),
+			Type:       auth.Type,
+			Name:       auth.Name,
+			CreatedAt:  auth.CreatedAt,
+			LastUsedAt: auth.LastUsedAt,
+		})
+	}
+	return response, nil
 }
 
 func (s *mfaService) RemoveAuthenticator(ctx context.Context,

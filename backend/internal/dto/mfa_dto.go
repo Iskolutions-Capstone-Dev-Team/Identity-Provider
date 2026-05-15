@@ -1,5 +1,9 @@
 package dto
 
+import (
+	"time"
+)
+
 type TOTPSetupRequest struct {
 	Email string `json:"email" binding:"required"`
 }
@@ -32,5 +36,13 @@ type MFADeleteRequest struct {
 }
 
 type MFAAuthenticatorListRequest struct {
-	Email string `json:"email" binding:"required"`
+	Email string `json:"email" form:"email" binding:"required"`
+}
+
+type MFAAuthenticatorResponse struct {
+	ID         string     `json:"id"`
+	Type       string     `json:"type"`
+	Name       string     `json:"name"`
+	CreatedAt  time.Time  `json:"created_at"`
+	LastUsedAt *time.Time `json:"last_used_at"`
 }

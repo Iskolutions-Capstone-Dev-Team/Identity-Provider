@@ -141,8 +141,8 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 // GetAuthenticatorList returns the list of registered authenticators.
 func (h *MFAHandler) GetAuthenticatorList(c *gin.Context) {
 	var req dto.MFAAuthenticatorListRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("[GetAuthenticatorList] Bind JSON: %v", err)
+	if err := c.ShouldBind(&req); err != nil {
+		log.Printf("[GetAuthenticatorList] Bind: %v", err)
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Error: "Invalid request payload",
 		})

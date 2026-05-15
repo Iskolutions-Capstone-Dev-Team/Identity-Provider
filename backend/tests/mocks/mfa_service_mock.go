@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	models "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
+	dto "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -73,10 +73,10 @@ func (mr *MockMFAServiceMockRecorder) GenerateTOTPSetup(ctx, email any) *gomock.
 }
 
 // GetAuthenticatorList mocks base method.
-func (m *MockMFAService) GetAuthenticatorList(ctx context.Context, userID []byte) ([]models.AuthenticatorMetadata, error) {
+func (m *MockMFAService) GetAuthenticatorList(ctx context.Context, userID []byte) ([]dto.MFAAuthenticatorResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAuthenticatorList", ctx, userID)
-	ret0, _ := ret[0].([]models.AuthenticatorMetadata)
+	ret0, _ := ret[0].([]dto.MFAAuthenticatorResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
