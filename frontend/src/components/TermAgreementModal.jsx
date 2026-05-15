@@ -23,7 +23,7 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
     modalSecondaryButtonClassName,
     modalSectionClassName,
   } = getModalTheme(colorMode);
-  const contentSectionClassName = `${modalSectionClassName} space-y-4`;
+  const contentSectionClassName = `${modalSectionClassName} space-y-0`;
   const continueButtonClassName = `${modalPrimaryButtonClassName} disabled:cursor-not-allowed ${
     isDarkMode
       ? "disabled:border-white/10 disabled:bg-white/10 disabled:text-[#d6c3c7] disabled:hover:border-white/10 disabled:hover:bg-white/10"
@@ -38,9 +38,11 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
   const linkClassName = isDarkMode
     ? "font-semibold text-[#ffe28a] underline decoration-[#f8d24e]/50 underline-offset-4 transition hover:text-[#fff1ba]"
     : "font-semibold text-[#7b0d15] underline decoration-[#d4a017]/65 underline-offset-4 transition hover:text-[#5a0b12]";
-  const agreementSectionClassName = isDarkMode
-    ? "rounded-[1.5rem] border border-[#f8d24e]/20 bg-[linear-gradient(135deg,rgba(248,210,78,0.08),rgba(255,255,255,0.03))] p-5 shadow-[0_22px_45px_-36px_rgba(2,6,23,0.72)]"
-    : "rounded-[1.5rem] border border-[#d4a017]/20 bg-[linear-gradient(135deg,rgba(255,252,247,0.98),rgba(255,244,220,0.9))] p-5 shadow-[0_22px_45px_-36px_rgba(43,3,7,0.45)]";
+  const iconWrapClassName = isDarkMode
+    ? "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#f8d24e]/15 bg-[#7b0d15]/45 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+    : "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#7b0d15]/10 bg-[#7b0d15]/10 text-[#7b0d15] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
+  const dividerClassName = isDarkMode ? "border-white/10" : "border-[#7b0d15]/10";
+  const agreementSectionClassName = "px-1 sm:px-3";
   const checkboxClassName = isDarkMode
     ? "checkbox mt-0.5 h-5 w-5 shrink-0 rounded-md border-white/15 bg-white/[0.04] checked:border-[#f8d24e] checked:bg-[#7b0d15] checked:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#f8d24e]/20"
     : "checkbox mt-0.5 h-5 w-5 shrink-0 rounded-md border-[#7b0d15]/20 bg-white checked:border-[#7b0d15] checked:bg-[#7b0d15] checked:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#f8d24e]/30";
@@ -97,31 +99,47 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
         <div className={modalBodyClassName}>
           <div className={modalBodyStackClassName}>
             <section className={contentSectionClassName}>
-              <p className={descriptionTextClassName}>
-                By clicking <span className={emphasisTextClassName}>"I Agree"</span>, you consent to the collection, use, and{" "}
-                processing of your personal data for legitimate purposes related to this service.
-              </p>
+              <div className="flex gap-4 pb-5">
+                <div className={iconWrapClassName} aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                  </svg>
+                </div>
 
-              <p className={descriptionTextClassName}>
-                Your information will be handled in accordance with our{" "}
-                <a href="https://www.pup.edu.ph/privacy/" className={linkClassName} target="_blank" rel="noreferrer">
-                  Privacy Policy
-                </a>{" "}
-                and in compliance with the <span className={emphasisTextClassName}>Data Privacy Act of 2012</span>.
-              </p>
+                <p className={descriptionTextClassName}>
+                  By clicking <span className={emphasisTextClassName}>"I Agree"</span>, you consent to the collection, use, and{" "}
+                  processing of your personal data for legitimate purposes related to this service.
+                </p>
+              </div>
+
+              <div className={`flex gap-4 border-t pt-5 ${dividerClassName}`}>
+                <div className={iconWrapClassName} aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                  </svg>
+                </div>
+
+                <p className={descriptionTextClassName}>
+                  Your information will be handled in accordance with our{" "}
+                  <a href="https://www.pup.edu.ph/privacy/" className={linkClassName} target="_blank" rel="noreferrer">
+                    Privacy Policy
+                  </a>{" "}
+                  and in compliance with the <span className={emphasisTextClassName}>Data Privacy Act of 2012</span>.
+                </p>
+              </div>
             </section>
 
             <section className={agreementSectionClassName}>
-              <label className="flex items-start gap-3 sm:gap-4">
-                <input type="checkbox" className={checkboxClassName} checked={agreed} onChange={(event) => setAgreed(event.target.checked)}/>
+              <div className="flex items-start gap-3 sm:gap-4">
+                <input type="checkbox" className={checkboxClassName} checked={agreed} onChange={(event) => setAgreed(event.target.checked)} aria-labelledby="terms-agreement-label"/>
 
-                <span className={agreementTextClassName}>
+                <span id="terms-agreement-label" className={agreementTextClassName}>
                   I Agree and acknowledge the{" "}
                   <a href="https://www.pup.edu.ph/terms/" className={linkClassName} target="_blank" rel="noreferrer">
                     Terms and Conditions
                   </a>
                 </span>
-              </label>
+              </div>
             </section>
           </div>
         </div>
