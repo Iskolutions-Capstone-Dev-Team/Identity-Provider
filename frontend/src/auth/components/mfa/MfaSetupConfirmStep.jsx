@@ -40,7 +40,7 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
                 </svg>
               </div>
               <p className="text-sm font-medium leading-6">
-                Use these backup codes if your authenticator app is lost. Each backup code can only be used once.
+                Copy or save these backup codes before continuing. Use them if your authenticator app is lost. Each backup code can only be used once.
               </p>
             </div>
           </div>
