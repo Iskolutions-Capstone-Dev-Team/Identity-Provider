@@ -115,7 +115,10 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    redirectAfterUnauthorized();
+    if (!originalRequest?.skipUnauthorizedRedirect) {
+      redirectAfterUnauthorized();
+    }
+
     return Promise.reject(error);
   },
 );
