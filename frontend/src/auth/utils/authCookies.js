@@ -1,4 +1,5 @@
 import { clearAuthorizeReturnPath } from "./authorizeFlow";
+import { clearMfaVerified } from "./mfaFlow";
 
 const ACCESS_TOKEN_COOKIE = "access_token";
 const LEGACY_REFRESH_TOKEN_COOKIE = "refresh_token";
@@ -99,4 +100,6 @@ export function clearAuthState() {
   if (typeof sessionStorage !== "undefined") {
     sessionStorage.removeItem(TERMS_STORAGE_KEY);
   }
+
+  clearMfaVerified();
 }
