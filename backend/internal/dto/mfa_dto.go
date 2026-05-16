@@ -4,9 +4,6 @@ import (
 	"time"
 )
 
-type TOTPSetupRequest struct {
-	Email string `json:"email" binding:"required"`
-}
 
 type TOTPSetupResponse struct {
 	Secret     string `json:"secret"`
@@ -35,9 +32,6 @@ type MFADeleteRequest struct {
 	ID    string `json:"id" binding:"required"`
 }
 
-type MFAAuthenticatorListRequest struct {
-	Email string `json:"email" form:"email" binding:"required"`
-}
 
 type MFAAuthenticatorResponse struct {
 	ID         string     `json:"id"`

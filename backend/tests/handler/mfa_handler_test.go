@@ -25,7 +25,7 @@ func TestGetTOTPSetupHandler(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.POST("/mfa/setup", handler.GetTOTPSetup)
+	r.GET("/mfa/setup", handler.GetTOTPSetup)
 
 	mockUserService.EXPECT().GetUserByEmail(gomock.Any(), "test@example.com").
 		Return(&dto.UserResponse{ID: uuid.New().String(), Email: "test@example.com"}, nil)
@@ -33,8 +33,7 @@ func TestGetTOTPSetupHandler(t *testing.T) {
 	mockMFAService.EXPECT().GenerateTOTPSetup(gomock.Any(), "test@example.com").
 		Return("SECRET", "otpauth://...", nil)
 
-	body, _ := json.Marshal(dto.TOTPSetupRequest{Email: "test@example.com"})
-	req, _ := http.NewRequest("POST", "/mfa/setup", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("GET", "/mfa/setup?email=test@example.com", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -69,6 +68,7 @@ func TestPostAuthenticatorHandler(t *testing.T) {
 		Name:   "My Phone",
 	})
 	req, _ := http.NewRequest("POST", "/mfa/authenticators", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -87,7 +87,7 @@ func TestGetAuthenticatorListHandler(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.POST("/mfa/authenticators/list", handler.GetAuthenticatorList)
+	r.GET("/mfa/authenticators/list", handler.GetAuthenticatorList)
 
 	mockUserService.EXPECT().GetUserByEmail(gomock.Any(), "test@example.com").
 		Return(&dto.UserResponse{ID: uuid.New().String(), Email: "test@example.com"}, nil)
@@ -95,8 +95,7 @@ func TestGetAuthenticatorListHandler(t *testing.T) {
 	mockMFAService.EXPECT().GetAuthenticatorList(gomock.Any(), gomock.Any()).
 		Return(nil, nil)
 
-	body, _ := json.Marshal(dto.MFAAuthenticatorListRequest{Email: "test@example.com"})
-	req, _ := http.NewRequest("POST", "/mfa/authenticators/list", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("GET", "/mfa/authenticators/list?email=test@example.com", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 

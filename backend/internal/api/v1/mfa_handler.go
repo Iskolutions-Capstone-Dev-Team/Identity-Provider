@@ -19,16 +19,16 @@ type MFAHandler struct {
 
 // GetTOTPSetup returns the secret and URI for a new TOTP authenticator.
 func (h *MFAHandler) GetTOTPSetup(c *gin.Context) {
-	var req dto.TOTPSetupRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("[GetTOTPSetup] Bind JSON: %v", err)
+	email := c.Query("email")
+	if email == "" {
+		log.Printf("[GetTOTPSetup] Missing email parameter")
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Invalid request payload",
+			Error: "Email parameter is required",
 		})
 		return
 	}
 
-	user, err := h.UserService.GetUserByEmail(c.Request.Context(), req.Email)
+	user, err := h.UserService.GetUserByEmail(c.Request.Context(), email)
 	if err != nil {
 		log.Printf("[GetTOTPSetup] User Lookup: %v", err)
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{
@@ -140,16 +140,16 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 
 // GetAuthenticatorList returns the list of registered authenticators.
 func (h *MFAHandler) GetAuthenticatorList(c *gin.Context) {
-	var req dto.MFAAuthenticatorListRequest
-	if err := c.ShouldBind(&req); err != nil {
-		log.Printf("[GetAuthenticatorList] Bind: %v", err)
+	email := c.Query("email")
+	if email == "" {
+		log.Printf("[GetAuthenticatorList] Missing email parameter")
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Invalid request payload",
+			Error: "Email parameter is required",
 		})
 		return
 	}
 
-	user, err := h.UserService.GetUserByEmail(c.Request.Context(), req.Email)
+	user, err := h.UserService.GetUserByEmail(c.Request.Context(), email)
 	if err != nil {
 		log.Printf("[GetAuthenticatorList] User Lookup: %v", err)
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{
