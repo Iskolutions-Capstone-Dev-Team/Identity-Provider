@@ -16,10 +16,18 @@ function getRequiredTextValue(value, label) {
 
 export const mfaService = {
   async getSetup(email) {
-    const response = await axiosInstance.get("/mfa/setup", {
-      params: {
-        email: getRequiredTextValue(email, "Email address"),
+    const payload = {
+      email: getRequiredTextValue(email, "Email address"),
+    };
+
+    const response = await axiosInstance.request({
+      method: "GET",
+      url: "/mfa/setup",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
       },
+      data: JSON.stringify(payload),
     });
 
     return {
