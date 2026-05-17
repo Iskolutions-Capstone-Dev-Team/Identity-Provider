@@ -128,6 +128,20 @@ func (mr *MockRegistrationServiceMockRecorder) GetRegistrationConfig(ctx any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationConfig", reflect.TypeOf((*MockRegistrationService)(nil).GetRegistrationConfig), ctx)
 }
 
+// SyncUsersByAccountType mocks base method.
+func (m *MockRegistrationService) SyncUsersByAccountType(ctx context.Context, id int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncUsersByAccountType", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncUsersByAccountType indicates an expected call of SyncUsersByAccountType.
+func (mr *MockRegistrationServiceMockRecorder) SyncUsersByAccountType(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncUsersByAccountType", reflect.TypeOf((*MockRegistrationService)(nil).SyncUsersByAccountType), ctx, id)
+}
+
 // UpdateAccountType mocks base method.
 func (m *MockRegistrationService) UpdateAccountType(ctx context.Context, req dto.UpsertAccountTypeRequest) error {
 	m.ctrl.T.Helper()

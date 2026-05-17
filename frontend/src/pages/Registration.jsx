@@ -9,6 +9,7 @@ import PageHeader from "../components/PageHeader";
 import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import SuccessAlert from "../components/SuccessAlert";
 import RegistrationConfigModal from "../components/registration/RegistrationConfigModal";
+import RegistrationSyncConfirmModal from "../components/registration/RegistrationSyncConfirmModal";
 import RegistrationTable from "../components/registration/RegistrationTable";
 import { useAllAppClients } from "../hooks/useAllAppClients";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
@@ -99,6 +100,8 @@ export default function Registration() {
   const [successMessage, setSuccessMessage] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [syncTarget, setSyncTarget] = useState(null);
+  const [isSyncingUsers, setIsSyncingUsers] = useState(false);
   const showLoading = useDelayedLoading(isLoadingRegistration);
   const isDarkMode = colorMode === "dark";
   const appClientOptions = useMemo(
@@ -288,9 +291,43 @@ export default function Registration() {
       clientIds: nextConfig.clientIds,
     });
     await loadRegistrationConfig({ showLoading: false });
-    setSuccessMessage(
-      `Updated pre-approved clients for ${nextConfig.label}.`,
-    );
+    setSyncTarget({
+      backendId,
+      label: accountTypeName,
+    });
+    setSuccessMessage(`Updated pre-approved clients for ${accountTypeName}.`);
+  };
+
+  const handleCancelSync = () => {
+    if (isSyncingUsers) {
+      return;
+    }
+
+    setSyncTarget(null);
+  };
+
+  const handleConfirmSync = async () => {
+    if (!syncTarget) {
+      return;
+    }
+
+    try {
+      setActionError("");
+      setIsSyncingUsers(true);
+      await registrationService.syncAccountTypeUsers(syncTarget.backendId);
+      setSuccessMessage(`Updated all ${syncTarget.label} users.`);
+    } catch (error) {
+      console.error("Failed to sync account type users:", error);
+      setActionError(
+        getRegistrationActionError(
+          error,
+          "Unable to update users for this account type.",
+        ),
+      );
+    } finally {
+      setIsSyncingUsers(false);
+      setSyncTarget(null);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -422,6 +459,15 @@ export default function Registration() {
           setIsDeleteConfirmOpen(false);
         }}
         onConfirm={handleConfirmDelete}
+      />
+
+      <RegistrationSyncConfirmModal
+        open={Boolean(syncTarget)}
+        accountTypeLabel={syncTarget?.label || "this account type"}
+        isSubmitting={isSyncingUsers}
+        colorMode={colorMode}
+        onCancel={handleCancelSync}
+        onConfirm={handleConfirmSync}
       />
 
       <SuccessAlert

@@ -204,6 +204,10 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 				"/config/:id",
 				h.RegistrationHandler.DeleteAccountType,
 			)
+			registrationAdmin.POST(
+				"/sync/:id",
+				h.RegistrationHandler.SyncAccountTypeUsers,
+			)
 		}
 	}
 }
