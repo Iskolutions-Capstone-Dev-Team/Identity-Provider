@@ -3,7 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "../services/authService";
 import { storeTokenResponse } from "../utils/authCookies";
 import { buildAccessDeniedPath, buildLoginPath } from "../utils/loginRoute";
+import { storePendingMfaTokenResponse } from "../utils/authCookies";
+import { buildAccessDeniedPath, buildLoginPath } from "../utils/loginRoute";
 import { clearAuthorizeAttempt, clearAuthorizeReturnPath, consumeAuthorizeReturnPath } from "../utils/authorizeFlow";
+import { clearMfaVerified, MFA_PATH, rememberMfaReturnPath } from "../utils/mfaFlow";
 
 export default function Callback() {
   const [searchParams] = useSearchParams();
@@ -31,13 +34,15 @@ export default function Callback() {
           throw new Error("Token exchange did not return an access token.");
         }
 
-        storeTokenResponse(tokenResponse);
+        storePendingMfaTokenResponse(tokenResponse);
         clearAuthorizeAttempt();
+        clearMfaVerified();
         sessionStorage.removeItem("termsAccepted");
         const returnPath = consumeAuthorizeReturnPath();
+        rememberMfaReturnPath(returnPath);
 
         setTimeout(() => {
-          navigate(returnPath, { replace: true });
+          navigate(MFA_PATH, { replace: true });
         }, 1000);
       } catch (err) {
         console.error(err);

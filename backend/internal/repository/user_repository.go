@@ -16,12 +16,20 @@ type UserRepository interface {
 	GetAdminUserList(ctx context.Context, limit,
 		offset int) ([]models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	GetUserByEmailIncludeDeleted(ctx context.Context,
+		email string) (*models.User, error)
+	GetUsersByAccountTypeID(ctx context.Context,
+		accountTypeID int) ([]models.User, error)
 	GetUserById(ctx context.Context, id []byte) (*models.User, error)
 	CreateUser(ctx context.Context, u *models.User) error
+	RestoreUser(ctx context.Context, id []byte) error
+	ClearUserRelations(ctx context.Context, id []byte) error
 	UpdateStatus(ctx context.Context, user *models.User) error
 	UpdateUserPassword(ctx context.Context, user *models.User) error
 	UpdateUserRole(ctx context.Context, userID []byte,
 		roleID sql.NullInt64) error
+	UpdateUserAccountType(ctx context.Context, userID []byte,
+		accountTypeID sql.NullInt64) error
 	UpdateUserName(ctx context.Context, user *models.User) error
 	SoftDelete(ctx context.Context, id []byte) error
 	CountUsers(ctx context.Context) (int, error)
@@ -60,7 +68,7 @@ func (r *userRepository) GetUserList(ctx context.Context,
 	sql := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name, 
                u.name_suffix, u.email, u.status, u.created_at, 
-               u.updated_at, r.id AS role_id, r.role_name AS role_name, 
+               u.updated_at, u.account_type_id, r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
@@ -122,7 +130,7 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 	const sql = `
         SELECT u.id, u.first_name, u.middle_name, u.last_name, 
                u.name_suffix, u.email, u.status, u.created_at, 
-               u.updated_at, r.id AS role_id, r.role_name AS role_name, 
+               u.updated_at, u.account_type_id, r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
@@ -197,7 +205,7 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 	const baseQuery = `
 		SELECT u.id, u.first_name, u.middle_name, 
 		       u.last_name, u.name_suffix, u.email, u.status, u.created_at, 
-		       u.updated_at, r.id AS role_id, 
+		       u.updated_at, u.account_type_id, r.id AS role_id, 
 		       r.role_name AS role_name, 
 		       r.description AS role_description
 		FROM users u
@@ -251,7 +259,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
 	query := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.name_suffix, u.email, u.password_hash, u.status, 
-               u.created_at, u.updated_at, r.id AS role_id, 
+               u.created_at, u.updated_at, u.deleted_at, u.account_type_id, r.id AS role_id, 
                r.role_name AS role_name, r.description AS role_description
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
@@ -284,6 +292,85 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
 	return &result[0], nil
 }
 
+func (r *userRepository) GetUserByEmailIncludeDeleted(ctx context.Context,
+	email string,
+) (*models.User, error) {
+	var rows []userRow
+	query := `
+        SELECT u.id, u.first_name, u.middle_name, u.last_name,
+               u.name_suffix, u.email, u.password_hash, u.status, 
+               u.created_at, u.updated_at, u.deleted_at, u.account_type_id, r.id AS role_id, 
+               r.role_name AS role_name, r.description AS role_description
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        WHERE u.email = ?`
+
+	err := r.db.SelectContext(ctx, &rows, query, email)
+	if err != nil {
+		return nil, fmt.Errorf("[GetUserByEmailAll] Database Query: %w", err)
+	}
+
+	if len(rows) == 0 {
+		return nil, nil
+	}
+
+	user := rows[0].User
+	if rows[0].RID.Valid {
+		user.RoleID = rows[0].RID
+		user.Role = models.Role{
+			ID:          int(rows[0].RID.Int64),
+			RoleName:    rows[0].RName.String,
+			Description: rows[0].RDesc.String,
+		}
+	}
+
+	result := []models.User{user}
+	if err := r.populateClients(ctx, result); err != nil {
+		return nil, fmt.Errorf("[GetUserByEmailAll] Prep: %w", err)
+	}
+
+	return &result[0], nil
+}
+
+func (r *userRepository) RestoreUser(ctx context.Context, id []byte) error {
+	query := `UPDATE users SET deleted_at = NULL, status = 'active', 
+	          updated_at = NOW() WHERE id = ?`
+	_, err := r.db.ExecContext(ctx, query, id)
+	return err
+}
+
+func (r *userRepository) ClearUserRelations(ctx context.Context, id []byte) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	tables := []string{
+		"client_allowed_users",
+		"admin_allowed_clients",
+		"otps",
+		"refresh_tokens",
+		"authorization_codes",
+		"idp_sessions",
+	}
+
+	for _, table := range tables {
+		query := fmt.Sprintf("DELETE FROM %s WHERE user_id = ?", table)
+		if _, err := tx.ExecContext(ctx, query, id); err != nil {
+			return fmt.Errorf("clearing %s: %w", table, err)
+		}
+	}
+
+	// Also clear role in the users table
+	if _, err := tx.ExecContext(ctx,
+		"UPDATE users SET role_id = NULL WHERE id = ?", id); err != nil {
+		return fmt.Errorf("clearing user role: %w", err)
+	}
+
+	return tx.Commit()
+}
+
 // GetUserById retrieves a specific user by binary UUID including roles.
 func (r *userRepository) GetUserById(ctx context.Context,
 	id []byte,
@@ -292,7 +379,7 @@ func (r *userRepository) GetUserById(ctx context.Context,
 	query := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.name_suffix, u.email, u.status, u.created_at, 
-               u.updated_at, r.id AS role_id, r.role_name AS role_name, 
+               u.updated_at, u.account_type_id, r.id AS role_id, r.role_name AS role_name, 
                r.description AS role_description
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
@@ -325,12 +412,53 @@ func (r *userRepository) GetUserById(ctx context.Context,
 	return &result[0], nil
 }
 
+func (r *userRepository) GetUsersByAccountTypeID(ctx context.Context,
+	accountTypeID int,
+) ([]models.User, error) {
+	var rows []userRow
+	query := `
+        SELECT u.id, u.first_name, u.middle_name, u.last_name,
+               u.name_suffix, u.email, u.status, u.created_at, 
+               u.updated_at, u.account_type_id, r.id AS role_id, 
+               r.role_name AS role_name, 
+               r.description AS role_description
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        WHERE u.account_type_id = ? AND u.deleted_at IS NULL`
+
+	err := r.db.SelectContext(ctx, &rows, query, accountTypeID)
+	if err != nil {
+		return nil,
+			fmt.Errorf(
+				"[GetUsersByAccountTypeID] Database Query: %w",
+				err,
+			)
+	}
+
+	result := make([]models.User, 0, len(rows))
+	for _, row := range rows {
+		user := row.User
+		if row.RID.Valid {
+			user.RoleID = row.RID
+			user.Role = models.Role{
+				ID:          int(row.RID.Int64),
+				RoleName:    row.RName.String,
+				Description: row.RDesc.String,
+			}
+		}
+		result = append(result, user)
+	}
+
+	return result, nil
+}
+
 // CreateUser executes a stored procedure to handle User creation.
 func (r *userRepository) CreateUser(ctx context.Context, u *models.User) error {
-	query := `CALL CreateUser(?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `CALL CreateUser(?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.db.ExecContext(ctx, query, u.ID, u.FirstName, u.MiddleName,
-		u.LastName, u.NameSuffix, u.Email, u.PasswordHash, u.RoleID)
+		u.LastName, u.NameSuffix, u.Email, u.PasswordHash, u.RoleID,
+		u.AccountTypeID)
 	if err != nil {
 		return fmt.Errorf("failed to execute CreateUser procedure: %w", err)
 	}
@@ -376,6 +504,18 @@ func (r *userRepository) UpdateUserRole(ctx context.Context,
 }
 
 // UpdateUserName updates the name fields of a specific user.
+func (r *userRepository) UpdateUserAccountType(ctx context.Context, userID []byte,
+	accountTypeID sql.NullInt64,
+) error {
+	query := `UPDATE users SET account_type_id = ?, updated_at = NOW() 
+	          WHERE id = ?`
+	_, err := r.db.ExecContext(ctx, query, accountTypeID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update user account type: %w", err)
+	}
+	return nil
+}
+
 func (r *userRepository) UpdateUserName(ctx context.Context,
 	user *models.User,
 ) error {

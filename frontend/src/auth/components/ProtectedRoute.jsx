@@ -6,15 +6,17 @@ import { buildAccessDeniedPath, buildLoginPath } from "../utils/loginRoute";
 import { userService } from "../../services/userService";
 import { hasAssignedRoles } from "../utils/authAccess";
 import { hasStoredAuthTokens } from "../utils/authRecovery";
+import { hasMfaVerified, isMfaPath, MFA_PATH, rememberMfaReturnPath } from "../utils/mfaFlow";
 
 export default function ProtectedRoute({ children }) {
   const [authState, setAuthState] = useState("loading");
   const location = useLocation();
+  const returnPath =
+    `${location.pathname}${location.search}${location.hash}` || "/";
+  const isCurrentMfaPath = isMfaPath(location.pathname);
 
   useEffect(() => {
     let isActive = true;
-    const returnPath =
-      `${location.pathname}${location.search}${location.hash}` || "/";
 
     const validate = async () => {
       if (!hasStoredAuthTokens()) {
@@ -32,6 +34,12 @@ export default function ProtectedRoute({ children }) {
 
         if (!hasAssignedRoles(currentUser)) {
           setAuthState("unauthorized");
+          return;
+        }
+
+        if (!isCurrentMfaPath && !hasMfaVerified()) {
+          rememberMfaReturnPath(returnPath);
+          setAuthState("needs-mfa");
           return;
         }
 
@@ -63,7 +71,7 @@ export default function ProtectedRoute({ children }) {
     return () => {
       isActive = false;
     };
-  }, [location.hash, location.pathname, location.search]);
+  }, [isCurrentMfaPath, location.hash, location.pathname, location.search, returnPath]);
 
   if (authState === "loading") {
     return (

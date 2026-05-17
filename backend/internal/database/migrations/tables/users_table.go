@@ -49,5 +49,14 @@ var UsersMigration = migrations.TableMigration{
 					FOREIGN KEY (role_id) REFERENCES roles(id);
 			`,
 		},
+		{
+			ID: "add-account-type-id-column",
+			SQL: `
+				ALTER TABLE users
+				ADD COLUMN account_type_id INT,
+				ADD CONSTRAINT fk_user_account_type 
+					FOREIGN KEY (account_type_id) REFERENCES account_types(id);
+			`,
+		},
 	},
 }

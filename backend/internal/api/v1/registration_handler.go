@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -312,6 +313,48 @@ func (h *RegistrationHandler) DeleteAccountType(c *gin.Context) {
 	_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Account type deleted successfully"})
+}
+
+// SyncAccountTypeUsers synchronizes clients for all users of an account type.
+// @Summary Sync Account Type Users
+// @Description Sync clients for all users belonging to a specific account type.
+// @Tags Registration
+// @Param id path int true "Account Type ID"
+// @Produce json
+// @Success 202 {object} map[string]string
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/registration/sync/{id} [post]
+func (h *RegistrationHandler) SyncAccountTypeUsers(c *gin.Context) {
+	if !middleware.HasPermission(c, "Edit Registration Config") {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "Unauthorized",
+		})
+		return
+	}
+
+	idStr := c.Param("id")
+	var id int
+	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "invalid account type id",
+		})
+		return
+	}
+
+	// Trigger async sync
+	go func() {
+		// Use a background context as the request context will be canceled
+		ctx := context.Background()
+		err := h.Service.SyncUsersByAccountType(ctx, id)
+		if err != nil {
+			log.Printf("[SyncAccountTypeUsers] Async sync failed: %v", err)
+		}
+	}()
+
+	c.JSON(http.StatusAccepted, dto.SuccessResponse{
+		Message: "Synchronization started in the background",
+	})
 }
 
 // ActivateAccount handles user account activation via invitation code.

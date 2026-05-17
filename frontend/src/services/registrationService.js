@@ -282,6 +282,19 @@ export const registrationService = {
     return response.data;
   },
 
+  async syncAccountTypeUsers(accountTypeId) {
+    if (!Number.isInteger(accountTypeId) || accountTypeId <= 0) {
+      throw new Error("Account type ID is required.");
+    }
+
+    const response = await axiosInstance.post(
+      `${REGISTRATION_BASE_PATH}/sync/${accountTypeId}`,
+    );
+
+    clearCachedRequests(REGISTRATION_CACHE_PREFIX);
+    return response.data;
+  },
+
   async resolveAccountTypeIdByName(accountTypeName) {
     const normalizedAccountTypeName = normalizeAccountType(accountTypeName);
 
