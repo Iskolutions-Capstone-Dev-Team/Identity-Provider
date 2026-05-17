@@ -105,9 +105,5 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to={buildAccessDeniedPath()} replace />;
   }
 
-  if (authState === "needs-mfa") {
-    return <Navigate to={MFA_PATH} replace />;
-  }
-
   return children;
 }
