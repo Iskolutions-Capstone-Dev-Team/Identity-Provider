@@ -16,7 +16,9 @@ type AccountTypeClientRow struct {
 }
 
 type RegistrationRepository interface {
-	GetRegistrationConfig(ctx context.Context) ([]AccountTypeClientRow, error)
+	GetRegistrationConfig(ctx context.Context,
+		limit, offset int) ([]AccountTypeClientRow, error)
+	CountAccountTypes(ctx context.Context) (int, error)
 	GetClientsByAccountTypeID(ctx context.Context,
 		id int) ([]AccountTypeClientRow, error)
 	SyncPreapprovedClients(ctx context.Context, accountTypeID int,
@@ -35,8 +37,8 @@ func NewRegistrationRepository(db *sqlx.DB) RegistrationRepository {
 	return &regRepo{db: db}
 }
 
-func (r *regRepo) GetRegistrationConfig(ctx context.Context) (
-	[]AccountTypeClientRow, error) {
+func (r *regRepo) GetRegistrationConfig(ctx context.Context,
+	limit, offset int) ([]AccountTypeClientRow, error) {
 	query := `
 		SELECT account_type_id, account_type_name, client_id, client_name
 		FROM (
@@ -47,7 +49,11 @@ func (r *regRepo) GetRegistrationConfig(ctx context.Context) (
 				COALESCE(cl.client_name, '') AS client_name,
 				ROW_NUMBER() OVER (PARTITION BY at.id 
 					ORDER BY cl.client_name) as row_num
-			FROM account_types at
+			FROM (
+				SELECT * FROM account_types 
+				ORDER BY id 
+				LIMIT ? OFFSET ?
+			) at
 			LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
 			LEFT JOIN clients cl ON pc.client_id = cl.id
 		) t
@@ -55,8 +61,15 @@ func (r *regRepo) GetRegistrationConfig(ctx context.Context) (
 		ORDER BY account_type_id;
 	`
 	var rows []AccountTypeClientRow
-	err := r.db.SelectContext(ctx, &rows, query)
+	err := r.db.SelectContext(ctx, &rows, query, limit, offset)
 	return rows, err
+}
+
+func (r *regRepo) CountAccountTypes(ctx context.Context) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM account_types"
+	err := r.db.GetContext(ctx, &count, query)
+	return count, err
 }
 
 func (r *regRepo) GetClientsByAccountTypeID(ctx context.Context,

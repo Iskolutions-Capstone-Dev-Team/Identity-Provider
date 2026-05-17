@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
@@ -27,10 +28,12 @@ type RegistrationHandler struct {
 	LogService service.LogService
 }
 
-// GetRegistrationConfig returns reg config and top 5 clients per type.
+// GetRegistrationConfig returns paginated reg config and top 5 clients per type.
 // @Summary Get Registration Config
-// @Description Fetch account types and their top 5 preapproved clients.
+// @Description Fetch paginated account types and their top 5 preapproved clients.
 // @Tags Registration
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
 // @Produce json
 // @Success 200 {object} dto.RegistrationConfigResponse
 // @Failure 500 {object} dto.ErrorResponse
@@ -43,7 +46,17 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 		return
 	}
 
-	config, err := h.Service.GetRegistrationConfig(c.Request.Context())
+	const defaultLimit = "10"
+	const defaultPage = "1"
+
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", defaultLimit))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", defaultPage))
+
+	if page < 1 {
+		page = 1
+	}
+
+	config, err := h.Service.GetRegistrationConfig(c.Request.Context(), limit, page)
 	if err != nil {
 		log.Printf("[GetRegistrationConfig] %v", err)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{

@@ -14,7 +14,8 @@ import (
 )
 
 type RegistrationService interface {
-	GetRegistrationConfig(ctx context.Context) (*dto.RegistrationConfigResponse, error)
+	GetRegistrationConfig(ctx context.Context,
+		limit, page int) (*dto.RegistrationConfigResponse, error)
 	GetClientsByAccountTypeID(ctx context.Context,
 		id int) (*dto.AccountTypeConfigResponse, error)
 	CreateAccountType(ctx context.Context,
@@ -50,9 +51,15 @@ func NewRegistrationService(
 	}
 }
 
-func (s *regService) GetRegistrationConfig(ctx context.Context) (
-	*dto.RegistrationConfigResponse, error) {
-	rows, err := s.repo.GetRegistrationConfig(ctx)
+func (s *regService) GetRegistrationConfig(ctx context.Context,
+	limit, page int) (*dto.RegistrationConfigResponse, error) {
+	total, err := s.repo.CountAccountTypes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	offset := (page - 1) * limit
+	rows, err := s.repo.GetRegistrationConfig(ctx, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +93,10 @@ func (s *regService) GetRegistrationConfig(ctx context.Context) (
 		}
 		resp.AccountTypes = append(resp.AccountTypes, cfg)
 	}
+
+	resp.TotalCount = total
+	resp.CurrentPage = page
+	resp.LastPage = (total + limit - 1) / limit
 
 	return &resp, nil
 }
