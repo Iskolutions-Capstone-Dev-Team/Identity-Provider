@@ -56,6 +56,7 @@ func MigrateAndSeed() {
 		"client_allowed_users",
 		"preapproved_clients",
 		"account_types",
+		"user_authenticators",
 	}
 
 	for _, tableName := range privilegedTables {

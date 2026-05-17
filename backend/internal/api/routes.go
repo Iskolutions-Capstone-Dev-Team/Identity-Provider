@@ -20,6 +20,7 @@ type Handlers struct {
 	MailHandler         *v1.MailHandler
 	RegistrationHandler *v1.RegistrationHandler
 	OTPHandler          *v1.OTPHandler
+	MFAHandler          *v1.MFAHandler
 	UserRepo            repository.UserRepository
 
 	RoleRepo   repository.RoleRepository
@@ -63,6 +64,16 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	{
 		otp.POST("/send", h.OTPHandler.SendOTP)
 		otp.POST("/verify", h.OTPHandler.VerifyOTP)
+	}
+
+	mfa := v1Group.Group("/mfa")
+	mfa.Use(h.ClientCORS)
+	{
+		mfa.GET("/setup", h.MFAHandler.GetTOTPSetup)
+		mfa.POST("/authenticators", h.MFAHandler.PostAuthenticator)
+		mfa.POST("/verify", h.MFAHandler.PostVerifyMFA)
+		mfa.GET("/authenticators/list", h.MFAHandler.GetAuthenticatorList)
+		mfa.DELETE("/authenticators", h.MFAHandler.DeleteAuthenticator)
 	}
 
 	user := v1Group.Group("/user")
