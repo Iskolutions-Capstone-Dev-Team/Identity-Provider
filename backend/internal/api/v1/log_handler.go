@@ -183,7 +183,7 @@ func (h *LogHandler) GetLog(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /logs/security [get]
 func (h *LogHandler) GetSecurityLogList(c *gin.Context) {
-	if !middleware.HasPermission(c, "View audit logs") {
+	if !middleware.HasPermission(c, "View security logs") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
 	}
@@ -246,7 +246,7 @@ func (h *LogHandler) GetSecurityLogList(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /logs/security/{id} [get]
 func (h *LogHandler) GetSecurityLog(c *gin.Context) {
-	if !middleware.HasPermission(c, "View audit logs") {
+	if !middleware.HasPermission(c, "View security logs") {
 		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
 		return
 	}
