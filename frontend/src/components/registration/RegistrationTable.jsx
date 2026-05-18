@@ -75,7 +75,7 @@ export default function RegistrationTable({ rows = [], onView, onEdit, onDelete,
             {rows.length === 0 && (
               <tr>
                 <td colSpan={3} className={emptyStateClassName}>
-                  No account type found
+                  No registration settings found
                 </td>
               </tr>
             )}

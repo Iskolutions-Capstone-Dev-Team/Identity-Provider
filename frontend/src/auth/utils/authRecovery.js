@@ -1,9 +1,9 @@
-import { getAccessToken, getPendingMfaAccessToken } from "./authCookies";
+import { getAccessToken } from "./authCookies";
 
 export function hasStoredAccessToken() {
   return Boolean(getAccessToken());
 }
 
 export function hasStoredAuthTokens() {
-  return hasStoredAccessToken() || Boolean(getPendingMfaAccessToken());
+  return hasStoredAccessToken();
 }

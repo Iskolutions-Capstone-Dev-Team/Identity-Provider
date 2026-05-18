@@ -1,5 +1,5 @@
 import axios from "axios";
-import { clearAuthState, getAccessToken, getPendingMfaAccessToken } from "../auth/utils/authCookies";
+import { clearAuthState, getAccessToken } from "../auth/utils/authCookies";
 import { getCurrentReturnPath, redirectToAuthorize } from "../auth/utils/authorizeFlow";
 import { IDP_ERROR_PAGE_PATH, isIdpProtectedPath } from "../auth/utils/idpErrorPage";
 import { buildLoginPath } from "../auth/utils/loginRoute";
@@ -60,7 +60,7 @@ function showForbiddenAccessAlert() {
 }
 
 axiosInstance.interceptors.request.use((config) => {
-  const token = getAccessToken() || getPendingMfaAccessToken();
+  const token = getAccessToken();
 
   if (token) {
     config.headers = config.headers ?? {};
@@ -115,10 +115,7 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    if (!originalRequest?.skipUnauthorizedRedirect) {
-      redirectAfterUnauthorized();
-    }
-
+    redirectAfterUnauthorized();
     return Promise.reject(error);
   },
 );

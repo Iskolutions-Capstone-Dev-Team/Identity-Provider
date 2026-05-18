@@ -5,7 +5,6 @@ import { clearCachedRequests, getCachedRequest } from "../utils/requestCache";
 const REGISTRATION_BASE_PATH = "/admin/registration";
 const REGISTRATION_CACHE_PREFIX = "registration:";
 const CREATE_ACCOUNT_TYPE_PLACEHOLDER_ID = 1;
-const DEFAULT_ITEMS_PER_PAGE = 10;
 
 function normalizeTextValue(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -28,46 +27,6 @@ function normalizeClient(client = {}) {
       client?.name ?? client?.client_name ?? client?.clientName,
     ),
   };
-}
-
-function normalizePositiveInteger(value, fallbackValue) {
-  const parsedValue = Number.parseInt(value, 10);
-
-  return Number.isInteger(parsedValue) && parsedValue > 0
-    ? parsedValue
-    : fallbackValue;
-}
-
-function normalizeNonNegativeInteger(value, fallbackValue) {
-  const parsedValue = Number.parseInt(value, 10);
-
-  return Number.isInteger(parsedValue) && parsedValue >= 0
-    ? parsedValue
-    : fallbackValue;
-}
-
-function getAccountTypeItems(payload = {}) {
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (Array.isArray(payload?.account_types)) {
-    return payload.account_types;
-  }
-
-  if (Array.isArray(payload?.accountTypes)) {
-    return payload.accountTypes;
-  }
-
-  if (Array.isArray(payload?.data?.account_types)) {
-    return payload.data.account_types;
-  }
-
-  if (Array.isArray(payload?.data?.accountTypes)) {
-    return payload.data.accountTypes;
-  }
-
-  return [];
 }
 
 function normalizeAccountTypeConfig(
@@ -98,102 +57,23 @@ function normalizeAccountTypeConfig(
   };
 }
 
-function buildRegistrationConfigPage(payload = {}, { limit, page, keyword }) {
-  const accountTypes = getAccountTypeItems(payload);
-  const normalizedKeyword = normalizeTextValue(keyword).toLowerCase();
-  const normalizedPage = normalizePositiveInteger(page, 1);
-  const normalizedLimit = normalizePositiveInteger(limit, DEFAULT_ITEMS_PER_PAGE);
-  let configs = accountTypes
-    .map((config) => normalizeAccountTypeConfig(config))
-    .filter((config) => config.accountTypeValue);
-
-  if (normalizedKeyword) {
-    configs = configs.filter((config) =>
-      [
-        config.label,
-        config.accountTypeValue,
-        ...config.clients.map((client) => client.name),
-      ].some((value) => value.toLowerCase().includes(normalizedKeyword)),
-    );
-  }
-
-  const responseTotal =
-    payload?.total_count ??
-    payload?.totalCount ??
-    payload?.total ??
-    payload?.count ??
-    payload?.data?.total_count ??
-    payload?.data?.totalCount ??
-    payload?.data?.total;
-  const total = normalizeNonNegativeInteger(responseTotal, configs.length);
-  const responseLastPage =
-    payload?.last_page ??
-    payload?.lastPage ??
-    payload?.data?.last_page ??
-    payload?.data?.lastPage;
-  const lastPage = normalizePositiveInteger(
-    responseLastPage,
-    Math.max(1, Math.ceil(total / normalizedLimit)),
-  );
-  const shouldSliceLocally =
-    responseTotal === undefined || responseTotal === null;
-  const startIndex = (normalizedPage - 1) * normalizedLimit;
-  const pageConfigs = shouldSliceLocally
-    ? configs.slice(startIndex, startIndex + normalizedLimit)
-    : configs;
-
-  return {
-    configs: pageConfigs,
-    total,
-    lastPage,
-  };
-}
-
 export const registrationService = {
   async getRegistrationConfig(requestConfig = {}) {
-    const pageData = await this.getRegistrationConfigPage({
-      limit: 1000,
-      requestConfig,
-    });
-
-    return pageData.configs;
-  },
-
-  async getRegistrationConfigPage({
-    limit = DEFAULT_ITEMS_PER_PAGE,
-    page = 1,
-    keyword = "",
-    requestConfig = {},
-  } = {}) {
-    const normalizedKeyword = normalizeTextValue(keyword);
-    const normalizedPage = normalizePositiveInteger(page, 1);
-    const normalizedLimit = normalizePositiveInteger(limit, DEFAULT_ITEMS_PER_PAGE);
-    const cacheKey = [
-      `${REGISTRATION_CACHE_PREFIX}config`,
-      normalizedLimit,
-      normalizedPage,
-      normalizedKeyword,
-    ].join(":");
-
-    return getCachedRequest(cacheKey, async () => {
+    return getCachedRequest(`${REGISTRATION_CACHE_PREFIX}config`, async () => {
       const response = await axiosInstance.get(
         `${REGISTRATION_BASE_PATH}/config`,
-        {
-          ...requestConfig,
-          params: {
-            limit: normalizedLimit,
-            page: normalizedPage,
-            ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
-            ...(requestConfig.params ?? {}),
-          },
-        },
+        requestConfig,
       );
+      const payload = response.data ?? {};
+      const accountTypes = Array.isArray(payload?.account_types)
+        ? payload.account_types
+        : Array.isArray(payload?.accountTypes)
+          ? payload.accountTypes
+          : [];
 
-      return buildRegistrationConfigPage(response.data ?? {}, {
-        limit: normalizedLimit,
-        page: normalizedPage,
-        keyword: normalizedKeyword,
-      });
+      return accountTypes
+        .map((config) => normalizeAccountTypeConfig(config))
+        .filter((config) => config.accountTypeValue);
     });
   },
 
@@ -276,19 +156,6 @@ export const registrationService = {
 
     const response = await axiosInstance.delete(
       `${REGISTRATION_BASE_PATH}/config/${accountTypeId}`,
-    );
-
-    clearCachedRequests(REGISTRATION_CACHE_PREFIX);
-    return response.data;
-  },
-
-  async syncAccountTypeUsers(accountTypeId) {
-    if (!Number.isInteger(accountTypeId) || accountTypeId <= 0) {
-      throw new Error("Account type ID is required.");
-    }
-
-    const response = await axiosInstance.post(
-      `${REGISTRATION_BASE_PATH}/sync/${accountTypeId}`,
     );
 
     clearCachedRequests(REGISTRATION_CACHE_PREFIX);

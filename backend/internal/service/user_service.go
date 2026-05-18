@@ -18,7 +18,6 @@ type UserService interface {
 	CreateAdminUser(ctx context.Context,
 		req dto.PostAdminUserRequest) (uuid.UUID, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
-	GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error)
 	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
 	GetFilteredUserList(ctx context.Context, permissions []string,
 		userID uuid.UUID, limit,
@@ -74,115 +73,41 @@ func (s *userService) CreateUser(
 	ctx context.Context,
 	req dto.UserRequest,
 ) (uuid.UUID, error) {
-	var userID uuid.UUID
-	var passwordHash string
-	var err error
-	var typeID int
+	userID := uuid.New()
 
-	// Lookup account type early if provided
-	if req.AccountType != "" {
-		typeID, err = s.RegRepo.GetAccountTypeIDByName(ctx, req.AccountType)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("pre-create (TypeLookup): %w", err)
-		}
-	}
-
-	// Check for existing user (including deleted)
-	existingUser, err := s.Repo.GetUserByEmailIncludeDeleted(ctx, req.Email)
+	passwordHash, err := utils.HashSecret(req.Password)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("pre-create (EmailLookup): %w", err)
+		return uuid.Nil, fmt.Errorf("secret hashing: %w", err)
 	}
 
-	if existingUser != nil {
-		if !existingUser.DeletedAt.Valid {
-			return uuid.Nil,
-				fmt.Errorf("conflict: user with email %s already exists",
-					req.Email)
-		}
+	user := models.User{
+		ID:           userID[:],
+		FirstName:    req.FirstName,
+		MiddleName:   req.MiddleName,
+		LastName:     req.LastName,
+		NameSuffix:   req.NameSuffix,
+		Email:        req.Email,
+		PasswordHash: passwordHash,
+		Status:       models.StatusActive,
+		RoleID: sql.NullInt64{
+			Valid: req.RoleID != nil,
+		},
+	}
+	if req.RoleID != nil {
+		user.RoleID.Int64 = int64(*req.RoleID)
+	}
 
-		// Handle re-registration of deleted user
-		uID, _ := uuid.FromBytes(existingUser.ID)
-		if err = s.Repo.ClearUserRelations(ctx, existingUser.ID); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (Clear): %w", err)
-		}
-		if err = s.Repo.RestoreUser(ctx, existingUser.ID); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (Restore): %w", err)
-		}
-
-		// Update user info
-		passwordHash, err = utils.HashSecret(req.Password)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("secret hashing: %w", err)
-		}
-		userToUpdate := models.User{
-			ID:           existingUser.ID,
-			FirstName:    req.FirstName,
-			MiddleName:   req.MiddleName,
-			LastName:     req.LastName,
-			NameSuffix:   req.NameSuffix,
-			PasswordHash: passwordHash,
-		}
-		if err = s.Repo.UpdateUserName(ctx, &userToUpdate); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (UpdateName): %w", err)
-		}
-		if err = s.Repo.UpdateUserPassword(ctx, &userToUpdate); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (UpdatePass): %w", err)
-		}
-
-		var roleID sql.NullInt64
-		if req.RoleID != nil {
-			roleID = sql.NullInt64{Int64: int64(*req.RoleID), Valid: true}
-		}
-		if err = s.Repo.UpdateUserRole(ctx, existingUser.ID, roleID); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (UpdateRole): %w", err)
-		}
-
-		// Update account type
-		var atID sql.NullInt64
-		if typeID != 0 {
-			atID = sql.NullInt64{Int64: int64(typeID), Valid: true}
-		}
-		if err = s.Repo.UpdateUserAccountType(ctx, existingUser.ID, atID); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (UpdateType): %w", err)
-		}
-
-		userID = uID
-	} else {
-		userID = uuid.New()
-		passwordHash, err = utils.HashSecret(req.Password)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("secret hashing: %w", err)
-		}
-
-		user := models.User{
-			ID:           userID[:],
-			FirstName:    req.FirstName,
-			MiddleName:   req.MiddleName,
-			LastName:     req.LastName,
-			NameSuffix:   req.NameSuffix,
-			Email:        req.Email,
-			PasswordHash: passwordHash,
-			Status:       models.StatusActive,
-			RoleID: sql.NullInt64{
-				Valid: req.RoleID != nil,
-			},
-			AccountTypeID: sql.NullInt64{
-				Valid: typeID != 0,
-				Int64: int64(typeID),
-			},
-		}
-		if req.RoleID != nil {
-			user.RoleID.Int64 = int64(*req.RoleID)
-		}
-
-		err = s.Repo.CreateUser(ctx, &user)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("database query (CreateUser): %w", err)
-		}
+	err = s.Repo.CreateUser(ctx, &user)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("database query (CreateUser): %w", err)
 	}
 
 	if req.AccountType != "" {
-		// typeID already looked up above
+		typeID, err := s.RegRepo.GetAccountTypeIDByName(ctx, req.AccountType)
+		if err != nil {
+			return userID, fmt.Errorf("post-create (TypeLookup): %w", err)
+		}
+
 		clients, err := s.RegRepo.GetClientsByAccountTypeID(ctx, typeID)
 		if err != nil {
 			return userID, fmt.Errorf("post-create (RegFetch): %w", err)
@@ -193,7 +118,7 @@ func (s *userService) CreateUser(
 			for _, c := range clients {
 				clientIDs = append(clientIDs, c.ClientID)
 			}
-			err = s.CAURepo.BatchAssignClientAccess(ctx, userID[:], clientIDs, models.SourcePreapproved)
+			err = s.CAURepo.BatchAssignClientAccess(ctx, user.ID, clientIDs)
 			if err != nil {
 				return userID, fmt.Errorf("post-create (Assign): %w", err)
 			}
@@ -209,7 +134,7 @@ func (s *userService) CreateUser(
 			}
 			clientIDs = append(clientIDs, cid[:])
 		}
-		err = s.ClientRepo.BatchAdminClientBind(ctx, userID[:], clientIDs)
+		err = s.ClientRepo.BatchAdminClientBind(ctx, user.ID, clientIDs)
 		if err != nil {
 			return userID, fmt.Errorf("post-create (AdminBind): %w", err)
 		}
@@ -225,100 +150,33 @@ func (s *userService) CreateAdminUser(
 	ctx context.Context,
 	req dto.PostAdminUserRequest,
 ) (uuid.UUID, error) {
-	var userID uuid.UUID
-	var passwordHash string
-	var err error
+	userID := uuid.New()
 
-	// Check for existing user (including deleted)
-	existingUser, err := s.Repo.GetUserByEmailIncludeDeleted(ctx, req.Email)
+	passwordHash, err := utils.HashSecret(req.Password)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("pre-create (EmailLookup): %w", err)
+		return uuid.Nil, fmt.Errorf("secret hashing: %w", err)
 	}
 
-	if existingUser != nil {
-		if !existingUser.DeletedAt.Valid {
-			return uuid.Nil, fmt.Errorf("conflict: user with email %s already exists", req.Email)
-		}
+	user := models.User{
+		ID:           userID[:],
+		FirstName:    req.FirstName,
+		MiddleName:   req.MiddleName,
+		LastName:     req.LastName,
+		NameSuffix:   req.NameSuffix,
+		Email:        req.Email,
+		PasswordHash: passwordHash,
+		Status:       models.StatusActive,
+		RoleID: sql.NullInt64{
+			Valid: req.RoleID != nil,
+		},
+	}
+	if req.RoleID != nil {
+		user.RoleID.Int64 = int64(*req.RoleID)
+	}
 
-		// Handle re-registration of deleted user
-		uID, _ := uuid.FromBytes(existingUser.ID)
-		if err := s.Repo.ClearUserRelations(ctx, existingUser.ID); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (Clear): %w", err)
-		}
-		if err := s.Repo.RestoreUser(ctx, existingUser.ID); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (Restore): %w", err)
-		}
-
-		// Update user info
-		passwordHash, err = utils.HashSecret(req.Password)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("secret hashing: %w", err)
-		}
-		userToUpdate := models.User{
-			ID:           existingUser.ID,
-			FirstName:    req.FirstName,
-			MiddleName:   req.MiddleName,
-			LastName:     req.LastName,
-			NameSuffix:   req.NameSuffix,
-			PasswordHash: passwordHash,
-		}
-		if err = s.Repo.UpdateUserName(ctx, &userToUpdate); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (UpdateName): %w", err)
-		}
-		if err = s.Repo.UpdateUserPassword(ctx, &userToUpdate); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (UpdatePass): %w", err)
-		}
-
-		var roleID sql.NullInt64
-		if req.RoleID != nil {
-			roleID = sql.NullInt64{Int64: int64(*req.RoleID), Valid: true}
-		}
-		if err = s.Repo.UpdateUserRole(ctx, existingUser.ID, roleID); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (UpdateRole): %w", err)
-		}
-
-		// Update account type
-		var atID sql.NullInt64
-		if req.AccountTypeID != 0 {
-			atID = sql.NullInt64{Int64: int64(req.AccountTypeID), Valid: true}
-		}
-		if err = s.Repo.UpdateUserAccountType(ctx, existingUser.ID, atID); err != nil {
-			return uuid.Nil, fmt.Errorf("re-register (UpdateType): %w", err)
-		}
-
-		userID = uID
-	} else {
-		userID = uuid.New()
-		passwordHash, err = utils.HashSecret(req.Password)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("secret hashing: %w", err)
-		}
-
-		user := models.User{
-			ID:           userID[:],
-			FirstName:    req.FirstName,
-			MiddleName:   req.MiddleName,
-			LastName:     req.LastName,
-			NameSuffix:   req.NameSuffix,
-			Email:        req.Email,
-			PasswordHash: passwordHash,
-			Status:       models.StatusActive,
-			RoleID: sql.NullInt64{
-				Valid: req.RoleID != nil,
-			},
-			AccountTypeID: sql.NullInt64{
-				Valid: req.AccountTypeID != 0,
-				Int64: int64(req.AccountTypeID),
-			},
-		}
-		if req.RoleID != nil {
-			user.RoleID.Int64 = int64(*req.RoleID)
-		}
-
-		err = s.Repo.CreateUser(ctx, &user)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("database query (CreateAdminUser): %w", err)
-		}
+	err = s.Repo.CreateUser(ctx, &user)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("database query (CreateAdminUser): %w", err)
 	}
 
 	if req.AccountTypeID != 0 {
@@ -333,7 +191,7 @@ func (s *userService) CreateAdminUser(
 			for _, c := range clients {
 				clientIDs = append(clientIDs, c.ClientID)
 			}
-			err = s.CAURepo.BatchAssignClientAccess(ctx, userID[:], clientIDs, models.SourcePreapproved)
+			err = s.CAURepo.BatchAssignClientAccess(ctx, user.ID, clientIDs)
 			if err != nil {
 				return userID, fmt.Errorf("post-create (Assign): %w", err)
 			}
@@ -349,7 +207,7 @@ func (s *userService) CreateAdminUser(
 			}
 			clientIDs = append(clientIDs, cid[:])
 		}
-		err = s.ClientRepo.BatchAdminClientBind(ctx, userID[:], clientIDs)
+		err = s.ClientRepo.BatchAdminClientBind(ctx, user.ID, clientIDs)
 		if err != nil {
 			return userID, fmt.Errorf("post-create (AdminBind): %w", err)
 		}
@@ -373,25 +231,6 @@ func (s *userService) GetUserByID(
 	if user == nil {
 		return nil, fmt.Errorf("user not found")
 	}
-	return s.mapToUserResponse(*user, id), nil
-}
-
-/**
- * GetUserByEmail retrieves a single user by their email address.
- */
-func (s *userService) GetUserByEmail(
-	ctx context.Context,
-	email string,
-) (*dto.UserResponse, error) {
-	user, err := s.Repo.GetUserByEmail(ctx, email)
-	if err != nil {
-		return nil, fmt.Errorf("database query (GetUserByEmail): %w", err)
-	}
-
-	if user == nil {
-		return nil, fmt.Errorf("user not found")
-	}
-	id, _ := uuid.FromBytes(user.ID)
 	return s.mapToUserResponse(*user, id), nil
 }
 

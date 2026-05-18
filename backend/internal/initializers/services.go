@@ -48,6 +48,5 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 			cauRepo,
 		),
 		OTPService: service.NewOTPService(otpRepo, service.NewMailService(otpRepo, invRepo)),
-		MFAService: service.NewMFAService(repository.NewMFARepository(db)),
 	}
 }

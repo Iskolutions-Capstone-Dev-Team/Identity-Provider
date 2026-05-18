@@ -62,11 +62,9 @@ export const authService = {
   },
 
   async checkSession() {
-    const response = await axiosInstance.get("/auth/session", {
+    return axiosInstance.get("/auth/session", {
       skipAuthRefresh: true,
     });
-
-    return response.data;
   },
 
   async refreshSession(clientId) {

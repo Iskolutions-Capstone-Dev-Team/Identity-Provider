@@ -1,6 +1,5 @@
 import { useOutletContext } from "react-router-dom";
 import ProfileCard from "../components/profile/ProfileCard";
-import AuthenticatorsPanel from "../components/profile/AuthenticatorsPanel";
 import { EMPTY_CURRENT_USER } from "../hooks/useCurrentUser";
 
 export default function Profile() {
@@ -16,10 +15,6 @@ export default function Profile() {
           profile={profile}
           updateCurrentUser={updateCurrentUser}
           allowEmailEdit={false}
-          colorMode={colorMode}
-        />
-        <AuthenticatorsPanel
-          email={profile.email}
           colorMode={colorMode}
         />
       </div>

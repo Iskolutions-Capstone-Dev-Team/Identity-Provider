@@ -15,9 +15,6 @@ const NON_RETURNABLE_PATHS = new Set([
   "/callback",
   "/logout",
   "/error",
-  "/mfa",
-  "/mfa/setup",
-  "/mfa/setup/confirm",
 ]);
 
 function normalizeClientId(clientId = DEFAULT_CLIENT_ID) {
