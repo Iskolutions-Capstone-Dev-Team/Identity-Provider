@@ -14,17 +14,17 @@ import (
 )
 
 type MFAService interface {
-	GenerateTOTPSetup(ctx context.Context, 
+	GenerateTOTPSetup(ctx context.Context,
 		email string) (string, string, error)
-	FinalizeTOTP(ctx context.Context, userID []byte, 
+	FinalizeTOTP(ctx context.Context, userID []byte,
 		secret, code, name string) ([]string, error)
-	SetupTOTP(ctx context.Context, userID []byte, 
+	SetupTOTP(ctx context.Context, userID []byte,
 		email string) (string, []string, error)
-	VerifyCode(ctx context.Context, userID []byte, 
+	VerifyCode(ctx context.Context, userID []byte,
 		code string) (bool, error)
-	GetAuthenticatorList(ctx context.Context, 
+	GetAuthenticatorList(ctx context.Context,
 		userID []byte) ([]dto.MFAAuthenticatorResponse, error)
-	RemoveAuthenticator(ctx context.Context, 
+	RemoveAuthenticator(ctx context.Context,
 		id []byte, userID []byte) error
 }
 

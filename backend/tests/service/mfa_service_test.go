@@ -34,7 +34,7 @@ func TestFinalizeTOTP(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	os.Setenv("MFA_ENCRYPTION_KEY", 
+	os.Setenv("MFA_ENCRYPTION_KEY",
 		"94f9aae6af350c1f2ccb6f02702d66262a12ccb5aad6ef97f5bb283c4c5927ef")
 
 	mockRepo := mocks.NewMockMFARepository(ctrl)

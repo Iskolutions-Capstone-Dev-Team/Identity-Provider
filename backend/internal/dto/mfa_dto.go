@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-
 type TOTPSetupResponse struct {
 	Secret     string `json:"secret"`
 	OTPAuthURI string `json:"otpauth_uri"`
@@ -31,7 +30,6 @@ type MFADeleteRequest struct {
 	Email string `json:"email" binding:"required"`
 	ID    string `json:"id" binding:"required"`
 }
-
 
 type MFAAuthenticatorResponse struct {
 	ID         string     `json:"id"`

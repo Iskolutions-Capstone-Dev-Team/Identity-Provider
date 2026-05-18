@@ -10,9 +10,9 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
-	"go.uber.org/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCreateUser_ReRegistration(t *testing.T) {
@@ -34,18 +34,18 @@ func TestCreateUser_ReRegistration(t *testing.T) {
 	ctx := context.Background()
 	email := "deleted@example.com"
 	uID := uuid.New()
-	
+
 	req := dto.UserRequest{
-		Email:      email,
-		Password:   "newpassword123",
-		FirstName:  "New",
-		LastName:   "Name",
+		Email:       email,
+		Password:    "newpassword123",
+		FirstName:   "New",
+		LastName:    "Name",
 		AccountType: "student",
 	}
 
 	deletedUser := &models.User{
-		ID:    uID[:],
-		Email: email,
+		ID:     uID[:],
+		Email:  email,
 		Status: models.StatusDeleted,
 		DeletedAt: sql.NullTime{
 			Time:  time.Now(),
@@ -61,23 +61,23 @@ func TestCreateUser_ReRegistration(t *testing.T) {
 		mockUserRepo.EXPECT().
 			GetUserByEmailIncludeDeleted(ctx, email).
 			Return(deletedUser, nil)
-		
+
 		mockUserRepo.EXPECT().
 			ClearUserRelations(ctx, deletedUser.ID).
 			Return(nil)
-		
+
 		mockUserRepo.EXPECT().
 			RestoreUser(ctx, deletedUser.ID).
 			Return(nil)
-		
+
 		mockUserRepo.EXPECT().
 			UpdateUserName(ctx, gomock.Any()).
 			Return(nil)
-		
+
 		mockUserRepo.EXPECT().
 			UpdateUserPassword(ctx, gomock.Any()).
 			Return(nil)
-		
+
 		mockUserRepo.EXPECT().
 			UpdateUserRole(ctx, deletedUser.ID, gomock.Any()).
 			Return(nil)
@@ -98,8 +98,8 @@ func TestCreateUser_ReRegistration(t *testing.T) {
 
 	t.Run("Fails if user exists and is active", func(t *testing.T) {
 		activeUser := &models.User{
-			ID:    uID[:],
-			Email: email,
+			ID:     uID[:],
+			Email:  email,
 			Status: models.StatusActive,
 			DeletedAt: sql.NullTime{
 				Valid: false,

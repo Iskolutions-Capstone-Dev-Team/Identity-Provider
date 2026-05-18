@@ -57,10 +57,10 @@ func TestPostAuthenticatorHandler(t *testing.T) {
 	mockUserService.EXPECT().GetUserByEmail(gomock.Any(), "test@example.com").
 		Return(&dto.UserResponse{ID: uuid.New().String(), Email: "test@example.com"}, nil)
 
-	mockMFAService.EXPECT().FinalizeTOTP(gomock.Any(), gomock.Any(), 
+	mockMFAService.EXPECT().FinalizeTOTP(gomock.Any(), gomock.Any(),
 		"SECRET", "123456", "My Phone").
 		Return([]string{"backup1"}, nil)
-	
+
 	body, _ := json.Marshal(dto.TOTPFinalizeRequest{
 		Email:  "test@example.com",
 		Secret: "SECRET",

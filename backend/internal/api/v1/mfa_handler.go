@@ -13,7 +13,7 @@ import (
 )
 
 type MFAHandler struct {
-	MFAService service.MFAService
+	MFAService  service.MFAService
 	UserService service.UserService
 }
 
