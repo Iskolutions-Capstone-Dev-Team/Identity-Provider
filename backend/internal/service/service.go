@@ -11,4 +11,5 @@ type ServiceContainer struct {
 	ClientAllowedUserService ClientAllowedUserService
 	RegistrationService      RegistrationService
 	OTPService               OTPService
+	MFAService               MFAService
 }

@@ -15,6 +15,9 @@ type AccountTypeConfigResponse struct {
 
 type RegistrationConfigResponse struct {
 	AccountTypes []AccountTypeConfigResponse `json:"account_types"`
+	TotalCount   int                         `json:"total_count"`
+	CurrentPage  int                         `json:"current_page"`
+	LastPage     int                         `json:"last_page"`
 }
 
 type UpsertAccountTypeRequest struct {

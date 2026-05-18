@@ -46,19 +46,21 @@ func MapStatus(status string) (UserStatus, error) {
 }
 
 type User struct {
-	ID           []byte     `db:"id"`
-	FirstName    string     `db:"first_name"`
-	MiddleName   string     `db:"middle_name"`
-	LastName     string     `db:"last_name"`
-	NameSuffix   string     `db:"name_suffix"`
-	Email        string     `db:"email"`
-	PasswordHash string     `db:"password_hash"`
-	Status       UserStatus `db:"status"`
-	CreatedAt    time.Time  `db:"created_at"`
-	UpdatedAt    time.Time  `db:"updated_at"`
+	ID           []byte       `db:"id"`
+	FirstName    string       `db:"first_name"`
+	MiddleName   string       `db:"middle_name"`
+	LastName     string       `db:"last_name"`
+	NameSuffix   string       `db:"name_suffix"`
+	Email        string       `db:"email"`
+	PasswordHash string       `db:"password_hash"`
+	Status       UserStatus   `db:"status"`
+	CreatedAt    time.Time    `db:"created_at"`
+	UpdatedAt    time.Time    `db:"updated_at"`
+	DeletedAt    sql.NullTime `db:"deleted_at"`
 
-	RoleID sql.NullInt64 `db:"role_id"`
-	Role   Role          `db:"-"`
+	RoleID        sql.NullInt64 `db:"role_id"`
+	AccountTypeID sql.NullInt64 `db:"account_type_id"`
+	Role          Role          `db:"-"`
 
 	AllowedClients []Client `db:"-"`
 	ManagedClients []Client `db:"-"`
