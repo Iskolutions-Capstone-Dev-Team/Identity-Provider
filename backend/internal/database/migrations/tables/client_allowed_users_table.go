@@ -18,5 +18,12 @@ var ClientAllowedUsersMigration = migrations.TableMigration{
 				INDEX idx_user_lookup (user_id)
 			);`,
 		},
+		{
+			ID: "add-assignment-source-column",
+			SQL: `
+				ALTER TABLE client_allowed_users
+				ADD COLUMN assignment_source ENUM('manual', 'preapproved') DEFAULT 'manual';
+			`,
+		},
 	},
 }

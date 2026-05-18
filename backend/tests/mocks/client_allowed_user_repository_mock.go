@@ -42,31 +42,31 @@ func (m *MockClientAllowedUserRepository) EXPECT() *MockClientAllowedUserReposit
 }
 
 // AssignClientAccess mocks base method.
-func (m *MockClientAllowedUserRepository) AssignClientAccess(ctx context.Context, userID, clientID []byte) error {
+func (m *MockClientAllowedUserRepository) AssignClientAccess(ctx context.Context, userID, clientID []byte, source models.AssignmentSource) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AssignClientAccess", ctx, userID, clientID)
+	ret := m.ctrl.Call(m, "AssignClientAccess", ctx, userID, clientID, source)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AssignClientAccess indicates an expected call of AssignClientAccess.
-func (mr *MockClientAllowedUserRepositoryMockRecorder) AssignClientAccess(ctx, userID, clientID any) *gomock.Call {
+func (mr *MockClientAllowedUserRepositoryMockRecorder) AssignClientAccess(ctx, userID, clientID, source any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignClientAccess", reflect.TypeOf((*MockClientAllowedUserRepository)(nil).AssignClientAccess), ctx, userID, clientID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignClientAccess", reflect.TypeOf((*MockClientAllowedUserRepository)(nil).AssignClientAccess), ctx, userID, clientID, source)
 }
 
 // BatchAssignClientAccess mocks base method.
-func (m *MockClientAllowedUserRepository) BatchAssignClientAccess(ctx context.Context, userID []byte, clientIDs [][]byte) error {
+func (m *MockClientAllowedUserRepository) BatchAssignClientAccess(ctx context.Context, userID []byte, clientIDs [][]byte, source models.AssignmentSource) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BatchAssignClientAccess", ctx, userID, clientIDs)
+	ret := m.ctrl.Call(m, "BatchAssignClientAccess", ctx, userID, clientIDs, source)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // BatchAssignClientAccess indicates an expected call of BatchAssignClientAccess.
-func (mr *MockClientAllowedUserRepositoryMockRecorder) BatchAssignClientAccess(ctx, userID, clientIDs any) *gomock.Call {
+func (mr *MockClientAllowedUserRepositoryMockRecorder) BatchAssignClientAccess(ctx, userID, clientIDs, source any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchAssignClientAccess", reflect.TypeOf((*MockClientAllowedUserRepository)(nil).BatchAssignClientAccess), ctx, userID, clientIDs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchAssignClientAccess", reflect.TypeOf((*MockClientAllowedUserRepository)(nil).BatchAssignClientAccess), ctx, userID, clientIDs, source)
 }
 
 // GetAll mocks base method.
@@ -97,6 +97,20 @@ func (m *MockClientAllowedUserRepository) GetByAdmin(ctx context.Context, adminI
 func (mr *MockClientAllowedUserRepositoryMockRecorder) GetByAdmin(ctx, adminID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAdmin", reflect.TypeOf((*MockClientAllowedUserRepository)(nil).GetByAdmin), ctx, adminID)
+}
+
+// SyncPreapprovedUserAccess mocks base method.
+func (m *MockClientAllowedUserRepository) SyncPreapprovedUserAccess(ctx context.Context, userID []byte, clientIDs [][]byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncPreapprovedUserAccess", ctx, userID, clientIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncPreapprovedUserAccess indicates an expected call of SyncPreapprovedUserAccess.
+func (mr *MockClientAllowedUserRepositoryMockRecorder) SyncPreapprovedUserAccess(ctx, userID, clientIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncPreapprovedUserAccess", reflect.TypeOf((*MockClientAllowedUserRepository)(nil).SyncPreapprovedUserAccess), ctx, userID, clientIDs)
 }
 
 // SyncUserAccess mocks base method.

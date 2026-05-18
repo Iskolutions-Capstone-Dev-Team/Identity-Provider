@@ -16,7 +16,8 @@ var CreateUserProcedure = migrations.MigrationPart{
             IN p_nameSuffix VARCHAR(5),
             IN p_userEmail VARCHAR(100),
             IN p_userPasswordHash VARCHAR(255),
-            IN p_roleId INT
+            IN p_roleId INT,
+            IN p_accountTypeId INT
         )
         BEGIN
             DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -35,7 +36,7 @@ var CreateUserProcedure = migrations.MigrationPart{
             ) THEN
                 INSERT INTO users (
                     id, first_name, middle_name, last_name, name_suffix, 
-                    email, password_hash, role_id
+                    email, password_hash, role_id, account_type_id
                 )
                 VALUES (
                     p_userId, 
@@ -45,7 +46,8 @@ var CreateUserProcedure = migrations.MigrationPart{
                     COALESCE(p_nameSuffix, ''),
                     p_userEmail, 
                     p_userPasswordHash,
-                    p_roleId
+                    p_roleId,
+                    p_accountTypeId
                 );
 
                 COMMIT;

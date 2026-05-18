@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
@@ -13,13 +14,15 @@ import (
 )
 
 type RegistrationService interface {
-	GetRegistrationConfig(ctx context.Context) (*dto.RegistrationConfigResponse, error)
+	GetRegistrationConfig(ctx context.Context,
+		limit, page int) (*dto.RegistrationConfigResponse, error)
 	GetClientsByAccountTypeID(ctx context.Context,
 		id int) (*dto.AccountTypeConfigResponse, error)
 	CreateAccountType(ctx context.Context,
 		req dto.UpsertAccountTypeRequest) error
 	UpdateAccountType(ctx context.Context,
 		req dto.UpsertAccountTypeRequest) error
+	SyncUsersByAccountType(ctx context.Context, id int) error
 	DeleteAccountType(ctx context.Context, id int) error
 	ActivateAccount(ctx context.Context,
 		req dto.ActivateAccountRequest) error
@@ -48,9 +51,15 @@ func NewRegistrationService(
 	}
 }
 
-func (s *regService) GetRegistrationConfig(ctx context.Context) (
-	*dto.RegistrationConfigResponse, error) {
-	rows, err := s.repo.GetRegistrationConfig(ctx)
+func (s *regService) GetRegistrationConfig(ctx context.Context,
+	limit, page int) (*dto.RegistrationConfigResponse, error) {
+	total, err := s.repo.CountAccountTypes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	offset := (page - 1) * limit
+	rows, err := s.repo.GetRegistrationConfig(ctx, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +93,10 @@ func (s *regService) GetRegistrationConfig(ctx context.Context) (
 		}
 		resp.AccountTypes = append(resp.AccountTypes, cfg)
 	}
+
+	resp.TotalCount = total
+	resp.CurrentPage = page
+	resp.LastPage = (total + limit - 1) / limit
 
 	return &resp, nil
 }
@@ -156,6 +169,39 @@ func (s *regService) UpdateAccountType(ctx context.Context,
 	return s.repo.SyncPreapprovedClients(ctx, req.ID, clientIDs)
 }
 
+func (s *regService) SyncUsersByAccountType(ctx context.Context, id int) error {
+	// 1. Get current preapproved clients for this account type
+	rows, err := s.repo.GetClientsByAccountTypeID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("sync service: fetch preapproved: %w", err)
+	}
+
+	clientIDs := make([][]byte, 0, len(rows))
+	for _, row := range rows {
+		if len(row.ClientID) > 0 {
+			clientIDs = append(clientIDs, row.ClientID)
+		}
+	}
+
+	// 2. Get all users belonging to this account type
+	users, err := s.user.GetUsersByAccountTypeID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("sync service: fetch users: %w", err)
+	}
+
+	// 3. Sync each user's preapproved access
+	for _, u := range users {
+		err = s.cau.SyncPreapprovedUserAccess(ctx, u.ID, clientIDs)
+		if err != nil {
+			log.Printf("[SyncUsersByAccountType] failed for user %x: %v",
+				u.ID, err)
+			// Continue with other users even if one fails
+		}
+	}
+
+	return nil
+}
+
 func (s *regService) DeleteAccountType(ctx context.Context, id int) error {
 	return s.repo.DeleteAccountType(ctx, id)
 }
@@ -200,7 +246,8 @@ func (s *regService) ActivateAccount(ctx context.Context,
 				}
 			}
 			if len(clientIDs) > 0 {
-				_ = s.cau.BatchAssignClientAccess(ctx, user.ID, clientIDs)
+				_ = s.cau.BatchAssignClientAccess(ctx, user.ID, clientIDs,
+					models.SourcePreapproved)
 			}
 		}
 	}

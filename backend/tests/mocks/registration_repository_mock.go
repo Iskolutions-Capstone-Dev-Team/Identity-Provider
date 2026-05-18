@@ -42,6 +42,21 @@ func (m *MockRegistrationRepository) EXPECT() *MockRegistrationRepositoryMockRec
 	return m.recorder
 }
 
+// CountAccountTypes mocks base method.
+func (m *MockRegistrationRepository) CountAccountTypes(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAccountTypes", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountAccountTypes indicates an expected call of CountAccountTypes.
+func (mr *MockRegistrationRepositoryMockRecorder) CountAccountTypes(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAccountTypes", reflect.TypeOf((*MockRegistrationRepository)(nil).CountAccountTypes), ctx)
+}
+
 // CreateAccountType mocks base method.
 func (m *MockRegistrationRepository) CreateAccountType(ctx context.Context, name string) (int, error) {
 	m.ctrl.T.Helper()
@@ -102,18 +117,18 @@ func (mr *MockRegistrationRepositoryMockRecorder) GetClientsByAccountTypeID(ctx,
 }
 
 // GetRegistrationConfig mocks base method.
-func (m *MockRegistrationRepository) GetRegistrationConfig(ctx context.Context) ([]repository.AccountTypeClientRow, error) {
+func (m *MockRegistrationRepository) GetRegistrationConfig(ctx context.Context, limit, offset int) ([]repository.AccountTypeClientRow, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistrationConfig", ctx)
+	ret := m.ctrl.Call(m, "GetRegistrationConfig", ctx, limit, offset)
 	ret0, _ := ret[0].([]repository.AccountTypeClientRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRegistrationConfig indicates an expected call of GetRegistrationConfig.
-func (mr *MockRegistrationRepositoryMockRecorder) GetRegistrationConfig(ctx any) *gomock.Call {
+func (mr *MockRegistrationRepositoryMockRecorder) GetRegistrationConfig(ctx, limit, offset any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationConfig", reflect.TypeOf((*MockRegistrationRepository)(nil).GetRegistrationConfig), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationConfig", reflect.TypeOf((*MockRegistrationRepository)(nil).GetRegistrationConfig), ctx, limit, offset)
 }
 
 // SyncPreapprovedClients mocks base method.
