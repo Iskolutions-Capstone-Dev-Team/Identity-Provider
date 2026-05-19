@@ -37,6 +37,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 
 	v1Group := r.Group("api/v1")
 	auth := v1Group.Group("/auth")
+	auth.Use(middleware.RateLimitMiddleware())
 	{
 		auth.GET("/authorize", h.AuthHandler.Authorize)
 		auth.POST("/login", h.ClientCORS, h.AuthHandler.LoginAndAuthorize)
@@ -61,13 +62,14 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	me.GET("", h.UserHandler.GetMe)
 
 	otp := v1Group.Group("/otp")
+	otp.Use(middleware.RateLimitMiddleware())
 	{
 		otp.POST("/send", h.OTPHandler.SendOTP)
 		otp.POST("/verify", h.OTPHandler.VerifyOTP)
 	}
 
 	mfa := v1Group.Group("/mfa")
-	mfa.Use(h.ClientCORS)
+	mfa.Use(h.ClientCORS, middleware.RateLimitMiddleware())
 	{
 		mfa.GET("/setup", h.MFAHandler.GetTOTPSetup)
 		mfa.POST("/authenticators", h.MFAHandler.PostAuthenticator)
