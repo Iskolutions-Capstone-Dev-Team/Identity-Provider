@@ -15,6 +15,7 @@ import AccessDenied from "./auth/pages/AccessDenied";
 import ProtectedRoute from "./auth/components/ProtectedRoute";
 import PermissionRoute from "./auth/components/PermissionRoute";
 import UserPool from "./pages/UserPool";
+import AddUserPage from "./pages/AddUserPage";
 import Roles from "./pages/Roles";
 import AppClient from "./pages/AppClient";
 import AuditLogs from "./pages/AuditLogs";
@@ -103,6 +104,13 @@ export default function App() {
             element={
               <PermissionRoute requiredPermissions={USER_POOL_PAGE_PERMISSIONS}>
                 <UserPool />
+              </PermissionRoute>
+            }
+          />
+          <Route path="/user-pool/create"
+            element={
+              <PermissionRoute requiredPermissions={[PERMISSIONS.ADD_USER]}>
+                <AddUserPage />
               </PermissionRoute>
             }
           />
