@@ -17,6 +17,7 @@ import PermissionRoute from "./auth/components/PermissionRoute";
 import UserPool from "./pages/UserPool";
 import AddUserPage from "./pages/AddUserPage";
 import Roles from "./pages/Roles";
+import CreateRolePage from "./pages/CreateRolePage";
 import AppClient from "./pages/AppClient";
 import AuditLogs from "./pages/AuditLogs";
 import FAQ from "./pages/FAQ";
@@ -118,6 +119,13 @@ export default function App() {
             element={
               <PermissionRoute requiredPermissions={[PERMISSIONS.VIEW_ROLES]}>
                 <Roles />
+              </PermissionRoute>
+            }
+          />
+          <Route path="/roles/create"
+            element={
+              <PermissionRoute requiredPermissions={[PERMISSIONS.ADD_ROLES]}>
+                <CreateRolePage />
               </PermissionRoute>
             }
           />
