@@ -17,6 +17,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/initializers"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
@@ -130,6 +131,7 @@ func main() {
 	database.StartJanitor(ctx, appDB, 10*time.Minute)
 
 	r := gin.Default()
+	r.Use(middleware.SecurityHeadersMiddleware())
 	r.Use(h.CORS)
 
 	// Register separate Swagger UI routes for Internal and External views
