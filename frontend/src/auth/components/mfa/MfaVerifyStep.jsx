@@ -68,7 +68,7 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
             <span className="block font-semibold">Passkey</span>
           </span>
           <span className="rounded-full border border-white/10 px-3 py-1 text-xs">
-            Disabled
+            Not Available
           </span>
         </button>
 
@@ -88,9 +88,11 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
         </button>
       </div>
 
-      <button type="button" onClick={onCancel} className="h-11 w-full rounded-lg border border-white/18 bg-white/8 text-sm font-semibold text-white/80 transition hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white">
-        Back to login
-      </button>
+      {onCancel ? (
+        <button type="button" onClick={onCancel} className="h-11 w-full rounded-lg border border-white/18 bg-white/8 text-sm font-semibold text-white/80 transition hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white">
+          Back to login
+        </button>
+      ) : null}
     </div>
   );
 }
