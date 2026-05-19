@@ -169,6 +169,7 @@ function AddUserStepIndicator({ currentStep, colorMode = "light" }) {
 export default function AddUserForm({ onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, appClientOptions = [], isLoadingAppClients = false, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const { hasPermission } = usePermissionAccess();
   const [step, setStep] = useState(1);
+  const [stepDirection, setStepDirection] = useState(1);
   const [data, setData] = useState(initialFormData);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
@@ -450,7 +451,13 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
     }
 
     setError("");
+    setStepDirection(1);
     setStep(step + 1);
+  };
+
+  const previousStep = () => {
+    setStepDirection(-1);
+    setStep(step - 1);
   };
 
   useEffect(() => {
@@ -766,6 +773,9 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
         </div>
       </motion.section>
     ) : null;
+  const stepTwoAnimationKey = isAdminAccountSetup
+    ? "account-setup-step-admin"
+    : "account-setup-step-standard";
 
   const formBody = (
     <div className={modalBodyStackClassName}>
@@ -776,7 +786,11 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
       <ErrorAlert message={error} onClose={() => setError("")} />
 
       <form id="step1-form" onSubmit={(event) => event.preventDefault()} className="space-y-5">
-        <FadeWrapper isVisible={step === 1} keyId="personal-information-section">
+        <FadeWrapper
+          isVisible={step === 1}
+          keyId="personal-information-section"
+          direction={stepDirection}
+        >
             <motion.section className={modalSectionClassName} {...sectionFadeProps}>
               <SpeechInputToolbar
                 activeFieldLabel={activeVoiceFieldLabel}
@@ -880,14 +894,11 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
             </FadeWrapper>
           )}
 
-          {adminAccessSection && (
-            <FadeWrapper isVisible={step === 2} keyId="admin-access-section">
-              {adminAccessSection}
-            </FadeWrapper>
-          )}
-
-          <FadeWrapper isVisible={step === 2} keyId="account-setup-section">
+          <FadeWrapper isVisible={step === 2} keyId={stepTwoAnimationKey}>
+            <div className="space-y-5">
+            {adminAccessSection}
             {accountSetupAndPasswordSection}
+            </div>
           </FadeWrapper>
         </div>
       </form>
@@ -903,7 +914,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
         )}
 
         {step > 1 && (
-          <button type="button" onClick={() => setStep(step - 1)} className={modalSecondaryButtonClassName}>
+          <button type="button" onClick={previousStep} className={modalSecondaryButtonClassName}>
             Back
           </button>
         )}
