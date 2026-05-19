@@ -222,16 +222,14 @@ export default function RegisterPasswordSetupForm({ clientId, email = "", invita
 
   return (
     <div className="relative z-20 w-full max-w-[34rem] px-1 sm:px-0">
-      <div className="rounded-4xl border border-white/20 bg-white/10 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
-        <div className="rounded-[calc(2rem-4px)] bg-[linear-gradient(180deg,rgba(120,12,22,0.72),rgba(60,7,12,0.86))] px-6 py-7 sm:px-8 sm:py-8">
+      <div className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
+        <div className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-7 sm:px-8 sm:py-8">
           {isComplete ? (
             <PasswordSavedState loginPath={loginPath} />
           ) : (
             <div className="space-y-6">
               <div className="space-y-4 text-center">
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/15 text-[#f8d24e] shadow-[0_20px_45px_-28px_rgba(248,210,78,0.55)]">
-                  <PasswordIcon />
-                </div>
+                <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="float-logo mx-auto block h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)]" />
 
                 <div className="space-y-2">
                   <h2 className="text-3xl font-bold leading-tight text-white">
@@ -336,9 +334,7 @@ export default function RegisterPasswordSetupForm({ clientId, email = "", invita
 function PasswordSavedState({ loginPath }) {
   return (
     <div className="space-y-5 text-center">
-      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 shadow-[0_20px_45px_-28px_rgba(16,185,129,0.6)]">
-        <CheckIcon />
-      </div>
+      <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="float-logo mx-auto block h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)]" />
 
       <div className="space-y-2">
         <h2 className="text-3xl font-bold leading-tight text-white">
