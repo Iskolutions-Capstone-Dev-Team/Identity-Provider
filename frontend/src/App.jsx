@@ -19,6 +19,7 @@ import AddUserPage from "./pages/AddUserPage";
 import Roles from "./pages/Roles";
 import CreateRolePage from "./pages/CreateRolePage";
 import AppClient from "./pages/AppClient";
+import CreateAppClientPage from "./pages/CreateAppClientPage";
 import AuditLogs from "./pages/AuditLogs";
 import FAQ from "./pages/FAQ";
 import Registration from "./pages/Registration";
@@ -141,6 +142,13 @@ export default function App() {
             element={
               <PermissionRoute requiredPermissions={APP_CLIENT_PAGE_PERMISSIONS}>
                 <AppClient />
+              </PermissionRoute>
+            }
+          />
+          <Route path="/app-client/create"
+            element={
+              <PermissionRoute requiredPermissions={[PERMISSIONS.ADD_APPCLIENT]}>
+                <CreateAppClientPage />
               </PermissionRoute>
             }
           />
