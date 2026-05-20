@@ -6,7 +6,7 @@ import { buildAccessDeniedPath, buildLoginPath } from "../utils/loginRoute";
 import { userService } from "../../services/userService";
 import { hasAssignedRoles } from "../utils/authAccess";
 import { hasStoredAuthTokens } from "../utils/authRecovery";
-import { hasMfaVerified, isMfaPath, MFA_PATH, rememberMfaReturnPath } from "../utils/mfaFlow";
+import { hasMfaVerified, isMfaPath, rememberMfaReturnPath } from "../utils/mfaFlow";
 
 export default function ProtectedRoute({ children }) {
   const [authState, setAuthState] = useState("loading");
@@ -106,7 +106,7 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (authState === "needs-mfa") {
-    return <Navigate to={MFA_PATH} replace />;
+    return <Navigate to={buildLoginPath(undefined, { showMfa: true })} replace />;
   }
 
   return children;

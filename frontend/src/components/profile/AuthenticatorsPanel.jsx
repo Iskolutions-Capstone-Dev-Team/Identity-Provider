@@ -117,22 +117,13 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     <>
       <section className={wrapperClassName}>
         <div className="space-y-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
             <div>
               <h3 className={headingClassName}>Authenticator Apps</h3>
               <p className={`mt-1 ${bodyTextClassName}`}>
                 Manage the authenticator apps connected to your account.
               </p>
             </div>
-            <button type="button" onClick={loadAuthenticators} disabled={isLoading}
-              className={`btn h-10 rounded-xl px-4 text-sm shadow-none ${
-                isDarkMode
-                  ? "border border-white/12 bg-[rgba(255,248,243,0.05)] text-[#f4eaea] hover:border-[#f8d24e]/45 hover:bg-[#f8d24e]/12"
-                  : "border border-[#7b0d15]/15 bg-white text-[#7b0d15] hover:border-[#f8d24e]/70 hover:bg-[#fff4dc]"
-              }`}
-            >
-              {isLoading ? "Loading..." : "Refresh"}
-            </button>
           </div>
 
           <ErrorAlert message={error} onClose={() => setError("")} />

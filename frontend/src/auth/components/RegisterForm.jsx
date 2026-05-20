@@ -931,7 +931,10 @@ export default function RegisterForm({ clientId }) {
   const maskedEmail = details.email ? maskEmail(details.email) : "";
 
   return (
-    <div className="relative z-20 w-full max-w-[38rem] px-1 sm:px-0">
+    <div className={`relative z-20 w-full max-w-[38rem] px-1 sm:px-0 ${
+        step === "success" ? "lg:mt-24 xl:mt-28" : ""
+      }`}
+    >
       <div className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
         <div className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 lg:px-10">
           <div className="space-y-5">
