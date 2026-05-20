@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../context/PermissionContext";
 import { useRoles } from "../hooks/useRoles";
@@ -56,6 +56,9 @@ export default function Roles() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const showLoading = useDelayedLoading(loading);
+  const closeSuccessAlert = useCallback(() => {
+    setSuccessMessage("");
+  }, [setSuccessMessage]);
   const visibleRoles = paginatedRoles.map((role) => ({
     ...role,
     canEdit: canEditRole && role.canEdit,
@@ -203,7 +206,7 @@ export default function Roles() {
 
       <SuccessAlert
         message={successMessage}
-        onClose={() => setSuccessMessage("")}
+        onClose={closeSuccessAlert}
       />
     </>
   );

@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import Breadcrumbs from "../components/Breadcrumbs";
 import PageHeader from "../components/PageHeader";
-import RoleModal from "../components/role/RoleModal";
+import RoleCreateForm from "../components/role/RoleCreateForm";
 import { usePermissions } from "../hooks/usePermissions";
 import { useRoles } from "../hooks/useRoles";
 
@@ -80,10 +80,7 @@ export default function CreateRolePage() {
         colorMode={colorMode}
       />
 
-      <RoleModal
-        open
-        mode="create"
-        variant="page"
+      <RoleCreateForm
         permissionOptions={permissionOptions}
         isPermissionOptionsLoading={isPermissionOptionsLoading}
         onClose={handleClose}
