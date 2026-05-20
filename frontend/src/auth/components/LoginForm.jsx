@@ -5,7 +5,7 @@ import ErrorAlert from "../../components/ErrorAlert";
 import ChangePasswordModal from "../../components/ChangePasswordModal";
 import { buildAccessDeniedPath } from "../utils/loginRoute";
 
-export default function LoginForm({ clientId, initialError = "" }) {
+export default function LoginForm({ clientId, initialError = "", onLoginSuccess }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -132,6 +132,14 @@ export default function LoginForm({ clientId, initialError = "" }) {
 
       if (!redirectUrl) {
         setError("Invalid server response. Please contact support.");
+        return;
+      }
+
+      if (onLoginSuccess) {
+        onLoginSuccess({
+          email,
+          redirectUrl,
+        });
         return;
       }
 

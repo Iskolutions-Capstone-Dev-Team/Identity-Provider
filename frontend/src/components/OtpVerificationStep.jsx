@@ -59,23 +59,79 @@ export default function OtpVerificationStep({ otp, setOtp, timer, canResend, onR
     : "font-mono text-[#7b0d15] transition-colors duration-500 ease-out";
 
   const handleChange = (index, value) => {
-    if (!/^\d?$/.test(value)) {
+    const digits = value.replace(/\D/g, "");
+
+    if (!digits) {
       return;
     }
 
     const updatedOtp = [...otp];
-    updatedOtp[index] = value;
+    digits.split("").forEach((digit, offset) => {
+      const nextIndex = index + offset;
+
+      if (nextIndex < updatedOtp.length) {
+        updatedOtp[nextIndex] = digit;
+      }
+    });
+
     setOtp(updatedOtp);
 
-    if (value && index < 5) {
-      inputsRef.current[index + 1]?.focus();
-    }
+    const nextFocusIndex = Math.min(index + digits.length, otp.length - 1);
+    inputsRef.current[nextFocusIndex]?.focus();
+    inputsRef.current[nextFocusIndex]?.select();
   };
 
   const handleKeyDown = (index, event) => {
-    if (event.key === "Backspace" && !otp[index] && index > 0) {
-      inputsRef.current[index - 1]?.focus();
+    if (event.key === "Backspace") {
+      event.preventDefault();
+      const updatedOtp = [...otp];
+
+      if (updatedOtp[index]) {
+        updatedOtp[index] = "";
+        setOtp(updatedOtp);
+        return;
+      }
+
+      if (index > 0) {
+        updatedOtp[index - 1] = "";
+        setOtp(updatedOtp);
+        inputsRef.current[index - 1]?.focus();
+        inputsRef.current[index - 1]?.select();
+      }
+      return;
     }
+
+    if (event.key === "Delete") {
+      event.preventDefault();
+      const updatedOtp = [...otp];
+      updatedOtp[index] = "";
+      setOtp(updatedOtp);
+      return;
+    }
+
+    if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      inputsRef.current[index - 1]?.focus();
+      inputsRef.current[index - 1]?.select();
+      return;
+    }
+
+    if (event.key === "ArrowRight" && index < otp.length - 1) {
+      event.preventDefault();
+      inputsRef.current[index + 1]?.focus();
+      inputsRef.current[index + 1]?.select();
+    }
+  };
+
+  const handlePaste = (index, event) => {
+    event.preventDefault();
+    const digits = event.clipboardData.getData("text").replace(/\D/g, "");
+
+    if (!digits) {
+      return;
+    }
+
+    handleChange(index, digits);
   };
 
   useEffect(() => {
@@ -115,9 +171,11 @@ export default function OtpVerificationStep({ otp, setOtp, timer, canResend, onR
                     inputsRef.current[index] = element;
                   }}
                   type="text"
+                  inputMode="numeric"
                   value={digit}
                   onChange={(event) => handleChange(index, event.target.value)}
                   onKeyDown={(event) => handleKeyDown(index, event)}
+                  onPaste={(event) => handlePaste(index, event)}
                   className={`${otpInputClassName} ${otpInputErrorClassName}`}
                   maxLength={1}
                 />

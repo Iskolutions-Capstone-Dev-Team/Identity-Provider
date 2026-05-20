@@ -1,8 +1,6 @@
-import { Link } from "react-router-dom";
-import { MFA_BACKUP_CODE_PATH } from "../../utils/mfaFlow";
 import MfaCodeInput from "./MfaCodeInput";
 
-export default function MfaAuthenticatorCodeStep({ code, isVerifying, onCodeChange, onVerify }) {
+export default function MfaAuthenticatorCodeStep({ code, isVerifying, onCodeChange, onVerify, onUseBackupCode }) {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
@@ -23,12 +21,14 @@ export default function MfaAuthenticatorCodeStep({ code, isVerifying, onCodeChan
         </button>
       </form>
 
-      <p className="text-center text-sm text-white/72">
-        Lost your authenticator app, use{" "}
-        <Link to={MFA_BACKUP_CODE_PATH} className="font-semibold text-[#ffd700] underline decoration-transparent transition hover:decoration-[#ffd700]">
-          Backup Code
-        </Link>
-      </p>
+      {onUseBackupCode ? (
+        <p className="text-center text-sm text-white/72">
+          Lost your authenticator app, use{" "}
+          <button type="button" onClick={onUseBackupCode} className="font-semibold text-[#ffd700] underline decoration-transparent transition hover:decoration-[#ffd700]">
+            Backup Code
+          </button>
+        </p>
+      ) : null}
     </div>
   );
 }
