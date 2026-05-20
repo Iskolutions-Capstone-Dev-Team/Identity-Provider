@@ -4,61 +4,48 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sendgrid/sendgrid-go"
-	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"github.com/resend/resend-go/v3"
 )
 
-// SendOTPEmail sends an OTP code to the user's email.
+// SendOTPEmail sends an OTP code using Resend.
 func SendOTPEmail(toEmail string, otp string) error {
-	apiKey := os.Getenv("SENDGRID_API_KEY")
-	fromEmail := os.Getenv("SENDGRID_FROM_EMAIL")
-	fromName := os.Getenv("SENDGRID_FROM_NAME")
+	apiKey := os.Getenv("RESEND_API_KEY")
+	fromEmail := os.Getenv("RESEND_FROM_EMAIL")
+	fromName := os.Getenv("RESEND_FROM_NAME")
 
 	if apiKey == "" || fromEmail == "" {
-		return fmt.Errorf("mailer: missing sendgrid configuration")
+		return fmt.Errorf("mailer: missing resend configuration")
 	}
 
-	from := mail.NewEmail(fromName, fromEmail)
-	subject := "Your One-Time Password (OTP)"
-	to := mail.NewEmail("User", toEmail)
-	plainTextContent := fmt.Sprintf("Your OTP code is: %s", otp)
-	htmlContent := fmt.Sprintf("<strong>Your OTP code is: %s</strong>", otp)
-	message := mail.NewSingleEmail(from, subject, to,
-		plainTextContent, htmlContent)
-	client := sendgrid.NewSendClient(apiKey)
-	_, err := client.Send(message)
+	client := resend.NewClient(apiKey)
+	from := fmt.Sprintf("%s <%s>", fromName, fromEmail)
+	params := &resend.SendEmailRequest{
+		From:    from,
+		To:      []string{toEmail},
+		Subject: "Your One-Time Password (OTP)",
+		Html:    fmt.Sprintf("<strong>Your OTP code is: %s</strong>", otp),
+	}
+
+	_, err := client.Emails.Send(params)
 	if err != nil {
 		return fmt.Errorf("[SendOTPEmail]: %w", err)
 	}
 	return nil
 }
 
-// SendInvitationEmail sends an invitation code to the user's email.
+// SendInvitationEmail sends an invitation code using Resend.
 func SendInvitationEmail(toEmail string, invitationCode string) error {
-	apiKey := os.Getenv("SENDGRID_API_KEY")
-	fromEmail := os.Getenv("SENDGRID_FROM_EMAIL")
-	fromName := os.Getenv("SENDGRID_FROM_NAME")
+	apiKey := os.Getenv("RESEND_API_KEY")
+	fromEmail := os.Getenv("RESEND_FROM_EMAIL")
+	fromName := os.Getenv("RESEND_FROM_NAME")
 	clientBaseURL := os.Getenv("CLIENT_BASE_URL")
 
 	if apiKey == "" || fromEmail == "" {
-		return fmt.Errorf("mailer: missing sendgrid configuration")
+		return fmt.Errorf("mailer: missing resend configuration")
 	}
 
 	regURL := fmt.Sprintf("%s/register?invitation_code=%s",
 		clientBaseURL, invitationCode)
-
-	from := mail.NewEmail(fromName, fromEmail)
-	subject := "Action Required: Activate Your PUP-Taguig Identity" +
-		" Provider Account"
-	to := mail.NewEmail("Valued User", toEmail)
-
-	plainText := fmt.Sprintf(
-		"Welcome to PUP-Taguig Identity Provider!\n\n"+
-			"You have been invited to activate your account. "+
-			"To get started, please visit the link below:\n\n"+
-			"%s\n\n"+
-			"If you did not expect this, please ignore this email.",
-		regURL)
 
 	htmlContent := fmt.Sprintf(
 		"<div style='font-family: sans-serif; color: #333;'>"+
@@ -77,10 +64,17 @@ func SendInvitationEmail(toEmail string, invitationCode string) error {
 			"<br>%s</p>"+
 			"</div>", regURL, regURL)
 
-	message := mail.NewSingleEmail(from, subject, to,
-		plainText, htmlContent)
-	client := sendgrid.NewSendClient(apiKey)
-	_, err := client.Send(message)
+	client := resend.NewClient(apiKey)
+	from := fmt.Sprintf("%s <%s>", fromName, fromEmail)
+	params := &resend.SendEmailRequest{
+		From: from,
+		To:   []string{toEmail},
+		Subject: "Action Required: Activate Your " +
+			"PUP-Taguig Identity Provider Account",
+		Html: htmlContent,
+	}
+
+	_, err := client.Emails.Send(params)
 	if err != nil {
 		return fmt.Errorf("[SendInvitationEmail]: %w", err)
 	}

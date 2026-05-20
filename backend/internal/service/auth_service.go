@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
+	"net/http"
 	"os"
 	"slices"
 	"time"
@@ -430,6 +431,7 @@ func (s *authService) GetSessionToken(ctx context.Context,
 }
 
 func (s *authService) RevokeCookies(c *gin.Context) {
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie(
 		SESSION_COOKIE_NAME,
 		"",
