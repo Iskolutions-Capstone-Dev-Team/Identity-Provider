@@ -248,6 +248,7 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 
 	// Set session cookie
 	maxAge := int(time.Hour.Seconds() * 24 * service.SESSION_DAYS)
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie(
 		service.SESSION_COOKIE_NAME,
 		sessionID,
@@ -630,6 +631,7 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	}
 
 	maxAge := int(time.Hour.Seconds() * 24 * service.SESSION_DAYS)
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie(
 		service.SESSION_COOKIE_NAME,
 		sessionID,

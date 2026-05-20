@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import sri from "vite-plugin-sri-gen";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, "..", "");
@@ -12,7 +13,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     envDir: "..",
-    plugins: [tailwindcss(), react()],
+    plugins: [tailwindcss(), react(), sri()],
     server: {
       host: true, 
       port: 5173,
