@@ -23,6 +23,7 @@ import CreateAppClientPage from "./pages/CreateAppClientPage";
 import AuditLogs from "./pages/AuditLogs";
 import FAQ from "./pages/FAQ";
 import Registration from "./pages/Registration";
+import CreateRegistrationConfigPage from "./pages/CreateRegistrationConfigPage";
 import Profile from "./pages/Profile";
 import Placeholder from "./pages/Placeholder";
 import IdpLayout from "./layouts/IdpLayout";
@@ -156,6 +157,13 @@ export default function App() {
             element={
               <PermissionRoute requiredPermissions={REGISTRATION_PAGE_PERMISSIONS}>
                 <Registration />
+              </PermissionRoute>
+            }
+          />
+          <Route path="/registration/create"
+            element={
+              <PermissionRoute requiredPermissions={[PERMISSIONS.CREATE_REGISTRATION_CONFIG]}>
+                <CreateRegistrationConfigPage />
               </PermissionRoute>
             }
           />
