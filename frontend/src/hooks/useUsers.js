@@ -325,6 +325,15 @@ function mapUserResponse(user = {}, { isAdmin = false } = {}) {
   return {
     id: user.id,
     email: user.email,
+    accountTypeId: normalizeAccountTypeId(
+      user.account_type_id ?? user.accountTypeId ?? user.accountType?.id,
+    ),
+    accountType:
+      user.account_type ??
+      user.accountType ??
+      user.account_type_name ??
+      user.accountTypeName ??
+      "",
     givenName,
     middleName,
     surname,
