@@ -13,14 +13,15 @@ type UserRepository interface {
 	GetUserList(ctx context.Context, limit, offset int) ([]models.User, error)
 	GetBoundUserList(ctx context.Context, limit, offset int,
 		adminID []byte) ([]models.User, error)
-	GetAdminUserList(ctx context.Context, limit,
-		offset int) ([]models.User, error)
+	GetAdminUserList(ctx context.Context, limit, offset int,
+		adminID []byte, hasViewAll bool) ([]models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetUserByEmailIncludeDeleted(ctx context.Context,
 		email string) (*models.User, error)
 	GetUsersByAccountTypeID(ctx context.Context,
 		accountTypeID int) ([]models.User, error)
-	GetUserById(ctx context.Context, id []byte) (*models.User, error)
+	GetUserById(ctx context.Context, id []byte,
+		adminID []byte, hasViewAll bool) (*models.User, error)
 	CreateUser(ctx context.Context, u *models.User) error
 	RestoreUser(ctx context.Context, id []byte) error
 	ClearUserRelations(ctx context.Context, id []byte) error
@@ -110,13 +111,15 @@ func (r *userRepository) GetUserList(ctx context.Context,
 }
 
 // GetAdminUserList retrieves users that have an assigned role.
+// When hasViewAll is false, client data is scoped to the admin's
+// admin_allowed_clients entries.
 func (r *userRepository) GetAdminUserList(ctx context.Context,
-	limit, offset int,
+	limit, offset int, adminID []byte, hasViewAll bool,
 ) ([]models.User, error) {
 	var ids [][]byte
-	idQuery := `SELECT id FROM users 
-                WHERE deleted_at IS NULL AND role_id IS NOT NULL 
-                LIMIT ? OFFSET ?`
+	idQuery := `SELECT id FROM users
+	            WHERE deleted_at IS NULL AND role_id IS NOT NULL
+	            LIMIT ? OFFSET ?`
 
 	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
 	if err != nil {
@@ -128,14 +131,15 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 	}
 
 	const sql = `
-        SELECT u.id, u.first_name, u.middle_name, u.last_name, 
-               u.name_suffix, u.email, u.status, u.created_at, 
-               u.updated_at, u.account_type_id, r.id AS role_id, r.role_name AS role_name, 
-               r.description AS role_description
-        FROM users u
-        LEFT JOIN roles r ON u.role_id = r.id
-        WHERE u.id IN (?) AND u.deleted_at IS NULL
-        ORDER BY u.created_at DESC`
+		SELECT u.id, u.first_name, u.middle_name, u.last_name,
+		       u.name_suffix, u.email, u.status, u.created_at,
+		       u.updated_at, u.account_type_id,
+		       r.id AS role_id, r.role_name AS role_name,
+		       r.description AS role_description
+		FROM users u
+		LEFT JOIN roles r ON u.role_id = r.id
+		WHERE u.id IN (?) AND u.deleted_at IS NULL
+		ORDER BY u.created_at DESC`
 
 	fullQuery, args, err := sqlx.In(sql, ids)
 	if err != nil {
@@ -164,8 +168,18 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 		result = append(result, user)
 	}
 
-	if err := r.populateClients(ctx, result); err != nil {
-		return nil, fmt.Errorf("[GetAdminUserList] Prep: %w", err)
+	if hasViewAll {
+		if err := r.populateClients(ctx, result); err != nil {
+			return nil, fmt.Errorf("[GetAdminUserList] Prep: %w", err)
+		}
+	} else {
+		if err := r.populateClientsScopedToAdmin(
+			ctx, result, adminID,
+		); err != nil {
+			return nil, fmt.Errorf(
+				"[GetAdminUserList] ScopedPrep: %w", err,
+			)
+		}
 	}
 
 	return result, nil
@@ -370,18 +384,21 @@ func (r *userRepository) ClearUserRelations(ctx context.Context, id []byte) erro
 }
 
 // GetUserById retrieves a specific user by binary UUID including roles.
+// When hasViewAll is false, client data is scoped to the admin's
+// admin_allowed_clients entries.
 func (r *userRepository) GetUserById(ctx context.Context,
-	id []byte,
+	id []byte, adminID []byte, hasViewAll bool,
 ) (*models.User, error) {
 	var rows []userRow
 	query := `
-        SELECT u.id, u.first_name, u.middle_name, u.last_name,
-               u.name_suffix, u.email, u.status, u.created_at, 
-               u.updated_at, u.account_type_id, r.id AS role_id, r.role_name AS role_name, 
-               r.description AS role_description
-        FROM users u
-        LEFT JOIN roles r ON u.role_id = r.id
-        WHERE u.id = ? AND u.deleted_at IS NULL`
+		SELECT u.id, u.first_name, u.middle_name, u.last_name,
+		       u.name_suffix, u.email, u.status, u.created_at,
+		       u.updated_at, u.account_type_id, r.id AS role_id,
+		       r.role_name AS role_name,
+		       r.description AS role_description
+		FROM users u
+		LEFT JOIN roles r ON u.role_id = r.id
+		WHERE u.id = ? AND u.deleted_at IS NULL`
 
 	err := r.db.SelectContext(ctx, &rows, query, id)
 	if err != nil {
@@ -402,8 +419,18 @@ func (r *userRepository) GetUserById(ctx context.Context,
 		}
 	}
 
-	if err := r.populateSingleUserClients(ctx, &user); err != nil {
-		return nil, fmt.Errorf("[GetUserById] Prep: %w", err)
+	if hasViewAll {
+		if err := r.populateSingleUserClients(ctx, &user); err != nil {
+			return nil, fmt.Errorf("[GetUserById] Prep: %w", err)
+		}
+	} else {
+		if err := r.populateSingleUserClientsScopedToAdmin(
+			ctx, &user, adminID,
+		); err != nil {
+			return nil, fmt.Errorf(
+				"[GetUserById] ScopedPrep: %w", err,
+			)
+		}
 	}
 
 	return &user, nil
@@ -724,6 +751,138 @@ func (r *userRepository) populateSingleUserClients(
 		managedClients = append(managedClients, models.Client{
 			ID:         row.ID,
 			ClientName: row.Name,
+		})
+	}
+	user.ManagedClients = managedClients
+
+	return nil
+}
+
+// populateClientsScopedToAdmin sets AllowedClients for each user
+// restricted to clients within the requesting admin's
+// admin_allowed_clients scope.
+func (r *userRepository) populateClientsScopedToAdmin(
+	ctx context.Context,
+	users []models.User,
+	adminID []byte,
+) error {
+	if len(users) == 0 {
+		return nil
+	}
+
+	userIDs := make([][]byte, 0, len(users))
+	for _, u := range users {
+		userIDs = append(userIDs, u.ID)
+	}
+
+	// Only return clients that exist in both cau AND the admin's aac.
+	const query = `
+		SELECT cau.user_id, c.id AS client_id, c.client_name
+		FROM client_allowed_users cau
+		JOIN clients c ON cau.client_id = c.id
+		JOIN admin_allowed_clients aac
+		    ON aac.client_id = c.id AND aac.user_id = ?
+		WHERE cau.user_id IN (?)
+	`
+
+	fullQuery, args, err := sqlx.In(query, adminID, userIDs)
+	if err != nil {
+		return fmt.Errorf(
+			"[populateClientsScopedToAdmin] In-Expansion: %w", err,
+		)
+	}
+
+	fullQuery = r.db.Rebind(fullQuery)
+
+	var rows []clientAccessRow
+	if err = r.db.SelectContext(ctx, &rows, fullQuery, args...); err != nil {
+		return fmt.Errorf(
+			"[populateClientsScopedToAdmin] Fetch: %w", err,
+		)
+	}
+
+	allowedMap := make(map[string][]models.Client)
+	for _, row := range rows {
+		userKey := string(row.UserID)
+		allowedMap[userKey] = append(
+			allowedMap[userKey],
+			models.Client{ID: row.ClientID, ClientName: row.ClientName},
+		)
+	}
+
+	for i := range users {
+		if clients, ok := allowedMap[string(users[i].ID)]; ok {
+			users[i].AllowedClients = clients
+		} else {
+			users[i].AllowedClients = []models.Client{}
+		}
+	}
+
+	return nil
+}
+
+// populateSingleUserClientsScopedToAdmin sets AllowedClients and
+// ManagedClients for one user, scoped to the requesting admin's
+// admin_allowed_clients entries.
+func (r *userRepository) populateSingleUserClientsScopedToAdmin(
+	ctx context.Context,
+	user *models.User,
+	adminID []byte,
+) error {
+	// Allowed clients: CAU rows whose client is also in the admin's AAC.
+	const allowedQuery = `
+		SELECT c.id, c.client_name
+		FROM client_allowed_users cau
+		JOIN clients c ON cau.client_id = c.id
+		JOIN admin_allowed_clients aac
+		    ON aac.client_id = c.id AND aac.user_id = ?
+		WHERE cau.user_id = ?
+	`
+	var allowedRows []struct {
+		ID   []byte `db:"id"`
+		Name string `db:"client_name"`
+	}
+	err := r.db.SelectContext(
+		ctx, &allowedRows, allowedQuery, adminID, user.ID,
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"[populateSingleUserClientsScopedToAdmin] allowed: %w", err,
+		)
+	}
+
+	allowedClients := make([]models.Client, 0, len(allowedRows))
+	for _, row := range allowedRows {
+		allowedClients = append(allowedClients, models.Client{
+			ID: row.ID, ClientName: row.Name,
+		})
+	}
+	user.AllowedClients = allowedClients
+
+	// Managed clients: the admin's own AAC entries (already scoped).
+	const managedQuery = `
+		SELECT c.id, c.client_name
+		FROM admin_allowed_clients aac
+		JOIN clients c ON aac.client_id = c.id
+		WHERE aac.user_id = ?
+	`
+	var managedRows []struct {
+		ID   []byte `db:"id"`
+		Name string `db:"client_name"`
+	}
+	err = r.db.SelectContext(
+		ctx, &managedRows, managedQuery, adminID,
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"[populateSingleUserClientsScopedToAdmin] managed: %w", err,
+		)
+	}
+
+	managedClients := make([]models.Client, 0, len(managedRows))
+	for _, row := range managedRows {
+		managedClients = append(managedClients, models.Client{
+			ID: row.ID, ClientName: row.Name,
 		})
 	}
 	user.ManagedClients = managedClients
