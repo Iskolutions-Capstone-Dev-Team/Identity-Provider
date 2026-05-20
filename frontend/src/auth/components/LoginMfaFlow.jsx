@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode";
-import { authService } from "../services/authService";
-import { clearAuthState, promotePendingMfaTokenResponse } from "../utils/authCookies";
+import { promotePendingMfaTokenResponse } from "../utils/authCookies";
 import { consumeMfaReturnPath, rememberMfaSetup, getMfaSetup, clearMfaSetup, rememberMfaVerified } from "../utils/mfaFlow";
-import { buildLoginPath } from "../utils/loginRoute";
 import { mfaService } from "../../services/mfaService";
 import { passwordResetService } from "../../services/passwordResetService";
 import { userService } from "../../services/userService";
@@ -34,7 +32,7 @@ function getRequestErrorMessage(error, fallbackMessage) {
   );
 }
 
-export default function LoginMfaFlow({ clientId, callbackRedirectUrl = "", initialEmail = "" }) {
+export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "" }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(MFA_STEPS.CHOOSE);
   const [email, setEmail] = useState(initialEmail);
@@ -64,22 +62,6 @@ export default function LoginMfaFlow({ clientId, callbackRedirectUrl = "", initi
 
     promotePendingMfaTokenResponse();
     navigate(consumeMfaReturnPath(), { replace: true });
-  };
-
-  const returnToLogin = async () => {
-    try {
-      const session = await authService.checkSession();
-      const userId = session?.user_id || "";
-
-      if (userId) {
-        await authService.logout({ clientId, userId });
-      }
-    } catch (logoutError) {
-      console.error("Unable to clear MFA session:", logoutError);
-    } finally {
-      clearAuthState();
-      navigate(buildLoginPath(clientId), { replace: true });
-    }
   };
 
   useEffect(() => {
