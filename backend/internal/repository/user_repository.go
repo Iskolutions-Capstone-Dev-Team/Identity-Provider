@@ -284,12 +284,11 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
 		}
 	}
 
-	result := []models.User{user}
-	if err := r.populateClients(ctx, result); err != nil {
+	if err := r.populateSingleUserClients(ctx, &user); err != nil {
 		return nil, fmt.Errorf("[GetUserByEmail] Prep: %w", err)
 	}
 
-	return &result[0], nil
+	return &user, nil
 }
 
 func (r *userRepository) GetUserByEmailIncludeDeleted(ctx context.Context,
@@ -324,12 +323,11 @@ func (r *userRepository) GetUserByEmailIncludeDeleted(ctx context.Context,
 		}
 	}
 
-	result := []models.User{user}
-	if err := r.populateClients(ctx, result); err != nil {
+	if err := r.populateSingleUserClients(ctx, &user); err != nil {
 		return nil, fmt.Errorf("[GetUserByEmailAll] Prep: %w", err)
 	}
 
-	return &result[0], nil
+	return &user, nil
 }
 
 func (r *userRepository) RestoreUser(ctx context.Context, id []byte) error {
@@ -404,12 +402,11 @@ func (r *userRepository) GetUserById(ctx context.Context,
 		}
 	}
 
-	result := []models.User{user}
-	if err := r.populateClients(ctx, result); err != nil {
+	if err := r.populateSingleUserClients(ctx, &user); err != nil {
 		return nil, fmt.Errorf("[GetUserById] Prep: %w", err)
 	}
 
-	return &result[0], nil
+	return &user, nil
 }
 
 func (r *userRepository) GetUsersByAccountTypeID(ctx context.Context,
@@ -623,14 +620,9 @@ func (r *userRepository) populateClients(ctx context.Context,
 	}
 
 	const query = `
-		SELECT cau.user_id, c.id AS client_id, c.client_name, cau.source
-		FROM (
-			SELECT user_id, client_id, 'allowed' AS source 
-			FROM client_allowed_users
-			UNION ALL
-			SELECT user_id, client_id, 'managed' AS source 
-			FROM admin_allowed_clients
-		) cau
+		SELECT cau.user_id, c.id AS client_id, c.client_name,
+		       'allowed' AS source
+		FROM client_allowed_users cau
 		JOIN clients c ON cau.client_id = c.id
 		WHERE cau.user_id IN (?)
 	`
@@ -658,10 +650,12 @@ func (r *userRepository) populateClients(ctx context.Context,
 			ClientName: row.ClientName,
 		}
 
-		if allowedMap[userKey] == nil {
-			allowedMap[userKey] = make(map[string]models.Client)
+		if row.Source == "allowed" {
+			if allowedMap[userKey] == nil {
+				allowedMap[userKey] = make(map[string]models.Client)
+			}
+			allowedMap[userKey][clientKey] = client
 		}
-		allowedMap[userKey][clientKey] = client
 
 		if row.Source == "managed" {
 			managedMap[userKey] = append(managedMap[userKey], client)
@@ -677,6 +671,62 @@ func (r *userRepository) populateClients(ctx context.Context,
 		users[i].AllowedClients = clients
 		users[i].ManagedClients = managedMap[string(users[i].ID)]
 	}
+
+	return nil
+}
+
+// populateSingleUserClients retrieves allowed and managed clients for a user.
+func (r *userRepository) populateSingleUserClients(
+	ctx context.Context,
+	user *models.User,
+) error {
+	const allowedQuery = `
+		SELECT c.id, c.client_name
+		FROM client_allowed_users cau
+		JOIN clients c ON cau.client_id = c.id
+		WHERE cau.user_id = ?
+	`
+	var allowedRows []struct {
+		ID   []byte `db:"id"`
+		Name string `db:"client_name"`
+	}
+	err := r.db.SelectContext(ctx, &allowedRows, allowedQuery, user.ID)
+	if err != nil {
+		return fmt.Errorf("allowed fetch: %w", err)
+	}
+
+	allowedClients := make([]models.Client, 0, len(allowedRows))
+	for _, row := range allowedRows {
+		allowedClients = append(allowedClients, models.Client{
+			ID:         row.ID,
+			ClientName: row.Name,
+		})
+	}
+	user.AllowedClients = allowedClients
+
+	const managedQuery = `
+		SELECT c.id, c.client_name
+		FROM admin_allowed_clients aac
+		JOIN clients c ON aac.client_id = c.id
+		WHERE aac.user_id = ?
+	`
+	var managedRows []struct {
+		ID   []byte `db:"id"`
+		Name string `db:"client_name"`
+	}
+	err = r.db.SelectContext(ctx, &managedRows, managedQuery, user.ID)
+	if err != nil {
+		return fmt.Errorf("managed fetch: %w", err)
+	}
+
+	managedClients := make([]models.Client, 0, len(managedRows))
+	for _, row := range managedRows {
+		managedClients = append(managedClients, models.Client{
+			ID:         row.ID,
+			ClientName: row.Name,
+		})
+	}
+	user.ManagedClients = managedClients
 
 	return nil
 }

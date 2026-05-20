@@ -43,10 +43,18 @@ func TestGetUserById(t *testing.T) {
 		WithArgs(userID[:]).
 		WillReturnRows(rows)
 
-	// Since populateClients is called, expect another query
-	// This query uses IN (?) so it's a bit dynamic
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT cau.user_id")).
-		WillReturnRows(sqlmock.NewRows([]string{"user_id", "client_id", "client_name"}))
+	// Since populateSingleUserClients is called, expect both queries
+	mock.ExpectQuery(regexp.QuoteMeta(
+		"SELECT c.id, c.client_name FROM client_allowed_users",
+	)).WithArgs(userID[:]).WillReturnRows(
+		sqlmock.NewRows([]string{"id", "client_name"}),
+	)
+
+	mock.ExpectQuery(regexp.QuoteMeta(
+		"SELECT c.id, c.client_name FROM admin_allowed_clients",
+	)).WithArgs(userID[:]).WillReturnRows(
+		sqlmock.NewRows([]string{"id", "client_name"}),
+	)
 
 	user, err := repo.GetUserById(context.Background(), userID[:])
 
