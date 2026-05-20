@@ -1,5 +1,6 @@
 const defaultClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 const LOGIN_ERROR_QUERY_PARAM = "auth_error";
+const LOGIN_MFA_QUERY_PARAM = "mfa";
 export const LOGIN_PATH = "/login";
 export const ACCESS_DENIED_PATH = "/access-denied";
 export const LEGACY_UNAUTHORIZED_PATH = "/unauthorized";
@@ -14,7 +15,7 @@ const LOGIN_ERROR_MESSAGES = {
 };
 
 export function buildLoginPath(clientId = defaultClientId, options = {}) {
-  const { authError = "" } = options;
+  const { authError = "", showMfa = false } = options;
 
   if (authError === LOGIN_ERROR_CODES.UNAUTHORIZED) {
     return buildAccessDeniedPath(clientId);
@@ -28,6 +29,10 @@ export function buildLoginPath(clientId = defaultClientId, options = {}) {
 
   if (authError) {
     params.set(LOGIN_ERROR_QUERY_PARAM, authError);
+  }
+
+  if (showMfa) {
+    params.set(LOGIN_MFA_QUERY_PARAM, "1");
   }
 
   const queryString = params.toString();
@@ -85,4 +90,8 @@ export function getLoginErrorMessageByCode(errorCode = "") {
 
 export function getLoginErrorMessage(searchParams) {
   return getLoginErrorMessageByCode(getLoginErrorCode(searchParams));
+}
+
+export function isLoginMfaRequested(searchParams) {
+  return searchParams.get(LOGIN_MFA_QUERY_PARAM) === "1";
 }
