@@ -721,6 +721,8 @@ export function useUsers({ visibleClientIds = [] } = {}) {
           shouldAssignAdminRole
             ? normalizeRoleId(newUser.roleId)
             : null,
+        accessible_clients: nextAccessibleClientIds,
+        skip_auto_client_assignment: Boolean(newUser.skipAutoClientAssignment),
       };
 
       const createdUserResponse = await userService.createUser(payload);
