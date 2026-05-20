@@ -67,11 +67,11 @@ func SendInvitationEmail(toEmail string, invitationCode string) error {
 	client := resend.NewClient(apiKey)
 	from := fmt.Sprintf("%s <%s>", fromName, fromEmail)
 	params := &resend.SendEmailRequest{
-		From:    from,
-		To:      []string{toEmail},
+		From: from,
+		To:   []string{toEmail},
 		Subject: "Action Required: Activate Your " +
 			"PUP-Taguig Identity Provider Account",
-		Html:    htmlContent,
+		Html: htmlContent,
 	}
 
 	_, err := client.Emails.Send(params)
