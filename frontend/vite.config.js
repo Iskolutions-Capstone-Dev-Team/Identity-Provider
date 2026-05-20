@@ -4,7 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, "..", "");
-  const proxyTarget = env.BACKEND_PROXY_TARGET 
+  const proxyTarget = process.env.BACKEND_PROXY_TARGET
+    || env.BACKEND_PROXY_TARGET 
+    || process.env.VITE_BACKEND_URL 
     || env.VITE_BACKEND_URL 
     || "http://localhost:8080";
 
