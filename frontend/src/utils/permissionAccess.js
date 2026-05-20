@@ -71,6 +71,7 @@ export const ROUTE_PERMISSIONS = Object.freeze({
   "/audit-logs": [PERMISSIONS.VIEW_AUDIT_LOGS],
   "/faq": [],
   "/registration": REGISTRATION_PAGE_PERMISSIONS,
+  "/registration/create": [PERMISSIONS.CREATE_REGISTRATION_CONFIG],
 });
 
 const DEFAULT_ACCESSIBLE_PATHS = [
