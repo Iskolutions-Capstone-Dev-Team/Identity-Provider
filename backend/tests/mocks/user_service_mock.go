@@ -101,18 +101,29 @@ func (mr *MockUserServiceMockRecorder) DeleteUser(ctx, id any) *gomock.Call {
 }
 
 // GetAdminUserList mocks base method.
-func (m *MockUserService) GetAdminUserList(ctx context.Context, limit, page int) (*dto.UserResponseList, error) {
+func (m *MockUserService) GetAdminUserList(
+	ctx context.Context, limit, page int,
+	adminID uuid.UUID, permissions []string,
+) (*dto.UserResponseList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdminUserList", ctx, limit, page)
+	ret := m.ctrl.Call(
+		m, "GetAdminUserList", ctx, limit, page, adminID, permissions,
+	)
 	ret0, _ := ret[0].(*dto.UserResponseList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAdminUserList indicates an expected call of GetAdminUserList.
-func (mr *MockUserServiceMockRecorder) GetAdminUserList(ctx, limit, page any) *gomock.Call {
+func (mr *MockUserServiceMockRecorder) GetAdminUserList(
+	ctx, limit, page, adminID, permissions any,
+) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminUserList", reflect.TypeOf((*MockUserService)(nil).GetAdminUserList), ctx, limit, page)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock, "GetAdminUserList",
+		reflect.TypeOf((*MockUserService)(nil).GetAdminUserList),
+		ctx, limit, page, adminID, permissions,
+	)
 }
 
 // GetBoundUserList mocks base method.
@@ -176,18 +187,29 @@ func (mr *MockUserServiceMockRecorder) GetUserByEmail(ctx, email any) *gomock.Ca
 }
 
 // GetUserByID mocks base method.
-func (m *MockUserService) GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error) {
+func (m *MockUserService) GetUserByID(
+	ctx context.Context, id uuid.UUID,
+	adminID uuid.UUID, permissions []string,
+) (*dto.UserResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByID", ctx, id)
+	ret := m.ctrl.Call(
+		m, "GetUserByID", ctx, id, adminID, permissions,
+	)
 	ret0, _ := ret[0].(*dto.UserResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserByID indicates an expected call of GetUserByID.
-func (mr *MockUserServiceMockRecorder) GetUserByID(ctx, id any) *gomock.Call {
+func (mr *MockUserServiceMockRecorder) GetUserByID(
+	ctx, id, adminID, permissions any,
+) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockUserService)(nil).GetUserByID), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock, "GetUserByID",
+		reflect.TypeOf((*MockUserService)(nil).GetUserByID),
+		ctx, id, adminID, permissions,
+	)
 }
 
 // GetUserList mocks base method.
