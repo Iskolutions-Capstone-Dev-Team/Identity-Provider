@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import AuthLayout from "../layouts/AuthLayout";
 import LoginForm from "../components/LoginForm";
+import LoginMfaFlow from "../components/LoginMfaFlow";
 import AccessDenied from "./AccessDenied";
-import { buildLoginPath, getLoginClientId, getLoginErrorCode, getLoginErrorMessage, LOGIN_ERROR_CODES } from "../utils/loginRoute";
+import { buildLoginPath, getLoginClientId, getLoginErrorCode, getLoginErrorMessage, isLoginMfaRequested, LOGIN_ERROR_CODES } from "../utils/loginRoute";
 import { DEFAULT_AUTHENTICATED_PATH } from "../utils/authAccess";
 import { hasStoredAccessToken } from "../utils/authRecovery";
 
@@ -16,12 +17,14 @@ export default function Login() {
   const loginErrorMessage = isAccessDeniedError
     ? ""
     : getLoginErrorMessage(searchParams);
+  const [mfaContext, setMfaContext] = useState(null);
+  const shouldShowMfa = Boolean(mfaContext) || isLoginMfaRequested(searchParams);
   const [isResolvingAccess, setIsResolvingAccess] = useState(
-    Boolean(clientId) && !loginErrorCode,
+    Boolean(clientId) && !loginErrorCode && !shouldShowMfa,
   );
 
   useEffect(() => {
-    if (!clientId || loginErrorCode) {
+    if (!clientId || loginErrorCode || shouldShowMfa) {
       setIsResolvingAccess(false);
       return;
     }
@@ -32,7 +35,7 @@ export default function Login() {
     }
 
     setIsResolvingAccess(false);
-  }, [clientId, loginErrorCode, navigate]);
+  }, [clientId, loginErrorCode, navigate, shouldShowMfa]);
 
   if (isAccessDeniedError) {
     return <AccessDenied />;
@@ -69,7 +72,19 @@ export default function Login() {
 
   return (
     <AuthLayout>
-      <LoginForm clientId={clientId} initialError={loginErrorMessage} />
+      {shouldShowMfa ? (
+        <LoginMfaFlow
+          clientId={clientId}
+          callbackRedirectUrl={mfaContext?.redirectUrl || ""}
+          initialEmail={mfaContext?.email || ""}
+        />
+      ) : (
+        <LoginForm
+          clientId={clientId}
+          initialError={loginErrorMessage}
+          onLoginSuccess={setMfaContext}
+        />
+      )}
     </AuthLayout>
   );
 }
