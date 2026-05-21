@@ -12,6 +12,7 @@ import UserPoolUserIconBox from "./UserPoolUserIconBox";
 import { getModalTheme } from "../modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 import { usePermissionAccess } from "../../context/PermissionContext";
+import { registrationService } from "../../services/registrationService";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions } from "../../utils/userPoolAccess";
 import {
   getAccountTypeBackendId,

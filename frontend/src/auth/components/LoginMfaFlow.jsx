@@ -317,6 +317,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
         email={email}
         isCheckingAuthenticators={isCheckingAuthenticators}
         onSelectAuthenticator={handleSelectAuthenticator}
+        onCancel={onBackToLogin}
       />
     );
   };
