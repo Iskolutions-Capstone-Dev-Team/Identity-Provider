@@ -7,7 +7,7 @@ function getArticle(label = "") {
   return ["a", "e", "i", "o", "u"].includes(normalizedLabel[0]) ? "an" : "a";
 }
 
-export default function InvitationConfirmModal({ open, accountTypeLabel = "selected", isSubmitting = false, onCancel, onConfirm, colorMode = "light" }) {
+export default function InvitationConfirmModal({ open, accountTypeLabel = "selected", title = "Send Invitation?", description = "", confirmLabel = "Send Invitation", isSubmitting = false, onCancel, onConfirm, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
   const isDarkMode = colorMode === "dark";
   const {
@@ -46,12 +46,10 @@ export default function InvitationConfirmModal({ open, accountTypeLabel = "selec
             </div>
           </div>
 
-          <h3 className={titleClassName}>
-            Send Invitation?
-          </h3>
+          <h3 className={titleClassName}>{title}</h3>
           <p className={descriptionClassName}>
-            This will create the user and send an invitation for {article}{" "}
-            {accountTypeLabel.toLowerCase()} account.
+            {description ||
+              `This will create the user and send an invitation for ${article} ${accountTypeLabel.toLowerCase()} account.`}
           </p>
         </div>
 
@@ -61,7 +59,7 @@ export default function InvitationConfirmModal({ open, accountTypeLabel = "selec
               Cancel
             </button>
             <button type="button" className={modalPrimaryButtonClassName} onClick={onConfirm} disabled={isSubmitting}>
-              {isSubmitting ? "Sending..." : "Send Invitation"}
+              {isSubmitting ? "Sending..." : confirmLabel}
             </button>
           </div>
         </div>

@@ -9,6 +9,7 @@ import Pagination from "../components/Pagination";
 import UserPoolModal from "../components/user-pool/UserPoolModal";
 import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import InvitationConfirmModal from "../components/user-pool/InvitationConfirmModal";
 import ResultsCount from "../components/ResultsCount";
 import Breadcrumbs from "../components/Breadcrumbs";
 import PageHeader from "../components/PageHeader";
@@ -16,8 +17,11 @@ import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import ErrorAlert from "../components/ErrorAlert";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { useAllAppClients } from "../hooks/useAllAppClients";
+import { mailService } from "../services/mailService";
+import { registrationService } from "../services/registrationService";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS, USER_STATUS_EDIT_PERMISSIONS } from "../utils/permissionAccess";
+import { getAccountTypeBackendId } from "../utils/accountTypes";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -25,12 +29,61 @@ function getUserLabel(user) {
   return user?.displayName || user?.email || "User";
 }
 
-function UserPoolBreadcrumbIcon() {
+function getRequestErrorMessage(error, fallbackMessage) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-6">
-      <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd" />
-    </svg>
+    error?.response?.data?.error ||
+    error?.response?.data?.message ||
+    error?.message ||
+    fallbackMessage
   );
+}
+
+function getMatchingClientCount(user = {}, config = {}) {
+  const userClientIds = new Set(user.accessibleClientIds || []);
+  const userClientNames = new Set(
+    (user.accessibleClientNames || []).map((name) => name.toLowerCase()),
+  );
+
+  return (config.clients || []).filter((client) => {
+    const clientName = client.name?.toLowerCase() || "";
+
+    return userClientIds.has(client.id) || userClientNames.has(clientName);
+  }).length;
+}
+
+async function resolveReinviteAccountTypeId(user = {}) {
+  if (Number.isInteger(user.accountTypeId) && user.accountTypeId > 0) {
+    return user.accountTypeId;
+  }
+
+  const accountTypeId = getAccountTypeBackendId(user.accountType);
+
+  if (accountTypeId) {
+    return accountTypeId;
+  }
+
+  const resolvedAccountTypeId = await registrationService.resolveAccountTypeIdByName(
+    user.accountType,
+  );
+
+  if (resolvedAccountTypeId) {
+    return resolvedAccountTypeId;
+  }
+
+  const registrationConfigs = await registrationService.getRegistrationConfig({
+    skipForbiddenAlert: true,
+    skipForbiddenRedirect: true,
+  });
+  const matchedConfig = registrationConfigs
+    .map((config) => ({
+      config,
+      matchingClientCount: getMatchingClientCount(user, config),
+    }))
+    .filter((match) => match.matchingClientCount > 0)
+    .sort((first, second) => second.matchingClientCount - first.matchingClientCount)
+    .at(0)?.config;
+
+  return matchedConfig?.backendId ?? null;
 }
 
 export default function UserPool() {
@@ -82,6 +135,9 @@ export default function UserPool() {
   const [isLoadingSelectedUser, setIsLoadingSelectedUser] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [openReinvite, setOpenReinvite] = useState(false);
+  const [userToReinvite, setUserToReinvite] = useState(null);
+  const [isSendingReinvite, setIsSendingReinvite] = useState(false);
   const selectedUserRequestRef = useRef(0);
   const showLoading = useDelayedLoading(
     loading ||
@@ -108,6 +164,8 @@ export default function UserPool() {
     userType === ADMIN_USER_TYPE
       ? canManageAdminUsers && canDeleteUsers
       : canDeleteUsers;
+  const canReinviteCurrentUserType =
+    userType === REGULAR_USER_TYPE && canAddUsers;
   const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
@@ -185,6 +243,15 @@ export default function UserPool() {
     setOpenDelete(true);
   };
 
+  const handleReinviteClick = (user) => {
+    if (!canReinviteCurrentUserType) {
+      return;
+    }
+
+    setUserToReinvite(user);
+    setOpenReinvite(true);
+  };
+
   const handleConfirmDelete = () => {
     if (!userToDelete) {
       return;
@@ -193,6 +260,45 @@ export default function UserPool() {
     deleteUser(userToDelete.id, getUserLabel(userToDelete));
     setOpenDelete(false);
     setUserToDelete(null);
+  };
+
+  const handleConfirmReinvite = async () => {
+    if (!userToReinvite || isSendingReinvite) {
+      return;
+    }
+
+    try {
+      setIsSendingReinvite(true);
+      setFetchError("");
+
+      const userDetails = await getUserDetails(userToReinvite);
+      const accountTypeId = await resolveReinviteAccountTypeId(userDetails);
+
+      if (!accountTypeId) {
+        throw new Error("The user's account type is unavailable.");
+      }
+
+      await mailService.sendInvitation({
+        email: userDetails.email,
+        accountTypeId,
+      });
+
+      setSuccessMessage(`Reinvitation sent to ${userDetails.email}.`);
+      setOpenReinvite(false);
+      setUserToReinvite(null);
+      setOpenViewEditModal(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Reinvitation error:", error);
+      setFetchError(
+        getRequestErrorMessage(
+          error,
+          `Unable to send reinvitation to ${getUserLabel(userToReinvite)}.`,
+        ),
+      );
+    } finally {
+      setIsSendingReinvite(false);
+    }
   };
 
   return (
@@ -295,6 +401,7 @@ export default function UserPool() {
               isLoadingAppClients={isLoadingAppClients}
               isLoadingUserDetails={isLoadingSelectedUser}
               onSubmit={updateUser}
+              onReinvite={handleReinviteClick}
               onClose={() => {
                 selectedUserRequestRef.current += 1;
                 setIsLoadingSelectedUser(false);
@@ -303,6 +410,7 @@ export default function UserPool() {
               canEditStatus={canEditUserStatus}
               canEditRole={canEditUserRole}
               canEditAccess={canEditUserAccess}
+              canReinvite={canReinviteCurrentUserType}
               includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
               colorMode={colorMode}
             />
@@ -319,6 +427,23 @@ export default function UserPool() {
           setUserToDelete(null);
         }}
         onConfirm={handleConfirmDelete}
+      />
+      <InvitationConfirmModal
+        open={openReinvite}
+        title="Send Reinvitation?"
+        description={`Send a new account activation email to ${getUserLabel(userToReinvite)}?`}
+        confirmLabel="Send Reinvitation"
+        isSubmitting={isSendingReinvite}
+        colorMode={colorMode}
+        onCancel={() => {
+          if (isSendingReinvite) {
+            return;
+          }
+
+          setOpenReinvite(false);
+          setUserToReinvite(null);
+        }}
+        onConfirm={handleConfirmReinvite}
       />
       <SuccessAlert
         message={successMessage}

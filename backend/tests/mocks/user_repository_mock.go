@@ -116,18 +116,29 @@ func (mr *MockUserRepositoryMockRecorder) CreateUser(ctx, u any) *gomock.Call {
 }
 
 // GetAdminUserList mocks base method.
-func (m *MockUserRepository) GetAdminUserList(ctx context.Context, limit, offset int) ([]models.User, error) {
+func (m *MockUserRepository) GetAdminUserList(
+	ctx context.Context, limit, offset int,
+	adminID []byte, hasViewAll bool,
+) ([]models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdminUserList", ctx, limit, offset)
+	ret := m.ctrl.Call(
+		m, "GetAdminUserList", ctx, limit, offset, adminID, hasViewAll,
+	)
 	ret0, _ := ret[0].([]models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAdminUserList indicates an expected call of GetAdminUserList.
-func (mr *MockUserRepositoryMockRecorder) GetAdminUserList(ctx, limit, offset any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) GetAdminUserList(
+	ctx, limit, offset, adminID, hasViewAll any,
+) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminUserList", reflect.TypeOf((*MockUserRepository)(nil).GetAdminUserList), ctx, limit, offset)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock, "GetAdminUserList",
+		reflect.TypeOf((*MockUserRepository)(nil).GetAdminUserList),
+		ctx, limit, offset, adminID, hasViewAll,
+	)
 }
 
 // GetBoundUserList mocks base method.
@@ -176,18 +187,29 @@ func (mr *MockUserRepositoryMockRecorder) GetUserByEmailIncludeDeleted(ctx, emai
 }
 
 // GetUserById mocks base method.
-func (m *MockUserRepository) GetUserById(ctx context.Context, id []byte) (*models.User, error) {
+func (m *MockUserRepository) GetUserById(
+	ctx context.Context, id []byte,
+	adminID []byte, hasViewAll bool,
+) (*models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserById", ctx, id)
+	ret := m.ctrl.Call(
+		m, "GetUserById", ctx, id, adminID, hasViewAll,
+	)
 	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserById indicates an expected call of GetUserById.
-func (mr *MockUserRepositoryMockRecorder) GetUserById(ctx, id any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) GetUserById(
+	ctx, id, adminID, hasViewAll any,
+) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserById", reflect.TypeOf((*MockUserRepository)(nil).GetUserById), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock, "GetUserById",
+		reflect.TypeOf((*MockUserRepository)(nil).GetUserById),
+		ctx, id, adminID, hasViewAll,
+	)
 }
 
 // GetUserList mocks base method.

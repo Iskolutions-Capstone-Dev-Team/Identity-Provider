@@ -907,9 +907,7 @@ export default function RegisterForm({ clientId }) {
   const renderSuccessStep = () => {
     return (
       <div className="space-y-5 text-center">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 shadow-[0_20px_45px_-28px_rgba(16,185,129,0.6)]">
-          <CheckIcon />
-        </div>
+        <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="float-logo mx-auto block h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)]" />
 
         <div className="space-y-2">
           <h2 className="text-3xl font-bold leading-tight text-white">
@@ -931,10 +929,7 @@ export default function RegisterForm({ clientId }) {
   const maskedEmail = details.email ? maskEmail(details.email) : "";
 
   return (
-    <div className={`relative z-20 w-full max-w-[38rem] px-1 sm:px-0 ${
-        step === "success" ? "lg:mt-24 xl:mt-28" : ""
-      }`}
-    >
+    <div className="relative z-20 w-full max-w-[38rem] px-1 sm:px-0">
       <div className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
         <div className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 lg:px-10">
           <div className="space-y-5">
@@ -1022,14 +1017,6 @@ function PasswordIcon({ className = "size-5" }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-10 w-10">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m9 12 2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
     </svg>
   );
 }

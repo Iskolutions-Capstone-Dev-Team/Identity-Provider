@@ -7,6 +7,7 @@ import AccessDenied from "./AccessDenied";
 import { buildLoginPath, getLoginClientId, getLoginErrorCode, getLoginErrorMessage, isLoginMfaRequested, LOGIN_ERROR_CODES } from "../utils/loginRoute";
 import { DEFAULT_AUTHENTICATED_PATH } from "../utils/authAccess";
 import { hasStoredAccessToken } from "../utils/authRecovery";
+import { clearAuthState } from "../utils/authCookies";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -20,22 +21,28 @@ export default function Login() {
   const [mfaContext, setMfaContext] = useState(null);
   const shouldShowMfa = Boolean(mfaContext) || isLoginMfaRequested(searchParams);
   const [isResolvingAccess, setIsResolvingAccess] = useState(
-    Boolean(clientId) && !loginErrorCode && !shouldShowMfa,
+    Boolean(clientId) && !loginErrorCode,
   );
 
   useEffect(() => {
-    if (!clientId || loginErrorCode || shouldShowMfa) {
+    if (!clientId || loginErrorCode) {
       setIsResolvingAccess(false);
       return;
     }
 
     if (hasStoredAccessToken()) {
-      navigate(DEFAULT_AUTHENTICATED_PATH, { replace: true });
+      window.location.replace(DEFAULT_AUTHENTICATED_PATH);
       return;
     }
 
     setIsResolvingAccess(false);
-  }, [clientId, loginErrorCode, navigate, shouldShowMfa]);
+  }, [clientId, loginErrorCode, navigate]);
+
+  const handleBackToLogin = () => {
+    clearAuthState();
+    setMfaContext(null);
+    navigate(buildLoginPath(clientId), { replace: true });
+  };
 
   if (isAccessDeniedError) {
     return <AccessDenied />;
@@ -77,6 +84,7 @@ export default function Login() {
           clientId={clientId}
           callbackRedirectUrl={mfaContext?.redirectUrl || ""}
           initialEmail={mfaContext?.email || ""}
+          onBackToLogin={handleBackToLogin}
         />
       ) : (
         <LoginForm

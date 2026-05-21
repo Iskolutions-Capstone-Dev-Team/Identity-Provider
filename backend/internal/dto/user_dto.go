@@ -16,16 +16,18 @@ type UserRequest struct {
 
 // PostAdminUserRequest handles administrator user creation with an account type ID.
 type PostAdminUserRequest struct {
-	FirstName         string   `json:"first_name" binding:"required"`
-	MiddleName        string   `json:"middle_name"`
-	LastName          string   `json:"last_name" binding:"required"`
-	NameSuffix        string   `json:"name_suffix"`
-	Email             string   `json:"email" binding:"required,email"`
-	Password          string   `json:"password" binding:"required,min=8"`
-	Status            string   `json:"status" binding:"required"`
-	RoleID            *int     `json:"role_id"`
-	AccountTypeID     int      `json:"account_type_id"`
-	AllowedAppClients []string `json:"allowed_appclients"`
+	FirstName                string   `json:"first_name" binding:"required"`
+	MiddleName               string   `json:"middle_name"`
+	LastName                 string   `json:"last_name" binding:"required"`
+	NameSuffix               string   `json:"name_suffix"`
+	Email                    string   `json:"email" binding:"required,email"`
+	Password                 string   `json:"password" binding:"required,min=8"`
+	Status                   string   `json:"status" binding:"required"`
+	RoleID                   *int     `json:"role_id"`
+	AccountTypeID            int      `json:"account_type_id"`
+	AllowedAppClients        []string `json:"allowed_appclients"`
+	SkipAutoClientAssignment bool     `json:"skip_auto_client_assignment"`
+	AccessibleClients        []string `json:"accessible_clients"`
 }
 
 // UpdatePasswordRequest handles incoming patch data for updating password

@@ -264,8 +264,13 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 		page = 1
 	}
 
+	adminIDStr := c.GetString("user_id")
+	adminID, _ := uuid.Parse(adminIDStr)
+	permissions := c.GetStringSlice("permissions")
 	ctx := c.Request.Context()
-	resp, err := h.Service.GetAdminUserList(ctx, limit, page)
+	resp, err := h.Service.GetAdminUserList(
+		ctx, limit, page, adminID, permissions,
+	)
 	if err != nil {
 		log.Printf("[GetAdminUserList] Service Execution: %v", err)
 		c.JSON(http.StatusInternalServerError,
@@ -312,7 +317,10 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		"user_agent": c.Request.UserAgent(),
 	})
 
-	resp, err := h.Service.GetUserByID(ctx, userID)
+	resp, err := h.Service.GetUserByID(
+		ctx, userID, actorID,
+		c.GetStringSlice("permissions"),
+	)
 	if err != nil {
 		log.Printf("[GetUser] %v", err)
 		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
@@ -1216,7 +1224,9 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 		actorEmail = adminIDStr
 	}
 
-	targetUser, err := h.Service.GetUserByID(ctx, targetID)
+	targetUser, err := h.Service.GetUserByID(
+		ctx, targetID, adminID, c.GetStringSlice("permissions"),
+	)
 	if err != nil {
 		c.JSON(http.StatusNotFound,
 			dto.ErrorResponse{Error: "target user not found"})
