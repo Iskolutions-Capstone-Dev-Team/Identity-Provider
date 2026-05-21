@@ -147,7 +147,7 @@ const mergeClientOptions = (baseOptions = [], ...selectedOptionLists) => {
   return Array.from(optionMap.values());
 };
 
-export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, isLoadingUserDetails = false, onClose, onSubmit, canEditStatus = true, canEditRole = true, canEditAccess = true, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
+export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, isLoadingUserDetails = false, onClose, onSubmit, onReinvite, canEditStatus = true, canEditRole = true, canEditAccess = true, canReinvite = false, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
@@ -203,6 +203,9 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     ? "mb-5 border-b border-white/10 pb-4"
     : "mb-5 border-b border-[#7b0d15]/10 pb-4";
   const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
+  const reinviteButtonClassName = isDarkMode
+    ? "inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-[#f8d24e]/25 bg-[#f8d24e]/10 px-5 text-sm font-semibold text-[#ffe28a] transition duration-300 hover:border-[#f8d24e]/55 hover:bg-[#f8d24e]/16 disabled:cursor-not-allowed disabled:opacity-60"
+    : "inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-[#7b0d15]/15 bg-[#fff4dc] px-5 text-sm font-semibold text-[#7b0d15] transition duration-300 hover:border-[#f8d24e]/70 hover:bg-[#ffe8a6] disabled:cursor-not-allowed disabled:opacity-60";
 
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
@@ -611,7 +614,20 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
         </form>
 
         <div className={modalFooterClassName}>
-          <div className={modalFooterActionsClassName}>
+          <div className="flex w-full flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              {!isViewMode && canReinvite && (
+                <button type="button" className={reinviteButtonClassName} onClick={() => onReinvite?.(formData)} disabled={isSubmitting || isLoadingUserDetails}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
+                    <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
+                    <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
+                  </svg>
+                  Send Reinvitation
+                </button>
+              )}
+            </div>
+
+            <div className={modalFooterActionsClassName}>
             <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
               {isViewMode ? "Close" : "Cancel"}
             </button>
@@ -626,6 +642,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                 {isSubmitting ? "Saving..." : "Save"}
               </button>
             )}
+            </div>
           </div>
         </div>
       </div>

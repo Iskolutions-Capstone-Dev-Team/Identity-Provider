@@ -31,7 +31,7 @@ function getRequestErrorMessage(error, fallbackMessage) {
   );
 }
 
-export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "" }) {
+export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", onBackToLogin }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(MFA_STEPS.CHOOSE);
   const [email, setEmail] = useState(initialEmail);
@@ -215,6 +215,12 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
     setStep(MFA_STEPS.SETUP_CONFIRM);
   };
 
+  const handleBackToSetupQr = () => {
+    setCode("");
+    setError("");
+    setStep(MFA_STEPS.SETUP);
+  };
+
   const handleSaveAuthenticator = async (event) => {
     event.preventDefault();
     setError("");
@@ -300,6 +306,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
           onCodeChange={(value) => setCode(getDigits(value))}
           onNameChange={setName}
           onSubmit={handleSaveAuthenticator}
+          onBack={handleBackToSetupQr}
           onContinue={finishMfa}
         />
       );

@@ -17,7 +17,9 @@ type UserService interface {
 	CreateUser(ctx context.Context, req dto.UserRequest) (uuid.UUID, error)
 	CreateAdminUser(ctx context.Context,
 		req dto.PostAdminUserRequest) (uuid.UUID, error)
-	GetUserByID(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error)
+	GetUserByID(ctx context.Context, id uuid.UUID,
+		adminID uuid.UUID, permissions []string,
+	) (*dto.UserResponse, error)
 	GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error)
 	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
 	GetFilteredUserList(ctx context.Context, permissions []string,
@@ -27,8 +29,9 @@ type UserService interface {
 		page int) (*dto.UserSimplifiedResponseList, error)
 	GetBoundUserList(ctx context.Context, limit, page int,
 		userID uuid.UUID) (*dto.UserSimplifiedResponseList, error)
-	GetAdminUserList(ctx context.Context, limit,
-		page int) (*dto.UserResponseList, error)
+	GetAdminUserList(ctx context.Context, limit, page int,
+		adminID uuid.UUID, permissions []string,
+	) (*dto.UserResponseList, error)
 	UpdateUserPassword(ctx context.Context, id uuid.UUID,
 		newPassword string) error
 	UpdateUserPasswordByEmail(ctx context.Context, email string,
@@ -328,12 +331,68 @@ func (s *userService) CreateAdminUser(
 			return userID, fmt.Errorf("post-create (RegFetch): %w", err)
 		}
 
-		if len(clients) > 0 {
-			clientIDs := make([][]byte, 0, len(clients))
-			for _, c := range clients {
-				clientIDs = append(clientIDs, c.ClientID)
+		preapprovedMap := make(map[string]bool)
+		var preapprovedClientIDs [][]byte
+		for _, c := range clients {
+			preapprovedMap[string(c.ClientID)] = true
+			preapprovedClientIDs = append(preapprovedClientIDs, c.ClientID)
+		}
+
+		if len(req.AccessibleClients) > 0 {
+			var preapprovedToAssign [][]byte
+			var manualToAssign [][]byte
+
+			for _, clientIDStr := range req.AccessibleClients {
+				cid, err := uuid.Parse(clientIDStr)
+				if err != nil {
+					return userID, fmt.Errorf(
+						"post-create (UUID): %w", err,
+					)
+				}
+				if preapprovedMap[string(cid[:])] {
+					preapprovedToAssign = append(
+						preapprovedToAssign, cid[:],
+					)
+				} else {
+					manualToAssign = append(
+						manualToAssign, cid[:],
+					)
+				}
 			}
-			err = s.CAURepo.BatchAssignClientAccess(ctx, userID[:], clientIDs, models.SourcePreapproved)
+
+			if len(preapprovedToAssign) > 0 {
+				err = s.CAURepo.BatchAssignClientAccess(
+					ctx,
+					userID[:],
+					preapprovedToAssign,
+					models.SourcePreapproved,
+				)
+				if err != nil {
+					return userID, fmt.Errorf(
+						"post-create (AssignPre): %w", err,
+					)
+				}
+			}
+			if len(manualToAssign) > 0 {
+				err = s.CAURepo.BatchAssignClientAccess(
+					ctx,
+					userID[:],
+					manualToAssign,
+					models.SourceManual,
+				)
+				if err != nil {
+					return userID, fmt.Errorf(
+						"post-create (AssignMan): %w", err,
+					)
+				}
+			}
+		} else if !req.SkipAutoClientAssignment && len(preapprovedClientIDs) > 0 {
+			err = s.CAURepo.BatchAssignClientAccess(
+				ctx,
+				userID[:],
+				preapprovedClientIDs,
+				models.SourcePreapproved,
+			)
 			if err != nil {
 				return userID, fmt.Errorf("post-create (Assign): %w", err)
 			}
@@ -361,13 +420,23 @@ func (s *userService) CreateAdminUser(
 /**
  * GetUserByID retrieves a single user by their UUID.
  */
+/**
+ * GetUserByID retrieves a single user by their UUID.
+ * hasViewAll controls whether client data is unfiltered or
+ * scoped to the requesting admin's admin_allowed_clients.
+ */
 func (s *userService) GetUserByID(
 	ctx context.Context,
 	id uuid.UUID,
+	adminID uuid.UUID,
+	permissions []string,
 ) (*dto.UserResponse, error) {
-	user, err := s.Repo.GetUserById(ctx, id[:])
+	hasViewAll := slices.Contains(permissions, "View all appclients")
+	user, err := s.Repo.GetUserById(ctx, id[:], adminID[:], hasViewAll)
 	if err != nil {
-		return nil, fmt.Errorf("database query (GetUserById): %w", err)
+		return nil, fmt.Errorf(
+			"database query (GetUserById): %w", err,
+		)
 	}
 
 	if user == nil {
@@ -402,7 +471,7 @@ func (s *userService) GetMe(
 	ctx context.Context,
 	userID uuid.UUID,
 ) (*dto.UserInfoResponse, error) {
-	user, err := s.Repo.GetUserById(ctx, userID[:])
+	user, err := s.Repo.GetUserById(ctx, userID[:], nil, true)
 	if err != nil {
 		return nil, fmt.Errorf("database query (GetUser): %w", err)
 	}
@@ -662,7 +731,7 @@ func (s *userService) ChangePassword(
 	newPassword string,
 ) error {
 	// 1. Get user to retrieve email
-	user, err := s.Repo.GetUserById(ctx, id[:])
+	user, err := s.Repo.GetUserById(ctx, id[:], nil, true)
 	if err != nil || user == nil {
 		return fmt.Errorf("user identification: not found")
 	}
@@ -795,21 +864,34 @@ func (s *userService) mapToSimplifiedUserResponse(
 /**
  * GetAdminUserList retrieves a paginated list of users with assigned roles.
  */
+/**
+ * GetAdminUserList retrieves a paginated list of users with assigned
+ * roles. hasViewAll controls whether client data is unfiltered or
+ * scoped to the requesting admin's admin_allowed_clients.
+ */
 func (s *userService) GetAdminUserList(
 	ctx context.Context,
-	limit,
-	page int,
+	limit, page int,
+	adminID uuid.UUID,
+	permissions []string,
 ) (*dto.UserResponseList, error) {
 	offset := (page - 1) * limit
+	hasViewAll := slices.Contains(permissions, "View all appclients")
 
-	users, err := s.Repo.GetAdminUserList(ctx, limit, offset)
+	users, err := s.Repo.GetAdminUserList(
+		ctx, limit, offset, adminID[:], hasViewAll,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("database query (GetAdminList): %w", err)
+		return nil, fmt.Errorf(
+			"database query (GetAdminList): %w", err,
+		)
 	}
 
 	total, err := s.Repo.CountAdminUsers(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("database query (CountAdmins): %w", err)
+		return nil, fmt.Errorf(
+			"database query (CountAdmins): %w", err,
+		)
 	}
 
 	var userResponses []dto.UserResponse
