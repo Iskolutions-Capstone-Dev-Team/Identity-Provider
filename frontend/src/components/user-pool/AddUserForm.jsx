@@ -10,7 +10,6 @@ import UserPoolModalSelect from "./UserPoolModalSelect";
 import InvitationConfirmModal from "./InvitationConfirmModal";
 import { getModalTheme } from "../modalTheme";
 import { usePermissionAccess } from "../../context/PermissionContext";
-import { registrationService } from "../../services/registrationService";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions } from "../../utils/userPoolAccess";
 import { getAccountTypeBackendId, getAccountTypeOption, isAdminAccountType } from "../../utils/accountTypes";
 import { generateTemporaryPassword, getTemporaryPasswordValidationMessage } from "../../utils/passwordRules";
@@ -202,52 +201,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
   const isInvitationFlow = data.accountSetupType === INVITATION_SETUP_VALUE;
   const showAccountTypeField = !isAdminView;
   const isAdminAccountSetup = isAdminView || selectedAccountTypeIsAdmin;
-  const [skipAutoClientAssignment, setSkipAutoClientAssignment] = useState(false);
-  const showAccessibleClientFields = canManageUserAccess;
-  const showManageableClientFields = isAdminAccountSetup && canManageUserAccess;
-
-  useEffect(() => {
-    if (!selectedAccountTypeOption?.backendId) {
-      return undefined;
-    }
-
-    let isCancelled = false;
-
-    const fetchClients = async () => {
-      try {
-        const config = await registrationService.getClientsByAccountTypeId(
-          selectedAccountTypeOption.backendId,
-          selectedAccountTypeOption.value,
-        );
-
-        if (!isCancelled && Array.isArray(config?.clients)) {
-          const clientIds = config.clients
-            .map((c) => c.id)
-            .filter(Boolean);
-
-          setData((current) => ({
-            ...current,
-            adminAccessibleClientIds: normalizeSelectedClientIds(clientIds),
-          }));
-        }
-      } catch (err) {
-        console.error(
-          "Failed to fetch pre-approved clients for account type:",
-          err,
-        );
-      }
-    };
-
-    fetchClients();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [
-    selectedAccountTypeOption?.backendId,
-    selectedAccountTypeOption?.value,
-  ]);
-
+  const showAdminClientFields = isAdminAccountSetup && canManageUserAccess;
   const showAdminRoleField = isAdminAccountSetup && canAssignRoles;
   const adminRoleIsRequired = selectedAccountTypeIsAdmin && !isAdminView;
   const rolesEndpoint =
@@ -450,12 +404,12 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
       nextFieldErrors.accountType = "Select an account type.";
     }
 
-    if (showManageableClientFields && data.adminAccessibleClientIds.length === 0) {
+    if (showAdminClientFields && data.adminAccessibleClientIds.length === 0) {
       nextFieldErrors.adminAccessibleClientId =
         "Select at least one accessible app client.";
     }
 
-    if (showManageableClientFields && data.adminManageableClientIds.length === 0) {
+    if (showAdminClientFields && data.adminManageableClientIds.length === 0) {
       nextFieldErrors.adminManageableClientId =
         "Select at least one manageable app client.";
     }
@@ -559,10 +513,10 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
     const selectedAdminRole = adminRoleOptions.find(
       (role) => role.id === data.selectedAdminRoleId,
     );
-    const adminAccessibleClientIds = showAccessibleClientFields
+    const adminAccessibleClientIds = showAdminClientFields
       ? normalizeSelectedClientIds(data.adminAccessibleClientIds)
       : [];
-    const adminManageableClientIds = showManageableClientFields
+    const adminManageableClientIds = showAdminClientFields
       ? normalizeSelectedClientIds(data.adminManageableClientIds)
       : [];
     const selectedAccountType = !isAdminView
@@ -606,7 +560,6 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
         accountType: selectedAccountType,
         accountTypeId: selectedAccountTypeId,
         status: "active",
-        skipAutoClientAssignment: skipAutoClientAssignment,
       });
 
       onClose();
@@ -680,29 +633,6 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
         colorMode={colorMode}
         name="add-user-account-type"
       />
-      {data.accountType && (
-        <div className="mt-5 flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="skip-auto-client-assignment"
-            checked={skipAutoClientAssignment}
-            onChange={(e) => setSkipAutoClientAssignment(e.target.checked)}
-            className={`h-5 w-5 rounded-[0.4rem] border focus:ring-0 ${
-              isDarkMode
-                ? "border-white/10 bg-white/[0.04] text-[#f8d24e] focus:border-[#f8d24e]"
-                : "border-[#7b0d15]/25 bg-white/75 text-[#7b0d15] focus:border-[#7b0d15]"
-            }`}
-          />
-          <label
-            htmlFor="skip-auto-client-assignment"
-            className={`text-sm font-semibold select-none cursor-pointer ${
-              isDarkMode ? "text-white/85" : "text-[#7b0d15]/85"
-            }`}
-          >
-            Skip auto-assigning pre-approved clients
-          </label>
-        </div>
-      )}
       {isLoadingAccountTypes && canViewRegistrationConfig && (
         <p className={modalHelperTextClassName}>
           Loading latest account types...
@@ -765,60 +695,60 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
     </motion.section>
   );
   const adminAccessSection =
-    showAccessibleClientFields || showManageableClientFields || showAdminRoleField ? (
-      <section className={modalSectionClassName}>
+    showAdminClientFields || showAdminRoleField ? (
+      <motion.section className={modalSectionClassName} {...sectionFadeProps}>
         <div className="space-y-6">
-          {showAccessibleClientFields && (
-            <div>
-              {renderSectionHeader(
-                "Accessible App Clients",
-                "Choose which clients are accessible for sign-in.",
-                showManageableClientFields,
-              )}
-              <MultiSelect
-                options={registrationAppClientOptions}
-                selectedValues={data.adminAccessibleClientIds}
-                onChange={handleMultiSelectFieldChange("adminAccessibleClientIds")}
-                placeholder="Select accessible app clients"
-                variant="userpoolModal"
-                hasError={Boolean(fieldErrors.adminAccessibleClientId)}
-                colorMode={colorMode}
-              />
-              {fieldErrors.adminAccessibleClientId && (
-                <p className="mt-2 text-xs text-red-500">
-                  {fieldErrors.adminAccessibleClientId}
-                </p>
-              )}
-            </div>
-          )}
+          {showAdminClientFields && (
+            <>
+              <div>
+                {renderSectionHeader(
+                  "Accessible App Clients",
+                  "Choose which clients are accessible for sign-in.",
+                  true,
+                )}
+                <MultiSelect
+                  options={registrationAppClientOptions}
+                  selectedValues={data.adminAccessibleClientIds}
+                  onChange={handleMultiSelectFieldChange("adminAccessibleClientIds")}
+                  placeholder="Select accessible app clients"
+                  variant="userpoolModal"
+                  hasError={Boolean(fieldErrors.adminAccessibleClientId)}
+                  colorMode={colorMode}
+                />
+                {fieldErrors.adminAccessibleClientId && (
+                  <p className="mt-2 text-xs text-red-500">
+                    {fieldErrors.adminAccessibleClientId}
+                  </p>
+                )}
+              </div>
 
-          {showManageableClientFields && (
-            <div>
-              {renderSectionHeader(
-                "Manageable App Clients",
-                "Choose which clients this admin can manage.",
-                true,
-              )}
-              <MultiSelect
-                options={registrationAppClientOptions}
-                selectedValues={data.adminManageableClientIds}
-                onChange={handleMultiSelectFieldChange("adminManageableClientIds")}
-                placeholder="Select manageable app clients"
-                variant="userpoolModal"
-                hasError={Boolean(fieldErrors.adminManageableClientId)}
-                colorMode={colorMode}
-              />
-              {fieldErrors.adminManageableClientId && (
-                <p className="mt-2 text-xs text-red-500">
-                  {fieldErrors.adminManageableClientId}
-                </p>
-              )}
-              {isLoadingAppClients && (
-                <p className={modalHelperTextClassName}>
-                  Loading app clients...
-                </p>
-              )}
-            </div>
+              <div>
+                {renderSectionHeader(
+                  "Manageable App Clients",
+                  "Choose which clients this admin can manage.",
+                  true,
+                )}
+                <MultiSelect
+                  options={registrationAppClientOptions}
+                  selectedValues={data.adminManageableClientIds}
+                  onChange={handleMultiSelectFieldChange("adminManageableClientIds")}
+                  placeholder="Select manageable app clients"
+                  variant="userpoolModal"
+                  hasError={Boolean(fieldErrors.adminManageableClientId)}
+                  colorMode={colorMode}
+                />
+                {fieldErrors.adminManageableClientId && (
+                  <p className="mt-2 text-xs text-red-500">
+                    {fieldErrors.adminManageableClientId}
+                  </p>
+                )}
+                {isLoadingAppClients && (
+                  <p className={modalHelperTextClassName}>
+                    Loading app clients...
+                  </p>
+                )}
+              </div>
+            </>
           )}
 
           {showAdminRoleField && (
