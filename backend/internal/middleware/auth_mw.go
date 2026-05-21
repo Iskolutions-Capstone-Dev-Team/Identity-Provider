@@ -149,7 +149,7 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 		}
 
 		ctx := c.Request.Context()
-		user, err := userRepo.GetUserById(ctx, userID[:])
+		user, err := userRepo.GetUserById(ctx, userID[:], nil, true)
 		if err != nil {
 			log.Printf("[AuthorizeRBAC] Fetch user failed: %v", err)
 			c.AbortWithStatus(http.StatusInternalServerError)

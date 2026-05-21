@@ -1,7 +1,7 @@
 import { useState } from "react";
 import MfaCodeInput from "./MfaCodeInput";
 
-export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving, onCodeChange, onNameChange, onSubmit, onContinue }) {
+export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving, onCodeChange, onNameChange, onSubmit, onBack, onContinue }) {
   const hasBackupCodes = backupCodes.length > 0;
   const [copyStatus, setCopyStatus] = useState("");
   const [hasCopiedBackupCodes, setHasCopiedBackupCodes] = useState(false);
@@ -60,10 +60,10 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
               </button>
             </div>
 
-            <div className="mt-4 rounded-xl border border-white/10 bg-black/14 p-4">
-              <div className="grid grid-cols-3 gap-2">
+            <div className="mt-4 rounded-xl border border-white/10 bg-black/14 p-3 sm:p-4">
+              <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 sm:grid-cols-3">
                 {backupCodes.map((backupCode) => (
-                  <span key={backupCode} className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-center font-mono text-xs font-semibold text-white/90">
+                  <span key={backupCode} className="min-w-0 overflow-hidden text-ellipsis rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-center font-mono text-[0.68rem] font-semibold text-white/90 sm:text-xs">
                     {backupCode}
                   </span>
                 ))}
@@ -91,9 +91,16 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
             />
           </div>
 
-          <button type="submit" disabled={isSaving} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
-            {isSaving ? "Saving..." : "Save Authenticator"}
-          </button>
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
+            <button type="button" onClick={onBack} disabled={isSaving} aria-label="Back to QR code" title="Back" className="btn h-12 w-12 rounded-lg border border-white/18 bg-white/8 p-0 text-white/85 transition hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="size-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+              </svg>
+            </button>
+            <button type="submit" disabled={isSaving} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
+              {isSaving ? "Saving..." : "Save Authenticator"}
+            </button>
+          </div>
         </form>
       )}
 
