@@ -1,5 +1,6 @@
 import TableRowFade from "../TableRowFade";
 import DataTableSkeleton from "../DataTableSkeleton";
+import EmptySearchState from "../EmptySearchState";
 
 const headerCellClassName =
   "border-b border-white/10 px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90";
@@ -149,7 +150,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
             {roles.length === 0 && (
               <tr>
                 <td colSpan={4} className={emptyStateClassName}>
-                  No roles found
+                  <EmptySearchState message="No roles found" colorMode={colorMode} />
                 </td>
               </tr>
             )}
