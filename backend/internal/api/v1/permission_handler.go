@@ -71,7 +71,7 @@ func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	user, err := h.UserRepo.GetUserById(ctx, uID[:])
+	user, err := h.UserRepo.GetUserById(ctx, uID[:], nil, true)
 	if err != nil {
 		log.Printf("[GetUserPermissions] Fetch user failed: %v", err)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{

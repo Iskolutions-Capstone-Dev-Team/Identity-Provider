@@ -45,7 +45,7 @@ func TestGetUserHandler(t *testing.T) {
 
 	// 1. Setup mock expectations
 	mockService.EXPECT().
-		GetUserByID(gomock.Any(), userID).
+		GetUserByID(gomock.Any(), userID, gomock.Any(), gomock.Any()).
 		Return(userResp, nil)
 
 	// UserHandler also calls LogService for audit logs
@@ -113,7 +113,7 @@ func TestPutAdminAccessHandler(t *testing.T) {
 		AnyTimes()
 
 	mockService.EXPECT().
-		GetUserByID(gomock.Any(), userID).
+		GetUserByID(gomock.Any(), userID, gomock.Any(), gomock.Any()).
 		Return(&dto.UserResponse{Email: targetEmail}, nil).
 		Times(1)
 

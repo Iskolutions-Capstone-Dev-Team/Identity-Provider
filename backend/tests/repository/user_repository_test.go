@@ -26,16 +26,19 @@ func TestGetUserById(t *testing.T) {
 	repo := repository.NewUserRepository(sqlxDB)
 
 	userID := uuid.New()
+	adminID := uuid.New()
 	email := "test@example.com"
 
 	now := time.Now()
 	rows := sqlmock.NewRows([]string{
 		"id", "first_name", "middle_name", "last_name", "name_suffix",
 		"email", "status", "created_at", "updated_at",
+		"account_type_id",
 		"role_id", "role_name", "role_description",
 	}).AddRow(
 		userID[:], "John", "Doe", "Smith", "",
 		email, "active", now, now,
+		nil,
 		1, "Admin", "Administrator role",
 	)
 
@@ -43,12 +46,22 @@ func TestGetUserById(t *testing.T) {
 		WithArgs(userID[:]).
 		WillReturnRows(rows)
 
-	// Since populateClients is called, expect another query
-	// This query uses IN (?) so it's a bit dynamic
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT cau.user_id")).
-		WillReturnRows(sqlmock.NewRows([]string{"user_id", "client_id", "client_name"}))
+	// hasViewAll=true → populateSingleUserClients is called (two queries)
+	mock.ExpectQuery(regexp.QuoteMeta(
+		"SELECT c.id, c.client_name FROM client_allowed_users",
+	)).WithArgs(userID[:]).WillReturnRows(
+		sqlmock.NewRows([]string{"id", "client_name"}),
+	)
 
-	user, err := repo.GetUserById(context.Background(), userID[:])
+	mock.ExpectQuery(regexp.QuoteMeta(
+		"SELECT c.id, c.client_name FROM admin_allowed_clients",
+	)).WithArgs(userID[:]).WillReturnRows(
+		sqlmock.NewRows([]string{"id", "client_name"}),
+	)
+
+	user, err := repo.GetUserById(
+		context.Background(), userID[:], adminID[:], true,
+	)
 
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

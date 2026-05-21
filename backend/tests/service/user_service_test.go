@@ -38,12 +38,15 @@ func TestGetUserByID(t *testing.T) {
 
 	// 1. Setup mock expectation: Repository should be called once.
 	mockRepo.EXPECT().
-		GetUserById(gomock.Any(), userID[:]).
+		GetUserById(gomock.Any(), userID[:], gomock.Any(), gomock.Any()).
 		Return(user, nil).
 		Times(1)
 
 	// 2. Execute service call
-	resp, err := userService.GetUserByID(context.Background(), userID)
+	adminID := uuid.New()
+	resp, err := userService.GetUserByID(
+		context.Background(), userID, adminID, []string{},
+	)
 
 	// 3. Verify results
 	if err != nil {
