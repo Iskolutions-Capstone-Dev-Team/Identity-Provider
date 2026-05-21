@@ -54,14 +54,14 @@ export default function AuthLayout({ children, allowPageScroll = false }) {
           </div>
         </aside>
 
-        <main className={`mt-8 flex w-full justify-center pb-8 sm:mt-10 lg:mt-0 lg:min-h-0 ${
-            allowPageScroll ? "items-start lg:py-8" : "items-center lg:pb-0"
+        <main className={`mt-8 flex w-full flex-1 items-center justify-center pb-8 sm:mt-10 lg:mt-0 lg:min-h-0 ${
+            allowPageScroll ? "lg:py-8" : "lg:pb-0"
           }`}
         >
           {children}
         </main>
 
-        <div className="mt-10 lg:hidden">
+        <div className="mt-auto lg:hidden">
           <LoginFooter />
         </div>
       </div>

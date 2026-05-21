@@ -325,6 +325,15 @@ function mapUserResponse(user = {}, { isAdmin = false } = {}) {
   return {
     id: user.id,
     email: user.email,
+    accountTypeId: normalizeAccountTypeId(
+      user.account_type_id ?? user.accountTypeId ?? user.accountType?.id,
+    ),
+    accountType:
+      user.account_type ??
+      user.accountType ??
+      user.account_type_name ??
+      user.accountTypeName ??
+      "",
     givenName,
     middleName,
     surname,
@@ -721,6 +730,8 @@ export function useUsers({ visibleClientIds = [] } = {}) {
           shouldAssignAdminRole
             ? normalizeRoleId(newUser.roleId)
             : null,
+        accessible_clients: nextAccessibleClientIds,
+        skip_auto_client_assignment: Boolean(newUser.skipAutoClientAssignment),
       };
 
       const createdUserResponse = await userService.createUser(payload);

@@ -5,7 +5,7 @@ import { rememberAuthorizeReturnPath } from "../utils/authorizeFlow";
 import { buildAccessDeniedPath, buildLoginPath } from "../utils/loginRoute";
 import { userService } from "../../services/userService";
 import { hasAssignedRoles } from "../utils/authAccess";
-import { hasStoredAuthTokens } from "../utils/authRecovery";
+import { hasStoredAccessToken, hasStoredAuthTokens } from "../utils/authRecovery";
 import { hasMfaVerified, isMfaPath, rememberMfaReturnPath } from "../utils/mfaFlow";
 
 export default function ProtectedRoute({ children }) {
@@ -37,7 +37,9 @@ export default function ProtectedRoute({ children }) {
           return;
         }
 
-        if (!isCurrentMfaPath && !hasMfaVerified()) {
+        const hasCompletedMfa = hasStoredAccessToken() || hasMfaVerified();
+
+        if (!isCurrentMfaPath && !hasCompletedMfa) {
           rememberMfaReturnPath(returnPath);
           setAuthState("needs-mfa");
           return;
