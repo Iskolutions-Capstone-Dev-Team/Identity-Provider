@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import DeleteConfirmModal from "../DeleteConfirmModal";
 import ErrorAlert from "../ErrorAlert";
 import SuccessAlert from "../SuccessAlert";
+import NewAuthenticatorModal from "./NewAuthenticatorModal";
 import { mfaService } from "../../services/mfaService";
 import { formatTimestamp } from "../../utils/formatTimestamp";
 
@@ -48,6 +49,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [authenticatorToDelete, setAuthenticatorToDelete] = useState(null);
+  const [isNewConnectionOpen, setIsNewConnectionOpen] = useState(false);
 
   const loadAuthenticators = useCallback(async () => {
     if (!email) {
@@ -112,6 +114,9 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
   const emptyClassName = isDarkMode
     ? "rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,248,243,0.025))] px-4 py-5 text-center text-sm text-[#c7adb4]"
     : "rounded-2xl border border-[#7b0d15]/10 bg-[#fffaf2] px-4 py-5 text-center text-sm text-[#7b5560]";
+  const newConnectionButtonClassName = isDarkMode
+    ? "inline-flex h-12 items-center justify-center gap-2 rounded-[1rem] border border-[#f8d24e]/30 bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] px-5 text-sm font-semibold text-white shadow-[0_18px_40px_-26px_rgba(2,6,23,0.75)] transition-[background-color,background-image,border-color,color,box-shadow] duration-500 ease-out hover:border-[#f8d24e] hover:bg-none hover:bg-[#f8d24e] hover:text-[#7b0d15]"
+    : "inline-flex h-12 items-center justify-center gap-2 rounded-[1rem] border border-[#7b0d15] bg-[#7b0d15] px-5 text-sm font-semibold text-white shadow-[0_18px_40px_-26px_rgba(123,13,21,0.6)] transition-[background-color,border-color,color,box-shadow] duration-500 ease-out hover:border-[#f8d24e] hover:bg-[#f8d24e] hover:text-[#7b0d15]";
   const cardClassName = isDarkMode
     ? "relative min-h-[13.5rem] overflow-hidden rounded-[1.25rem] border border-white/15 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,248,243,0.025))] p-4 shadow-[0_18px_42px_-34px_rgba(2,6,23,0.85)] sm:max-w-[18rem]"
     : "relative min-h-[13.5rem] overflow-hidden rounded-[1.25rem] border border-[#7b0d15]/12 bg-white/78 p-4 shadow-[0_18px_42px_-34px_rgba(43,3,7,0.55)] sm:max-w-[18rem]";
@@ -131,13 +136,17 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     <>
       <section className={wrapperClassName}>
         <div className="space-y-5">
-          <div>
-            <div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <h3 className={headingClassName}>Authenticator Apps</h3>
               <p className={`mt-1 ${bodyTextClassName}`}>
                 Manage the authenticator apps connected to your account.
               </p>
             </div>
+
+            <button type="button" className={newConnectionButtonClassName} onClick={() => setIsNewConnectionOpen(true)}>
+              + New Connection
+            </button>
           </div>
 
           <ErrorAlert message={error} onClose={() => setError("")} />
@@ -199,6 +208,16 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
         onConfirm={handleDeleteAuthenticator}
         theme="glass"
         colorMode={colorMode}
+      />
+      <NewAuthenticatorModal
+        open={isNewConnectionOpen}
+        email={email}
+        colorMode={colorMode}
+        onClose={() => setIsNewConnectionOpen(false)}
+        onCreated={async () => {
+          setSuccessMessage("Authenticator connected successfully.");
+          await loadAuthenticators();
+        }}
       />
       <SuccessAlert
         message={successMessage}
