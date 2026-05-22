@@ -275,6 +275,8 @@ export default function UserPool() {
       return;
     }
 
+    const reinviteUserLabel = getUserLabel(userToReinvite);
+
     try {
       setIsSendingReinvite(true);
       setFetchError("");
@@ -291,7 +293,7 @@ export default function UserPool() {
         accountTypeId,
       });
 
-      setSuccessMessage(`Reinvitation sent to ${userDetails.email}.`);
+      setSuccessMessage(`Invitation resent to ${userDetails.email}.`);
       setOpenReinvite(false);
       setUserToReinvite(null);
       setOpenViewEditModal(false);
@@ -301,9 +303,13 @@ export default function UserPool() {
       setFetchError(
         getRequestErrorMessage(
           error,
-          `Unable to send reinvitation to ${getUserLabel(userToReinvite)}.`,
+          `Unable to resend invitation to ${reinviteUserLabel}.`,
         ),
       );
+      setOpenReinvite(false);
+      setUserToReinvite(null);
+      setOpenViewEditModal(false);
+      setSelectedUser(null);
     } finally {
       setIsSendingReinvite(false);
     }
@@ -438,9 +444,9 @@ export default function UserPool() {
       />
       <InvitationConfirmModal
         open={openReinvite}
-        title="Send Reinvitation?"
-        description={`Send a new account activation email to ${getUserLabel(userToReinvite)}?`}
-        confirmLabel="Send Reinvitation"
+        title="Resend Invitation?"
+        description={`Resend an account activation email to ${getUserLabel(userToReinvite)}?`}
+        confirmLabel="Resend Invite"
         isSubmitting={isSendingReinvite}
         colorMode={colorMode}
         onCancel={() => {
