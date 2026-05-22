@@ -222,33 +222,11 @@ export default function Registration() {
     );
   }, []);
 
-  const handleOpenCreate = () => {
-    if (!canCreateRegistration) {
-      return;
-    }
-
-    setActionError("");
-    navigate("/registration/create");
-  };
-
-  const handleOpenView = (row) => {
-    setActionError("");
-    setSelectedConfig(row);
-    setModalMode("view");
-  };
-
-  const handleOpenEdit = async (row) => {
-    if (!canEditRegistration) {
-      return;
-    }
-
-    setActionError("");
-
+  const getFullRegistrationConfig = useCallback(async (row) => {
     const backendId = await resolveAccountTypeId(row);
 
     if (!backendId) {
-      setActionError("Unable to edit this account type right now.");
-      return;
+      return null;
     }
 
     let nextConfig = {
@@ -278,7 +256,47 @@ export default function Registration() {
       console.error("Failed to load full registration config:", error);
     }
 
-    setSelectedConfig(nextConfig);
+    return nextConfig;
+  }, [resolveAccountTypeId]);
+
+  const handleOpenCreate = () => {
+    if (!canCreateRegistration) {
+      return;
+    }
+
+    setActionError("");
+    navigate("/registration/create");
+  };
+
+  const handleOpenView = async (row) => {
+    setActionError("");
+
+    const fullConfig = await getFullRegistrationConfig(row);
+
+    if (!fullConfig) {
+      setActionError("Unable to view this account type right now.");
+      return;
+    }
+
+    setSelectedConfig(fullConfig);
+    setModalMode("view");
+  };
+
+  const handleOpenEdit = async (row) => {
+    if (!canEditRegistration) {
+      return;
+    }
+
+    setActionError("");
+
+    const fullConfig = await getFullRegistrationConfig(row);
+
+    if (!fullConfig) {
+      setActionError("Unable to edit this account type right now.");
+      return;
+    }
+
+    setSelectedConfig(fullConfig);
     setModalMode("edit");
   };
 
