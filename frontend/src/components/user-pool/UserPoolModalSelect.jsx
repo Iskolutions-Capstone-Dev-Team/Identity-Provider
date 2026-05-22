@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   getModalTheme,
 } from "../modalTheme";
@@ -25,6 +26,27 @@ export default function UserPoolModalSelect({ value, onChange, options, selected
   const chevronClassName = isDarkMode
     ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f8d24e]/12 text-[#f8d24e] transition duration-300"
     : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff2d2] text-[#991b1b] transition duration-300";
+  const menuAnimation = {
+    initial: {
+      opacity: 0,
+      y: -6,
+      scaleY: 0.96,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+      scaleY: 1,
+    },
+    exit: {
+      opacity: 0,
+      y: -4,
+      scaleY: 0.96,
+    },
+    transition: {
+      duration: 0.18,
+      ease: "easeOut",
+    },
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -75,23 +97,30 @@ export default function UserPoolModalSelect({ value, onChange, options, selected
         </span>
       </button>
 
-      {isOpen ? (
-        <div className={modalSelectMenuClassName} role="listbox" aria-label={ariaLabel}>
-          {options.map((option) => {
-            const isSelected = option.value === value;
+      <AnimatePresence>
+        {isOpen ? (
+          <motion.div
+            className={`${modalSelectMenuClassName} origin-top`}
+            role="listbox"
+            aria-label={ariaLabel}
+            {...menuAnimation}
+          >
+            {options.map((option) => {
+              const isSelected = option.value === value;
 
-            return (
-              <button key={option.value} type="button" role="option" aria-selected={isSelected} onClick={() => handleSelect(option.value)}
-                className={`${modalSelectOptionClassName} ${
-                  isSelected ? modalSelectOptionSelectedClassName : ""
-                }`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+              return (
+                <button key={option.value} type="button" role="option" aria-selected={isSelected} onClick={() => handleSelect(option.value)}
+                  className={`${modalSelectOptionClassName} ${
+                    isSelected ? modalSelectOptionSelectedClassName : ""
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import TableRowFade from "../TableRowFade";
+import EmptySearchState from "../EmptySearchState";
 
 const headerCellClassName =
   "border-b border-white/10 px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90";
@@ -75,7 +76,7 @@ export default function RegistrationTable({ rows = [], onView, onEdit, onDelete,
             {rows.length === 0 && (
               <tr>
                 <td colSpan={3} className={emptyStateClassName}>
-                  No account type found
+                  <EmptySearchState message="No account type found" colorMode={colorMode} />
                 </td>
               </tr>
             )}

@@ -1,10 +1,10 @@
-import { useOutletContext } from "react-router-dom";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../context/PermissionContext";
 import { useAppClients } from "../hooks/useAppClients";
+import Breadcrumbs from "../components/Breadcrumbs";
 import ConnectedAppClientCard from "../components/app-client/ConnectedAppClientCard";
 import AppClientModal from "../components/app-client/AppClientModal";
-import AppClientCreateModal from "../components/app-client/AppClientCreateModal";
 import ClientSecretModal from "../components/app-client/ClientSecretModal";
 import SecretConfirmModal from "../components/app-client/SecretConfirmModal";
 import SuccessAlert from "../components/SuccessAlert";
@@ -18,6 +18,8 @@ import { PERMISSIONS } from "../utils/permissionAccess";
 const ITEMS_PER_PAGE = 10;
 
 export default function AppClient() {
+    const location = useLocation();
+    const navigate = useNavigate();
     const { colorMode = "light" } = useOutletContext();
     const { hasPermission } = usePermissionAccess();
     const canCreateClient = hasPermission(PERMISSIONS.ADD_APPCLIENT);
@@ -33,11 +35,10 @@ export default function AppClient() {
         paginatedClients, totalPages, totalResults,
         loading,
         successMessage, setSuccessMessage,
-        createClient, updateClient, deleteClient,
+        updateClient, deleteClient,
         getClientDetails,
         rotateClientSecret, secretModal, setSecretModal,
     } = useAppClients({ enabled: canViewClientList });
-    const [createOpen, setCreateOpen] = useState(false);
     const [editViewOpen, setEditViewOpen] = useState(false);
     const [mode, setMode] = useState("create");
     const [activeClient, setActiveClient] = useState(null);
@@ -45,29 +46,19 @@ export default function AppClient() {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [showSecretConfirm, setShowSecretConfirm] = useState(false);
     const [secretTarget, setSecretTarget] = useState(null);
+    const [pendingSuccessMessage, setPendingSuccessMessage] = useState("");
     const showLoading = useDelayedLoading(loading);
     const canRotateClientSecret = canEditClient;
-
-    const handleCreateClient = async (payload) => {
-        const res = await createClient(payload);
-
-        setSecretModal({
-            open: true,
-            title: "Client secret created",
-            clientId: res?.client_id || "",
-            clientName: payload?.name || "",
-            secret: res?.client_secret || "",
-            loading: false,
-            hasError: false,
-        });
-    };
+    const closeSuccessAlert = useCallback(() => {
+        setSuccessMessage("");
+    }, [setSuccessMessage]);
 
     const openCreate = () => {
         if (!canCreateClient) {
             return;
         }
 
-        setCreateOpen(true);
+        navigate("/app-client/create");
     };
 
     const openView = (client) => {
@@ -139,11 +130,50 @@ export default function AppClient() {
             loading: false,
             hasError: false,
         });
+
+        if (pendingSuccessMessage) {
+            setSuccessMessage(pendingSuccessMessage);
+            setPendingSuccessMessage("");
+        }
     };
+
+    useEffect(() => {
+        const routeState = location.state || {};
+
+        if (routeState.secretModal) {
+            setSecretModal(routeState.secretModal);
+
+            if (routeState.successMessage) {
+                setPendingSuccessMessage(routeState.successMessage);
+            }
+        } else if (routeState.successMessage) {
+            setSuccessMessage(routeState.successMessage);
+        }
+
+        if (routeState.successMessage || routeState.secretModal) {
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [
+        location.pathname,
+        location.state,
+        navigate,
+        setSecretModal,
+        setSuccessMessage,
+    ]);
 
     return (
         <>
             <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+                <Breadcrumbs
+                    colorMode={colorMode}
+                    items={[
+                        {
+                            label: "App Client",
+                            icon: <AppClientIcon className="size-6" />,
+                        },
+                    ]}
+                />
+
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0 flex-1">
                         <PageHeader
@@ -185,12 +215,6 @@ export default function AppClient() {
                         colorMode={colorMode}
                     />
                 </div>
-                <AppClientCreateModal
-                    open={createOpen}
-                    onClose={() => setCreateOpen(false)}
-                    onSubmit={handleCreateClient}
-                    colorMode={colorMode}
-                />
                 <AppClientModal
                     open={editViewOpen}
                     mode={mode}
@@ -233,7 +257,7 @@ export default function AppClient() {
                 onConfirm={confirmDelete}
             />
 
-            <SuccessAlert message={successMessage} onClose={() => setSuccessMessage("")} />
+            <SuccessAlert message={successMessage} onClose={closeSuccessAlert} />
         </>
     );
 }

@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../context/PermissionContext";
 import { useUsers } from "../hooks/useUsers";
 import UserPoolCard from "../components/user-pool/UserPoolCard";
@@ -7,11 +7,11 @@ import UserPoolFilters from "../components/user-pool/UserPoolFilters";
 import UserPoolTable from "../components/user-pool/UserPoolTable";
 import Pagination from "../components/Pagination";
 import UserPoolModal from "../components/user-pool/UserPoolModal";
-import AddUserModal from "../components/user-pool/AddUserModal";
 import SuccessAlert from "../components/SuccessAlert";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import InvitationConfirmModal from "../components/user-pool/InvitationConfirmModal";
 import ResultsCount from "../components/ResultsCount";
+import Breadcrumbs from "../components/Breadcrumbs";
 import PageHeader from "../components/PageHeader";
 import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import ErrorAlert from "../components/ErrorAlert";
@@ -27,6 +27,14 @@ const ITEMS_PER_PAGE = 10;
 
 function getUserLabel(user) {
   return user?.displayName || user?.email || "User";
+}
+
+function UserPoolBreadcrumbIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-6">
+      <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd" />
+    </svg>
+  );
 }
 
 function getRequestErrorMessage(error, fallbackMessage) {
@@ -87,6 +95,8 @@ async function resolveReinviteAccountTypeId(user = {}) {
 }
 
 export default function UserPool() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const outletContext = useOutletContext() || {};
   const colorMode = outletContext.colorMode || "light";
   const currentUser = outletContext.currentUser || {};
@@ -122,7 +132,6 @@ export default function UserPool() {
     setFetchError,
     loading,
     getUserDetails,
-    createUser,
     updateUser,
     deleteUser,
   } = useUsers({
@@ -132,7 +141,6 @@ export default function UserPool() {
   const [modalMode, setModalMode] = useState("view");
   const [selectedUser, setSelectedUser] = useState(null);
   const [isLoadingSelectedUser, setIsLoadingSelectedUser] = useState(false);
-  const [openAddModal, setOpenAddModal] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [openReinvite, setOpenReinvite] = useState(false);
@@ -169,6 +177,28 @@ export default function UserPool() {
   const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
+
+  useEffect(() => {
+    const routeState = location.state || {};
+
+    if (routeState.userType) {
+      setUserType(routeState.userType);
+    }
+
+    if (routeState.successMessage) {
+      setSuccessMessage(routeState.successMessage);
+    }
+
+    if (routeState.userType || routeState.successMessage) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [
+    location.pathname,
+    location.state,
+    navigate,
+    setSuccessMessage,
+    setUserType,
+  ]);
 
   const openUserModal = async (user, mode) => {
     const canOpenModal =
@@ -245,6 +275,8 @@ export default function UserPool() {
       return;
     }
 
+    const reinviteUserLabel = getUserLabel(userToReinvite);
+
     try {
       setIsSendingReinvite(true);
       setFetchError("");
@@ -261,7 +293,7 @@ export default function UserPool() {
         accountTypeId,
       });
 
-      setSuccessMessage(`Reinvitation sent to ${userDetails.email}.`);
+      setSuccessMessage(`Invitation resent to ${userDetails.email}.`);
       setOpenReinvite(false);
       setUserToReinvite(null);
       setOpenViewEditModal(false);
@@ -271,9 +303,13 @@ export default function UserPool() {
       setFetchError(
         getRequestErrorMessage(
           error,
-          `Unable to send reinvitation to ${getUserLabel(userToReinvite)}.`,
+          `Unable to resend invitation to ${reinviteUserLabel}.`,
         ),
       );
+      setOpenReinvite(false);
+      setUserToReinvite(null);
+      setOpenViewEditModal(false);
+      setSelectedUser(null);
     } finally {
       setIsSendingReinvite(false);
     }
@@ -282,6 +318,16 @@ export default function UserPool() {
   return (
     <>
       <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+        <Breadcrumbs
+          colorMode={colorMode}
+          items={[
+            {
+              label: "User Pool",
+              icon: <UserPoolBreadcrumbIcon />,
+            },
+          ]}
+        />
+
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <PageHeader
@@ -300,7 +346,11 @@ export default function UserPool() {
             <div className="self-end sm:self-center">
               <PageHeaderActionButton
                 colorMode={colorMode}
-                onClick={() => setOpenAddModal(true)}
+                onClick={() =>
+                  navigate(`/user-pool/create?type=${userType}`, {
+                    state: { userType },
+                  })
+                }
               >
                 + Add User
               </PageHeaderActionButton>
@@ -378,20 +428,6 @@ export default function UserPool() {
               includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
               colorMode={colorMode}
             />
-            {canAddUsers && (
-              <AddUserModal
-                open={openAddModal}
-                onClose={() => setOpenAddModal(false)}
-                onSubmit={createUser}
-                userType={userType}
-                canAssignRoles={canEditUserRole}
-                canManageUserAccess={canEditUserAccess}
-                appClientOptions={appClientOptions}
-                isLoadingAppClients={isLoadingAppClients}
-                includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
-                colorMode={colorMode}
-              />
-            )}
           </UserPoolCard>
         </div>
       </div>
@@ -408,9 +444,9 @@ export default function UserPool() {
       />
       <InvitationConfirmModal
         open={openReinvite}
-        title="Send Reinvitation?"
-        description={`Send a new account activation email to ${getUserLabel(userToReinvite)}?`}
-        confirmLabel="Send Reinvitation"
+        title="Resend Invitation?"
+        description={`Resend an account activation email to ${getUserLabel(userToReinvite)}?`}
+        confirmLabel="Resend Invite"
         isSubmitting={isSendingReinvite}
         colorMode={colorMode}
         onCancel={() => {

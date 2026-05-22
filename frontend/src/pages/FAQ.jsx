@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import Breadcrumbs from "../components/Breadcrumbs";
 import PageHeader from "../components/PageHeader";
 import FAQAccordionItem from "../components/faq/FAQAccordionItem";
 import FAQHeaderIcon from "../components/faq/FAQHeaderIcon";
@@ -46,6 +47,16 @@ export default function FAQ() {
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+      <Breadcrumbs
+        colorMode={colorMode}
+        items={[
+          {
+            label: "FAQ",
+            icon: <FAQHeaderIcon />,
+          },
+        ]}
+      />
+
       <PageHeader
         title="FAQ"
         description="Frequently asked questions"

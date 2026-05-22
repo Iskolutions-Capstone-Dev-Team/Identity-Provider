@@ -1,6 +1,7 @@
 import TableRowFade from "../TableRowFade";
 import { shortenId } from "../../utils/shortenId";
 import DataTableSkeleton from "../DataTableSkeleton";
+import EmptySearchState from "../EmptySearchState";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../utils/userPoolAccess";
 
 const headerCellClassName = "border-b  border-white/10 px-4 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90 xl:px-6";
@@ -124,9 +125,7 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
   const isDarkMode = colorMode === "dark";
   const isAdminView = userType === ADMIN_USER_TYPE;
   const accessColumnLabel = isAdminView ? "Role" : "Accessible Clients";
-  const emptyStateLabel = isAdminView
-    ? "No admin users found"
-    : "No regular users found";
+  const emptyStateLabel = "No users found";
   const tableTheme = isDarkMode ? "userpoolDark" : "userpool";
   const wrapperClassName = isDarkMode
     ? "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(28,18,29,0.92))] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.82)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
@@ -216,7 +215,7 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
             {users.length === 0 && (
               <tr>
                 <td colSpan={columnWidths.length} className={emptyStateClassName}>
-                  {emptyStateLabel}
+                  <EmptySearchState message={emptyStateLabel} colorMode={colorMode} />
                 </td>
               </tr>
             )}
