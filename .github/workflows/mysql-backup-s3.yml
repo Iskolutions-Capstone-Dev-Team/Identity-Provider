@@ -22,7 +22,7 @@ jobs:
           printf '%s' "$BACKUP_SSH_KEY" > "$HOME/.ssh/backup_key"
           chmod 600 "$HOME/.ssh/backup_key"
 
-      - name: Create MySQL Dump on Server
+      - name: Stream MySQL Dump to Runner
         env:
           SSH_HOST: ${{ secrets.BACKUP_SSH_HOST }}
           SSH_USER: ${{ secrets.BACKUP_SSH_USER }}
@@ -33,7 +33,8 @@ jobs:
           ssh -i "$HOME/.ssh/backup_key" \
             -o StrictHostKeyChecking=no \
             "$SSH_USER@$SSH_HOST" \
-            "mysqldump -u '$DB_USER' -p'$DB_PASS' '$DB_NAME' | gzip > backup.sql.gz"
+            "mysqldump -u '$DB_USER' -p'$DB_PASS' '$DB_NAME' | gzip -1" \
+            > backup.sql.gz
 
       - name: Install AWS CLI
         run: |
