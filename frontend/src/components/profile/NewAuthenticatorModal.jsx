@@ -49,7 +49,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
   const modalHeaderSpacingClassName =
     `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
   const setupBodyClassName =
-    "rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(31,19,27,0.96))] p-5 text-white shadow-[0_22px_45px_-36px_rgba(2,6,23,0.72)] sm:p-6";
+    "rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(35,38,48,0.96),rgba(27,29,38,0.96))] p-5 text-white shadow-[0_22px_45px_-36px_rgba(2,6,23,0.72)] sm:p-6";
 
   useEffect(() => {
     if (!open) {
