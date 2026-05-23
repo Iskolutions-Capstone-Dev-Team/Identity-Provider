@@ -39,7 +39,7 @@ func (rl *rateLimiter) getLimiter(ip string) *rate.Limiter {
 	return limiter
 }
 
-var strictLimiter = newRateLimiter(rate.Every(12*time.Second), 5)
+var strictLimiter = newRateLimiter(rate.Every(12*time.Second), 15)
 
 // RateLimitMiddleware applies a strict rate limit for sensitive endpoints.
 func RateLimitMiddleware() gin.HandlerFunc {
@@ -49,7 +49,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 
 		if !limiter.Allow() {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, dto.ErrorResponse{
-				Error: "too_many_requests",
+				Error: "request limit exceeded",
 			})
 			return
 		}
