@@ -1,0 +1,51 @@
+name: MySQL Backup to S3
+
+on:
+  schedule:
+    # - cron: "0 */12 * * *"     # every 12 hours
+    - cron: "*/5 * * * *"        # every 5 minutes (TEST MODE)
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        env:
+          BACKUP_SSH_KEY: ${{ secrets.BACKUP_SSH_KEY }}
+        run: |
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s' "$BACKUP_SSH_KEY" > "$HOME/.ssh/backup_key"
+          chmod 600 "$HOME/.ssh/backup_key"
+
+      - name: Stream MySQL Dump to Runner
+        env:
+          SSH_HOST: ${{ secrets.BACKUP_SSH_HOST }}
+          SSH_USER: ${{ secrets.BACKUP_SSH_USER }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+        run: |
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no \
+            "$SSH_USER@$SSH_HOST" \
+            "mysqldump -u '$DB_USER' -p'$DB_PASS' '$DB_NAME' | gzip -1" \
+            > backup.sql.gz
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload to S3
+        env:
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+        run: |
+          TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
+          aws s3 cp backup.sql.gz s3://$S3_BUCKET_NAME/mysql-backups/backup-$TIMESTAMP.sql.gz

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 function getOptionLabel(option) {
   if (!option || typeof option !== "object") {
@@ -66,6 +67,27 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
   const isUserPoolModalVariant = variant === "userpoolModal";
   const isDarkUserPoolModalVariant =
     isUserPoolModalVariant && colorMode === "dark";
+  const dropdownAnimation = {
+    initial: {
+      opacity: 0,
+      y: -6,
+      scaleY: 0.96,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+      scaleY: 1,
+    },
+    exit: {
+      opacity: 0,
+      y: -4,
+      scaleY: 0.96,
+    },
+    transition: {
+      duration: 0.18,
+      ease: "easeOut",
+    },
+  };
 
   const triggerClassName = `flex items-center justify-between min-h-10.5 rounded-lg border p-2 ${
     isDarkUserPoolModalVariant
@@ -83,7 +105,7 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
       : disabled
         ? "border-gray-200 bg-gray-100 text-gray-600 cursor-default"
         : "border-gray-200 bg-transparent text-gray-700 cursor-pointer"
-  }`;
+  } transition-[border-color,box-shadow,background-color,background-image] duration-200`;
 
   const placeholderClassName = isDarkUserPoolModalVariant
     ? "ml-1 text-sm text-[#a58d95]"
@@ -126,10 +148,10 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
     : "text-gray-400";
 
   const dropdownClassName = isDarkUserPoolModalVariant
-    ? "mt-2 max-h-60 w-full overflow-y-auto rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(16,23,38,0.98),rgba(27,18,28,0.98))] py-2 shadow-[0_26px_60px_-34px_rgba(2,6,23,0.82)] sm:absolute sm:z-50 sm:max-h-72"
+    ? "mt-2 max-h-60 w-full origin-top overflow-y-auto rounded-[1.25rem] border border-white/10 bg-[linear-gradient(180deg,rgba(16,23,38,0.98),rgba(27,18,28,0.98))] py-2 shadow-[0_26px_60px_-34px_rgba(2,6,23,0.82)] sm:absolute sm:z-50 sm:max-h-72"
     : isUserPoolModalVariant
-    ? "mt-2 max-h-60 w-full overflow-y-auto rounded-[1.25rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,248,243,0.96))] py-2 shadow-[0_26px_60px_-34px_rgba(43,3,7,0.62)] sm:absolute sm:z-50 sm:max-h-72"
-    : "absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-xl";
+    ? "mt-2 max-h-60 w-full origin-top overflow-y-auto rounded-[1.25rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,248,243,0.96))] py-2 shadow-[0_26px_60px_-34px_rgba(43,3,7,0.62)] sm:absolute sm:z-50 sm:max-h-72"
+    : "absolute z-50 mt-1 max-h-72 w-full origin-top overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-xl";
 
   const groupLabelClassName = isDarkUserPoolModalVariant
     ? "px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-[#a58d95]"
@@ -230,47 +252,49 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
         </div>
       </div>
 
-      {!disabled && isOpen && (
-        <div className={dropdownClassName}>
-          {selectedItems.length > 0 && (
-            <div className="pb-2">
-              <div className={groupLabelClassName}>
-                Selected
-              </div>
-              {selectedItems.map((option) => (
-                <div
-                  key={option.id}
-                  onClick={() => toggleOption(option.id)}
-                  className={
-                    lockedSelectedLookup.has(option.id)
-                      ? lockedOptionClassName
-                      : optionClassName
-                  }
-                >
-                  <input type="checkbox" checked={true} readOnly className={checkboxClassName}/>
-                  <span className={selectedOptionTextClassName}>
-                    {getOptionLabel(option)}
-                  </span>
+      <AnimatePresence>
+        {!disabled && isOpen && (
+          <motion.div className={dropdownClassName} {...dropdownAnimation}>
+            {selectedItems.length > 0 && (
+              <div className="pb-2">
+                <div className={groupLabelClassName}>
+                  Selected
                 </div>
-              ))}
-              <div className={dividerClassName} />
-            </div>
-          )}
-
-          {unselectedItems.length > 0 ? (
-            unselectedItems.map((option) => (
-              <div key={option.id} onClick={() => toggleOption(option.id)} className={optionClassName}>
-                <input type="checkbox" checked={false} readOnly className={checkboxClassName}/>
-                <span className={optionTextClassName}>{getOptionLabel(option)}</span>
+                {selectedItems.map((option) => (
+                  <div
+                    key={option.id}
+                    onClick={() => toggleOption(option.id)}
+                    className={
+                      lockedSelectedLookup.has(option.id)
+                        ? lockedOptionClassName
+                        : optionClassName
+                    }
+                  >
+                    <input type="checkbox" checked={true} readOnly className={checkboxClassName}/>
+                    <span className={selectedOptionTextClassName}>
+                      {getOptionLabel(option)}
+                    </span>
+                  </div>
+                ))}
+                <div className={dividerClassName} />
               </div>
-            ))
-          ) : (
-            <div className={emptyStateClassName}>
-              {searchTerm ? "No results found" : "No clients available"}
-            </div>
-          )}
-        </div>
-      )}
+            )}
+
+            {unselectedItems.length > 0 ? (
+              unselectedItems.map((option) => (
+                <div key={option.id} onClick={() => toggleOption(option.id)} className={optionClassName}>
+                  <input type="checkbox" checked={false} readOnly className={checkboxClassName}/>
+                  <span className={optionTextClassName}>{getOptionLabel(option)}</span>
+                </div>
+              ))
+            ) : (
+              <div className={emptyStateClassName}>
+                {searchTerm ? "No results found" : "No clients available"}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -417,11 +417,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
               </h3>
             </div>
 
-            <button
-              type="button"
-              className={`${modalCloseButtonClassName} shrink-0`}
-              onClick={onClose}
-            >
+            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -622,7 +618,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                     <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
                     <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
                   </svg>
-                  Send Reinvitation
+                  Resend Invite
                 </button>
               )}
             </div>
@@ -633,12 +629,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
             </button>
 
             {!isViewMode && canEditThisUser && (
-              <button
-                form="user-pool-form"
-                type="submit"
-                className={modalPrimaryButtonClassName}
-                disabled={isSubmitting}
-              >
+              <button form="user-pool-form" type="submit" className={modalPrimaryButtonClassName} disabled={isSubmitting}>
                 {isSubmitting ? "Saving..." : "Save"}
               </button>
             )}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE } from "../../utils/userPoolAccess";
 
@@ -106,6 +107,27 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
   const selectedStatusThemeClassName = isDarkMode
     ? "bg-[#7b0d15]/28 text-[#ffe28a]"
     : selectedStatusOptionClassName;
+  const statusMenuAnimation = {
+    initial: {
+      opacity: 0,
+      y: -6,
+      scaleY: 0.96,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+      scaleY: 1,
+    },
+    exit: {
+      opacity: 0,
+      y: -4,
+      scaleY: 0.96,
+    },
+    transition: {
+      duration: 0.18,
+      ease: "easeOut",
+    },
+  };
 
   useEffect(() => {
     if (!isStatusOpen) {
@@ -192,23 +214,30 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
             </span>
           </button>
 
-          {isStatusOpen ? (
-            <div className={statusMenuClassName} role="listbox" aria-label="Status">
-              {statusOptions.map((option) => {
-                const isSelected = option.value === status;
+          <AnimatePresence>
+            {isStatusOpen ? (
+              <motion.div
+                className={`${statusMenuClassName} origin-top`}
+                role="listbox"
+                aria-label="Status"
+                {...statusMenuAnimation}
+              >
+                {statusOptions.map((option) => {
+                  const isSelected = option.value === status;
 
-                return (
-                  <button key={option.label} type="button" role="option" aria-selected={isSelected} onClick={() => handleStatusSelect(option.value)}
-                    className={`${statusOptionThemeClassName} ${
-                      isSelected ? selectedStatusThemeClassName : ""
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
+                  return (
+                    <button key={option.label} type="button" role="option" aria-selected={isSelected} onClick={() => handleStatusSelect(option.value)}
+                      className={`${statusOptionThemeClassName} ${
+                        isSelected ? selectedStatusThemeClassName : ""
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
       </div>
 

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../context/PermissionContext";
 import DataTableSkeleton from "../components/DataTableSkeleton";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ErrorAlert from "../components/ErrorAlert";
+import Breadcrumbs from "../components/Breadcrumbs";
 import PageHeader from "../components/PageHeader";
 import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import SuccessAlert from "../components/SuccessAlert";
@@ -18,18 +19,6 @@ import { PERMISSIONS } from "../utils/permissionAccess";
 import { getAllAppClientSelectOptions } from "../utils/userPoolAccess";
 
 const ITEMS_PER_PAGE = 10;
-
-function createEmptyConfig() {
-  return {
-    accountType: "",
-    accountTypeValue: "",
-    label: "",
-    backendId: null,
-    clientIds: [],
-    clientNames: [],
-    totalClientCount: 0,
-  };
-}
 
 function getClientSummary(clients = []) {
   const normalizedClients = Array.isArray(clients) ? clients : [];
@@ -76,6 +65,8 @@ function getRegistrationActionError(error, fallbackMessage) {
 }
 
 export default function Registration() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { colorMode = "light" } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
   const canCreateRegistration = hasPermission(
@@ -109,6 +100,9 @@ export default function Registration() {
   const [isSyncingUsers, setIsSyncingUsers] = useState(false);
   const showLoading = useDelayedLoading(isLoadingRegistration);
   const isDarkMode = colorMode === "dark";
+  const closeSuccessAlert = useCallback(() => {
+    setSuccessMessage("");
+  }, []);
   const searchKeyword = search.trim();
   const appClientOptions = useMemo(
     () => getAllAppClientSelectOptions(appClients),
@@ -205,6 +199,19 @@ export default function Registration() {
     loadRegistrationConfig();
   }, [loadRegistrationConfig]);
 
+  useEffect(() => {
+    const routeState = location.state || {};
+
+    if (routeState.successMessage) {
+      setSuccessMessage(routeState.successMessage);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [
+    location.pathname,
+    location.state,
+    navigate,
+  ]);
+
   const resolveAccountTypeId = useCallback(async (config) => {
     if (Number.isInteger(config?.backendId) && config.backendId > 0) {
       return config.backendId;
@@ -215,34 +222,11 @@ export default function Registration() {
     );
   }, []);
 
-  const handleOpenCreate = () => {
-    if (!canCreateRegistration) {
-      return;
-    }
-
-    setActionError("");
-    setSelectedConfig(createEmptyConfig());
-    setModalMode("create");
-  };
-
-  const handleOpenView = (row) => {
-    setActionError("");
-    setSelectedConfig(row);
-    setModalMode("view");
-  };
-
-  const handleOpenEdit = async (row) => {
-    if (!canEditRegistration) {
-      return;
-    }
-
-    setActionError("");
-
+  const getFullRegistrationConfig = useCallback(async (row) => {
     const backendId = await resolveAccountTypeId(row);
 
     if (!backendId) {
-      setActionError("Unable to edit this account type right now.");
-      return;
+      return null;
     }
 
     let nextConfig = {
@@ -272,7 +256,47 @@ export default function Registration() {
       console.error("Failed to load full registration config:", error);
     }
 
-    setSelectedConfig(nextConfig);
+    return nextConfig;
+  }, [resolveAccountTypeId]);
+
+  const handleOpenCreate = () => {
+    if (!canCreateRegistration) {
+      return;
+    }
+
+    setActionError("");
+    navigate("/registration/create");
+  };
+
+  const handleOpenView = async (row) => {
+    setActionError("");
+
+    const fullConfig = await getFullRegistrationConfig(row);
+
+    if (!fullConfig) {
+      setActionError("Unable to view this account type right now.");
+      return;
+    }
+
+    setSelectedConfig(fullConfig);
+    setModalMode("view");
+  };
+
+  const handleOpenEdit = async (row) => {
+    if (!canEditRegistration) {
+      return;
+    }
+
+    setActionError("");
+
+    const fullConfig = await getFullRegistrationConfig(row);
+
+    if (!fullConfig) {
+      setActionError("Unable to edit this account type right now.");
+      return;
+    }
+
+    setSelectedConfig(fullConfig);
     setModalMode("edit");
   };
 
@@ -304,23 +328,6 @@ export default function Registration() {
 
   const handleSave = async (nextConfig) => {
     const accountTypeName = nextConfig?.name || nextConfig?.label || "";
-
-    if (modalMode === "create") {
-      await registrationService.createAccountType({
-        name: accountTypeName,
-        clientIds: nextConfig.clientIds,
-      });
-
-      await resolveAccountTypeId({
-        ...nextConfig,
-        name: accountTypeName,
-        label: accountTypeName,
-      });
-      await loadRegistrationConfig({ showLoading: false });
-      setSuccessMessage(`Created ${accountTypeName} account type.`);
-      return;
-    }
-
     const backendId = nextConfig?.backendId ?? (await resolveAccountTypeId(nextConfig));
 
     if (!backendId) {
@@ -419,6 +426,21 @@ export default function Registration() {
   return (
     <>
       <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+        <Breadcrumbs
+          colorMode={colorMode}
+          items={[
+            {
+              label: "Registration",
+              icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
+                  <path fillRule="evenodd" d="M9 1.5H5.625c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5Zm6.61 10.936a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 14.47a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd"/>
+                  <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+                </svg>
+              ),
+            },
+          ]}
+        />
+
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <PageHeader
@@ -523,7 +545,7 @@ export default function Registration() {
 
       <SuccessAlert
         message={successMessage}
-        onClose={() => setSuccessMessage("")}
+        onClose={closeSuccessAlert}
       />
     </>
   );
