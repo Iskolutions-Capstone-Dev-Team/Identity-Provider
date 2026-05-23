@@ -2,8 +2,8 @@ name: MySQL Backup to S3
 
 on:
   schedule:
-    # - cron: "0 */12 * * *"     # every 12 hours
-    - cron: "*/5 * * * *"        # every 5 minutes (TEST MODE)
+    - cron: "0 */12 * * *"     # every 12 hours
+    # - cron: "*/5 * * * *"        # every 5 minutes (TEST MODE)
   workflow_dispatch:
 
 jobs:
