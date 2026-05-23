@@ -12,6 +12,15 @@ function normalizeRoleSource(roles) {
   return [roles];
 }
 
+function getUserRoleSource(user = {}) {
+  return [
+    ...normalizeRoleSource(user?.roles),
+    ...normalizeRoleSource(user?.role),
+    user?.role_name,
+    user?.roleName,
+  ];
+}
+
 function normalizeRoleName(role) {
   if (typeof role === "string") {
     return role.trim();
@@ -35,5 +44,5 @@ export function getAssignedRoleNames(roles = []) {
 }
 
 export function hasAssignedRoles(user = {}) {
-  return getAssignedRoleNames(user?.roles).length > 0;
+  return getAssignedRoleNames(getUserRoleSource(user)).length > 0;
 }
