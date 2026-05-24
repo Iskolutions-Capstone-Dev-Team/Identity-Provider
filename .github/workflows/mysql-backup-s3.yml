@@ -52,5 +52,4 @@ jobs:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
           TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
-          FILE="backup-${TIMESTAMP}.sql.gz"
-          aws s3 cp backup.sql.gz "s3://${S3_BUCKET_NAME}/mysql-backups/${FILE}"
+          aws s3 cp backup.sql.gz "s3://${S3_BUCKET_NAME}/mysql-backups/backup-${TIMESTAMP}.sql.gz"
