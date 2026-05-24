@@ -6,7 +6,7 @@ import ChangePasswordModal from "../../components/ChangePasswordModal";
 import { buildAccessDeniedPath } from "../utils/loginRoute";
 import { beginPendingMfaSession } from "../utils/authCookies";
 
-export default function LoginForm({ clientId, initialError = "", onLoginSuccess }) {
+export default function LoginForm({ clientId, redirectUri = "", initialError = "", onLoginSuccess }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,9 +19,18 @@ export default function LoginForm({ clientId, initialError = "", onLoginSuccess 
   });
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const registerPath = clientId
-    ? `/register?client_id=${encodeURIComponent(clientId)}`
-    : "/register";
+  const registerParams = new URLSearchParams();
+
+  if (clientId) {
+    registerParams.set("client_id", clientId);
+  }
+
+  if (redirectUri) {
+    registerParams.set("redirect_uri", redirectUri);
+  }
+
+  const registerQuery = registerParams.toString();
+  const registerPath = registerQuery ? `/register?${registerQuery}` : "/register";
 
   useEffect(() => {
     setError(initialError);
@@ -153,7 +162,9 @@ export default function LoginForm({ clientId, initialError = "", onLoginSuccess 
       } else if (status === 401) {
         setError("Invalid email or password.");
       } else if (status === 403) {
-        navigate(buildAccessDeniedPath(clientId), { replace: true });
+        navigate(buildAccessDeniedPath(clientId, { redirectUri }), {
+          replace: true,
+        });
       } else if (status === 500) {
         setError("Server error. Please try again later.");
       } else {
