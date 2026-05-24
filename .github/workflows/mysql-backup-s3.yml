@@ -51,12 +51,13 @@ jobs:
         env:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
-          set -e
+          set -euo pipefail
 
           TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
           FILE="backup-${TIMESTAMP}.sql.gz"
+
           DEST="s3://${S3_BUCKET_NAME}/mysql-backups/${FILE}"
 
-          echo "Uploading to: $DEST"
+          echo "Uploading to S3 destination: $DEST"
 
-          aws s3 cp "./backup.sql.gz" "$DEST".sql.gz"
+          aws s3 cp "./backup.sql.gz" "$DEST"
