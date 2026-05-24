@@ -1,10 +1,9 @@
 import { Fragment, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import FadeWrapper from "../FadeWrapper";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
-import AppClientIconBox, { AppClientIcon } from "./AppClientIconBox";
+import { AppClientIcon } from "./AppClientIconBox";
 import { getModalTheme } from "../modalTheme";
-import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
@@ -153,22 +152,13 @@ function AppClientStepIndicator({ currentStep, colorMode = "light" }) {
   );
 }
 
-export default function AppClientCreateModal({ open, onClose, onSubmit, colorMode = "light" }) {
-  const { shouldRender, isClosing } = useModalTransition(open);
+export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const {
-    modalBodyClassName,
     modalBodyStackClassName,
-    modalBoxClassName,
-    modalCloseButtonClassName,
-    modalFooterActionsClassName,
-    modalFooterClassName,
-    modalHeaderClassName,
-    modalHeaderTitleClassName,
     modalHelperTextClassName,
     modalInputClassName,
     modalLabelClassName,
-    modalOverlayClassName,
     modalPrimaryButtonClassName,
     modalSecondaryButtonClassName,
     modalSectionClassName,
@@ -215,33 +205,10 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
   const fullImageClassName = isDarkMode
     ? "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-[#111827] object-contain shadow-[0_36px_90px_-40px_rgba(2,6,23,0.9)]"
     : "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-white/90 object-contain shadow-[0_36px_90px_-40px_rgba(43,3,7,0.72)]";
-  const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
-  const modalHeaderContentClassName =
-    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
   const sectionHeaderClassName = isDarkMode
     ? "mb-5 border-b border-white/10 pb-4"
     : "mb-5 border-b border-[#7b0d15]/10 pb-4";
   const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
-
-  useEffect(() => {
-    if (!shouldRender) {
-      setStep(1);
-      setName("");
-      setDescription("");
-      setBaseURL("");
-      setRedirectURL("");
-      setLogoutURL("");
-      setGrants(["authorization_code"]);
-      setImageFile(null);
-      setImagePreview(null);
-      setIsDragging(false);
-      setShowFullImage(false);
-      setActiveVoiceField("name");
-      setError("");
-      setFieldErrors(initialFieldErrors);
-    }
-  }, [shouldRender]);
 
   useEffect(() => {
     if (step === 1) {
@@ -513,7 +480,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
         grants,
         imageFile,
       });
-      onClose();
     } catch (submitError) {
       console.error("Create app client error:", submitError);
       setError(
@@ -522,8 +488,6 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
       );
     }
   };
-
-  if (!shouldRender) return null;
 
   const renderSectionHeader = (title, description, isRequired = false) => (
     <div className={sectionHeaderClassName}>
@@ -536,42 +500,16 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
     </div>
   );
 
-  return createPortal(
-    <>
-      <dialog open
-        className={getModalTransitionClassName(
-          modalOverlayClassName,
-          isClosing,
-        )}
-      >
-        <div className={modalBoxClassName}>
-          <div className={modalHeaderSpacingClassName}>
-            <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
-              <div className={modalHeaderContentClassName}>
-                <AppClientIconBox colorMode={colorMode} variant="plain" />
-                <h3 className={modalHeaderTitleClassName}>
-                  Create App Client
-                </h3>
-              </div>
-
-              <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div className={modalBodyClassName}>
-            <div className={modalBodyStackClassName}>
+  const formContent = (
+    <div className={modalBodyStackClassName}>
               <div className={modalStepsWrapClassName}>
                 <AppClientStepIndicator currentStep={step} colorMode={colorMode} />
               </div>
 
               <ErrorAlert message={error} onClose={() => setError("")} />
 
-              {step === 1 && (
-                <>
+              <FadeWrapper isVisible={step === 1} keyId="app-client-basic-info">
+                <div className="space-y-5">
                   <section className={modalSectionClassName}>
                     {renderSectionHeader(
                       "System Logo",
@@ -675,10 +613,10 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                       <textarea value={description} onChange={(event) => setDescription(event.target.value)} onFocus={() => setActiveVoiceField("description")} rows="3" placeholder="Short description of the application (optional)" className={textareaClassName}/>
                     </div>
                   </section>
-                </>
-              )}
+                </div>
+              </FadeWrapper>
 
-              {step === 2 && (
+              <FadeWrapper isVisible={step === 2} keyId="app-client-urls">
                 <section className={modalSectionClassName}>
                     <div className="space-y-5">
                       <SpeechInputToolbar
@@ -787,9 +725,9 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                     </div>
                   </div>
                 </section>
-              )}
+              </FadeWrapper>
 
-              {step === 3 && (
+              <FadeWrapper isVisible={step === 3} keyId="app-client-grants">
                 <section className={modalSectionClassName}>
                   {renderSectionHeader(
                     "Grants",
@@ -819,15 +757,16 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                     </p>
                   )}
                 </section>
-              )}
-            </div>
-          </div>
-
-          <div className={modalFooterClassName}>
-            <div className={modalFooterActionsClassName}>
+              </FadeWrapper>
+    </div>
+  );
+  const pageFooterActionsClassName =
+    "flex flex-col-reverse gap-3 md:mb-12 lg:flex-row lg:justify-end xl:mb-16 [&>button]:w-full lg:[&>button]:w-auto";
+  const footerActions = (
+    <div className={pageFooterActionsClassName}>
               {step === 1 ? (
                 <button type="button" onClick={onClose} className={modalSecondaryButtonClassName}>
-                  Close
+                  Cancel
                 </button>
               ) : (
                 <button type="button" onClick={() => setStep(step - 1)} className={modalSecondaryButtonClassName}>
@@ -844,25 +783,29 @@ export default function AppClientCreateModal({ open, onClose, onSubmit, colorMod
                   Create Client
                 </button>
               )}
-            </div>
-          </div>
-        </div>
-      </dialog>
+    </div>
+  );
+  const fullImagePreview = showFullImage ? (
+    <div className="fixed inset-0 z-[130] flex items-center justify-center px-4 py-6" onClick={() => setShowFullImage(false)}>
+      <div className={fullImageBackdropClassName} />
+      <div className="relative pointer-events-none flex max-w-4xl items-center justify-center">
+        <button type="button" className={`${getImagePreviewCloseButtonClassName(isDarkMode)} pointer-events-auto`} onClick={() => setShowFullImage(false)}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <img src={imagePreview} className={fullImageClassName} alt="Full Preview"/>
+      </div>
+    </div>
+  ) : null;
 
-      {showFullImage && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center px-4 py-6" onClick={() => setShowFullImage(false)}>
-          <div className={fullImageBackdropClassName} />
-          <div className="relative pointer-events-none flex max-w-4xl items-center justify-center">
-            <button type="button" className={`${getImagePreviewCloseButtonClassName(isDarkMode)} pointer-events-auto`} onClick={() => setShowFullImage(false)}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-            <img src={imagePreview} className={fullImageClassName} alt="Full Preview"/>
-          </div>
-        </div>
-      )}
-    </>,
-    document.body,
+  return (
+    <>
+      <div className="space-y-6">
+        {formContent}
+        {footerActions}
+      </div>
+      {fullImagePreview}
+    </>
   );
 }

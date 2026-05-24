@@ -1,5 +1,5 @@
 import { clearAuthorizeReturnPath } from "./authorizeFlow";
-import { clearMfaVerified } from "./mfaFlow";
+import { clearMfaChallengePending, clearMfaVerified, hasMfaChallengePending, hasMfaVerified, rememberMfaChallengePending } from "./mfaFlow";
 
 const ACCESS_TOKEN_COOKIE = "access_token";
 const LEGACY_REFRESH_TOKEN_COOKIE = "refresh_token";
@@ -94,6 +94,11 @@ export function storeTokenResponse(tokenResponse) {
     return;
   }
 
+  if (hasMfaChallengePending() && !hasMfaVerified()) {
+    storePendingMfaTokenResponse(tokenResponse);
+    return;
+  }
+
   const accessToken = tokenResponse.access_token;
   const expiresIn =
     Number(tokenResponse.expires_in) || DEFAULT_ACCESS_TOKEN_MAX_AGE_SECONDS;
@@ -156,6 +161,13 @@ export function clearPendingMfaTokenResponse() {
   sessionStorage.removeItem(PENDING_MFA_TOKEN_RESPONSE_STORAGE_KEY);
 }
 
+export function beginPendingMfaSession(email = "") {
+  expireCookie(ACCESS_TOKEN_COOKIE);
+  clearLegacyRefreshTokenCookie();
+  clearPendingMfaTokenResponse();
+  rememberMfaChallengePending(email);
+}
+
 export function clearAuthState() {
   expireCookie(ACCESS_TOKEN_COOKIE);
   expireCookie(SESSION_COOKIE);
@@ -169,4 +181,5 @@ export function clearAuthState() {
 
   clearPendingMfaTokenResponse();
   clearMfaVerified();
+  clearMfaChallengePending();
 }

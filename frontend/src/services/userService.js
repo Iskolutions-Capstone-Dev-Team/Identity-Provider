@@ -151,8 +151,6 @@ export const userService = {
       role_id: normalizeRoleId(data.role_id) ?? null,
       account_type_id: accountTypeId,
       allowed_appclients: normalizeStringList(data.allowed_appclients),
-      accessible_clients: normalizeStringList(data.accessible_clients),
-      skip_auto_client_assignment: Boolean(data.skip_auto_client_assignment),
     };
 
     const res = await axiosInstance.post("/admin/users", payload, {

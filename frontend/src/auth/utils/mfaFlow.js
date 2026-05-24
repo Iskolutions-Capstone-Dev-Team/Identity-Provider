@@ -3,6 +3,8 @@ import { DEFAULT_AUTHENTICATED_PATH } from "./authAccess";
 const MFA_RETURN_PATH_STORAGE_KEY = "idp.mfaReturnPath";
 const MFA_SETUP_STORAGE_KEY = "idp.mfaSetup";
 const MFA_VERIFIED_STORAGE_KEY = "idp.mfaVerified";
+const MFA_CHALLENGE_PENDING_STORAGE_KEY = "idp.mfaChallengePending";
+const MFA_CHALLENGE_EMAIL_STORAGE_KEY = "idp.mfaChallengeEmail";
 export const MFA_PATH = "/mfa";
 export const MFA_AUTHENTICATOR_PATH = "/mfa/authenticator";
 export const MFA_BACKUP_CODE_PATH = "/mfa/backup-code";
@@ -120,6 +122,7 @@ export function rememberMfaVerified() {
   }
 
   sessionStorage.setItem(MFA_VERIFIED_STORAGE_KEY, "true");
+  clearMfaChallengePending();
 }
 
 export function hasMfaVerified() {
@@ -136,6 +139,61 @@ export function clearMfaVerified() {
   }
 
   sessionStorage.removeItem(MFA_VERIFIED_STORAGE_KEY);
+}
+
+function getChallengeStorage() {
+  if (typeof localStorage === "undefined") {
+    return null;
+  }
+
+  return localStorage;
+}
+
+export function rememberMfaChallengePending(email = "") {
+  const storage = getChallengeStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  storage.setItem(MFA_CHALLENGE_PENDING_STORAGE_KEY, "true");
+
+  if (email) {
+    storage.setItem(MFA_CHALLENGE_EMAIL_STORAGE_KEY, email);
+  }
+
+  clearMfaVerified();
+}
+
+export function hasMfaChallengePending() {
+  const storage = getChallengeStorage();
+
+  if (!storage) {
+    return false;
+  }
+
+  return storage.getItem(MFA_CHALLENGE_PENDING_STORAGE_KEY) === "true";
+}
+
+export function getMfaChallengeEmail() {
+  const storage = getChallengeStorage();
+
+  if (!storage) {
+    return "";
+  }
+
+  return storage.getItem(MFA_CHALLENGE_EMAIL_STORAGE_KEY) || "";
+}
+
+export function clearMfaChallengePending() {
+  const storage = getChallengeStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  storage.removeItem(MFA_CHALLENGE_PENDING_STORAGE_KEY);
+  storage.removeItem(MFA_CHALLENGE_EMAIL_STORAGE_KEY);
 }
 
 export function isMfaPath(pathname = "") {

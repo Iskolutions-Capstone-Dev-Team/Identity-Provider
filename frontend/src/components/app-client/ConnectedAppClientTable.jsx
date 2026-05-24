@@ -1,5 +1,6 @@
 import TableRowFade from "../TableRowFade";
 import DataTableSkeleton from "../DataTableSkeleton";
+import EmptySearchState from "../EmptySearchState";
 
 const getClientId = (client) => client?.id ?? client?.clientId ?? "";
 
@@ -96,7 +97,7 @@ export default function ConnectedAppClientTable({ loading = false, clients, onVi
             {clients.length === 0 && (
               <tr>
                 <td colSpan={6} className={emptyStateClassName}>
-                  No app clients found
+                  <EmptySearchState message="No app clients found" colorMode={colorMode} />
                 </td>
               </tr>
             )}

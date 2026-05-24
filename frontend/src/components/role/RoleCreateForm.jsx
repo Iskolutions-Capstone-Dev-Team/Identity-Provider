@@ -1,10 +1,8 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import { Fragment, useMemo, useState } from "react";
 import FadeWrapper from "../FadeWrapper";
 import ErrorAlert from "../ErrorAlert";
 import { SpeechInputToolbar } from "../SpeechInputButton";
 import { getModalTheme } from "../modalTheme";
-import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
 
 const toPositiveInt = (value) => {
   const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
@@ -57,29 +55,6 @@ const normalizePermissionOption = (permission = {}) => {
     id,
     permission: label,
   };
-};
-
-const mapPermissionNamesToIds = (permissionNames = [], permissionOptions = []) => {
-  if (!Array.isArray(permissionNames) || permissionNames.length === 0) {
-    return [];
-  }
-
-  const permissionMap = new Map(
-    permissionOptions.map((permission) => [
-      permission.permission.toLowerCase(),
-      permission.id,
-    ]),
-  );
-
-  return Array.from(
-    new Set(
-      permissionNames
-        .map((permissionName) =>
-          permissionMap.get(permissionName.toLowerCase()),
-        )
-        .filter((permissionId) => permissionId !== undefined),
-    ),
-  );
 };
 
 function getPermissionCardClassName({ isSelected, isViewMode, isDarkMode }) {
@@ -184,35 +159,21 @@ function RoleStepIndicator({ currentStep, colorMode = "light" }) {
   );
 }
 
-export default function RoleModal({ open, mode, role, permissionOptions = [], isPermissionOptionsLoading = false, onClose, onSubmit, colorMode = "light" }) {
-  const { shouldRender, isClosing } = useModalTransition(open);
-  const isCreateMode = mode === "create";
-  const isEditMode = mode === "edit";
-  const isViewMode = mode === "view";
+export default function RoleCreateForm({ permissionOptions = [], isPermissionOptionsLoading = false, onClose, onSubmit, colorMode = "light" }) {
+  const isViewMode = false;
   const isDarkMode = colorMode === "dark";
-  const isRoleNameEditable = isCreateMode;
-  const shouldUseSteps = isCreateMode;
+  const isRoleNameEditable = true;
+  const shouldUseSteps = true;
   const {
-    modalBodyClassName,
     modalBodyStackClassName,
-    modalBoxClassName,
-    modalCloseButtonClassName,
-    modalFooterActionsClassName,
-    modalFooterClassName,
-    modalHeaderClassName,
-    modalHeaderTitleClassName,
     modalHelperTextClassName,
     modalLabelClassName,
-    modalOverlayClassName,
     modalPrimaryButtonClassName,
     modalReadOnlyInputClassName,
     modalSecondaryButtonClassName,
     modalSectionClassName,
     modalStepsWrapClassName,
   } = getModalTheme(colorMode);
-
-  const modalTitle =
-    mode === "create" ? "Add Role" : mode === "edit" ? "Edit Role" : "View Role";
 
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
@@ -233,50 +194,10 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
         .filter(Boolean),
     [permissionOptions],
   );
-  const rolePermissionFallbackMap = useMemo(() => {
-    const rolePermissionIds = Array.isArray(role?.permissionIds)
-      ? role.permissionIds
-      : [];
-    const rolePermissionLabels = Array.isArray(role?.permissionLabels)
-      ? role.permissionLabels
-      : [];
-    const fallbackMap = new Map();
-
-    rolePermissionIds.forEach((permissionId, index) => {
-      const label = rolePermissionLabels[index];
-
-      if (permissionId && typeof label === "string" && label.trim()) {
-        fallbackMap.set(permissionId, label.trim());
-      }
-    });
-
-    return fallbackMap;
-  }, [role]);
   const mergedPermissionOptions = useMemo(() => {
-    const optionMap = new Map(
-      normalizedPermissionOptions.map((permission) => [permission.id, permission]),
-    );
+    return normalizedPermissionOptions;
+  }, [normalizedPermissionOptions]);
 
-    selectedPermissionIds.forEach((permissionId) => {
-      if (!optionMap.has(permissionId)) {
-        optionMap.set(permissionId, {
-          id: permissionId,
-          permission:
-            rolePermissionFallbackMap.get(permissionId) ||
-            `Permission #${permissionId}`,
-        });
-      }
-    });
-
-    return Array.from(optionMap.values());
-  }, [
-    normalizedPermissionOptions,
-    rolePermissionFallbackMap,
-    selectedPermissionIds,
-  ]);
-
-  const readOnlyTextAreaClassName =
-    `${modalReadOnlyInputClassName} min-h-28 whitespace-pre-wrap`;
   const editableFieldBaseClassName = isDarkMode
     ? "w-full rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,25,0.72),rgba(22,28,40,0.88))] px-4 text-sm text-[#f4eaea] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out placeholder:text-[#9f8790] focus:border-[#f8d24e]/55"
     : "w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out placeholder:text-[#9b7d84] focus:border-[#d4a017]";
@@ -289,21 +210,15 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   const permissionCheckboxClassName = isDarkMode
     ? "checkbox h-5 w-5 rounded border-white/20 bg-transparent checked:border-[#f8d24e] checked:bg-[#7b0d15] checked:text-white"
     : "checkbox h-5 w-5 rounded border-[#7b0d15]/20 bg-transparent checked:border-[#7b0d15] checked:bg-[#7b0d15] checked:text-white";
-  const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
-  const modalHeaderContentClassName =
-    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
-  const headerIconClassName =
-    colorMode === "dark" ? "h-10 w-10 text-[#ffe28a]" : "h-10 w-10 text-[#fff0a8]";
+  const pageFormClassName = "space-y-5";
+  const pageFooterActionsClassName =
+    "flex flex-col-reverse gap-3 md:mb-12 lg:flex-row lg:justify-end xl:mb-16 [&>button]:w-full lg:[&>button]:w-auto";
   const sectionHeaderClassName = isDarkMode
     ? "mb-5 border-b border-white/10 pb-4"
     : "mb-5 border-b border-[#7b0d15]/10 pb-4";
   const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
   const fieldLabelRowClassName = "mb-2 flex flex-wrap items-center gap-2";
   const fieldLabelClassName = `${modalLabelClassName} !mb-0`;
-  const roleNameReadOnlyClassName = isEditMode
-    ? `${modalReadOnlyInputClassName} cursor-not-allowed select-none`
-    : modalReadOnlyInputClassName;
 
   const fieldErrors = useMemo(
     () => ({
@@ -322,45 +237,6 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
     `${editableTextAreaBaseClassName} ${
       hasError ? "border-red-400 focus:border-red-500" : ""
     }`;
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    if (isCreateMode) {
-      setRoleName("");
-      setDescription("");
-      setSelectedPermissionIds([]);
-    } else {
-      const rolePermissionIds = Array.isArray(role?.permissionIds)
-        ? role.permissionIds
-        : [];
-      const rolePermissionLabels = Array.isArray(role?.permissionLabels)
-        ? role.permissionLabels
-        : [];
-
-      setRoleName(normalizeTextValue(role?.role_name));
-      setDescription(normalizeTextValue(role?.description));
-      setSelectedPermissionIds(
-        rolePermissionIds.length > 0
-          ? rolePermissionIds
-          : mapPermissionNamesToIds(
-              rolePermissionLabels,
-              normalizedPermissionOptions,
-            ),
-      );
-    }
-
-    setStep(1);
-    setStepDirection(1);
-    setActiveVoiceField(isRoleNameEditable ? "name" : "description");
-    setError("");
-    setTouched({
-      name: false,
-      description: false,
-    });
-  }, [isCreateMode, isRoleNameEditable, normalizedPermissionOptions, open, role]);
 
   const clearAlertError = () => {
     if (error) {
@@ -385,15 +261,9 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   };
 
   const activeVoiceFieldLabel =
-    !isRoleNameEditable || activeVoiceField === "description"
-      ? "Role Description"
-      : "Role Name";
+    activeVoiceField === "description" ? "Role Description" : "Role Name";
 
   const handleRoleNameChange = (value) => {
-    if (!isRoleNameEditable) {
-      return;
-    }
-
     setRoleName(normalizeTextValue(value));
     clearAlertError();
   };
@@ -404,7 +274,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   };
 
   const handleSpeechTranscript = (transcript) => {
-    if (!isRoleNameEditable || activeVoiceField === "description") {
+    if (activeVoiceField === "description") {
       handleDescriptionChange(
         description.trim()
           ? `${description.trimEnd()} ${transcript}`
@@ -459,12 +329,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    if (isViewMode) {
-      onClose();
-      return;
-    }
-
-    if (isCreateMode && step === 1) {
+    if (step === 1) {
       goToPermissionsStep();
       return;
     }
@@ -479,30 +344,15 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
       return;
     }
 
-    const submittedRoleName = isRoleNameEditable
-      ? roleName.trim()
-      : normalizeTextValue(role?.role_name).trim();
-
     onSubmit({
-      id: role?.id,
-      role_name: submittedRoleName,
+      role_name: roleName.trim(),
       description: description.trim(),
       permission_ids: selectedPermissionIds,
     });
   };
 
-  if (!shouldRender) {
-    return null;
-  }
-
-  const roleDetailsDescription = isViewMode
-    ? "View the role name and description."
-    : isEditMode
-      ? "Enter the description."
-      : "Enter the role name and description.";
-  const permissionsDescription = isViewMode
-    ? "View the permissions assigned to this role."
-    : "Select the permissions assigned to this role.";
+  const roleDetailsDescription = "Enter the role name and description.";
+  const permissionsDescription = "Select the permissions assigned to this role.";
   const showRoleDetails = !shouldUseSteps || step === 1;
   const showPermissions = !shouldUseSteps || step === 2;
   const renderSectionHeader = (title, description) => (
@@ -554,39 +404,21 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                   </label>
                 </div>
 
-                {isRoleNameEditable ? (
-                  <input
-                    type="text"
-                    required
-                    value={roleName}
-                    onChange={(event) =>
-                      handleRoleNameChange(event.target.value)
-                    }
-                    onBlur={() => setFieldTouched("name")}
-                    onFocus={() => setActiveVoiceField("name")}
-                    placeholder="(e.g., admin)"
-                    autoCapitalize="none"
-                    className={getEditableInputClassName(
-                      touched.name && Boolean(fieldErrors.name),
-                    )}
-                  />
-                ) : (
-                  <div
-                    aria-disabled={isEditMode}
-                    className={roleNameReadOnlyClassName}
-                    onMouseDown={(event) => {
-                      if (isEditMode) {
-                        event.preventDefault();
-                      }
-                    }}
-                  >
-                    {roleName.trim() ? (
-                      <span className="truncate">{roleName}</span>
-                    ) : (
-                      <span className={emptyContentClassName}>No content</span>
-                    )}
-                  </div>
-                )}
+                <input
+                  type="text"
+                  required
+                  value={roleName}
+                  onChange={(event) =>
+                    handleRoleNameChange(event.target.value)
+                  }
+                  onBlur={() => setFieldTouched("name")}
+                  onFocus={() => setActiveVoiceField("name")}
+                  placeholder="(e.g., admin)"
+                  autoCapitalize="none"
+                  className={getEditableInputClassName(
+                    touched.name && Boolean(fieldErrors.name),
+                  )}
+                />
 
                 {isRoleNameEditable && touched.name && fieldErrors.name && (
                   <p className="mt-2 text-xs text-red-500">{fieldErrors.name}</p>
@@ -603,68 +435,28 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                   </label>
                 </div>
 
-                {isViewMode ? (
-                  <div className={readOnlyTextAreaClassName}>
-                    {description.trim() ? (
-                      description
-                    ) : (
-                      <span className={emptyContentClassName}>No content</span>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <textarea
-                      required
-                      value={description}
-                      onChange={(event) =>
-                        handleDescriptionChange(event.target.value)
-                      }
-                      onBlur={() => setFieldTouched("description")}
-                      onFocus={() => setActiveVoiceField("description")}
-                      rows="4"
-                      placeholder="Role description"
-                      className={getEditableTextAreaClassName(
-                        touched.description && Boolean(fieldErrors.description),
-                      )}
-                    />
-                    {touched.description && fieldErrors.description && (
-                      <p className="mt-2 text-xs text-red-500">
-                        {fieldErrors.description}
-                      </p>
-                    )}
-                  </>
+                <textarea
+                  required
+                  value={description}
+                  onChange={(event) =>
+                    handleDescriptionChange(event.target.value)
+                  }
+                  onBlur={() => setFieldTouched("description")}
+                  onFocus={() => setActiveVoiceField("description")}
+                  rows="4"
+                  placeholder="Role description"
+                  className={getEditableTextAreaClassName(
+                    touched.description && Boolean(fieldErrors.description),
+                  )}
+                />
+                {touched.description && fieldErrors.description && (
+                  <p className="mt-2 text-xs text-red-500">
+                    {fieldErrors.description}
+                  </p>
                 )}
               </div>
             </div>
           </section>
-
-          {isViewMode && (
-            <section className={modalSectionClassName}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className={modalLabelClassName}>Created At</label>
-                  <div className={modalReadOnlyInputClassName}>
-                    {role?.created_at ? (
-                      <span className="truncate">{role.created_at}</span>
-                    ) : (
-                      <span className={emptyContentClassName}>No content</span>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className={modalLabelClassName}>Updated At</label>
-                  <div className={modalReadOnlyInputClassName}>
-                    {role?.updated_at ? (
-                      <span className="truncate">{role.updated_at}</span>
-                    ) : (
-                      <span className={emptyContentClassName}>No content</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
         </div>
       </FadeWrapper>
 
@@ -712,72 +504,35 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
   );
 
   const footerActions = (
-    <div className={modalFooterActionsClassName}>
-      {isCreateMode ? (
-        <>
-          {step === 1 ? (
-            <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
-              Cancel
-            </button>
-          ) : (
-            <button type="button" className={modalSecondaryButtonClassName} onClick={goToDetailsStep}>
-              Back
-            </button>
-          )}
-
-          {step === 1 ? (
-            <button type="button" className={modalPrimaryButtonClassName} onClick={handleNextClick}>
-              Next
-            </button>
-          ) : (
-            <button form="role-form" type="submit" className={modalPrimaryButtonClassName}>
-              Create
-            </button>
-          )}
-        </>
+    <div className={pageFooterActionsClassName}>
+      {step === 1 ? (
+        <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
+          Cancel
+        </button>
       ) : (
-        <>
-          <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
-            {isViewMode ? "Close" : "Cancel"}
-          </button>
+        <button type="button" className={modalSecondaryButtonClassName} onClick={goToDetailsStep}>
+          Back
+        </button>
+      )}
 
-          {!isViewMode && (
-            <button form="role-form" type="submit" className={modalPrimaryButtonClassName}>
-              Save
-            </button>
-          )}
-        </>
+      {step === 1 ? (
+        <button type="button" className={modalPrimaryButtonClassName} onClick={handleNextClick}>
+          Next
+        </button>
+      ) : (
+        <button form="role-form" type="submit" className={modalPrimaryButtonClassName}>
+          Create
+        </button>
       )}
     </div>
   );
 
-  return createPortal(
-    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
-      <div className={modalBoxClassName}>
-        <div className={modalHeaderSpacingClassName}>
-          <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
-            <div className={modalHeaderContentClassName}>
-              <RoleShieldIcon className={headerIconClassName} />
-              <h3 className={modalHeaderTitleClassName}>{modalTitle}</h3>
-            </div>
-
-            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <form id="role-form" noValidate className={modalBodyClassName} onSubmit={handleSubmit}>
-          {formContent}
-        </form>
-
-        <div className={modalFooterClassName}>
-          {footerActions}
-        </div>
-      </div>
-    </dialog>,
-    document.body,
+  return (
+    <div className="space-y-6">
+      <form id="role-form" noValidate className={pageFormClassName} onSubmit={handleSubmit}>
+        {formContent}
+      </form>
+      {footerActions}
+    </div>
   );
 }
