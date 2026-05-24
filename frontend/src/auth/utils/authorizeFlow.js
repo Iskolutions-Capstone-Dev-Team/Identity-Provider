@@ -192,13 +192,33 @@ export function buildAuthorizeUrl(clientId = DEFAULT_CLIENT_ID) {
   return `${apiBaseUrl}/auth/authorize?${params.toString()}`;
 }
 
-export function redirectToAuthorize( clientId = DEFAULT_CLIENT_ID, returnPath = DEFAULT_AUTHENTICATED_PATH ) {
+export function buildClientAuthorizeUrl(
+  clientId = DEFAULT_CLIENT_ID,
+  redirectUri = "",
+) {
+  const authorizeUrl = buildAuthorizeUrl(clientId);
+
+  if (!authorizeUrl || !redirectUri) {
+    return authorizeUrl;
+  }
+
+  const url = new URL(authorizeUrl);
+  url.searchParams.set("redirect_uri", redirectUri);
+
+  return url.toString();
+}
+
+export function redirectToAuthorize(
+  clientId = DEFAULT_CLIENT_ID,
+  returnPath = DEFAULT_AUTHENTICATED_PATH,
+  redirectUri = "",
+) {
   if (typeof window === "undefined") {
     return false;
   }
 
   const normalizedClientId = normalizeClientId(clientId);
-  const authorizeUrl = buildAuthorizeUrl(clientId);
+  const authorizeUrl = buildClientAuthorizeUrl(clientId, redirectUri);
 
   if (!normalizedClientId || !authorizeUrl) {
     return false;
