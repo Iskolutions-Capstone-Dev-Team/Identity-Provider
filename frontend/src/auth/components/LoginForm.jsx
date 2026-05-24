@@ -4,6 +4,7 @@ import { authService } from "../services/authService";
 import ErrorAlert from "../../components/ErrorAlert";
 import ChangePasswordModal from "../../components/ChangePasswordModal";
 import { buildAccessDeniedPath } from "../utils/loginRoute";
+import { beginPendingMfaSession } from "../utils/authCookies";
 
 export default function LoginForm({ clientId, initialError = "", onLoginSuccess }) {
   const navigate = useNavigate();
@@ -136,6 +137,7 @@ export default function LoginForm({ clientId, initialError = "", onLoginSuccess 
       }
 
       if (onLoginSuccess) {
+        beginPendingMfaSession(email);
         onLoginSuccess({
           email,
           redirectUrl,
