@@ -1,44 +1,33 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { userService } from "../../services/userService";
-import { authService } from "../services/authService";
 import { clearAuthState } from "../utils/authCookies";
-import { buildLoginPath, getLoginClientId } from "../utils/loginRoute";
-
-const ONE_PORTAL_URL = import.meta.env.VITE_ONE_PORTAL_URL ?? "";
+import { buildClientAuthorizeUrl, clearAuthorizeAttempt } from "../utils/authorizeFlow";
+import { buildLoginPath, getLoginClientId, getLoginRedirectUri } from "../utils/loginRoute";
 
 export default function AccessDenied() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const clientId = getLoginClientId(searchParams);
+  const redirectUri = getLoginRedirectUri(searchParams);
   const [isClearingSession, setIsClearingSession] = useState(false);
 
-  const handleCancel = async () => {
+  const handleReturnToLogin = () => {
     if (isClearingSession) {
       return;
     }
 
     setIsClearingSession(true);
+    clearAuthorizeAttempt();
 
-    try {
-      const currentUser = await userService.getMe();
+    const authorizeUrl = buildClientAuthorizeUrl(clientId, redirectUri);
 
-      if (currentUser?.id) {
-        await authService.logout({
-          clientId,
-          userId: currentUser.id,
-        });
-      }
-    } catch (error) {
-      console.error("Unable to clear server session:", error);
-    } finally {
-      clearAuthState();
-      navigate(buildLoginPath(clientId), { replace: true });
+    if (authorizeUrl) {
+      window.location.replace(authorizeUrl);
+      return;
     }
-  };
 
-  const handleGoToOnePortal = () => {
-    window.location.assign(ONE_PORTAL_URL);
+    clearAuthState();
+    navigate(buildLoginPath(clientId, { redirectUri }), { replace: true });
   };
 
   return (
@@ -55,16 +44,13 @@ export default function AccessDenied() {
 
         <div className="max-w-xl">
           <p className="text-xs font-medium uppercase leading-7 tracking-[0.28em] text-white/75 sm:text-sm">
-            You do not have access to this service. Would you like to proceed to One Portal instead?
+            You do not have access to this service.
           </p>
         </div>
 
-        <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
-          <button type="button" onClick={handleCancel} disabled={isClearingSession} className="btn h-12 w-full rounded-lg border-white/35 bg-white/10 px-6 text-white shadow-[0_18px_40px_-24px_rgba(0,0,0,0.9)] transition duration-300 hover:border-white hover:bg-white hover:text-[#991b1b] sm:w-auto sm:min-w-40">
-            {isClearingSession ? "Clearing..." : "No, back to login"}
-          </button>
-          <button type="button" onClick={handleGoToOnePortal} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-[#ffd700] px-6 text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white sm:w-auto sm:min-w-44">
-            Go to One Portal
+        <div className="flex w-full max-w-md justify-center">
+          <button type="button" onClick={handleReturnToLogin} disabled={isClearingSession} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-transparent px-6 text-[#ffd700] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.9)] transition duration-300 hover:border-[#ffd700] hover:bg-[#ffd700] hover:text-[#991b1b] sm:w-auto sm:min-w-40">
+            {isClearingSession ? "Returning..." : "Return to login"}
           </button>
         </div>
       </div>
