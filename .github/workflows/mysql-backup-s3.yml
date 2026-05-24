@@ -22,7 +22,7 @@ jobs:
           printf '%s' "$BACKUP_SSH_KEY" > "$HOME/.ssh/backup_key"
           chmod 600 "$HOME/.ssh/backup_key"
 
-      - name: Stream MySQL Dump to Runner
+      - name: Stream MySQL Dump to Runner (SAFE)
         env:
           SSH_HOST: ${{ secrets.BACKUP_SSH_HOST }}
           SSH_USER: ${{ secrets.BACKUP_SSH_USER }}
@@ -30,12 +30,23 @@ jobs:
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_NAME: ${{ secrets.DB_NAME }}
         run: |
+          set -euo pipefail
+
           ssh -i "$HOME/.ssh/backup_key" \
             -o StrictHostKeyChecking=no \
             "$SSH_USER@$SSH_HOST" \
-            "mysqldump -u '$DB_USER' -p'$DB_PASS' '$DB_NAME' | gzip -1" \
-            > backup.sql.gz
+            "mysqldump -u '$DB_USER' -p'$DB_PASS' '$DB_NAME'" \
+            | gzip -1 > backup.sql.gz
 
+          echo "Backup size:"
+          ls -lh backup.sql.gz
+
+          # FAIL if backup is too small
+          if [ $(stat -c%s backup.sql.gz) -lt 10000 ]; then
+            echo "❌ Backup is too small — aborting"
+            exit 1
+          fi
+          
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
