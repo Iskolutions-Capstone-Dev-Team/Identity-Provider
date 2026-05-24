@@ -51,5 +51,12 @@ jobs:
         env:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
+          set -e
+
           TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
-          aws s3 cp backup.sql.gz "s3://${S3_BUCKET_NAME}/mysql-backups/backup-${TIMESTAMP}.sql.gz"
+          FILE="backup-${TIMESTAMP}.sql.gz"
+          DEST="s3://${S3_BUCKET_NAME}/mysql-backups/${FILE}"
+
+          echo "Uploading to: $DEST"
+
+          aws s3 cp "./backup.sql.gz" "$DEST".sql.gz"
