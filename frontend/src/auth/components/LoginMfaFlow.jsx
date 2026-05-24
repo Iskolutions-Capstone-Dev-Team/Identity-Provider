@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode";
 import { promotePendingMfaTokenResponse } from "../utils/authCookies";
-import { consumeMfaReturnPath, rememberMfaSetup, getMfaSetup, clearMfaSetup, rememberMfaVerified } from "../utils/mfaFlow";
+import { clearMfaSetup, consumeMfaReturnPath, getMfaChallengeEmail, getMfaSetup, rememberMfaSetup, rememberMfaVerified } from "../utils/mfaFlow";
 import { mfaService } from "../../services/mfaService";
 import { passwordResetService } from "../../services/passwordResetService";
 import { userService } from "../../services/userService";
@@ -68,8 +68,10 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
     let isMounted = true;
 
     async function loadCurrentUser() {
-      if (initialEmail) {
-        setEmail(initialEmail);
+      const challengeEmail = initialEmail || getMfaChallengeEmail();
+
+      if (challengeEmail) {
+        setEmail(challengeEmail);
         setIsLoading(false);
         return;
       }
