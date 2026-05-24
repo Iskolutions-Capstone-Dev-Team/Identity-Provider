@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { userService } from "../../services/userService";
-import { authService } from "../services/authService";
 import { clearAuthState } from "../utils/authCookies";
+import { buildClientAuthorizeUrl, clearAuthorizeAttempt } from "../utils/authorizeFlow";
 import { buildLoginPath, getLoginClientId, getLoginRedirectUri } from "../utils/loginRoute";
 
 export default function AccessDenied() {
@@ -12,28 +11,23 @@ export default function AccessDenied() {
   const redirectUri = getLoginRedirectUri(searchParams);
   const [isClearingSession, setIsClearingSession] = useState(false);
 
-  const handleCancel = async () => {
+  const handleReturnToLogin = () => {
     if (isClearingSession) {
       return;
     }
 
     setIsClearingSession(true);
+    clearAuthorizeAttempt();
 
-    try {
-      const currentUser = await userService.getMe();
+    const authorizeUrl = buildClientAuthorizeUrl(clientId, redirectUri);
 
-      if (currentUser?.id) {
-        await authService.logout({
-          clientId,
-          userId: currentUser.id,
-        });
-      }
-    } catch (error) {
-      console.error("Unable to clear server session:", error);
-    } finally {
-      clearAuthState();
-      navigate(buildLoginPath(clientId, { redirectUri }), { replace: true });
+    if (authorizeUrl) {
+      window.location.replace(authorizeUrl);
+      return;
     }
+
+    clearAuthState();
+    navigate(buildLoginPath(clientId, { redirectUri }), { replace: true });
   };
 
   return (
@@ -55,7 +49,7 @@ export default function AccessDenied() {
         </div>
 
         <div className="flex w-full max-w-md justify-center">
-          <button type="button" onClick={handleCancel} disabled={isClearingSession} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-transparent px-6 text-[#ffd700] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.9)] transition duration-300 hover:border-[#ffd700] hover:bg-[#ffd700] hover:text-[#991b1b] sm:w-auto sm:min-w-40">
+          <button type="button" onClick={handleReturnToLogin} disabled={isClearingSession} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-transparent px-6 text-[#ffd700] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.9)] transition duration-300 hover:border-[#ffd700] hover:bg-[#ffd700] hover:text-[#991b1b] sm:w-auto sm:min-w-40">
             {isClearingSession ? "Returning..." : "Return to login"}
           </button>
         </div>

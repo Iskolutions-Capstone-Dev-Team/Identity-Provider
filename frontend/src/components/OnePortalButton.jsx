@@ -1,4 +1,4 @@
-import { buildLoginPath } from "../auth/utils/loginRoute";
+import { buildClientAuthorizeUrl, clearAuthorizeAttempt } from "../auth/utils/authorizeFlow";
 
 const ONE_PORTAL_CLIENT_ID =
   import.meta.env.VITE_ONE_PORTAL_CLIENT_ID ??
@@ -24,15 +24,17 @@ function getOnePortalRedirectUri() {
 
 export default function OnePortalButton({ className = "" }) {
   const handleClick = () => {
-    const loginPath = buildLoginPath(ONE_PORTAL_CLIENT_ID, {
-      redirectUri: getOnePortalRedirectUri(),
-    });
-    const loginUrl =
-      typeof window === "undefined"
-        ? loginPath
-        : `${window.location.origin}${loginPath}`;
+    const authorizeUrl = buildClientAuthorizeUrl(
+      ONE_PORTAL_CLIENT_ID,
+      getOnePortalRedirectUri(),
+    );
 
-    window.location.href = loginUrl;
+    if (!authorizeUrl) {
+      return;
+    }
+
+    clearAuthorizeAttempt();
+    window.location.replace(authorizeUrl);
   };
 
   return (
