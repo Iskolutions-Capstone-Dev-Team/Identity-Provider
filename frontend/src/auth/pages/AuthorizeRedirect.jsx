@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { buildLoginPath } from "../utils/loginRoute";
 import { hasStoredAccessToken } from "../utils/authRecovery";
 import { clearAuthorizeAttempt, getAuthorizeReturnPath, redirectToAuthorize } from "../utils/authorizeFlow";
+import { hasMfaChallengePending, hasMfaVerified, rememberMfaReturnPath } from "../utils/mfaFlow";
 
 const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 
@@ -16,6 +17,14 @@ export default function AuthorizeRedirect() {
 
     const redirectToNextPage = () => {
       const returnPath = getAuthorizeReturnPath();
+
+      if (hasMfaChallengePending() && !hasMfaVerified()) {
+        rememberMfaReturnPath(returnPath);
+        navigate(buildLoginPath(authClientId, { showMfa: true }), {
+          replace: true,
+        });
+        return;
+      }
 
       if (hasStoredAccessToken()) {
         clearAuthorizeAttempt();

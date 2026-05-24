@@ -6,7 +6,7 @@ import { buildAccessDeniedPath, buildLoginPath } from "../utils/loginRoute";
 import { userService } from "../../services/userService";
 import { hasAssignedRoles } from "../utils/authAccess";
 import { hasStoredAccessToken, hasStoredAuthTokens } from "../utils/authRecovery";
-import { hasMfaVerified, isMfaPath, rememberMfaReturnPath } from "../utils/mfaFlow";
+import { hasMfaChallengePending, hasMfaVerified, isMfaPath, rememberMfaReturnPath } from "../utils/mfaFlow";
 
 export default function ProtectedRoute({ children }) {
   const [authState, setAuthState] = useState("loading");
@@ -19,6 +19,15 @@ export default function ProtectedRoute({ children }) {
     let isActive = true;
 
     const validate = async () => {
+      const needsMfaVerification =
+        hasMfaChallengePending() && !hasMfaVerified();
+
+      if (!isCurrentMfaPath && needsMfaVerification) {
+        rememberMfaReturnPath(returnPath);
+        setAuthState("needs-mfa");
+        return;
+      }
+
       if (!hasStoredAuthTokens()) {
         rememberAuthorizeReturnPath(returnPath);
         setAuthState("redirect-to-sso");
@@ -37,7 +46,9 @@ export default function ProtectedRoute({ children }) {
           return;
         }
 
-        const hasCompletedMfa = hasStoredAccessToken() || hasMfaVerified();
+        const hasCompletedMfa =
+          hasMfaVerified() ||
+          (hasStoredAccessToken() && !hasMfaChallengePending());
 
         if (!isCurrentMfaPath && !hasCompletedMfa) {
           rememberMfaReturnPath(returnPath);

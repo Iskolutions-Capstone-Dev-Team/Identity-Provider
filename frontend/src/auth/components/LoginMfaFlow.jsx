@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode";
 import { promotePendingMfaTokenResponse } from "../utils/authCookies";
-import { consumeMfaReturnPath, rememberMfaSetup, getMfaSetup, clearMfaSetup, rememberMfaVerified } from "../utils/mfaFlow";
+import { clearMfaSetup, consumeMfaReturnPath, getMfaChallengeEmail, getMfaSetup, rememberMfaSetup, rememberMfaVerified } from "../utils/mfaFlow";
 import { mfaService } from "../../services/mfaService";
+import { passwordResetService } from "../../services/passwordResetService";
 import { userService } from "../../services/userService";
 import ErrorAlert from "../../components/ErrorAlert";
 import MfaAuthenticatorCodeStep from "./mfa/MfaAuthenticatorCodeStep";
@@ -37,8 +38,11 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
   const [email, setEmail] = useState(initialEmail);
   const [code, setCode] = useState("");
   const [backupCode, setBackupCode] = useState("");
+  const [mode, setMode] = useState("email");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [hasSentOtp, setHasSentOtp] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isCheckingAuthenticators, setIsCheckingAuthenticators] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
@@ -64,8 +68,10 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
     let isMounted = true;
 
     async function loadCurrentUser() {
-      if (initialEmail) {
-        setEmail(initialEmail);
+      const challengeEmail = initialEmail || getMfaChallengeEmail();
+
+      if (challengeEmail) {
+        setEmail(challengeEmail);
         setIsLoading(false);
         return;
       }
@@ -99,9 +105,38 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
     };
   }, [initialEmail]);
 
+  const handleSendOtp = async () => {
+    setError("");
+
+    if (!email) {
+      setError("Your email address is unavailable.");
+      return;
+    }
+
+    try {
+      setIsSendingOtp(true);
+      await passwordResetService.sendOtp({ email });
+      setHasSentOtp(true);
+    } catch (otpError) {
+      setError(
+        getRequestErrorMessage(otpError, "Unable to send an OTP right now."),
+      );
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleSelectEmail = () => {
+    setStep(MFA_STEPS.CHOOSE);
+    setMode("email");
+    setCode("");
+    setError("");
+  };
+
   const handleSelectAuthenticator = async () => {
     setError("");
     setCode("");
+    setMode("authenticator");
 
     try {
       setIsCheckingAuthenticators(true);
@@ -147,6 +182,28 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
           "Unable to load authenticator setup.",
         ),
       );
+    }
+  };
+
+  const handleVerifyEmailOtp = async (event) => {
+    event.preventDefault();
+    setError("");
+
+    if (code.length !== 6) {
+      setError("Enter the 6-digit verification code.");
+      return;
+    }
+
+    try {
+      setIsVerifying(true);
+      await passwordResetService.verifyOtp({ email, otp: code });
+      finishMfa();
+    } catch (verifyError) {
+      setError(
+        getRequestErrorMessage(verifyError, "Unable to verify this code."),
+      );
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -315,8 +372,17 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
     return (
       <MfaVerifyStep
         email={email}
+        code={code}
+        mode={mode}
+        hasSentOtp={hasSentOtp}
+        isSendingOtp={isSendingOtp}
+        isVerifying={isVerifying}
         isCheckingAuthenticators={isCheckingAuthenticators}
+        onSelectEmail={handleSelectEmail}
         onSelectAuthenticator={handleSelectAuthenticator}
+        onCodeChange={(value) => setCode(getDigits(value))}
+        onSendOtp={handleSendOtp}
+        onVerify={handleVerifyEmailOtp}
         onCancel={onBackToLogin}
       />
     );
