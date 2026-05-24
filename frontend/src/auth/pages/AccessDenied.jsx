@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { userService } from "../../services/userService";
 import { authService } from "../services/authService";
 import { clearAuthState } from "../utils/authCookies";
-import { buildLoginPath, getLoginClientId } from "../utils/loginRoute";
+import { buildLoginPath, getLoginClientId, getLoginRedirectUri } from "../utils/loginRoute";
 
 const ONE_PORTAL_URL = import.meta.env.VITE_ONE_PORTAL_URL ?? "";
 
@@ -11,6 +11,7 @@ export default function AccessDenied() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const clientId = getLoginClientId(searchParams);
+  const redirectUri = getLoginRedirectUri(searchParams);
   const [isClearingSession, setIsClearingSession] = useState(false);
 
   const handleCancel = async () => {
@@ -33,7 +34,7 @@ export default function AccessDenied() {
       console.error("Unable to clear server session:", error);
     } finally {
       clearAuthState();
-      navigate(buildLoginPath(clientId), { replace: true });
+      navigate(buildLoginPath(clientId, { redirectUri }), { replace: true });
     }
   };
 
