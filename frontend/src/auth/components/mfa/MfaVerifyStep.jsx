@@ -64,21 +64,6 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
       </div>
 
       <div className="space-y-3 rounded-2xl border border-white/14 bg-white/8 p-4">
-        <button type="button" onClick={onSelectPasskey} disabled={isCheckingPasskey}
-          className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition disabled:cursor-wait disabled:opacity-70 ${
-            isPasskeyMode
-              ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-white"
-              : "border-white/12 bg-white/6 text-white/80 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white"
-          }`}
-        >
-          <span>
-            <span className="block font-semibold">Passkey</span>
-          </span>
-          {isCheckingPasskey ? (
-            <span className="text-sm text-[#ffd700]">Checking...</span>
-          ) : null}
-        </button>
-
         <button type="button" onClick={onSelectAuthenticator} disabled={isCheckingAuthenticators}
           className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition disabled:cursor-wait disabled:opacity-70 ${
             isAuthenticatorMode
@@ -90,6 +75,21 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
             <span className="block font-semibold">Authenticator app</span>
           </span>
           {isCheckingAuthenticators ? (
+            <span className="text-sm text-[#ffd700]">Checking...</span>
+          ) : null}
+        </button>
+
+        <button type="button" onClick={onSelectPasskey} disabled={isCheckingPasskey}
+          className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition disabled:cursor-wait disabled:opacity-70 ${
+            isPasskeyMode
+              ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-white"
+              : "border-white/12 bg-white/6 text-white/80 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white"
+          }`}
+        >
+          <span>
+            <span className="block font-semibold">Passkey</span>
+          </span>
+          {isCheckingPasskey ? (
             <span className="text-sm text-[#ffd700]">Checking...</span>
           ) : null}
         </button>
