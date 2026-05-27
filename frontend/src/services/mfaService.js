@@ -14,6 +14,14 @@ function getRequiredTextValue(value, label) {
   return normalizedValue;
 }
 
+function getExistsValue(data) {
+  if (typeof data === "boolean") {
+    return data;
+  }
+
+  return Boolean(data?.exists || data?.has_totp || data?.has_passkey);
+}
+
 export const mfaService = {
   async getSetup(email) {
     const response = await axiosInstance.request({
@@ -55,6 +63,7 @@ export const mfaService = {
       },
       {
         skipUnauthorizedRedirect: true,
+        skipAuthHeader: true,
       },
     );
 
@@ -72,6 +81,28 @@ export const mfaService = {
     );
 
     return Array.isArray(response.data) ? response.data : [];
+  },
+
+  async hasTotpAuthenticator(email) {
+    const response = await axiosInstance.get("/mfa/totp/exists", {
+      params: {
+        email: getRequiredTextValue(email, "Email address"),
+      },
+      skipAuthHeader: true,
+    });
+
+    return getExistsValue(response.data);
+  },
+
+  async hasPasskey(email) {
+    const response = await axiosInstance.get("/mfa/passkey/exists", {
+      params: {
+        email: getRequiredTextValue(email, "Email address"),
+      },
+      skipAuthHeader: true,
+    });
+
+    return getExistsValue(response.data);
   },
 
   async deleteAuthenticator({ email, id } = {}) {
@@ -93,6 +124,9 @@ export const mfaService = {
     const response = await axiosInstance.post(
       "/mfa/passkey/register/begin",
       { email: getRequiredTextValue(email, "Email address") },
+      {
+        skipUnauthorizedRedirect: true,
+      },
     );
     return response.data;
   },
@@ -103,8 +137,14 @@ export const mfaService = {
    */
   async finishPasskeyRegistration(email, credential) {
     const response = await axiosInstance.post(
-      `/mfa/passkey/register/finish?email=${encodeURIComponent(email)}`,
+      "/mfa/passkey/register/finish",
       credential,
+      {
+        params: {
+          email: getRequiredTextValue(email, "Email address"),
+        },
+        skipUnauthorizedRedirect: true,
+      },
     );
     return response.data;
   },
@@ -117,6 +157,9 @@ export const mfaService = {
     const response = await axiosInstance.post(
       "/mfa/passkey/verify/begin",
       { email: getRequiredTextValue(email, "Email address") },
+      {
+        skipAuthHeader: true,
+      },
     );
     return response.data;
   },
@@ -128,9 +171,15 @@ export const mfaService = {
    */
   async finishPasskeyVerification(email, assertion) {
     const response = await axiosInstance.post(
-      `/mfa/passkey/verify/finish?email=${encodeURIComponent(email)}`,
+      "/mfa/passkey/verify/finish",
       assertion,
-      { skipUnauthorizedRedirect: true },
+      {
+        params: {
+          email: getRequiredTextValue(email, "Email address"),
+        },
+        skipAuthHeader: true,
+        skipUnauthorizedRedirect: true,
+      },
     );
     return response.data;
   },

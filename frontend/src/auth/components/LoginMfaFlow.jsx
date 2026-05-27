@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode";
 import { promotePendingMfaTokenResponse } from "../utils/authCookies";
 import { clearMfaSetup, consumeMfaReturnPath, getMfaChallengeEmail, getMfaSetup, rememberMfaSetup, rememberMfaVerified } from "../utils/mfaFlow";
+import { createPasskeyCredential, getPasskeyCredential } from "../utils/webAuthn";
 import { mfaService } from "../../services/mfaService";
 import { passwordResetService } from "../../services/passwordResetService";
 import { userService } from "../../services/userService";
@@ -45,6 +46,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isCheckingAuthenticators, setIsCheckingAuthenticators] = useState(false);
+  const [isCheckingPasskey, setIsCheckingPasskey] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [setup, setSetup] = useState({ email: "", secret: "", otpAuthUri: "" });
   const [name, setName] = useState("");
@@ -140,9 +142,9 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
 
     try {
       setIsCheckingAuthenticators(true);
-      const authenticators = await mfaService.getAuthenticators(email);
+      const hasAuthenticator = await mfaService.hasTotpAuthenticator(email);
 
-      if (authenticators.length === 0) {
+      if (!hasAuthenticator) {
         await loadAuthenticatorSetup();
         return;
       }
@@ -157,6 +159,46 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
       );
     } finally {
       setIsCheckingAuthenticators(false);
+    }
+  };
+
+  const registerPasskey = async () => {
+    const options = await mfaService.beginPasskeyRegistration(email);
+    const credential = await createPasskeyCredential(options);
+
+    await mfaService.finishPasskeyRegistration(email, credential);
+    finishMfa();
+  };
+
+  const verifyPasskey = async () => {
+    const options = await mfaService.beginPasskeyVerification(email);
+    const credential = await getPasskeyCredential(options);
+
+    await mfaService.finishPasskeyVerification(email, credential);
+    finishMfa();
+  };
+
+  const handleSelectPasskey = async () => {
+    setError("");
+    setCode("");
+    setMode("passkey");
+
+    try {
+      setIsCheckingPasskey(true);
+      const hasPasskey = await mfaService.hasPasskey(email);
+
+      if (!hasPasskey) {
+        await registerPasskey();
+        return;
+      }
+
+      await verifyPasskey();
+    } catch (passkeyError) {
+      setError(
+        getRequestErrorMessage(passkeyError, "Unable to check your passkeys."),
+      );
+    } finally {
+      setIsCheckingPasskey(false);
     }
   };
 
@@ -378,8 +420,10 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
         isSendingOtp={isSendingOtp}
         isVerifying={isVerifying}
         isCheckingAuthenticators={isCheckingAuthenticators}
+        isCheckingPasskey={isCheckingPasskey}
         onSelectEmail={handleSelectEmail}
         onSelectAuthenticator={handleSelectAuthenticator}
+        onSelectPasskey={handleSelectPasskey}
         onCodeChange={(value) => setCode(getDigits(value))}
         onSendOtp={handleSendOtp}
         onVerify={handleVerifyEmailOtp}
