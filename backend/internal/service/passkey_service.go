@@ -12,6 +12,7 @@ import (
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
 )
@@ -85,10 +86,16 @@ func NewPasskeyService(
 	// Strip trailing slash from origin for strict matching.
 	origin = strings.TrimRight(origin, "/")
 
+	requireRK := true
 	wa, err := webauthn.New(&webauthn.Config{
 		RPDisplayName: "Identity Provider",
 		RPID:          rpid,
 		RPOrigins:     []string{origin},
+		AuthenticatorSelection: protocol.AuthenticatorSelection{
+			RequireResidentKey: &requireRK,
+			ResidentKey:        protocol.ResidentKeyRequirementRequired,
+			UserVerification:   protocol.VerificationPreferred,
+		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf(
