@@ -103,3 +103,130 @@ func TestGetAuthenticatorListHandler(t *testing.T) {
 		t.Errorf("Expected status 200, got %d", w.Code)
 	}
 }
+
+/**
+ * TestGetHasTOTPHandler verifies the GET /mfa/totp/exists endpoint.
+ */
+func TestGetHasTOTPHandler(t *testing.T) {
+	t.Run("returns has_totp true when TOTP exists", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockMFAService := mocks.NewMockMFAService(ctrl)
+		mockUserService := mocks.NewMockUserService(ctrl)
+		handler := v1.NewMFAHandler(mockMFAService, mockUserService)
+
+		gin.SetMode(gin.TestMode)
+		r := gin.New()
+		r.GET("/mfa/totp/exists", handler.GetHasTOTP)
+
+		mockUserService.EXPECT().
+			GetUserByEmail(gomock.Any(), "test@example.com").
+			Return(&dto.UserResponse{
+				ID:    uuid.New().String(),
+				Email: "test@example.com",
+			}, nil)
+
+		mockMFAService.EXPECT().
+			HasTOTP(gomock.Any(), gomock.Any()).
+			Return(true, nil)
+
+		req, _ := http.NewRequest(
+			"GET", "/mfa/totp/exists?email=test@example.com", nil,
+		)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected 200, got %d", w.Code)
+		}
+
+		var body map[string]bool
+		if err := json.NewDecoder(w.Body).Decode(&body); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if !body["has_totp"] {
+			t.Errorf("expected has_totp=true, got %v", body)
+		}
+	})
+
+	t.Run("returns 400 when email is missing", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockMFAService := mocks.NewMockMFAService(ctrl)
+		mockUserService := mocks.NewMockUserService(ctrl)
+		handler := v1.NewMFAHandler(mockMFAService, mockUserService)
+
+		gin.SetMode(gin.TestMode)
+		r := gin.New()
+		r.GET("/mfa/totp/exists", handler.GetHasTOTP)
+
+		req, _ := http.NewRequest("GET", "/mfa/totp/exists", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+}
+
+/**
+ * TestGetHasPasskeyHandler verifies the GET /mfa/passkey/exists endpoint.
+ */
+func TestGetHasPasskeyHandler(t *testing.T) {
+	t.Run("returns has_passkey false when none registered", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockPasskeyService := mocks.NewMockPasskeyService(ctrl)
+		handler := v1.NewPasskeyHandler(mockPasskeyService)
+
+		gin.SetMode(gin.TestMode)
+		r := gin.New()
+		r.GET("/mfa/passkey/exists", handler.GetHasPasskey)
+
+		mockPasskeyService.EXPECT().
+			HasPasskey(gomock.Any(), "test@example.com").
+			Return(false, nil)
+
+		req, _ := http.NewRequest(
+			"GET", "/mfa/passkey/exists?email=test@example.com", nil,
+		)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected 200, got %d", w.Code)
+		}
+
+		var body map[string]bool
+		if err := json.NewDecoder(w.Body).Decode(&body); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if body["has_passkey"] {
+			t.Errorf("expected has_passkey=false, got %v", body)
+		}
+	})
+
+	t.Run("returns 400 when email is missing", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockPasskeyService := mocks.NewMockPasskeyService(ctrl)
+		handler := v1.NewPasskeyHandler(mockPasskeyService)
+
+		gin.SetMode(gin.TestMode)
+		r := gin.New()
+		r.GET("/mfa/passkey/exists", handler.GetHasPasskey)
+
+		req, _ := http.NewRequest("GET", "/mfa/passkey/exists", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+}
