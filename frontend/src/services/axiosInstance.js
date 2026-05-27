@@ -67,6 +67,12 @@ axiosInstance.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+  const apiKey = import.meta.env.VITE_BACKEND_API_KEY;
+  if (apiKey) {
+    config.headers = config.headers ?? {};
+    config.headers["X-API-Key"] = apiKey;
+  }
+
   return config;
 });
 
