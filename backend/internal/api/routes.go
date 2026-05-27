@@ -83,6 +83,12 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			h.MFAHandler.PostVerifyMFA,
 		)
 
+		// Check if user has a TOTP authenticator registered
+		mfaVerify.GET(
+			"/totp/exists",
+			h.MFAHandler.GetHasTOTP,
+		)
+
 		// Passkey verification ceremony (mid-login, no JWT)
 		passkeyVerify := mfaVerify.Group("/passkey/verify")
 		{
@@ -95,6 +101,12 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 				h.PasskeyHandler.FinishVerification,
 			)
 		}
+
+		// Check if user has a passkey registered
+		mfaVerify.GET(
+			"/passkey/exists",
+			h.PasskeyHandler.GetHasPasskey,
+		)
 	}
 
 	// mfaManage — JWT + API-key: mutates MFA state for an

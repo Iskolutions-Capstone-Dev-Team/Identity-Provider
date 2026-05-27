@@ -24,7 +24,7 @@ type PasskeyUser struct {
 	credentials []webauthn.Credential
 }
 
-func (u *PasskeyUser) WebAuthnID() []byte { return u.id }
+func (u *PasskeyUser) WebAuthnID() []byte   { return u.id }
 func (u *PasskeyUser) WebAuthnName() string { return u.name }
 func (u *PasskeyUser) WebAuthnDisplayName() string {
 	return u.displayName
@@ -47,6 +47,8 @@ type PasskeyService interface {
 	FinishVerification(
 		ctx context.Context, email string, r *http.Request,
 	) error
+	// HasPasskey reports whether the user has a registered passkey.
+	HasPasskey(ctx context.Context, email string) (bool, error)
 }
 
 type passkeyService struct {
@@ -220,7 +222,7 @@ func (s *passkeyService) FinishRegistration(
 		Name:         "Passkey",
 		CredentialID: cred.ID,
 		PublicKey:    cred.PublicKey,
-		AAGUID: fmt.Sprintf("%x", cred.Authenticator.AAGUID),
+		AAGUID:       fmt.Sprintf("%x", cred.Authenticator.AAGUID),
 		Transport:    transport,
 		SignCount:    cred.Authenticator.SignCount,
 	}
@@ -295,4 +297,26 @@ func (s *passkeyService) FinishVerification(
 		)
 	}
 	return nil
+}
+
+// HasPasskey reports whether the user identified by email has at
+// least one registered passkey credential.
+func (s *passkeyService) HasPasskey(
+	ctx context.Context, email string,
+) (bool, error) {
+	user, err := s.userService.GetUserByEmail(ctx, email)
+	if err != nil {
+		return false, fmt.Errorf(
+			"[PasskeyService] HasPasskey User Lookup: %w", err,
+		)
+	}
+
+	uid, err := uuid.Parse(user.ID)
+	if err != nil {
+		return false, fmt.Errorf(
+			"[PasskeyService] HasPasskey UUID Parse: %w", err,
+		)
+	}
+
+	return s.passkeyRepo.HasPasskey(ctx, uid[:])
 }

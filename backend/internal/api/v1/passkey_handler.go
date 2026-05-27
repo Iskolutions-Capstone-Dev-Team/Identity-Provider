@@ -129,6 +129,33 @@ func (h *PasskeyHandler) FinishVerification(c *gin.Context) {
 	})
 }
 
+/**
+ * GetHasPasskey checks whether the user identified by the email query
+ * parameter has at least one registered passkey credential.
+ * Returns {"has_passkey": true|false}.
+ */
+func (h *PasskeyHandler) GetHasPasskey(c *gin.Context) {
+	email := c.Query("email")
+	if email == "" {
+		log.Printf("[GetHasPasskey] Missing email parameter")
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "email query parameter is required",
+		})
+		return
+	}
+
+	has, err := h.PasskeyService.HasPasskey(c.Request.Context(), email)
+	if err != nil {
+		log.Printf("[GetHasPasskey] HasPasskey: %v", err)
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "Failed to check passkey status",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"has_passkey": has})
+}
+
 // NewPasskeyHandler constructs a PasskeyHandler.
 func NewPasskeyHandler(ps service.PasskeyService) *PasskeyHandler {
 	return &PasskeyHandler{PasskeyService: ps}

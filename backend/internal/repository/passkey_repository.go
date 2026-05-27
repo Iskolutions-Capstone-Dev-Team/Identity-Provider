@@ -22,6 +22,8 @@ type PasskeyRepository interface {
 	UpdatePasskeySignCount(
 		ctx context.Context, credentialID []byte, count uint32,
 	) error
+	// HasPasskey reports whether the user has at least one passkey.
+	HasPasskey(ctx context.Context, userID []byte) (bool, error)
 }
 
 type passkeyRepository struct {
@@ -103,6 +105,20 @@ func (r *passkeyRepository) UpdatePasskeySignCount(
 		)
 	}
 	return nil
+}
+
+// HasPasskey returns true if the user has at least one passkey.
+func (r *passkeyRepository) HasPasskey(
+	ctx context.Context, userID []byte,
+) (bool, error) {
+	var count int
+	query := `SELECT COUNT(1) FROM user_authenticators
+		WHERE user_id = ? AND type = 'passkey' LIMIT 1`
+	err := r.db.GetContext(ctx, &count, query, userID)
+	if err != nil {
+		return false, fmt.Errorf("[HasPasskey]: %w", err)
+	}
+	return count > 0, nil
 }
 
 // NewPasskeyRepository returns a MySQL-backed PasskeyRepository.

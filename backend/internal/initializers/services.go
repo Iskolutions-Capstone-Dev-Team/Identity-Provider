@@ -63,4 +63,3 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		PasskeyService: passkeySvc,
 	}
 }
-

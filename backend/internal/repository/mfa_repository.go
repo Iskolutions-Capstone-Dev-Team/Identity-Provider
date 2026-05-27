@@ -9,13 +9,21 @@ import (
 )
 
 type MFARepository interface {
-	InsertAuthenticator(ctx context.Context, auth *models.UserAuthenticator) error
-	GetAuthenticatorsByUserIDAndType(ctx context.Context,
-		userID []byte, authType string) ([]models.UserAuthenticator, error)
-	GetAuthenticatorList(ctx context.Context,
-		userID []byte) ([]models.AuthenticatorMetadata, error)
+	InsertAuthenticator(
+		ctx context.Context, auth *models.UserAuthenticator,
+	) error
+	GetAuthenticatorsByUserIDAndType(
+		ctx context.Context, userID []byte, authType string,
+	) ([]models.UserAuthenticator, error)
+	GetAuthenticatorList(
+		ctx context.Context, userID []byte,
+	) ([]models.AuthenticatorMetadata, error)
 	UpdateLastUsedAt(ctx context.Context, id []byte) error
-	DeleteAuthenticator(ctx context.Context, id []byte, userID []byte) error
+	DeleteAuthenticator(
+		ctx context.Context, id []byte, userID []byte,
+	) error
+	// HasTOTP reports whether the user has at least one active TOTP.
+	HasTOTP(ctx context.Context, userID []byte) (bool, error)
 }
 
 type mfaRepository struct {
@@ -85,6 +93,20 @@ func (r *mfaRepository) DeleteAuthenticator(ctx context.Context,
 		return fmt.Errorf("[DeleteAuthenticator]: %w", err)
 	}
 	return nil
+}
+
+// HasTOTP returns true if the user has at least one TOTP authenticator.
+func (r *mfaRepository) HasTOTP(
+	ctx context.Context, userID []byte,
+) (bool, error) {
+	var count int
+	query := `SELECT COUNT(1) FROM user_authenticators
+		WHERE user_id = ? AND type = 'totp' LIMIT 1`
+	err := r.db.GetContext(ctx, &count, query, userID)
+	if err != nil {
+		return false, fmt.Errorf("[HasTOTP]: %w", err)
+	}
+	return count > 0, nil
 }
 
 func NewMFARepository(db *sqlx.DB) MFARepository {
