@@ -33,6 +33,19 @@ function getRequestErrorMessage(error, fallbackMessage) {
   );
 }
 
+function getPasskeyErrorMessage(error) {
+  const message = getRequestErrorMessage(
+    error,
+    "Unable to check your passkeys.",
+  );
+
+  if (error?.response?.status === 401) {
+    return "Passkey verification failed. Try another MFA method.";
+  }
+
+  return message;
+}
+
 export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", isReturningToLogin = false, onBackToLogin }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(MFA_STEPS.CHOOSE);
@@ -194,9 +207,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
 
       await verifyPasskey();
     } catch (passkeyError) {
-      setError(
-        getRequestErrorMessage(passkeyError, "Unable to check your passkeys."),
-      );
+      setError(getPasskeyErrorMessage(passkeyError));
     } finally {
       setIsCheckingPasskey(false);
     }

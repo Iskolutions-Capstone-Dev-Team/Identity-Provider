@@ -14,12 +14,12 @@ function getRequiredTextValue(value, label) {
   return normalizedValue;
 }
 
-function getExistsValue(data) {
+function getExistsValue(data, responseKey) {
   if (typeof data === "boolean") {
     return data;
   }
 
-  return Boolean(data?.exists || data?.has_totp || data?.has_passkey);
+  return data?.exists === true || data?.[responseKey] === true;
 }
 
 export const mfaService = {
@@ -91,7 +91,7 @@ export const mfaService = {
       skipAuthHeader: true,
     });
 
-    return getExistsValue(response.data);
+    return getExistsValue(response.data, "has_totp");
   },
 
   async hasPasskey(email) {
@@ -102,7 +102,7 @@ export const mfaService = {
       skipAuthHeader: true,
     });
 
-    return getExistsValue(response.data);
+    return getExistsValue(response.data, "has_passkey");
   },
 
   async deleteAuthenticator({ email, id } = {}) {

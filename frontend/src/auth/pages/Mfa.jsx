@@ -23,6 +23,19 @@ function getRequestErrorMessage(error, fallbackMessage) {
   );
 }
 
+function getPasskeyErrorMessage(error) {
+  const message = getRequestErrorMessage(
+    error,
+    "Unable to check your passkeys.",
+  );
+
+  if (error?.response?.status === 401) {
+    return "Passkey verification failed. Try another MFA method.";
+  }
+
+  return message;
+}
+
 const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 
 export default function Mfa() {
@@ -186,12 +199,7 @@ export default function Mfa() {
 
       await verifyPasskey();
     } catch (passkeyError) {
-      setError(
-        getRequestErrorMessage(
-          passkeyError,
-          "Unable to check your passkeys.",
-        ),
-      );
+      setError(getPasskeyErrorMessage(passkeyError));
     } finally {
       setIsCheckingPasskey(false);
     }
