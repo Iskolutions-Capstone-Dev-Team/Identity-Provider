@@ -12,4 +12,5 @@ type ServiceContainer struct {
 	RegistrationService      RegistrationService
 	OTPService               OTPService
 	MFAService               MFAService
+	PasskeyService           PasskeyService
 }

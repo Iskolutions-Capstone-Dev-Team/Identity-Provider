@@ -21,6 +21,7 @@ type Handlers struct {
 	RegistrationHandler *v1.RegistrationHandler
 	OTPHandler          *v1.OTPHandler
 	MFAHandler          *v1.MFAHandler
+	PasskeyHandler      *v1.PasskeyHandler
 	UserRepo            repository.UserRepository
 
 	RoleRepo   repository.RoleRepository
@@ -68,14 +69,89 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		otp.POST("/verify", h.OTPHandler.VerifyOTP)
 	}
 
-	mfa := v1Group.Group("/mfa")
-	mfa.Use(h.ClientCORS, middleware.RateLimitMiddleware())
+	// mfaVerify — API-key-only: called mid-login, no JWT yet.
+	mfaVerify := v1Group.Group("/mfa")
+	mfaVerify.Use(
+		h.ClientCORS,
+		middleware.RateLimitMiddleware(),
+		middleware.APIKeyMiddleware(),
+	)
 	{
-		mfa.GET("/setup", h.MFAHandler.GetTOTPSetup)
-		mfa.POST("/authenticators", h.MFAHandler.PostAuthenticator)
-		mfa.POST("/verify", h.MFAHandler.PostVerifyMFA)
-		mfa.GET("/authenticators/list", h.MFAHandler.GetAuthenticatorList)
-		mfa.DELETE("/authenticators", h.MFAHandler.DeleteAuthenticator)
+		// TOTP verification (mid-login, no JWT available)
+		mfaVerify.POST(
+			"/totp/verify",
+			h.MFAHandler.PostVerifyMFA,
+		)
+
+		// Check if user has a TOTP authenticator registered
+		mfaVerify.GET(
+			"/totp/exists",
+			h.MFAHandler.GetHasTOTP,
+		)
+
+		// Passkey verification ceremony (mid-login, no JWT)
+		passkeyVerify := mfaVerify.Group("/passkey/verify")
+		{
+			passkeyVerify.POST(
+				"/begin",
+				h.PasskeyHandler.BeginVerification,
+			)
+			passkeyVerify.POST(
+				"/finish",
+				h.PasskeyHandler.FinishVerification,
+			)
+		}
+
+		// Check if user has a passkey registered
+		mfaVerify.GET(
+			"/passkey/exists",
+			h.PasskeyHandler.GetHasPasskey,
+		)
+
+		// TOTP setup and registration
+		totpManage := mfaVerify.Group("/totp")
+		{
+			totpManage.GET("/setup", h.MFAHandler.GetTOTPSetup)
+			totpManage.POST(
+				"/authenticators",
+				h.MFAHandler.PostAuthenticator,
+			)
+		}
+
+		// Passkey registration ceremony
+		passkeyManage := mfaVerify.Group("/passkey/register")
+		{
+			passkeyManage.POST(
+				"/begin",
+				h.PasskeyHandler.BeginRegistration,
+			)
+			passkeyManage.POST(
+				"/finish",
+				h.PasskeyHandler.FinishRegistration,
+			)
+		}
+	}
+
+	// mfaManage — JWT + API-key: mutates MFA state for an
+	// already-authenticated user.
+	mfaManage := v1Group.Group("/mfa")
+	mfaManage.Use(
+		h.ClientCORS,
+		middleware.RateLimitMiddleware(),
+		middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+		middleware.APIKeyMiddleware(),
+	)
+	{
+		// Shared authenticator management endpoints
+		mfaManage.GET(
+			"/authenticators/list",
+			h.MFAHandler.GetAuthenticatorList,
+		)
+		mfaManage.DELETE(
+			"/authenticators",
+			h.MFAHandler.DeleteAuthenticator,
+		)
+
 	}
 
 	user := v1Group.Group("/user")

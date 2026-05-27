@@ -1,8 +1,9 @@
 import MfaCodeInput from "./MfaCodeInput";
 
-export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSendingOtp, isVerifying, isCheckingAuthenticators, isCancelling = false, onSelectEmail, onSelectAuthenticator, onCodeChange, onSendOtp, onVerify, onCancel }) {
+export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSendingOtp, isVerifying, isCheckingAuthenticators, isCheckingPasskey, isCancelling = false, onSelectEmail, onSelectAuthenticator, onSelectPasskey, onCodeChange, onSendOtp, onVerify, onCancel }) {
   const isEmailMode = mode === "email";
   const isAuthenticatorMode = mode === "authenticator";
+  const isPasskeyMode = mode === "passkey";
   const shouldShowCodeInput = isAuthenticatorMode || hasSentOtp;
   const verifyLabel = isAuthenticatorMode
     ? "Verify Authenticator Code"
@@ -63,15 +64,6 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
       </div>
 
       <div className="space-y-3 rounded-2xl border border-white/14 bg-white/8 p-4">
-        <button type="button" disabled title="Passkey is not available yet." className="flex w-full cursor-not-allowed items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left text-white/38">
-          <span>
-            <span className="block font-semibold">Passkey</span>
-          </span>
-          <span className="rounded-full border border-white/10 px-3 py-1 text-xs">
-            Not Available
-          </span>
-        </button>
-
         <button type="button" onClick={onSelectAuthenticator} disabled={isCheckingAuthenticators}
           className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition disabled:cursor-wait disabled:opacity-70 ${
             isAuthenticatorMode
@@ -83,6 +75,21 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
             <span className="block font-semibold">Authenticator app</span>
           </span>
           {isCheckingAuthenticators ? (
+            <span className="text-sm text-[#ffd700]">Checking...</span>
+          ) : null}
+        </button>
+
+        <button type="button" onClick={onSelectPasskey} disabled={isCheckingPasskey}
+          className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition disabled:cursor-wait disabled:opacity-70 ${
+            isPasskeyMode
+              ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-white"
+              : "border-white/12 bg-white/6 text-white/80 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white"
+          }`}
+        >
+          <span>
+            <span className="block font-semibold">Passkey</span>
+          </span>
+          {isCheckingPasskey ? (
             <span className="text-sm text-[#ffd700]">Checking...</span>
           ) : null}
         </button>

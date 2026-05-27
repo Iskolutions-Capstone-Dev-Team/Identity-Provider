@@ -24,10 +24,22 @@ var UserAuthenticatorsMigration = migrations.TableMigration{
 				credential_id VARBINARY(255),
 				public_key VARBINARY(512),
 				sign_count INT DEFAULT 0,
-				CONSTRAINT fk_authenticator_user 
-					FOREIGN KEY (user_id) REFERENCES users(id) 
+				CONSTRAINT fk_authenticator_user
+					FOREIGN KEY (user_id) REFERENCES users(id)
 					ON DELETE CASCADE
 			);`,
+		},
+		{
+			ID: "user-authenticators-add-webauthn-meta",
+			SQL: `ALTER TABLE user_authenticators
+				ADD COLUMN aaguid VARCHAR(36) NULL,
+				ADD COLUMN transport VARCHAR(255) NULL;`,
+		},
+		{
+			ID: "user-authenticators-add-backup-flags",
+			SQL: `ALTER TABLE user_authenticators
+				ADD COLUMN backup_eligible BOOLEAN DEFAULT FALSE,
+				ADD COLUMN backup_state BOOLEAN DEFAULT FALSE;`,
 		},
 	},
 }

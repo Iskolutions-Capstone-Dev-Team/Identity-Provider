@@ -26,6 +26,8 @@ type MFAService interface {
 		userID []byte) ([]dto.MFAAuthenticatorResponse, error)
 	RemoveAuthenticator(ctx context.Context,
 		id []byte, userID []byte) error
+	// HasTOTP reports whether the user has a registered TOTP.
+	HasTOTP(ctx context.Context, userID []byte) (bool, error)
 }
 
 type mfaService struct {
@@ -238,6 +240,13 @@ func (s *mfaService) RemoveAuthenticator(ctx context.Context,
 	id []byte, userID []byte,
 ) error {
 	return s.mfaRepo.DeleteAuthenticator(ctx, id, userID)
+}
+
+// HasTOTP delegates to the repository existence check.
+func (s *mfaService) HasTOTP(
+	ctx context.Context, userID []byte,
+) (bool, error) {
+	return s.mfaRepo.HasTOTP(ctx, userID)
 }
 
 func NewMFAService(mfaRepo repository.MFARepository) MFAService {
