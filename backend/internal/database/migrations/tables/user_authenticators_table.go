@@ -32,8 +32,8 @@ var UserAuthenticatorsMigration = migrations.TableMigration{
 		{
 			ID: "user-authenticators-add-webauthn-meta",
 			SQL: `ALTER TABLE user_authenticators
-				ADD COLUMN IF NOT EXISTS aaguid VARCHAR(36) NULL,
-				ADD COLUMN IF NOT EXISTS transport VARCHAR(255) NULL;`,
+				ADD COLUMN aaguid VARCHAR(36) NULL,
+				ADD COLUMN transport VARCHAR(255) NULL;`,
 		},
 	},
 }
