@@ -32,7 +32,7 @@ function getRequestErrorMessage(error, fallbackMessage) {
   );
 }
 
-export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", onBackToLogin }) {
+export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", isReturningToLogin = false, onBackToLogin }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(MFA_STEPS.CHOOSE);
   const [email, setEmail] = useState(initialEmail);
@@ -383,6 +383,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
         onCodeChange={(value) => setCode(getDigits(value))}
         onSendOtp={handleSendOtp}
         onVerify={handleVerifyEmailOtp}
+        isCancelling={isReturningToLogin}
         onCancel={onBackToLogin}
       />
     );

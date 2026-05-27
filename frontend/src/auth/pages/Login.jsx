@@ -27,6 +27,7 @@ export default function Login() {
   const [mfaContext, setMfaContext] = useState(null);
   const isMfaRequested = isLoginMfaRequested(searchParams);
   const shouldShowMfa = Boolean(mfaContext) || isMfaRequested;
+  const [isReturningToLogin, setIsReturningToLogin] = useState(false);
   const [isResolvingAccess, setIsResolvingAccess] = useState(
     Boolean(clientId) && !loginErrorCode,
   );
@@ -102,10 +103,30 @@ export default function Login() {
     };
   }, [clientId, isClientLoginFlow, isMfaRequested, loginErrorCode, redirectUri]);
 
-  const handleBackToLogin = () => {
-    clearAuthState();
-    setMfaContext(null);
-    navigate(buildLoginPath(clientId, { redirectUri }), { replace: true });
+  const handleBackToLogin = async () => {
+    if (isReturningToLogin) {
+      return;
+    }
+
+    setIsReturningToLogin(true);
+
+    try {
+      const session = await authService.checkSession();
+      const userId = session?.user_id || "";
+
+      if (userId) {
+        await authService.logout({
+          clientId,
+          userId,
+        });
+      }
+    } catch (logoutError) {
+      console.error("Unable to clear MFA session:", logoutError);
+    } finally {
+      clearAuthState();
+      setMfaContext(null);
+      navigate(buildLoginPath(clientId, { redirectUri }), { replace: true });
+    }
   };
 
   const handleLoginSuccess = (context) => {
@@ -148,6 +169,7 @@ export default function Login() {
               : "")
           }
           initialEmail={mfaContext?.email || ""}
+          isReturningToLogin={isReturningToLogin}
           onBackToLogin={handleBackToLogin}
         />
       ) : (
