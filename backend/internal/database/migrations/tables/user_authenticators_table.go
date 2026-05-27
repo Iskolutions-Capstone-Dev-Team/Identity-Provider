@@ -24,10 +24,16 @@ var UserAuthenticatorsMigration = migrations.TableMigration{
 				credential_id VARBINARY(255),
 				public_key VARBINARY(512),
 				sign_count INT DEFAULT 0,
-				CONSTRAINT fk_authenticator_user 
-					FOREIGN KEY (user_id) REFERENCES users(id) 
+				CONSTRAINT fk_authenticator_user
+					FOREIGN KEY (user_id) REFERENCES users(id)
 					ON DELETE CASCADE
 			);`,
+		},
+		{
+			ID: "user-authenticators-add-webauthn-meta",
+			SQL: `ALTER TABLE user_authenticators
+				ADD COLUMN IF NOT EXISTS aaguid VARCHAR(36) NULL,
+				ADD COLUMN IF NOT EXISTS transport VARCHAR(255) NULL;`,
 		},
 	},
 }

@@ -18,16 +18,24 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 	invRepo := repository.NewInvitationRepository(db)
 	cauRepo := repository.NewClientAllowedUserRepository(db)
 	registrationRepo := repository.NewRegistrationRepository(db)
+	passkeyRepo := repository.NewPasskeyRepository(db)
+
+	userSvc := service.NewUserService(
+		userRepo,
+		clientRepo,
+		registrationRepo,
+		cauRepo,
+	)
+
+	passkeySvc, err := service.NewPasskeyService(passkeyRepo, userSvc)
+	if err != nil {
+		panic(err)
+	}
 
 	return service.ServiceContainer{
 		ClientService: service.NewClientService(clientRepo, Storage),
 		RoleService:   service.NewRoleService(roleRepo),
-		UserService: service.NewUserService(
-			userRepo,
-			clientRepo,
-			registrationRepo,
-			cauRepo,
-		),
+		UserService:   userSvc,
 		AuthService: service.NewAuthService(
 			authRepo,
 			sessionRepo,
@@ -47,7 +55,12 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 			userRepo,
 			cauRepo,
 		),
-		OTPService: service.NewOTPService(otpRepo, service.NewMailService(otpRepo, invRepo)),
-		MFAService: service.NewMFAService(repository.NewMFARepository(db)),
+		OTPService: service.NewOTPService(
+			otpRepo,
+			service.NewMailService(otpRepo, invRepo),
+		),
+		MFAService:     service.NewMFAService(repository.NewMFARepository(db)),
+		PasskeyService: passkeySvc,
 	}
 }
+
