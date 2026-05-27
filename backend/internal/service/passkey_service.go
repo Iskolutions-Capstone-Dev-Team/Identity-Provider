@@ -141,6 +141,10 @@ func (s *passkeyService) buildPasskeyUser(
 		creds = append(creds, webauthn.Credential{
 			ID:        pk.CredentialID,
 			PublicKey: pk.PublicKey,
+			Flags: webauthn.CredentialFlags{
+				BackupEligible: pk.BackupEligible,
+				BackupState:    pk.BackupState,
+			},
 			Authenticator: webauthn.Authenticator{
 				SignCount: pk.SignCount,
 			},
@@ -224,14 +228,16 @@ func (s *passkeyService) FinishRegistration(
 
 	id := uuid.New()
 	pk := &models.Passkey{
-		ID:           id[:],
-		UserID:       pu.id,
-		Name:         "Passkey",
-		CredentialID: cred.ID,
-		PublicKey:    cred.PublicKey,
-		AAGUID:       fmt.Sprintf("%x", cred.Authenticator.AAGUID),
-		Transport:    transport,
-		SignCount:    cred.Authenticator.SignCount,
+		ID:             id[:],
+		UserID:         pu.id,
+		Name:           "Passkey",
+		CredentialID:   cred.ID,
+		PublicKey:      cred.PublicKey,
+		AAGUID:         fmt.Sprintf("%x", cred.Authenticator.AAGUID),
+		Transport:      transport,
+		SignCount:      cred.Authenticator.SignCount,
+		BackupEligible: cred.Flags.BackupEligible,
+		BackupState:    cred.Flags.BackupState,
 	}
 
 	if err = s.passkeyRepo.InsertPasskey(ctx, pk); err != nil {

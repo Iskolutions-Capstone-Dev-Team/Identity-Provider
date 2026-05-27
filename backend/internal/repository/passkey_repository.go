@@ -36,13 +36,15 @@ func (r *passkeyRepository) InsertPasskey(
 ) error {
 	query := `INSERT INTO user_authenticators
 		(id, user_id, type, name, credential_id,
-		 public_key, aaguid, transport, sign_count)
-		VALUES (?, ?, 'passkey', ?, ?, ?, ?, ?, ?)`
+		 public_key, aaguid, transport, sign_count,
+		 backup_eligible, backup_state)
+		VALUES (?, ?, 'passkey', ?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err := r.db.ExecContext(
 		ctx, query,
 		p.ID, p.UserID, p.Name,
 		p.CredentialID, p.PublicKey,
 		p.AAGUID, p.Transport, p.SignCount,
+		p.BackupEligible, p.BackupState,
 	)
 	if err != nil {
 		return fmt.Errorf("[InsertPasskey]: %w", err)
@@ -58,7 +60,8 @@ func (r *passkeyRepository) GetPasskeysByUserID(
 	query := `SELECT id, user_id, name, credential_id, public_key,
 		COALESCE(aaguid, '') AS aaguid,
 		COALESCE(transport, '') AS transport,
-		sign_count, created_at, last_used_at
+		sign_count, backup_eligible, backup_state,
+		created_at, last_used_at
 		FROM user_authenticators
 		WHERE user_id = ? AND type = 'passkey'`
 	err := r.db.SelectContext(ctx, &rows, query, userID)
@@ -78,7 +81,8 @@ func (r *passkeyRepository) GetPasskeyByCredentialID(
 	query := `SELECT id, user_id, name, credential_id, public_key,
 		COALESCE(aaguid, '') AS aaguid,
 		COALESCE(transport, '') AS transport,
-		sign_count, created_at, last_used_at
+		sign_count, backup_eligible, backup_state,
+		created_at, last_used_at
 		FROM user_authenticators
 		WHERE credential_id = ? AND type = 'passkey'
 		LIMIT 1`

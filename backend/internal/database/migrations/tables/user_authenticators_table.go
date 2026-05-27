@@ -35,5 +35,11 @@ var UserAuthenticatorsMigration = migrations.TableMigration{
 				ADD COLUMN aaguid VARCHAR(36) NULL,
 				ADD COLUMN transport VARCHAR(255) NULL;`,
 		},
+		{
+			ID: "user-authenticators-add-backup-flags",
+			SQL: `ALTER TABLE user_authenticators
+				ADD COLUMN backup_eligible BOOLEAN DEFAULT FALSE,
+				ADD COLUMN backup_state BOOLEAN DEFAULT FALSE;`,
+		},
 	},
 }
