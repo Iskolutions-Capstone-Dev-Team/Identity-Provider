@@ -107,6 +107,29 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			"/passkey/exists",
 			h.PasskeyHandler.GetHasPasskey,
 		)
+
+		// TOTP setup and registration
+		totpManage := mfaVerify.Group("/totp")
+		{
+			totpManage.GET("/setup", h.MFAHandler.GetTOTPSetup)
+			totpManage.POST(
+				"/authenticators",
+				h.MFAHandler.PostAuthenticator,
+			)
+		}
+
+		// Passkey registration ceremony
+		passkeyManage := mfaVerify.Group("/passkey/register")
+		{
+			passkeyManage.POST(
+				"/begin",
+				h.PasskeyHandler.BeginRegistration,
+			)
+			passkeyManage.POST(
+				"/finish",
+				h.PasskeyHandler.FinishRegistration,
+			)
+		}
 	}
 
 	// mfaManage — JWT + API-key: mutates MFA state for an
@@ -129,28 +152,6 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			h.MFAHandler.DeleteAuthenticator,
 		)
 
-		// TOTP setup and registration
-		totpManage := mfaManage.Group("/totp")
-		{
-			totpManage.GET("/setup", h.MFAHandler.GetTOTPSetup)
-			totpManage.POST(
-				"/authenticators",
-				h.MFAHandler.PostAuthenticator,
-			)
-		}
-
-		// Passkey registration ceremony
-		passkeyManage := mfaManage.Group("/passkey/register")
-		{
-			passkeyManage.POST(
-				"/begin",
-				h.PasskeyHandler.BeginRegistration,
-			)
-			passkeyManage.POST(
-				"/finish",
-				h.PasskeyHandler.FinishRegistration,
-			)
-		}
 	}
 
 	user := v1Group.Group("/user")
