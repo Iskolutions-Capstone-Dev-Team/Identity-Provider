@@ -27,6 +27,9 @@ type RegistrationRepository interface {
 	CreateAccountType(ctx context.Context, name string) (int, error)
 	UpdateAccountType(ctx context.Context, id int, name string) error
 	DeleteAccountType(ctx context.Context, id int) error
+	GetScopedRegistrationConfig(ctx context.Context, userID []byte,
+		limit, offset int) ([]AccountTypeClientRow, error)
+	CountScopedAccountTypes(ctx context.Context, userID []byte) (int, error)
 }
 
 type regRepo struct {
@@ -169,4 +172,51 @@ func (r *regRepo) DeleteAccountType(ctx context.Context, id int) error {
 	}
 
 	return tx.Commit()
+}
+
+func (r *regRepo) GetScopedRegistrationConfig(ctx context.Context,
+	userID []byte, limit, offset int) ([]AccountTypeClientRow, error) {
+	query := `
+		SELECT account_type_id, account_type_name, client_id, client_name
+		FROM (
+			SELECT 
+				at.id AS account_type_id,
+				at.name AS account_type_name,
+				cl.id AS client_id,
+				COALESCE(cl.client_name, '') AS client_name,
+				ROW_NUMBER() OVER (PARTITION BY at.id 
+					ORDER BY cl.client_name) as row_num
+			FROM (
+				SELECT DISTINCT at2.* FROM account_types at2
+				JOIN preapproved_clients pc2 ON at2.id = pc2.account_type_id
+				JOIN admin_allowed_clients aac2 ON pc2.client_id = aac2.client_id
+				WHERE aac2.user_id = ?
+				ORDER BY at2.id
+				LIMIT ? OFFSET ?
+			) at
+			LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
+			LEFT JOIN clients cl ON pc.client_id = cl.id
+			JOIN admin_allowed_clients aac ON cl.id = aac.client_id
+			WHERE aac.user_id = ? AND cl.deleted_at IS NULL
+		) t
+		WHERE row_num <= 5
+		ORDER BY account_type_id;
+	`
+	var rows []AccountTypeClientRow
+	err := r.db.SelectContext(ctx, &rows, query, userID, limit, offset, userID)
+	return rows, err
+}
+
+func (r *regRepo) CountScopedAccountTypes(ctx context.Context,
+	userID []byte) (int, error) {
+	var count int
+	query := `
+		SELECT COUNT(DISTINCT at.id)
+		FROM account_types at
+		JOIN preapproved_clients pc ON at.id = pc.account_type_id
+		JOIN admin_allowed_clients aac ON pc.client_id = aac.client_id
+		WHERE aac.user_id = ?
+	`
+	err := r.db.GetContext(ctx, &count, query, userID)
+	return count, err
 }
