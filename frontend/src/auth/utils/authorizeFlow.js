@@ -2,10 +2,8 @@ import { DEFAULT_AUTHENTICATED_PATH } from "./authAccess";
 
 const DEFAULT_CLIENT_ID = import.meta.env.VITE_CLIENT_ID ?? "";
 const IDP_STORAGE_PREFIX = "idp";
-const AUTHORIZE_RETURN_PATH_STORAGE_KEY =
-  `${IDP_STORAGE_PREFIX}.authorizeReturnPath`;
-const AUTHORIZE_ATTEMPT_STORAGE_KEY =
-  `${IDP_STORAGE_PREFIX}.authorizeAttempt`;
+const AUTHORIZE_RETURN_PATH_STORAGE_KEY = `${IDP_STORAGE_PREFIX}.authorizeReturnPath`;
+const AUTHORIZE_ATTEMPT_STORAGE_KEY = `${IDP_STORAGE_PREFIX}.authorizeAttempt`;
 const AUTHORIZE_ATTEMPT_WINDOW_MS = 5000;
 const NON_RETURNABLE_PATHS = new Set([
   "/",
@@ -30,6 +28,26 @@ function normalizeApiBaseUrl() {
   return typeof apiBaseUrl === "string"
     ? apiBaseUrl.trim().replace(/\/$/, "")
     : "";
+}
+
+function createUrl(url = "") {
+  if (!url) {
+    return null;
+  }
+
+  try {
+    return new URL(url);
+  } catch {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    try {
+      return new URL(url, window.location.origin);
+    } catch {
+      return null;
+    }
+  }
 }
 
 function normalizeReturnPath(path = DEFAULT_AUTHENTICATED_PATH) {
@@ -202,7 +220,12 @@ export function buildClientAuthorizeUrl(
     return authorizeUrl;
   }
 
-  const url = new URL(authorizeUrl);
+  const url = createUrl(authorizeUrl);
+
+  if (!url) {
+    return authorizeUrl;
+  }
+
   url.searchParams.set("redirect_uri", redirectUri);
 
   return url.toString();
