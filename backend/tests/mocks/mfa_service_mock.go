@@ -131,3 +131,26 @@ func (mr *MockMFAServiceMockRecorder) VerifyCode(ctx, userID, code any) *gomock.
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyCode", reflect.TypeOf((*MockMFAService)(nil).VerifyCode), ctx, userID, code)
 }
+
+// HasTOTP mocks base method.
+func (m *MockMFAService) HasTOTP(
+	ctx context.Context, userID []byte,
+) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasTOTP", ctx, userID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasTOTP indicates an expected call of HasTOTP.
+func (mr *MockMFAServiceMockRecorder) HasTOTP(
+	ctx, userID any,
+) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock, "HasTOTP",
+		reflect.TypeOf((*MockMFAService)(nil).HasTOTP),
+		ctx, userID,
+	)
+}

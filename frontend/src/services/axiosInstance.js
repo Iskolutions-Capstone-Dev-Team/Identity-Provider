@@ -16,6 +16,20 @@ const axiosInstance = axios.create({
   timeout: REQUEST_TIMEOUT_MS,
 });
 
+function getBackendApiKey() {
+  return import.meta.env.VITE_BACKEND_API_KEY || "";
+}
+
+function getBearerToken() {
+  const token = getAccessToken() || getPendingMfaAccessToken();
+
+  if (!token) {
+    return "";
+  }
+
+  return token.split(".").length === 3 ? token : "";
+}
+
 function redirectAfterUnauthorized() {
   if (typeof window === "undefined") {
     return;
@@ -60,11 +74,17 @@ function showForbiddenAccessAlert() {
 }
 
 axiosInstance.interceptors.request.use((config) => {
-  const token = getAccessToken() || getPendingMfaAccessToken();
+  const token = getBearerToken();
 
-  if (token) {
+  if (token && !config.skipAuthHeader) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  const apiKey = getBackendApiKey();
+  if (apiKey) {
+    config.headers = config.headers ?? {};
+    config.headers["X-API-Key"] = apiKey;
   }
 
   return config;

@@ -56,7 +56,17 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 		page = 1
 	}
 
-	config, err := h.Service.GetRegistrationConfig(c.Request.Context(), limit, page)
+	permissions := c.GetStringSlice("permissions")
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+
+	config, err := h.Service.GetRegistrationConfig(
+		c.Request.Context(),
+		permissions,
+		userID,
+		limit,
+		page,
+	)
 	if err != nil {
 		log.Printf("[GetRegistrationConfig] %v", err)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{

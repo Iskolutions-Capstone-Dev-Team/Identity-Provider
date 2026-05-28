@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"slices"
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
@@ -14,8 +15,9 @@ import (
 )
 
 type RegistrationService interface {
-	GetRegistrationConfig(ctx context.Context,
-		limit, page int) (*dto.RegistrationConfigResponse, error)
+	GetRegistrationConfig(ctx context.Context, permissions []string,
+		userID uuid.UUID, limit,
+		page int) (*dto.RegistrationConfigResponse, error)
 	GetClientsByAccountTypeID(ctx context.Context,
 		id int) (*dto.AccountTypeConfigResponse, error)
 	CreateAccountType(ctx context.Context,
@@ -52,16 +54,35 @@ func NewRegistrationService(
 }
 
 func (s *regService) GetRegistrationConfig(ctx context.Context,
-	limit, page int) (*dto.RegistrationConfigResponse, error) {
-	total, err := s.repo.CountAccountTypes(ctx)
-	if err != nil {
-		return nil, err
-	}
+	permissions []string, userID uuid.UUID, limit,
+	page int) (*dto.RegistrationConfigResponse, error) {
+	var total int
+	var rows []repository.AccountTypeClientRow
+	var err error
 
-	offset := (page - 1) * limit
-	rows, err := s.repo.GetRegistrationConfig(ctx, limit, offset)
-	if err != nil {
-		return nil, err
+	if slices.Contains(permissions, "View all appclients") {
+		total, err = s.repo.CountAccountTypes(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		offset := (page - 1) * limit
+		rows, err = s.repo.GetRegistrationConfig(ctx, limit, offset)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		total, err = s.repo.CountScopedAccountTypes(ctx, userID[:])
+		if err != nil {
+			return nil, err
+		}
+
+		offset := (page - 1) * limit
+		rows, err = s.repo.GetScopedRegistrationConfig(ctx, userID[:],
+			limit, offset)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	configMap := make(map[string][]dto.PreapprovedClientResponse)
@@ -71,12 +92,14 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 	for _, row := range rows {
 		if _, ok := configMap[row.AccountTypeName]; !ok {
 			order = append(order, row.AccountTypeName)
-			configMap[row.AccountTypeName] = []dto.PreapprovedClientResponse{}
+			configMap[row.AccountTypeName] =
+				[]dto.PreapprovedClientResponse{}
 			idMap[row.AccountTypeName] = row.AccountTypeID
 		}
 		if len(row.ClientID) > 0 {
 			id, _ := uuid.FromBytes(row.ClientID)
-			configMap[row.AccountTypeName] = append(configMap[row.AccountTypeName],
+			configMap[row.AccountTypeName] = append(
+				configMap[row.AccountTypeName],
 				dto.PreapprovedClientResponse{
 					ID:   id,
 					Name: row.ClientName,
@@ -97,6 +120,9 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 	resp.TotalCount = total
 	resp.CurrentPage = page
 	resp.LastPage = (total + limit - 1) / limit
+	if resp.LastPage == 0 {
+		resp.LastPage = 1
+	}
 
 	return &resp, nil
 }

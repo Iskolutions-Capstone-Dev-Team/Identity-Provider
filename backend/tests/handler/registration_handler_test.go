@@ -69,3 +69,73 @@ func TestCheckInvitationHandler(t *testing.T) {
 		t.Errorf("expected message 'invitation code is valid', got '%s'", resp.Message)
 	}
 }
+
+/**
+ * TestGetRegistrationConfigHandler verifies the GetRegistrationConfig endpoint.
+ */
+func TestGetRegistrationConfigHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("returns_unauthorized_when_permission_missing", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockRegService := mocks.NewMockRegistrationService(ctrl)
+		mockLogService := mocks.NewMockLogService(ctrl)
+
+		handler := &v1.RegistrationHandler{
+			Service:    mockRegService,
+			LogService: mockLogService,
+		}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("GET", "/admin/registration/config", nil)
+
+		handler.GetRegistrationConfig(c)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("expected status 401, got %d", w.Code)
+		}
+	})
+
+	t.Run("success_with_view_all", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockRegService := mocks.NewMockRegistrationService(ctrl)
+		mockLogService := mocks.NewMockLogService(ctrl)
+
+		handler := &v1.RegistrationHandler{
+			Service:    mockRegService,
+			LogService: mockLogService,
+		}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("GET", "/admin/registration/config", nil)
+
+		c.Set("permissions", []string{
+			"View Registration Config",
+			"View all appclients",
+		})
+		c.Set("user_id", "00000000-0000-0000-0000-000000000001")
+
+		mockRegService.EXPECT().GetRegistrationConfig(
+			gomock.Any(),
+			[]string{
+				"View Registration Config",
+				"View all appclients",
+			},
+			gomock.Any(),
+			10,
+			1,
+		).Return(&dto.RegistrationConfigResponse{}, nil)
+
+		handler.GetRegistrationConfig(c)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status 200, got %d", w.Code)
+		}
+	})
+}
