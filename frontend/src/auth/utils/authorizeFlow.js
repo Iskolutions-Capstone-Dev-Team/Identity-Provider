@@ -2,10 +2,8 @@ import { DEFAULT_AUTHENTICATED_PATH } from "./authAccess";
 
 const DEFAULT_CLIENT_ID = import.meta.env.VITE_CLIENT_ID ?? "";
 const IDP_STORAGE_PREFIX = "idp";
-const AUTHORIZE_RETURN_PATH_STORAGE_KEY =
-  `${IDP_STORAGE_PREFIX}.authorizeReturnPath`;
-const AUTHORIZE_ATTEMPT_STORAGE_KEY =
-  `${IDP_STORAGE_PREFIX}.authorizeAttempt`;
+const AUTHORIZE_RETURN_PATH_STORAGE_KEY = `${IDP_STORAGE_PREFIX}.authorizeReturnPath`;
+const AUTHORIZE_ATTEMPT_STORAGE_KEY = `${IDP_STORAGE_PREFIX}.authorizeAttempt`;
 const AUTHORIZE_ATTEMPT_WINDOW_MS = 5000;
 const NON_RETURNABLE_PATHS = new Set([
   "/",
