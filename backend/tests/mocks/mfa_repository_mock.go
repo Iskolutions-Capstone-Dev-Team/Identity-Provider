@@ -112,3 +112,26 @@ func (mr *MockMFARepositoryMockRecorder) UpdateLastUsedAt(ctx, id any) *gomock.C
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastUsedAt", reflect.TypeOf((*MockMFARepository)(nil).UpdateLastUsedAt), ctx, id)
 }
+
+// HasTOTP mocks base method.
+func (m *MockMFARepository) HasTOTP(
+	ctx context.Context, userID []byte,
+) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasTOTP", ctx, userID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasTOTP indicates an expected call of HasTOTP.
+func (mr *MockMFARepositoryMockRecorder) HasTOTP(
+	ctx, userID any,
+) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock, "HasTOTP",
+		reflect.TypeOf((*MockMFARepository)(nil).HasTOTP),
+		ctx, userID,
+	)
+}

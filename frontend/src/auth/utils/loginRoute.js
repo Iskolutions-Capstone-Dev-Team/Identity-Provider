@@ -1,6 +1,7 @@
 const defaultClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 const LOGIN_ERROR_QUERY_PARAM = "auth_error";
 const LOGIN_MFA_QUERY_PARAM = "mfa";
+const REDIRECT_URI_QUERY_PARAM = "redirect_uri";
 export const LOGIN_PATH = "/login";
 export const ACCESS_DENIED_PATH = "/access-denied";
 export const LEGACY_UNAUTHORIZED_PATH = "/unauthorized";
@@ -15,16 +16,20 @@ const LOGIN_ERROR_MESSAGES = {
 };
 
 export function buildLoginPath(clientId = defaultClientId, options = {}) {
-  const { authError = "", showMfa = false } = options;
+  const { authError = "", redirectUri = "", showMfa = false } = options;
 
   if (authError === LOGIN_ERROR_CODES.UNAUTHORIZED) {
-    return buildAccessDeniedPath(clientId);
+    return buildAccessDeniedPath(clientId, { redirectUri });
   }
 
   const params = new URLSearchParams();
 
   if (clientId) {
     params.set("client_id", clientId);
+  }
+
+  if (redirectUri) {
+    params.set(REDIRECT_URI_QUERY_PARAM, redirectUri);
   }
 
   if (authError) {
@@ -40,11 +45,16 @@ export function buildLoginPath(clientId = defaultClientId, options = {}) {
   return queryString ? `${LOGIN_PATH}?${queryString}` : LOGIN_PATH;
 }
 
-export function buildAccessDeniedPath(clientId = defaultClientId) {
+export function buildAccessDeniedPath(clientId = defaultClientId, options = {}) {
+  const { redirectUri = "" } = options;
   const params = new URLSearchParams();
 
   if (clientId) {
     params.set("client_id", clientId);
+  }
+
+  if (redirectUri) {
+    params.set(REDIRECT_URI_QUERY_PARAM, redirectUri);
   }
 
   const queryString = params.toString();
@@ -78,6 +88,10 @@ export function buildRegisterPasswordSetupPath( clientId = defaultClientId, emai
 
 export function getLoginClientId(searchParams) {
   return searchParams.get("client_id") || defaultClientId;
+}
+
+export function getLoginRedirectUri(searchParams) {
+  return searchParams.get(REDIRECT_URI_QUERY_PARAM)?.trim() ?? "";
 }
 
 export function getLoginErrorCode(searchParams) {

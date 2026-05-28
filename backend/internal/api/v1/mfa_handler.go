@@ -217,6 +217,43 @@ func (h *MFAHandler) DeleteAuthenticator(c *gin.Context) {
 	})
 }
 
+/**
+ * GetHasTOTP checks whether the user identified by the email query
+ * parameter has at least one registered TOTP authenticator.
+ * Returns {"has_totp": true|false}.
+ */
+func (h *MFAHandler) GetHasTOTP(c *gin.Context) {
+	email := c.Query("email")
+	if email == "" {
+		log.Printf("[GetHasTOTP] Missing email parameter")
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: "email query parameter is required",
+		})
+		return
+	}
+
+	user, err := h.UserService.GetUserByEmail(c.Request.Context(), email)
+	if err != nil {
+		log.Printf("[GetHasTOTP] User Lookup: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "User not found",
+		})
+		return
+	}
+
+	userID, _ := uuid.Parse(user.ID)
+	has, err := h.MFAService.HasTOTP(c.Request.Context(), userID[:])
+	if err != nil {
+		log.Printf("[GetHasTOTP] HasTOTP: %v", err)
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error: "Failed to check TOTP status",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"has_totp": has})
+}
+
 func NewMFAHandler(mfaService service.MFAService,
 	userService service.UserService,
 ) *MFAHandler {

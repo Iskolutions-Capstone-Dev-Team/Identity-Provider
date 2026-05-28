@@ -7,6 +7,7 @@ import { authService } from "../services/authService";
 import { mfaService } from "../../services/mfaService";
 import { passwordResetService } from "../../services/passwordResetService";
 import { userService } from "../../services/userService";
+import { createPasskeyCredential, getPasskeyCredential } from "../utils/webAuthn";
 import ErrorAlert from "../../components/ErrorAlert";
 import MfaLoadingStep from "../components/mfa/MfaLoadingStep";
 import MfaShell from "../components/mfa/MfaShell";
@@ -20,6 +21,19 @@ function getRequestErrorMessage(error, fallbackMessage) {
     error?.message ||
     fallbackMessage
   );
+}
+
+function getPasskeyErrorMessage(error) {
+  const message = getRequestErrorMessage(
+    error,
+    "Unable to check your passkeys.",
+  );
+
+  if (error?.response?.status === 401) {
+    return "Passkey verification failed. Try another MFA method.";
+  }
+
+  return message;
 }
 
 const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
@@ -36,6 +50,7 @@ export default function Mfa() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isCheckingAuthenticators, setIsCheckingAuthenticators] =
     useState(false);
+  const [isCheckingPasskey, setIsCheckingPasskey] = useState(false);
 
   const finishMfa = () => {
     promotePendingMfaTokenResponse();
@@ -132,9 +147,9 @@ export default function Mfa() {
 
     try {
       setIsCheckingAuthenticators(true);
-      const authenticators = await mfaService.getAuthenticators(email);
+      const hasAuthenticator = await mfaService.hasTotpAuthenticator(email);
 
-      if (authenticators.length === 0) {
+      if (!hasAuthenticator) {
         navigate(MFA_SETUP_PATH);
         return;
       }
@@ -149,6 +164,44 @@ export default function Mfa() {
       );
     } finally {
       setIsCheckingAuthenticators(false);
+    }
+  };
+
+  const registerPasskey = async () => {
+    const options = await mfaService.beginPasskeyRegistration(email);
+    const credential = await createPasskeyCredential(options);
+
+    await mfaService.finishPasskeyRegistration(email, credential);
+    finishMfa();
+  };
+
+  const verifyPasskey = async () => {
+    const options = await mfaService.beginPasskeyVerification(email);
+    const credential = await getPasskeyCredential(options);
+
+    await mfaService.finishPasskeyVerification(email, credential);
+    finishMfa();
+  };
+
+  const handleSelectPasskey = async () => {
+    setError("");
+    setCode("");
+    setMode("passkey");
+
+    try {
+      setIsCheckingPasskey(true);
+      const hasPasskey = await mfaService.hasPasskey(email);
+
+      if (!hasPasskey) {
+        await registerPasskey();
+        return;
+      }
+
+      await verifyPasskey();
+    } catch (passkeyError) {
+      setError(getPasskeyErrorMessage(passkeyError));
+    } finally {
+      setIsCheckingPasskey(false);
     }
   };
 
@@ -195,8 +248,10 @@ export default function Mfa() {
           isSendingOtp={isSendingOtp}
           isVerifying={isVerifying}
           isCheckingAuthenticators={isCheckingAuthenticators}
+          isCheckingPasskey={isCheckingPasskey}
           onSelectEmail={handleSelectEmail}
           onSelectAuthenticator={handleSelectAuthenticator}
+          onSelectPasskey={handleSelectPasskey}
           onCodeChange={(value) => setCode(getDigits(value))}
           onSendOtp={handleSendOtp}
           onVerify={handleVerify}

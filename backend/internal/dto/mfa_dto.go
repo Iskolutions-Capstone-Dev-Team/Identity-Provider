@@ -38,3 +38,10 @@ type MFAAuthenticatorResponse struct {
 	CreatedAt  time.Time  `json:"created_at"`
 	LastUsedAt *time.Time `json:"last_used_at"`
 }
+
+// PasskeyBeginRequest is sent to start a passkey registration or
+// authentication ceremony. The backend uses the email to load the
+// user and build the WebAuthn challenge.
+type PasskeyBeginRequest struct {
+	Email string `json:"email" binding:"required"`
+}

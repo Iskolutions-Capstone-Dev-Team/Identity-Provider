@@ -9,6 +9,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
+	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 )
 
@@ -71,16 +72,31 @@ func TestGetRegistrationConfig(t *testing.T) {
 	offset := 0
 
 	rows := []repository.AccountTypeClientRow{
-		{AccountTypeID: 1, AccountTypeName: "Type A", ClientID: []byte{1}, ClientName: "Client 1"},
-		{AccountTypeID: 2, AccountTypeName: "Type B", ClientID: []byte{2}, ClientName: "Client 2"},
+		{
+			AccountTypeID:   1,
+			AccountTypeName: "Type A",
+			ClientID:        []byte{1},
+			ClientName:      "Client 1",
+		},
+		{
+			AccountTypeID:   2,
+			AccountTypeName: "Type B",
+			ClientID:        []byte{2},
+			ClientName:      "Client 2",
+		},
 	}
 
 	// 1. Setup mock expectations
 	mockRegRepo.EXPECT().CountAccountTypes(ctx).Return(5, nil)
-	mockRegRepo.EXPECT().GetRegistrationConfig(ctx, limit, offset).Return(rows, nil)
+	mockRegRepo.EXPECT().GetRegistrationConfig(ctx, limit, offset).
+		Return(rows, nil)
 
 	// 2. Execute
-	resp, err := regService.GetRegistrationConfig(ctx, limit, page)
+	permissions := []string{"View all appclients"}
+	userID := uuid.New()
+	resp, err := regService.GetRegistrationConfig(
+		ctx, permissions, userID, limit, page,
+	)
 
 	// 3. Verify
 	if err != nil {
@@ -101,5 +117,60 @@ func TestGetRegistrationConfig(t *testing.T) {
 
 	if len(resp.AccountTypes) != 2 {
 		t.Errorf("expected 2 account types, got %d", len(resp.AccountTypes))
+	}
+}
+
+/**
+ * TestGetRegistrationConfig_Scoped verifies the scoped filtering logic.
+ */
+func TestGetRegistrationConfig_Scoped(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRegRepo := mocks.NewMockRegistrationRepository(ctrl)
+	mockInvRepo := mocks.NewMockInvitationRepository(ctrl)
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	mockCauRepo := mocks.NewMockClientAllowedUserRepository(ctrl)
+
+	regService := service.NewRegistrationService(
+		mockRegRepo, mockInvRepo, mockUserRepo, mockCauRepo)
+
+	ctx := context.Background()
+	limit, page := 2, 1
+	offset := 0
+	userID := uuid.New()
+
+	rows := []repository.AccountTypeClientRow{
+		{
+			AccountTypeID:   1,
+			AccountTypeName: "Type A",
+			ClientID:        []byte{1},
+			ClientName:      "Client 1",
+		},
+	}
+
+	// 1. Setup mock expectations
+	mockRegRepo.EXPECT().CountScopedAccountTypes(ctx, userID[:]).
+		Return(1, nil)
+	mockRegRepo.EXPECT().GetScopedRegistrationConfig(ctx, userID[:],
+		limit, offset).Return(rows, nil)
+
+	// 2. Execute
+	permissions := []string{"View connected appclients"}
+	resp, err := regService.GetRegistrationConfig(
+		ctx, permissions, userID, limit, page,
+	)
+
+	// 3. Verify
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if resp.TotalCount != 1 {
+		t.Errorf("expected TotalCount 1, got %d", resp.TotalCount)
+	}
+
+	if len(resp.AccountTypes) != 1 {
+		t.Errorf("expected 1 account types, got %d", len(resp.AccountTypes))
 	}
 }
