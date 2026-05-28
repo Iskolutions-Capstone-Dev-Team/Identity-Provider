@@ -30,26 +30,6 @@ function normalizeApiBaseUrl() {
     : "";
 }
 
-function createUrl(url = "") {
-  if (!url) {
-    return null;
-  }
-
-  try {
-    return new URL(url);
-  } catch {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    try {
-      return new URL(url, window.location.origin);
-    } catch {
-      return null;
-    }
-  }
-}
-
 function normalizeReturnPath(path = DEFAULT_AUTHENTICATED_PATH) {
   if (typeof path !== "string") {
     return DEFAULT_AUTHENTICATED_PATH;
@@ -220,12 +200,7 @@ export function buildClientAuthorizeUrl(
     return authorizeUrl;
   }
 
-  const url = createUrl(authorizeUrl);
-
-  if (!url) {
-    return authorizeUrl;
-  }
-
+  const url = new URL(authorizeUrl);
   url.searchParams.set("redirect_uri", redirectUri);
 
   return url.toString();
