@@ -1,22 +1,15 @@
 import { buildClientAuthorizeUrl, clearAuthorizeAttempt } from "../auth/utils/authorizeFlow";
 
-const ONE_PORTAL_CLIENT_ID =
-  import.meta.env.VITE_ONE_PORTAL_CLIENT_ID ??
-  "65b491cd-6d28-404b-85ce-a45ecd4bade0";
+const ONE_PORTAL_CLIENT_ID = import.meta.env.VITE_ONE_PORTAL_CLIENT_ID ?? "";
 const ONE_PORTAL_URL = import.meta.env.VITE_ONE_PORTAL_URL ?? "";
-const ONE_PORTAL_REDIRECT_URI = import.meta.env.VITE_ONE_PORTAL_REDIRECT_URI ?? "";
 
 function getOnePortalRedirectUri() {
-  if (ONE_PORTAL_REDIRECT_URI) {
-    return ONE_PORTAL_REDIRECT_URI;
-  }
-
   if (!ONE_PORTAL_URL) {
     return "";
   }
 
   try {
-    return `${new URL(ONE_PORTAL_URL).origin}/callback`;
+    return new URL("/callback", ONE_PORTAL_URL).toString();
   } catch {
     return "";
   }
@@ -29,12 +22,15 @@ export default function OnePortalButton({ className = "" }) {
       getOnePortalRedirectUri(),
     );
 
-    if (!authorizeUrl) {
+    if (authorizeUrl) {
+      clearAuthorizeAttempt();
+      window.location.replace(authorizeUrl);
       return;
     }
 
-    clearAuthorizeAttempt();
-    window.location.replace(authorizeUrl);
+    console.error(
+      "Unable to authorize One Portal. Check VITE_ONE_PORTAL_CLIENT_ID and VITE_ONE_PORTAL_URL.",
+    );
   };
 
   return (
