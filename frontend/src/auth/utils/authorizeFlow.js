@@ -30,6 +30,22 @@ function normalizeApiBaseUrl() {
     : "";
 }
 
+function getBrowserOrigin() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return window.location.origin;
+}
+
+function createUrl(url) {
+  try {
+    return new URL(url, getBrowserOrigin() || undefined);
+  } catch {
+    return null;
+  }
+}
+
 function normalizeReturnPath(path = DEFAULT_AUTHENTICATED_PATH) {
   if (typeof path !== "string") {
     return DEFAULT_AUTHENTICATED_PATH;
@@ -200,7 +216,12 @@ export function buildClientAuthorizeUrl(
     return authorizeUrl;
   }
 
-  const url = new URL(authorizeUrl);
+  const url = createUrl(authorizeUrl);
+
+  if (!url) {
+    return "";
+  }
+
   url.searchParams.set("redirect_uri", redirectUri);
 
   return url.toString();

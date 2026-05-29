@@ -7,21 +7,16 @@ import { authPageBackground, authPagePatternStyle } from "../utils/authBackgroun
 import { buildClientAuthorizeUrl, clearAuthorizeAttempt } from "../utils/authorizeFlow";
 import { buildLoginPath, getLoginClientId, getLoginRedirectUri } from "../utils/loginRoute";
 
-const ONE_PORTAL_CLIENT_ID = import.meta.env.VITE_ONE_PORTAL_CLIENT_ID ?? "65b491cd-6d28-404b-85ce-a45ecd4bade0";
+const ONE_PORTAL_CLIENT_ID = import.meta.env.VITE_ONE_PORTAL_CLIENT_ID ?? "";
 const ONE_PORTAL_URL = import.meta.env.VITE_ONE_PORTAL_URL ?? "";
-const ONE_PORTAL_REDIRECT_URI = import.meta.env.VITE_ONE_PORTAL_REDIRECT_URI ?? "";
 
 function getOnePortalRedirectUri() {
-  if (ONE_PORTAL_REDIRECT_URI) {
-    return ONE_PORTAL_REDIRECT_URI;
-  }
-
   if (!ONE_PORTAL_URL) {
     return "";
   }
 
   try {
-    return `${new URL(ONE_PORTAL_URL).origin}/callback`;
+    return new URL("/callback", ONE_PORTAL_URL).toString();
   } catch {
     return "";
   }
@@ -72,9 +67,9 @@ export default function AccessDenied() {
       return;
     }
 
-    if (ONE_PORTAL_URL) {
-      window.location.assign(ONE_PORTAL_URL);
-    }
+    console.error(
+      "Unable to authorize One Portal. Check VITE_ONE_PORTAL_CLIENT_ID and VITE_ONE_PORTAL_URL.",
+    );
   };
 
   return (
