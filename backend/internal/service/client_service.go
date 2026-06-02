@@ -91,6 +91,7 @@ func (s *clientService) CreateClient(
 		LogoutUri:     req.LogoutURI,
 		Description:   req.Description,
 		ImageLocation: imagePath,
+		OnePortalLink: req.OnePortalLink,
 	}
 
 	// 4. Persistence
@@ -200,6 +201,7 @@ func (s *clientService) GetClientList(
 			BaseURL:       cl.BaseUrl,
 			RedirectURI:   cl.RedirectUri,
 			LogoutURI:     cl.LogoutUri,
+			OnePortalLink: cl.OnePortalLink,
 			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
 		})
 	}
@@ -259,6 +261,7 @@ func (s *clientService) GetBoundClients(
 			BaseURL:       cl.BaseUrl,
 			RedirectURI:   cl.RedirectUri,
 			LogoutURI:     cl.LogoutUri,
+			OnePortalLink: cl.OnePortalLink,
 			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
 		})
 	}
@@ -312,6 +315,7 @@ func (s *clientService) GetAllowedClients(
 			BaseURL:       cl.BaseUrl,
 			RedirectURI:   cl.RedirectUri,
 			LogoutURI:     cl.LogoutUri,
+			OnePortalLink: cl.OnePortalLink,
 			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
 		})
 	}
@@ -376,6 +380,7 @@ func (s *clientService) GetClientByID(
 		BaseURL:       cl.BaseUrl,
 		RedirectURI:   cl.RedirectUri,
 		LogoutURI:     cl.LogoutUri,
+		OnePortalLink: cl.OnePortalLink,
 		Grants:        grants,
 		AllowedRoles:  roleResponses,
 	}, nil
@@ -426,6 +431,7 @@ func (s *clientService) UpdateClient(
 		LogoutUri:     req.LogoutURI,
 		Description:   req.Description,
 		ImageLocation: imagePath,
+		OnePortalLink: req.OnePortalLink,
 	}
 
 	err = s.Repo.UpdateClient(ctx, clientModel, req.Grants)
