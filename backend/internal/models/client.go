@@ -28,7 +28,7 @@ type Client struct {
 	LogoutUri     string    `db:"logout_uri"`
 	Description   string    `db:"description"`
 	ImageLocation string    `db:"image_location"`
-	OnePortalLink string    `db:"one_portal_link"`
+	OnePortalLink *string   `db:"one_portal_link"`
 	CreatedAt     time.Time `db:"created_at"`
 	UpdatedAt     time.Time `db:"updated_at"`
 

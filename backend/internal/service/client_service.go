@@ -81,6 +81,11 @@ func (s *clientService) CreateClient(
 	rawSecret, _ := utils.GenerateRandomString(32)
 	hashedSecret, _ := utils.HashSecret(rawSecret)
 
+	var onePortalLink *string
+	if req.OnePortalLink != "" {
+		onePortalLink = &req.OnePortalLink
+	}
+
 	// 3. Model Mapping
 	clientModel := &models.Client{
 		ID:            clientID[:],
@@ -91,7 +96,7 @@ func (s *clientService) CreateClient(
 		LogoutUri:     req.LogoutURI,
 		Description:   req.Description,
 		ImageLocation: imagePath,
-		OnePortalLink: req.OnePortalLink,
+		OnePortalLink: onePortalLink,
 	}
 
 	// 4. Persistence
@@ -201,7 +206,7 @@ func (s *clientService) GetClientList(
 			BaseURL:       cl.BaseUrl,
 			RedirectURI:   cl.RedirectUri,
 			LogoutURI:     cl.LogoutUri,
-			OnePortalLink: cl.OnePortalLink,
+			OnePortalLink: derefString(cl.OnePortalLink),
 			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
 		})
 	}
@@ -261,7 +266,7 @@ func (s *clientService) GetBoundClients(
 			BaseURL:       cl.BaseUrl,
 			RedirectURI:   cl.RedirectUri,
 			LogoutURI:     cl.LogoutUri,
-			OnePortalLink: cl.OnePortalLink,
+			OnePortalLink: derefString(cl.OnePortalLink),
 			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
 		})
 	}
@@ -315,7 +320,7 @@ func (s *clientService) GetAllowedClients(
 			BaseURL:       cl.BaseUrl,
 			RedirectURI:   cl.RedirectUri,
 			LogoutURI:     cl.LogoutUri,
-			OnePortalLink: cl.OnePortalLink,
+			OnePortalLink: derefString(cl.OnePortalLink),
 			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
 		})
 	}
@@ -380,7 +385,7 @@ func (s *clientService) GetClientByID(
 		BaseURL:       cl.BaseUrl,
 		RedirectURI:   cl.RedirectUri,
 		LogoutURI:     cl.LogoutUri,
-		OnePortalLink: cl.OnePortalLink,
+		OnePortalLink: derefString(cl.OnePortalLink),
 		Grants:        grants,
 		AllowedRoles:  roleResponses,
 	}, nil
@@ -423,6 +428,11 @@ func (s *clientService) UpdateClient(
 		imagePath = newPath
 	}
 
+	var onePortalLink *string
+	if req.OnePortalLink != "" {
+		onePortalLink = &req.OnePortalLink
+	}
+
 	clientModel := &models.Client{
 		ID:            id[:],
 		ClientName:    req.Name,
@@ -431,7 +441,7 @@ func (s *clientService) UpdateClient(
 		LogoutUri:     req.LogoutURI,
 		Description:   req.Description,
 		ImageLocation: imagePath,
-		OnePortalLink: req.OnePortalLink,
+		OnePortalLink: onePortalLink,
 	}
 
 	err = s.Repo.UpdateClient(ctx, clientModel, req.Grants)
@@ -512,4 +522,12 @@ func (s *clientService) DeleteClient(
 	}
 
 	return nil
+}
+
+// derefString safely dereferences a string pointer.
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
