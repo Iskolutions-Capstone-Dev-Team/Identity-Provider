@@ -51,6 +51,7 @@ const mapClientSummary = (client = {}) => {
     base_url: client.base_url ?? client.baseURL ?? "",
     redirect_uri: client.redirect_uri ?? client.redirectURI ?? "",
     logout_uri: client.logout_uri ?? client.logoutURI ?? "",
+    one_portal_redirect_link: client.one_portal_redirect_link ?? client.onePortalRedirectLink ?? "",
     grants: Array.isArray(client.grants) ? client.grants : [],
     roleNames: normalizeRoleNames(
       client.allowed_roles ?? client.allowedRoles ?? client.roles,
