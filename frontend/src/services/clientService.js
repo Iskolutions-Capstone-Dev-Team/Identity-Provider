@@ -153,6 +153,7 @@ const buildClientFormData = (data = {}) => {
   formData.append("base_url", normalizeStringValue(data.base_url));
   formData.append("redirect_uri", normalizeStringValue(data.redirect_uri));
   formData.append("logout_uri", normalizeStringValue(data.logout_uri));
+  formData.append("one_portal_redirect_link", normalizeStringValue(data.one_portal_redirect_link),);
 
   normalizeStringList(data.grants).forEach((grant) => {
     formData.append("grants", grant);

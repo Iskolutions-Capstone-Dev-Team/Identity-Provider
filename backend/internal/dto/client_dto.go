@@ -1,13 +1,14 @@
 package dto
 
 type CreateClientRequest struct {
-	Name        string   `json:"name"`
-	BaseURL     string   `json:"base_url"`
-	RedirectURI string   `json:"redirect_uri"`
-	LogoutURI   string   `json:"logout_uri"`
-	Description string   `json:"description"`
-	Grants      []string `json:"grants"`
-	RoleIDs     []int    `json:"role_ids"`
+	Name          string   `json:"name"`
+	BaseURL       string   `json:"base_url"`
+	RedirectURI   string   `json:"redirect_uri"`
+	LogoutURI     string   `json:"logout_uri"`
+	Description   string   `json:"description"`
+	OnePortalLink string   `json:"one_portal_link"`
+	Grants        []string `json:"grants"`
+	RoleIDs       []int    `json:"role_ids"`
 }
 
 type ClientResponse struct {
@@ -18,6 +19,7 @@ type ClientResponse struct {
 	BaseURL       string         `json:"base_url"`
 	RedirectURI   string         `json:"redirect_uri"`
 	LogoutURI     string         `json:"logout_uri"`
+	OnePortalLink string         `json:"one_portal_link"`
 	CreatedAt     string         `json:"created_at"`
 	Grants        []string       `json:"grants"`
 	AllowedRoles  []RoleResponse `json:"allowed_roles"`

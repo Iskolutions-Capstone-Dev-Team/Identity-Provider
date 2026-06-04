@@ -57,7 +57,8 @@ func (r *clientRepository) GetByID(ctx context.Context,
 	query := `
 		SELECT id, client_name, description,
 		       image_location, base_url,
-		       redirect_uri, logout_uri, updated_at
+		       redirect_uri, logout_uri, updated_at,
+		       one_portal_link
 		FROM clients
 		WHERE id = ? AND deleted_at IS NULL`
 
@@ -100,7 +101,8 @@ func (r *clientRepository) ListClients(ctx context.Context, limit,
 		SELECT
 			id, client_name,
 			description, image_location,
-			base_url, redirect_uri, logout_uri, created_at
+			base_url, redirect_uri, logout_uri, created_at,
+			one_portal_link
 		FROM clients
 		WHERE deleted_at IS NULL AND client_name LIKE ?
 		LIMIT ? OFFSET ?
@@ -120,7 +122,8 @@ func (r *clientRepository) ListBoundClients(ctx context.Context,
 		SELECT
 			c.id, c.client_name,
 			c.description, c.image_location,
-			c.base_url, c.redirect_uri, c.logout_uri, c.created_at
+			c.base_url, c.redirect_uri, c.logout_uri, c.created_at,
+			c.one_portal_link
 		FROM clients c
 		JOIN admin_allowed_clients a ON c.id = a.client_id
 		WHERE a.user_id = ?
@@ -144,7 +147,8 @@ func (r *clientRepository) ListAllowedClients(ctx context.Context,
 		SELECT
 			c.id, c.client_name,
 			c.description, c.image_location,
-			c.base_url, c.redirect_uri, c.logout_uri, c.created_at
+			c.base_url, c.redirect_uri, c.logout_uri, c.created_at,
+			c.one_portal_link
 		FROM clients c
 		JOIN client_allowed_users a ON c.id = a.client_id
 		WHERE a.user_id = ?
@@ -172,11 +176,12 @@ func (r *clientRepository) CreateClient(ctx context.Context,
 	q1 := `INSERT INTO clients (
 			id, client_name, client_secret,
 			base_url, redirect_uri, logout_uri,
-			description, image_location
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+			description, image_location, one_portal_link
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err = tx.ExecContext(ctx, q1, client.ID, client.ClientName,
 		client.ClientSecret, client.BaseUrl, client.RedirectUri,
 		client.LogoutUri, client.Description, client.ImageLocation,
+		client.OnePortalLink,
 	)
 	if err != nil {
 		return err
@@ -218,12 +223,13 @@ func (r *clientRepository) UpdateClient(ctx context.Context,
 			image_location = IF(? = '', image_location, ?),
 			base_url = ?,
 			redirect_uri = ?,
-			logout_uri = ?
+			logout_uri = ?,
+			one_portal_link = ?
 		WHERE id = ?`
 
 	_, err := r.db.ExecContext(ctx, query, c.ClientName, c.Description,
 		c.ImageLocation, c.ImageLocation, c.BaseUrl, c.RedirectUri,
-		c.LogoutUri, c.ID,
+		c.LogoutUri, c.OnePortalLink, c.ID,
 	)
 	if err != nil {
 		return err
