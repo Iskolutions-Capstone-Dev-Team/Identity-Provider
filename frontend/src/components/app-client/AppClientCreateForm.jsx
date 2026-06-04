@@ -18,6 +18,7 @@ const initialFieldErrors = {
   baseURL: "",
   redirectURL: "",
   logoutURL: "",
+  onePortalRedirectLink: "",
 };
 const inlineErrorClassName = "mt-2 text-xs text-red-500";
 
@@ -170,6 +171,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
   const [baseURL, setBaseURL] = useState("");
   const [redirectURL, setRedirectURL] = useState("");
   const [logoutURL, setLogoutURL] = useState("");
+  const [onePortalRedirectLink, setOnePortalRedirectLink] = useState("");
   const [grants, setGrants] = useState(["authorization_code"]);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -218,7 +220,15 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
       return;
     }
 
-    if (step === 2 && !["baseURL", "redirectURL", "logoutURL"].includes(activeVoiceField)) {
+    if (
+      step === 2 &&
+      ![
+        "baseURL",
+        "redirectURL",
+        "logoutURL",
+        "onePortalRedirectLink",
+      ].includes(activeVoiceField)
+    ) {
       setActiveVoiceField("baseURL");
     }
   }, [activeVoiceField, step]);
@@ -248,16 +258,14 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
       fieldErrors[fieldName] ? "border-red-400 focus:border-red-500" : ""
     }`;
 
-  const activeVoiceFieldLabel =
-    activeVoiceField === "description"
-      ? "Description"
-      : activeVoiceField === "baseURL"
-        ? "Base URL"
-        : activeVoiceField === "redirectURL"
-            ? "Redirect URL"
-            : activeVoiceField === "logoutURL"
-              ? "Logout URL"
-              : "Name";
+  const voiceFieldLabels = {
+    description: "Description",
+    baseURL: "Base URL",
+    redirectURL: "Redirect URL",
+    logoutURL: "Logout URL",
+    onePortalRedirectLink: "One Portal Redirect Link",
+  };
+  const activeVoiceFieldLabel = voiceFieldLabels[activeVoiceField] || "Name";
 
   const handleVoiceInput = (transcript) => {
     if (activeVoiceField === "description") {
@@ -285,6 +293,15 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
       return;
     }
 
+    if (activeVoiceField === "onePortalRedirectLink") {
+      updateFieldValue(
+        "onePortalRedirectLink",
+        transcript,
+        setOnePortalRedirectLink,
+      );
+      return;
+    }
+
     updateFieldValue("name", transcript, setName);
   };
 
@@ -295,6 +312,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
       baseURL: fieldErrors.baseURL,
       redirectURL: fieldErrors.redirectURL,
       logoutURL: fieldErrors.logoutURL,
+      onePortalRedirectLink: fieldErrors.onePortalRedirectLink,
     };
 
     if (!imageFile) {
@@ -323,6 +341,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
     const trimmedBaseURL = baseURL.trim();
     const trimmedRedirectURL = redirectURL.trim();
     const trimmedLogoutURL = logoutURL.trim();
+    const trimmedOnePortalRedirectLink = onePortalRedirectLink.trim();
     const nextFieldErrors = {
       ...initialFieldErrors,
       imageFile: fieldErrors.imageFile,
@@ -347,12 +366,21 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
       nextFieldErrors.logoutURL = "Logout URL must be a valid URL.";
     }
 
+    if (
+      trimmedOnePortalRedirectLink &&
+      !isValidHttpUrl(trimmedOnePortalRedirectLink)
+    ) {
+      nextFieldErrors.onePortalRedirectLink =
+        "One Portal Redirect Link must be a valid URL.";
+    }
+
     setFieldErrors(nextFieldErrors);
 
     const firstError =
       nextFieldErrors.baseURL ||
       nextFieldErrors.redirectURL ||
-      nextFieldErrors.logoutURL;
+      nextFieldErrors.logoutURL ||
+      nextFieldErrors.onePortalRedirectLink;
 
     if (firstError) {
       setError(firstError);
@@ -477,6 +505,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
         base_url: baseURL,
         redirect_uri: redirectURL,
         logout_uri: logoutURL,
+        one_portal_redirect_link: onePortalRedirectLink,
         grants,
         imageFile,
       });
@@ -628,7 +657,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
 
                       {renderSectionHeader(
                         "Application URLs",
-                        "Set the base, redirect, and logout URLs.",
+                        "Set the base, redirect, logout, and One Portal redirect URLs.",
                       )}
 
                       <div>
@@ -717,6 +746,40 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
                       {fieldErrors.logoutURL && (
                         <p className={inlineErrorClassName}>
                           {fieldErrors.logoutURL}
+                        </p>
+                      )}
+                      <p className={`${modalHelperTextClassName} mt-2`}>
+                        Must be valid URL
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className={modalLabelClassName}>
+                        One Portal Redirect Link
+                      </label>
+                      <input
+                        type="url"
+                        value={onePortalRedirectLink}
+                        onChange={(event) =>
+                          updateFieldValue(
+                            "onePortalRedirectLink",
+                            event.target.value,
+                            setOnePortalRedirectLink,
+                          )
+                        }
+                        onFocus={() =>
+                          setActiveVoiceField("onePortalRedirectLink")
+                        }
+                        placeholder="https://one-portal.example.com"
+                        className={getInputClassName(
+                          "onePortalRedirectLink",
+                        )}
+                        pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$"
+                        title="Must be valid URL"
+                      />
+                      {fieldErrors.onePortalRedirectLink && (
+                        <p className={inlineErrorClassName}>
+                          {fieldErrors.onePortalRedirectLink}
                         </p>
                       )}
                       <p className={`${modalHelperTextClassName} mt-2`}>

@@ -49,5 +49,12 @@ var ClientsMigration = migrations.TableMigration{
 				DROP COLUMN tag;
 			`,
 		},
+		{
+			ID: "add-one-portal-link-column",
+			SQL: `
+				ALTER TABLE clients
+				ADD COLUMN one_portal_link VARCHAR(255);
+			`,
+		},
 	},
 }

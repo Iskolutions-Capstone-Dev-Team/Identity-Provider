@@ -66,12 +66,13 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	defer file.Close()
 
 	req := dto.CreateClientRequest{
-		Name:        c.PostForm("name"),
-		BaseURL:     c.PostForm("base_url"),
-		RedirectURI: c.PostForm("redirect_uri"),
-		LogoutURI:   c.PostForm("logout_uri"),
-		Description: c.PostForm("description"),
-		Grants:      c.PostFormArray("grants"),
+		Name:          c.PostForm("name"),
+		BaseURL:       c.PostForm("base_url"),
+		RedirectURI:   c.PostForm("redirect_uri"),
+		LogoutURI:     c.PostForm("logout_uri"),
+		Description:   c.PostForm("description"),
+		Grants:        c.PostFormArray("grants"),
+		OnePortalLink: c.PostForm("one_portal_link"),
 	}
 
 	userID := c.GetString("user_id")
@@ -322,12 +323,13 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 	}
 
 	req := dto.CreateClientRequest{
-		Name:        c.PostForm("name"),
-		BaseURL:     c.PostForm("base_url"),
-		RedirectURI: c.PostForm("redirect_uri"),
-		LogoutURI:   c.PostForm("logout_uri"),
-		Description: c.PostForm("description"),
-		Grants:      c.PostFormArray("grants"),
+		Name:          c.PostForm("name"),
+		BaseURL:       c.PostForm("base_url"),
+		RedirectURI:   c.PostForm("redirect_uri"),
+		LogoutURI:     c.PostForm("logout_uri"),
+		Description:   c.PostForm("description"),
+		Grants:        c.PostFormArray("grants"),
+		OnePortalLink: c.PostForm("one_portal_link"),
 	}
 
 	metadata := buildMetadata(map[string]interface{}{

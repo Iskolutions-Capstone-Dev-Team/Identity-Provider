@@ -34,11 +34,12 @@ func TestGetClientByID(t *testing.T) {
 		"id", "client_name", "description",
 		"image_location", "base_url",
 		"redirect_uri", "logout_uri", "updated_at",
+		"one_portal_link",
 	}).AddRow(
 		clientID[:], clientName, "A test client",
 		"/img.png", "http://localhost:3000",
 		"http://localhost:3000/callback", "http://localhost:3000/logout",
-		&now,
+		&now, "http://localhost:3000/portal",
 	)
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, client_name")).
@@ -101,10 +102,12 @@ func TestListAllowedClients(t *testing.T) {
 		"id", "client_name", "description",
 		"image_location", "base_url",
 		"redirect_uri", "logout_uri", "created_at",
+		"one_portal_link",
 	}).AddRow(
 		clientID[:], "Test Client", "Desc",
 		"/img.png", "http://localhost",
 		"http://localhost/cb", "http://localhost/out", now,
+		"http://localhost/portal",
 	)
 
 	mock.ExpectQuery(".*client_allowed_users.*").
