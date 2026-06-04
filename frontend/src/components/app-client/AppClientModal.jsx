@@ -32,6 +32,9 @@ const isValidHttpUrl = (value) => {
   }
 };
 
+const getOnePortalRedirectLink = (client = {}) =>
+  client.one_portal_link ?? client.one_portal_redirect_link ?? "";
+
 const getDropzoneBaseClassName = (isDarkMode) =>
   isDarkMode
     ? "relative flex min-h-56 w-full flex-col items-center justify-center overflow-hidden rounded-[1.5rem] border border-dashed bg-[linear-gradient(180deg,rgba(9,14,25,0.72),rgba(22,28,40,0.88))] px-6 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
@@ -179,7 +182,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setBaseURL(client.base_url || "");
     setRedirectURL(client.redirect_uri || "");
     setLogoutURL(client.logout_uri || "");
-    setOnePortalRedirectLink(client.one_portal_redirect_link || "");
+    setOnePortalRedirectLink(getOnePortalRedirectLink(client));
     setSelectedGrants(client.grants || ["authorization_code"]);
     setImageFile(null);
     setIsDragging(false);
@@ -226,7 +229,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         setBaseURL(details.base_url || "");
         setRedirectURL(details.redirect_uri || "");
         setLogoutURL(details.logout_uri || "");
-        setOnePortalRedirectLink(details.one_portal_redirect_link || "");
+        setOnePortalRedirectLink(getOnePortalRedirectLink(details));
         setSelectedGrants(details.grants || ["authorization_code"]);
         setFieldErrors(initialFieldErrors);
 
