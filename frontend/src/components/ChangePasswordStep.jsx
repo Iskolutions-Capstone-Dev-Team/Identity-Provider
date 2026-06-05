@@ -2,6 +2,13 @@ import { useState } from "react";
 import ErrorAlert from "./ErrorAlert";
 import { getModalTheme } from "./modalTheme";
 
+const PASSWORD_REQUIREMENTS = [
+  { key: "length", label: "At least 8 characters" },
+  { key: "uppercase", label: "One uppercase letter" },
+  { key: "number", label: "One number" },
+  { key: "special", label: "One special character" },
+];
+
 function PasswordVisibilityIcon({ isVisible }) {
   if (isVisible) {
     return (
@@ -40,6 +47,32 @@ function PasswordRuleItem({ isMet, label, colorMode = "light" }) {
       </span>
       <span>{label}</span>
     </span>
+  );
+}
+
+function ForgotPasswordRuleList({ validation, colorMode = "light" }) {
+  const isDarkMode = colorMode === "dark";
+  const listClassName = isDarkMode
+    ? "mt-3 grid gap-1.5 text-[0.84rem] font-medium text-[#aeb9c8]"
+    : "mt-3 grid gap-1.5 text-[0.84rem] font-medium text-[#64748b]";
+  const validItemClassName = isDarkMode ? "text-[#4ade80]" : "text-[#16a34a]";
+
+  return (
+    <div className={listClassName}>
+      {PASSWORD_REQUIREMENTS.map((requirement) => {
+        const isMet = validation.checks[requirement.key];
+        const itemClassName = isMet ? validItemClassName : "";
+
+        return (
+          <p key={requirement.key} className={`flex items-center gap-2 ${itemClassName}`}>
+            <span className="inline-flex min-w-5 justify-center text-xs font-extrabold">
+              {isMet ? "OK" : "-"}
+            </span>
+            {requirement.label}
+          </p>
+        );
+      })}
+    </div>
   );
 }
 
@@ -136,28 +169,20 @@ export default function ChangePasswordStep({ form, setForm, showCurrentPassword 
               </div>
 
               {field === "newPassword" && (
-                <div className="mt-3 flex flex-col items-start gap-1.5">
-                  <PasswordRuleItem
-                    isMet={validation.checks.length}
-                    label="At least 8 characters"
-                    colorMode={colorMode}
-                  />
-                  <PasswordRuleItem
-                    isMet={validation.checks.uppercase}
-                    label="One uppercase letter"
-                    colorMode={colorMode}
-                  />
-                  <PasswordRuleItem
-                    isMet={validation.checks.number}
-                    label="One number"
-                    colorMode={colorMode}
-                  />
-                  <PasswordRuleItem
-                    isMet={validation.checks.special}
-                    label="One special character"
-                    colorMode={colorMode}
-                  />
-                </div>
+                showCurrentPassword ? (
+                  <div className="mt-3 flex flex-col items-start gap-1.5">
+                    {PASSWORD_REQUIREMENTS.map((requirement) => (
+                      <PasswordRuleItem
+                        key={requirement.key}
+                        isMet={validation.checks[requirement.key]}
+                        label={requirement.label}
+                        colorMode={colorMode}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <ForgotPasswordRuleList validation={validation} colorMode={colorMode} />
+                )
               )}
             </div>
           ))}
