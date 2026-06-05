@@ -28,9 +28,11 @@ type Client struct {
 	LogoutUri     string    `db:"logout_uri"`
 	Description   string    `db:"description"`
 	ImageLocation string    `db:"image_location"`
-	OnePortalLink *string   `db:"one_portal_link"`
-	CreatedAt     time.Time `db:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at"`
+	OnePortalLink   *string   `db:"one_portal_link"`
+	AccessTokenTTL  int       `db:"access_token_ttl"`
+	RefreshTokenTTL int       `db:"refresh_token_ttl"`
+	CreatedAt       time.Time `db:"created_at"`
+	UpdatedAt       time.Time `db:"updated_at"`
 
 	Grants       []string
 	AllowedRoles []Role
