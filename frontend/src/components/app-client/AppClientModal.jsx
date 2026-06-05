@@ -13,6 +13,18 @@ const GRANT_OPTIONS = [
   "refresh_token",
   "client_credentials",
 ];
+const TOKEN_TTL_LIMITS = {
+  accessToken: {
+    min: 1,
+    max: 1440,
+    defaultValue: "60",
+  },
+  refreshToken: {
+    min: 1,
+    max: 8760,
+    defaultValue: "168",
+  },
+};
 const initialFieldErrors = {
   imageFile: "",
   name: "",
@@ -20,6 +32,8 @@ const initialFieldErrors = {
   redirectURL: "",
   logoutURL: "",
   onePortalRedirectLink: "",
+  accessTokenTTL: "",
+  refreshTokenTTL: "",
 };
 const inlineErrorClassName = "mt-2 text-xs text-red-500";
 
@@ -34,6 +48,19 @@ const isValidHttpUrl = (value) => {
 
 const getOnePortalRedirectLink = (client = {}) =>
   client.one_portal_link ?? client.one_portal_redirect_link ?? "";
+
+const getTokenTTLValue = (value, fallbackValue) => {
+  const parsedValue = Number.parseInt(value, 10);
+
+  return Number.isInteger(parsedValue) && parsedValue > 0
+    ? String(parsedValue)
+    : fallbackValue;
+};
+
+const parseTokenTTL = (value) => Number.parseInt(value, 10);
+
+const isValidTokenTTL = (value, { min, max }) =>
+  Number.isInteger(value) && value >= min && value <= max;
 
 const getDropzoneBaseClassName = (isDarkMode) =>
   isDarkMode
@@ -81,6 +108,41 @@ const getGrantClassName = ({ isSelected, isView, isDarkMode }) =>
         : "hover:border-[#f8d24e]/45 hover:bg-[#fffaf2]"
   }`;
 
+const getTokenInputWrapClassName = ({ hasError, isView, isDarkMode }) =>
+  `flex h-12 overflow-hidden rounded-[1rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-[background-color,border-color,box-shadow] duration-500 ease-out focus-within:outline-none ${
+    hasError && !isView
+      ? "border-red-400 focus-within:border-red-500"
+      : isView
+        ? isDarkMode
+          ? "border-white/10 bg-[rgba(10,15,24,0.76)]"
+          : "border-[#7b0d15]/10 bg-[#fff7ef]/90"
+        : isDarkMode
+          ? "border-white/10 bg-[linear-gradient(180deg,rgba(9,14,25,0.72),rgba(22,28,40,0.88))] focus-within:border-[#f8d24e]/55"
+          : "border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] focus-within:border-[#d4a017]"
+  }`;
+
+const getTokenInputClassName = ({ isView, isDarkMode }) =>
+  `min-w-0 flex-1 bg-transparent px-4 text-sm outline-none ${
+    isView
+      ? isDarkMode
+        ? "text-[#d6c3c7]"
+        : "text-[#5d3a41]"
+      : isDarkMode
+        ? "text-[#f4eaea]"
+        : "text-[#4a1921]"
+  }`;
+
+const getTokenUnitClassName = ({ isView, isDarkMode }) =>
+  `flex min-w-14 items-center justify-center border-l px-4 text-sm font-medium ${
+    isView
+      ? isDarkMode
+        ? "border-white/10 bg-white/[0.03] text-[#a58d95]"
+        : "border-[#7b0d15]/10 bg-[#fff3e8] text-[#8f6f76]"
+      : isDarkMode
+        ? "border-white/10 bg-white/[0.03] text-[#c7adb4]"
+        : "border-[#7b0d15]/10 bg-[#fff7ef]/80 text-[#8f6f76]"
+  }`;
+
 export default function AppClientModal({ open, mode, client, getClientDetails, onClose, onSubmit, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
   const isView = mode === "view";
@@ -110,6 +172,12 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [logoutURL, setLogoutURL] = useState("");
   const [onePortalRedirectLink, setOnePortalRedirectLink] = useState("");
   const [selectedGrants, setSelectedGrants] = useState(["authorization_code"]);
+  const [accessTokenTTL, setAccessTokenTTL] = useState(
+    TOKEN_TTL_LIMITS.accessToken.defaultValue,
+  );
+  const [refreshTokenTTL, setRefreshTokenTTL] = useState(
+    TOKEN_TTL_LIMITS.refreshToken.defaultValue,
+  );
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageLocation, setImageLocation] = useState(null);
@@ -184,6 +252,18 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setLogoutURL(client.logout_uri || "");
     setOnePortalRedirectLink(getOnePortalRedirectLink(client));
     setSelectedGrants(client.grants || ["authorization_code"]);
+    setAccessTokenTTL(
+      getTokenTTLValue(
+        client.access_token_ttl,
+        TOKEN_TTL_LIMITS.accessToken.defaultValue,
+      ),
+    );
+    setRefreshTokenTTL(
+      getTokenTTLValue(
+        client.refresh_token_ttl,
+        TOKEN_TTL_LIMITS.refreshToken.defaultValue,
+      ),
+    );
     setImageFile(null);
     setIsDragging(false);
     setActiveVoiceField("name");
@@ -231,6 +311,18 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         setLogoutURL(details.logout_uri || "");
         setOnePortalRedirectLink(getOnePortalRedirectLink(details));
         setSelectedGrants(details.grants || ["authorization_code"]);
+        setAccessTokenTTL(
+          getTokenTTLValue(
+            details.access_token_ttl,
+            TOKEN_TTL_LIMITS.accessToken.defaultValue,
+          ),
+        );
+        setRefreshTokenTTL(
+          getTokenTTLValue(
+            details.refresh_token_ttl,
+            TOKEN_TTL_LIMITS.refreshToken.defaultValue,
+          ),
+        );
         setFieldErrors(initialFieldErrors);
 
         const image = details.image || details.image_location || null;
@@ -371,6 +463,26 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         "One Portal Redirect Link must be a valid URL.";
     }
 
+    if (
+      !isValidTokenTTL(
+        parseTokenTTL(accessTokenTTL),
+        TOKEN_TTL_LIMITS.accessToken,
+      )
+    ) {
+      nextFieldErrors.accessTokenTTL =
+        "Expiration must be between 1 and 1,440 minutes.";
+    }
+
+    if (
+      !isValidTokenTTL(
+        parseTokenTTL(refreshTokenTTL),
+        TOKEN_TTL_LIMITS.refreshToken,
+      )
+    ) {
+      nextFieldErrors.refreshTokenTTL =
+        "Expiration must be between 1 and 8,760 hours.";
+    }
+
     setFieldErrors(nextFieldErrors);
 
     const firstError =
@@ -379,7 +491,9 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
       nextFieldErrors.baseURL ||
       nextFieldErrors.redirectURL ||
       nextFieldErrors.logoutURL ||
-      nextFieldErrors.onePortalRedirectLink;
+      nextFieldErrors.onePortalRedirectLink ||
+      nextFieldErrors.accessTokenTTL ||
+      nextFieldErrors.refreshTokenTTL;
 
     if (firstError) {
       setError(firstError);
@@ -491,6 +605,8 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         logout_uri: logoutURL,
         one_portal_redirect_link: onePortalRedirectLink,
         grants: selectedGrants,
+        access_token_ttl: parseTokenTTL(accessTokenTTL),
+        refresh_token_ttl: parseTokenTTL(refreshTokenTTL),
         imageFile,
       });
 
@@ -838,6 +954,111 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                         At least one grant is required.
                       </p>
                     )}
+                  </div>
+
+                  <div>
+                    {renderSectionHeader(
+                      "Token Expiration",
+                      isView
+                        ? "View the configured token expiration values."
+                        : "Update the token expiration values for this client.",
+                      !isView,
+                    )}
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <div>
+                        <label className={modalLabelClassName}>
+                          Access Token expiration{" "}
+                          {!isView && <span className="text-red-500">*</span>}
+                        </label>
+                        <div
+                          className={getTokenInputWrapClassName({
+                            hasError: Boolean(fieldErrors.accessTokenTTL),
+                            isView,
+                            isDarkMode,
+                          })}
+                        >
+                          <input type="number" required={!isView} min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL}
+                            onChange={(event) =>
+                              updateFieldValue(
+                                "accessTokenTTL",
+                                event.target.value,
+                                setAccessTokenTTL,
+                              )
+                            }
+                            className={getTokenInputClassName({
+                              isView,
+                              isDarkMode,
+                            })}
+                            disabled={isView}
+                          />
+                          <span
+                            className={getTokenUnitClassName({
+                              isView,
+                              isDarkMode,
+                            })}
+                          >
+                            min
+                          </span>
+                        </div>
+                        {!isView && fieldErrors.accessTokenTTL && (
+                          <p className={inlineErrorClassName}>
+                            {fieldErrors.accessTokenTTL}
+                          </p>
+                        )}
+                        {!isView && (
+                          <p className={`${modalHelperTextClassName} mt-2`}>
+                            Valid range: 1-1,440 minutes (24 hours)
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className={modalLabelClassName}>
+                          Refresh Token expiration{" "}
+                          {!isView && <span className="text-red-500">*</span>}
+                        </label>
+                        <div
+                          className={getTokenInputWrapClassName({
+                            hasError: Boolean(fieldErrors.refreshTokenTTL),
+                            isView,
+                            isDarkMode,
+                          })}
+                        >
+                          <input type="number" required={!isView} min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL}
+                            onChange={(event) =>
+                              updateFieldValue(
+                                "refreshTokenTTL",
+                                event.target.value,
+                                setRefreshTokenTTL,
+                              )
+                            }
+                            className={getTokenInputClassName({
+                              isView,
+                              isDarkMode,
+                            })}
+                            disabled={isView}
+                          />
+                          <span
+                            className={getTokenUnitClassName({
+                              isView,
+                              isDarkMode,
+                            })}
+                          >
+                            hr
+                          </span>
+                        </div>
+                        {!isView && fieldErrors.refreshTokenTTL && (
+                          <p className={inlineErrorClassName}>
+                            {fieldErrors.refreshTokenTTL}
+                          </p>
+                        )}
+                        {!isView && (
+                          <p className={`${modalHelperTextClassName} mt-2`}>
+                            Valid range: 1 - 8,760 hours (1 year)
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>
