@@ -27,45 +27,29 @@ function PasswordVisibilityIcon({ isVisible }) {
   );
 }
 
-function PasswordRuleItem({ isMet, label, colorMode = "light" }) {
-  const isDarkMode = colorMode === "dark";
-  const wrapperClassName = isDarkMode
-    ? "inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[0.72rem] font-medium text-[#d6c3c7]"
-    : "inline-flex items-center gap-2 rounded-full border border-[#7b0d15]/10 bg-[#fffaf2] px-2.5 py-1 text-[0.72rem] font-medium text-[#6f4f56]";
-  const statusClassName = isMet
-    ? isDarkMode
-      ? "bg-emerald-400/12 text-emerald-200"
-      : "bg-emerald-100 text-emerald-700"
-    : isDarkMode
-      ? "bg-[#f8d24e]/12 text-[#ffe28a]"
-      : "bg-[#fff4dc] text-[#7b0d15]";
-
-  return (
-    <span className={wrapperClassName}>
-      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-semibold ${statusClassName}`}>
-        {isMet ? "OK" : "?"}
-      </span>
-      <span>{label}</span>
-    </span>
-  );
-}
-
-function ForgotPasswordRuleList({ validation, colorMode = "light" }) {
+function PasswordRuleList({ validation, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const listClassName = isDarkMode
     ? "mt-3 grid gap-1.5 text-[0.84rem] font-medium text-[#aeb9c8]"
     : "mt-3 grid gap-1.5 text-[0.84rem] font-medium text-[#64748b]";
-  const validItemClassName = isDarkMode ? "text-[#4ade80]" : "text-[#16a34a]";
+  const validItemClassName = isDarkMode ? "text-[#4ade80]" : "text-emerald-700";
+  const pendingBadgeClassName = isDarkMode
+    ? "bg-[#f8d24e]/12 text-[#ffe28a]"
+    : "bg-[#fff4dc] text-[#7b0d15]";
+  const validBadgeClassName = isDarkMode
+    ? "bg-emerald-400/12 text-emerald-200"
+    : "bg-emerald-100 text-emerald-700";
 
   return (
     <div className={listClassName}>
       {PASSWORD_REQUIREMENTS.map((requirement) => {
         const isMet = validation.checks[requirement.key];
         const itemClassName = isMet ? validItemClassName : "";
+        const badgeClassName = isMet ? validBadgeClassName : pendingBadgeClassName;
 
         return (
           <p key={requirement.key} className={`flex items-center gap-2 ${itemClassName}`}>
-            <span className="inline-flex min-w-5 justify-center text-xs font-extrabold">
+            <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.62rem] font-bold ${badgeClassName}`}>
               {isMet ? "OK" : "-"}
             </span>
             {requirement.label}
@@ -169,20 +153,7 @@ export default function ChangePasswordStep({ form, setForm, showCurrentPassword 
               </div>
 
               {field === "newPassword" && (
-                showCurrentPassword ? (
-                  <div className="mt-3 flex flex-col items-start gap-1.5">
-                    {PASSWORD_REQUIREMENTS.map((requirement) => (
-                      <PasswordRuleItem
-                        key={requirement.key}
-                        isMet={validation.checks[requirement.key]}
-                        label={requirement.label}
-                        colorMode={colorMode}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <ForgotPasswordRuleList validation={validation} colorMode={colorMode} />
-                )
+                <PasswordRuleList validation={validation} colorMode={colorMode} />
               )}
             </div>
           ))}
