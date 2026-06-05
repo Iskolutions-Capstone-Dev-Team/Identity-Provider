@@ -10,6 +10,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/database"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -196,8 +197,8 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 		LogoutUri:       cBase,
 		Description:     "Identity Provider",
 		ImageLocation:   "idp.png",
-		AccessTokenTTL:  60,
-		RefreshTokenTTL: 168,
+		AccessTokenTTL:  service.DefaultAccessTokenTTL,
+		RefreshTokenTTL: service.DefaultRefreshTokenTTL,
 	}
 
 	adminEmail := os.Getenv("ADMIN_EMAIL")

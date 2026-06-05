@@ -28,7 +28,7 @@ func GenerateToken(privateKey *rsa.PrivateKey,
 
 	ttlMinutes := client.AccessTokenTTL
 	if ttlMinutes <= 0 {
-		ttlMinutes = 60
+		ttlMinutes = DefaultAccessTokenTTL
 	}
 	duration := time.Duration(ttlMinutes) * time.Minute
 

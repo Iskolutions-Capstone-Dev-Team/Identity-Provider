@@ -284,7 +284,7 @@ func (s *authService) ExchangeCodeForToken(
 			refreshStr, _ = utils.GenerateRandomString(SECRET_ENTROPY)
 			refTTLHours := client.RefreshTokenTTL
 			if refTTLHours <= 0 {
-				refTTLHours = 168
+				refTTLHours = DefaultRefreshTokenTTL
 			}
 			expiresAt := time.Now().Add(
 				time.Duration(refTTLHours) * time.Hour,
@@ -347,7 +347,7 @@ func (s *authService) RotateRefreshToken(
 
 	refTTLHours := client.RefreshTokenTTL
 	if refTTLHours <= 0 {
-		refTTLHours = 168
+		refTTLHours = DefaultRefreshTokenTTL
 	}
 	expiresAt := time.Now().Add(
 		time.Duration(refTTLHours) * time.Hour,
