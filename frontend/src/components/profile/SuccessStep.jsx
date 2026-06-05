@@ -1,4 +1,4 @@
-import { getModalTheme } from "./modalTheme";
+import { getModalTheme } from "../modalTheme";
 
 export default function SuccessStep({ colorMode = "light", showCurrentPassword = true }) {
   const { modalSectionClassName } = getModalTheme(colorMode);

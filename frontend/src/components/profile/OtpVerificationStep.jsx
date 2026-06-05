@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import ErrorAlert from "./ErrorAlert";
-import { getModalTheme } from "./modalTheme";
+import ErrorAlert from "../ErrorAlert";
+import { getModalTheme } from "../modalTheme";
 
 function formatTimer(totalSeconds) {
   const minutes = Math.floor(totalSeconds / 60);

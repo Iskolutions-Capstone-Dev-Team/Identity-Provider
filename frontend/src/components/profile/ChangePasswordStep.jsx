@@ -1,6 +1,6 @@
 import { useState } from "react";
-import ErrorAlert from "./ErrorAlert";
-import { getModalTheme } from "./modalTheme";
+import ErrorAlert from "../ErrorAlert";
+import { getModalTheme } from "../modalTheme";
 
 const PASSWORD_REQUIREMENTS = [
   { key: "length", label: "At least 8 characters" },
