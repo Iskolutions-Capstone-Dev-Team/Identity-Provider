@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import EditProfileModal from "./EditProfileModal";
-import ChangePasswordModal from "../ChangePasswordModal";
+import ChangePasswordModal from "./ChangePasswordModal";
 import ProfileDetails from "./ProfileDetails";
 import ActionButtons from "./ActionButtons";
 import SuccessAlert from "../SuccessAlert";

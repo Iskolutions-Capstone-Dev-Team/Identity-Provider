@@ -1,5 +1,5 @@
-import ErrorAlert from "./ErrorAlert";
-import { getModalTheme } from "./modalTheme";
+import ErrorAlert from "../ErrorAlert";
+import { getModalTheme } from "../modalTheme";
 
 export default function InputEmailStep({ email, setEmail, errorMessage = "", onClearError, colorMode = "light" }) {
   const {
