@@ -1,15 +1,13 @@
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
 import InputEmailStep from "./InputEmailStep";
-import ChangePasswordStep, {
-  getPasswordValidationState,
-} from "./ChangePasswordStep";
+import ChangePasswordStep, { getPasswordValidationState } from "./ChangePasswordStep";
 import OtpVerificationStep from "./OtpVerificationStep";
 import SuccessStep from "./SuccessStep";
-import SuccessAlert from "./SuccessAlert";
-import { getModalTheme } from "./modalTheme";
-import { getModalTransitionClassName, useModalTransition } from "./modalTransition";
-import { passwordResetService } from "../services/passwordResetService";
+import SuccessAlert from "../SuccessAlert";
+import { getModalTheme } from "../modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../modalTransition";
+import { passwordResetService } from "../../services/passwordResetService";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMPTY_OTP = ["", "", "", "", "", ""];
@@ -551,10 +549,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
                     <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
                       Cancel
                     </button>
-                    <button
-                      type="button"
-                      disabled={isPrimaryDisabled}
-                      className={getPrimaryButtonClassName(isPrimaryDisabled)}
+                    <button type="button" disabled={isPrimaryDisabled} className={getPrimaryButtonClassName(isPrimaryDisabled)}
                       onClick={
                         step === "email"
                           ? handleEmailContinue
