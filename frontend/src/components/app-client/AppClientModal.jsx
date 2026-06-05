@@ -209,9 +209,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const viewContentBoxClassName = isDarkMode
     ? "min-h-24 w-full rounded-[1rem] border border-white/10 bg-[rgba(10,15,24,0.76)] px-4 py-3 text-sm text-[#d6c3c7] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
     : "min-h-24 w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-3 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
-  const emptyContentClassName = isDarkMode
-    ? "italic text-[#a58d95]"
-    : "italic text-[#8f6f76]";
   const textareaClassName = isDarkMode
     ? "w-full rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,25,0.72),rgba(22,28,40,0.88))] px-4 py-3 text-sm text-[#f4eaea] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out focus:border-[#f8d24e]/55 resize-none placeholder:text-[#9f8790]"
     : "w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 py-3 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out focus:border-[#d4a017] resize-none";
@@ -785,11 +782,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <label className={modalLabelClassName}>Description</label>
                     {isView ? (
                       <div className={viewContentBoxClassName}>
-                        {description?.trim() ? (
-                          description
-                        ) : (
-                          <span className={emptyContentClassName}>No content</span>
-                        )}
+                        {description?.trim() || ""}
                       </div>
                     ) : (
                       <textarea value={description} onChange={(event) => setDescription(event.target.value)} onFocus={() => setActiveVoiceField("description")} rows="3" placeholder="Application description" className={textareaClassName}/>
