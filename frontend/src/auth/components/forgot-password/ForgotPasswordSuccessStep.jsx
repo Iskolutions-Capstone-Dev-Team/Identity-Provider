@@ -12,13 +12,6 @@ export default function ForgotPasswordSuccessStep() {
           Your password has been changed successfully. You can now sign in with your new password.
         </p>
       </section>
-
-      <section className="rounded-2xl border border-[#f8d24e]/40 bg-[#fff4dc] p-5">
-        <p className="text-sm text-[#7b0d15]">
-          <span className="font-semibold">Security Note:</span>{" "}
-          Use your updated password the next time you access your account.
-        </p>
-      </section>
     </div>
   );
 }
