@@ -188,14 +188,16 @@ func seedAppClient(adminDatabase *sqlx.DB) error {
 	}
 
 	client := &models.Client{
-		ID:            parsedID[:],
-		ClientName:    cName,
-		ClientSecret:  hashedClientSecret,
-		BaseUrl:       cBase,
-		RedirectUri:   cCallback,
-		LogoutUri:     cBase,
-		Description:   "Identity Provider",
-		ImageLocation: "idp.png",
+		ID:              parsedID[:],
+		ClientName:      cName,
+		ClientSecret:    hashedClientSecret,
+		BaseUrl:         cBase,
+		RedirectUri:     cCallback,
+		LogoutUri:       cBase,
+		Description:     "Identity Provider",
+		ImageLocation:   "idp.png",
+		AccessTokenTTL:  60,
+		RefreshTokenTTL: 168,
 	}
 
 	adminEmail := os.Getenv("ADMIN_EMAIL")
