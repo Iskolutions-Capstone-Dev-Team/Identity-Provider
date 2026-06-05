@@ -282,11 +282,19 @@ func (s *authService) ExchangeCodeForToken(
 			refreshStr = "internal_session_managed"
 		} else {
 			refreshStr, _ = utils.GenerateRandomString(SECRET_ENTROPY)
+			refTTLHours := client.RefreshTokenTTL
+			if refTTLHours <= 0 {
+				refTTLHours = 168
+			}
+			expiresAt := time.Now().Add(
+				time.Duration(refTTLHours) * time.Hour,
+			)
 			err = s.Repo.StoreRefreshToken(
 				ctx,
 				refreshStr,
 				authCode.UserId,
 				clientIDBin,
+				expiresAt,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("database query (StoreRefresh): %w", err)
@@ -294,10 +302,15 @@ func (s *authService) ExchangeCodeForToken(
 		}
 	}
 
+	expiresIn := client.AccessTokenTTL * 60
+	if expiresIn <= 0 {
+		expiresIn = ACCESS_TOKEN_EXPIRY
+	}
+
 	return &dto.TokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshStr,
-		ExpiresIn:    ACCESS_TOKEN_EXPIRY,
+		ExpiresIn:    expiresIn,
 		TokenType:    "Bearer",
 	}, nil
 }
@@ -321,13 +334,26 @@ func (s *authService) RotateRefreshToken(
 		return nil, fmt.Errorf("client verification: missing refresh_token grant")
 	}
 
+	client, err := s.ClientRepo.GetByID(ctx, cID)
+	if err != nil {
+		return nil, fmt.Errorf("database query (GetClient): %w", err)
+	}
+
 	// 2. Generate and persist new Refresh Token
 	newToken, err := utils.GenerateRandomString(SECRET_ENTROPY)
 	if err != nil {
 		return nil, fmt.Errorf("token generation: %w", err)
 	}
 
-	err = s.Repo.RotateRefreshToken(ctx, oldToken, newToken)
+	refTTLHours := client.RefreshTokenTTL
+	if refTTLHours <= 0 {
+		refTTLHours = 168
+	}
+	expiresAt := time.Now().Add(
+		time.Duration(refTTLHours) * time.Hour,
+	)
+
+	err = s.Repo.RotateRefreshToken(ctx, oldToken, newToken, expiresAt)
 	if err != nil {
 		return nil, fmt.Errorf("database query (RotateToken): %w", err)
 	}
@@ -338,21 +364,21 @@ func (s *authService) RotateRefreshToken(
 		return nil, fmt.Errorf("database query (GetClaims): %w", err)
 	}
 
-	client, err := s.ClientRepo.GetByID(ctx, cID)
-	if err != nil {
-		return nil, fmt.Errorf("database query (GetClient): %w", err)
-	}
-
 	// 4. Mint new Access Token
 	accessToken, err := GenerateToken(s.PrivateKey, client, *claims)
 	if err != nil {
 		return nil, fmt.Errorf("token generation (JWT): %w", err)
 	}
 
+	expiresIn := client.AccessTokenTTL * 60
+	if expiresIn <= 0 {
+		expiresIn = ACCESS_TOKEN_EXPIRY
+	}
+
 	return &dto.TokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: newToken,
-		ExpiresIn:    ACCESS_TOKEN_EXPIRY,
+		ExpiresIn:    expiresIn,
 		TokenType:    "Bearer",
 	}, nil
 }

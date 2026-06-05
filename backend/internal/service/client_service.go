@@ -88,15 +88,17 @@ func (s *clientService) CreateClient(
 
 	// 3. Model Mapping
 	clientModel := &models.Client{
-		ID:            clientID[:],
-		ClientName:    req.Name,
-		ClientSecret:  hashedSecret,
-		BaseUrl:       req.BaseURL,
-		RedirectUri:   req.RedirectURI,
-		LogoutUri:     req.LogoutURI,
-		Description:   req.Description,
-		ImageLocation: imagePath,
-		OnePortalLink: onePortalLink,
+		ID:              clientID[:],
+		ClientName:      req.Name,
+		ClientSecret:    hashedSecret,
+		BaseUrl:         req.BaseURL,
+		RedirectUri:     req.RedirectURI,
+		LogoutUri:       req.LogoutURI,
+		Description:     req.Description,
+		ImageLocation:   imagePath,
+		OnePortalLink:   onePortalLink,
+		AccessTokenTTL:  req.AccessTokenTTL,
+		RefreshTokenTTL: req.RefreshTokenTTL,
 	}
 
 	// 4. Persistence
@@ -199,15 +201,17 @@ func (s *clientService) GetClientList(
 		}
 
 		res = append(res, dto.ClientResponse{
-			ID:            id.String(),
-			Name:          cl.ClientName,
-			Description:   cl.Description,
-			ImageLocation: imgUrl,
-			BaseURL:       cl.BaseUrl,
-			RedirectURI:   cl.RedirectUri,
-			LogoutURI:     cl.LogoutUri,
-			OnePortalLink: derefString(cl.OnePortalLink),
-			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
+			ID:              id.String(),
+			Name:            cl.ClientName,
+			Description:     cl.Description,
+			ImageLocation:   imgUrl,
+			BaseURL:         cl.BaseUrl,
+			RedirectURI:     cl.RedirectUri,
+			LogoutURI:       cl.LogoutUri,
+			OnePortalLink:   derefString(cl.OnePortalLink),
+			CreatedAt:       cl.CreatedAt.Format(TIME_LAYOUT),
+			AccessTokenTTL:  cl.AccessTokenTTL,
+			RefreshTokenTTL: cl.RefreshTokenTTL,
 		})
 	}
 
@@ -259,15 +263,17 @@ func (s *clientService) GetBoundClients(
 		imgURL, _ := GetPresignedURL(ctx, cl.ImageLocation, s.Storage)
 
 		res = append(res, dto.ClientResponse{
-			ID:            id.String(),
-			Name:          cl.ClientName,
-			Description:   cl.Description,
-			ImageLocation: imgURL,
-			BaseURL:       cl.BaseUrl,
-			RedirectURI:   cl.RedirectUri,
-			LogoutURI:     cl.LogoutUri,
-			OnePortalLink: derefString(cl.OnePortalLink),
-			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
+			ID:              id.String(),
+			Name:            cl.ClientName,
+			Description:     cl.Description,
+			ImageLocation:   imgURL,
+			BaseURL:         cl.BaseUrl,
+			RedirectURI:     cl.RedirectUri,
+			LogoutURI:       cl.LogoutUri,
+			OnePortalLink:   derefString(cl.OnePortalLink),
+			CreatedAt:       cl.CreatedAt.Format(TIME_LAYOUT),
+			AccessTokenTTL:  cl.AccessTokenTTL,
+			RefreshTokenTTL: cl.RefreshTokenTTL,
 		})
 	}
 
@@ -313,15 +319,17 @@ func (s *clientService) GetAllowedClients(
 		imgURL, _ := GetPresignedURL(ctx, cl.ImageLocation, s.Storage)
 
 		res = append(res, dto.ClientResponse{
-			ID:            id.String(),
-			Name:          cl.ClientName,
-			Description:   cl.Description,
-			ImageLocation: imgURL,
-			BaseURL:       cl.BaseUrl,
-			RedirectURI:   cl.RedirectUri,
-			LogoutURI:     cl.LogoutUri,
-			OnePortalLink: derefString(cl.OnePortalLink),
-			CreatedAt:     cl.CreatedAt.Format(TIME_LAYOUT),
+			ID:              id.String(),
+			Name:            cl.ClientName,
+			Description:     cl.Description,
+			ImageLocation:   imgURL,
+			BaseURL:         cl.BaseUrl,
+			RedirectURI:     cl.RedirectUri,
+			LogoutURI:       cl.LogoutUri,
+			OnePortalLink:   derefString(cl.OnePortalLink),
+			CreatedAt:       cl.CreatedAt.Format(TIME_LAYOUT),
+			AccessTokenTTL:  cl.AccessTokenTTL,
+			RefreshTokenTTL: cl.RefreshTokenTTL,
 		})
 	}
 
@@ -378,16 +386,18 @@ func (s *clientService) GetClientByID(
 	}
 
 	return &dto.ClientResponse{
-		ID:            id.String(),
-		Name:          cl.ClientName,
-		Description:   cl.Description,
-		ImageLocation: imgUrl,
-		BaseURL:       cl.BaseUrl,
-		RedirectURI:   cl.RedirectUri,
-		LogoutURI:     cl.LogoutUri,
-		OnePortalLink: derefString(cl.OnePortalLink),
-		Grants:        grants,
-		AllowedRoles:  roleResponses,
+		ID:              id.String(),
+		Name:            cl.ClientName,
+		Description:     cl.Description,
+		ImageLocation:   imgUrl,
+		BaseURL:         cl.BaseUrl,
+		RedirectURI:     cl.RedirectUri,
+		LogoutURI:       cl.LogoutUri,
+		OnePortalLink:   derefString(cl.OnePortalLink),
+		Grants:          grants,
+		AllowedRoles:    roleResponses,
+		AccessTokenTTL:  cl.AccessTokenTTL,
+		RefreshTokenTTL: cl.RefreshTokenTTL,
 	}, nil
 }
 
@@ -434,14 +444,16 @@ func (s *clientService) UpdateClient(
 	}
 
 	clientModel := &models.Client{
-		ID:            id[:],
-		ClientName:    req.Name,
-		BaseUrl:       req.BaseURL,
-		RedirectUri:   req.RedirectURI,
-		LogoutUri:     req.LogoutURI,
-		Description:   req.Description,
-		ImageLocation: imagePath,
-		OnePortalLink: onePortalLink,
+		ID:              id[:],
+		ClientName:      req.Name,
+		BaseUrl:         req.BaseURL,
+		RedirectUri:     req.RedirectURI,
+		LogoutUri:       req.LogoutURI,
+		Description:     req.Description,
+		ImageLocation:   imagePath,
+		OnePortalLink:   onePortalLink,
+		AccessTokenTTL:  req.AccessTokenTTL,
+		RefreshTokenTTL: req.RefreshTokenTTL,
 	}
 
 	err = s.Repo.UpdateClient(ctx, clientModel, req.Grants)
