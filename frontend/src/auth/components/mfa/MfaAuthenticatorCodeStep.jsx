@@ -17,13 +17,13 @@ export default function MfaAuthenticatorCodeStep({ code, isVerifying, onCodeChan
         />
 
         <button type="submit" disabled={isVerifying} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
-          {isVerifying ? "Verifying..." : "Verify Authenticator Code"}
+          {isVerifying ? "Verifying..." : "Verify Code"}
         </button>
       </form>
 
       {onUseBackupCode ? (
         <p className="text-center text-sm text-white/72">
-          Lost your authenticator app, use{" "}
+          Lost your authenticator app? Use{" "}
           <button type="button" onClick={onUseBackupCode} className="font-semibold text-[#ffd700] underline decoration-transparent transition hover:decoration-[#ffd700]">
             Backup Code
           </button>
