@@ -74,33 +74,36 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
           </div>
         </div>
       ) : (
-        <form onSubmit={onSubmit} className="space-y-5">
+        <form onSubmit={onSubmit} className="mx-auto w-full max-w-[594px] space-y-5">
           <div>
-            <label className="mb-2 block text-sm font-medium text-white/90">
-              Authenticator Name
+            <label className="mb-2 block text-sm font-semibold text-white">
+              App Name
             </label>
             <input type="text" value={name} onChange={(event) => onNameChange(event.target.value)} placeholder="Enter the App Name(e.g., Google Auth)" className="h-13 w-full rounded-2xl border border-white/20 bg-white/95 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#ffd700] focus:ring-4 focus:ring-[#ffd700]/20"/>
           </div>
 
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-white/90">
-              Authenticator code
+            <label className="block text-sm font-semibold text-white">
+              Verification Code
             </label>
             <MfaCodeInput
               value={code}
               onChange={onCodeChange}
               disabled={isSaving}
+              fullWidth
             />
           </div>
 
-          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
-            <button type="button" onClick={onBack} disabled={isSaving} aria-label="Back to QR code" title="Back" className="btn h-12 w-12 rounded-lg border border-white/18 bg-white/8 p-0 text-white/85 transition hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
+          <div className="space-y-4">
+            <button type="submit" disabled={isSaving} className="btn h-11 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-sm font-semibold text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
+              {isSaving ? "Saving..." : "Save Authenticator"}
+            </button>
+
+            <button type="button" onClick={onBack} disabled={isSaving} className="mx-auto flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white/70 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="size-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
               </svg>
-            </button>
-            <button type="submit" disabled={isSaving} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
-              {isSaving ? "Saving..." : "Save Authenticator"}
+              Back
             </button>
           </div>
         </form>
