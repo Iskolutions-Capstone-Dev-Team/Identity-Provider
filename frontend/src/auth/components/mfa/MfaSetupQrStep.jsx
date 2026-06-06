@@ -13,7 +13,7 @@ export default function MfaSetupQrStep({ qrCodeUrl, isLoading, onNext }) {
             </svg>
           </div>
           <p className="text-sm font-medium leading-6">
-            Note: Make sure to scan this using any authenticator app before clicking "Next".
+            Note: Scan this QR code using any authenticator app before clicking Next.
           </p>
         </div>
       </div>
