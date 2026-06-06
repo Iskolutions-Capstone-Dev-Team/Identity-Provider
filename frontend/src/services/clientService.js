@@ -12,6 +12,12 @@ const normalizeStringList = (values = []) =>
     (value) => typeof value === "string" && value.trim().length > 0,
   );
 
+const normalizeIntegerValue = (value) => {
+  const parsedValue = Number.parseInt(value, 10);
+
+  return Number.isInteger(parsedValue) ? String(parsedValue) : "";
+};
+
 function validateClientImageFile(imageFile) {
   if (!imageFile) {
     return;
@@ -154,6 +160,14 @@ const buildClientFormData = (data = {}) => {
   formData.append("redirect_uri", normalizeStringValue(data.redirect_uri));
   formData.append("logout_uri", normalizeStringValue(data.logout_uri));
   formData.append("one_portal_link", normalizeStringValue(data.one_portal_link ?? data.one_portal_redirect_link,),);
+  formData.append(
+    "access_token_ttl",
+    normalizeIntegerValue(data.access_token_ttl),
+  );
+  formData.append(
+    "refresh_token_ttl",
+    normalizeIntegerValue(data.refresh_token_ttl),
+  );
 
   normalizeStringList(data.grants).forEach((grant) => {
     formData.append("grants", grant);

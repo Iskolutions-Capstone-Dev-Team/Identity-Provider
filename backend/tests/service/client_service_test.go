@@ -27,8 +27,10 @@ func TestGetClientByID(t *testing.T) {
 	clientID := uuid.New()
 	userID := uuid.New()
 	client := &models.Client{
-		ID:         clientID[:],
-		ClientName: "Test Client",
+		ID:              clientID[:],
+		ClientName:      "Test Client",
+		AccessTokenTTL:  60,
+		RefreshTokenTTL: 168,
 	}
 
 	// 1. Setup mock expectations
@@ -58,6 +60,14 @@ func TestGetClientByID(t *testing.T) {
 
 	if resp.Name != client.ClientName {
 		t.Errorf("expected name %s, got %s", client.ClientName, resp.Name)
+	}
+
+	if resp.AccessTokenTTL != 60 {
+		t.Errorf("expected AccessTokenTTL 60, got %d", resp.AccessTokenTTL)
+	}
+
+	if resp.RefreshTokenTTL != 168 {
+		t.Errorf("expected RefreshTokenTTL 168, got %d", resp.RefreshTokenTTL)
 	}
 }
 

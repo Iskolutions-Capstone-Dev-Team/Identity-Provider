@@ -27,8 +27,9 @@ func TestGenerateAndValidateToken(t *testing.T) {
 
 	clientID := uuid.New()
 	client := &models.Client{
-		ID:      clientID[:],
-		BaseUrl: "http://client.com",
+		ID:             clientID[:],
+		BaseUrl:        "http://client.com",
+		AccessTokenTTL: 30,
 	}
 
 	claims := models.UserClaims{

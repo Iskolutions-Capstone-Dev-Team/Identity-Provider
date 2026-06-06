@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	models "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	gomock "go.uber.org/mock/gomock"
@@ -133,17 +134,17 @@ func (mr *MockAuthCodeRepositoryMockRecorder) RevokeTokens(ctx, userID any) *gom
 }
 
 // RotateRefreshToken mocks base method.
-func (m *MockAuthCodeRepository) RotateRefreshToken(ctx context.Context, oldToken, newToken string) error {
+func (m *MockAuthCodeRepository) RotateRefreshToken(ctx context.Context, oldToken, newToken string, expiresAt time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RotateRefreshToken", ctx, oldToken, newToken)
+	ret := m.ctrl.Call(m, "RotateRefreshToken", ctx, oldToken, newToken, expiresAt)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RotateRefreshToken indicates an expected call of RotateRefreshToken.
-func (mr *MockAuthCodeRepositoryMockRecorder) RotateRefreshToken(ctx, oldToken, newToken any) *gomock.Call {
+func (mr *MockAuthCodeRepositoryMockRecorder) RotateRefreshToken(ctx, oldToken, newToken, expiresAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RotateRefreshToken", reflect.TypeOf((*MockAuthCodeRepository)(nil).RotateRefreshToken), ctx, oldToken, newToken)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RotateRefreshToken", reflect.TypeOf((*MockAuthCodeRepository)(nil).RotateRefreshToken), ctx, oldToken, newToken, expiresAt)
 }
 
 // StoreCode mocks base method.
@@ -161,17 +162,17 @@ func (mr *MockAuthCodeRepositoryMockRecorder) StoreCode(ctx, code, userID, clien
 }
 
 // StoreRefreshToken mocks base method.
-func (m *MockAuthCodeRepository) StoreRefreshToken(ctx context.Context, token string, userID, clientID []byte) error {
+func (m *MockAuthCodeRepository) StoreRefreshToken(ctx context.Context, token string, userID, clientID []byte, expiresAt time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StoreRefreshToken", ctx, token, userID, clientID)
+	ret := m.ctrl.Call(m, "StoreRefreshToken", ctx, token, userID, clientID, expiresAt)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // StoreRefreshToken indicates an expected call of StoreRefreshToken.
-func (mr *MockAuthCodeRepositoryMockRecorder) StoreRefreshToken(ctx, token, userID, clientID any) *gomock.Call {
+func (mr *MockAuthCodeRepositoryMockRecorder) StoreRefreshToken(ctx, token, userID, clientID, expiresAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreRefreshToken", reflect.TypeOf((*MockAuthCodeRepository)(nil).StoreRefreshToken), ctx, token, userID, clientID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreRefreshToken", reflect.TypeOf((*MockAuthCodeRepository)(nil).StoreRefreshToken), ctx, token, userID, clientID, expiresAt)
 }
 
 // VerifyClient mocks base method.
