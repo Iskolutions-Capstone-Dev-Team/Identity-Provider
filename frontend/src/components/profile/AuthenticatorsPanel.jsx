@@ -166,6 +166,11 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
   const carouselButtonClassName = isDarkMode
     ? "btn btn-circle h-11 min-h-11 w-11 border border-[#f8d24e]/35 bg-[#f8d24e]/10 text-[#ffe28a] shadow-none transition hover:border-[#f8d24e]/70 hover:bg-[#f8d24e]/20"
     : "btn btn-circle h-11 min-h-11 w-11 border border-[#7b0d15]/20 bg-white text-[#7b0d15] shadow-none transition hover:border-[#f8d24e] hover:bg-[#fff4dc]";
+  const pageDotClassName = isDarkMode
+    ? "h-2 w-2 rounded-full bg-white/18 transition-[width,background-color] duration-300 hover:bg-white/35"
+    : "h-2 w-2 rounded-full bg-[#d8cfd0] transition-[width,background-color] duration-300 hover:bg-[#c7adb4]";
+  const activePageDotClassName =
+    "h-2 w-5 rounded-full bg-[#7b0d15] transition-[width,background-color] duration-300";
   const slideCount = Math.ceil(authenticators.length / AUTHENTICATORS_PER_SLIDE);
   const hasCarouselControls = slideCount > 1;
   const carouselSlides = Array.from({ length: slideCount }, (_, slideIndex) =>
@@ -270,8 +275,10 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
               ) : null}
 
               {hasCarouselControls ? (
-                <div className="mt-3 text-center text-xs font-semibold text-[#c7adb4]">
-                  {currentSlide + 1} / {slideCount}
+                <div className="mt-4 flex items-center justify-center gap-2" aria-label="Authenticator carousel pages">
+                  {carouselSlides.map((_, slideIndex) => (
+                    <button key={slideIndex} type="button" className={slideIndex === currentSlide ? activePageDotClassName : pageDotClassName} onClick={() => setCurrentSlide(slideIndex)} aria-label={`Show authenticator page ${slideIndex + 1}`} aria-current={slideIndex === currentSlide ? "page" : undefined}/>
+                  ))}
                 </div>
               ) : null}
             </div>
