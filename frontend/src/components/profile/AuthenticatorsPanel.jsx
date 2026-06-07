@@ -188,6 +188,34 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     setCurrentSlide((slide) => (slide + 1) % slideCount);
   };
 
+  const renderAuthenticatorCard = (authenticator) => (
+    <article key={authenticator.id} className={cardClassName}>
+      <div className="flex min-w-0 flex-col gap-4">
+        <AuthenticatorIcon colorMode={colorMode} type={authenticator.type} />
+
+        <div className="min-w-0 pr-10">
+          <h4 className={cardTitleClassName}>
+            {authenticator.name || "Authenticator app"}
+          </h4>
+          <p className={cardTypeClassName}>
+            Type: {getAuthenticatorTypeLabel(authenticator.type)}
+          </p>
+        </div>
+
+        <div className={metadataClassName}>
+          <p>Added: {formatDate(authenticator.created_at)}</p>
+          <p>Last used: {formatDate(authenticator.last_used_at)}</p>
+        </div>
+      </div>
+
+      <button type="button" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} title="Delete authenticator" className={deleteButtonClassName}>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor" className="size-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+        </svg>
+      </button>
+    </article>
+  );
+
   return (
     <>
       <section className={wrapperClassName}>
@@ -225,38 +253,16 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
             </div>
           ) : (
             <div className="relative">
-              <div className="carousel w-full overflow-hidden">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden">
+                {authenticators.map(renderAuthenticatorCard)}
+              </div>
+
+              <div className="carousel hidden w-full overflow-hidden lg:block">
                 <div className="flex w-full transition-transform duration-500 ease-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
                   {carouselSlides.map((slideAuthenticators, slideIndex) => (
                     <div key={slideIndex} className="carousel-item w-full shrink-0">
                       <div className="grid w-full justify-center gap-3 sm:grid-cols-[repeat(3,minmax(15rem,18rem))]">
-                        {slideAuthenticators.map((authenticator) => (
-                          <article key={authenticator.id} className={cardClassName}>
-                            <div className="flex min-w-0 flex-col gap-4">
-                              <AuthenticatorIcon colorMode={colorMode} type={authenticator.type} />
-
-                              <div className="min-w-0 pr-10">
-                                <h4 className={cardTitleClassName}>
-                                  {authenticator.name || "Authenticator app"}
-                                </h4>
-                                <p className={cardTypeClassName}>
-                                  Type: {getAuthenticatorTypeLabel(authenticator.type)}
-                                </p>
-                              </div>
-
-                              <div className={metadataClassName}>
-                                <p>Added: {formatDate(authenticator.created_at)}</p>
-                                <p>Last used: {formatDate(authenticator.last_used_at)}</p>
-                              </div>
-                            </div>
-
-                            <button type="button" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} title="Delete authenticator" className={deleteButtonClassName}>
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor" className="size-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                              </svg>
-                            </button>
-                          </article>
-                        ))}
+                        {slideAuthenticators.map(renderAuthenticatorCard)}
                       </div>
                     </div>
                   ))}
@@ -264,7 +270,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
               </div>
 
               {hasCarouselControls ? (
-                <div className="mt-4 flex items-center justify-center gap-3 sm:absolute sm:-left-3 sm:-right-3 sm:top-1/2 sm:mt-0 sm:-translate-y-1/2 sm:justify-between">
+                <div className="mt-4 hidden items-center justify-center gap-3 lg:absolute lg:-left-3 lg:-right-3 lg:top-1/2 lg:mt-0 lg:flex lg:-translate-y-1/2 lg:justify-between">
                   <button type="button" className={carouselButtonClassName} onClick={goToPreviousSlide} aria-label="Show previous authenticators">
                     &#10094;
                   </button>
@@ -275,7 +281,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
               ) : null}
 
               {hasCarouselControls ? (
-                <div className="mt-4 flex items-center justify-center gap-2" aria-label="Authenticator carousel pages">
+                <div className="mt-4 hidden items-center justify-center gap-2 lg:flex" aria-label="Authenticator carousel pages">
                   {carouselSlides.map((_, slideIndex) => (
                     <button key={slideIndex} type="button" className={slideIndex === currentSlide ? activePageDotClassName : pageDotClassName} onClick={() => setCurrentSlide(slideIndex)} aria-label={`Show authenticator page ${slideIndex + 1}`} aria-current={slideIndex === currentSlide ? "page" : undefined}/>
                   ))}
