@@ -43,17 +43,29 @@ function PasskeySetupIcon({ className }) {
   );
 }
 
-function ConnectionOptionButton({ title, description, icon, onClick, disabled }) {
+function ConnectionOptionButton({ title, description, icon, colorMode, onClick, disabled }) {
+  const isDarkMode = colorMode === "dark";
+  const buttonClassName = isDarkMode
+    ? "group flex min-h-[5.5rem] w-full items-center gap-4 rounded-[1.25rem] border border-white/12 bg-white/[0.04] px-5 py-4 text-left transition hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/10 disabled:cursor-not-allowed disabled:opacity-60"
+    : "group flex min-h-[5.5rem] w-full items-center gap-4 rounded-[1.25rem] border border-[#7b0d15]/12 bg-[#fffaf2] px-5 py-4 text-left shadow-[0_18px_36px_-32px_rgba(43,3,7,0.5)] transition hover:border-[#f8d24e]/80 hover:bg-[#fff4dc] disabled:cursor-not-allowed disabled:opacity-60";
+  const iconClassName = isDarkMode
+    ? "flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-[#f8d24e]/35 bg-[#f8d24e]/10 text-[#ffe28a]"
+    : "flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-[#f8d24e]/55 bg-[#f8d24e]/18 text-[#7b0d15]";
+  const titleClassName = isDarkMode
+    ? "block text-base font-bold text-white"
+    : "block text-base font-bold text-[#351018]";
+  const descriptionClassName = isDarkMode
+    ? "mt-1 block text-sm font-semibold leading-5 text-[#d8c6cc]"
+    : "mt-1 block text-sm font-semibold leading-5 text-[#7b5560]";
+
   return (
-    <button type="button" className="group flex min-h-[5.5rem] w-full items-center gap-4 rounded-[1.25rem] border border-white/12 bg-white/[0.04] px-5 py-4 text-left transition hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/10 disabled:cursor-not-allowed disabled:opacity-60" onClick={onClick} disabled={disabled}>
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-[#f8d24e]/35 bg-[#f8d24e]/10 text-[#ffe28a]">
+    <button type="button" className={buttonClassName} onClick={onClick} disabled={disabled}>
+      <span className={iconClassName}>
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-base font-bold text-white">{title}</span>
-        <span className="mt-1 block text-sm font-semibold leading-5 text-[#d8c6cc]">
-          {description}
-        </span>
+        <span className={titleClassName}>{title}</span>
+        <span className={descriptionClassName}>{description}</span>
       </span>
     </button>
   );
@@ -83,8 +95,9 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
     colorMode === "dark" ? "h-10 w-10 text-[#ffe28a]" : "h-10 w-10 text-[#fff0a8]";
   const modalHeaderSpacingClassName =
     `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
-  const setupBodyClassName =
-    "rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(35,38,48,0.96),rgba(27,29,38,0.96))] p-5 text-white shadow-[0_22px_45px_-36px_rgba(2,6,23,0.72)] sm:p-6";
+  const setupBodyClassName = colorMode === "dark"
+    ? "rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(35,38,48,0.96),rgba(27,29,38,0.96))] p-5 text-white shadow-[0_22px_45px_-36px_rgba(2,6,23,0.72)] sm:p-6"
+    : "rounded-[1.5rem] border border-[#7b0d15]/10 bg-[#fffaf2] p-5 text-[#351018] shadow-[0_22px_45px_-36px_rgba(43,3,7,0.45)] sm:p-6";
 
   useEffect(() => {
     if (open) {
@@ -249,6 +262,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
                   title="Authenticator App"
                   description="Scan a QR code and verify a 6-digit code."
                   icon={<AuthenticatorSetupIcon className="h-6 w-6" />}
+                  colorMode={colorMode}
                   onClick={handleSelectAuthenticator}
                   disabled={isRegisteringPasskey}
                 />
@@ -256,6 +270,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
                   title="Passkey"
                   description="Use your device, browser, or security key."
                   icon={<PasskeySetupIcon className="h-6 w-6" />}
+                  colorMode={colorMode}
                   onClick={handleSelectPasskey}
                   disabled={isRegisteringPasskey}
                 />
@@ -266,6 +281,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
                 <MfaSetupQrStep
                   qrCodeUrl={qrCodeUrl}
                   isLoading={!qrCodeUrl && !error}
+                  colorMode={colorMode}
                   onNext={() => {
                     setCode("");
                     setError("");
@@ -278,6 +294,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
                   name={name}
                   backupCodes={backupCodes}
                   isSaving={isSaving}
+                  colorMode={colorMode}
                   onCodeChange={(value) => setCode(getDigits(value))}
                   onNameChange={setName}
                   onSubmit={handleSaveAuthenticator}

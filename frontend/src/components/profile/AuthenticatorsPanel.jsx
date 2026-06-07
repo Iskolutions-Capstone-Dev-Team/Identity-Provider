@@ -6,6 +6,8 @@ import NewAuthenticatorModal from "./NewAuthenticatorModal";
 import { mfaService } from "../../services/mfaService";
 import { formatTimestamp } from "../../utils/formatTimestamp";
 
+const AUTHENTICATORS_PER_SLIDE = 3;
+
 function getRequestErrorMessage(error, fallbackMessage) {
   return (
     error?.response?.data?.error ||
@@ -75,6 +77,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
   const [successMessage, setSuccessMessage] = useState("");
   const [authenticatorToDelete, setAuthenticatorToDelete] = useState(null);
   const [isNewConnectionOpen, setIsNewConnectionOpen] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const loadAuthenticators = useCallback(async () => {
     if (!email) {
@@ -103,6 +106,10 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
   useEffect(() => {
     loadAuthenticators();
   }, [loadAuthenticators]);
+
+  useEffect(() => {
+    setCurrentSlide(0);
+  }, [authenticators.length]);
 
   const handleDeleteAuthenticator = async () => {
     if (!authenticatorToDelete?.id) {
@@ -156,6 +163,25 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     : "border-t border-[#7b0d15]/10 pt-3 text-xs font-semibold leading-6 text-[#7b5560]";
   const deleteButtonClassName =
     "btn absolute right-4 top-4 h-10 w-10 rounded-[0.9rem] border border-red-400/45 bg-red-500/10 p-0 text-red-500 shadow-none transition hover:border-red-500/70 hover:bg-red-500/15 hover:text-red-400";
+  const carouselButtonClassName = isDarkMode
+    ? "btn btn-circle h-11 min-h-11 w-11 border border-[#f8d24e]/35 bg-[#f8d24e]/10 text-[#ffe28a] shadow-none transition hover:border-[#f8d24e]/70 hover:bg-[#f8d24e]/20"
+    : "btn btn-circle h-11 min-h-11 w-11 border border-[#7b0d15]/20 bg-white text-[#7b0d15] shadow-none transition hover:border-[#f8d24e] hover:bg-[#fff4dc]";
+  const slideCount = Math.ceil(authenticators.length / AUTHENTICATORS_PER_SLIDE);
+  const hasCarouselControls = slideCount > 1;
+  const carouselSlides = Array.from({ length: slideCount }, (_, slideIndex) =>
+    authenticators.slice(
+      slideIndex * AUTHENTICATORS_PER_SLIDE,
+      slideIndex * AUTHENTICATORS_PER_SLIDE + AUTHENTICATORS_PER_SLIDE,
+    ),
+  );
+
+  const goToPreviousSlide = () => {
+    setCurrentSlide((slide) => (slide === 0 ? slideCount - 1 : slide - 1));
+  };
+
+  const goToNextSlide = () => {
+    setCurrentSlide((slide) => (slide + 1) % slideCount);
+  };
 
   return (
     <>
@@ -193,34 +219,61 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
               No authenticator apps are connected yet.
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(15rem,18rem))]">
-              {authenticators.map((authenticator) => (
-                <article key={authenticator.id} className={cardClassName}>
-                  <div className="flex min-w-0 flex-col gap-4">
-                    <AuthenticatorIcon colorMode={colorMode} type={authenticator.type} />
+            <div className="relative">
+              <div className="carousel w-full overflow-hidden">
+                <div className="flex w-full transition-transform duration-500 ease-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
+                  {carouselSlides.map((slideAuthenticators, slideIndex) => (
+                    <div key={slideIndex} className="carousel-item w-full shrink-0">
+                      <div className="grid w-full justify-center gap-3 sm:grid-cols-[repeat(3,minmax(15rem,18rem))]">
+                        {slideAuthenticators.map((authenticator) => (
+                          <article key={authenticator.id} className={cardClassName}>
+                            <div className="flex min-w-0 flex-col gap-4">
+                              <AuthenticatorIcon colorMode={colorMode} type={authenticator.type} />
 
-                    <div className="min-w-0 pr-10">
-                      <h4 className={cardTitleClassName}>
-                        {authenticator.name || "Authenticator app"}
-                      </h4>
-                      <p className={cardTypeClassName}>
-                        Type: {getAuthenticatorTypeLabel(authenticator.type)}
-                      </p>
+                              <div className="min-w-0 pr-10">
+                                <h4 className={cardTitleClassName}>
+                                  {authenticator.name || "Authenticator app"}
+                                </h4>
+                                <p className={cardTypeClassName}>
+                                  Type: {getAuthenticatorTypeLabel(authenticator.type)}
+                                </p>
+                              </div>
+
+                              <div className={metadataClassName}>
+                                <p>Added: {formatDate(authenticator.created_at)}</p>
+                                <p>Last used: {formatDate(authenticator.last_used_at)}</p>
+                              </div>
+                            </div>
+
+                            <button type="button" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} title="Delete authenticator" className={deleteButtonClassName}>
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor" className="size-5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                              </svg>
+                            </button>
+                          </article>
+                        ))}
+                      </div>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    <div className={metadataClassName}>
-                      <p>Added: {formatDate(authenticator.created_at)}</p>
-                      <p>Last used: {formatDate(authenticator.last_used_at)}</p>
-                    </div>
-                  </div>
-
-                  <button type="button" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} title="Delete authenticator" className={deleteButtonClassName}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor" className="size-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                    </svg>
+              {hasCarouselControls ? (
+                <div className="mt-4 flex items-center justify-center gap-3 sm:absolute sm:-left-3 sm:-right-3 sm:top-1/2 sm:mt-0 sm:-translate-y-1/2 sm:justify-between">
+                  <button type="button" className={carouselButtonClassName} onClick={goToPreviousSlide} aria-label="Show previous authenticators">
+                    &#10094;
                   </button>
-                </article>
-              ))}
+                  <button type="button" className={carouselButtonClassName} onClick={goToNextSlide} aria-label="Show next authenticators">
+                    &#10095;
+                  </button>
+                </div>
+              ) : null}
+
+              {hasCarouselControls ? (
+                <div className="mt-3 text-center text-xs font-semibold text-[#c7adb4]">
+                  {currentSlide + 1} / {slideCount}
+                </div>
+              ) : null}
             </div>
           )}
         </div>
