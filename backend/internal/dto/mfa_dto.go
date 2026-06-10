@@ -43,5 +43,6 @@ type MFAAuthenticatorResponse struct {
 // authentication ceremony. The backend uses the email to load the
 // user and build the WebAuthn challenge.
 type PasskeyBeginRequest struct {
-	Email string `json:"email" binding:"required"`
+	Email             string `json:"email" binding:"required"`
+	PlatformAvailable *bool  `json:"platform_available"`
 }
