@@ -168,7 +168,18 @@ export default function Mfa() {
   };
 
   const registerPasskey = async () => {
-    const options = await mfaService.beginPasskeyRegistration(email);
+    let platformAvailable = false;
+    if (window.PublicKeyCredential &&
+        typeof window.PublicKeyCredential
+          .isUserVerifyingPlatformAuthenticatorAvailable === "function") {
+      platformAvailable = await window.PublicKeyCredential
+        .isUserVerifyingPlatformAuthenticatorAvailable();
+    }
+
+    const options = await mfaService.beginPasskeyRegistration(
+      email,
+      platformAvailable,
+    );
     const credential = await createPasskeyCredential(options);
 
     await mfaService.finishPasskeyRegistration(email, credential);
@@ -176,7 +187,18 @@ export default function Mfa() {
   };
 
   const verifyPasskey = async () => {
-    const options = await mfaService.beginPasskeyVerification(email);
+    let platformAvailable = false;
+    if (window.PublicKeyCredential &&
+        typeof window.PublicKeyCredential
+          .isUserVerifyingPlatformAuthenticatorAvailable === "function") {
+      platformAvailable = await window.PublicKeyCredential
+        .isUserVerifyingPlatformAuthenticatorAvailable();
+    }
+
+    const options = await mfaService.beginPasskeyVerification(
+      email,
+      platformAvailable,
+    );
     const credential = await getPasskeyCredential(options);
 
     await mfaService.finishPasskeyVerification(email, credential);

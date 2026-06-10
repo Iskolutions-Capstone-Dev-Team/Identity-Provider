@@ -45,10 +45,10 @@ func (m *MockPasskeyService) EXPECT() *MockPasskeyServiceMockRecorder {
 
 // BeginRegistration mocks base method.
 func (m *MockPasskeyService) BeginRegistration(
-	ctx context.Context, email string,
+	ctx context.Context, email string, platformAvailable bool,
 ) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BeginRegistration", ctx, email)
+	ret := m.ctrl.Call(m, "BeginRegistration", ctx, email, platformAvailable)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -56,13 +56,13 @@ func (m *MockPasskeyService) BeginRegistration(
 
 // BeginRegistration indicates an expected call of BeginRegistration.
 func (mr *MockPasskeyServiceMockRecorder) BeginRegistration(
-	ctx, email any,
+	ctx, email, platformAvailable any,
 ) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(
 		mr.mock, "BeginRegistration",
 		reflect.TypeOf((*MockPasskeyService)(nil).BeginRegistration),
-		ctx, email,
+		ctx, email, platformAvailable,
 	)
 }
 
@@ -90,10 +90,10 @@ func (mr *MockPasskeyServiceMockRecorder) FinishRegistration(
 
 // BeginVerification mocks base method.
 func (m *MockPasskeyService) BeginVerification(
-	ctx context.Context, email string,
+	ctx context.Context, email string, platformAvailable bool,
 ) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BeginVerification", ctx, email)
+	ret := m.ctrl.Call(m, "BeginVerification", ctx, email, platformAvailable)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -101,13 +101,13 @@ func (m *MockPasskeyService) BeginVerification(
 
 // BeginVerification indicates an expected call of BeginVerification.
 func (mr *MockPasskeyServiceMockRecorder) BeginVerification(
-	ctx, email any,
+	ctx, email, platformAvailable any,
 ) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(
 		mr.mock, "BeginVerification",
 		reflect.TypeOf((*MockPasskeyService)(nil).BeginVerification),
-		ctx, email,
+		ctx, email, platformAvailable,
 	)
 }
 
