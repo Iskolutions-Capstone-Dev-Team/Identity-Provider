@@ -56,5 +56,13 @@ var ClientsMigration = migrations.TableMigration{
 				ADD COLUMN one_portal_link VARCHAR(255);
 			`,
 		},
+		{
+			ID: "add-token-ttl-columns",
+			SQL: `
+				ALTER TABLE clients
+				ADD COLUMN access_token_ttl INT NOT NULL DEFAULT 60,
+				ADD COLUMN refresh_token_ttl INT NOT NULL DEFAULT 168;
+			`,
+		},
 	},
 }

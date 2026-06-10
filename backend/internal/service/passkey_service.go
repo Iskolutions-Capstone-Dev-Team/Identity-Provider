@@ -34,16 +34,15 @@ func (u *PasskeyUser) WebAuthnCredentials() []webauthn.Credential {
 	return u.credentials
 }
 
-// PasskeyService manages WebAuthn registration and verification.
 type PasskeyService interface {
 	BeginRegistration(
-		ctx context.Context, email string,
+		ctx context.Context, email string, platformAvailable bool,
 	) ([]byte, error)
 	FinishRegistration(
 		ctx context.Context, email string, r *http.Request,
 	) error
 	BeginVerification(
-		ctx context.Context, email string,
+		ctx context.Context, email string, platformAvailable bool,
 	) ([]byte, error)
 	FinishVerification(
 		ctx context.Context, email string, r *http.Request,
@@ -70,10 +69,12 @@ func rpidFromURL(rawURL string) string {
 }
 
 // NewPasskeyService constructs a PasskeyService using CLIENT_BASE_URL
-// as both the WebAuthn origin and the source of the RPID.
+// as both the WebAuthn origin and the source of the RPID, along with
+// allowed client origins from the database.
 func NewPasskeyService(
 	pr repository.PasskeyRepository,
 	us UserService,
+	cr repository.ClientRepository,
 ) (PasskeyService, error) {
 	origin := os.Getenv("CLIENT_BASE_URL")
 	if origin == "" {
@@ -83,14 +84,38 @@ func NewPasskeyService(
 	}
 
 	rpid := rpidFromURL(origin)
-	// Strip trailing slash from origin for strict matching.
 	origin = strings.TrimRight(origin, "/")
+
+	originsMap := make(map[string]bool)
+	originsMap[origin] = true
+
+	// Query other allowed client origins from DB
+	dbURLS, err := cr.ListClientBaseURLS(context.Background())
+	if err == nil {
+		for _, u := range dbURLS {
+			parsed, err := url.Parse(u)
+			if err != nil || parsed.Host == "" {
+				continue
+			}
+			scheme := parsed.Scheme
+			if scheme == "" {
+				scheme = "http"
+			}
+			orig := fmt.Sprintf("%s://%s", scheme, parsed.Host)
+			originsMap[orig] = true
+		}
+	}
+
+	var origins []string
+	for o := range originsMap {
+		origins = append(origins, o)
+	}
 
 	requireRK := true
 	wa, err := webauthn.New(&webauthn.Config{
 		RPDisplayName: "Identity Provider",
 		RPID:          rpid,
-		RPOrigins:     []string{origin},
+		RPOrigins:     origins,
 		AuthenticatorSelection: protocol.AuthenticatorSelection{
 			RequireResidentKey: &requireRK,
 			ResidentKey:        protocol.ResidentKeyRequirementRequired,
@@ -168,14 +193,27 @@ func (s *passkeyService) buildPasskeyUser(
 
 // BeginRegistration generates a WebAuthn registration challenge.
 func (s *passkeyService) BeginRegistration(
-	ctx context.Context, email string,
+	ctx context.Context, email string, platformAvailable bool,
 ) ([]byte, error) {
 	pu, err := s.buildPasskeyUser(ctx, email)
 	if err != nil {
 		return nil, err
 	}
 
-	creation, session, err := s.wa.BeginRegistration(pu)
+	var opts []webauthn.RegistrationOption
+	if platformAvailable {
+		requireRK := true
+		opts = append(opts, webauthn.WithAuthenticatorSelection(
+			protocol.AuthenticatorSelection{
+				AuthenticatorAttachment: protocol.Platform,
+				RequireResidentKey:      &requireRK,
+				ResidentKey:             protocol.ResidentKeyRequirementRequired,
+				UserVerification:        protocol.VerificationPreferred,
+			},
+		))
+	}
+
+	creation, session, err := s.wa.BeginRegistration(pu, opts...)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[PasskeyService] Begin Registration: %w", err,
@@ -250,7 +288,7 @@ func (s *passkeyService) FinishRegistration(
 
 // BeginVerification generates a WebAuthn authentication challenge.
 func (s *passkeyService) BeginVerification(
-	ctx context.Context, email string,
+	ctx context.Context, email string, platformAvailable bool,
 ) ([]byte, error) {
 	pu, err := s.buildPasskeyUser(ctx, email)
 	if err != nil {

@@ -13,4 +13,9 @@ const (
 	SECRET_ENTROPY      = 32
 	DEFAULT_PAGE        = 1
 	ACCESS_TOKEN_EXPIRY = 3600
+
+	// DefaultAccessTokenTTL represents access token duration in minutes
+	DefaultAccessTokenTTL = 60
+	// DefaultRefreshTokenTTL represents refresh token duration in hours
+	DefaultRefreshTokenTTL = 168
 )

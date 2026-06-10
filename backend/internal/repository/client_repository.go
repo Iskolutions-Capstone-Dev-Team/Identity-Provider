@@ -58,7 +58,8 @@ func (r *clientRepository) GetByID(ctx context.Context,
 		SELECT id, client_name, description,
 		       image_location, base_url,
 		       redirect_uri, logout_uri, updated_at,
-		       one_portal_link
+		       one_portal_link, access_token_ttl,
+		       refresh_token_ttl
 		FROM clients
 		WHERE id = ? AND deleted_at IS NULL`
 
@@ -102,7 +103,8 @@ func (r *clientRepository) ListClients(ctx context.Context, limit,
 			id, client_name,
 			description, image_location,
 			base_url, redirect_uri, logout_uri, created_at,
-			one_portal_link
+			one_portal_link, access_token_ttl,
+			refresh_token_ttl
 		FROM clients
 		WHERE deleted_at IS NULL AND client_name LIKE ?
 		LIMIT ? OFFSET ?
@@ -123,7 +125,8 @@ func (r *clientRepository) ListBoundClients(ctx context.Context,
 			c.id, c.client_name,
 			c.description, c.image_location,
 			c.base_url, c.redirect_uri, c.logout_uri, c.created_at,
-			c.one_portal_link
+			c.one_portal_link, c.access_token_ttl,
+			c.refresh_token_ttl
 		FROM clients c
 		JOIN admin_allowed_clients a ON c.id = a.client_id
 		WHERE a.user_id = ?
@@ -148,7 +151,8 @@ func (r *clientRepository) ListAllowedClients(ctx context.Context,
 			c.id, c.client_name,
 			c.description, c.image_location,
 			c.base_url, c.redirect_uri, c.logout_uri, c.created_at,
-			c.one_portal_link
+			c.one_portal_link, c.access_token_ttl,
+			c.refresh_token_ttl
 		FROM clients c
 		JOIN client_allowed_users a ON c.id = a.client_id
 		WHERE a.user_id = ?
@@ -176,12 +180,14 @@ func (r *clientRepository) CreateClient(ctx context.Context,
 	q1 := `INSERT INTO clients (
 			id, client_name, client_secret,
 			base_url, redirect_uri, logout_uri,
-			description, image_location, one_portal_link
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			description, image_location, one_portal_link,
+			access_token_ttl, refresh_token_ttl
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err = tx.ExecContext(ctx, q1, client.ID, client.ClientName,
 		client.ClientSecret, client.BaseUrl, client.RedirectUri,
 		client.LogoutUri, client.Description, client.ImageLocation,
-		client.OnePortalLink,
+		client.OnePortalLink, client.AccessTokenTTL,
+		client.RefreshTokenTTL,
 	)
 	if err != nil {
 		return err
@@ -224,12 +230,15 @@ func (r *clientRepository) UpdateClient(ctx context.Context,
 			base_url = ?,
 			redirect_uri = ?,
 			logout_uri = ?,
-			one_portal_link = ?
+			one_portal_link = ?,
+			access_token_ttl = ?,
+			refresh_token_ttl = ?
 		WHERE id = ?`
 
 	_, err := r.db.ExecContext(ctx, query, c.ClientName, c.Description,
 		c.ImageLocation, c.ImageLocation, c.BaseUrl, c.RedirectUri,
-		c.LogoutUri, c.OnePortalLink, c.ID,
+		c.LogoutUri, c.OnePortalLink, c.AccessTokenTTL,
+		c.RefreshTokenTTL, c.ID,
 	)
 	if err != nil {
 		return err
@@ -274,7 +283,17 @@ func (r *clientRepository) GetClientAllowedRoles(ctx context.Context,
 func (r *clientRepository) ListClientBaseURLS(ctx context.Context,
 ) ([]string, error) {
 	var baseURLS []string
-	query := `SELECT base_url FROM clients WHERE deleted_at IS NULL`
+	query := `
+		SELECT base_url FROM clients 
+		WHERE deleted_at IS NULL 
+		  AND base_url IS NOT NULL 
+		  AND base_url != ''
+		UNION
+		SELECT one_portal_link FROM clients 
+		WHERE deleted_at IS NULL 
+		  AND one_portal_link IS NOT NULL 
+		  AND one_portal_link != ''
+	`
 	err := r.db.SelectContext(ctx, &baseURLS, query)
 	if err != nil {
 		return nil, err

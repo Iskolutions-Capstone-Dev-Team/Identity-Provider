@@ -1304,6 +1304,7 @@ func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
 			Description:   cl.Description,
 			ImageLocation: cl.ImageLocation,
 			BaseURL:       cl.BaseURL,
+			OnePortalLink: cl.OnePortalLink,
 		})
 	}
 

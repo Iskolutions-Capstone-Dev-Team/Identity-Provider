@@ -6,6 +6,8 @@ import NewAuthenticatorModal from "./NewAuthenticatorModal";
 import { mfaService } from "../../services/mfaService";
 import { formatTimestamp } from "../../utils/formatTimestamp";
 
+const AUTHENTICATORS_PER_SLIDE = 3;
+
 function getRequestErrorMessage(error, fallbackMessage) {
   return (
     error?.response?.data?.error ||
@@ -25,8 +27,51 @@ function formatDate(value) {
   return timestamp === "NaN-NaN-NaN NaN:NaN:NaN" ? "Unavailable" : timestamp;
 }
 
-function AuthenticatorIcon({ colorMode }) {
+function getAuthenticatorTypeLabel(type) {
+  const normalizedType = String(type || "").toLowerCase();
+
+  if (normalizedType === "totp") {
+    return "authenticator app";
+  }
+
+  return normalizedType || "authenticator app";
+}
+
+function PhoneIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-7 w-7 sm:h-8 sm:w-8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+    </svg>
+  );
+}
+
+function PasskeyIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-7 w-7 sm:h-8 sm:w-8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+    </svg>
+  );
+}
+
+function AddedIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 shrink-0">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 2.994v2.25m10.5-2.25v2.25m-14.252 13.5V7.491a2.25 2.25 0 0 1 2.25-2.25h13.5a2.25 2.25 0 0 1 2.25 2.25v11.251m-18 0a2.25 2.25 0 0 0 2.25 2.25h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5a2.25 2.25 0 0 1 2.25-2.25h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5m-6.75-6h2.25m-9 2.25h4.5m.002-2.25h.005v.006H12v-.006Zm-.001 4.5h.006v.006h-.006v-.005Zm-2.25.001h.005v.006H9.75v-.006Zm-2.25 0h.005v.005h-.006v-.005Zm6.75-2.247h.005v.005h-.005v-.005Zm0 2.247h.006v.006h-.006v-.006Zm2.25-2.248h.006V15H16.5v-.005Z" />
+    </svg>
+  );
+}
+
+function LastUsedIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 shrink-0">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+  );
+}
+
+function AuthenticatorIcon({ colorMode, type }) {
   const isDarkMode = colorMode === "dark";
+  const isPasskey = String(type || "").toLowerCase() === "passkey";
 
   return (
     <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[1rem] sm:h-16 sm:w-16 ${
@@ -35,9 +80,7 @@ function AuthenticatorIcon({ colorMode }) {
           : "border border-[#f8d24e]/45 bg-[#fff4dc] text-[#7b0d15] shadow-[0_18px_44px_-34px_rgba(123,13,21,0.45)]"
       }`}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-7 w-7 sm:h-8 sm:w-8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M12 3.75 5.25 6.75v5.063c0 3.902 2.527 7.356 6.25 8.438 3.723-1.082 6.25-4.536 6.25-8.438V6.75L12 3.75Z" />
-      </svg>
+      {isPasskey ? <PasskeyIcon /> : <PhoneIcon />}
     </div>
   );
 }
@@ -50,6 +93,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
   const [successMessage, setSuccessMessage] = useState("");
   const [authenticatorToDelete, setAuthenticatorToDelete] = useState(null);
   const [isNewConnectionOpen, setIsNewConnectionOpen] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const loadAuthenticators = useCallback(async () => {
     if (!email) {
@@ -78,6 +122,10 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
   useEffect(() => {
     loadAuthenticators();
   }, [loadAuthenticators]);
+
+  useEffect(() => {
+    setCurrentSlide(0);
+  }, [authenticators.length]);
 
   const handleDeleteAuthenticator = async () => {
     if (!authenticatorToDelete?.id) {
@@ -127,10 +175,69 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     ? "mt-1 text-sm font-semibold text-[#c7adb4]"
     : "mt-1 text-sm font-semibold text-[#7b5560]";
   const metadataClassName = isDarkMode
-    ? "border-t border-white/10 pt-3 text-xs font-semibold leading-6 text-[#c7adb4]"
-    : "border-t border-[#7b0d15]/10 pt-3 text-xs font-semibold leading-6 text-[#7b5560]";
+    ? "space-y-2 border-t border-white/10 pt-3 text-xs font-semibold text-[#c7adb4]"
+    : "space-y-2 border-t border-[#7b0d15]/10 pt-3 text-xs font-semibold text-[#7b5560]";
+  const metadataIconClassName = isDarkMode ? "text-[#ffd700]" : "text-[#7b0d15]";
   const deleteButtonClassName =
     "btn absolute right-4 top-4 h-10 w-10 rounded-[0.9rem] border border-red-400/45 bg-red-500/10 p-0 text-red-500 shadow-none transition hover:border-red-500/70 hover:bg-red-500/15 hover:text-red-400";
+  const carouselButtonClassName = isDarkMode
+    ? "btn btn-circle h-11 min-h-11 w-11 border border-[#f8d24e]/35 bg-[#f8d24e]/10 text-[#ffe28a] shadow-none transition hover:border-[#f8d24e]/70 hover:bg-[#f8d24e]/20"
+    : "btn btn-circle h-11 min-h-11 w-11 border border-[#7b0d15]/20 bg-white text-[#7b0d15] shadow-none transition hover:border-[#f8d24e] hover:bg-[#fff4dc]";
+  const pageDotClassName = isDarkMode
+    ? "h-2 w-2 rounded-full bg-white/18 transition-[width,background-color] duration-300 hover:bg-white/35"
+    : "h-2 w-2 rounded-full bg-[#d8cfd0] transition-[width,background-color] duration-300 hover:bg-[#c7adb4]";
+  const activePageDotClassName =
+    "h-2 w-5 rounded-full bg-[#7b0d15] transition-[width,background-color] duration-300";
+  const slideCount = Math.ceil(authenticators.length / AUTHENTICATORS_PER_SLIDE);
+  const hasCarouselControls = slideCount > 1;
+  const carouselSlides = Array.from({ length: slideCount }, (_, slideIndex) =>
+    authenticators.slice(
+      slideIndex * AUTHENTICATORS_PER_SLIDE,
+      slideIndex * AUTHENTICATORS_PER_SLIDE + AUTHENTICATORS_PER_SLIDE,
+    ),
+  );
+
+  const goToPreviousSlide = () => {
+    setCurrentSlide((slide) => (slide === 0 ? slideCount - 1 : slide - 1));
+  };
+
+  const goToNextSlide = () => {
+    setCurrentSlide((slide) => (slide + 1) % slideCount);
+  };
+
+  const renderAuthenticatorCard = (authenticator) => (
+    <article key={authenticator.id} className={cardClassName}>
+      <div className="flex min-w-0 flex-col gap-4">
+        <AuthenticatorIcon colorMode={colorMode} type={authenticator.type} />
+
+        <div className="min-w-0 pr-10">
+          <h4 className={cardTitleClassName}>
+            {authenticator.name || "Authenticator app"}
+          </h4>
+          <p className={cardTypeClassName}>
+            Type: {getAuthenticatorTypeLabel(authenticator.type)}
+          </p>
+        </div>
+
+        <div className={metadataClassName}>
+          <p className="flex items-center gap-2">
+            <span className={metadataIconClassName}><AddedIcon /></span>
+            <span>Added: {formatDate(authenticator.created_at)}</span>
+          </p>
+          <p className="flex items-center gap-2">
+            <span className={metadataIconClassName}><LastUsedIcon /></span>
+            <span>Last used: {formatDate(authenticator.last_used_at)}</span>
+          </p>
+        </div>
+      </div>
+
+      <button type="button" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} title="Delete authenticator" className={deleteButtonClassName}>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor" className="size-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+        </svg>
+      </button>
+    </article>
+  );
 
   return (
     <>
@@ -168,34 +275,41 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
               No authenticator apps are connected yet.
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(15rem,18rem))]">
-              {authenticators.map((authenticator) => (
-                <article key={authenticator.id} className={cardClassName}>
-                  <div className="flex min-w-0 flex-col gap-4">
-                    <AuthenticatorIcon colorMode={colorMode} />
+            <div className="relative">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden">
+                {authenticators.map(renderAuthenticatorCard)}
+              </div>
 
-                    <div className="min-w-0 pr-10">
-                      <h4 className={cardTitleClassName}>
-                        {authenticator.name || "Authenticator app"}
-                      </h4>
-                      <p className={cardTypeClassName}>
-                        Type: {authenticator.type || "TOTP"}
-                      </p>
+              <div className="carousel hidden w-full overflow-hidden lg:block">
+                <div className="flex w-full transition-transform duration-500 ease-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
+                  {carouselSlides.map((slideAuthenticators, slideIndex) => (
+                    <div key={slideIndex} className="carousel-item w-full shrink-0">
+                      <div className="grid w-full justify-center gap-3 sm:grid-cols-[repeat(3,minmax(15rem,18rem))]">
+                        {slideAuthenticators.map(renderAuthenticatorCard)}
+                      </div>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    <div className={metadataClassName}>
-                      <p>Added: {formatDate(authenticator.created_at)}</p>
-                      <p>Last used: {formatDate(authenticator.last_used_at)}</p>
-                    </div>
-                  </div>
-
-                  <button type="button" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} title="Delete authenticator" className={deleteButtonClassName}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor" className="size-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                    </svg>
+              {hasCarouselControls ? (
+                <div className="mt-4 hidden items-center justify-center gap-3 lg:absolute lg:-left-3 lg:-right-3 lg:top-1/2 lg:mt-0 lg:flex lg:-translate-y-1/2 lg:justify-between">
+                  <button type="button" className={carouselButtonClassName} onClick={goToPreviousSlide} aria-label="Show previous authenticators">
+                    &#10094;
                   </button>
-                </article>
-              ))}
+                  <button type="button" className={carouselButtonClassName} onClick={goToNextSlide} aria-label="Show next authenticators">
+                    &#10095;
+                  </button>
+                </div>
+              ) : null}
+
+              {hasCarouselControls ? (
+                <div className="mt-4 hidden items-center justify-center gap-2 lg:flex" aria-label="Authenticator carousel pages">
+                  {carouselSlides.map((_, slideIndex) => (
+                    <button key={slideIndex} type="button" className={slideIndex === currentSlide ? activePageDotClassName : pageDotClassName} onClick={() => setCurrentSlide(slideIndex)} aria-label={`Show authenticator page ${slideIndex + 1}`} aria-current={slideIndex === currentSlide ? "page" : undefined}/>
+                  ))}
+                </div>
+              ) : null}
             </div>
           )}
         </div>
@@ -214,8 +328,12 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
         email={email}
         colorMode={colorMode}
         onClose={() => setIsNewConnectionOpen(false)}
-        onCreated={async () => {
-          setSuccessMessage("Authenticator connected successfully.");
+        onCreated={async ({ type } = {}) => {
+          setSuccessMessage(
+            type === "passkey"
+              ? "Passkey connected successfully."
+              : "Authenticator connected successfully.",
+          );
           await loadAuthenticators();
         }}
       />

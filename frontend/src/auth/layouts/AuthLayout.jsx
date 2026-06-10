@@ -40,10 +40,10 @@ export default function AuthLayout({ children, allowPageScroll = false }) {
 
               <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.12em] text-white/85 lg:mt-6">
                 <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2">
-                  Secure access
+                  Centralized Access
                 </span>
                 <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2">
-                  Unified login
+                  Single Sign-On
                 </span>
               </div>
             </section>
