@@ -274,7 +274,17 @@ func (r *clientRepository) GetClientAllowedRoles(ctx context.Context,
 func (r *clientRepository) ListClientBaseURLS(ctx context.Context,
 ) ([]string, error) {
 	var baseURLS []string
-	query := `SELECT base_url FROM clients WHERE deleted_at IS NULL`
+	query := `
+		SELECT base_url FROM clients 
+		WHERE deleted_at IS NULL 
+		  AND base_url IS NOT NULL 
+		  AND base_url != ''
+		UNION
+		SELECT one_portal_link FROM clients 
+		WHERE deleted_at IS NULL 
+		  AND one_portal_link IS NOT NULL 
+		  AND one_portal_link != ''
+	`
 	err := r.db.SelectContext(ctx, &baseURLS, query)
 	if err != nil {
 		return nil, err
