@@ -34,16 +34,15 @@ func (u *PasskeyUser) WebAuthnCredentials() []webauthn.Credential {
 	return u.credentials
 }
 
-// PasskeyService manages WebAuthn registration and verification.
 type PasskeyService interface {
 	BeginRegistration(
-		ctx context.Context, email string,
+		ctx context.Context, email string, platformAvailable bool,
 	) ([]byte, error)
 	FinishRegistration(
 		ctx context.Context, email string, r *http.Request,
 	) error
 	BeginVerification(
-		ctx context.Context, email string,
+		ctx context.Context, email string, platformAvailable bool,
 	) ([]byte, error)
 	FinishVerification(
 		ctx context.Context, email string, r *http.Request,
@@ -194,14 +193,27 @@ func (s *passkeyService) buildPasskeyUser(
 
 // BeginRegistration generates a WebAuthn registration challenge.
 func (s *passkeyService) BeginRegistration(
-	ctx context.Context, email string,
+	ctx context.Context, email string, platformAvailable bool,
 ) ([]byte, error) {
 	pu, err := s.buildPasskeyUser(ctx, email)
 	if err != nil {
 		return nil, err
 	}
 
-	creation, session, err := s.wa.BeginRegistration(pu)
+	var opts []webauthn.RegistrationOption
+	if platformAvailable {
+		requireRK := true
+		opts = append(opts, webauthn.WithAuthenticatorSelection(
+			protocol.AuthenticatorSelection{
+				AuthenticatorAttachment: protocol.Platform,
+				RequireResidentKey:      &requireRK,
+				ResidentKey:             protocol.ResidentKeyRequirementRequired,
+				UserVerification:        protocol.VerificationPreferred,
+			},
+		))
+	}
+
+	creation, session, err := s.wa.BeginRegistration(pu, opts...)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[PasskeyService] Begin Registration: %w", err,
@@ -276,7 +288,7 @@ func (s *passkeyService) FinishRegistration(
 
 // BeginVerification generates a WebAuthn authentication challenge.
 func (s *passkeyService) BeginVerification(
-	ctx context.Context, email string,
+	ctx context.Context, email string, platformAvailable bool,
 ) ([]byte, error) {
 	pu, err := s.buildPasskeyUser(ctx, email)
 	if err != nil {
