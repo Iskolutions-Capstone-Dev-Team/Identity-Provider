@@ -70,10 +70,12 @@ func rpidFromURL(rawURL string) string {
 }
 
 // NewPasskeyService constructs a PasskeyService using CLIENT_BASE_URL
-// as both the WebAuthn origin and the source of the RPID.
+// as both the WebAuthn origin and the source of the RPID, along with
+// allowed client origins from the database.
 func NewPasskeyService(
 	pr repository.PasskeyRepository,
 	us UserService,
+	cr repository.ClientRepository,
 ) (PasskeyService, error) {
 	origin := os.Getenv("CLIENT_BASE_URL")
 	if origin == "" {
@@ -83,14 +85,38 @@ func NewPasskeyService(
 	}
 
 	rpid := rpidFromURL(origin)
-	// Strip trailing slash from origin for strict matching.
 	origin = strings.TrimRight(origin, "/")
+
+	originsMap := make(map[string]bool)
+	originsMap[origin] = true
+
+	// Query other allowed client origins from DB
+	dbURLS, err := cr.ListClientBaseURLS(context.Background())
+	if err == nil {
+		for _, u := range dbURLS {
+			parsed, err := url.Parse(u)
+			if err != nil || parsed.Host == "" {
+				continue
+			}
+			scheme := parsed.Scheme
+			if scheme == "" {
+				scheme = "http"
+			}
+			orig := fmt.Sprintf("%s://%s", scheme, parsed.Host)
+			originsMap[orig] = true
+		}
+	}
+
+	var origins []string
+	for o := range originsMap {
+		origins = append(origins, o)
+	}
 
 	requireRK := true
 	wa, err := webauthn.New(&webauthn.Config{
 		RPDisplayName: "Identity Provider",
 		RPID:          rpid,
-		RPOrigins:     []string{origin},
+		RPOrigins:     origins,
 		AuthenticatorSelection: protocol.AuthenticatorSelection{
 			RequireResidentKey: &requireRK,
 			ResidentKey:        protocol.ResidentKeyRequirementRequired,
