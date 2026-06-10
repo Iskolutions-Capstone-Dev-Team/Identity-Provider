@@ -19,15 +19,15 @@ func (g ClientGrantType) IsValid() bool {
 }
 
 type Client struct {
-	ID            []byte    `db:"id"`
-	ClientName    string    `db:"client_name"`
-	ClientSecret  string    `db:"client_secret"`
-	OldSecret     string    `db:"old_secret"`
-	BaseUrl       string    `db:"base_url"`
-	RedirectUri   string    `db:"redirect_uri"`
-	LogoutUri     string    `db:"logout_uri"`
-	Description   string    `db:"description"`
-	ImageLocation string    `db:"image_location"`
+	ID              []byte    `db:"id"`
+	ClientName      string    `db:"client_name"`
+	ClientSecret    string    `db:"client_secret"`
+	OldSecret       string    `db:"old_secret"`
+	BaseUrl         string    `db:"base_url"`
+	RedirectUri     string    `db:"redirect_uri"`
+	LogoutUri       string    `db:"logout_uri"`
+	Description     string    `db:"description"`
+	ImageLocation   string    `db:"image_location"`
 	OnePortalLink   *string   `db:"one_portal_link"`
 	AccessTokenTTL  int       `db:"access_token_ttl"`
 	RefreshTokenTTL int       `db:"refresh_token_ttl"`
