@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -471,10 +472,23 @@ func rpidFromRequest(r *http.Request) string {
 		return ""
 	}
 	var host string
-	if origin := r.Header.Get("Origin"); origin != "" {
-		parsed, err := url.Parse(origin)
-		if err == nil && parsed.Hostname() != "" {
-			host = parsed.Hostname()
+	if custom := r.Header.Get("X-Original-Client-Origin"); custom != "" {
+		if strings.HasPrefix(custom, "http://") ||
+			strings.HasPrefix(custom, "https://") {
+			parsed, err := url.Parse(custom)
+			if err == nil && parsed.Hostname() != "" {
+				host = parsed.Hostname()
+			}
+		} else {
+			host = custom
+		}
+	}
+	if host == "" {
+		if origin := r.Header.Get("Origin"); origin != "" {
+			parsed, err := url.Parse(origin)
+			if err == nil && parsed.Hostname() != "" {
+				host = parsed.Hostname()
+			}
 		}
 	}
 	if host == "" {
@@ -496,5 +510,16 @@ func rpidFromRequest(r *http.Request) string {
 	if idx := strings.Index(host, ":"); idx != -1 {
 		host = host[:idx]
 	}
+	log.Printf(
+		"[rpidFromRequest] X-Original-Client-Origin: %q, "+
+			"Origin: %q, Referer: %q, X-Forwarded-Host: %q, "+
+			"Host: %q => resolved RPID: %q",
+		r.Header.Get("X-Original-Client-Origin"),
+		r.Header.Get("Origin"),
+		r.Header.Get("Referer"),
+		r.Header.Get("X-Forwarded-Host"),
+		r.Host,
+		host,
+	)
 	return host
 }
