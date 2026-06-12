@@ -37,12 +37,14 @@ func (u *PasskeyUser) WebAuthnCredentials() []webauthn.Credential {
 type PasskeyService interface {
 	BeginRegistration(
 		ctx context.Context, email string, platformAvailable bool,
+		r *http.Request,
 	) ([]byte, error)
 	FinishRegistration(
 		ctx context.Context, email string, r *http.Request,
 	) error
 	BeginVerification(
 		ctx context.Context, email string, platformAvailable bool,
+		r *http.Request,
 	) ([]byte, error)
 	FinishVerification(
 		ctx context.Context, email string, r *http.Request,
@@ -239,6 +241,7 @@ func (s *passkeyService) buildPasskeyUser(
 // BeginRegistration generates a WebAuthn registration challenge.
 func (s *passkeyService) BeginRegistration(
 	ctx context.Context, email string, platformAvailable bool,
+	r *http.Request,
 ) ([]byte, error) {
 	pu, err := s.buildPasskeyUser(ctx, email)
 	if err != nil {
@@ -258,7 +261,13 @@ func (s *passkeyService) BeginRegistration(
 		))
 	}
 
-	creation, session, err := s.wa.BeginRegistration(pu, opts...)
+	rpid := rpidFromRequest(r)
+	wa, err := s.getWebAuthn(rpid)
+	if err != nil {
+		return nil, err
+	}
+
+	creation, session, err := wa.BeginRegistration(pu, opts...)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[PasskeyService] Begin Registration: %w", err,
@@ -293,7 +302,13 @@ func (s *passkeyService) FinishRegistration(
 	}
 	session := val.(*webauthn.SessionData)
 
-	cred, err := s.wa.FinishRegistration(pu, *session, r)
+	rpid := rpidFromRequest(r)
+	wa, err := s.getWebAuthn(rpid)
+	if err != nil {
+		return err
+	}
+
+	cred, err := wa.FinishRegistration(pu, *session, r)
 	if err != nil {
 		return fmt.Errorf(
 			"[PasskeyService] Finish Registration: %w", err,
@@ -334,13 +349,20 @@ func (s *passkeyService) FinishRegistration(
 // BeginVerification generates a WebAuthn authentication challenge.
 func (s *passkeyService) BeginVerification(
 	ctx context.Context, email string, platformAvailable bool,
+	r *http.Request,
 ) ([]byte, error) {
 	pu, err := s.buildPasskeyUser(ctx, email)
 	if err != nil {
 		return nil, err
 	}
 
-	assertion, session, err := s.wa.BeginLogin(pu)
+	rpid := rpidFromRequest(r)
+	wa, err := s.getWebAuthn(rpid)
+	if err != nil {
+		return nil, err
+	}
+
+	assertion, session, err := wa.BeginLogin(pu)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[PasskeyService] Begin Verification: %w", err,
@@ -375,7 +397,13 @@ func (s *passkeyService) FinishVerification(
 	}
 	session := val.(*webauthn.SessionData)
 
-	cred, err := s.wa.FinishLogin(pu, *session, r)
+	rpid := rpidFromRequest(r)
+	wa, err := s.getWebAuthn(rpid)
+	if err != nil {
+		return err
+	}
+
+	cred, err := wa.FinishLogin(pu, *session, r)
 	if err != nil {
 		return fmt.Errorf(
 			"[PasskeyService] Finish Verification: %w", err,
@@ -415,4 +443,53 @@ func (s *passkeyService) HasPasskey(
 	}
 
 	return s.passkeyRepo.HasPasskey(ctx, uid[:])
+}
+
+// getWebAuthn returns a customized WebAuthn instance for the given RPID.
+func (s *passkeyService) getWebAuthn(
+	rpid string,
+) (*webauthn.WebAuthn, error) {
+	if rpid == "" {
+		return s.wa, nil
+	}
+	requireRK := true
+	return webauthn.New(&webauthn.Config{
+		RPDisplayName: "Identity Provider",
+		RPID:          rpid,
+		RPOrigins:     s.wa.Config.RPOrigins,
+		AuthenticatorSelection: protocol.AuthenticatorSelection{
+			RequireResidentKey: &requireRK,
+			ResidentKey:        protocol.ResidentKeyRequirementRequired,
+			UserVerification:   protocol.VerificationPreferred,
+		},
+	})
+}
+
+// rpidFromRequest extracts the hostname from request origin/referer/headers.
+func rpidFromRequest(r *http.Request) string {
+	if r == nil {
+		return ""
+	}
+	if origin := r.Header.Get("Origin"); origin != "" {
+		parsed, err := url.Parse(origin)
+		if err == nil && parsed.Hostname() != "" {
+			return parsed.Hostname()
+		}
+	}
+	if referer := r.Header.Get("Referer"); referer != "" {
+		parsed, err := url.Parse(referer)
+		if err == nil && parsed.Hostname() != "" {
+			return parsed.Hostname()
+		}
+	}
+	if host := r.Header.Get("X-Forwarded-Host"); host != "" {
+		return host
+	}
+	if host := r.Host; host != "" {
+		if idx := strings.Index(host, ":"); idx != -1 {
+			return host[:idx]
+		}
+		return host
+	}
+	return ""
 }

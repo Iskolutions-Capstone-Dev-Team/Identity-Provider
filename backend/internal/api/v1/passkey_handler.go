@@ -34,7 +34,7 @@ func (h *PasskeyHandler) BeginRegistration(c *gin.Context) {
 	}
 
 	challenge, err := h.PasskeyService.BeginRegistration(
-		c.Request.Context(), req.Email, platformAvailable,
+		c.Request.Context(), req.Email, platformAvailable, c.Request,
 	)
 	if err != nil {
 		log.Printf("[BeginRegistration] Service: %v", err)
@@ -96,7 +96,7 @@ func (h *PasskeyHandler) BeginVerification(c *gin.Context) {
 	}
 
 	challenge, err := h.PasskeyService.BeginVerification(
-		c.Request.Context(), req.Email, platformAvailable,
+		c.Request.Context(), req.Email, platformAvailable, c.Request,
 	)
 	if err != nil {
 		log.Printf("[BeginVerification] Service: %v", err)
