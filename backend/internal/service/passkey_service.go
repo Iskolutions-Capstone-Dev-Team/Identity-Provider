@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -34,16 +35,17 @@ func (u *PasskeyUser) WebAuthnCredentials() []webauthn.Credential {
 	return u.credentials
 }
 
-// PasskeyService manages WebAuthn registration and verification.
 type PasskeyService interface {
 	BeginRegistration(
-		ctx context.Context, email string,
+		ctx context.Context, email string, platformAvailable bool,
+		r *http.Request,
 	) ([]byte, error)
 	FinishRegistration(
 		ctx context.Context, email string, r *http.Request,
 	) error
 	BeginVerification(
-		ctx context.Context, email string,
+		ctx context.Context, email string, platformAvailable bool,
+		r *http.Request,
 	) ([]byte, error)
 	FinishVerification(
 		ctx context.Context, email string, r *http.Request,
@@ -70,12 +72,61 @@ func rpidFromURL(rawURL string) string {
 }
 
 // NewPasskeyService constructs a PasskeyService using CLIENT_BASE_URL
-// as both the WebAuthn origin and the source of the RPID.
+// as both the WebAuthn origin and the source of the RPID, along with
+// allowed client origins from the database.
 func NewPasskeyService(
 	pr repository.PasskeyRepository,
 	us UserService,
+	cr repository.ClientRepository,
 ) (PasskeyService, error) {
 	origin := os.Getenv("CLIENT_BASE_URL")
+	originsMap := make(map[string]bool)
+
+	// Fetch One Portal client to support its origins and fallback
+	clients, err := cr.ListClients(
+		context.Background(), 10, 0, "One Portal",
+	)
+	if err == nil {
+		for _, c := range clients {
+			if strings.EqualFold(c.ClientName, "One Portal") {
+				if origin == "" {
+					if c.OnePortalLink != nil && *c.OnePortalLink != "" {
+						origin = *c.OnePortalLink
+					} else if c.BaseUrl != "" {
+						origin = c.BaseUrl
+					}
+				}
+				// Add both URLs to allowed origins
+				urls := []string{c.BaseUrl}
+				if c.OnePortalLink != nil && *c.OnePortalLink != "" {
+					urls = append(urls, *c.OnePortalLink)
+				}
+				for _, u := range urls {
+					if u == "" {
+						continue
+					}
+					parsed, err := url.Parse(u)
+					if err != nil || parsed.Host == "" {
+						continue
+					}
+					scheme := parsed.Scheme
+					if scheme == "" {
+						scheme = "http"
+					}
+					orig := fmt.Sprintf("%s://%s", scheme, parsed.Host)
+					originsMap[orig] = true
+				}
+			}
+		}
+	}
+
+	if origin == "" {
+		envOP := os.Getenv("VITE_ONE_PORTAL_URL")
+		if envOP != "" {
+			origin = envOP
+		}
+	}
+
 	if origin == "" {
 		return nil, fmt.Errorf(
 			"[PasskeyService] Init: CLIENT_BASE_URL is not set",
@@ -83,14 +134,36 @@ func NewPasskeyService(
 	}
 
 	rpid := rpidFromURL(origin)
-	// Strip trailing slash from origin for strict matching.
 	origin = strings.TrimRight(origin, "/")
+	originsMap[origin] = true
+
+	// Query other allowed client origins from DB
+	dbURLS, err := cr.ListClientBaseURLS(context.Background())
+	if err == nil {
+		for _, u := range dbURLS {
+			parsed, err := url.Parse(u)
+			if err != nil || parsed.Host == "" {
+				continue
+			}
+			scheme := parsed.Scheme
+			if scheme == "" {
+				scheme = "http"
+			}
+			orig := fmt.Sprintf("%s://%s", scheme, parsed.Host)
+			originsMap[orig] = true
+		}
+	}
+
+	var origins []string
+	for o := range originsMap {
+		origins = append(origins, o)
+	}
 
 	requireRK := true
 	wa, err := webauthn.New(&webauthn.Config{
 		RPDisplayName: "Identity Provider",
 		RPID:          rpid,
-		RPOrigins:     []string{origin},
+		RPOrigins:     origins,
 		AuthenticatorSelection: protocol.AuthenticatorSelection{
 			RequireResidentKey: &requireRK,
 			ResidentKey:        protocol.ResidentKeyRequirementRequired,
@@ -168,14 +241,34 @@ func (s *passkeyService) buildPasskeyUser(
 
 // BeginRegistration generates a WebAuthn registration challenge.
 func (s *passkeyService) BeginRegistration(
-	ctx context.Context, email string,
+	ctx context.Context, email string, platformAvailable bool,
+	r *http.Request,
 ) ([]byte, error) {
 	pu, err := s.buildPasskeyUser(ctx, email)
 	if err != nil {
 		return nil, err
 	}
 
-	creation, session, err := s.wa.BeginRegistration(pu)
+	var opts []webauthn.RegistrationOption
+	if platformAvailable {
+		requireRK := true
+		opts = append(opts, webauthn.WithAuthenticatorSelection(
+			protocol.AuthenticatorSelection{
+				AuthenticatorAttachment: protocol.Platform,
+				RequireResidentKey:      &requireRK,
+				ResidentKey:             protocol.ResidentKeyRequirementRequired,
+				UserVerification:        protocol.VerificationPreferred,
+			},
+		))
+	}
+
+	rpid := rpidFromRequest(r)
+	wa, err := s.getWebAuthn(rpid)
+	if err != nil {
+		return nil, err
+	}
+
+	creation, session, err := wa.BeginRegistration(pu, opts...)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[PasskeyService] Begin Registration: %w", err,
@@ -210,7 +303,13 @@ func (s *passkeyService) FinishRegistration(
 	}
 	session := val.(*webauthn.SessionData)
 
-	cred, err := s.wa.FinishRegistration(pu, *session, r)
+	rpid := rpidFromRequest(r)
+	wa, err := s.getWebAuthn(rpid)
+	if err != nil {
+		return err
+	}
+
+	cred, err := wa.FinishRegistration(pu, *session, r)
 	if err != nil {
 		return fmt.Errorf(
 			"[PasskeyService] Finish Registration: %w", err,
@@ -250,14 +349,21 @@ func (s *passkeyService) FinishRegistration(
 
 // BeginVerification generates a WebAuthn authentication challenge.
 func (s *passkeyService) BeginVerification(
-	ctx context.Context, email string,
+	ctx context.Context, email string, platformAvailable bool,
+	r *http.Request,
 ) ([]byte, error) {
 	pu, err := s.buildPasskeyUser(ctx, email)
 	if err != nil {
 		return nil, err
 	}
 
-	assertion, session, err := s.wa.BeginLogin(pu)
+	rpid := rpidFromRequest(r)
+	wa, err := s.getWebAuthn(rpid)
+	if err != nil {
+		return nil, err
+	}
+
+	assertion, session, err := wa.BeginLogin(pu)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[PasskeyService] Begin Verification: %w", err,
@@ -292,7 +398,13 @@ func (s *passkeyService) FinishVerification(
 	}
 	session := val.(*webauthn.SessionData)
 
-	cred, err := s.wa.FinishLogin(pu, *session, r)
+	rpid := rpidFromRequest(r)
+	wa, err := s.getWebAuthn(rpid)
+	if err != nil {
+		return err
+	}
+
+	cred, err := wa.FinishLogin(pu, *session, r)
 	if err != nil {
 		return fmt.Errorf(
 			"[PasskeyService] Finish Verification: %w", err,
@@ -332,4 +444,82 @@ func (s *passkeyService) HasPasskey(
 	}
 
 	return s.passkeyRepo.HasPasskey(ctx, uid[:])
+}
+
+// getWebAuthn returns a customized WebAuthn instance for the given RPID.
+func (s *passkeyService) getWebAuthn(
+	rpid string,
+) (*webauthn.WebAuthn, error) {
+	if rpid == "" {
+		return s.wa, nil
+	}
+	requireRK := true
+	return webauthn.New(&webauthn.Config{
+		RPDisplayName: "Identity Provider",
+		RPID:          rpid,
+		RPOrigins:     s.wa.Config.RPOrigins,
+		AuthenticatorSelection: protocol.AuthenticatorSelection{
+			RequireResidentKey: &requireRK,
+			ResidentKey:        protocol.ResidentKeyRequirementRequired,
+			UserVerification:   protocol.VerificationPreferred,
+		},
+	})
+}
+
+// rpidFromRequest extracts the hostname from request origin/referer/headers.
+func rpidFromRequest(r *http.Request) string {
+	if r == nil {
+		return ""
+	}
+	var host string
+	if custom := r.Header.Get("X-Original-Client-Origin"); custom != "" {
+		if strings.HasPrefix(custom, "http://") ||
+			strings.HasPrefix(custom, "https://") {
+			parsed, err := url.Parse(custom)
+			if err == nil && parsed.Hostname() != "" {
+				host = parsed.Hostname()
+			}
+		} else {
+			host = custom
+		}
+	}
+	if host == "" {
+		if origin := r.Header.Get("Origin"); origin != "" {
+			parsed, err := url.Parse(origin)
+			if err == nil && parsed.Hostname() != "" {
+				host = parsed.Hostname()
+			}
+		}
+	}
+	if host == "" {
+		if referer := r.Header.Get("Referer"); referer != "" {
+			parsed, err := url.Parse(referer)
+			if err == nil && parsed.Hostname() != "" {
+				host = parsed.Hostname()
+			}
+		}
+	}
+	if host == "" {
+		if fwd := r.Header.Get("X-Forwarded-Host"); fwd != "" {
+			host = fwd
+		}
+	}
+	if host == "" {
+		host = r.Host
+	}
+	if idx := strings.Index(host, ":"); idx != -1 {
+		host = host[:idx]
+	}
+	log.Printf(
+		"[rpidFromRequest] X-Original-Client-Origin: %q, "+
+			"Origin: %q, Referer: %q, X-Forwarded-Host: %q, "+
+			"Host: %q => resolved RPID: %q",
+		r.Header.Get("X-Original-Client-Origin"),
+		r.Header.Get("Origin"),
+		r.Header.Get("Referer"),
+		r.Header.Get("X-Forwarded-Host"),
+		r.Host,
+		host,
+	)
+	return host
 }

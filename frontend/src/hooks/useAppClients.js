@@ -34,6 +34,14 @@ const toNonNegativeInteger = (value, fallbackValue) => {
     : fallbackValue;
 };
 
+const toOptionalPositiveInteger = (value) => {
+  const parsedValue = Number.parseInt(value, 10);
+
+  return Number.isInteger(parsedValue) && parsedValue > 0
+    ? parsedValue
+    : "";
+};
+
 const mapClientSummary = (client = {}) => {
   const clientId = getClientId(client);
 
@@ -53,6 +61,12 @@ const mapClientSummary = (client = {}) => {
     logout_uri: client.logout_uri ?? client.logoutURI ?? "",
     one_portal_redirect_link: client.one_portal_link ?? client.one_portal_redirect_link ?? client.onePortalRedirectLink ?? "",
     grants: Array.isArray(client.grants) ? client.grants : [],
+    access_token_ttl: toOptionalPositiveInteger(
+      client.access_token_ttl ?? client.accessTokenTTL,
+    ),
+    refresh_token_ttl: toOptionalPositiveInteger(
+      client.refresh_token_ttl ?? client.refreshTokenTTL,
+    ),
     roleNames: normalizeRoleNames(
       client.allowed_roles ?? client.allowedRoles ?? client.roles,
     ),

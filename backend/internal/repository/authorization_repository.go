@@ -24,9 +24,9 @@ type AuthCodeRepository interface {
 	GetClaimsByID(ctx context.Context,
 		userId []byte) (*models.UserClaims, error)
 	StoreRefreshToken(ctx context.Context, token string, userID []byte,
-		clientID []byte) error
+		clientID []byte, expiresAt time.Time) error
 	RotateRefreshToken(ctx context.Context, oldToken,
-		newToken string) error
+		newToken string, expiresAt time.Time) error
 	GetIDsFromToken(ctx context.Context,
 		token string) ([]byte, []byte, error)
 	GetClientRedirectURI(ctx context.Context,
@@ -178,15 +178,14 @@ func (r *authCodeRepository) GetClaimsByID(ctx context.Context,
 }
 
 func (r *authCodeRepository) StoreRefreshToken(ctx context.Context,
-	token string, userID []byte, clientID []byte,
+	token string, userID []byte, clientID []byte, expiresAt time.Time,
 ) error {
-	expirationDate := time.Now().AddDate(YEARS, MONTHS, DAYS)
 	query := `
 		INSERT INTO refresh_tokens(token, client_id, user_id, expires_at)
 		VALUES (?, ?, ?, ?)
 	`
 	_, err := r.db.ExecContext(ctx, query, token, clientID, userID,
-		expirationDate)
+		expiresAt)
 	if err != nil {
 		return err
 	}
@@ -195,12 +194,10 @@ func (r *authCodeRepository) StoreRefreshToken(ctx context.Context,
 }
 
 func (r *authCodeRepository) RotateRefreshToken(ctx context.Context,
-	oldToken, newToken string,
+	oldToken, newToken string, expiresAt time.Time,
 ) error {
-	newExpiresAt := time.Now().AddDate(YEARS, MONTHS, DAYS)
-
 	query := `CALL RotateRefreshToken(?, ?, ?)`
-	_, err := r.db.ExecContext(ctx, query, oldToken, newToken, newExpiresAt)
+	_, err := r.db.ExecContext(ctx, query, oldToken, newToken, expiresAt)
 	if err != nil {
 		return err
 	}

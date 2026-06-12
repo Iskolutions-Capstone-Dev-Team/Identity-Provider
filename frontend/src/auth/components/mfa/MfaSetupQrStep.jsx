@@ -1,19 +1,30 @@
-export default function MfaSetupQrStep({ qrCodeUrl, isLoading, onNext }) {
+export default function MfaSetupQrStep({ qrCodeUrl, isLoading, colorMode = "dark", onNext }) {
+  const isDarkMode = colorMode === "dark";
+  const titleClassName = isDarkMode
+    ? "text-3xl font-semibold text-white"
+    : "text-3xl font-semibold text-[#351018]";
+  const noteClassName = isDarkMode
+    ? "rounded-2xl border border-blue-300/35 bg-blue-950/28 px-4 py-4 text-left text-blue-50 shadow-[0_18px_45px_-36px_rgba(37,99,235,0.72)]"
+    : "rounded-2xl border border-[#f8d24e]/55 bg-[#fff4dc] px-4 py-4 text-left text-[#351018] shadow-[0_18px_45px_-36px_rgba(123,13,21,0.22)]";
+  const noteIconClassName = isDarkMode
+    ? "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-300/14 text-blue-100"
+    : "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f8d24e]/25 text-[#7b0d15]";
+
   return (
     <div className="space-y-6 text-center">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold text-white">Scan the QR code</h1>
+        <h1 className={titleClassName}>Scan the QR code</h1>
       </div>
 
-      <div className="rounded-2xl border border-blue-300/35 bg-blue-950/28 px-4 py-4 text-left text-blue-50 shadow-[0_18px_45px_-36px_rgba(37,99,235,0.72)]">
+      <div className={noteClassName}>
         <div className="flex gap-3">
-          <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-300/14 text-blue-100">
+          <div className={noteIconClassName}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
             </svg>
           </div>
           <p className="text-sm font-medium leading-6">
-            Note: Make sure to scan this using any authenticator app before clicking "Next".
+            Note: Scan this QR code using any authenticator app before clicking Next.
           </p>
         </div>
       </div>

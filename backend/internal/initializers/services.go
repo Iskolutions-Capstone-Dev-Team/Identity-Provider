@@ -27,7 +27,11 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		cauRepo,
 	)
 
-	passkeySvc, err := service.NewPasskeyService(passkeyRepo, userSvc)
+	passkeySvc, err := service.NewPasskeyService(
+		passkeyRepo,
+		userSvc,
+		clientRepo,
+	)
 	if err != nil {
 		panic(err)
 	}

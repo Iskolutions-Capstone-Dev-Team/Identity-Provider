@@ -11,7 +11,7 @@ package mocks
 
 import (
 	context "context"
-	"net/http"
+	http "net/http"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -30,9 +30,7 @@ type MockPasskeyServiceMockRecorder struct {
 }
 
 // NewMockPasskeyService creates a new mock instance.
-func NewMockPasskeyService(
-	ctrl *gomock.Controller,
-) *MockPasskeyService {
+func NewMockPasskeyService(ctrl *gomock.Controller) *MockPasskeyService {
 	mock := &MockPasskeyService{ctrl: ctrl}
 	mock.recorder = &MockPasskeyServiceMockRecorder{mock}
 	return mock
@@ -44,32 +42,37 @@ func (m *MockPasskeyService) EXPECT() *MockPasskeyServiceMockRecorder {
 }
 
 // BeginRegistration mocks base method.
-func (m *MockPasskeyService) BeginRegistration(
-	ctx context.Context, email string,
-) ([]byte, error) {
+func (m *MockPasskeyService) BeginRegistration(ctx context.Context, email string, platformAvailable bool, r *http.Request) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BeginRegistration", ctx, email)
+	ret := m.ctrl.Call(m, "BeginRegistration", ctx, email, platformAvailable, r)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // BeginRegistration indicates an expected call of BeginRegistration.
-func (mr *MockPasskeyServiceMockRecorder) BeginRegistration(
-	ctx, email any,
-) *gomock.Call {
+func (mr *MockPasskeyServiceMockRecorder) BeginRegistration(ctx, email, platformAvailable, r any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(
-		mr.mock, "BeginRegistration",
-		reflect.TypeOf((*MockPasskeyService)(nil).BeginRegistration),
-		ctx, email,
-	)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginRegistration", reflect.TypeOf((*MockPasskeyService)(nil).BeginRegistration), ctx, email, platformAvailable, r)
+}
+
+// BeginVerification mocks base method.
+func (m *MockPasskeyService) BeginVerification(ctx context.Context, email string, platformAvailable bool, r *http.Request) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BeginVerification", ctx, email, platformAvailable, r)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BeginVerification indicates an expected call of BeginVerification.
+func (mr *MockPasskeyServiceMockRecorder) BeginVerification(ctx, email, platformAvailable, r any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginVerification", reflect.TypeOf((*MockPasskeyService)(nil).BeginVerification), ctx, email, platformAvailable, r)
 }
 
 // FinishRegistration mocks base method.
-func (m *MockPasskeyService) FinishRegistration(
-	ctx context.Context, email string, r *http.Request,
-) error {
+func (m *MockPasskeyService) FinishRegistration(ctx context.Context, email string, r *http.Request) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FinishRegistration", ctx, email, r)
 	ret0, _ := ret[0].(error)
@@ -77,44 +80,13 @@ func (m *MockPasskeyService) FinishRegistration(
 }
 
 // FinishRegistration indicates an expected call of FinishRegistration.
-func (mr *MockPasskeyServiceMockRecorder) FinishRegistration(
-	ctx, email, r any,
-) *gomock.Call {
+func (mr *MockPasskeyServiceMockRecorder) FinishRegistration(ctx, email, r any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(
-		mr.mock, "FinishRegistration",
-		reflect.TypeOf((*MockPasskeyService)(nil).FinishRegistration),
-		ctx, email, r,
-	)
-}
-
-// BeginVerification mocks base method.
-func (m *MockPasskeyService) BeginVerification(
-	ctx context.Context, email string,
-) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BeginVerification", ctx, email)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// BeginVerification indicates an expected call of BeginVerification.
-func (mr *MockPasskeyServiceMockRecorder) BeginVerification(
-	ctx, email any,
-) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(
-		mr.mock, "BeginVerification",
-		reflect.TypeOf((*MockPasskeyService)(nil).BeginVerification),
-		ctx, email,
-	)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishRegistration", reflect.TypeOf((*MockPasskeyService)(nil).FinishRegistration), ctx, email, r)
 }
 
 // FinishVerification mocks base method.
-func (m *MockPasskeyService) FinishVerification(
-	ctx context.Context, email string, r *http.Request,
-) error {
+func (m *MockPasskeyService) FinishVerification(ctx context.Context, email string, r *http.Request) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FinishVerification", ctx, email, r)
 	ret0, _ := ret[0].(error)
@@ -122,21 +94,13 @@ func (m *MockPasskeyService) FinishVerification(
 }
 
 // FinishVerification indicates an expected call of FinishVerification.
-func (mr *MockPasskeyServiceMockRecorder) FinishVerification(
-	ctx, email, r any,
-) *gomock.Call {
+func (mr *MockPasskeyServiceMockRecorder) FinishVerification(ctx, email, r any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(
-		mr.mock, "FinishVerification",
-		reflect.TypeOf((*MockPasskeyService)(nil).FinishVerification),
-		ctx, email, r,
-	)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishVerification", reflect.TypeOf((*MockPasskeyService)(nil).FinishVerification), ctx, email, r)
 }
 
 // HasPasskey mocks base method.
-func (m *MockPasskeyService) HasPasskey(
-	ctx context.Context, email string,
-) (bool, error) {
+func (m *MockPasskeyService) HasPasskey(ctx context.Context, email string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HasPasskey", ctx, email)
 	ret0, _ := ret[0].(bool)
@@ -145,13 +109,7 @@ func (m *MockPasskeyService) HasPasskey(
 }
 
 // HasPasskey indicates an expected call of HasPasskey.
-func (mr *MockPasskeyServiceMockRecorder) HasPasskey(
-	ctx, email any,
-) *gomock.Call {
+func (mr *MockPasskeyServiceMockRecorder) HasPasskey(ctx, email any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(
-		mr.mock, "HasPasskey",
-		reflect.TypeOf((*MockPasskeyService)(nil).HasPasskey),
-		ctx, email,
-	)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasPasskey", reflect.TypeOf((*MockPasskeyService)(nil).HasPasskey), ctx, email)
 }

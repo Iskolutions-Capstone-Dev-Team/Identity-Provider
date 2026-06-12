@@ -1,9 +1,15 @@
 import { useEffect, useRef } from "react";
 import { getDigits } from "./mfaInputUtils";
 
-export default function MfaCodeInput({ value, onChange, disabled = false }) {
+export default function MfaCodeInput({ value, onChange, disabled = false, fullWidth = false }) {
   const inputsRef = useRef([]);
   const digits = Array.from({ length: 6 }, (_, index) => value[index] ?? "");
+  const containerClassName = fullWidth
+    ? "grid grid-cols-6 gap-2"
+    : "flex justify-center gap-2";
+  const inputClassName = fullWidth
+    ? "h-12 w-full rounded-xl border border-white/20 bg-white/95 text-center text-lg font-semibold text-[#351018] outline-none transition focus:border-[#ffd700] focus:ring-4 focus:ring-[#ffd700]/20 disabled:cursor-not-allowed disabled:opacity-60 sm:h-14"
+    : "h-12 w-10 rounded-xl border border-white/20 bg-white/95 text-center text-lg font-semibold text-[#351018] outline-none transition focus:border-[#ffd700] focus:ring-4 focus:ring-[#ffd700]/20 disabled:cursor-not-allowed disabled:opacity-60 sm:h-14 sm:w-12";
 
   const updateDigits = (nextDigits) => {
     onChange(nextDigits.join(""));
@@ -21,7 +27,7 @@ export default function MfaCodeInput({ value, onChange, disabled = false }) {
   }, [disabled]);
 
   return (
-    <div className="flex justify-center gap-2">
+    <div className={containerClassName}>
       {digits.map((digit, index) => (
         <input key={index}
           ref={(element) => {
@@ -108,7 +114,7 @@ export default function MfaCodeInput({ value, onChange, disabled = false }) {
             updateDigits(nextDigits);
             focusInput(Math.min(index + pastedDigits.length, 5));
           }}
-          className="h-12 w-10 rounded-xl border border-white/20 bg-white/95 text-center text-lg font-semibold text-[#351018] outline-none transition focus:border-[#ffd700] focus:ring-4 focus:ring-[#ffd700]/20 disabled:cursor-not-allowed disabled:opacity-60 sm:h-14 sm:w-12"
+          className={inputClassName}
           maxLength={1}
         />
       ))}

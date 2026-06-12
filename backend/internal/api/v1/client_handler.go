@@ -23,6 +23,44 @@ const (
 	actionDeleteClient = "delete_client"
 )
 
+// Token TTL guard limits
+const (
+	MinAccessTokenTTL  = 1
+	MaxAccessTokenTTL  = 1440
+	MinRefreshTokenTTL = 1
+	MaxRefreshTokenTTL = 8760
+)
+
+// validateTokenTTL checks if the access/refresh token expiry is valid.
+func validateTokenTTL(accStr, refStr string) (int, int, string) {
+	if accStr == "" {
+		return 0, 0, "access_token_ttl is required"
+	}
+	if refStr == "" {
+		return 0, 0, "refresh_token_ttl is required"
+	}
+
+	accTTL, err := strconv.Atoi(accStr)
+	if err != nil {
+		return 0, 0, "access_token_ttl must be an integer"
+	}
+
+	refTTL, err := strconv.Atoi(refStr)
+	if err != nil {
+		return 0, 0, "refresh_token_ttl must be an integer"
+	}
+
+	if accTTL < MinAccessTokenTTL || accTTL > MaxAccessTokenTTL {
+		return 0, 0, "access_token_ttl must be between 1 and 1440"
+	}
+
+	if refTTL < MinRefreshTokenTTL || refTTL > MaxRefreshTokenTTL {
+		return 0, 0, "refresh_token_ttl must be between 1 and 8760"
+	}
+
+	return accTTL, refTTL, ""
+}
+
 // ClientHandler handles client management HTTP requests.
 type ClientHandler struct {
 	Service    service.ClientService
@@ -65,14 +103,26 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	}
 	defer file.Close()
 
+	accStr := c.PostForm("access_token_ttl")
+	refStr := c.PostForm("refresh_token_ttl")
+	accTTL, refTTL, valErr := validateTokenTTL(accStr, refStr)
+	if valErr != "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: valErr,
+		})
+		return
+	}
+
 	req := dto.CreateClientRequest{
-		Name:          c.PostForm("name"),
-		BaseURL:       c.PostForm("base_url"),
-		RedirectURI:   c.PostForm("redirect_uri"),
-		LogoutURI:     c.PostForm("logout_uri"),
-		Description:   c.PostForm("description"),
-		Grants:        c.PostFormArray("grants"),
-		OnePortalLink: c.PostForm("one_portal_link"),
+		Name:            c.PostForm("name"),
+		BaseURL:         c.PostForm("base_url"),
+		RedirectURI:     c.PostForm("redirect_uri"),
+		LogoutURI:       c.PostForm("logout_uri"),
+		Description:     c.PostForm("description"),
+		Grants:          c.PostFormArray("grants"),
+		OnePortalLink:   c.PostForm("one_portal_link"),
+		AccessTokenTTL:  accTTL,
+		RefreshTokenTTL: refTTL,
 	}
 
 	userID := c.GetString("user_id")
@@ -322,14 +372,26 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 		defer file.Close()
 	}
 
+	accStr := c.PostForm("access_token_ttl")
+	refStr := c.PostForm("refresh_token_ttl")
+	accTTL, refTTL, valErr := validateTokenTTL(accStr, refStr)
+	if valErr != "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error: valErr,
+		})
+		return
+	}
+
 	req := dto.CreateClientRequest{
-		Name:          c.PostForm("name"),
-		BaseURL:       c.PostForm("base_url"),
-		RedirectURI:   c.PostForm("redirect_uri"),
-		LogoutURI:     c.PostForm("logout_uri"),
-		Description:   c.PostForm("description"),
-		Grants:        c.PostFormArray("grants"),
-		OnePortalLink: c.PostForm("one_portal_link"),
+		Name:            c.PostForm("name"),
+		BaseURL:         c.PostForm("base_url"),
+		RedirectURI:     c.PostForm("redirect_uri"),
+		LogoutURI:       c.PostForm("logout_uri"),
+		Description:     c.PostForm("description"),
+		Grants:          c.PostFormArray("grants"),
+		OnePortalLink:   c.PostForm("one_portal_link"),
+		AccessTokenTTL:  accTTL,
+		RefreshTokenTTL: refTTL,
 	}
 
 	metadata := buildMetadata(map[string]interface{}{

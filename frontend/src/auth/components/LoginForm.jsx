@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import ErrorAlert from "../../components/ErrorAlert";
-import ChangePasswordModal from "../../components/ChangePasswordModal";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 import { buildAccessDeniedPath } from "../utils/loginRoute";
 import { beginPendingMfaSession } from "../utils/authCookies";
 
@@ -296,10 +296,9 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
         </div>
       </div>
 
-      <ChangePasswordModal
+      <ForgotPasswordModal
         isOpen={isForgotOpen}
         onClose={() => setForgotOpen(false)}
-        showCurrentPassword={false}
         emailAddress={email}
       />
     </>

@@ -120,10 +120,13 @@ export const mfaService = {
    * Passkey (WebAuthn) — Registration
    * Step 1: fetch the challenge from the server.
    */
-  async beginPasskeyRegistration(email) {
+  async beginPasskeyRegistration(email, platformAvailable) {
     const response = await axiosInstance.post(
       "/mfa/passkey/register/begin",
-      { email: getRequiredTextValue(email, "Email address") },
+      {
+        email: getRequiredTextValue(email, "Email address"),
+        platform_available: platformAvailable,
+      },
       {
         skipUnauthorizedRedirect: true,
       },
@@ -153,10 +156,13 @@ export const mfaService = {
    * Passkey (WebAuthn) — Authentication
    * Step 1: fetch the assertion challenge from the server.
    */
-  async beginPasskeyVerification(email) {
+  async beginPasskeyVerification(email, platformAvailable) {
     const response = await axiosInstance.post(
       "/mfa/passkey/verify/begin",
-      { email: getRequiredTextValue(email, "Email address") },
+      {
+        email: getRequiredTextValue(email, "Email address"),
+        platform_available: platformAvailable,
+      },
       {
         skipAuthHeader: true,
       },

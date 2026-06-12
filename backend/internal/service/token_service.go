@@ -26,11 +26,17 @@ func GenerateToken(privateKey *rsa.PrivateKey,
 
 	claims.AuthorizedParty = clientIDStr.String()
 
+	ttlMinutes := client.AccessTokenTTL
+	if ttlMinutes <= 0 {
+		ttlMinutes = DefaultAccessTokenTTL
+	}
+	duration := time.Duration(ttlMinutes) * time.Minute
+
 	claims.RegisteredClaims = jwt.RegisteredClaims{
 		Subject:   claims.ID,
 		Issuer:    os.Getenv("CLIENT_BASE_URL"),
 		Audience:  jwt.ClaimStrings{client.BaseUrl},
-		ExpiresAt: jwt.NewNumericDate(now.Add(1 * time.Hour)),
+		ExpiresAt: jwt.NewNumericDate(now.Add(duration)),
 		IssuedAt:  jwt.NewNumericDate(now),
 		NotBefore: jwt.NewNumericDate(now),
 		ID:        fmt.Sprintf("%d", now.UnixNano()),
