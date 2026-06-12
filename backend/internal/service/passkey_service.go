@@ -77,6 +77,53 @@ func NewPasskeyService(
 	cr repository.ClientRepository,
 ) (PasskeyService, error) {
 	origin := os.Getenv("CLIENT_BASE_URL")
+	originsMap := make(map[string]bool)
+
+	// Fetch One Portal client to support its origins and fallback
+	clients, err := cr.ListClients(
+		context.Background(), 10, 0, "One Portal",
+	)
+	if err == nil {
+		for _, c := range clients {
+			if strings.EqualFold(c.ClientName, "One Portal") {
+				if origin == "" {
+					if c.OnePortalLink != nil && *c.OnePortalLink != "" {
+						origin = *c.OnePortalLink
+					} else if c.BaseUrl != "" {
+						origin = c.BaseUrl
+					}
+				}
+				// Add both URLs to allowed origins
+				urls := []string{c.BaseUrl}
+				if c.OnePortalLink != nil && *c.OnePortalLink != "" {
+					urls = append(urls, *c.OnePortalLink)
+				}
+				for _, u := range urls {
+					if u == "" {
+						continue
+					}
+					parsed, err := url.Parse(u)
+					if err != nil || parsed.Host == "" {
+						continue
+					}
+					scheme := parsed.Scheme
+					if scheme == "" {
+						scheme = "http"
+					}
+					orig := fmt.Sprintf("%s://%s", scheme, parsed.Host)
+					originsMap[orig] = true
+				}
+			}
+		}
+	}
+
+	if origin == "" {
+		envOP := os.Getenv("VITE_ONE_PORTAL_URL")
+		if envOP != "" {
+			origin = envOP
+		}
+	}
+
 	if origin == "" {
 		return nil, fmt.Errorf(
 			"[PasskeyService] Init: CLIENT_BASE_URL is not set",
@@ -85,8 +132,6 @@ func NewPasskeyService(
 
 	rpid := rpidFromURL(origin)
 	origin = strings.TrimRight(origin, "/")
-
-	originsMap := make(map[string]bool)
 	originsMap[origin] = true
 
 	// Query other allowed client origins from DB
