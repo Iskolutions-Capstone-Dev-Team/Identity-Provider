@@ -470,26 +470,31 @@ func rpidFromRequest(r *http.Request) string {
 	if r == nil {
 		return ""
 	}
+	var host string
 	if origin := r.Header.Get("Origin"); origin != "" {
 		parsed, err := url.Parse(origin)
 		if err == nil && parsed.Hostname() != "" {
-			return parsed.Hostname()
+			host = parsed.Hostname()
 		}
 	}
-	if referer := r.Header.Get("Referer"); referer != "" {
-		parsed, err := url.Parse(referer)
-		if err == nil && parsed.Hostname() != "" {
-			return parsed.Hostname()
+	if host == "" {
+		if referer := r.Header.Get("Referer"); referer != "" {
+			parsed, err := url.Parse(referer)
+			if err == nil && parsed.Hostname() != "" {
+				host = parsed.Hostname()
+			}
 		}
 	}
-	if host := r.Header.Get("X-Forwarded-Host"); host != "" {
-		return host
-	}
-	if host := r.Host; host != "" {
-		if idx := strings.Index(host, ":"); idx != -1 {
-			return host[:idx]
+	if host == "" {
+		if fwd := r.Header.Get("X-Forwarded-Host"); fwd != "" {
+			host = fwd
 		}
-		return host
 	}
-	return ""
+	if host == "" {
+		host = r.Host
+	}
+	if idx := strings.Index(host, ":"); idx != -1 {
+		host = host[:idx]
+	}
+	return host
 }
