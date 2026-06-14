@@ -11,7 +11,7 @@ import (
 
 type MetricsRepository interface {
 	GetTotalLogins(ctx context.Context, since time.Time) (int, error)
-	GetTopClients(ctx context.Context, limit int) (
+	GetTopClients(ctx context.Context, limit int, since time.Time) (
 		[]models.TopClientLogin, error)
 	GetFailedAuthAttempts(ctx context.Context, since time.Time) (
 		[]models.FailedAuthAttempt, error)
@@ -42,22 +42,23 @@ func (r *metricsRepository) GetTotalLogins(ctx context.Context,
 }
 
 func (r *metricsRepository) GetTopClients(ctx context.Context,
-	limit int,
+	limit int, since time.Time,
 ) ([]models.TopClientLogin, error) {
 	var topClients []models.TopClientLogin
 	query := `
 		SELECT 
 			a.target AS client_id,
 			COALESCE(c.client_name, a.target) AS client_name,
+			COALESCE(c.image_location, '') AS image_location,
 			COUNT(*) AS login_count
 		FROM audit_logs a
 		LEFT JOIN clients c ON BIN_TO_UUID(c.id) = a.target
-		WHERE a.action = 'login' AND a.status = 'success'
-		GROUP BY a.target, c.client_name
+		WHERE a.action = 'login' AND a.status = 'success' AND a.created_at >= ?
+		GROUP BY a.target, c.client_name, c.image_location
 		ORDER BY login_count DESC
 		LIMIT ?`
 
-	err := r.db.SelectContext(ctx, &topClients, query, limit)
+	err := r.db.SelectContext(ctx, &topClients, query, since, limit)
 	if err != nil {
 		return nil, fmt.Errorf("[MetricsRepository] GetTopClients: %w", err)
 	}
