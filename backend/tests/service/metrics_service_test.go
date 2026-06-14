@@ -229,3 +229,33 @@ func TestPerformAnalysisWithGemini(t *testing.T) {
 		t.Errorf("unexpected anomalies: %v", result.Anomalies)
 	}
 }
+
+func TestGenerateReportPDF(t *testing.T) {
+	repo := &mockMetricsRepository{
+		TotalLogins: 42,
+		TopClients: []models.TopClientLogin{
+			{ClientID: "id-1", ClientName: "App 1", LoginCount: 30},
+		},
+		Failed: []models.FailedAuthAttempt{
+			{
+				IP:          "1.1.1.1",
+				Actor:       "user1",
+				FailCount:   3,
+				LastAttempt: time.Now(),
+			},
+		},
+	}
+
+	cache := &mockCache{store: make(map[string]string)}
+
+	svc := service.NewMetricsService(repo, cache, nil)
+
+	pdfBytes, err := svc.GenerateReportPDF(context.Background())
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if len(pdfBytes) == 0 {
+		t.Error("expected non-empty PDF bytes")
+	}
+}
