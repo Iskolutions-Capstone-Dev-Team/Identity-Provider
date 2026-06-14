@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
@@ -19,7 +20,10 @@ func TestGetRoleByID(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockRoleRepository(ctrl)
-	roleService := service.NewRoleService(mockRepo)
+	roleService := service.NewRoleService(
+		mockRepo,
+		cache.NewNoopCache(),
+	)
 
 	roleID := 1
 	role := &models.Role{

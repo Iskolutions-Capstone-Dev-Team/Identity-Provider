@@ -2,11 +2,14 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"mime/multipart"
 	"slices"
+	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
@@ -42,14 +45,17 @@ type ClientService interface {
 type clientService struct {
 	Repo    repository.ClientRepository
 	Storage *storage.S3Provider
+	Cache   cache.Cache
 }
 
 func NewClientService(repo repository.ClientRepository,
 	storage *storage.S3Provider,
+	c cache.Cache,
 ) ClientService {
 	return &clientService{
 		Repo:    repo,
 		Storage: storage,
+		Cache:   c,
 	}
 }
 
@@ -106,6 +112,8 @@ func (s *clientService) CreateClient(
 	if err != nil {
 		return nil, fmt.Errorf("database query (Create): %w", err)
 	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:clients")
 
 	return &dto.ClientSecretResponse{
 		ID:           clientID.String(),
@@ -164,6 +172,28 @@ func (s *clientService) checkClientAccess(
 	return nil
 }
 
+func (s *clientService) getClientListCacheKey(
+	ctx context.Context,
+	prefix string,
+	userID string,
+	limit, page int,
+	keyword string,
+) string {
+	version, _, _ := s.Cache.Get(ctx, "cache:version:clients")
+	if version == "" {
+		version = "0"
+	}
+	return fmt.Sprintf(
+		"clients:v%s:%s:uid:%s:lim:%d:pg:%d:kw:%s",
+		version,
+		prefix,
+		userID,
+		limit,
+		page,
+		keyword,
+	)
+}
+
 /**
  * GetClientList retrieves a paginated list of clients,
  * calculates metadata, and generates presigned URLs for icons.
@@ -174,6 +204,21 @@ func (s *clientService) GetClientList(
 	page int,
 	keyword string,
 ) (*dto.ClientListResponse, error) {
+	cacheKey := s.getClientListCacheKey(
+		ctx,
+		"list",
+		"",
+		limit,
+		page,
+		keyword,
+	)
+	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
+		var cached dto.ClientListResponse
+		if json.Unmarshal([]byte(val), &cached) == nil {
+			return &cached, nil
+		}
+	}
+
 	offset := (page - 1) * limit
 
 	total, err := s.Repo.CountClients(ctx, keyword)
@@ -220,12 +265,18 @@ func (s *clientService) GetClientList(
 		lastPage = 1
 	}
 
-	return &dto.ClientListResponse{
+	resp := &dto.ClientListResponse{
 		Clients:     res,
 		CurrentPage: page,
 		LastPage:    lastPage,
 		TotalCount:  total,
-	}, nil
+	}
+
+	if raw, err := json.Marshal(resp); err == nil {
+		_ = s.Cache.Set(ctx, cacheKey, string(raw), 30*time.Minute)
+	}
+
+	return resp, nil
 }
 
 /**
@@ -239,6 +290,21 @@ func (s *clientService) GetBoundClients(
 	page int,
 	keyword string,
 ) (*dto.ClientListResponse, error) {
+	cacheKey := s.getClientListCacheKey(
+		ctx,
+		"bound",
+		userID.String(),
+		limit,
+		page,
+		keyword,
+	)
+	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
+		var cached dto.ClientListResponse
+		if json.Unmarshal([]byte(val), &cached) == nil {
+			return &cached, nil
+		}
+	}
+
 	offset := (page - 1) * limit
 
 	clients, err := s.Repo.ListBoundClients(
@@ -277,11 +343,23 @@ func (s *clientService) GetBoundClients(
 		})
 	}
 
-	return &dto.ClientListResponse{
+	lastPage := (total + limit - 1) / limit
+	if lastPage == 0 {
+		lastPage = 1
+	}
+
+	resp := &dto.ClientListResponse{
 		Clients:     res,
 		CurrentPage: page,
+		LastPage:    lastPage,
 		TotalCount:  total,
-	}, nil
+	}
+
+	if raw, err := json.Marshal(resp); err == nil {
+		_ = s.Cache.Set(ctx, cacheKey, string(raw), 30*time.Minute)
+	}
+
+	return resp, nil
 }
 
 /**
@@ -295,6 +373,21 @@ func (s *clientService) GetAllowedClients(
 	page int,
 	keyword string,
 ) (*dto.ClientListResponse, error) {
+	cacheKey := s.getClientListCacheKey(
+		ctx,
+		"allowed",
+		userID.String(),
+		limit,
+		page,
+		keyword,
+	)
+	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
+		var cached dto.ClientListResponse
+		if json.Unmarshal([]byte(val), &cached) == nil {
+			return &cached, nil
+		}
+	}
+
 	offset := (page - 1) * limit
 
 	clients, err := s.Repo.ListAllowedClients(
@@ -333,11 +426,23 @@ func (s *clientService) GetAllowedClients(
 		})
 	}
 
-	return &dto.ClientListResponse{
+	lastPage := (total + limit - 1) / limit
+	if lastPage == 0 {
+		lastPage = 1
+	}
+
+	resp := &dto.ClientListResponse{
 		Clients:     res,
 		CurrentPage: page,
+		LastPage:    lastPage,
 		TotalCount:  total,
-	}, nil
+	}
+
+	if raw, err := json.Marshal(resp); err == nil {
+		_ = s.Cache.Set(ctx, cacheKey, string(raw), 30*time.Minute)
+	}
+
+	return resp, nil
 }
 
 /**
@@ -461,6 +566,8 @@ func (s *clientService) UpdateClient(
 		return fmt.Errorf("database query (Update): %w", err)
 	}
 
+	_, _ = s.Cache.Incr(ctx, "cache:version:clients")
+
 	return nil
 }
 
@@ -495,6 +602,8 @@ func (s *clientService) RotateClientSecret(
 	if err != nil {
 		return nil, fmt.Errorf("database query (ChangeSecret): %w", err)
 	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:clients")
 
 	return &dto.ClientSecretResponse{
 		ID:           id.String(),
@@ -532,6 +641,8 @@ func (s *clientService) DeleteClient(
 	if err := s.Repo.SoftDelete(ctx, id[:]); err != nil {
 		return fmt.Errorf("database query (SoftDelete): %w", err)
 	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:clients")
 
 	return nil
 }

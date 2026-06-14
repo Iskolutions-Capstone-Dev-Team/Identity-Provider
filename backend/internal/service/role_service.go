@@ -2,9 +2,12 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
+	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
@@ -14,8 +17,9 @@ import (
 
 type RoleService interface {
 	CreateRole(ctx context.Context, req dto.RoleRequest) error
-	GetFilteredRoleList(ctx context.Context, permissions []string, userID uuid.UUID,
-		limit, page int, keyword string) (*dto.RoleListResponse, error)
+	GetFilteredRoleList(ctx context.Context, permissions []string,
+		userID uuid.UUID, limit, page int,
+		keyword string) (*dto.RoleListResponse, error)
 	GetRoleList(ctx context.Context, limit, page int,
 		keyword string) (*dto.RoleListResponse, error)
 	GetAllExceptIDP(ctx context.Context, limit, page int,
@@ -31,10 +35,17 @@ type RoleService interface {
 
 type roleService struct {
 	RoleRepo repository.RoleRepository
+	Cache    cache.Cache
 }
 
-func NewRoleService(roleRepo repository.RoleRepository) RoleService {
-	return &roleService{RoleRepo: roleRepo}
+func NewRoleService(
+	roleRepo repository.RoleRepository,
+	c cache.Cache,
+) RoleService {
+	return &roleService{
+		RoleRepo: roleRepo,
+		Cache:    c,
+	}
 }
 
 /**
@@ -57,6 +68,8 @@ func (s *roleService) CreateRole(
 		return fmt.Errorf("database query (CreateRole): %w", err)
 	}
 
+	_, _ = s.Cache.Incr(ctx, "cache:version:roles")
+
 	return nil
 }
 
@@ -78,6 +91,28 @@ func (s *roleService) GetFilteredRoleList(
 	return nil, fmt.Errorf("privilege validation: level unauthorized")
 }
 
+func (s *roleService) getRoleListCacheKey(
+	ctx context.Context,
+	prefix string,
+	userID string,
+	limit, page int,
+	keyword string,
+) string {
+	version, _, _ := s.Cache.Get(ctx, "cache:version:roles")
+	if version == "" {
+		version = "0"
+	}
+	return fmt.Sprintf(
+		"roles:v%s:%s:uid:%s:lim:%d:pg:%d:kw:%s",
+		version,
+		prefix,
+		userID,
+		limit,
+		page,
+		keyword,
+	)
+}
+
 /**
  * GetRoleList retrieves a paginated list of roles.
  */
@@ -87,6 +122,21 @@ func (s *roleService) GetRoleList(
 	page int,
 	keyword string,
 ) (*dto.RoleListResponse, error) {
+	cacheKey := s.getRoleListCacheKey(
+		ctx,
+		"list",
+		"",
+		limit,
+		page,
+		keyword,
+	)
+	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
+		var cached dto.RoleListResponse
+		if json.Unmarshal([]byte(val), &cached) == nil {
+			return &cached, nil
+		}
+	}
+
 	offset := (page - 1) * limit
 
 	roles, err := s.RoleRepo.ListRoles(ctx, limit, offset, keyword)
@@ -99,7 +149,13 @@ func (s *roleService) GetRoleList(
 		return nil, fmt.Errorf("database query (CountRoles): %w", err)
 	}
 
-	return s.formatRoleListResponse(roles, total, limit, page), nil
+	resp := s.formatRoleListResponse(roles, total, limit, page)
+
+	if raw, err := json.Marshal(resp); err == nil {
+		_ = s.Cache.Set(ctx, cacheKey, string(raw), 30*time.Minute)
+	}
+
+	return resp, nil
 }
 
 /**
@@ -111,6 +167,21 @@ func (s *roleService) GetAllExceptIDP(
 	page int,
 	keyword string,
 ) (*dto.RoleListResponse, error) {
+	cacheKey := s.getRoleListCacheKey(
+		ctx,
+		"except_idp",
+		"",
+		limit,
+		page,
+		keyword,
+	)
+	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
+		var cached dto.RoleListResponse
+		if json.Unmarshal([]byte(val), &cached) == nil {
+			return &cached, nil
+		}
+	}
+
 	offset := (page - 1) * limit
 
 	roles, err := s.RoleRepo.ListAllExceptIdP(ctx, limit, offset, keyword)
@@ -123,7 +194,13 @@ func (s *roleService) GetAllExceptIDP(
 		return nil, fmt.Errorf("database query (CountRoles): %w", err)
 	}
 
-	return s.formatRoleListResponse(roles, total, limit, page), nil
+	resp := s.formatRoleListResponse(roles, total, limit, page)
+
+	if raw, err := json.Marshal(resp); err == nil {
+		_ = s.Cache.Set(ctx, cacheKey, string(raw), 30*time.Minute)
+	}
+
+	return resp, nil
 }
 
 /**
@@ -136,6 +213,21 @@ func (s *roleService) GetAuthorizedRoles(
 	page int,
 	keyword string,
 ) (*dto.RoleListResponse, error) {
+	cacheKey := s.getRoleListCacheKey(
+		ctx,
+		"auth_roles",
+		userID.String(),
+		limit,
+		page,
+		keyword,
+	)
+	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
+		var cached dto.RoleListResponse
+		if json.Unmarshal([]byte(val), &cached) == nil {
+			return &cached, nil
+		}
+	}
+
 	offset := (page - 1) * limit
 
 	roles, err := s.RoleRepo.ListDistinctBoundRoles(
@@ -154,7 +246,13 @@ func (s *roleService) GetAuthorizedRoles(
 		return nil, fmt.Errorf("database query (CountBoundRoles): %w", err)
 	}
 
-	return s.formatRoleWithMetadataListResponse(roles, total, limit, page), nil
+	resp := s.formatRoleWithMetadataListResponse(roles, total, limit, page)
+
+	if raw, err := json.Marshal(resp); err == nil {
+		_ = s.Cache.Set(ctx, cacheKey, string(raw), 30*time.Minute)
+	}
+
+	return resp, nil
 }
 
 /**
@@ -255,6 +353,21 @@ func (s *roleService) SearchRoles(
 	ctx context.Context,
 	keyword string,
 ) (*dto.RoleListResponse, error) {
+	cacheKey := s.getRoleListCacheKey(
+		ctx,
+		"search",
+		"",
+		0,
+		0,
+		keyword,
+	)
+	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
+		var cached dto.RoleListResponse
+		if json.Unmarshal([]byte(val), &cached) == nil {
+			return &cached, nil
+		}
+	}
+
 	roles, err := s.RoleRepo.SearchRoles(ctx, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("database query (SearchRoles): %w", err)
@@ -276,12 +389,18 @@ func (s *roleService) SearchRoles(
 		})
 	}
 
-	return &dto.RoleListResponse{
+	resp := &dto.RoleListResponse{
 		Roles:       roleResponses,
 		CurrentPage: DEFAULT_PAGE,
 		LastPage:    DEFAULT_PAGE,
 		TotalCount:  len(roleResponses),
-	}, nil
+	}
+
+	if raw, err := json.Marshal(resp); err == nil {
+		_ = s.Cache.Set(ctx, cacheKey, string(raw), 30*time.Minute)
+	}
+
+	return resp, nil
 }
 
 func GetRoleNames(roles []models.Role) []string {
@@ -311,6 +430,8 @@ func (s *roleService) UpdateRole(
 		return fmt.Errorf("database query (UpdateRole): %w", err)
 	}
 
+	_, _ = s.Cache.Incr(ctx, "cache:version:roles")
+
 	return nil
 }
 
@@ -321,6 +442,8 @@ func (s *roleService) DeleteRole(ctx context.Context, id int) error {
 	if err := s.RoleRepo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("database query (Delete): %w", err)
 	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:roles")
 
 	return nil
 }

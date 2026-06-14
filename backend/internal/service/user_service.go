@@ -3,9 +3,12 @@ package service
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"slices"
+	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
@@ -54,6 +57,7 @@ type userService struct {
 	ClientRepo repository.ClientRepository
 	RegRepo    repository.RegistrationRepository
 	CAURepo    repository.ClientAllowedUserRepository
+	Cache      cache.Cache
 }
 
 func NewUserService(
@@ -61,12 +65,14 @@ func NewUserService(
 	clientRepo repository.ClientRepository,
 	regRepo repository.RegistrationRepository,
 	cauRepo repository.ClientAllowedUserRepository,
+	c cache.Cache,
 ) UserService {
 	return &userService{
 		Repo:       repo,
 		ClientRepo: clientRepo,
 		RegRepo:    regRepo,
 		CAURepo:    cauRepo,
+		Cache:      c,
 	}
 }
 
@@ -145,7 +151,8 @@ func (s *userService) CreateUser(
 		if typeID != 0 {
 			atID = sql.NullInt64{Int64: int64(typeID), Valid: true}
 		}
-		if err = s.Repo.UpdateUserAccountType(ctx, existingUser.ID, atID); err != nil {
+		err = s.Repo.UpdateUserAccountType(ctx, existingUser.ID, atID)
+		if err != nil {
 			return uuid.Nil, fmt.Errorf("re-register (UpdateType): %w", err)
 		}
 
@@ -196,7 +203,12 @@ func (s *userService) CreateUser(
 			for _, c := range clients {
 				clientIDs = append(clientIDs, c.ClientID)
 			}
-			err = s.CAURepo.BatchAssignClientAccess(ctx, userID[:], clientIDs, models.SourcePreapproved)
+			err = s.CAURepo.BatchAssignClientAccess(
+				ctx,
+				userID[:],
+				clientIDs,
+				models.SourcePreapproved,
+			)
 			if err != nil {
 				return userID, fmt.Errorf("post-create (Assign): %w", err)
 			}
@@ -217,6 +229,8 @@ func (s *userService) CreateUser(
 			return userID, fmt.Errorf("post-create (AdminBind): %w", err)
 		}
 	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
 
 	return userID, nil
 }
@@ -240,7 +254,10 @@ func (s *userService) CreateAdminUser(
 
 	if existingUser != nil {
 		if !existingUser.DeletedAt.Valid {
-			return uuid.Nil, fmt.Errorf("conflict: user with email %s already exists", req.Email)
+			return uuid.Nil, fmt.Errorf(
+				"conflict: user with email %s already exists",
+				req.Email,
+			)
 		}
 
 		// Handle re-registration of deleted user
@@ -285,7 +302,8 @@ func (s *userService) CreateAdminUser(
 		if req.AccountTypeID != 0 {
 			atID = sql.NullInt64{Int64: int64(req.AccountTypeID), Valid: true}
 		}
-		if err = s.Repo.UpdateUserAccountType(ctx, existingUser.ID, atID); err != nil {
+		err = s.Repo.UpdateUserAccountType(ctx, existingUser.ID, atID)
+		if err != nil {
 			return uuid.Nil, fmt.Errorf("re-register (UpdateType): %w", err)
 		}
 
@@ -414,6 +432,8 @@ func (s *userService) CreateAdminUser(
 		}
 	}
 
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
 	return userID, nil
 }
 
@@ -515,6 +535,26 @@ func (s *userService) GetFilteredUserList(
 	return resp, nil
 }
 
+func (s *userService) getUserListCacheKey(
+	ctx context.Context,
+	prefix string,
+	userID string,
+	limit, page int,
+) string {
+	version, _, _ := s.Cache.Get(ctx, "cache:version:users")
+	if version == "" {
+		version = "0"
+	}
+	return fmt.Sprintf(
+		"users:v%s:%s:uid:%s:lim:%d:pg:%d",
+		version,
+		prefix,
+		userID,
+		limit,
+		page,
+	)
+}
+
 /**
  * GetUserList retrieves a paginated list of all users.
  */
@@ -523,6 +563,14 @@ func (s *userService) GetUserList(
 	limit,
 	page int,
 ) (*dto.UserSimplifiedResponseList, error) {
+	cacheKey := s.getUserListCacheKey(ctx, "list", "", limit, page)
+	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
+		var cached dto.UserSimplifiedResponseList
+		if json.Unmarshal([]byte(val), &cached) == nil {
+			return &cached, nil
+		}
+	}
+
 	offset := (page - 1) * limit
 
 	users, err := s.Repo.GetUserList(ctx, limit, offset)
@@ -547,12 +595,18 @@ func (s *userService) GetUserList(
 		lastPage = 1
 	}
 
-	return &dto.UserSimplifiedResponseList{
+	resp := &dto.UserSimplifiedResponseList{
 		Users:       userResponses,
 		TotalCount:  total,
 		CurrentPage: page,
 		LastPage:    lastPage,
-	}, nil
+	}
+
+	if raw, err := json.Marshal(resp); err == nil {
+		_ = s.Cache.Set(ctx, cacheKey, string(raw), 30*time.Minute)
+	}
+
+	return resp, nil
 }
 
 /**
@@ -564,6 +618,20 @@ func (s *userService) GetBoundUserList(
 	page int,
 	userID uuid.UUID,
 ) (*dto.UserSimplifiedResponseList, error) {
+	cacheKey := s.getUserListCacheKey(
+		ctx,
+		"bound",
+		userID.String(),
+		limit,
+		page,
+	)
+	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
+		var cached dto.UserSimplifiedResponseList
+		if json.Unmarshal([]byte(val), &cached) == nil {
+			return &cached, nil
+		}
+	}
+
 	offset := (page - 1) * limit
 
 	users, err := s.Repo.GetBoundUserList(ctx, limit, offset, userID[:])
@@ -588,12 +656,18 @@ func (s *userService) GetBoundUserList(
 		lastPage = 1
 	}
 
-	return &dto.UserSimplifiedResponseList{
+	resp := &dto.UserSimplifiedResponseList{
 		Users:       userResponses,
 		TotalCount:  total,
 		CurrentPage: page,
 		LastPage:    lastPage,
-	}, nil
+	}
+
+	if raw, err := json.Marshal(resp); err == nil {
+		_ = s.Cache.Set(ctx, cacheKey, string(raw), 30*time.Minute)
+	}
+
+	return resp, nil
 }
 
 /**
@@ -618,6 +692,8 @@ func (s *userService) UpdateUserPassword(
 	if err != nil {
 		return fmt.Errorf("database query (UpdatePassword): %w", err)
 	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
 
 	return nil
 }
@@ -665,6 +741,8 @@ func (s *userService) UpdateUserStatus(
 		return fmt.Errorf("database query (UpdateStatus): %w", err)
 	}
 
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
 	return nil
 }
 
@@ -691,6 +769,7 @@ func (s *userService) UpdateUserRole(
 		if err != nil {
 			return fmt.Errorf("database query (UpdateUserRole): %w", err)
 		}
+		_, _ = s.Cache.Incr(ctx, "cache:version:users")
 		return nil
 	}
 
@@ -717,6 +796,8 @@ func (s *userService) UpdateUserName(
 	if err != nil {
 		return fmt.Errorf("database query (UpdateUserName): %w", err)
 	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
 
 	return nil
 }
@@ -776,6 +857,8 @@ func (s *userService) SyncAdminClientAccess(
 		return fmt.Errorf("sync admin access: database query: %w", err)
 	}
 
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
 	return nil
 }
 
@@ -783,6 +866,8 @@ func (s *userService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	if err := s.Repo.SoftDelete(ctx, id[:]); err != nil {
 		return fmt.Errorf("database query (SoftDelete): %w", err)
 	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
 
 	return nil
 }
@@ -875,6 +960,20 @@ func (s *userService) GetAdminUserList(
 	adminID uuid.UUID,
 	permissions []string,
 ) (*dto.UserResponseList, error) {
+	cacheKey := s.getUserListCacheKey(
+		ctx,
+		"admin",
+		adminID.String(),
+		limit,
+		page,
+	)
+	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
+		var cached dto.UserResponseList
+		if json.Unmarshal([]byte(val), &cached) == nil {
+			return &cached, nil
+		}
+	}
+
 	offset := (page - 1) * limit
 	hasViewAll := slices.Contains(permissions, "View all appclients")
 
@@ -906,10 +1005,16 @@ func (s *userService) GetAdminUserList(
 		lastPage = 1
 	}
 
-	return &dto.UserResponseList{
+	resp := &dto.UserResponseList{
 		Users:       userResponses,
 		TotalCount:  total,
 		CurrentPage: page,
 		LastPage:    lastPage,
-	}, nil
+	}
+
+	if raw, err := json.Marshal(resp); err == nil {
+		_ = s.Cache.Set(ctx, cacheKey, string(raw), 30*time.Minute)
+	}
+
+	return resp, nil
 }

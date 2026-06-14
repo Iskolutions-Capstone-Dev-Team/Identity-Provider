@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
@@ -22,7 +23,11 @@ func TestGetClientByID(t *testing.T) {
 
 	// S3Provider is a struct and hard to mock without extra layers.
 	// Since GetClientByID ignores its error, we can pass nil here for simplicity.
-	clientService := service.NewClientService(mockRepo, nil)
+	clientService := service.NewClientService(
+		mockRepo,
+		nil,
+		cache.NewNoopCache(),
+	)
 
 	clientID := uuid.New()
 	userID := uuid.New()
@@ -47,7 +52,12 @@ func TestGetClientByID(t *testing.T) {
 		Return([]models.Role{}, nil)
 
 	// 2. Execute
-	resp, err := clientService.GetClientByID(context.Background(), clientID, userID, []string{"View all appclients"})
+	resp, err := clientService.GetClientByID(
+		context.Background(),
+		clientID,
+		userID,
+		[]string{"View all appclients"},
+	)
 
 	// 3. Verify
 	if err != nil {
@@ -79,7 +89,11 @@ func TestGetAllowedClients(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockClientRepository(ctrl)
-	clientService := service.NewClientService(mockRepo, nil)
+	clientService := service.NewClientService(
+		mockRepo,
+		nil,
+		cache.NewNoopCache(),
+	)
 
 	userID := uuid.New()
 	clientID := uuid.New()
@@ -96,7 +110,13 @@ func TestGetAllowedClients(t *testing.T) {
 		CountAllowedClients(gomock.Any(), "", userID[:]).
 		Return(1, nil)
 
-	resp, err := clientService.GetAllowedClients(context.Background(), userID, 10, 1, "")
+	resp, err := clientService.GetAllowedClients(
+		context.Background(),
+		userID,
+		10,
+		1,
+		"",
+	)
 
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
@@ -28,6 +29,7 @@ func TestGetUserByID(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		cache.NewNoopCache(),
 	)
 
 	userID := uuid.New()
@@ -76,6 +78,7 @@ func TestSyncAdminClientAccess(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		cache.NewNoopCache(),
 	)
 
 	userID := uuid.New()

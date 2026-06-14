@@ -10,6 +10,7 @@ services:
       - "localhost:host-gateway"
     environment:
       - GODEBUG=http2debug=0,asyncpreemptoff=1
+      - REDIS_URL=${REDIS_URL}
     ports:
       - "8080:8080"
     volumes:
@@ -20,6 +21,8 @@ services:
       - identity_network
     depends_on:
       db:
+        condition: service_healthy
+      cache:
         condition: service_healthy
 
   # Identity Provider Frontend (GHCR Image)
@@ -112,9 +115,37 @@ services:
       exit 0;
       "
 
+  # The Redis Caching Service
+  cache:
+    image: redis:7.2-alpine
+    container_name: redis_cache
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory ${REDIS_MAXMEMORY}
+      --maxmemory-policy ${REDIS_MAXMEMORY_POLICY}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 750M
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - identity_network
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   db_data:
   minio_data:
+  redis_data:
 
 networks:
   identity_network:

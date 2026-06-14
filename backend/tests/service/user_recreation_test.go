@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
@@ -29,6 +30,7 @@ func TestCreateUser_ReRegistration(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCauRepo,
+		cache.NewNoopCache(),
 	)
 
 	ctx := context.Background()
