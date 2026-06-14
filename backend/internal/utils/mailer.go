@@ -2,10 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"html"
-	"net/url"
 	"os"
-	"strings"
 
 	"github.com/resend/resend-go/v3"
 )
@@ -48,8 +45,7 @@ func SendInvitationEmail(toEmail string, invitationCode string) error {
 	}
 
 	regURL := fmt.Sprintf("%s/register?invitation_code=%s",
-		strings.TrimRight(clientBaseURL, "/"),
-		url.QueryEscape(invitationCode))
+		clientBaseURL, invitationCode)
 
 	client := resend.NewClient(apiKey)
 	from := fmt.Sprintf("%s <%s>", fromName, fromEmail)
@@ -80,14 +76,13 @@ func buildOTPEmailHTML(otp string) string {
 				</td>
 			</tr>
 		</table>`,
-		html.EscapeString(otp),
+		otp,
 	)
 
 	return buildEmailShell(content)
 }
 
 func buildInvitationEmailHTML(regURL string) string {
-	escapedURL := html.EscapeString(regURL)
 	content := fmt.Sprintf(`
 		<table role="presentation" width="100%%" cellpadding="0" cellspacing="0">
 			<tr>
@@ -123,9 +118,9 @@ func buildInvitationEmailHTML(regURL string) string {
 				</td>
 			</tr>
 		</table>`,
-		escapedURL,
-		escapedURL,
-		escapedURL,
+		regURL,
+		regURL,
+		regURL,
 	)
 
 	return buildEmailShell(content)
