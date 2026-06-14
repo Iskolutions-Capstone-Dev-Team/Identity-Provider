@@ -50,15 +50,16 @@ func TestGetTopClients(t *testing.T) {
 	sqlxDB := sqlx.NewDb(db, "mysql")
 	repo := repository.NewMetricsRepository(sqlxDB)
 
+	since := time.Now().Add(-24 * time.Hour)
 	rows := sqlmock.NewRows([]string{
-		"client_id", "client_name", "login_count",
-	}).AddRow("client-1", "App One", 25).
-		AddRow("client-2", "App Two", 12)
+		"client_id", "client_name", "image_location", "login_count",
+	}).AddRow("client-1", "App One", "logo1.png", 25).
+		AddRow("client-2", "App Two", "", 12)
 
 	queryRegex := `(?s)SELECT.*a\.target AS client_id.*FROM audit_logs a.*LIMIT \?`
-	mock.ExpectQuery(queryRegex).WithArgs(5).WillReturnRows(rows)
+	mock.ExpectQuery(queryRegex).WithArgs(since, 5).WillReturnRows(rows)
 
-	res, err := repo.GetTopClients(context.Background(), 5)
+	res, err := repo.GetTopClients(context.Background(), 5, since)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -67,6 +68,9 @@ func TestGetTopClients(t *testing.T) {
 	}
 	if res[0].ClientName != "App One" || res[0].LoginCount != 25 {
 		t.Errorf("unexpected top client: %+v", res[0])
+	}
+	if res[0].ImageLocation != "logo1.png" {
+		t.Errorf("expected logo1.png, got %s", res[0].ImageLocation)
 	}
 }
 

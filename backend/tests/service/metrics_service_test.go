@@ -26,7 +26,7 @@ func (m *mockMetricsRepository) GetTotalLogins(
 }
 
 func (m *mockMetricsRepository) GetTopClients(
-	ctx context.Context, limit int,
+	ctx context.Context, limit int, since time.Time,
 ) ([]models.TopClientLogin, error) {
 	return m.TopClients, nil
 }
@@ -107,20 +107,20 @@ func TestGetDashboardMetrics(t *testing.T) {
 		30*time.Minute,
 	)
 
-	svc := service.NewMetricsService(repo, cache)
+	svc := service.NewMetricsService(repo, cache, nil)
 
 	metrics, err := svc.GetDashboardMetrics(context.Background())
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if metrics.LoginStats.Today != 42 {
-		t.Errorf("expected 42 today logins, got %d", metrics.LoginStats.Today)
+	if metrics.LoginStats.Today.Count != 42 {
+		t.Errorf("expected 42 today logins, got %d", metrics.LoginStats.Today.Count)
 	}
 
-	if len(metrics.TopClients) != 1 ||
-		metrics.TopClients[0].ClientName != "App 1" {
-		t.Errorf("unexpected top clients: %v", metrics.TopClients)
+	if len(metrics.LoginStats.Today.TopClients) != 1 ||
+		metrics.LoginStats.Today.TopClients[0].ClientName != "App 1" {
+		t.Errorf("unexpected top clients: %v", metrics.LoginStats.Today.TopClients)
 	}
 
 	if metrics.SecurityAnalysis.ThreatLevel != "LOW" {
@@ -197,7 +197,7 @@ func TestPerformAnalysisWithGemini(t *testing.T) {
 		setChan: setChan,
 	}
 
-	_ = service.NewMetricsService(repo, cache)
+	_ = service.NewMetricsService(repo, cache, nil)
 
 	// Wait for the background goroutine to complete its performAnalysis run
 	select {
