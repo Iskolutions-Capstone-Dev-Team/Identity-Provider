@@ -93,6 +93,8 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		),
 		MFAService:     service.NewMFAService(repository.NewMFARepository(db)),
 		PasskeyService: passkeySvc,
-		MetricsService: service.NewMetricsService(metricsRepo, appCache),
+		MetricsService: service.NewMetricsService(
+			metricsRepo, appCache, Storage,
+		),
 	}
 }
