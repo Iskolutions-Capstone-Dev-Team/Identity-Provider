@@ -15,10 +15,12 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
+	"github.com/jung-kurt/gofpdf/v2"
 )
 
 type MetricsService interface {
 	GetDashboardMetrics(ctx context.Context) (*models.DashboardMetrics, error)
+	GenerateReportPDF(ctx context.Context) ([]byte, error)
 }
 
 type metricsService struct {
@@ -386,4 +388,164 @@ func (s *metricsService) populateClientImageURLs(ctx context.Context,
 		}
 	}
 	return clients
+}
+
+func (s *metricsService) GenerateReportPDF(
+	ctx context.Context,
+) ([]byte, error) {
+	metrics, err := s.GetDashboardMetrics(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get dashboard metrics: %w", err)
+	}
+
+	since := time.Now().Add(-24 * time.Hour)
+	failedAttempts, err := s.repo.GetFailedAuthAttempts(ctx, since)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get failed auth attempts: %w", err)
+	}
+
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.SetMargins(15, 20, 15)
+
+	pdf.SetFooterFunc(func() {
+		pdf.SetY(-15)
+		pdf.SetFont("Arial", "B", 8)
+		pdf.SetTextColor(255, 0, 0)
+		warningText := "This document contains personal-identifiable " +
+			"information that is subject to Data Privacy. " +
+			"Please keep this document protected and in a safe pace."
+		pdf.CellFormat(
+			0, 10,
+			warningText,
+			"", 0, "C", false, 0, "",
+		)
+	})
+
+	pdf.AddPage()
+
+	pdf.SetTextColor(0, 0, 0)
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(0, 10, "Identity Provider Metrics & Security Report")
+	pdf.Ln(8)
+	pdf.SetFont("Arial", "I", 10)
+	genDate := time.Now().Format("2006-01-02 15:04:05 MST")
+	pdf.Cell(0, 10, fmt.Sprintf("Generated on: %s", genDate))
+	pdf.Ln(12)
+
+	pdf.SetFont("Arial", "B", 12)
+	pdf.Cell(0, 10, "1. Executive Security Analysis")
+	pdf.Ln(8)
+	pdf.SetFont("Arial", "", 10)
+
+	pdf.Cell(40, 6, "Threat Level:")
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(0, 6, metrics.SecurityAnalysis.ThreatLevel)
+	pdf.Ln(6)
+
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(40, 6, "Confidence Score:")
+	pdf.Cell(0, 6, fmt.Sprintf("%.2f", metrics.SecurityAnalysis.Confidence))
+	pdf.Ln(6)
+
+	pdf.Cell(40, 6, "Analysis Date:")
+	analyzedDate := metrics.SecurityAnalysis.AnalyzedAt.Format(
+		"2006-01-02 15:04:05 MST",
+	)
+	pdf.Cell(0, 6, analyzedDate)
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(0, 6, "Security Advisory:")
+	pdf.Ln(6)
+	pdf.SetFont("Arial", "", 10)
+	pdf.MultiCell(0, 6, metrics.SecurityAnalysis.Advisory, "", "", false)
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "B", 12)
+	pdf.Cell(0, 10, "2. Authentication Statistics")
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(
+		0, 6,
+		fmt.Sprintf(
+			"Today - Total Logins: %d",
+			metrics.LoginStats.Today.Count,
+		),
+	)
+	pdf.Ln(6)
+	pdf.SetFont("Arial", "", 10)
+	for _, tc := range metrics.LoginStats.Today.TopClients {
+		pdf.Cell(10, 6, "")
+		pdf.Cell(80, 6, fmt.Sprintf("Client: %s", tc.ClientName))
+		pdf.Cell(0, 6, fmt.Sprintf("Logins: %d", tc.LoginCount))
+		pdf.Ln(6)
+	}
+
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(
+		0, 6,
+		fmt.Sprintf(
+			"This Week - Total Logins: %d",
+			metrics.LoginStats.ThisWeek.Count,
+		),
+	)
+	pdf.Ln(6)
+	pdf.SetFont("Arial", "", 10)
+	for _, tc := range metrics.LoginStats.ThisWeek.TopClients {
+		pdf.Cell(10, 6, "")
+		pdf.Cell(80, 6, fmt.Sprintf("Client: %s", tc.ClientName))
+		pdf.Cell(0, 6, fmt.Sprintf("Logins: %d", tc.LoginCount))
+		pdf.Ln(6)
+	}
+
+	pdf.SetFont("Arial", "B", 10)
+	pdf.Cell(
+		0, 6,
+		fmt.Sprintf(
+			"This Month - Total Logins: %d",
+			metrics.LoginStats.ThisMonth.Count,
+		),
+	)
+	pdf.Ln(6)
+	pdf.SetFont("Arial", "", 10)
+	for _, tc := range metrics.LoginStats.ThisMonth.TopClients {
+		pdf.Cell(10, 6, "")
+		pdf.Cell(80, 6, fmt.Sprintf("Client: %s", tc.ClientName))
+		pdf.Cell(0, 6, fmt.Sprintf("Logins: %d", tc.LoginCount))
+		pdf.Ln(6)
+	}
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "B", 12)
+	pdf.Cell(0, 10, "3. Failed Authentication Attempts (Last 24 Hours)")
+	pdf.Ln(8)
+	pdf.SetFont("Arial", "B", 10)
+
+	pdf.Cell(50, 6, "IP Address")
+	pdf.Cell(80, 6, "Actor (Username/Email)")
+	pdf.Cell(20, 6, "Fail Count")
+	pdf.Cell(30, 6, "Last Attempt")
+	pdf.Ln(6)
+
+	pdf.SetFont("Arial", "", 10)
+	for _, fa := range failedAttempts {
+		actor := fa.Actor
+		if len(actor) > 40 {
+			actor = actor[:37] + "..."
+		}
+		pdf.Cell(50, 6, fa.IP)
+		pdf.Cell(80, 6, actor)
+		pdf.Cell(20, 6, fmt.Sprintf("%d", fa.FailCount))
+		pdf.Cell(30, 6, fa.LastAttempt.Format("15:04:05"))
+		pdf.Ln(6)
+	}
+
+	var buf bytes.Buffer
+	err = pdf.Output(&buf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate PDF output: %w", err)
+	}
+
+	return buf.Bytes(), nil
 }
