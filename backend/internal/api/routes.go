@@ -197,6 +197,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			c.JSON(http.StatusOK, gin.H{"status": "IdP is operational"})
 		})
 		admin.GET("/metrics", h.MetricsHandler.GetDashboardMetrics)
+		admin.GET("/report", h.MetricsHandler.GetMetricsReportPDF)
 
 		// Service Provider (Client) Maintenance
 		clients := admin.Group("/clients")
