@@ -14,6 +14,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
 )
 
 type MetricsService interface {
@@ -23,6 +24,7 @@ type MetricsService interface {
 type metricsService struct {
 	repo       repository.MetricsRepository
 	cache      cache.Cache
+	storage    *storage.S3Provider
 	apiKey     string
 	mu         sync.RWMutex
 	lastResult models.SecurityAnalysisResult
@@ -67,12 +69,14 @@ type geminiResponse struct {
 func NewMetricsService(
 	repo repository.MetricsRepository,
 	c cache.Cache,
+	s3 *storage.S3Provider,
 ) MetricsService {
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	s := &metricsService{
-		repo:   repo,
-		cache:  c,
-		apiKey: apiKey,
+		repo:    repo,
+		cache:   c,
+		storage: s3,
+		apiKey:  apiKey,
 		lastResult: models.SecurityAnalysisResult{
 			ThreatLevel: "UNKNOWN",
 			Confidence:  0.0,
@@ -142,7 +146,7 @@ func (s *metricsService) performAnalysis(ctx context.Context) {
 		return
 	}
 
-	topClients, err := s.repo.GetTopClients(ctx, 5)
+	topClients, err := s.repo.GetTopClients(ctx, 5, since)
 	if err != nil {
 		log.Printf("[MetricsService] GetTopClients error: %v", err)
 		return
@@ -316,10 +320,24 @@ func (s *metricsService) GetDashboardMetrics(
 		return nil, err
 	}
 
-	topClients, err := s.repo.GetTopClients(ctx, 10)
+	todayTopClients, err := s.repo.GetTopClients(ctx, 5, todayStart)
 	if err != nil {
 		return nil, err
 	}
+
+	weekTopClients, err := s.repo.GetTopClients(ctx, 5, weekStart)
+	if err != nil {
+		return nil, err
+	}
+
+	monthTopClients, err := s.repo.GetTopClients(ctx, 5, monthStart)
+	if err != nil {
+		return nil, err
+	}
+
+	todayTopClients = s.populateClientImageURLs(ctx, todayTopClients)
+	weekTopClients = s.populateClientImageURLs(ctx, weekTopClients)
+	monthTopClients = s.populateClientImageURLs(ctx, monthTopClients)
 
 	s.mu.RLock()
 	analysis := s.lastResult
@@ -337,11 +355,35 @@ func (s *metricsService) GetDashboardMetrics(
 
 	return &models.DashboardMetrics{
 		LoginStats: models.LoginStats{
-			Today:     todayCount,
-			ThisWeek:  weekCount,
-			ThisMonth: monthCount,
+			Today: models.TimeframeStats{
+				Count:      todayCount,
+				TopClients: todayTopClients,
+			},
+			ThisWeek: models.TimeframeStats{
+				Count:      weekCount,
+				TopClients: weekTopClients,
+			},
+			ThisMonth: models.TimeframeStats{
+				Count:      monthCount,
+				TopClients: monthTopClients,
+			},
 		},
-		TopClients:       topClients,
 		SecurityAnalysis: analysis,
 	}, nil
+}
+
+func (s *metricsService) populateClientImageURLs(ctx context.Context,
+	clients []models.TopClientLogin,
+) []models.TopClientLogin {
+	for i := range clients {
+		if clients[i].ImageLocation != "" {
+			url, err := GetPresignedURL(
+				ctx, clients[i].ImageLocation, s.storage,
+			)
+			if err == nil {
+				clients[i].ImageURL = url
+			}
+		}
+	}
+	return clients
 }
