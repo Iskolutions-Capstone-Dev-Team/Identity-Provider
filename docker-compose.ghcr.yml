@@ -10,6 +10,7 @@ services:
       - "localhost:host-gateway"
     environment:
       - GODEBUG=http2debug=0,asyncpreemptoff=1
+      - REDIS_URL=redis://idp_redis:6379
     ports:
       - "8080:8080"
     volumes:
@@ -20,6 +21,8 @@ services:
       - identity_network
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   # Identity Provider Frontend (GHCR Image)
@@ -111,6 +114,22 @@ services:
       mc cors set local/${S3_BUCKET} /tmp/cors.json;
       exit 0;
       "
+
+  # Redis Cache Service
+  redis:
+    image: redis:7-alpine
+    container_name: idp_redis
+    restart: always
+    command: redis-server --save "" --appendonly no
+    ports:
+      - "6379:6379"
+    networks:
+      - identity_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db_data:
