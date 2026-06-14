@@ -13,4 +13,5 @@ type ServiceContainer struct {
 	OTPService               OTPService
 	MFAService               MFAService
 	PasskeyService           PasskeyService
+	MetricsService           MetricsService
 }
