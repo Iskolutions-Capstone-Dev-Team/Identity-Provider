@@ -31,3 +31,24 @@ func (h *MetricsHandler) GetDashboardMetrics(c *gin.Context) {
 
 	c.JSON(http.StatusOK, metrics)
 }
+
+// GetMetricsReportPDF generates and streams the PDF report.
+func (h *MetricsHandler) GetMetricsReportPDF(c *gin.Context) {
+	pdfBytes, err := h.MetricsService.GenerateReportPDF(
+		c.Request.Context(),
+	)
+	if err != nil {
+		log.Printf("[MetricsHandler] GetMetricsReportPDF error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to generate metrics report",
+		})
+		return
+	}
+
+	c.Header("Content-Type", "application/pdf")
+	c.Header(
+		"Content-Disposition",
+		"attachment; filename=\"metrics_report.pdf\"",
+	)
+	c.Data(http.StatusOK, "application/pdf", pdfBytes)
+}
