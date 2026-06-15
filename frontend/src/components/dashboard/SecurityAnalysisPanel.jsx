@@ -48,7 +48,7 @@ function SecurityMetric({ icon, label, value, colorMode }) {
   );
 }
 
-function SecurityNote({ icon, title, children, tone = "yellow", colorMode }) {
+function SecurityNote({ icon, title, children, tone = "blue", colorMode }) {
   const isDarkMode = colorMode === "dark";
   const toneClassName =
     tone === "blue"
@@ -61,20 +61,44 @@ function SecurityNote({ icon, title, children, tone = "yellow", colorMode }) {
   const iconClassName =
     tone === "blue"
       ? isDarkMode
-        ? "border-[#3b82f6]/30 bg-[#3b82f6]/12 text-[#93c5fd]"
-        : "border-[#2563eb]/20 bg-white/70 text-[#1d4ed8]"
+        ? "text-[#93c5fd]"
+        : "text-[#1d4ed8]"
       : isDarkMode
-        ? "border-[#f8c21a]/30 bg-[#f8c21a]/12 text-[#f8d24e]"
-        : "border-[#f8c21a]/35 bg-white/70 text-[#9a5b00]";
+        ? "text-[#f8d24e]"
+        : "text-[#9a5b00]";
 
   return (
-    <div className={`flex gap-3 rounded-xl border p-4 ${toneClassName}`}>
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border ${iconClassName}`}>
+    <div className={`flex gap-3 rounded-xl border p-3.5 ${toneClassName}`}>
+      <span className={`mt-0.5 flex shrink-0 items-center justify-center ${iconClassName}`}>
         {icon}
       </span>
       <div className="min-w-0">
         <p className="font-black">{title}</p>
         <p className="mt-2 text-sm leading-6">{children}</p>
+      </div>
+    </div>
+  );
+}
+
+function SecurityMeaningDropdown({ colorMode }) {
+  const isDarkMode = colorMode === "dark";
+  const triggerClassName = isDarkMode
+    ? "border-[#f8c21a]/35 bg-[#f8c21a]/10 text-[#f8d24e] hover:bg-[#f8d24e]/18"
+    : "border-[#7b0d15]/15 bg-[#7b0d15]/8 text-[#7b0d15] hover:bg-[#7b0d15]/12";
+  const menuClassName = isDarkMode
+    ? "border-[#f8c21a]/30 bg-[#171914] text-[#f8d24e] shadow-[0_24px_60px_-34px_rgba(0,0,0,0.9)]"
+    : "border-[#f8c21a]/35 bg-[#fff8d8] text-[#9a5b00] shadow-[0_24px_60px_-34px_rgba(123,13,21,0.5)]";
+
+  return (
+    <div className="dropdown dropdown-end">
+      <button type="button" tabIndex={0} aria-label="Open security analysis explanation" className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${triggerClassName}`}>
+        <QuestionIcon className="h-5 w-5" />
+      </button>
+      <div tabIndex={0} className={`dropdown-content z-50 mt-3 w-80 rounded-xl border p-4 ${menuClassName}`}>
+        <p className="font-black">What does this mean?</p>
+        <p className="mt-2 text-sm leading-6">
+          The system analyzed authentication activity and user behavior. An anomaly count of zero indicates that no suspicious or unusual activity was detected.
+        </p>
       </div>
     </div>
   );
@@ -89,31 +113,26 @@ export default function SecurityAnalysisPanel({ analysis, analyzedAt, colorMode 
 
   return (
     <DashboardPanel colorMode={colorMode} className="p-5">
-      <h2 className={`text-xl font-black uppercase tracking-[0.03em] ${
-        isDarkMode ? "text-white" : "text-[#7b0d15]"
-      }`}>
-        Security Analysis
-      </h2>
+      <div className="flex items-start justify-between gap-4">
+        <h2 className={`text-xl font-black uppercase tracking-[0.03em] ${
+          isDarkMode ? "text-white" : "text-[#7b0d15]"
+        }`}>
+          Security Analysis
+        </h2>
+        <SecurityMeaningDropdown colorMode={colorMode} />
+      </div>
       <p className={`mt-1 text-sm ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
         AI-assisted authentication review
       </p>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5">
         <SecurityNote
           icon={<InfoIcon />}
-          title="AI analysis refresh"
+          title="AI Analysis"
           tone="blue"
           colorMode={colorMode}
         >
-          AI security analysis refreshes every 2 hours to help prevent exhausting the AI request quota.
-        </SecurityNote>
-
-        <SecurityNote
-          icon={<QuestionIcon />}
-          title="What does this mean?"
-          colorMode={colorMode}
-        >
-          The system analyzed authentication patterns and behavior. No risks or unusual activities were found when the anomaly count is zero.
+          Updates every 2 hours.
         </SecurityNote>
       </div>
 
@@ -183,6 +202,7 @@ export default function SecurityAnalysisPanel({ analysis, analyzedAt, colorMode 
             No anomalies detected in the selected period.
           </p>
         )}
+
       </div>
 
     </DashboardPanel>

@@ -76,7 +76,7 @@ function TopLoginRow({ client, maxLoginCount, totalLoginCount, colorMode }) {
     : 0;
 
   return (
-    <div className="grid grid-cols-[minmax(0,12rem)_1fr_auto] items-center gap-4">
+    <div>
       <div className="flex min-w-0 items-center gap-3">
         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border p-1 ${
           isDarkMode ? "border-white/10 bg-white/[0.04]" : "border-[#7b0d15]/10 bg-white"
@@ -97,19 +97,21 @@ function TopLoginRow({ client, maxLoginCount, totalLoginCount, colorMode }) {
         </div>
       </div>
 
-      <div className={`h-2 rounded-full ${
-        isDarkMode ? "bg-white/10" : "bg-[#7b0d15]/10"
-      }`}>
-        <div className={`h-full rounded-full ${accent.bg}`} style={{ width: barWidth }}/>
-      </div>
+      <div className="grid grid-cols-[1fr_auto] items-center gap-4">
+        <div className={`h-2 rounded-full ${
+          isDarkMode ? "bg-white/10" : "bg-[#7b0d15]/10"
+        }`}>
+          <div className={`h-full rounded-full ${accent.bg}`} style={{ width: barWidth }}/>
+        </div>
 
-      <div className="w-20 text-right">
-        <p className={`text-lg font-black ${accent.text}`}>
-          {loginCount.toLocaleString()}
-        </p>
-        <p className={`text-xs ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
-          {percentage.toFixed(1)}%
-        </p>
+        <div className="w-20 text-right">
+          <p className={`text-lg font-black ${accent.text}`}>
+            {loginCount.toLocaleString()}
+          </p>
+          <p className={`text-xs ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
+            {percentage.toFixed(1)}%
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -151,7 +153,9 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
         />
       </div>
 
-      <div className="mt-8 space-y-6">
+      <div className={`mt-8 space-y-5 pr-1 ${
+        clients.length > 4 ? "max-h-[30rem] overflow-y-auto" : ""
+      }`}>
         {clients.length > 0 ? (
           clients.map((client) => (
             <TopLoginRow
