@@ -6,6 +6,7 @@ import PageHeaderActionButton from "../components/PageHeaderActionButton";
 import { DashboardChartIcon, DownloadIcon } from "../components/dashboard/DashboardIcons";
 import DashboardPanel from "../components/dashboard/DashboardPanel";
 import MetricFilterCard from "../components/dashboard/MetricFilterCard";
+import ReportConfirmModal from "../components/dashboard/ReportConfirmModal";
 import SecurityAnalysisPanel from "../components/dashboard/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/dashboard/TopLoginsPanel";
 import { usePermissionAccess } from "../context/PermissionContext";
@@ -240,6 +241,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reportError, setReportError] = useState("");
+  const [isReportConfirmOpen, setIsReportConfirmOpen] = useState(false);
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
   const normalizedMetrics = useMemo(() => normalizeMetrics(metrics), [metrics]);
   const selectedPeriod = normalizedMetrics.loginStats.find(
@@ -298,6 +300,7 @@ export default function Dashboard() {
       console.error("Metrics report download error:", downloadError);
       setReportError("Unable to generate the metrics report right now.");
     } finally {
+      setIsReportConfirmOpen(false);
       setIsDownloadingReport(false);
     }
   };
@@ -322,15 +325,19 @@ export default function Dashboard() {
           colorMode={colorMode}
         />
 
-        <PageHeaderActionButton
-          colorMode={colorMode}
-          onClick={handleDownloadReport}
-        >
-          <span className="inline-flex items-center gap-3">
-            {isDownloadingReport ? "Generating..." : "Generate Report"}
-            <DownloadIcon />
-          </span>
-        </PageHeaderActionButton>
+        {loading ? (
+          <SkeletonBlock className="h-14 w-48 rounded-2xl" colorMode={colorMode} />
+        ) : (
+          <PageHeaderActionButton
+            colorMode={colorMode}
+            onClick={() => setIsReportConfirmOpen(true)}
+          >
+            <span className="inline-flex items-center gap-3">
+              Generate Report
+              <DownloadIcon />
+            </span>
+          </PageHeaderActionButton>
+        )}
       </div>
 
       {loading ? (
@@ -369,6 +376,14 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <ReportConfirmModal
+        open={isReportConfirmOpen}
+        colorMode={colorMode}
+        isGenerating={isDownloadingReport}
+        onCancel={() => setIsReportConfirmOpen(false)}
+        onConfirm={handleDownloadReport}
+      />
     </div>
   );
 }
