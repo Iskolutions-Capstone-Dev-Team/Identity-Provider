@@ -152,7 +152,7 @@ func (s *metricsService) performAnalysis(ctx context.Context) {
 	s.mu.Unlock()
 
 	resultJSON, _ := json.Marshal(result)
-	_ = s.cache.Set(ctx, cacheKey, string(resultJSON), 30*time.Minute)
+	_ = s.cache.Set(ctx, cacheKey, string(resultJSON), 2*time.Hour)
 }
 
 func (s *metricsService) callGeminiAPI(
