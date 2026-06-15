@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"slices"
 	"sync"
@@ -18,6 +17,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
 	"github.com/google/uuid"
 	"github.com/jung-kurt/gofpdf/v2"
+	"google.golang.org/genai"
 )
 
 type MetricsService interface {
@@ -40,42 +40,6 @@ type metricsService struct {
 	apiKey     string
 	mu         sync.RWMutex
 	lastResult models.SecurityAnalysisResult
-}
-
-type geminiRequest struct {
-	Contents         []geminiContent `json:"contents"`
-	GenerationConfig geminiConfig    `json:"generationConfig"`
-}
-
-type geminiContent struct {
-	Parts []geminiPart `json:"parts"`
-}
-
-type geminiPart struct {
-	Text string `json:"text"`
-}
-
-type geminiConfig struct {
-	ResponseMIMEType string        `json:"responseMimeType"`
-	ResponseSchema   *geminiSchema `json:"responseSchema,omitempty"`
-}
-
-type geminiSchema struct {
-	Type       string                   `json:"type"`
-	Properties map[string]*geminiSchema `json:"properties,omitempty"`
-	Required   []string                 `json:"required,omitempty"`
-	Items      *geminiSchema            `json:"items,omitempty"`
-	Enum       []string                 `json:"enum,omitempty"`
-}
-
-type geminiResponse struct {
-	Candidates []struct {
-		Content struct {
-			Parts []struct {
-				Text string `json:"text"`
-			} `json:"parts"`
-		} `json:"content"`
-	} `json:"candidates"`
 }
 
 func NewMetricsService(
@@ -201,14 +165,21 @@ func (s *metricsService) callGeminiAPI(
 		success, fail,
 	)
 
-	baseURL := os.Getenv("GEMINI_BASE_URL")
-	if baseURL == "" {
-		baseURL = "https://generativelanguage.googleapis.com"
+	config := &genai.ClientConfig{
+		APIKey: s.apiKey,
 	}
-	url := fmt.Sprintf(
-		"%s/v1/models/gemini-3.5-flash:generateContent",
-		baseURL,
-	)
+	baseURL := os.Getenv("GEMINI_BASE_URL")
+	if baseURL != "" {
+		config.HTTPOptions = genai.HTTPOptions{
+			BaseURL: baseURL,
+		}
+	}
+
+	client, err := genai.NewClient(ctx, config)
+	if err != nil {
+		return models.SecurityAnalysisResult{},
+			fmt.Errorf("failed to create genai client: %w", err)
+	}
 
 	prompt := fmt.Sprintf(
 		"Analyze authentication metrics for threats like brute force or DDoS.\n"+
@@ -217,91 +188,49 @@ func (s *metricsService) callGeminiAPI(
 		success, fail, topClients, attempts,
 	)
 
-	reqPayload := geminiRequest{
-		Contents: []geminiContent{
-			{
-				Parts: []geminiPart{
-					{Text: prompt},
+	configObj := &genai.GenerateContentConfig{
+		ResponseMIMEType: "application/json",
+		ResponseSchema: &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"threat_level": {
+					Type: genai.TypeString,
+					Enum: []string{"LOW", "MEDIUM", "HIGH"},
 				},
+				"confidence": {Type: genai.TypeNumber},
+				"anomalies": {
+					Type:  genai.TypeArray,
+					Items: &genai.Schema{Type: genai.TypeString},
+				},
+				"advisory": {Type: genai.TypeString},
 			},
-		},
-		GenerationConfig: geminiConfig{
-			ResponseMIMEType: "application/json",
-			ResponseSchema: &geminiSchema{
-				Type: "OBJECT",
-				Properties: map[string]*geminiSchema{
-					"threat_level": {
-						Type: "STRING",
-						Enum: []string{"LOW", "MEDIUM", "HIGH"},
-					},
-					"confidence": {Type: "NUMBER"},
-					"anomalies": {
-						Type:  "ARRAY",
-						Items: &geminiSchema{Type: "STRING"},
-					},
-					"advisory": {Type: "STRING"},
-				},
-				Required: []string{
-					"threat_level", "confidence", "anomalies", "advisory",
-				},
+			Required: []string{
+				"threat_level", "confidence", "anomalies", "advisory",
 			},
 		},
 	}
 
-	bodyBytes, err := json.Marshal(reqPayload)
-	if err != nil {
-		return models.SecurityAnalysisResult{}, err
-	}
-
-	req, err := http.NewRequestWithContext(
-		ctx, "POST", url, bytes.NewReader(bodyBytes),
+	resp, err := client.Models.GenerateContent(
+		ctx,
+		"gemini-3.5-flash",
+		genai.Text(prompt),
+		configObj,
 	)
 	if err != nil {
-		return models.SecurityAnalysisResult{}, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-goog-api-key", s.apiKey)
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return models.SecurityAnalysisResult{}, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		var errResp map[string]interface{}
-		_ = json.NewDecoder(resp.Body).Decode(&errResp)
-		log.Printf(
-			"[MetricsService] Gemini API returned status %d: %v",
-			resp.StatusCode, errResp,
-		)
-		return models.SecurityAnalysisResult{}, fmt.Errorf(
-			"gemini api returned status %d: %v", resp.StatusCode, errResp)
+		return models.SecurityAnalysisResult{},
+			fmt.Errorf("gemini sdk request failed: %w", err)
 	}
 
-	var geminiResp geminiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&geminiResp); err != nil {
-		return models.SecurityAnalysisResult{}, err
-	}
-
-	if len(geminiResp.Candidates) == 0 ||
-		len(geminiResp.Candidates[0].Content.Parts) == 0 {
-		return models.SecurityAnalysisResult{}, fmt.Errorf(
-			"empty gemini response candidates")
-	}
-
-	responseText := geminiResp.Candidates[0].Content.Parts[0].Text
-
+	text := resp.Text()
 	var result models.SecurityAnalysisResult
-	if err := json.Unmarshal([]byte(responseText), &result); err != nil {
+	if err := json.Unmarshal([]byte(text), &result); err != nil {
 		log.Printf(
 			"[MetricsService] Failed to parse Gemini response: %v, raw: %s",
-			err, responseText,
+			err, text,
 		)
-		return models.SecurityAnalysisResult{}, fmt.Errorf(
-			"failed to parse gemini response JSON: %w (raw response: %s)",
-			err, responseText)
+		return models.SecurityAnalysisResult{},
+			fmt.Errorf("failed to parse gemini response JSON: %w (raw: %s)",
+				err, text)
 	}
 
 	log.Printf(
