@@ -30,9 +30,10 @@ export default function MetricFilterCard({ stat, colorMode = "light", isLoading 
     : "bg-white/85 shadow-[0_18px_46px_-38px_rgba(43,3,7,0.55)]";
   const countClassName = isDarkMode ? "text-white" : "text-[#2a1518]";
   const captionClassName = isDarkMode ? "text-slate-200" : "text-slate-600";
+  const hoverClassName = "transition-transform duration-200 ease-out hover:-translate-y-1";
 
   return (
-    <div className={`rounded-2xl border p-5 ${tone.border} ${cardClassName}`}>
+    <div className={`rounded-2xl border p-5 ${hoverClassName} ${tone.border} ${cardClassName}`}>
       <div className="flex items-center gap-4">
         <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${tone.icon}`}>
           <CalendarIcon />
