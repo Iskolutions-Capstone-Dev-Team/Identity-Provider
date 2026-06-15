@@ -369,6 +369,166 @@ func (s *metricsService) populateClientImageURLs(ctx context.Context,
 	return clients
 }
 
+func addReportHeader(pdf *gofpdf.Fpdf, generatedAt string) {
+	pdf.SetXY(15, 18)
+	pdf.SetTextColor(20, 20, 20)
+	pdf.SetFont("Arial", "B", 17)
+	pdf.Cell(0, 8, "Identity Provider Metrics & Security Report")
+
+	pdf.SetXY(15, 27)
+	pdf.SetFont("Arial", "I", 10)
+	pdf.SetTextColor(45, 45, 45)
+	pdf.Cell(0, 6, fmt.Sprintf("Generated on: %s", generatedAt))
+	pdf.Ln(22)
+}
+
+func addReportSectionTitle(pdf *gofpdf.Fpdf, title string) {
+	pdf.SetTextColor(20, 20, 20)
+	pdf.SetFont("Arial", "B", 14)
+	pdf.Cell(0, 9, title)
+	pdf.Ln(11)
+}
+
+func addReportTableHeader(pdf *gofpdf.Fpdf, headers []string, widths []float64) {
+	pdf.SetFillColor(244, 244, 244)
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+	pdf.SetFont("Arial", "B", 9)
+
+	for i, header := range headers {
+		pdf.CellFormat(widths[i], 9, header, "1", 0, "C", true, 0, "")
+	}
+	pdf.Ln(-1)
+}
+
+func addReportCell(
+	pdf *gofpdf.Fpdf,
+	width float64,
+	height float64,
+	text string,
+	align string,
+	bold bool,
+) {
+	if bold {
+		pdf.SetFont("Arial", "B", 9)
+	} else {
+		pdf.SetFont("Arial", "", 9)
+	}
+	pdf.CellFormat(width, height, text, "1", 0, align, false, 0, "")
+}
+
+func addReportSecurityTable(
+	pdf *gofpdf.Fpdf,
+	analysis models.SecurityAnalysisResult,
+) {
+	labelWidth := 52.0
+	valueWidth := 128.0
+	rowHeight := 13.0
+	analyzedDate := analysis.AnalyzedAt.Format("2006-01-02 15:04:05 MST")
+
+	rows := []struct {
+		label string
+		value string
+		bold  bool
+	}{
+		{"Threat Level:", analysis.ThreatLevel, true},
+		{"Confidence Score:", fmt.Sprintf("%.2f", analysis.Confidence), false},
+		{"Analysis Date:", analyzedDate, false},
+		{"Security Advisory:", analysis.Advisory, false},
+	}
+
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+	for _, row := range rows {
+		addReportCell(pdf, labelWidth, rowHeight, row.label, "L", true)
+		addReportCell(pdf, valueWidth, rowHeight, row.value, "L", row.bold)
+		pdf.Ln(-1)
+	}
+	pdf.Ln(16)
+}
+
+func addReportAuthStatsTable(
+	pdf *gofpdf.Fpdf,
+	stats models.LoginStats,
+) {
+	widths := []float64{58, 84, 38}
+	addReportTableHeader(pdf, []string{"TIME PERIOD", "CLIENT", "LOGINS"}, widths)
+
+	periodRows := []struct {
+		label   string
+		count   int
+		clients []models.TopClientLogin
+	}{
+		{"Today - Total Logins", stats.Today.Count, stats.Today.TopClients},
+		{"This Week - Total Logins", stats.ThisWeek.Count, stats.ThisWeek.TopClients},
+		{"This Month - Total Logins", stats.ThisMonth.Count, stats.ThisMonth.TopClients},
+	}
+
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+	for _, period := range periodRows {
+		if len(period.clients) == 0 {
+			addReportCell(pdf, widths[0], 12, fmt.Sprintf("%s: %d", period.label, period.count), "L", true)
+			addReportCell(pdf, widths[1], 12, "No client login activity", "L", false)
+			addReportCell(pdf, widths[2], 12, "0", "C", false)
+			pdf.Ln(-1)
+			continue
+		}
+
+		for index, client := range period.clients {
+			periodLabel := ""
+			if index == 0 {
+				periodLabel = fmt.Sprintf("%s: %d", period.label, period.count)
+			}
+
+			addReportCell(pdf, widths[0], 12, periodLabel, "L", index == 0)
+			addReportCell(pdf, widths[1], 12, client.ClientName, "L", false)
+			addReportCell(pdf, widths[2], 12, fmt.Sprintf("%d", client.LoginCount), "C", false)
+			pdf.Ln(-1)
+		}
+	}
+	pdf.Ln(16)
+}
+
+func truncateReportText(value string, maxLength int) string {
+	if len(value) <= maxLength {
+		return value
+	}
+	return value[:maxLength-3] + "..."
+}
+
+func addReportFailedAttemptsTable(
+	pdf *gofpdf.Fpdf,
+	failedAttempts []models.FailedAuthAttempt,
+) {
+	widths := []float64{38, 78, 35, 29}
+	addReportTableHeader(
+		pdf,
+		[]string{"IP ADDRESS", "ACTOR (USERNAME/EMAIL)", "FAIL COUNT", "LAST ATTEMPT"},
+		widths,
+	)
+
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+
+	if len(failedAttempts) == 0 {
+		addReportCell(pdf, widths[0], 12, "None", "C", false)
+		addReportCell(pdf, widths[1], 12, "No failed attempts recorded", "C", false)
+		addReportCell(pdf, widths[2], 12, "0", "C", false)
+		addReportCell(pdf, widths[3], 12, "-", "C", false)
+		pdf.Ln(-1)
+		return
+	}
+
+	for _, attempt := range failedAttempts {
+		addReportCell(pdf, widths[0], 12, attempt.IP, "C", false)
+		addReportCell(pdf, widths[1], 12, truncateReportText(attempt.Actor, 42), "C", false)
+		addReportCell(pdf, widths[2], 12, fmt.Sprintf("%d", attempt.FailCount), "C", false)
+		addReportCell(pdf, widths[3], 12, attempt.LastAttempt.Format("15:04:05"), "C", false)
+		pdf.Ln(-1)
+	}
+}
+
 func (s *metricsService) GenerateReportPDF(
 	ctx context.Context,
 	userID uuid.UUID,
@@ -400,141 +560,56 @@ func (s *metricsService) GenerateReportPDF(
 	}
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
-	pdf.SetMargins(15, 20, 15)
+	pdf.SetMargins(15, 18, 15)
+	pdf.SetAutoPageBreak(true, 28)
 
 	pdf.SetFooterFunc(func() {
-		pdf.SetY(-15)
-		pdf.SetFont("Arial", "B", 8)
-		pdf.SetTextColor(255, 0, 0)
-		warningText := "This document contains personal-identifiable " +
-			"information that is subject to Data Privacy. " +
-			"Please keep this document protected and in a safe pace."
+		pdf.SetY(-27)
+		pdf.SetFont("Arial", "", 8)
+		pdf.SetTextColor(25, 25, 25)
+		pdf.SetX(105)
 		pdf.CellFormat(
-			0, 10,
-			warningText,
+			90, 5,
+			"This is system-generated, signature is not required.",
+			"", 0, "R", false, 0, "",
+		)
+
+		pdf.SetY(-21)
+		pdf.SetDrawColor(30, 30, 30)
+		pdf.Line(15, pdf.GetY(), 195, pdf.GetY())
+
+		pdf.SetY(-16)
+		pdf.SetFont("Arial", "B", 8)
+		pdf.SetTextColor(180, 0, 0)
+		pdf.SetX(5)
+		pdf.CellFormat(
+			145, 4,
+			"This document contains personal-identifiable information that is subject to Data Privacy.",
+			"", 0, "C", false, 0, "",
+		)
+
+		pdf.SetY(-11)
+		pdf.SetX(5)
+		pdf.CellFormat(
+			145, 4,
+			"Please keep this document protected and in a safe place.",
 			"", 0, "C", false, 0, "",
 		)
 	})
 
 	pdf.AddPage()
 
-	pdf.SetTextColor(0, 0, 0)
-	pdf.SetFont("Arial", "B", 16)
-	pdf.Cell(0, 10, "Identity Provider Metrics & Security Report")
-	pdf.Ln(8)
-	pdf.SetFont("Arial", "I", 10)
 	genDate := time.Now().Format("2006-01-02 15:04:05 MST")
-	pdf.Cell(0, 10, fmt.Sprintf("Generated on: %s", genDate))
-	pdf.Ln(12)
+	addReportHeader(pdf, genDate)
 
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(0, 10, "1. Executive Security Analysis")
-	pdf.Ln(8)
-	pdf.SetFont("Arial", "", 10)
+	addReportSectionTitle(pdf, "1. Executive Security Analysis")
+	addReportSecurityTable(pdf, metrics.SecurityAnalysis)
 
-	pdf.Cell(40, 6, "Threat Level:")
-	pdf.SetFont("Arial", "B", 10)
-	pdf.Cell(0, 6, metrics.SecurityAnalysis.ThreatLevel)
-	pdf.Ln(6)
+	addReportSectionTitle(pdf, "2. Authentication Statistics")
+	addReportAuthStatsTable(pdf, metrics.LoginStats)
 
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(40, 6, "Confidence Score:")
-	pdf.Cell(0, 6, fmt.Sprintf("%.2f", metrics.SecurityAnalysis.Confidence))
-	pdf.Ln(6)
-
-	pdf.Cell(40, 6, "Analysis Date:")
-	analyzedDate := metrics.SecurityAnalysis.AnalyzedAt.Format(
-		"2006-01-02 15:04:05 MST",
-	)
-	pdf.Cell(0, 6, analyzedDate)
-	pdf.Ln(8)
-
-	pdf.SetFont("Arial", "B", 10)
-	pdf.Cell(0, 6, "Security Advisory:")
-	pdf.Ln(6)
-	pdf.SetFont("Arial", "", 10)
-	pdf.MultiCell(0, 6, metrics.SecurityAnalysis.Advisory, "", "", false)
-	pdf.Ln(8)
-
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(0, 10, "2. Authentication Statistics")
-	pdf.Ln(8)
-
-	pdf.SetFont("Arial", "B", 10)
-	pdf.Cell(
-		0, 6,
-		fmt.Sprintf(
-			"Today - Total Logins: %d",
-			metrics.LoginStats.Today.Count,
-		),
-	)
-	pdf.Ln(6)
-	pdf.SetFont("Arial", "", 10)
-	for _, tc := range metrics.LoginStats.Today.TopClients {
-		pdf.Cell(10, 6, "")
-		pdf.Cell(80, 6, fmt.Sprintf("Client: %s", tc.ClientName))
-		pdf.Cell(0, 6, fmt.Sprintf("Logins: %d", tc.LoginCount))
-		pdf.Ln(6)
-	}
-
-	pdf.SetFont("Arial", "B", 10)
-	pdf.Cell(
-		0, 6,
-		fmt.Sprintf(
-			"This Week - Total Logins: %d",
-			metrics.LoginStats.ThisWeek.Count,
-		),
-	)
-	pdf.Ln(6)
-	pdf.SetFont("Arial", "", 10)
-	for _, tc := range metrics.LoginStats.ThisWeek.TopClients {
-		pdf.Cell(10, 6, "")
-		pdf.Cell(80, 6, fmt.Sprintf("Client: %s", tc.ClientName))
-		pdf.Cell(0, 6, fmt.Sprintf("Logins: %d", tc.LoginCount))
-		pdf.Ln(6)
-	}
-
-	pdf.SetFont("Arial", "B", 10)
-	pdf.Cell(
-		0, 6,
-		fmt.Sprintf(
-			"This Month - Total Logins: %d",
-			metrics.LoginStats.ThisMonth.Count,
-		),
-	)
-	pdf.Ln(6)
-	pdf.SetFont("Arial", "", 10)
-	for _, tc := range metrics.LoginStats.ThisMonth.TopClients {
-		pdf.Cell(10, 6, "")
-		pdf.Cell(80, 6, fmt.Sprintf("Client: %s", tc.ClientName))
-		pdf.Cell(0, 6, fmt.Sprintf("Logins: %d", tc.LoginCount))
-		pdf.Ln(6)
-	}
-	pdf.Ln(8)
-
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(0, 10, "3. Failed Authentication Attempts (Last 24 Hours)")
-	pdf.Ln(8)
-	pdf.SetFont("Arial", "B", 10)
-
-	pdf.Cell(50, 6, "IP Address")
-	pdf.Cell(80, 6, "Actor (Username/Email)")
-	pdf.Cell(20, 6, "Fail Count")
-	pdf.Cell(30, 6, "Last Attempt")
-	pdf.Ln(6)
-
-	pdf.SetFont("Arial", "", 10)
-	for _, fa := range failedAttempts {
-		actor := fa.Actor
-		if len(actor) > 40 {
-			actor = actor[:37] + "..."
-		}
-		pdf.Cell(50, 6, fa.IP)
-		pdf.Cell(80, 6, actor)
-		pdf.Cell(20, 6, fmt.Sprintf("%d", fa.FailCount))
-		pdf.Cell(30, 6, fa.LastAttempt.Format("15:04:05"))
-		pdf.Ln(6)
-	}
+	addReportSectionTitle(pdf, "3. Failed Authentication Attempts (Last 24 Hours)")
+	addReportFailedAttemptsTable(pdf, failedAttempts)
 
 	var buf bytes.Buffer
 	err = pdf.Output(&buf)
