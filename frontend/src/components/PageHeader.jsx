@@ -1,10 +1,7 @@
-export default function PageHeader({ title, description, icon, colorMode = "light" }) {
+export default function PageHeader({ title, description, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const titleClassName = isDarkMode ? "text-white" : "text-[#7b0d15]";
-  const descriptionClassName = isDarkMode
-    ? "text-[#d8c7cb]"
-    : "text-[#7b0d15]";
-  const iconClassName = isDarkMode ? "text-white" : titleClassName;
+  const descriptionClassName = isDarkMode ? "text-[#d8c7cb]" : "text-[#7b0d15]";
   const titleClasses = [
     "text-3xl font-black uppercase tracking-[0.02em] sm:text-4xl",
     titleClassName,
@@ -13,16 +10,9 @@ export default function PageHeader({ title, description, icon, colorMode = "ligh
     "mt-1 text-xs font-bold uppercase tracking-[0.16em] sm:text-sm",
     descriptionClassName,
   ].join(" ");
-  const iconClasses = ["shrink-0", iconClassName].join(" ");
 
   return (
-    <header className="flex w-full items-center gap-3 text-left sm:gap-4">
-      {icon ? (
-        <div className={iconClasses} aria-hidden="true">
-          {icon}
-        </div>
-      ) : null}
-
+    <header className="flex w-full items-center text-left">
       <div className="min-w-0">
         <h1 className={titleClasses}>{title}</h1>
         <p className={descriptionClasses}>{description}</p>
