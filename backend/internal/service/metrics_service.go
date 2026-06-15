@@ -206,9 +206,8 @@ func (s *metricsService) callGeminiAPI(
 		baseURL = "https://generativelanguage.googleapis.com"
 	}
 	url := fmt.Sprintf(
-		"%s/v1beta/models/gemini-1.5-flash:generateContent?key=%s",
+		"%s/v1beta/models/gemini-3.5-flash:generateContent",
 		baseURL,
-		s.apiKey,
 	)
 
 	prompt := fmt.Sprintf(
@@ -261,6 +260,7 @@ func (s *metricsService) callGeminiAPI(
 		return models.SecurityAnalysisResult{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-goog-api-key", s.apiKey)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
