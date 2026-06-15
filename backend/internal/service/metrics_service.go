@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"slices"
 	"sync"
 	"time"
 
@@ -15,12 +16,21 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
+	"github.com/google/uuid"
 	"github.com/jung-kurt/gofpdf/v2"
 )
 
 type MetricsService interface {
-	GetDashboardMetrics(ctx context.Context) (*models.DashboardMetrics, error)
-	GenerateReportPDF(ctx context.Context) ([]byte, error)
+	GetDashboardMetrics(
+		ctx context.Context,
+		userID uuid.UUID,
+		permissions []string,
+	) (*models.DashboardMetrics, error)
+	GenerateReportPDF(
+		ctx context.Context,
+		userID uuid.UUID,
+		permissions []string,
+	) ([]byte, error)
 }
 
 type metricsService struct {
@@ -136,19 +146,19 @@ func (s *metricsService) performAnalysis(ctx context.Context) {
 	}
 
 	since := time.Now().Add(-1 * time.Hour)
-	successCount, err := s.repo.GetTotalLogins(ctx, since)
+	successCount, err := s.repo.GetTotalLogins(ctx, since, nil)
 	if err != nil {
 		log.Printf("[MetricsService] GetTotalLogins error: %v", err)
 		return
 	}
 
-	failedAttempts, err := s.repo.GetFailedAuthAttempts(ctx, since)
+	failedAttempts, err := s.repo.GetFailedAuthAttempts(ctx, since, nil)
 	if err != nil {
 		log.Printf("[MetricsService] GetFailedAuthAttempts error: %v", err)
 		return
 	}
 
-	topClients, err := s.repo.GetTopClients(ctx, 5, since)
+	topClients, err := s.repo.GetTopClients(ctx, 5, since, nil)
 	if err != nil {
 		log.Printf("[MetricsService] GetTopClients error: %v", err)
 		return
@@ -185,6 +195,12 @@ func (s *metricsService) callGeminiAPI(
 	ctx context.Context, success int, fail int,
 	topClients string, attempts string,
 ) (models.SecurityAnalysisResult, error) {
+	log.Printf(
+		"[MetricsService] Sending request to Gemini API "+
+			"(success=%d, fail=%d)",
+		success, fail,
+	)
+
 	baseURL := os.Getenv("GEMINI_BASE_URL")
 	if baseURL == "" {
 		baseURL = "https://generativelanguage.googleapis.com"
@@ -256,6 +272,10 @@ func (s *metricsService) callGeminiAPI(
 	if resp.StatusCode != http.StatusOK {
 		var errResp map[string]interface{}
 		_ = json.NewDecoder(resp.Body).Decode(&errResp)
+		log.Printf(
+			"[MetricsService] Gemini API returned status %d: %v",
+			resp.StatusCode, errResp,
+		)
 		return models.SecurityAnalysisResult{}, fmt.Errorf(
 			"gemini api returned status %d: %v", resp.StatusCode, errResp)
 	}
@@ -275,16 +295,28 @@ func (s *metricsService) callGeminiAPI(
 
 	var result models.SecurityAnalysisResult
 	if err := json.Unmarshal([]byte(responseText), &result); err != nil {
+		log.Printf(
+			"[MetricsService] Failed to parse Gemini response: %v, raw: %s",
+			err, responseText,
+		)
 		return models.SecurityAnalysisResult{}, fmt.Errorf(
 			"failed to parse gemini response JSON: %w (raw response: %s)",
 			err, responseText)
 	}
+
+	log.Printf(
+		"[MetricsService] Gemini API response parsed successfully: "+
+			"level=%s, confidence=%.2f",
+		result.ThreatLevel, result.Confidence,
+	)
 
 	return result, nil
 }
 
 func (s *metricsService) GetDashboardMetrics(
 	ctx context.Context,
+	userID uuid.UUID,
+	permissions []string,
 ) (*models.DashboardMetrics, error) {
 	now := time.Now()
 
@@ -307,32 +339,50 @@ func (s *metricsService) GetDashboardMetrics(
 		0, 0, 0, 0, now.Location(),
 	)
 
-	todayCount, err := s.repo.GetTotalLogins(ctx, todayStart)
+	var allowedClients []string
+	var err error
+	if !slices.Contains(permissions, "View all appclients") {
+		allowedClients, err = s.repo.GetBoundClientIDs(ctx, userID[:])
+		if err != nil {
+			return nil, fmt.Errorf("failed to get bound client IDs: %w", err)
+		}
+		if allowedClients == nil {
+			allowedClients = []string{}
+		}
+	}
+
+	todayCount, err := s.repo.GetTotalLogins(ctx, todayStart, allowedClients)
 	if err != nil {
 		return nil, err
 	}
 
-	weekCount, err := s.repo.GetTotalLogins(ctx, weekStart)
+	weekCount, err := s.repo.GetTotalLogins(ctx, weekStart, allowedClients)
 	if err != nil {
 		return nil, err
 	}
 
-	monthCount, err := s.repo.GetTotalLogins(ctx, monthStart)
+	monthCount, err := s.repo.GetTotalLogins(ctx, monthStart, allowedClients)
 	if err != nil {
 		return nil, err
 	}
 
-	todayTopClients, err := s.repo.GetTopClients(ctx, 5, todayStart)
+	todayTopClients, err := s.repo.GetTopClients(
+		ctx, 5, todayStart, allowedClients,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	weekTopClients, err := s.repo.GetTopClients(ctx, 5, weekStart)
+	weekTopClients, err := s.repo.GetTopClients(
+		ctx, 5, weekStart, allowedClients,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	monthTopClients, err := s.repo.GetTopClients(ctx, 5, monthStart)
+	monthTopClients, err := s.repo.GetTopClients(
+		ctx, 5, monthStart, allowedClients,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -392,14 +442,30 @@ func (s *metricsService) populateClientImageURLs(ctx context.Context,
 
 func (s *metricsService) GenerateReportPDF(
 	ctx context.Context,
+	userID uuid.UUID,
+	permissions []string,
 ) ([]byte, error) {
-	metrics, err := s.GetDashboardMetrics(ctx)
+	metrics, err := s.GetDashboardMetrics(ctx, userID, permissions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get dashboard metrics: %w", err)
 	}
 
+	var allowedClients []string
+	var err2 error
+	if !slices.Contains(permissions, "View all appclients") {
+		allowedClients, err2 = s.repo.GetBoundClientIDs(ctx, userID[:])
+		if err2 != nil {
+			return nil, fmt.Errorf("failed to get bound client IDs: %w", err2)
+		}
+		if allowedClients == nil {
+			allowedClients = []string{}
+		}
+	}
+
 	since := time.Now().Add(-24 * time.Hour)
-	failedAttempts, err := s.repo.GetFailedAuthAttempts(ctx, since)
+	failedAttempts, err := s.repo.GetFailedAuthAttempts(
+		ctx, since, allowedClients,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get failed auth attempts: %w", err)
 	}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/google/uuid"
 )
 
 type mockMetricsRepository struct {
@@ -20,21 +21,27 @@ type mockMetricsRepository struct {
 }
 
 func (m *mockMetricsRepository) GetTotalLogins(
-	ctx context.Context, since time.Time,
+	ctx context.Context, since time.Time, allowedClients []string,
 ) (int, error) {
 	return m.TotalLogins, nil
 }
 
 func (m *mockMetricsRepository) GetTopClients(
-	ctx context.Context, limit int, since time.Time,
+	ctx context.Context, limit int, since time.Time, allowedClients []string,
 ) ([]models.TopClientLogin, error) {
 	return m.TopClients, nil
 }
 
 func (m *mockMetricsRepository) GetFailedAuthAttempts(
-	ctx context.Context, since time.Time,
+	ctx context.Context, since time.Time, allowedClients []string,
 ) ([]models.FailedAuthAttempt, error) {
 	return m.Failed, nil
+}
+
+func (m *mockMetricsRepository) GetBoundClientIDs(
+	ctx context.Context, userID []byte,
+) ([]string, error) {
+	return []string{"id-1"}, nil
 }
 
 type mockCache struct {
@@ -109,24 +116,50 @@ func TestGetDashboardMetrics(t *testing.T) {
 
 	svc := service.NewMetricsService(repo, cache, nil)
 
-	metrics, err := svc.GetDashboardMetrics(context.Background())
+	metrics, err := svc.GetDashboardMetrics(
+		context.Background(),
+		uuid.New(),
+		[]string{"View all appclients"},
+	)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
 	if metrics.LoginStats.Today.Count != 42 {
-		t.Errorf("expected 42 today logins, got %d", metrics.LoginStats.Today.Count)
+		t.Errorf(
+			"expected 42 today logins, got %d",
+			metrics.LoginStats.Today.Count,
+		)
 	}
 
 	if len(metrics.LoginStats.Today.TopClients) != 1 ||
 		metrics.LoginStats.Today.TopClients[0].ClientName != "App 1" {
-		t.Errorf("unexpected top clients: %v", metrics.LoginStats.Today.TopClients)
+		t.Errorf(
+			"unexpected top clients: %v",
+			metrics.LoginStats.Today.TopClients,
+		)
 	}
 
 	if metrics.SecurityAnalysis.ThreatLevel != "LOW" {
 		t.Errorf(
 			"expected threat level LOW, got %s",
 			metrics.SecurityAnalysis.ThreatLevel,
+		)
+	}
+
+	// Test with restricted permissions
+	metricsRestricted, err := svc.GetDashboardMetrics(
+		context.Background(),
+		uuid.New(),
+		[]string{"View connected appclients"},
+	)
+	if err != nil {
+		t.Fatalf("expected no error for restricted user, got %v", err)
+	}
+	if metricsRestricted.LoginStats.Today.Count != 42 {
+		t.Errorf(
+			"expected 42 today logins for restricted, got %d",
+			metricsRestricted.LoginStats.Today.Count,
 		)
 	}
 }
@@ -250,7 +283,11 @@ func TestGenerateReportPDF(t *testing.T) {
 
 	svc := service.NewMetricsService(repo, cache, nil)
 
-	pdfBytes, err := svc.GenerateReportPDF(context.Background())
+	pdfBytes, err := svc.GenerateReportPDF(
+		context.Background(),
+		uuid.New(),
+		[]string{"View all appclients"},
+	)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

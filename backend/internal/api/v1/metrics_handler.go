@@ -6,6 +6,7 @@ import (
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type MetricsHandler struct {
@@ -18,8 +19,23 @@ func NewMetricsHandler(svc service.MetricsService) *MetricsHandler {
 
 // GetDashboardMetrics returns login stats and threat analysis.
 func (h *MetricsHandler) GetDashboardMetrics(c *gin.Context) {
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf(
+			"[MetricsHandler] GetDashboardMetrics: invalid user ID: %v",
+			err,
+		)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user context"})
+		return
+	}
+
+	permissions := c.GetStringSlice("permissions")
+
 	metrics, err := h.MetricsService.GetDashboardMetrics(
 		c.Request.Context(),
+		userID,
+		permissions,
 	)
 	if err != nil {
 		log.Printf("[MetricsHandler] GetDashboardMetrics error: %v", err)
@@ -34,8 +50,23 @@ func (h *MetricsHandler) GetDashboardMetrics(c *gin.Context) {
 
 // GetMetricsReportPDF generates and streams the PDF report.
 func (h *MetricsHandler) GetMetricsReportPDF(c *gin.Context) {
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf(
+			"[MetricsHandler] GetMetricsReportPDF: invalid user ID: %v",
+			err,
+		)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user context"})
+		return
+	}
+
+	permissions := c.GetStringSlice("permissions")
+
 	pdfBytes, err := h.MetricsService.GenerateReportPDF(
 		c.Request.Context(),
+		userID,
+		permissions,
 	)
 	if err != nil {
 		log.Printf("[MetricsHandler] GetMetricsReportPDF error: %v", err)

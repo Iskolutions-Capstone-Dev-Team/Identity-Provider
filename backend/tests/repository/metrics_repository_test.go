@@ -31,12 +31,46 @@ func TestGetTotalLogins(t *testing.T) {
 
 	mock.ExpectQuery(q).WithArgs(since).WillReturnRows(rows)
 
-	count, err := repo.GetTotalLogins(context.Background(), since)
+	count, err := repo.GetTotalLogins(context.Background(), since, nil)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
 	if count != 15 {
 		t.Errorf("expected count 15, got %d", count)
+	}
+}
+
+func TestGetTotalLoginsWithAllowedClients(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %s", err)
+	}
+	defer db.Close()
+
+	sqlxDB := sqlx.NewDb(db, "mysql")
+	repo := repository.NewMetricsRepository(sqlxDB)
+
+	since := time.Now().Add(-24 * time.Hour)
+	allowedClients := []string{"client-1", "client-2"}
+	rows := sqlmock.NewRows([]string{"count"}).AddRow(10)
+
+	// Regexp pattern matching query with IN clause
+	q := `(?s)SELECT.*COUNT.*FROM audit_logs.*WHERE.*target IN.*`
+
+	mock.ExpectQuery(q).
+		WithArgs(since, "client-1", "client-2").
+		WillReturnRows(rows)
+
+	count, err := repo.GetTotalLogins(
+		context.Background(),
+		since,
+		allowedClients,
+	)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if count != 10 {
+		t.Errorf("expected count 10, got %d", count)
 	}
 }
 
@@ -59,7 +93,7 @@ func TestGetTopClients(t *testing.T) {
 	queryRegex := `(?s)SELECT.*a\.target AS client_id.*FROM audit_logs a.*LIMIT \?`
 	mock.ExpectQuery(queryRegex).WithArgs(since, 5).WillReturnRows(rows)
 
-	res, err := repo.GetTopClients(context.Background(), 5, since)
+	res, err := repo.GetTopClients(context.Background(), 5, since, nil)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -100,7 +134,7 @@ func TestGetFailedAuthAttempts(t *testing.T) {
 		GROUP BY ip, actor
 		ORDER BY fail_count DESC`)).WithArgs(since).WillReturnRows(rows)
 
-	res, err := repo.GetFailedAuthAttempts(context.Background(), since)
+	res, err := repo.GetFailedAuthAttempts(context.Background(), since, nil)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
