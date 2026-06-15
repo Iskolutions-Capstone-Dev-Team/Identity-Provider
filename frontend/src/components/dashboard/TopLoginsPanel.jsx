@@ -3,6 +3,14 @@ import DashboardPanel from "./DashboardPanel";
 
 const DEFAULT_CLIENT_IMAGE = "/assets/images/PUP_Logo.png";
 
+function SkeletonBlock({ className = "", colorMode = "light" }) {
+  const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";
+
+  return (
+    <span className={`block animate-pulse rounded-lg ${toneClassName} ${className}`} />
+  );
+}
+
 function getDashboardAccent(colorMode) {
   return colorMode === "dark"
     ? {
@@ -33,7 +41,7 @@ function ClientLogo({ client }) {
   );
 }
 
-function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeriod }) {
+export function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeriod }) {
   const isDarkMode = colorMode === "dark";
   const accent = getDashboardAccent(colorMode);
   const shellClassName = isDarkMode
@@ -117,7 +125,33 @@ function TopLoginRow({ client, maxLoginCount, totalLoginCount, colorMode }) {
   );
 }
 
-export default function TopLoginsPanel({ clients, periods, selectedPeriod, selectedPeriodKey, isRestrictedView = false, colorMode = "light", onSelectPeriod }) {
+function TopLoginRowsSkeleton({ colorMode }) {
+  return (
+    <>
+      {[0, 1, 2].map((item) => (
+        <div key={item}>
+          <div className="flex min-w-0 items-center gap-3">
+            <SkeletonBlock className="h-10 w-10 rounded-xl" colorMode={colorMode} />
+            <div className="min-w-0 flex-1">
+              <SkeletonBlock className="h-4 w-44" colorMode={colorMode} />
+              <SkeletonBlock className="mt-2 h-3 w-52" colorMode={colorMode} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-[1fr_auto] items-center gap-4">
+            <SkeletonBlock className="h-2 w-full rounded-full" colorMode={colorMode} />
+            <div className="w-20">
+              <SkeletonBlock className="ml-auto h-5 w-10" colorMode={colorMode} />
+              <SkeletonBlock className="ml-auto mt-2 h-3 w-14" colorMode={colorMode} />
+            </div>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+export default function TopLoginsPanel({ clients, periods, selectedPeriod, selectedPeriodKey, isRestrictedView = false, colorMode = "light", isLoading = false, onSelectPeriod }) {
   const isDarkMode = colorMode === "dark";
   const totalLoginCount = Number(selectedPeriod?.count) || 0;
   const subtitle = isRestrictedView
@@ -156,7 +190,9 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
       <div className={`mt-8 space-y-5 pr-1 ${
         clients.length > 4 ? "max-h-[30rem] overflow-y-auto" : ""
       }`}>
-        {clients.length > 0 ? (
+        {isLoading ? (
+          <TopLoginRowsSkeleton colorMode={colorMode} />
+        ) : clients.length > 0 ? (
           clients.map((client) => (
             <TopLoginRow
               key={client.client_id || client.client_name}

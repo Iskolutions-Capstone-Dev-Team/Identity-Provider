@@ -1,5 +1,13 @@
 import { CalendarIcon } from "./DashboardIcons";
 
+function SkeletonBlock({ className = "", colorMode = "light" }) {
+  const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";
+
+  return (
+    <span className={`block animate-pulse rounded-lg ${toneClassName} ${className}`} />
+  );
+}
+
 function getMetricTone(colorMode) {
   return colorMode === "dark"
     ? {
@@ -14,7 +22,7 @@ function getMetricTone(colorMode) {
       };
 }
 
-export default function MetricFilterCard({ stat, colorMode = "light" }) {
+export default function MetricFilterCard({ stat, colorMode = "light", isLoading = false }) {
   const tone = getMetricTone(colorMode);
   const isDarkMode = colorMode === "dark";
   const cardClassName = isDarkMode
@@ -34,9 +42,13 @@ export default function MetricFilterCard({ stat, colorMode = "light" }) {
           <p className={`text-xs font-black uppercase tracking-[0.16em] ${tone.accent}`}>
             {stat.label}
           </p>
-          <p className={`mt-3 text-4xl font-black ${countClassName}`}>
-            {stat.count.toLocaleString()}
-          </p>
+          {isLoading ? (
+            <SkeletonBlock className="mt-3 h-10 w-16" colorMode={colorMode} />
+          ) : (
+            <p className={`mt-3 text-4xl font-black ${countClassName}`}>
+              {stat.count.toLocaleString()}
+            </p>
+          )}
           <p className={`mt-1 text-sm font-medium ${captionClassName}`}>
             Successful logins
           </p>

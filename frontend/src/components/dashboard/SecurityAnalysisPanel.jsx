@@ -1,6 +1,14 @@
 import DashboardPanel from "./DashboardPanel";
 import { CheckIcon, ClockIcon, FingerprintIcon, InfoIcon, QuestionIcon, ShieldIcon } from "./DashboardIcons";
 
+function SkeletonBlock({ className = "", colorMode = "light" }) {
+  const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";
+
+  return (
+    <span className={`block animate-pulse rounded-lg ${toneClassName} ${className}`} />
+  );
+}
+
 function getDashboardAccent(colorMode) {
   return colorMode === "dark"
     ? {
@@ -17,7 +25,7 @@ function getDashboardAccent(colorMode) {
       };
 }
 
-function SecurityMetric({ icon, label, value, colorMode }) {
+function SecurityMetric({ icon, label, value, colorMode, isLoading = false }) {
   const isDarkMode = colorMode === "dark";
   const accent = getDashboardAccent(colorMode);
 
@@ -37,11 +45,15 @@ function SecurityMetric({ icon, label, value, colorMode }) {
           }`}>
             {label}
           </p>
-          <p className={`mt-1 text-lg font-black ${
-            isDarkMode ? "text-white" : "text-[#2a1518]"
-          }`}>
-            {value}
-          </p>
+          {isLoading ? (
+            <SkeletonBlock className="mt-2 h-6 w-24" colorMode={colorMode} />
+          ) : (
+            <p className={`mt-1 text-lg font-black ${
+              isDarkMode ? "text-white" : "text-[#2a1518]"
+            }`}>
+              {value}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -104,7 +116,7 @@ function SecurityMeaningDropdown({ colorMode }) {
   );
 }
 
-export default function SecurityAnalysisPanel({ analysis, analyzedAt, colorMode = "light" }) {
+export default function SecurityAnalysisPanel({ analysis, analyzedAt, colorMode = "light", isLoading = false }) {
   const isDarkMode = colorMode === "dark";
   const accent = getDashboardAccent(colorMode);
   const anomalies = Array.isArray(analysis?.anomalies) ? analysis.anomalies : [];
@@ -142,18 +154,21 @@ export default function SecurityAnalysisPanel({ analysis, analyzedAt, colorMode 
           label="Threat Level"
           value={<span className="text-[#20e58d]">{threatLevel}</span>}
           colorMode={colorMode}
+          isLoading={isLoading}
         />
         <SecurityMetric
           icon={<FingerprintIcon />}
           label="Confidence"
           value={`${confidencePercent}%`}
           colorMode={colorMode}
+          isLoading={isLoading}
         />
         <SecurityMetric
           icon={<ClockIcon />}
           label="Analyzed At"
           value={analyzedAt}
           colorMode={colorMode}
+          isLoading={isLoading}
         />
       </div>
 
@@ -169,11 +184,18 @@ export default function SecurityAnalysisPanel({ analysis, analyzedAt, colorMode 
           }`}>
             AI Summary
           </p>
-          <p className={`mt-2 text-sm leading-6 ${
-            isDarkMode ? "text-slate-100" : "text-slate-700"
-          }`}>
-            {analysis?.advisory || "No security advisory is available."}
-          </p>
+          {isLoading ? (
+            <div className="mt-3 space-y-2">
+              <SkeletonBlock className="h-4 w-full" colorMode={colorMode} />
+              <SkeletonBlock className="h-4 w-3/4" colorMode={colorMode} />
+            </div>
+          ) : (
+            <p className={`mt-2 text-sm leading-6 ${
+              isDarkMode ? "text-slate-100" : "text-slate-700"
+            }`}>
+              {analysis?.advisory || "No security advisory is available."}
+            </p>
+          )}
         </div>
       </div>
 
@@ -184,12 +206,18 @@ export default function SecurityAnalysisPanel({ analysis, analyzedAt, colorMode 
           }`}>
             Anomalies
           </h3>
-          <span className={`rounded-full px-3 py-1 text-sm font-black ${accent.chipBg} ${accent.chipText}`}>
-            {anomalies.length}
-          </span>
+          {isLoading ? (
+            <SkeletonBlock className="h-8 w-10 rounded-full" colorMode={colorMode} />
+          ) : (
+            <span className={`rounded-full px-3 py-1 text-sm font-black ${accent.chipBg} ${accent.chipText}`}>
+              {anomalies.length}
+            </span>
+          )}
         </div>
 
-        {anomalies.length > 0 ? (
+        {isLoading ? (
+          <SkeletonBlock className="mt-3 h-4 w-48" colorMode={colorMode} />
+        ) : anomalies.length > 0 ? (
           <ul className={`mt-3 list-inside list-disc space-y-2 text-sm ${
             isDarkMode ? "text-slate-300" : "text-slate-600"
           }`}>
