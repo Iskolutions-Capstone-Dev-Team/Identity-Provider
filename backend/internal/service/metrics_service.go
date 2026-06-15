@@ -206,7 +206,7 @@ func (s *metricsService) callGeminiAPI(
 		baseURL = "https://generativelanguage.googleapis.com"
 	}
 	url := fmt.Sprintf(
-		"%s/v1beta/models/gemini-3.5-flash:generateContent",
+		"%s/v1/models/gemini-3.5-flash:generateContent",
 		baseURL,
 	)
 
