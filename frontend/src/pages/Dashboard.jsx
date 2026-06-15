@@ -8,8 +8,10 @@ import DashboardPanel from "../components/dashboard/DashboardPanel";
 import MetricFilterCard from "../components/dashboard/MetricFilterCard";
 import SecurityAnalysisPanel from "../components/dashboard/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/dashboard/TopLoginsPanel";
+import { usePermissionAccess } from "../context/PermissionContext";
 import { metricsService } from "../services/metricsService";
 import { formatTimestamp } from "../utils/formatTimestamp";
+import { PERMISSIONS } from "../utils/permissionAccess";
 
 const emptyMetrics = {
   login_stats: {
@@ -232,6 +234,7 @@ function DashboardMessage({ message, colorMode = "light" }) {
 
 export default function Dashboard() {
   const { colorMode = "light" } = useOutletContext() || {};
+  const { hasPermission } = usePermissionAccess();
   const [metrics, setMetrics] = useState(null);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("today");
   const [loading, setLoading] = useState(true);
@@ -248,6 +251,7 @@ export default function Dashboard() {
   const analyzedAt = formatAnalyzedAt(
     normalizedMetrics.securityAnalysis.analyzed_at,
   );
+  const isRestrictedMetricsView = !hasPermission(PERMISSIONS.VIEW_ALL_APPCLIENTS);
 
   useEffect(() => {
     let ignore = false;
@@ -352,6 +356,7 @@ export default function Dashboard() {
               periods={normalizedMetrics.loginStats}
               selectedPeriod={selectedPeriod}
               selectedPeriodKey={selectedPeriodKey}
+              isRestrictedView={isRestrictedMetricsView}
               colorMode={colorMode}
               onSelectPeriod={setSelectedPeriodKey}
             />

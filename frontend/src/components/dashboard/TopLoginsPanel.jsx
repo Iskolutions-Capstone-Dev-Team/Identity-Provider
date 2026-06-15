@@ -115,9 +115,15 @@ function TopLoginRow({ client, maxLoginCount, totalLoginCount, colorMode }) {
   );
 }
 
-export default function TopLoginsPanel({ clients, periods, selectedPeriod, selectedPeriodKey, colorMode = "light", onSelectPeriod }) {
+export default function TopLoginsPanel({ clients, periods, selectedPeriod, selectedPeriodKey, isRestrictedView = false, colorMode = "light", onSelectPeriod }) {
   const isDarkMode = colorMode === "dark";
   const totalLoginCount = Number(selectedPeriod?.count) || 0;
+  const subtitle = isRestrictedView
+    ? "Highest login volume by accessible applications"
+    : "Highest login volume by application";
+  const emptyMessage = isRestrictedView
+    ? "No login activity is available for your accessible applications."
+    : "No login activity is available for this application.";
   const maxLoginCount = clients.reduce((maxCount, client) => {
     const loginCount = Number(client.login_count) || 0;
     return Math.max(maxCount, loginCount);
@@ -133,7 +139,7 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
             Top Logins
           </h2>
           <p className={`mt-1 text-sm ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-            Highest login volume by application
+            {subtitle}
           </p>
         </div>
 
@@ -162,7 +168,7 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
               ? "border-white/10 bg-white/[0.03] text-slate-300"
               : "border-[#7b0d15]/10 bg-white/70 text-slate-600"
           }`}>
-            No client login data available.
+            {emptyMessage}
           </p>
         )}
       </div>
