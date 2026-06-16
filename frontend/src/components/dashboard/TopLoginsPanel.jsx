@@ -164,6 +164,9 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
     const loginCount = Number(client.login_count) || 0;
     return Math.max(maxCount, loginCount);
   }, 0);
+  const scrollClassName = isDarkMode
+    ? "[scrollbar-width:thin] [scrollbar-color:rgba(248,210,78,0.58)_rgba(255,255,255,0.06)] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/[0.06] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#f8d24e]/55 hover:[&::-webkit-scrollbar-thumb]:bg-[#f8d24e]/75"
+    : "[scrollbar-width:thin] [scrollbar-color:rgba(123,13,21,0.5)_rgba(123,13,21,0.08)] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#7b0d15]/[0.08] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#7b0d15]/50 hover:[&::-webkit-scrollbar-thumb]:bg-[#7b0d15]/70";
 
   return (
     <DashboardPanel colorMode={colorMode} className="p-5">
@@ -187,8 +190,8 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
         />
       </div>
 
-      <div className={`mt-8 space-y-5 pr-1 ${
-        clients.length > 4 ? "max-h-[30rem] overflow-y-auto" : ""
+      <div className={`mt-8 space-y-5 ${
+        clients.length > 4 ? `max-h-[30rem] overflow-y-auto pr-3 ${scrollClassName}` : ""
       }`}>
         {isLoading ? (
           <TopLoginRowsSkeleton colorMode={colorMode} />
