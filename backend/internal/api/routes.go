@@ -22,6 +22,7 @@ type Handlers struct {
 	OTPHandler          *v1.OTPHandler
 	MFAHandler          *v1.MFAHandler
 	PasskeyHandler      *v1.PasskeyHandler
+	MetricsHandler      *v1.MetricsHandler
 	UserRepo            repository.UserRepository
 
 	RoleRepo   repository.RoleRepository
@@ -195,6 +196,8 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		admin.GET("/status", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "IdP is operational"})
 		})
+		admin.GET("/metrics", h.MetricsHandler.GetDashboardMetrics)
+		admin.GET("/report", h.MetricsHandler.GetMetricsReportPDF)
 
 		// Service Provider (Client) Maintenance
 		clients := admin.Group("/clients")

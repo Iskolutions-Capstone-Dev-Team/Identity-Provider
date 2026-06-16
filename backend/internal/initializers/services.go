@@ -45,6 +45,7 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 	cauRepo := repository.NewClientAllowedUserRepository(db)
 	registrationRepo := repository.NewRegistrationRepository(db)
 	passkeyRepo := repository.NewPasskeyRepository(db)
+	metricsRepo := repository.NewMetricsRepository(db)
 
 	userSvc := service.NewUserService(
 		userRepo,
@@ -92,5 +93,8 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		),
 		MFAService:     service.NewMFAService(repository.NewMFARepository(db)),
 		PasskeyService: passkeySvc,
+		MetricsService: service.NewMetricsService(
+			metricsRepo, appCache, Storage,
+		),
 	}
 }
