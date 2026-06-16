@@ -230,7 +230,7 @@ func (s *metricsService) callGeminiAPI(
 
 	resp, err := client.Models.GenerateContent(
 		ctx,
-		"gemini-3.5-flash",
+		"gemini-3.5-flash-lite",
 		genai.Text(prompt),
 		configObj,
 	)
