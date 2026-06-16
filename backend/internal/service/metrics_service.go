@@ -99,13 +99,22 @@ func (s *metricsService) performAnalysis(ctx context.Context) {
 
 	// Check Redis cache first to avoid rate limiting
 	cacheKey := "metrics:security_analysis"
-	if cachedVal, ok, err := s.cache.Get(ctx, cacheKey); err == nil && ok {
+	cachedVal, ok, err := s.cache.Get(ctx, cacheKey)
+	if err != nil {
+		log.Printf("[MetricsService] Cache Get error: %v", err)
+	} else if ok {
 		var cachedResult models.SecurityAnalysisResult
-		if err := json.Unmarshal([]byte(cachedVal), &cachedResult); err == nil {
+		err := json.Unmarshal([]byte(cachedVal), &cachedResult)
+		if err == nil {
 			s.mu.Lock()
 			s.lastResult = cachedResult
 			s.mu.Unlock()
 			return
+		} else {
+			log.Printf(
+				"[MetricsService] Cache Unmarshal error: %v",
+				err,
+			)
 		}
 	}
 
@@ -151,8 +160,17 @@ func (s *metricsService) performAnalysis(ctx context.Context) {
 	s.lastResult = result
 	s.mu.Unlock()
 
-	resultJSON, _ := json.Marshal(result)
-	_ = s.cache.Set(ctx, cacheKey, string(resultJSON), 2*time.Hour)
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		log.Printf("[MetricsService] Marshal result error: %v", err)
+	} else {
+		err = s.cache.Set(
+			ctx, cacheKey, string(resultJSON), 2*time.Hour,
+		)
+		if err != nil {
+			log.Printf("[MetricsService] Cache Set error: %v", err)
+		}
+	}
 }
 
 func (s *metricsService) callGeminiAPI(
@@ -273,7 +291,14 @@ func (s *metricsService) GetDashboardMetrics(
 	if !slices.Contains(permissions, "View all appclients") {
 		allowedClients, err = s.repo.GetBoundClientIDs(ctx, userID[:])
 		if err != nil {
-			return nil, fmt.Errorf("failed to get bound client IDs: %w", err)
+			log.Printf(
+				"[MetricsService] GetBoundClientIDs error: %v",
+				err,
+			)
+			return nil, fmt.Errorf(
+				"failed to get bound client IDs: %w",
+				err,
+			)
 		}
 		if allowedClients == nil {
 			allowedClients = []string{}
@@ -282,16 +307,19 @@ func (s *metricsService) GetDashboardMetrics(
 
 	todayCount, err := s.repo.GetTotalLogins(ctx, todayStart, allowedClients)
 	if err != nil {
+		log.Printf("[MetricsService] GetTotalLogins error: %v", err)
 		return nil, err
 	}
 
 	weekCount, err := s.repo.GetTotalLogins(ctx, weekStart, allowedClients)
 	if err != nil {
+		log.Printf("[MetricsService] GetTotalLogins error: %v", err)
 		return nil, err
 	}
 
 	monthCount, err := s.repo.GetTotalLogins(ctx, monthStart, allowedClients)
 	if err != nil {
+		log.Printf("[MetricsService] GetTotalLogins error: %v", err)
 		return nil, err
 	}
 
@@ -299,6 +327,7 @@ func (s *metricsService) GetDashboardMetrics(
 		ctx, 5, todayStart, allowedClients,
 	)
 	if err != nil {
+		log.Printf("[MetricsService] GetTopClients error: %v", err)
 		return nil, err
 	}
 
@@ -306,6 +335,7 @@ func (s *metricsService) GetDashboardMetrics(
 		ctx, 5, weekStart, allowedClients,
 	)
 	if err != nil {
+		log.Printf("[MetricsService] GetTopClients error: %v", err)
 		return nil, err
 	}
 
@@ -313,6 +343,7 @@ func (s *metricsService) GetDashboardMetrics(
 		ctx, 5, monthStart, allowedClients,
 	)
 	if err != nil {
+		log.Printf("[MetricsService] GetTopClients error: %v", err)
 		return nil, err
 	}
 
@@ -325,12 +356,19 @@ func (s *metricsService) GetDashboardMetrics(
 	s.mu.RUnlock()
 
 	// If cache has a newer result, use it
-	if cachedVal, ok, err := s.cache.Get(
-		ctx, "metrics:security_analysis",
-	); err == nil && ok {
+	cachedVal, ok, err := s.cache.Get(ctx, "metrics:security_analysis")
+	if err != nil {
+		log.Printf("[MetricsService] Cache Get error: %v", err)
+	} else if ok {
 		var cachedResult models.SecurityAnalysisResult
-		if err := json.Unmarshal([]byte(cachedVal), &cachedResult); err == nil {
+		err := json.Unmarshal([]byte(cachedVal), &cachedResult)
+		if err == nil {
 			analysis = cachedResult
+		} else {
+			log.Printf(
+				"[MetricsService] Cache Unmarshal error: %v",
+				err,
+			)
 		}
 	}
 
@@ -361,7 +399,12 @@ func (s *metricsService) populateClientImageURLs(ctx context.Context,
 			url, err := GetPresignedURL(
 				ctx, clients[i].ImageLocation, s.storage,
 			)
-			if err == nil {
+			if err != nil {
+				log.Printf(
+					"[MetricsService] GetPresignedURL error: %v",
+					err,
+				)
+			} else {
 				clients[i].ImageURL = url
 			}
 		}
@@ -536,6 +579,10 @@ func (s *metricsService) GenerateReportPDF(
 ) ([]byte, error) {
 	metrics, err := s.GetDashboardMetrics(ctx, userID, permissions)
 	if err != nil {
+		log.Printf(
+			"[MetricsService] GetDashboardMetrics error: %v",
+			err,
+		)
 		return nil, fmt.Errorf("failed to get dashboard metrics: %w", err)
 	}
 
@@ -544,7 +591,14 @@ func (s *metricsService) GenerateReportPDF(
 	if !slices.Contains(permissions, "View all appclients") {
 		allowedClients, err2 = s.repo.GetBoundClientIDs(ctx, userID[:])
 		if err2 != nil {
-			return nil, fmt.Errorf("failed to get bound client IDs: %w", err2)
+			log.Printf(
+				"[MetricsService] GetBoundClientIDs error: %v",
+				err2,
+			)
+			return nil, fmt.Errorf(
+				"failed to get bound client IDs: %w",
+				err2,
+			)
 		}
 		if allowedClients == nil {
 			allowedClients = []string{}
@@ -556,6 +610,10 @@ func (s *metricsService) GenerateReportPDF(
 		ctx, since, allowedClients,
 	)
 	if err != nil {
+		log.Printf(
+			"[MetricsService] GetFailedAuthAttempts error: %v",
+			err,
+		)
 		return nil, fmt.Errorf("failed to get failed auth attempts: %w", err)
 	}
 
@@ -614,6 +672,7 @@ func (s *metricsService) GenerateReportPDF(
 	var buf bytes.Buffer
 	err = pdf.Output(&buf)
 	if err != nil {
+		log.Printf("[MetricsService] PDF Output error: %v", err)
 		return nil, fmt.Errorf("failed to generate PDF output: %w", err)
 	}
 
