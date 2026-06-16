@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ACCESSIBILITY_READY_EVENT, ACCESSIBILITY_UNAVAILABLE_EVENT, isAccessibilityWidgetReady, toggleAccessibilityMenu } from "./AccessibilityWidget";
 import OnePortalButton from "./OnePortalButton";
 import { FloatingSpeechInputAction } from "./SpeechInputButton";
@@ -46,6 +47,7 @@ function getActionTransitionStyle(actionIndex, actionCount) {
 }
 
 export default function AssistiveFab({ colorMode = "light" }) {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [areActionsVisible, setAreActionsVisible] = useState(false);
   const [isAccessibilityReady, setIsAccessibilityReady] = useState(() =>
@@ -55,6 +57,11 @@ export default function AssistiveFab({ colorMode = "light" }) {
 
   const handleAccessibilityClick = () => {
     toggleAccessibilityMenu();
+  };
+
+  const handleFaqClick = () => {
+    navigate("/faq");
+    setIsOpen(false);
   };
 
   const fabActions = [
@@ -81,6 +88,15 @@ export default function AssistiveFab({ colorMode = "light" }) {
       content: (
         <button type="button" aria-label="Open web accessibility" title="Open web accessibility" className={FAB_BUTTON_CLASS_NAME} disabled={!isAccessibilityReady} onClick={handleAccessibilityClick}>
           <AccessibilityIcon />
+        </button>
+      ),
+    },
+    {
+      key: "faq",
+      tooltipLabel: "FAQ",
+      content: (
+        <button type="button" aria-label="Open FAQ" title="Open FAQ" className={FAB_BUTTON_CLASS_NAME} onClick={handleFaqClick}>
+          <FaqIcon />
         </button>
       ),
     },
@@ -221,6 +237,14 @@ function AccessibilityIcon() {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
       <path d="M12 2.25a1.875 1.875 0 1 0 0 3.75 1.875 1.875 0 0 0 0-3.75Z" />
       <path d="M7.5 8.25a.75.75 0 0 0 0 1.5h2.977l-.733 10.634a.75.75 0 1 0 1.496.103L12 13.42l.76 7.067a.75.75 0 1 0 1.493-.103L13.52 9.75H16.5a.75.75 0 0 0 0-1.5h-9Z" />
+    </svg>
+  );
+}
+
+function FaqIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-7 w-7">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
     </svg>
   );
 }
