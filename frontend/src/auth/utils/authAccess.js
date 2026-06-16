@@ -1,4 +1,4 @@
-export const DEFAULT_AUTHENTICATED_PATH = "/user-pool";
+export const DEFAULT_AUTHENTICATED_PATH = "/dashboard";
 
 function normalizeRoleSource(roles) {
   if (Array.isArray(roles)) {
