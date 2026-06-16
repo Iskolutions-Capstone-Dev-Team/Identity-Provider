@@ -460,6 +460,47 @@ func addReportCell(
 	pdf.CellFormat(width, height, text, "1", 0, align, false, 0, "")
 }
 
+func addWrappedReportRow(
+	pdf *gofpdf.Fpdf,
+	labelWidth float64,
+	valueWidth float64,
+	minHeight float64,
+	label string,
+	value string,
+	valueBold bool,
+) {
+	x := pdf.GetX()
+	y := pdf.GetY()
+	lineHeight := 5.0
+	paddingX := 1.5
+	paddingY := 2.0
+
+	pdf.SetFont("Arial", "", 9)
+	valueLines := pdf.SplitLines([]byte(value), valueWidth-(paddingX*2))
+	rowHeight := minHeight
+	requiredHeight := float64(len(valueLines))*lineHeight + (paddingY * 2)
+	if requiredHeight > rowHeight {
+		rowHeight = requiredHeight
+	}
+
+	pdf.Rect(x, y, labelWidth, rowHeight, "")
+	pdf.Rect(x+labelWidth, y, valueWidth, rowHeight, "")
+
+	pdf.SetXY(x+paddingX, y+paddingY)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.MultiCell(labelWidth-(paddingX*2), lineHeight, label, "", "L", false)
+
+	pdf.SetXY(x+labelWidth+paddingX, y+paddingY)
+	if valueBold {
+		pdf.SetFont("Arial", "B", 9)
+	} else {
+		pdf.SetFont("Arial", "", 9)
+	}
+	pdf.MultiCell(valueWidth-(paddingX*2), lineHeight, value, "", "L", false)
+
+	pdf.SetXY(x, y+rowHeight)
+}
+
 func addReportSecurityTable(
 	pdf *gofpdf.Fpdf,
 	analysis models.SecurityAnalysisResult,
@@ -483,9 +524,15 @@ func addReportSecurityTable(
 	pdf.SetDrawColor(185, 185, 185)
 	pdf.SetTextColor(20, 20, 20)
 	for _, row := range rows {
-		addReportCell(pdf, labelWidth, rowHeight, row.label, "L", true)
-		addReportCell(pdf, valueWidth, rowHeight, row.value, "L", row.bold)
-		pdf.Ln(-1)
+		addWrappedReportRow(
+			pdf,
+			labelWidth,
+			valueWidth,
+			rowHeight,
+			row.label,
+			row.value,
+			row.bold,
+		)
 	}
 	pdf.Ln(16)
 }
