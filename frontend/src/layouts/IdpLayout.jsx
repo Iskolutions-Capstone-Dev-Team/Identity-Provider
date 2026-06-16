@@ -174,8 +174,13 @@ export default function IdpLayout() {
           currentUser={currentUser}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="relative z-40">
+        <div className="flex min-w-0 flex-1 flex-col" style={{ overflowAnchor: "none" }}>
+          <div className="relative z-40 shrink-0" style={{
+              backfaceVisibility: "hidden",
+              overflowAnchor: "none",
+              transform: "translateZ(0)",
+            }}
+          >
             <Navbar
               activeColorMode={colorMode}
               onToggleColorMode={handleToggleColorMode}

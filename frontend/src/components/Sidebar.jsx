@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -8,6 +8,23 @@ import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS
 import { AppClientOutlineIcon } from "./app-client/AppClientIconBox";
 
 const menuSections = [
+  {
+    title: "DASHBOARD",
+    items: [
+      {
+        name: "Dashboard",
+        tooltipLabel: "Dashboard",
+        path: "/dashboard",
+        requiredPermissions: [],
+        icon: ({ className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+          </svg>
+        ),
+      },
+    ],
+  },
   {
     title: "IDENTITY MANAGEMENT",
     items: [
@@ -59,17 +76,6 @@ const menuSections = [
         requiredPermissions: [PERMISSIONS.VIEW_AUDIT_LOGS],
         iconPath:
           "M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z",
-      },
-      {
-        name: "FAQ",
-        tooltipLabel: "FAQ",
-        path: "/faq",
-        requiredPermissions: [],
-        icon: ({ className }) => (
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
-          </svg>
-        ),
       },
     ],
   },
@@ -151,6 +157,14 @@ function SidebarIcon({ item, isActive }) {
   }`;
 
   return renderSidebarMenuIcon(item, iconClassName);
+}
+
+function MoreMenuIcon({ className }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+  );
 }
 
 function SidebarTooltip({ tooltip, className }) {
@@ -240,11 +254,63 @@ function SidebarMenuItem({ isOpen, item, isActive, onClick, theme, onTooltipChan
   );
 }
 
+function MobileNavButton({ children, isActive, label, onClick, theme }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} className={`relative flex flex-1 items-center justify-center py-3 transition-all duration-300 ${
+      isActive ? theme.mobileActive : theme.mobileInactive
+    }`}>
+      {children}
+      <span className={`absolute bottom-1 h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+          isActive ? "opacity-100" : "opacity-0"
+        } ${theme.mobileIndicator}`}
+      />
+    </button>
+  );
+}
+
+function MobileMenuItemIcon({ item, isActive }) {
+  return renderSidebarMenuIcon(
+    item,
+    `h-5 w-5 transition-all duration-300 ${
+      isActive
+        ? "scale-110 drop-shadow-[0_0_14px_rgba(248,210,78,0.72)]"
+        : ""
+    }`,
+  );
+}
+
+function MobileMoreMenu({ items, isOpen, theme, onItemClick }) {
+  return (
+    <AnimatePresence>
+      {isOpen ? (
+        <motion.ul
+          initial={{ opacity: 0, y: 10, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 8, scale: 0.98 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className={`absolute bottom-[calc(100%+0.75rem)] right-0 z-50 w-44 overflow-hidden rounded-2xl border p-2 text-white backdrop-blur-2xl ${theme.mobileShell}`}
+        >
+          {items.map((item) => (
+            <li key={item.key}>
+              <button type="button" onClick={() => onItemClick(item)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-current transition duration-200 hover:bg-white/[0.08] focus-visible:bg-white/[0.08]">
+                {item.icon}
+                <span className="min-w-0 truncate">{item.name}</span>
+              </button>
+            </li>
+          ))}
+        </motion.ul>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
 export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "light", currentUser = null }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { hasAnyPermission, isLoadingPermissions } = usePermissionAccess();
   const [hoveredTooltip, setHoveredTooltip] = useState(null);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef(null);
   const isDarkMode = activeColorMode === "dark";
   const theme = isDarkMode ? darkSidebarTheme : lightSidebarTheme;
   const railWidthClassName = isOpen ? "w-80" : "w-32";
@@ -260,8 +326,36 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
         }))
         .filter((section) => section.items.length > 0);
   const mobileMenuItems = visibleMenuSections.flatMap((section) => section.items);
+  const mobileNavItems = [...mobileMenuItems, { isLogout: true, name: "Logout", key: "logout" }];
+  const shouldShowMobileMoreMenu = mobileNavItems.length > 5;
+  const visibleMobileMenuItems = shouldShowMobileMoreMenu
+    ? mobileMenuItems.slice(0, 4)
+    : mobileMenuItems;
+  const overflowMobileMenuItems = shouldShowMobileMoreMenu
+    ? [
+        ...mobileMenuItems.slice(4).map((item) => ({
+          ...item,
+          key: item.path,
+          icon: renderSidebarMenuIcon(item, "h-4 w-4 shrink-0 text-current"),
+        })),
+        {
+          isLogout: true,
+          name: "Logout",
+          key: "logout",
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-4 w-4 shrink-0">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+            </svg>
+          ),
+        },
+      ]
+    : [];
+  const isOverflowItemActive = overflowMobileMenuItems.some(
+    (item) => item.path && location.pathname === item.path,
+  );
 
   const handleLogout = () => {
+    setIsMoreMenuOpen(false);
     navigate(
       buildLogoutPath({
         userId: currentUser?.id,
@@ -269,12 +363,39 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
       { replace: true },
     );
   };
+  const handleMobileMoreItemClick = (item) => {
+    setIsMoreMenuOpen(false);
+
+    if (item.isLogout) {
+      handleLogout();
+      return;
+    }
+
+    navigate(item.path);
+  };
 
   useEffect(() => {
     if (isOpen) {
       setHoveredTooltip(null);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isMoreMenuOpen) {
+      return undefined;
+    }
+
+    const handleClickOutside = (event) => {
+      if (moreMenuRef.current?.contains(event.target)) {
+        return;
+      }
+
+      setIsMoreMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMoreMenuOpen]);
 
   return (
     <>
@@ -369,40 +490,39 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
       <SidebarTooltip tooltip={!isOpen ? hoveredTooltip : null} className={theme.tooltip} />
 
       <div className="fixed bottom-5 left-1/2 z-40 w-[calc(100%-1.5rem)] max-w-[28rem] -translate-x-1/2 lg:hidden">
-        <div className={`relative overflow-hidden rounded-[2rem] border p-2 backdrop-blur-2xl ${theme.mobileShell}`}>
+        <div className={`relative overflow-visible rounded-[2rem] border p-2 backdrop-blur-2xl ${theme.mobileShell}`}>
           <div className={`pointer-events-none absolute inset-0 ${theme.mobileOverlay}`} />
 
           <div className="relative flex items-center gap-2">
-            {mobileMenuItems.map((item) => {
+            {visibleMobileMenuItems.map((item) => {
               const isActive = location.pathname === item.path;
 
               return (
-                <button key={item.path} type="button" onClick={() => navigate(item.path)}
-                  className={`relative flex flex-1 items-center justify-center py-3 transition-all duration-300 ${
-                    isActive ? theme.mobileActive : theme.mobileInactive
-                  }`}
-                >
-                  {renderSidebarMenuIcon(
-                    item,
-                    `h-5 w-5 transition-all duration-300 ${
-                      isActive
-                        ? "scale-110 drop-shadow-[0_0_14px_rgba(248,210,78,0.72)]"
-                        : ""
-                    }`,
-                  )}
-                  <span className={`absolute bottom-1 h-1.5 w-1.5 rounded-full transition-all duration-300 ${
-                      isActive ? "opacity-100" : "opacity-0"
-                    } ${theme.mobileIndicator}`}
-                  />
-                </button>
+                <MobileNavButton key={item.path} isActive={isActive} label={item.name} onClick={() => navigate(item.path)} theme={theme}>
+                  <MobileMenuItemIcon item={item} isActive={isActive} />
+                </MobileNavButton>
               );
             })}
 
-            <button type="button" onClick={handleLogout} className={`flex flex-1 items-center justify-center py-3 transition-all duration-300 ${theme.mobileInactive}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
-              </svg>
-            </button>
+            {shouldShowMobileMoreMenu ? (
+              <div ref={moreMenuRef} className="relative flex flex-1">
+                <MobileMoreMenu
+                  items={overflowMobileMenuItems}
+                  isOpen={isMoreMenuOpen}
+                  theme={theme}
+                  onItemClick={handleMobileMoreItemClick}
+                />
+                <MobileNavButton isActive={isMoreMenuOpen || isOverflowItemActive} label="More" onClick={() => setIsMoreMenuOpen((prev) => !prev)} theme={theme}>
+                  <MoreMenuIcon className="h-5 w-5 transition-all duration-300" />
+                </MobileNavButton>
+              </div>
+            ) : (
+              <MobileNavButton isActive={false} label="Logout" onClick={handleLogout} theme={theme}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+                </svg>
+              </MobileNavButton>
+            )}
           </div>
         </div>
       </div>

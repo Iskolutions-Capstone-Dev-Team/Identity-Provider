@@ -9,6 +9,7 @@ import ErrorPage from "./auth/pages/ErrorPage";
 import AccessDenied from "./auth/pages/AccessDenied";
 import ProtectedRoute from "./auth/components/ProtectedRoute";
 import PermissionRoute from "./auth/components/PermissionRoute";
+import Dashboard from "./pages/Dashboard";
 import UserPool from "./pages/UserPool";
 import AddUserPage from "./pages/AddUserPage";
 import Roles from "./pages/Roles";
@@ -58,6 +59,7 @@ export default function App() {
             </ProtectedRoute>
           }
         >
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/user-pool"
             element={
               <PermissionRoute requiredPermissions={USER_POOL_PAGE_PERMISSIONS}>
