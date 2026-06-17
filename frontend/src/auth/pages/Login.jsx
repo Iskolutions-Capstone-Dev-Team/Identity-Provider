@@ -5,12 +5,25 @@ import AuthLoadingScreen from "../components/AuthLoadingScreen";
 import LoginForm from "../components/LoginForm";
 import LoginMfaFlow from "../components/LoginMfaFlow";
 import AccessDenied from "./AccessDenied";
-import { buildLoginPath, getLoginClientId, getLoginErrorCode, getLoginErrorMessage, getLoginRedirectUri, isLoginMfaRequested, LOGIN_ERROR_CODES } from "../utils/loginRoute";
+import {
+  buildLoginPath,
+  getLoginClientId,
+  getLoginErrorCode,
+  getLoginErrorMessage,
+  getLoginRedirectUri,
+  isLoginMfaRequested,
+  LOGIN_ERROR_CODES,
+} from "../utils/loginRoute";
 import { DEFAULT_AUTHENTICATED_PATH } from "../utils/authAccess";
 import { hasStoredAccessToken } from "../utils/authRecovery";
 import { clearAuthState } from "../utils/authCookies";
-import { buildClientAuthorizeUrl, redirectToAuthorize } from "../utils/authorizeFlow";
+import {
+  buildClientAuthorizeUrl,
+  redirectToAuthorize,
+} from "../utils/authorizeFlow";
 import { authService } from "../services/authService";
+
+const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,7 +31,8 @@ export default function Login() {
   const clientId = getLoginClientId(searchParams);
   const redirectUri = getLoginRedirectUri(searchParams);
   const isClientLoginFlow =
-    Boolean(searchParams.get("client_id")) && Boolean(redirectUri);
+    Boolean(clientId) &&
+    (clientId !== authClientId || Boolean(redirectUri));
   const loginErrorCode = getLoginErrorCode(searchParams);
   const isAccessDeniedError = loginErrorCode === LOGIN_ERROR_CODES.UNAUTHORIZED;
   const loginErrorMessage = isAccessDeniedError
