@@ -5,25 +5,19 @@ import AuthLoadingScreen from "../components/AuthLoadingScreen";
 import LoginForm from "../components/LoginForm";
 import LoginMfaFlow from "../components/LoginMfaFlow";
 import AccessDenied from "./AccessDenied";
-import {
-  buildLoginPath,
-  getLoginClientId,
-  getLoginErrorCode,
-  getLoginErrorMessage,
-  getLoginRedirectUri,
-  isLoginMfaRequested,
-  LOGIN_ERROR_CODES,
-} from "../utils/loginRoute";
+import { buildLoginPath, getLoginClientId, getLoginErrorCode, getLoginErrorMessage, getLoginRedirectUri, isLoginMfaRequested, LOGIN_ERROR_CODES } from "../utils/loginRoute";
 import { DEFAULT_AUTHENTICATED_PATH } from "../utils/authAccess";
 import { hasStoredAccessToken } from "../utils/authRecovery";
 import { clearAuthState } from "../utils/authCookies";
-import {
-  buildClientAuthorizeUrl,
-  redirectToAuthorize,
-} from "../utils/authorizeFlow";
+import { hasMfaChallengePending, hasMfaVerified } from "../utils/mfaFlow";
+import { buildClientAuthorizeUrl, redirectToAuthorize } from "../utils/authorizeFlow";
 import { authService } from "../services/authService";
 
 const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
+
+function needsMfaVerification() {
+  return hasMfaChallengePending() && !hasMfaVerified();
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -40,11 +34,27 @@ export default function Login() {
     : getLoginErrorMessage(searchParams);
   const [mfaContext, setMfaContext] = useState(null);
   const isMfaRequested = isLoginMfaRequested(searchParams);
-  const shouldShowMfa = Boolean(mfaContext) || isMfaRequested;
+  const [hasPendingMfa, setHasPendingMfa] = useState(needsMfaVerification);
+  const shouldShowMfa =
+    Boolean(mfaContext) || isMfaRequested || hasPendingMfa;
   const [isReturningToLogin, setIsReturningToLogin] = useState(false);
   const [isResolvingAccess, setIsResolvingAccess] = useState(
     Boolean(clientId) && !loginErrorCode,
   );
+
+  useEffect(() => {
+    const syncPendingMfa = () => {
+      setHasPendingMfa(needsMfaVerification());
+    };
+
+    window.addEventListener("pageshow", syncPendingMfa);
+    window.addEventListener("storage", syncPendingMfa);
+
+    return () => {
+      window.removeEventListener("pageshow", syncPendingMfa);
+      window.removeEventListener("storage", syncPendingMfa);
+    };
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -54,7 +64,7 @@ export default function Login() {
       return undefined;
     }
 
-    if (isMfaRequested) {
+    if (isMfaRequested || hasPendingMfa) {
       setIsResolvingAccess(false);
       return undefined;
     }
@@ -115,7 +125,14 @@ export default function Login() {
     return () => {
       isActive = false;
     };
-  }, [clientId, isClientLoginFlow, isMfaRequested, loginErrorCode, redirectUri]);
+  }, [
+    clientId,
+    hasPendingMfa,
+    isClientLoginFlow,
+    isMfaRequested,
+    loginErrorCode,
+    redirectUri,
+  ]);
 
   const handleBackToLogin = async () => {
     if (isReturningToLogin) {
@@ -139,6 +156,8 @@ export default function Login() {
     } finally {
       clearAuthState();
       setMfaContext(null);
+      setHasPendingMfa(false);
+      setIsReturningToLogin(false);
       navigate(buildLoginPath(clientId, { redirectUri }), { replace: true });
     }
   };
