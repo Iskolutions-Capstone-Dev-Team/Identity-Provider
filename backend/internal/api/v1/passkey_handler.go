@@ -7,11 +7,14 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // PasskeyHandler handles WebAuthn passkey registration and verification.
 type PasskeyHandler struct {
 	PasskeyService service.PasskeyService
+	UserService    service.UserService
+	AuthService    service.AuthService
 }
 
 /**
@@ -61,6 +64,35 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 		return
 	}
 
+	uID, isPending, clearCookie, err := h.AuthService.
+		CheckSessionOrPendingMFA(c)
+	if err != nil {
+		log.Printf("[FinishRegistration] Auth check failed: %v", err)
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "Unauthorized access",
+		})
+		return
+	}
+
+	user, err := h.UserService.GetUserByEmail(
+		c.Request.Context(), email,
+	)
+	if err != nil {
+		log.Printf("[FinishRegistration] User Lookup: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "User not found",
+		})
+		return
+	}
+
+	userID, _ := uuid.Parse(user.ID)
+	if userID != uID {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "User mismatch",
+		})
+		return
+	}
+
 	if err := h.PasskeyService.FinishRegistration(
 		c.Request.Context(), email, c.Request,
 	); err != nil {
@@ -69,6 +101,18 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 			Error: "passkey registration failed",
 		})
 		return
+	}
+
+	if isPending {
+		err := h.AuthService.CreateSessionAndSetCookie(c, uID)
+		if err != nil {
+			log.Printf("[FinishRegistration] CreateSession: %v", err)
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+				Error: "Failed to establish session",
+			})
+			return
+		}
+		clearCookie()
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
@@ -124,6 +168,35 @@ func (h *PasskeyHandler) FinishVerification(c *gin.Context) {
 		return
 	}
 
+	uID, isPending, clearCookie, err := h.AuthService.
+		CheckSessionOrPendingMFA(c)
+	if err != nil {
+		log.Printf("[FinishVerification] Auth check failed: %v", err)
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "Unauthorized access",
+		})
+		return
+	}
+
+	user, err := h.UserService.GetUserByEmail(
+		c.Request.Context(), email,
+	)
+	if err != nil {
+		log.Printf("[FinishVerification] User Lookup: %v", err)
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{
+			Error: "User not found",
+		})
+		return
+	}
+
+	userID, _ := uuid.Parse(user.ID)
+	if userID != uID {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "User mismatch",
+		})
+		return
+	}
+
 	if err := h.PasskeyService.FinishVerification(
 		c.Request.Context(), email, c.Request,
 	); err != nil {
@@ -132,6 +205,18 @@ func (h *PasskeyHandler) FinishVerification(c *gin.Context) {
 			Error: "passkey verification failed",
 		})
 		return
+	}
+
+	if isPending {
+		err := h.AuthService.CreateSessionAndSetCookie(c, uID)
+		if err != nil {
+			log.Printf("[FinishVerification] CreateSession: %v", err)
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+				Error: "Failed to establish session",
+			})
+			return
+		}
+		clearCookie()
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
@@ -167,6 +252,14 @@ func (h *PasskeyHandler) GetHasPasskey(c *gin.Context) {
 }
 
 // NewPasskeyHandler constructs a PasskeyHandler.
-func NewPasskeyHandler(ps service.PasskeyService) *PasskeyHandler {
-	return &PasskeyHandler{PasskeyService: ps}
+func NewPasskeyHandler(
+	ps service.PasskeyService,
+	us service.UserService,
+	as service.AuthService,
+) *PasskeyHandler {
+	return &PasskeyHandler{
+		PasskeyService: ps,
+		UserService:    us,
+		AuthService:    as,
+	}
 }

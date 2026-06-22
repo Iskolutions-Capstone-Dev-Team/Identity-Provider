@@ -37,6 +37,15 @@ type AuthService interface {
 	RefreshBySession(ctx context.Context, sessionID string,
 		clientID string) (*dto.TokenResponse, error)
 	RevokeCookies(c *gin.Context)
+	GenerateMFAPendingToken(userID string, email string,
+		ip string, ua string) (string, error)
+	ValidateMFAPendingToken(
+		tokenStr string) (*MFAPendingClaims, error)
+	CreateSessionAndSetCookie(
+		c *gin.Context, userID uuid.UUID) error
+	CheckSessionOrPendingMFA(
+		c *gin.Context,
+	) (uuid.UUID, bool, func(), error)
 }
 
 type authService struct {
@@ -145,14 +154,20 @@ func (s *authService) LoginAndAuthorize(
 		return "", "", fmt.Errorf("database query (StoreCode): %w", err)
 	}
 
-	// 4. Session Management
-	sessionID, err := s.GetSessionToken(ctx, userID, ipAddress, userAgent)
+	// 4. Generate MFA Pending Token
+	mfaPendingToken, err := GenerateMFAPendingToken(
+		s.PrivateKey,
+		claims.UserID,
+		req.Email,
+		ipAddress,
+		userAgent,
+	)
 	if err != nil {
-		return "", "", fmt.Errorf("session token generation: %w", err)
+		return "", "", fmt.Errorf("mfa pending token generation: %w", err)
 	}
 
 	redirectURL := fmt.Sprintf("%s?code=%s", regURI, code)
-	return redirectURL, sessionID, nil
+	return redirectURL, mfaPendingToken, nil
 }
 
 /**
@@ -476,4 +491,98 @@ func (s *authService) RevokeCookies(c *gin.Context) {
 		true,
 		true,
 	)
+}
+
+func (s *authService) GenerateMFAPendingToken(
+	userID string,
+	email string,
+	ip string,
+	ua string,
+) (string, error) {
+	return GenerateMFAPendingToken(s.PrivateKey, userID, email, ip, ua)
+}
+
+func (s *authService) ValidateMFAPendingToken(
+	tokenStr string,
+) (*MFAPendingClaims, error) {
+	return ValidateMFAPendingToken(tokenStr, s.PublicKey)
+}
+
+func (s *authService) CreateSessionAndSetCookie(
+	c *gin.Context,
+	userID uuid.UUID,
+) error {
+	sessionID, err := s.GetSessionToken(
+		c.Request.Context(),
+		userID,
+		c.ClientIP(),
+		c.Request.UserAgent(),
+	)
+	if err != nil {
+		return err
+	}
+
+	maxAge := int(time.Hour.Seconds() * 24 * SESSION_DAYS)
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie(
+		SESSION_COOKIE_NAME,
+		sessionID,
+		maxAge,
+		"/",
+		"",
+		true,
+		true,
+	)
+
+	return nil
+}
+
+func (s *authService) CheckSessionOrPendingMFA(
+	c *gin.Context,
+) (uuid.UUID, bool, func(), error) {
+	// 1. Try checking the active session
+	sessionCookie, err := c.Cookie(SESSION_COOKIE_NAME)
+	if err == nil && sessionCookie != "" {
+		session, err := s.ValidateSession(
+			c.Request.Context(),
+			sessionCookie,
+		)
+		if err == nil && session != nil {
+			uID, _ := uuid.FromBytes(session.UserId)
+			return uID, false, func() {}, nil
+		}
+	}
+
+	// 2. Try checking the pending MFA token
+	pendingCookie, err := c.Cookie("idp_mfa_pending")
+	if err != nil || pendingCookie == "" {
+		return uuid.Nil, false, nil, fmt.Errorf("pending cookie missing")
+	}
+
+	claims, err := s.ValidateMFAPendingToken(pendingCookie)
+	if err != nil {
+		return uuid.Nil, false, nil, fmt.Errorf(
+			"token validation failed: %w", err,
+		)
+	}
+
+	uID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		return uuid.Nil, false, nil, fmt.Errorf("invalid token user ID")
+	}
+
+	clearCookie := func() {
+		c.SetSameSite(http.SameSiteStrictMode)
+		c.SetCookie(
+			"idp_mfa_pending",
+			"",
+			-1,
+			"/",
+			"",
+			true,
+			true,
+		)
+	}
+
+	return uID, true, clearCookie, nil
 }
