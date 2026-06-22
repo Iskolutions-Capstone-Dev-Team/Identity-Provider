@@ -81,3 +81,68 @@ func GetParsedToken(token string, publicKey *rsa.PublicKey) (jwt.Token, error) {
 	}
 	return *parsedToken, err
 }
+
+type MFAPendingClaims struct {
+	UserID    string `json:"user_id"`
+	Email     string `json:"email"`
+	IPAddress string `json:"ip_address"`
+	UserAgent string `json:"user_agent"`
+	jwt.RegisteredClaims
+}
+
+// GenerateMFAPendingToken creates a signed JWT for pending MFA verification.
+func GenerateMFAPendingToken(
+	privateKey *rsa.PrivateKey,
+	userID string,
+	email string,
+	ip string,
+	ua string,
+) (string, error) {
+	now := time.Now()
+	claims := MFAPendingClaims{
+		UserID:    userID,
+		Email:     email,
+		IPAddress: ip,
+		UserAgent: ua,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID,
+			Issuer:    os.Getenv("CLIENT_BASE_URL"),
+			ExpiresAt: jwt.NewNumericDate(now.Add(5 * time.Minute)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	token.Header["kid"] = os.Getenv("KEY_ID")
+
+	return token.SignedString(privateKey)
+}
+
+// ValidateMFAPendingToken parses and validates a pending MFA token.
+func ValidateMFAPendingToken(
+	tokenStr string,
+	publicKey *rsa.PublicKey,
+) (*MFAPendingClaims, error) {
+	parsedToken, err := jwt.ParseWithClaims(
+		tokenStr,
+		&MFAPendingClaims{},
+		func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+				return nil, fmt.Errorf("unexpected signing method")
+			}
+			return publicKey, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := parsedToken.Claims.(*MFAPendingClaims)
+	if !ok || !parsedToken.Valid {
+		return nil, fmt.Errorf("invalid pending mfa token")
+	}
+
+	return claims, nil
+}
+

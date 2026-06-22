@@ -60,6 +60,37 @@ func (mr *MockAuthServiceMockRecorder) Authorize(ctx, clientIDStr, sessionToken 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authorize", reflect.TypeOf((*MockAuthService)(nil).Authorize), ctx, clientIDStr, sessionToken)
 }
 
+// CheckSessionOrPendingMFA mocks base method.
+func (m *MockAuthService) CheckSessionOrPendingMFA(c *gin.Context) (uuid.UUID, bool, func(), error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckSessionOrPendingMFA", c)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(func())
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// CheckSessionOrPendingMFA indicates an expected call of CheckSessionOrPendingMFA.
+func (mr *MockAuthServiceMockRecorder) CheckSessionOrPendingMFA(c any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckSessionOrPendingMFA", reflect.TypeOf((*MockAuthService)(nil).CheckSessionOrPendingMFA), c)
+}
+
+// CreateSessionAndSetCookie mocks base method.
+func (m *MockAuthService) CreateSessionAndSetCookie(c *gin.Context, userID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSessionAndSetCookie", c, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateSessionAndSetCookie indicates an expected call of CreateSessionAndSetCookie.
+func (mr *MockAuthServiceMockRecorder) CreateSessionAndSetCookie(c, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSessionAndSetCookie", reflect.TypeOf((*MockAuthService)(nil).CreateSessionAndSetCookie), c, userID)
+}
+
 // ExchangeCodeForToken mocks base method.
 func (m *MockAuthService) ExchangeCodeForToken(ctx context.Context, req dto.TokenExchangeRequest) (*dto.TokenResponse, error) {
 	m.ctrl.T.Helper()
@@ -73,6 +104,21 @@ func (m *MockAuthService) ExchangeCodeForToken(ctx context.Context, req dto.Toke
 func (mr *MockAuthServiceMockRecorder) ExchangeCodeForToken(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExchangeCodeForToken", reflect.TypeOf((*MockAuthService)(nil).ExchangeCodeForToken), ctx, req)
+}
+
+// GenerateMFAPendingToken mocks base method.
+func (m *MockAuthService) GenerateMFAPendingToken(userID, email, ip, ua string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateMFAPendingToken", userID, email, ip, ua)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GenerateMFAPendingToken indicates an expected call of GenerateMFAPendingToken.
+func (mr *MockAuthServiceMockRecorder) GenerateMFAPendingToken(userID, email, ip, ua any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateMFAPendingToken", reflect.TypeOf((*MockAuthService)(nil).GenerateMFAPendingToken), userID, email, ip, ua)
 }
 
 // GetJWKS mocks base method.
@@ -189,6 +235,21 @@ func (m *MockAuthService) RotateRefreshToken(ctx context.Context, oldToken strin
 func (mr *MockAuthServiceMockRecorder) RotateRefreshToken(ctx, oldToken any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RotateRefreshToken", reflect.TypeOf((*MockAuthService)(nil).RotateRefreshToken), ctx, oldToken)
+}
+
+// ValidateMFAPendingToken mocks base method.
+func (m *MockAuthService) ValidateMFAPendingToken(tokenStr string) (*service.MFAPendingClaims, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateMFAPendingToken", tokenStr)
+	ret0, _ := ret[0].(*service.MFAPendingClaims)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ValidateMFAPendingToken indicates an expected call of ValidateMFAPendingToken.
+func (mr *MockAuthServiceMockRecorder) ValidateMFAPendingToken(tokenStr any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateMFAPendingToken", reflect.TypeOf((*MockAuthService)(nil).ValidateMFAPendingToken), tokenStr)
 }
 
 // ValidateSession mocks base method.
