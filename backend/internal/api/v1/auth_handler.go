@@ -243,22 +243,28 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		Status:   models.StatusSuccess,
 		Metadata: metadata,
 	}
-	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), req.Email, logReq)
-	_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), req.Email, logReq)
+	_ = h.LogService.PostAuditLogWithActorString(
+		c.Request.Context(),
+		req.Email,
+		logReq,
+	)
+	_ = h.LogService.PostSecurityLogWithActorString(
+		c.Request.Context(),
+		req.Email,
+		logReq,
+	)
 
-	// Set session cookie
-	maxAge := int(time.Hour.Seconds() * 24 * service.SESSION_DAYS)
+	// Set temporary MFA pending cookie
 	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie(
-		service.SESSION_COOKIE_NAME,
-		sessionID,
-		maxAge,
+		"idp_mfa_pending",
+		sessionID, // Contains the MFA pending token
+		300,       // 5 minutes expiry
 		"/",
 		"",
 		true,
 		true,
 	)
-
 	c.JSON(http.StatusOK, redirectLink)
 }
 
