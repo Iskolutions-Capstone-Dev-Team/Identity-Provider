@@ -145,4 +145,3 @@ func ValidateMFAPendingToken(
 
 	return claims, nil
 }
-

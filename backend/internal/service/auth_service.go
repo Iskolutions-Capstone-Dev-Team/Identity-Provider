@@ -586,5 +586,3 @@ func (s *authService) CheckSessionOrPendingMFA(
 
 	return uID, true, clearCookie, nil
 }
-
-
