@@ -15,6 +15,7 @@ import (
 type MFAHandler struct {
 	MFAService  service.MFAService
 	UserService service.UserService
+	AuthService service.AuthService
 }
 
 // GetTOTPSetup returns the secret and URI for a new TOTP authenticator.
@@ -64,7 +65,19 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 		return
 	}
 
-	user, err := h.UserService.GetUserByEmail(c.Request.Context(), req.Email)
+	uID, isPending, clearCookie, err := h.AuthService.
+		CheckSessionOrPendingMFA(c)
+	if err != nil {
+		log.Printf("[PostAuthenticator] Auth check failed: %v", err)
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "Unauthorized access",
+		})
+		return
+	}
+
+	user, err := h.UserService.GetUserByEmail(
+		c.Request.Context(), req.Email,
+	)
 	if err != nil {
 		log.Printf("[PostAuthenticator] User Lookup: %v", err)
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{
@@ -74,6 +87,13 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 	}
 
 	userID, _ := uuid.Parse(user.ID)
+	if userID != uID {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "User mismatch",
+		})
+		return
+	}
+
 	backupCodes, err := h.MFAService.FinalizeTOTP(c.Request.Context(),
 		userID[:], req.Secret, req.Code, req.Name)
 	if err != nil {
@@ -82,6 +102,18 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 			Error: err.Error(),
 		})
 		return
+	}
+
+	if isPending {
+		err := h.AuthService.CreateSessionAndSetCookie(c, uID)
+		if err != nil {
+			log.Printf("[PostAuthenticator] CreateSession: %v", err)
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+				Error: "Failed to establish session",
+			})
+			return
+		}
+		clearCookie()
 	}
 
 	// We return the URI again just in case, plus backup codes
@@ -106,7 +138,19 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 		return
 	}
 
-	user, err := h.UserService.GetUserByEmail(c.Request.Context(), req.Email)
+	uID, isPending, clearCookie, err := h.AuthService.
+		CheckSessionOrPendingMFA(c)
+	if err != nil {
+		log.Printf("[PostVerifyMFA] Auth check failed: %v", err)
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "Unauthorized access",
+		})
+		return
+	}
+
+	user, err := h.UserService.GetUserByEmail(
+		c.Request.Context(), req.Email,
+	)
 	if err != nil {
 		log.Printf("[PostVerifyMFA] User Lookup: %v", err)
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{
@@ -116,6 +160,13 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 	}
 
 	userID, _ := uuid.Parse(user.ID)
+	if userID != uID {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error: "User mismatch",
+		})
+		return
+	}
+
 	success, err := h.MFAService.VerifyCode(c.Request.Context(),
 		userID[:], req.Code)
 	if err != nil {
@@ -131,6 +182,18 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 			Error: "Invalid code",
 		})
 		return
+	}
+
+	if isPending {
+		err := h.AuthService.CreateSessionAndSetCookie(c, uID)
+		if err != nil {
+			log.Printf("[PostVerifyMFA] CreateSession: %v", err)
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+				Error: "Failed to establish session",
+			})
+			return
+		}
+		clearCookie()
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
@@ -256,9 +319,11 @@ func (h *MFAHandler) GetHasTOTP(c *gin.Context) {
 
 func NewMFAHandler(mfaService service.MFAService,
 	userService service.UserService,
+	authService service.AuthService,
 ) *MFAHandler {
 	return &MFAHandler{
 		MFAService:  mfaService,
 		UserService: userService,
+		AuthService: authService,
 	}
 }

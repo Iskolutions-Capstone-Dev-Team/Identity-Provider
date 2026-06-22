@@ -21,7 +21,12 @@ func TestGetTOTPSetupHandler(t *testing.T) {
 
 	mockMFAService := mocks.NewMockMFAService(ctrl)
 	mockUserService := mocks.NewMockUserService(ctrl)
-	handler := v1.NewMFAHandler(mockMFAService, mockUserService)
+	mockAuthService := mocks.NewMockAuthService(ctrl)
+	handler := v1.NewMFAHandler(
+		mockMFAService,
+		mockUserService,
+		mockAuthService,
+	)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -48,14 +53,29 @@ func TestPostAuthenticatorHandler(t *testing.T) {
 
 	mockMFAService := mocks.NewMockMFAService(ctrl)
 	mockUserService := mocks.NewMockUserService(ctrl)
-	handler := v1.NewMFAHandler(mockMFAService, mockUserService)
+	mockAuthService := mocks.NewMockAuthService(ctrl)
+	handler := v1.NewMFAHandler(
+		mockMFAService,
+		mockUserService,
+		mockAuthService,
+	)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.POST("/mfa/authenticators", handler.PostAuthenticator)
 
-	mockUserService.EXPECT().GetUserByEmail(gomock.Any(), "test@example.com").
-		Return(&dto.UserResponse{ID: uuid.New().String(), Email: "test@example.com"}, nil)
+	mockUserUUID := uuid.New()
+
+	mockAuthService.EXPECT().
+		CheckSessionOrPendingMFA(gomock.Any()).
+		Return(mockUserUUID, false, func() {}, nil)
+
+	mockUserService.EXPECT().
+		GetUserByEmail(gomock.Any(), "test@example.com").
+		Return(&dto.UserResponse{
+			ID:    mockUserUUID.String(),
+			Email: "test@example.com",
+		}, nil)
 
 	mockMFAService.EXPECT().FinalizeTOTP(gomock.Any(), gomock.Any(),
 		"SECRET", "123456", "My Phone").
@@ -67,7 +87,9 @@ func TestPostAuthenticatorHandler(t *testing.T) {
 		Code:   "123456",
 		Name:   "My Phone",
 	})
-	req, _ := http.NewRequest("POST", "/mfa/authenticators", bytes.NewBuffer(body))
+	req, _ := http.NewRequest(
+		"POST", "/mfa/authenticators", bytes.NewBuffer(body),
+	)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -83,7 +105,12 @@ func TestGetAuthenticatorListHandler(t *testing.T) {
 
 	mockMFAService := mocks.NewMockMFAService(ctrl)
 	mockUserService := mocks.NewMockUserService(ctrl)
-	handler := v1.NewMFAHandler(mockMFAService, mockUserService)
+	mockAuthService := mocks.NewMockAuthService(ctrl)
+	handler := v1.NewMFAHandler(
+		mockMFAService,
+		mockUserService,
+		mockAuthService,
+	)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -114,7 +141,12 @@ func TestGetHasTOTPHandler(t *testing.T) {
 
 		mockMFAService := mocks.NewMockMFAService(ctrl)
 		mockUserService := mocks.NewMockUserService(ctrl)
-		handler := v1.NewMFAHandler(mockMFAService, mockUserService)
+		mockAuthService := mocks.NewMockAuthService(ctrl)
+		handler := v1.NewMFAHandler(
+			mockMFAService,
+			mockUserService,
+			mockAuthService,
+		)
 
 		gin.SetMode(gin.TestMode)
 		r := gin.New()
@@ -156,7 +188,12 @@ func TestGetHasTOTPHandler(t *testing.T) {
 
 		mockMFAService := mocks.NewMockMFAService(ctrl)
 		mockUserService := mocks.NewMockUserService(ctrl)
-		handler := v1.NewMFAHandler(mockMFAService, mockUserService)
+		mockAuthService := mocks.NewMockAuthService(ctrl)
+		handler := v1.NewMFAHandler(
+			mockMFAService,
+			mockUserService,
+			mockAuthService,
+		)
 
 		gin.SetMode(gin.TestMode)
 		r := gin.New()
@@ -181,7 +218,13 @@ func TestGetHasPasskeyHandler(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockPasskeyService := mocks.NewMockPasskeyService(ctrl)
-		handler := v1.NewPasskeyHandler(mockPasskeyService)
+		mockUserService := mocks.NewMockUserService(ctrl)
+		mockAuthService := mocks.NewMockAuthService(ctrl)
+		handler := v1.NewPasskeyHandler(
+			mockPasskeyService,
+			mockUserService,
+			mockAuthService,
+		)
 
 		gin.SetMode(gin.TestMode)
 		r := gin.New()
@@ -215,7 +258,13 @@ func TestGetHasPasskeyHandler(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockPasskeyService := mocks.NewMockPasskeyService(ctrl)
-		handler := v1.NewPasskeyHandler(mockPasskeyService)
+		mockUserService := mocks.NewMockUserService(ctrl)
+		mockAuthService := mocks.NewMockAuthService(ctrl)
+		handler := v1.NewPasskeyHandler(
+			mockPasskeyService,
+			mockUserService,
+			mockAuthService,
+		)
 
 		gin.SetMode(gin.TestMode)
 		r := gin.New()

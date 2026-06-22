@@ -1,12 +1,14 @@
 package v1
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 const (
@@ -15,8 +17,10 @@ const (
 )
 
 type OTPHandler struct {
-	OTPService service.OTPService
-	LogService service.LogService
+	OTPService  service.OTPService
+	LogService  service.LogService
+	UserService service.UserService
+	AuthService service.AuthService
 }
 
 // SendOTP is a handler to generate and send an OTP code to a user's email.
@@ -90,6 +94,45 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 	}
 
 	reqCtx := c.Request.Context()
+
+	var isPending bool
+	var clearCookie func()
+	var uID uuid.UUID
+
+	pendingCookie, errCookie := c.Cookie("idp_mfa_pending")
+	if errCookie == nil && pendingCookie != "" {
+		claims, errVal := h.AuthService.
+			ValidateMFAPendingToken(pendingCookie)
+		if errVal == nil {
+			parsedID, errParse := uuid.Parse(claims.UserID)
+			if errParse == nil {
+				user, errUser := h.UserService.
+					GetUserByEmail(reqCtx, req.Email)
+				if errUser == nil {
+					userID, _ := uuid.Parse(user.ID)
+					if userID == parsedID {
+						uID = userID
+						isPending = true
+						clearCookie = func() {
+							c.SetSameSite(
+								http.SameSiteStrictMode,
+							)
+							c.SetCookie(
+								"idp_mfa_pending",
+								"",
+								-1,
+								"/",
+								"",
+								true,
+								true,
+							)
+						}
+					}
+				}
+			}
+		}
+	}
+
 	err := h.OTPService.VerifyOTP(reqCtx, req.Email, req.OTP)
 
 	logReq := &dto.PostAuditLogRequest{
@@ -109,12 +152,28 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 			"user_agent": c.Request.UserAgent(),
 			"error":      err.Error(),
 		})
-		_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
-		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
+		_ = h.LogService.PostAuditLogWithActorString(
+			reqCtx, req.Email, logReq,
+		)
+		_ = h.LogService.PostSecurityLogWithActorString(
+			reqCtx, req.Email, logReq,
+		)
 
 		c.JSON(http.StatusUnauthorized,
 			dto.ErrorResponse{Error: err.Error()})
 		return
+	}
+
+	if isPending {
+		err := h.AuthService.CreateSessionAndSetCookie(c, uID)
+		if err != nil {
+			log.Printf("[VerifyOTP] CreateSession: %v", err)
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+				Error: "Failed to establish session",
+			})
+			return
+		}
+		clearCookie()
 	}
 
 	_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
@@ -124,6 +183,16 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 		dto.SuccessResponse{Message: "OTP verified successfully"})
 }
 
-func NewOTPHandler(os service.OTPService, ls service.LogService) *OTPHandler {
-	return &OTPHandler{OTPService: os, LogService: ls}
+func NewOTPHandler(
+	os service.OTPService,
+	ls service.LogService,
+	us service.UserService,
+	as service.AuthService,
+) *OTPHandler {
+	return &OTPHandler{
+		OTPService:  os,
+		LogService:  ls,
+		UserService: us,
+		AuthService: as,
+	}
 }
