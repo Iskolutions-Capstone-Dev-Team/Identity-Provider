@@ -1,0 +1,538 @@
+import { Fragment, useMemo, useState } from "react";
+import FadeWrapper from "../../../components/FadeWrapper";
+import ErrorAlert from "../../../components/ErrorAlert";
+import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
+import { getModalTheme } from "../../../components/modalTheme";
+
+const toPositiveInt = (value) => {
+  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const normalizeTextValue = (value) =>
+  typeof value === "string" ? value : "";
+
+const normalizePermissionLabel = (permission) => {
+  if (typeof permission === "string") {
+    return permission.trim();
+  }
+
+  if (!permission || typeof permission !== "object") {
+    return "";
+  }
+
+  const label =
+    permission.permission ??
+    permission.permission_name ??
+    permission.name ??
+    permission.PermissionName;
+
+  return typeof label === "string" ? label.trim() : "";
+};
+
+const normalizePermissionId = (permission) => {
+  if (permission && typeof permission === "object") {
+    return toPositiveInt(
+      permission.id ??
+      permission.permission_id ??
+      permission.permissionId ??
+      permission.ID,
+    );
+  }
+
+  return toPositiveInt(permission);
+};
+
+const normalizePermissionOption = (permission = {}) => {
+  const id = normalizePermissionId(permission);
+  const label = normalizePermissionLabel(permission);
+
+  if (id === null || !label) {
+    return null;
+  }
+
+  return {
+    id,
+    permission: label,
+  };
+};
+
+function getPermissionCardClassName({ isSelected, isViewMode, isDarkMode }) {
+  return `flex items-center gap-3 rounded-[1rem] border px-4 py-3 text-sm font-medium transition duration-300 ${
+    isSelected
+      ? isDarkMode
+        ? "border-[#f8d24e]/35 bg-[#f8d24e]/12 text-[#ffe28a]"
+        : "border-[#f8d24e]/70 bg-[#fff4dc] text-[#7b0d15]"
+      : isDarkMode
+        ? "border-white/10 bg-white/[0.04] text-[#d6c3c7]"
+        : "border-[#7b0d15]/10 bg-white/78 text-[#5d3a41]"
+  } ${
+    isViewMode
+      ? "cursor-default"
+      : isDarkMode
+        ? "hover:border-[#f8d24e]/35 hover:bg-[#f8d24e]/10"
+        : "hover:border-[#f8d24e]/45 hover:bg-[#fffaf2]"
+  }`;
+}
+
+function RoleShieldIcon({ className }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M12.516 2.17a.75.75 0 0 0-1.032 0 11.209 11.209 0 0 1-7.877 3.08.75.75 0 0 0-.722.515A12.74 12.74 0 0 0 2.25 9.75c0 5.942 4.064 10.933 9.563 12.348a.749.749 0 0 0 .374 0c5.499-1.415 9.563-6.406 9.563-12.348 0-1.39-.223-2.73-.635-3.985a.75.75 0 0 0-.722-.516l-.143.001c-2.996 0-5.717-1.17-7.734-3.08Zm3.094 8.016a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function RoleDetailsIcon({ className }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625ZM7.5 15a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 15Zm.75 2.25a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H8.25Z" clipRule="evenodd" />
+      <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+    </svg>
+  );
+}
+
+function RoleStepIndicator({ currentStep, colorMode = "light" }) {
+  const isDarkMode = colorMode === "dark";
+  const activeStepClassName = isDarkMode
+    ? "border-[#f8d24e]/20 bg-[#f8d24e]/10 text-[#ffe28a]"
+    : "border-[#7b0d15]/10 bg-[#f8eef0] text-[#7b0d15]";
+  const inactiveStepClassName = isDarkMode
+    ? "border-white/10 bg-white/[0.04] text-[#cbb8bd]"
+    : "border-[#7b0d15]/10 bg-white/75 text-[#8f6f76]";
+  const activeLabelClassName = isDarkMode ? "text-[#ffe28a]" : "text-[#7b0d15]";
+  const inactiveLabelClassName = isDarkMode ? "text-[#cbb8bd]" : "text-[#8f6f76]";
+  const lineClassName =
+    currentStep >= 2
+      ? isDarkMode
+        ? "border-[#f8d24e]/45"
+        : "border-[#7b0d15]/25"
+      : isDarkMode
+        ? "border-white/15"
+        : "border-[#7b0d15]/15";
+  const steps = [
+    {
+      label: "Role Details",
+      shortLabel: "Details",
+      icon: <RoleDetailsIcon className="h-4 w-4" />,
+    },
+    {
+      label: "Permissions",
+      shortLabel: "Permissions",
+      icon: <RoleShieldIcon className="h-4 w-4" />,
+    },
+  ];
+
+  const getStepIconClassName = (isActive) =>
+    `inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] border transition-colors duration-300 ${
+      isActive ? activeStepClassName : inactiveStepClassName
+    }`;
+  const getStepLabelClassName = (isActive) =>
+    `text-center text-xs font-semibold leading-tight transition-colors duration-300 sm:text-sm ${
+      isActive ? activeLabelClassName : inactiveLabelClassName
+    }`;
+
+  return (
+    <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(5.75rem,auto)_1fr_minmax(5.75rem,auto)] items-start gap-2 px-3 py-4 sm:gap-3 sm:px-4">
+      {steps.map((stepItem, index) => {
+        const isActive = currentStep >= index + 1;
+
+        return (
+          <Fragment key={stepItem.label}>
+            <div className="flex min-w-0 flex-col items-center gap-2">
+              <span className={getStepIconClassName(isActive)}>
+                {stepItem.icon}
+              </span>
+              <span className={getStepLabelClassName(isActive)}>
+                <span className="sm:hidden">{stepItem.shortLabel}</span>
+                <span className="hidden sm:inline">{stepItem.label}</span>
+              </span>
+            </div>
+
+            {index === 0 && (
+              <span className={`mt-5 h-px flex-1 border-t-2 border-dotted ${lineClassName}`} aria-hidden="true" />
+            )}
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function RoleCreateForm({ permissionOptions = [], isPermissionOptionsLoading = false, onClose, onSubmit, colorMode = "light" }) {
+  const isViewMode = false;
+  const isDarkMode = colorMode === "dark";
+  const isRoleNameEditable = true;
+  const shouldUseSteps = true;
+  const {
+    modalBodyStackClassName,
+    modalHelperTextClassName,
+    modalLabelClassName,
+    modalPrimaryButtonClassName,
+    modalReadOnlyInputClassName,
+    modalSecondaryButtonClassName,
+    modalSectionClassName,
+    modalStepsWrapClassName,
+  } = getModalTheme(colorMode);
+
+  const [roleName, setRoleName] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState([]);
+  const [step, setStep] = useState(1);
+  const [stepDirection, setStepDirection] = useState(1);
+  const [activeVoiceField, setActiveVoiceField] = useState("name");
+  const [error, setError] = useState("");
+  const [touched, setTouched] = useState({
+    name: false,
+    description: false,
+  });
+
+  const normalizedPermissionOptions = useMemo(
+    () =>
+      permissionOptions
+        .map((permission) => normalizePermissionOption(permission))
+        .filter(Boolean),
+    [permissionOptions],
+  );
+  const mergedPermissionOptions = useMemo(() => {
+    return normalizedPermissionOptions;
+  }, [normalizedPermissionOptions]);
+
+  const editableFieldBaseClassName = isDarkMode
+    ? "w-full rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,25,0.72),rgba(22,28,40,0.88))] px-4 text-sm text-[#f4eaea] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out placeholder:text-[#9f8790] focus:border-[#f8d24e]/55"
+    : "w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out placeholder:text-[#9b7d84] focus:border-[#d4a017]";
+  const editableInputBaseClassName = `${editableFieldBaseClassName} h-14`;
+  const editableTextAreaBaseClassName =
+    `${editableFieldBaseClassName} min-h-28 resize-none py-3`;
+  const emptyContentClassName = isDarkMode
+    ? "italic text-[#a58d95]"
+    : "italic text-[#8f6f76]";
+  const permissionCheckboxClassName = isDarkMode
+    ? "checkbox h-5 w-5 rounded border-white/20 bg-transparent checked:border-[#f8d24e] checked:bg-[#7b0d15] checked:text-white"
+    : "checkbox h-5 w-5 rounded border-[#7b0d15]/20 bg-transparent checked:border-[#7b0d15] checked:bg-[#7b0d15] checked:text-white";
+  const pageFormClassName = "space-y-5";
+  const pageFooterActionsClassName =
+    "flex flex-col-reverse gap-3 md:mb-12 lg:flex-row lg:justify-end xl:mb-16 [&>button]:w-full lg:[&>button]:w-auto";
+  const sectionHeaderClassName = isDarkMode
+    ? "mb-5 border-b border-white/10 pb-4"
+    : "mb-5 border-b border-[#7b0d15]/10 pb-4";
+  const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
+  const fieldLabelRowClassName = "mb-2 flex flex-wrap items-center gap-2";
+  const fieldLabelClassName = `${modalLabelClassName} !mb-0`;
+
+  const fieldErrors = useMemo(
+    () => ({
+      name: isRoleNameEditable && !roleName.trim() ? "Role name is required." : "",
+      description: !description.trim() ? "Description is required." : "",
+    }),
+    [description, isRoleNameEditable, roleName],
+  );
+
+  const getEditableInputClassName = (hasError) =>
+    `${editableInputBaseClassName} ${
+      hasError ? "border-red-400 focus:border-red-500" : ""
+    }`;
+
+  const getEditableTextAreaClassName = (hasError) =>
+    `${editableTextAreaBaseClassName} ${
+      hasError ? "border-red-400 focus:border-red-500" : ""
+    }`;
+
+  const clearAlertError = () => {
+    if (error) {
+      setError("");
+    }
+  };
+
+  const setFieldTouched = (field) => {
+    setTouched((current) => ({ ...current, [field]: true }));
+  };
+
+  const validateForm = () => {
+    const firstError = fieldErrors.name || fieldErrors.description;
+
+    if (!firstError) {
+      setError("");
+      return true;
+    }
+
+    setError(firstError);
+    return false;
+  };
+
+  const activeVoiceFieldLabel =
+    activeVoiceField === "description" ? "Role Description" : "Role Name";
+
+  const handleRoleNameChange = (value) => {
+    setRoleName(normalizeTextValue(value));
+    clearAlertError();
+  };
+
+  const handleDescriptionChange = (value) => {
+    setDescription(normalizeTextValue(value));
+    clearAlertError();
+  };
+
+  const handleSpeechTranscript = (transcript) => {
+    if (activeVoiceField === "description") {
+      handleDescriptionChange(
+        description.trim()
+          ? `${description.trimEnd()} ${transcript}`
+          : transcript,
+      );
+      return;
+    }
+
+    handleRoleNameChange(transcript);
+  };
+
+  const togglePermission = (permissionId) => {
+    if (isViewMode) {
+      return;
+    }
+
+    setSelectedPermissionIds((currentIds) =>
+      currentIds.includes(permissionId)
+        ? currentIds.filter((currentId) => currentId !== permissionId)
+        : [...currentIds, permissionId],
+    );
+    clearAlertError();
+  };
+
+  const goToPermissionsStep = () => {
+    setTouched({
+      name: true,
+      description: true,
+    });
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setError("");
+    setStepDirection(1);
+    setStep(2);
+  };
+
+  const handleNextClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    goToPermissionsStep();
+  };
+
+  const goToDetailsStep = () => {
+    setError("");
+    setStepDirection(-1);
+    setStep(1);
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    if (step === 1) {
+      goToPermissionsStep();
+      return;
+    }
+
+    setTouched({
+      name: true,
+      description: true,
+    });
+
+    if (!validateForm()) {
+      setStep(1);
+      return;
+    }
+
+    onSubmit({
+      role_name: roleName.trim(),
+      description: description.trim(),
+      permission_ids: selectedPermissionIds,
+    });
+  };
+
+  const roleDetailsDescription = "Enter the role name and description.";
+  const permissionsDescription = "Select the permissions assigned to this role.";
+  const showRoleDetails = !shouldUseSteps || step === 1;
+  const showPermissions = !shouldUseSteps || step === 2;
+  const renderSectionHeader = (title, description) => (
+    <div className={sectionHeaderClassName}>
+      <label className={modalLabelClassName}>
+        {title}
+      </label>
+      <p className={sectionDescriptionClassName}>
+        {description}
+      </p>
+    </div>
+  );
+
+  const formContent = (
+    <div className={modalBodyStackClassName}>
+      {shouldUseSteps && (
+        <div className={modalStepsWrapClassName}>
+          <RoleStepIndicator currentStep={step} colorMode={colorMode} />
+        </div>
+      )}
+
+      <ErrorAlert message={error} onClose={() => setError("")} />
+
+      {!isViewMode && (!shouldUseSteps || step === 1) && (
+        <SpeechInputToolbar
+          activeFieldLabel={activeVoiceFieldLabel}
+          onError={setError}
+          onTranscript={handleSpeechTranscript}
+          colorMode={colorMode}
+        />
+      )}
+
+      <FadeWrapper
+        isVisible={showRoleDetails}
+        keyId="role-details-section"
+        direction={stepDirection}
+      >
+        <div className="space-y-5">
+          <section className={modalSectionClassName}>
+            {renderSectionHeader("Role Details", roleDetailsDescription)}
+            <div className="space-y-5">
+              <div>
+                <div className={fieldLabelRowClassName}>
+                  <label className={fieldLabelClassName}>
+                    Role Name{" "}
+                    {isRoleNameEditable && (
+                      <span className="text-red-500">*</span>
+                    )}
+                  </label>
+                </div>
+
+                <input
+                  type="text"
+                  required
+                  value={roleName}
+                  onChange={(event) =>
+                    handleRoleNameChange(event.target.value)
+                  }
+                  onBlur={() => setFieldTouched("name")}
+                  onFocus={() => setActiveVoiceField("name")}
+                  placeholder="(e.g., admin)"
+                  autoCapitalize="none"
+                  className={getEditableInputClassName(
+                    touched.name && Boolean(fieldErrors.name),
+                  )}
+                />
+
+                {isRoleNameEditable && touched.name && fieldErrors.name && (
+                  <p className="mt-2 text-xs text-red-500">{fieldErrors.name}</p>
+                )}
+              </div>
+
+              <div>
+                <div className={fieldLabelRowClassName}>
+                  <label className={fieldLabelClassName}>
+                    Role Description{" "}
+                    {!isViewMode && (
+                      <span className="text-red-500">*</span>
+                    )}
+                  </label>
+                </div>
+
+                <textarea
+                  required
+                  value={description}
+                  onChange={(event) =>
+                    handleDescriptionChange(event.target.value)
+                  }
+                  onBlur={() => setFieldTouched("description")}
+                  onFocus={() => setActiveVoiceField("description")}
+                  rows="4"
+                  placeholder="Role description"
+                  className={getEditableTextAreaClassName(
+                    touched.description && Boolean(fieldErrors.description),
+                  )}
+                />
+                {touched.description && fieldErrors.description && (
+                  <p className="mt-2 text-xs text-red-500">
+                    {fieldErrors.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        </div>
+      </FadeWrapper>
+
+      <FadeWrapper
+        isVisible={showPermissions}
+        keyId="role-permissions-section"
+        direction={stepDirection}
+      >
+        <section className={modalSectionClassName}>
+          <div className="space-y-5">
+            <div>
+              {renderSectionHeader("Permissions", permissionsDescription)}
+
+              {isPermissionOptionsLoading && mergedPermissionOptions.length === 0 ? (
+                <p className={modalHelperTextClassName}>Loading permissions...</p>
+              ) : mergedPermissionOptions.length > 0 ? (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {mergedPermissionOptions.map((permission) => {
+                    const isSelected = selectedPermissionIds.includes(permission.id);
+
+                    return (
+                      <label key={permission.id}
+                        className={getPermissionCardClassName({
+                          isSelected,
+                          isViewMode,
+                          isDarkMode,
+                        })}
+                      >
+                        <input type="checkbox" className={permissionCheckboxClassName} checked={isSelected} onChange={() => togglePermission(permission.id)} disabled={isViewMode} />
+                        <span className="break-words">{permission.permission}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className={modalReadOnlyInputClassName}>
+                  <span className={emptyContentClassName}>No permissions available</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      </FadeWrapper>
+    </div>
+  );
+
+  const footerActions = (
+    <div className={pageFooterActionsClassName}>
+      {step === 1 ? (
+        <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
+          Cancel
+        </button>
+      ) : (
+        <button type="button" className={modalSecondaryButtonClassName} onClick={goToDetailsStep}>
+          Back
+        </button>
+      )}
+
+      {step === 1 ? (
+        <button type="button" className={modalPrimaryButtonClassName} onClick={handleNextClick}>
+          Next
+        </button>
+      ) : (
+        <button form="role-form" type="submit" className={modalPrimaryButtonClassName}>
+          Create
+        </button>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <form id="role-form" noValidate className={pageFormClassName} onSubmit={handleSubmit}>
+        {formContent}
+      </form>
+      {footerActions}
+    </div>
+  );
+}
