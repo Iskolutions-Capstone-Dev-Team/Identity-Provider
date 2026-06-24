@@ -1,7 +1,12 @@
 import axiosInstance from "./axiosInstance";
 import { clearCachedRequests, getCachedRequest } from "../utils/requestCache";
+import { buildSafePaginationParams, sanitizePositiveIntegerParam } from "../utils/safeQueryParams";
 
 const ROLE_CACHE_PREFIX = "role:";
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
+const CLIENT_TAGS_DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 100;
 
 const normalizeTextValue = (value) =>
   typeof value === "string" ? value.trim() : "";
@@ -44,15 +49,16 @@ const normalizeClientTagOption = (client = {}) => {
 };
 
 export const roleService = {
-  async getRoles(page = 1, { keyword = "" } = {}) {
+  async getRoles(page = DEFAULT_PAGE, { keyword = "" } = {}) {
     const normalizedKeyword = normalizeTextValue(keyword);
+    const normalizedPage = sanitizePositiveIntegerParam(page, DEFAULT_PAGE);
 
     return getCachedRequest(
-      `${ROLE_CACHE_PREFIX}list:${page}:${normalizedKeyword}`,
+      `${ROLE_CACHE_PREFIX}list:${normalizedPage}:${normalizedKeyword}`,
       async () => {
         const response = await axiosInstance.get("/admin/roles", {
           params: {
-            page,
+            page: normalizedPage,
             ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
           },
         });
@@ -62,15 +68,16 @@ export const roleService = {
     );
   },
 
-  async getAllRolesPage(page = 1, { keyword = "" } = {}) {
+  async getAllRolesPage(page = DEFAULT_PAGE, { keyword = "" } = {}) {
     const normalizedKeyword = normalizeTextValue(keyword);
+    const normalizedPage = sanitizePositiveIntegerParam(page, DEFAULT_PAGE);
 
     return getCachedRequest(
-      `${ROLE_CACHE_PREFIX}all:${page}:${normalizedKeyword}`,
+      `${ROLE_CACHE_PREFIX}all:${normalizedPage}:${normalizedKeyword}`,
       async () => {
         const response = await axiosInstance.get("/admin/roles/all", {
           params: {
-            page,
+            page: normalizedPage,
             ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
           },
         });
@@ -82,8 +89,12 @@ export const roleService = {
 
   async getAllRoles() {
     return getCachedRequest(`${ROLE_CACHE_PREFIX}summary`, async () => {
+      const paginationParams = buildSafePaginationParams(
+        { page: DEFAULT_PAGE, limit: DEFAULT_LIMIT },
+        { defaultPage: DEFAULT_PAGE, defaultLimit: DEFAULT_LIMIT, maxLimit: MAX_LIMIT },
+      );
       const response = await axiosInstance.get("/admin/roles", {
-        params: { page: 1, limit: 10 },
+        params: paginationParams,
       });
 
       return response.data.roles;
@@ -97,7 +108,13 @@ export const roleService = {
     });
   },
 
-  async getClientTags({ limit = 50, keyword = "" } = {}) {
+  async getClientTags({ limit = CLIENT_TAGS_DEFAULT_LIMIT, keyword = "" } = {}) {
+    const normalizedLimit = sanitizePositiveIntegerParam(
+      limit,
+      CLIENT_TAGS_DEFAULT_LIMIT,
+      1,
+      MAX_LIMIT,
+    );
     const uniqueTags = new Map();
     let currentPage = 1;
     let lastPage = 1;
@@ -105,7 +122,7 @@ export const roleService = {
     do {
       const response = await axiosInstance.get("/admin/clients/tags", {
         params: {
-          limit,
+          limit: normalizedLimit,
           page: currentPage,
           ...(typeof keyword === "string" && keyword.trim()
             ? { keyword: keyword.trim() }
