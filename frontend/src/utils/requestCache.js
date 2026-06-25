@@ -1,6 +1,22 @@
 const DEFAULT_CACHE_MS = 500;
 const cachedRequests = new Map();
 
+function isExpired(cachedRequest, now, cacheMs) {
+  return (
+    cachedRequest &&
+    !cachedRequest.promise &&
+    now - cachedRequest.timestamp >= cacheMs
+  );
+}
+
+function pruneExpiredRequests(now, cacheMs) {
+  cachedRequests.forEach((cachedRequest, key) => {
+    if (isExpired(cachedRequest, now, cacheMs)) {
+      cachedRequests.delete(key);
+    }
+  });
+}
+
 export function getCachedRequest(
   key,
   requestFactory,
@@ -8,6 +24,10 @@ export function getCachedRequest(
 ) {
   const cachedRequest = cachedRequests.get(key);
   const now = Date.now();
+
+  if (isExpired(cachedRequest, now, cacheMs)) {
+    cachedRequests.delete(key);
+  }
 
   if (cachedRequest?.promise) {
     return cachedRequest.promise;
@@ -28,6 +48,7 @@ export function getCachedRequest(
         data,
         timestamp: Date.now(),
       });
+      pruneExpiredRequests(Date.now(), cacheMs);
 
       return data;
     })
