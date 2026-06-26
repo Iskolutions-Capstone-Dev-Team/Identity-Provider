@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE } from "../../../utils/userPoolAccess";
+import { UserTypeRegularIcon, UserPlusIcon, SearchIcon, ChevronIcon } from "./userpoolIcons";
 
 const statusOptions = [
   { value: "", label: "All Status" },
@@ -31,18 +32,10 @@ function getStatusLabel(status) {
 
 function UserTypeIcon({ userType }) {
   if (userType === ADMIN_USER_TYPE) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
-        <path d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z" />
-      </svg>
-    );
+    return <UserPlusIcon className="size-6" />;
   }
 
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
-      <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clipRule="evenodd" />
-    </svg>
-  );
+  return <UserTypeRegularIcon className="size-6" />;
 }
 
 export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, showAdminUserType = true, colorMode = "light" }) {
@@ -185,12 +178,7 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
         />
         <label className={labelClassName}>Who are you looking for?</label>
         <label className={searchFieldClassName}>
-          <svg className={searchIconClassName} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-            <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2">
-              <circle cx="11" cy="11" r="7.5" />
-              <path d="m20 20-3.8-3.8" />
-            </g>
-          </svg>
+          <SearchIcon className={searchIconClassName} />
           <input type="search" value={search} placeholder="Search by email, or name..." className={searchInputClassName} onChange={handleSearchChange}/>
         </label>
       </div>
@@ -204,13 +192,11 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
             </span>
 
             <span className={statusChevronClassName}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+              <ChevronIcon
                 className={`h-5 w-5 transition duration-300 ${
                   isStatusOpen ? "rotate-180" : ""
                 }`}
-              >
-                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd"/>
-              </svg>
+              />
             </span>
           </button>
 

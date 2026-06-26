@@ -22,16 +22,9 @@ import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../../../
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS, USER_STATUS_EDIT_PERMISSIONS } from "../../../utils/permissionAccess";
 import { resolveReinviteAccountTypeId } from "../utils/reinviteAccountType";
 import { getUserLabel } from "../utils/userLabels";
+import { UserPoolIcon } from "../components/userpoolIcons";
 
 const ITEMS_PER_PAGE = 10;
-
-function UserPoolBreadcrumbIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-6">
-      <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd" />
-    </svg>
-  );
-}
 
 function getRequestErrorMessage(error, fallbackMessage) {
   return (
@@ -271,7 +264,7 @@ export default function UserPool() {
           items={[
             {
               label: "User Pool",
-              icon: <UserPoolBreadcrumbIcon />,
+              icon: <UserPoolIcon />,
             },
           ]}
         />
@@ -281,11 +274,7 @@ export default function UserPool() {
             <PageHeader
               title="Users"
               description="Manage user accounts"
-              icon={
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-14 w-14 sm:h-16 sm:w-16">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd"/>
-                </svg>
-              }
+              icon={<UserPoolIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
               colorMode={colorMode}
             />
           </div>

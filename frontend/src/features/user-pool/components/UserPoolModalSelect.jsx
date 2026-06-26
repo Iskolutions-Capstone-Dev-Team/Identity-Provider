@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   getModalTheme,
 } from "../../../components/modalTheme";
+import { ChevronIcon } from "./userpoolIcons";
 
 function getSelectedOption(options, value) {
   return options.find((option) => option.value === value) || options[0];
@@ -87,13 +88,11 @@ export default function UserPoolModalSelect({ value, onChange, options, selected
         </span>
 
         <span className={chevronClassName}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+          <ChevronIcon
             className={`h-5 w-5 transition duration-300 ${
               isOpen ? "rotate-180" : ""
             }`}
-          >
-            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd"/>
-          </svg>
+          />
         </span>
       </button>
 

@@ -15,6 +15,7 @@ import { getAccountTypeBackendId, getAccountTypeOption, isAdminAccountType } fro
 import { generateTemporaryPassword, getTemporaryPasswordValidationMessage } from "../../../utils/passwordRules";
 import { useRegistrationAccountTypes } from "../../registration/hooks/useRegistrationAccountTypes";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
+import { PasswordVisibilityIcon, StepOneIcon, StepTwoIcon } from "./userpoolIcons";
 
 const TEMP_PASSWORD_SETUP_VALUE = "temporary_password";
 const INVITATION_SETUP_VALUE = "invitation";
@@ -87,24 +88,6 @@ const extractErrorMessage = (error) =>
   error?.message ||
   "Unable to create user.";
 
-function PasswordVisibilityIcon({ showPassword }) {
-  if (showPassword) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0 1 12 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 0 1 2.293-3.607M6.72 6.72A9.956 9.956 0 0 1 12 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 0 1-4.563 5.956M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  );
-}
-
 function AddUserStepIndicator({ currentStep, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const firstStepIsActive = currentStep >= 1;
@@ -139,9 +122,7 @@ function AddUserStepIndicator({ currentStep, colorMode = "light" }) {
     <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(4.5rem,auto)_1fr_minmax(5.75rem,auto)] items-start gap-2 px-3 py-4 sm:gap-3 sm:px-4">
       <div className="flex min-w-0 flex-col items-center gap-2">
         <span className={getStepIconClassName(firstStepIsActive)}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-            <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
-          </svg>
+          <StepOneIcon />
         </span>
         <span className={getStepLabelClassName(firstStepIsActive)}>
           <span className="sm:hidden">Info</span>
@@ -153,9 +134,7 @@ function AddUserStepIndicator({ currentStep, colorMode = "light" }) {
 
       <div className="flex min-w-0 flex-col items-center gap-2">
         <span className={getStepIconClassName(secondStepIsActive)}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-            <path fillRule="evenodd" d="M10 1.25a3.75 3.75 0 0 0-3.75 3.75v1H5A2.75 2.75 0 0 0 2.25 8.75v6.5A2.75 2.75 0 0 0 5 18h10a2.75 2.75 0 0 0 2.75-2.75v-6.5A2.75 2.75 0 0 0 15 6h-1.25V5A3.75 3.75 0 0 0 10 1.25Zm2.25 4.75V5a2.25 2.25 0 1 0-4.5 0v1h4.5Z" clipRule="evenodd" />
-          </svg>
+          <StepTwoIcon />
         </span>
         <span className={getStepLabelClassName(secondStepIsActive)}>
           <span className="sm:hidden">Setup</span>
