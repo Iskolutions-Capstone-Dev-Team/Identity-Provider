@@ -1,6 +1,7 @@
 import { createPortal } from "react-dom";
 import { getModalTheme } from "../../../components/modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
+import { SyncConfirmIcon } from "./registrationIcons";
 
 export default function RegistrationSyncConfirmModal({ open, accountTypeLabel = "this", isSubmitting = false, onCancel, onConfirm, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
@@ -32,9 +33,7 @@ export default function RegistrationSyncConfirmModal({ open, accountTypeLabel = 
         <div className="px-6 py-8 sm:px-8">
           <div className="mb-6 flex justify-center">
             <div className={iconWrapClassName}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-10 w-10 text-white">
-                <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-12.15 12.15a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32L19.513 8.2Z" />
-              </svg>
+              <SyncConfirmIcon />
             </div>
           </div>
 

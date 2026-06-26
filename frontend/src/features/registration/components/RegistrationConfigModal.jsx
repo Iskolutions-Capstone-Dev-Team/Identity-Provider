@@ -5,6 +5,7 @@ import MultiSelect from "../../../components/MultiSelect";
 import { getModalTheme } from "../../../components/modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
 import { ACCOUNT_TYPE_OPTIONS, getAccountTypeOption } from "../../../utils/accountTypes";
+import { RegistrationIcon, CloseIcon } from "./registrationIcons";
 
 function getClientNames(clientIds = [], appClientOptions = []) {
   const clientLabelLookup = new Map(
@@ -17,15 +18,6 @@ function getClientNames(clientIds = [], appClientOptions = []) {
   return (Array.isArray(clientIds) ? clientIds : [])
     .map((clientId) => clientLabelLookup.get(clientId))
     .filter(Boolean);
-}
-
-function RegistrationIcon({ className }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path fillRule="evenodd" d="M9 1.5H5.625c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5Zm6.61 10.936a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 14.47a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
-      <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
-    </svg>
-  );
 }
 
 export default function RegistrationConfigModal({ open, mode = "view", config = null, appClientOptions = [], isLoadingAppClients = false, appClientsError = "", onClose, onSave, colorMode = "light" }) {
@@ -216,9 +208,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
             </div>
 
             <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
+              <CloseIcon />
             </button>
           </div>
         </div>
