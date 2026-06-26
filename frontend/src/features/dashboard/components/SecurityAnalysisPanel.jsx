@@ -1,5 +1,5 @@
 import DashboardPanel from "./DashboardPanel";
-import { CheckIcon, ClockIcon, FingerprintIcon, InfoIcon, QuestionIcon, ShieldIcon } from "./DashboardIcons";
+import { CheckIcon, ClockIcon, FingerprintIcon, InfoIcon, QuestionIcon, ShieldIcon } from "./dashboardIcons";
 
 function SkeletonBlock({ className = "", colorMode = "light" }) {
   const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";

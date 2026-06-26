@@ -3,7 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import PageHeader from "../../../components/PageHeader";
 import PageHeaderActionButton from "../../../components/PageHeaderActionButton";
-import { DashboardChartIcon, DownloadIcon } from "../components/DashboardIcons";
+import { DashboardChartIcon, DownloadIcon } from "../components/dashboardIcons";
 import MetricFilterCard from "../components/MetricFilterCard";
 import ReportConfirmModal from "../components/ReportConfirmModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";

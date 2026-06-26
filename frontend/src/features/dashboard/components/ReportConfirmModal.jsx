@@ -1,5 +1,5 @@
 import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
-import { ReportDownloadIcon } from "./DashboardIcons";
+import { ReportDownloadIcon } from "./dashboardIcons";
 
 export default function ReportConfirmModal({ open, colorMode = "light", isGenerating = false, onCancel, onConfirm }) {
   const { shouldRender, isClosing } = useModalTransition(open);
