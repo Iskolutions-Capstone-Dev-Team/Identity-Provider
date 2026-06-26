@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getModalTheme } from "../../../components/modalTheme";
+import { RemoveIcon, ChevronIcon } from "./roleIcons";
 
 function TagIcon({ tag, image, sizeClass = "h-5 w-5", colorMode = "light" }) {
   const [hasImageError, setHasImageError] = useState(false);
@@ -160,9 +161,7 @@ export default function TagMultiSelect({ options, selectedValues, onChange, plac
                 <span className="truncate">{item.tag}</span>
                 {!disabled && (
                   <button type="button" className={removeButtonClassName} onClick={(event) => removeTag(event, item.id)} aria-label={`Remove ${item.tag}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                      <path fillRule="evenodd" d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 0 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-                    </svg>
+                    <RemoveIcon className="h-4 w-4" />
                   </button>
                 )}
               </span>
@@ -189,16 +188,12 @@ export default function TagMultiSelect({ options, selectedValues, onChange, plac
           <div className={controlsWrapClassName}>
             {!disabled && selectedValues.length > 0 && (
               <button type="button" className={clearButtonClassName} onClick={clearAll} aria-label="Clear selected tags">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path fillRule="evenodd" d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 0 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-                </svg>
+                <RemoveIcon className="h-4 w-4" />
               </button>
             )}
 
             <span className={chevronWrapClassName}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`h-5 w-5 transition duration-300 ${isOpen ? "rotate-180" : ""}`}>
-                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd" />
-              </svg>
+              <ChevronIcon className={`h-5 w-5 transition duration-300 ${isOpen ? "rotate-180" : ""}`} />
             </span>
           </div>
         </div>

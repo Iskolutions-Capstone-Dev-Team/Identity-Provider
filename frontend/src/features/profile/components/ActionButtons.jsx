@@ -1,3 +1,5 @@
+import { EditIcon, LockIcon } from "./profileIcons";
+
 export default function ActionButtons({ openEdit, openPassword, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const wrapperClassName = `flex flex-col gap-3 border-t pt-6 sm:flex-row sm:justify-end ${
@@ -13,16 +15,12 @@ export default function ActionButtons({ openEdit, openPassword, colorMode = "lig
   return (
     <div className={wrapperClassName}>
       <button type="button" onClick={openEdit} className={secondaryButtonClassName}>
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 1 1 3.536 3.536L6.5 21.036H3v-3.572L16.732 3.732Z"/>
-        </svg>
+        <EditIcon />
         Edit Profile
       </button>
 
       <button type="button" onClick={openPassword} className={primaryButtonClassName}>
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2Zm10-10V7a4 4 0 0 0-8 0v4h8Z"/>
-        </svg>
+        <LockIcon />
         Change Password
       </button>
     </div>

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import AppClientIconBox from "./AppClientIconBox";
 import { getModalTheme } from "../../../components/modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
+import { CloseIcon, CopyIcon, CopySuccessIcon, EyeIcon, EyeSlashIcon, NoteInfoIcon } from "./appClientIcons";
 
 export default function ClientSecretModal({ open, clientName, clientId, secret, loading = false, hasError = false, onClose, colorMode = "light" }) {
   const { shouldRender, isClosing } = useModalTransition(open);
@@ -104,9 +105,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
               </div>
             </div>
 
-            <button
-              type="button"
-              className={`${modalCloseButtonClassName} shrink-0 disabled:cursor-not-allowed disabled:opacity-45`}
+            <button type="button" className={`${modalCloseButtonClassName} shrink-0 disabled:cursor-not-allowed disabled:opacity-45`}
               onClick={() => {
                 if (canClose) {
                   onClose?.();
@@ -116,9 +115,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
               title={lockedCloseTitle}
               aria-label="Close client secret modal"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
+              <CloseIcon />
             </button>
           </div>
         </div>
@@ -144,9 +141,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
               <>
                 <section className={noteClassName}>
                   <p className={noteTextClassName}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className={noteIconClassName} aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M12 8.25h.008v.008H12V8.25Zm9 3.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                    </svg>
+                    <NoteInfoIcon className={noteIconClassName} />
                     <span>
                       <span className={noteEmphasisClassName}>Note:</span>{" "}
                       This secret is shown{" "}
@@ -162,33 +157,22 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
                       <input type={showSecret ? "text" : "password"} readOnly value={secret || ""} className={`${modalReadOnlyInputClassName} w-full pr-12 font-mono`}/>
                       <button type="button" className={visibilityButtonClassName} onClick={() => setShowSecret((current) => !current)} disabled={!secret} aria-label={showSecret ? "Hide secret" : "Show secret"} title={showSecret ? "Hide secret" : "Show secret"}>
                         {showSecret ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M10.58 10.58a2 2 0 102.828 2.828M9.88 4.24A9.956 9.956 0 0112 4c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.132 5.411M6.228 6.228C4.024 7.515 2.458 9.56 1.5 12c1.274 4.057 5.064 7 9.542 7a9.96 9.96 0 005.227-1.472"/>
-                          </svg>
+                          <EyeSlashIcon />
                         ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                          </svg>
+                          <EyeIcon />
                         )}
                       </button>
                     </div>
                     <button type="button" className={copyButtonClassName} onClick={handleCopy} disabled={!secret}>
                       <span className="relative inline-flex h-6 w-6 items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"
-                          className={`absolute size-6 transition-all duration-300 ease-out ${
+                        <CopyIcon className={`absolute size-6 transition-all duration-300 ease-out ${
                             copied ? "opacity-0 scale-75 -rotate-12" : "opacity-100 scale-100 rotate-0"
                           }`}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
-                        </svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"
-                          className={`absolute size-6 transition-all duration-300 ease-out ${
+                        />
+                        <CopySuccessIcon className={`absolute size-6 transition-all duration-300 ease-out ${
                             copied ? "opacity-100 scale-100 rotate-0 text-emerald-600" : "opacity-0 scale-75 rotate-12"
                           }`}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                        </svg>
+                        />
                       </span>
                     </button>
                   </div>
@@ -200,9 +184,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
 
         <div className={modalFooterClassName}>
           <div className={modalFooterActionsClassName}>
-            <button
-              type="button"
-              className={closeButtonClassName}
+            <button type="button" className={closeButtonClassName}
               onClick={() => {
                 if (canClose) {
                   onClose?.();

@@ -8,6 +8,7 @@ import SuccessAlert from "../../../components/SuccessAlert";
 import { getModalTheme } from "../../../components/modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
 import { passwordResetService } from "../../../services/passwordResetService";
+import { PasswordLockIcon, CloseIcon } from "./profileIcons";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMPTY_OTP = ["", "", "", "", "", ""];
@@ -69,14 +70,6 @@ function getDisabledPrimaryButtonClassName(isDarkMode) {
   return isDarkMode
     ? "cursor-not-allowed border-white/10 bg-white/[0.08] text-white/45 hover:border-white/10 hover:bg-white/[0.08]"
     : "cursor-not-allowed border-[#7b0d15]/12 bg-[#cdb7bb] text-white/70 hover:border-[#7b0d15]/12 hover:bg-[#cdb7bb]";
-}
-
-function PasswordLockIcon({ className }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
-    </svg>
-  );
 }
 
 export default function ChangePasswordModal({ isOpen, onClose, showCurrentPassword = true, addAuditLog, setToastMessage, enableSuccessAlert = false, colorMode = "light", emailAddress = "" }) {
@@ -484,9 +477,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
 
                 {currentStepMeta.showCloseButton && (
                   <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                    <CloseIcon />
                   </button>
                 )}
               </div>

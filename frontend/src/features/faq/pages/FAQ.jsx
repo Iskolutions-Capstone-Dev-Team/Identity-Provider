@@ -3,7 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import PageHeader from "../../../components/PageHeader";
 import FAQAccordionItem from "../components/FAQAccordionItem";
-import FAQHeaderIcon from "../components/FAQHeaderIcon";
+import { FAQHeaderIcon } from "../components/faqIcons";
 import FAQPanel from "../components/FAQPanel";
 import FAQSkeleton from "../components/FAQSkeleton";
 import FAQTopicButton from "../components/FAQTopicButton";

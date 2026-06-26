@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { getModalTheme } from "../../../components/modalTheme";
+import { EnvelopeIcon } from "./profileIcons";
 
 function formatTimer(totalSeconds) {
   const minutes = Math.floor(totalSeconds / 60);
@@ -148,9 +149,7 @@ export default function OtpVerificationStep({ otp, setOtp, timer, canResend, onR
 
       <section className={`${modalSectionClassName} text-center`}>
         <div className={iconWrapClassName}>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/>
-          </svg>
+          <EnvelopeIcon />
         </div>
 
         <h4 className={headingClassName}>Check Your Email</h4>

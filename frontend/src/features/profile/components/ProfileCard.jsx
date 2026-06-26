@@ -5,6 +5,7 @@ import ProfileDetails from "./ProfileDetails";
 import ActionButtons from "./ActionButtons";
 import SuccessAlert from "../../../components/SuccessAlert";
 import { userService } from "../../../services/userService";
+import { EmailIcon } from "./profileIcons";
 
 function formatProfileName(profile = {}) {
   return [profile.firstName, profile.middleName, profile.lastName, profile.suffix]
@@ -135,9 +136,7 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
                     {profileName}
                   </h2>
                   <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-white/88 backdrop-blur-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor" className="h-4 w-4 shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
-                    </svg>
+                    <EmailIcon />
                     <span className="truncate">{currentProfile.email}</span>
                   </div>
                 </div>

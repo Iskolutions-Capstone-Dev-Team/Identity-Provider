@@ -1,3 +1,5 @@
+import { FacebookIcon, YouTubeIcon } from "./componentIcons";
+
 export default function Footer() {
   return (
     <footer className="bg-[#991b1b] text-white p-10 px-25  ">
@@ -33,14 +35,10 @@ export default function Footer() {
           <h6 className="footer-title text-lg mb-2 font-semibold">Stay Connected</h6>
           <div className="grid grid-flow-col gap-2 mb-2">
             <a href="https://www.facebook.com/PUPTaguig" target="_blank" rel="noopener noreferrer" className="group bg-white/10 hover:bg-white/20 rounded-lg p-2 text-center transition-all duration-300 hover:scale-105">
-              <svg class="w-6 h-6 mx-auto text-white group-hover:text-yellow-400 transition-colors" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
+              <FacebookIcon className="w-6 h-6 mx-auto text-white group-hover:text-yellow-400 transition-colors" />
             </a>
             <a href="https://www.youtube.com/@PUPTaguigOfficial" target="_blank" rel="noopener noreferrer" className="group bg-white/10 hover:bg-white/20 rounded-lg p-2 text-center transition-all duration-300 hover:scale-105">
-              <svg class="w-6 h-6 mx-auto text-white group-hover:text-yellow-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-              </svg>
+              <YouTubeIcon className="w-6 h-6 mx-auto text-white group-hover:text-yellow-300 transition-colors" />
             </a>
           </div>
           <p className="text-gray-300 text-sm mt-1">Follow us for updates</p>

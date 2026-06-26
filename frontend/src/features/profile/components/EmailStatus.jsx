@@ -1,3 +1,5 @@
+import { EnvelopeIcon, CheckmarkIcon } from "./profileIcons";
+
 export default function EmailStatus({ colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const cardClassName = isDarkMode
@@ -24,9 +26,7 @@ export default function EmailStatus({ colorMode = "light" }) {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-4">
           <div className={iconWrapClassName}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z"/>
-            </svg>
+            <EnvelopeIcon className="h-5 w-5" />
           </div>
 
           <div>
@@ -38,9 +38,7 @@ export default function EmailStatus({ colorMode = "light" }) {
         <div className={statusBadgeClassName}>
           <span className={statusDotClassName} />
           <span className="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round"  strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-            </svg>
+            <CheckmarkIcon />
             Email Active
           </span>
         </div>

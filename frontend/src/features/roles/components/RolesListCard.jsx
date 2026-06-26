@@ -3,6 +3,7 @@ import Pagination from "../../../components/Pagination";
 import RolesListTable from "./RolesListTable";
 import ResultsCount from "../../../components/ResultsCount";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
+import { SearchIcon } from "./roleIcons";
 
 export default function RolesListCard({ loading = false, roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
@@ -47,12 +48,7 @@ export default function RolesListCard({ loading = false, roles, totalResults, it
             What role are you looking for?
           </label>
           <label className={searchFieldClassName}>
-            <svg className={searchIconClassName} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-              <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.2" stroke="currentColor">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </g>
-            </svg>
+            <SearchIcon className={searchIconClassName} />
             <input
               type="search"
               value={search}
