@@ -52,7 +52,7 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
       key: "view",
       label: `View ${role.role_name}`,
       onClick: () => onView(role),
-        <ViewIcon />
+      icon: <ViewIcon />
     },
   ];
 
@@ -61,7 +61,7 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
       key: "edit",
       label: `Edit ${role.role_name}`,
       onClick: () => onEdit(role),
-        <EditIcon />
+      icon: <EditIcon />
     });
   }
 
@@ -70,7 +70,7 @@ function getRoleActions(role, { onView, onEdit, onDelete }) {
       key: "delete",
       label: `Delete ${role.role_name}`,
       onClick: () => onDelete(role.id),
-        <DeleteIcon />
+      icon: <DeleteIcon />
     });
   }
 
