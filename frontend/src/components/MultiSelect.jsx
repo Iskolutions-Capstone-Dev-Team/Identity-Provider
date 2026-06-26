@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDownIcon } from "./componentIcons";
 
 function getOptionLabel(option) {
   if (!option || typeof option !== "object") {
@@ -241,13 +242,7 @@ export default function MultiSelect({ options, selectedValues, onChange, placeho
             </button>
           )}
           <span className={chevronWrapClassName}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-              className={`size-4 transition-transform duration-200 ${
-                !disabled && isOpen ? "rotate-180" : ""
-              }`}
-            >
-              <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd"/>
-            </svg>
+            <ChevronDownIcon className={`size-4 transition-transform duration-200 ${!disabled && isOpen ? "rotate-180" : ""}`} />
           </span>
         </div>
       </div>
