@@ -1,4 +1,5 @@
 import { getModalTheme } from "../../../components/modalTheme";
+import { SuccessIcon } from "./profileIcons";
 
 export default function SuccessStep({ colorMode = "light", showCurrentPassword = true }) {
   const { modalSectionClassName } = getModalTheme(colorMode);
@@ -20,9 +21,7 @@ export default function SuccessStep({ colorMode = "light", showCurrentPassword =
     <div className="space-y-5">
       <section className={`${modalSectionClassName} text-center`}>
         <div className={successIconClassName}>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
-          </svg>
+          <SuccessIcon />
         </div>
 
         <h4 className={headingClassName}>Password Updated</h4>

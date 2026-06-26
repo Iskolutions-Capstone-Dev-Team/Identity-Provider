@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { getModalTheme } from "../../../components/modalTheme";
+import { PasswordVisibilityIcon } from "./profileIcons";
 
 const PASSWORD_REQUIREMENTS = [
   { key: "length", label: "At least 8 characters" },
@@ -8,24 +9,6 @@ const PASSWORD_REQUIREMENTS = [
   { key: "number", label: "One number" },
   { key: "special", label: "One special character" },
 ];
-
-function PasswordVisibilityIcon({ isVisible }) {
-  if (isVisible) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0 1 12 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 0 1 2.293-3.607M6.72 6.72A9.956 9.956 0 0 1 12 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 0 1-4.563 5.956M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18"/>
-      </svg>
-    );
-  }
-
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-    </svg>
-  );
-}
 
 function PasswordRuleList({ validation, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
