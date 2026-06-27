@@ -46,3 +46,10 @@ type FailedAuthAttempt struct {
 	FailCount   int       `db:"fail_count" json:"fail_count"`
 	LastAttempt time.Time `db:"last_attempt" json:"last_attempt"`
 }
+
+// MetricCard represents metric counts/info for an admin group.
+type MetricCard struct {
+	Title       string `json:"title"`
+	Value       string `json:"value"`
+	Description string `json:"description"`
+}
