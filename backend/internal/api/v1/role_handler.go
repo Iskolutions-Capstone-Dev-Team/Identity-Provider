@@ -97,7 +97,7 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to create role.",
+			"Failed to create role. A role with the same name may already exist.",
 			err,
 		)
 		return
