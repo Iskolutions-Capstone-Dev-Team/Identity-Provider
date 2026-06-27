@@ -13,6 +13,9 @@ import PageHeaderActionButton from "../../../components/PageHeaderActionButton";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import { RolesIcon } from "../components/roleIcons";
+import MetricsCard from "../../../components/MetricsCard";
+import { RoleIcon, PermissionIcon } from "../../../components/Icons";
+import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -21,6 +24,13 @@ export default function Roles() {
   const navigate = useNavigate();
   const { colorMode = "light" } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
+  const [roleMetrics, setRoleMetrics] = useState(null);
+  const [permissionMetrics, setPermissionMetrics] = useState(null);
+
+  useEffect(() => {
+    metricsService.getRoleMetrics().then(setRoleMetrics).catch(() => {});
+    metricsService.getPermissionMetrics().then(setPermissionMetrics).catch(() => {});
+  }, []);
   const {
     search,
     setSearch,
@@ -150,6 +160,22 @@ export default function Roles() {
             </div>
           )}
         </div>
+
+        <MetricsCard
+          colorMode={colorMode}
+          metrics={[
+            ...(Array.isArray(roleMetrics) ? roleMetrics : []).map((m) => ({
+              title: m.title,
+              value: m.value,
+              Icon: RoleIcon,
+            })),
+            ...(Array.isArray(permissionMetrics) ? permissionMetrics : []).map((m) => ({
+              title: m.title,
+              value: m.value,
+              Icon: PermissionIcon,
+            })),
+          ]}
+        />
 
         <div className="relative">
           <RolesListCard

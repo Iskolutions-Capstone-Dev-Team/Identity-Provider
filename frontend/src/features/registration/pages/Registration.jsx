@@ -18,6 +18,9 @@ import { registrationService } from "../../../services/registrationService";
 import { mergeAccountTypeOptions } from "../../../utils/accountTypes";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import { getAllAppClientSelectOptions } from "../../../utils/userPoolAccess";
+import MetricsCard from "../../../components/MetricsCard";
+import { RegistrationIcon as RegistrationMetricIcon } from "../../../components/Icons";
+import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -79,6 +82,11 @@ export default function Registration() {
   const canDeleteRegistration = hasPermission(
     PERMISSIONS.DELETE_REGISTRATION_CONFIG,
   );
+  const [registrationMetrics, setRegistrationMetrics] = useState(null);
+
+  useEffect(() => {
+    metricsService.getRegistrationMetrics().then(setRegistrationMetrics).catch(() => {});
+  }, []);
   const shouldLoadEditableAppClients =
     canCreateRegistration || canEditRegistration;
   const { appClients, appClientsError, isLoadingAppClients } = useAllAppClients({
@@ -455,6 +463,15 @@ export default function Registration() {
             </div>
           )}
         </div>
+
+        <MetricsCard
+          colorMode={colorMode}
+          metrics={(Array.isArray(registrationMetrics) ? registrationMetrics : []).map((m) => ({
+            title: m.title,
+            value: m.value,
+            Icon: RegistrationMetricIcon,
+          }))}
+        />
 
         <div className="relative">
           <RegistrationListCard

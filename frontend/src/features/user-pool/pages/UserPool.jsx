@@ -23,6 +23,9 @@ import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS, 
 import { resolveReinviteAccountTypeId } from "../utils/reinviteAccountType";
 import { getUserLabel } from "../utils/userLabels";
 import { UserPoolIcon } from "../components/userpoolIcons";
+import MetricsCard from "../../../components/MetricsCard";
+import { UserIcon } from "../../../components/Icons";
+import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -44,6 +47,11 @@ export default function UserPool() {
   const isLoadingCurrentUser = Boolean(outletContext.isLoadingCurrentUser);
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
   const isDarkMode = colorMode === "dark";
+  const [userMetrics, setUserMetrics] = useState(null);
+
+  useEffect(() => {
+    metricsService.getUserMetrics().then(setUserMetrics).catch(() => {});
+  }, []);
   const isCurrentUserSuperAdmin = hasSuperAdminRole(currentUser?.roles);
   const {
     appClients: appClientOptions,
@@ -294,6 +302,15 @@ export default function UserPool() {
             </div>
           )}
         </div>
+
+        <MetricsCard
+          colorMode={colorMode}
+          metrics={(Array.isArray(userMetrics) ? userMetrics : []).map((m) => ({
+            title: m.title,
+            value: m.value,
+            Icon: UserIcon,
+          }))}
+        />
 
         <div className="relative">
           <UserPoolCard colorMode={colorMode}>

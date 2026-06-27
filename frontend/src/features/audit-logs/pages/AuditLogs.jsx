@@ -10,6 +10,9 @@ import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import { AuditLogsIcon } from "../components/auditLogIcons";
+import MetricsCard from "../../../components/MetricsCard";
+import { LogIcon } from "../../../components/Icons";
+import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
 const TRANSACTION_LOG_TYPE = "transaction";
@@ -160,9 +163,14 @@ export default function AuditLogs() {
   const [isMetadataOpen, setIsMetadataOpen] = useState(false);
   const [isMetadataLoading, setIsMetadataLoading] = useState(false);
   const [metadataError, setMetadataError] = useState("");
+  const [logMetrics, setLogMetrics] = useState(null);
   const showLoading = useDelayedLoading(loading);
   const selectedLogTypeLabel = getLogTypeLabel(logType);
   const isSecurityLogType = logType === SECURITY_LOG_TYPE;
+
+  useEffect(() => {
+    metricsService.getLogMetrics().then(setLogMetrics).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (isSecurityLogType && !canViewSecurityLogs) {
@@ -324,6 +332,15 @@ export default function AuditLogs() {
           description="Track transaction and security activity"
           icon={<AuditLogsIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
           colorMode={colorMode}
+        />
+
+        <MetricsCard
+          colorMode={colorMode}
+          metrics={(Array.isArray(logMetrics) ? logMetrics : []).map((m) => ({
+            title: m.title,
+            value: m.value,
+            Icon: LogIcon,
+          }))}
         />
 
         <div className="relative">
