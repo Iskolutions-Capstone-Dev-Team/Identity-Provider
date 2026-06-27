@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
@@ -40,16 +41,25 @@ type RoleHandler struct {
 // @Router /admin/roles [post]
 func (h *RoleHandler) PostRole(c *gin.Context) {
 	if !middleware.HasPermission(c, "Add Roles") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	var req dto.RoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostRole] Bind JSON: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid request payload"},
+			errors.CodeInvalidInput,
+			"Invalid request payload.",
+			err,
 		)
 		return
 	}
@@ -83,9 +93,12 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Role creation failed"},
+			errors.CodeInternalError,
+			"Role creation failed.",
+			err,
 		)
 		return
 	}
@@ -116,9 +129,12 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 // @Router /admin/roles [get]
 func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View roles") {
-		c.JSON(
+		errors.SendString(
+			c,
 			http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "Unauthorized"},
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
 		)
 		return
 	}
@@ -135,9 +151,13 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
 		log.Printf("[GetRoleList] UUID Parse: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "identity parse error",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Identity parse error.",
+			err,
+		)
 		return
 	}
 
@@ -154,9 +174,13 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetRoleList] %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to retrieve roles",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to retrieve roles.",
+			err,
+		)
 		return
 	}
 
@@ -188,9 +212,12 @@ func (h *RoleHandler) GetAllRoles(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetRoleList] %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to fetch roles"},
+			errors.CodeInternalError,
+			"Failed to fetch roles.",
+			err,
 		)
 		return
 	}
@@ -212,9 +239,12 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Printf("[GetRole] Parse ID: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID format"},
+			errors.CodeInvalidInput,
+			"Invalid ID format.",
+			err,
 		)
 		return
 	}
@@ -248,9 +278,12 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusNotFound,
-			dto.ErrorResponse{Error: "Role not found"},
+			errors.CodeNotFound,
+			"Role not found.",
+			err,
 		)
 		return
 	}
@@ -279,16 +312,25 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 // @Router /admin/roles/{id} [put]
 func (h *RoleHandler) PutRole(c *gin.Context) {
 	if !middleware.HasPermission(c, "Edit Roles") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Printf("[PutRole] Parse ID: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID format"},
+			errors.CodeInvalidInput,
+			"Invalid ID format.",
+			err,
 		)
 		return
 	}
@@ -296,7 +338,13 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 	var req dto.RoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PutRole] Bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			err.Error(),
+			err,
+		)
 		return
 	}
 
@@ -331,9 +379,12 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Update failed"},
+			errors.CodeInternalError,
+			"Update failed.",
+			err,
 		)
 		return
 	}
@@ -359,16 +410,25 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 // @Router /admin/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	if !middleware.HasPermission(c, "Delete Roles") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Printf("[DeleteRole] Parse ID: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID format"},
+			errors.CodeInvalidInput,
+			"Invalid ID format.",
+			err,
 		)
 		return
 	}
@@ -402,9 +462,12 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Deletion failed"},
+			errors.CodeInternalError,
+			"Deletion failed.",
+			err,
 		)
 		return
 	}
