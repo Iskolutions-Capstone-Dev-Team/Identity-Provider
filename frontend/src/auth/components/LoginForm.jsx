@@ -5,6 +5,7 @@ import ErrorAlert from "../../components/ErrorAlert";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 import { buildAccessDeniedPath } from "../utils/loginRoute";
 import { beginPendingMfaSession } from "../utils/authCookies";
+import { EmailIcon, PasswordIcon, EyeIcon, EyeSlashIcon } from "./authIcons";
 
 export default function LoginForm({ clientId, redirectUri = "", initialError = "", onLoginSuccess }) {
   const navigate = useNavigate();
@@ -205,10 +206,7 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                   </label>
                   <div className="relative">
                     <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
-                        <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
-                        <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
-                      </svg>
+                      <EmailIcon />
                     </span>
                     <input type="email" value={email} onChange={handleEmailChange} onBlur={handleEmailBlur} required placeholder="Enter your email"
                       className={`h-12 w-full rounded-xl border bg-white/95 pl-16 pr-4 text-base text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
@@ -242,9 +240,7 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
 
                   <div className="relative w-full">
                     <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
-                        <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
-                      </svg>
+                      <PasswordIcon />
                     </span>
                     <input type={showPassword ? "text" : "password"} value={password} onChange={handlePasswordChange} onBlur={handlePasswordBlur} required placeholder="Enter your password"
                       className={`h-12 w-full rounded-xl border bg-white/95 pl-16 pr-14 text-base text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
@@ -255,15 +251,9 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                     />
                     <button type="button" onClick={toggleShowPassword} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]" aria-label={showPassword ? "Hide password" : "Show password"}>
                       {showPassword ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 012.293-3.607M6.72 6.72A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 01-4.563 5.956M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18" />
-                        </svg>
+                        <EyeSlashIcon />
                       ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
+                        <EyeIcon />
                       )}
                     </button>
                   </div>

@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
@@ -88,9 +89,12 @@ type ClientHandler struct {
 // @Router /admin/clients [post]
 func (h *ClientHandler) PostClient(c *gin.Context) {
 	if !middleware.HasPermission(c, "Add appclient") {
-		c.JSON(
+		errors.SendString(
+			c,
 			http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "Unauthorized"},
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
 		)
 		return
 	}
@@ -98,7 +102,13 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	file, header, err := c.Request.FormFile("image")
 	if err != nil {
 		log.Print("[PostClient] FormFile Extraction: no image")
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "no image"})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"No image.",
+			err,
+		)
 		return
 	}
 	defer file.Close()
@@ -107,9 +117,13 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	refStr := c.PostForm("refresh_token_ttl")
 	accTTL, refTTL, valErr := validateTokenTTL(accStr, refStr)
 	if valErr != "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: valErr,
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			valErr,
+			valErr,
+		)
 		return
 	}
 
@@ -129,8 +143,14 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 	userUUID, err := uuid.Parse(userID)
 	if err != nil {
 		log.Printf("[PostClient] UUID Parse: %v", err)
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "creation failed"})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to create client. "+
+				"A client with the same name may already exist.",
+			err,
+		)
 		return
 	}
 
@@ -167,8 +187,14 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 					"error":       err.Error(),
 				}),
 			})
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "creation failed"})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to create client. "+
+				"A client with the same name may already exist.",
+			err,
+		)
 		return
 	}
 
@@ -194,9 +220,12 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 func (h *ClientHandler) GetClientList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View all appclients") &&
 		!middleware.HasPermission(c, "View connected appclients") {
-		c.JSON(
+		errors.SendString(
+			c,
 			http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "Unauthorized"},
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
 		)
 		return
 	}
@@ -212,9 +241,13 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
 		log.Printf("[GetClientList] UUID Parse: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "identity parse error",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Identity parse error.",
+			err,
+		)
 		return
 	}
 
@@ -230,16 +263,24 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetClientList] %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to retrieve clients",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to retrieve clients.",
+			err,
+		)
 		return
 	}
 	if resp == nil {
 		log.Printf("[GetClientList] %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "null clients",
-		})
+		errors.SendString(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Null clients.",
+			"null clients",
+		)
 		return
 	}
 
@@ -261,9 +302,12 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 	clientUUID, err := uuid.Parse(idParam)
 	if err != nil {
 		log.Printf("[GetClient] UUID Parse: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid uuid format"},
+			errors.CodeInvalidInput,
+			"Invalid UUID format.",
+			err,
 		)
 		return
 	}
@@ -307,9 +351,12 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 					"error":       err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusNotFound,
-			dto.ErrorResponse{Error: "client not found"},
+			errors.CodeNotFound,
+			"Client not found.",
+			err,
 		)
 		return
 	}
@@ -338,9 +385,12 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 // @Router /admin/clients/{id} [put]
 func (h *ClientHandler) PutClient(c *gin.Context) {
 	if !middleware.HasPermission(c, "Edit appclient") {
-		c.JSON(
+		errors.SendString(
+			c,
 			http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "Unauthorized"},
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
 		)
 		return
 	}
@@ -348,7 +398,13 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 	idParam := c.Param("id")
 	clientUUID, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid id"})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid ID.",
+			err,
+		)
 		return
 	}
 
@@ -376,9 +432,13 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 	refStr := c.PostForm("refresh_token_ttl")
 	accTTL, refTTL, valErr := validateTokenTTL(accStr, refStr)
 	if valErr != "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: valErr,
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			valErr,
+			valErr,
+		)
 		return
 	}
 
@@ -425,8 +485,13 @@ func (h *ClientHandler) PutClient(c *gin.Context) {
 					"error":       err.Error(),
 				}),
 			})
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "update failed"})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Update failed.",
+			err,
+		)
 		return
 	}
 
@@ -456,9 +521,12 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 	clientID, err := uuid.Parse(clientIDString)
 	if err != nil {
 		log.Printf("[PatchClientSecret] UUID Parse: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid client id format"},
+			errors.CodeInvalidInput,
+			"Invalid client ID format.",
+			err,
 		)
 		return
 	}
@@ -503,9 +571,12 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 		}
 		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
 		_ = h.LogService.PostSecurityLog(ctx, userID[:], logReq)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to rotate secret"},
+			errors.CodeInternalError,
+			"Failed to rotate secret.",
+			err,
 		)
 		return
 	}
@@ -533,9 +604,12 @@ func (h *ClientHandler) PatchClientSecret(c *gin.Context) {
 // @Router /admin/clients/{id} [delete]
 func (h *ClientHandler) DeleteClient(c *gin.Context) {
 	if !middleware.HasPermission(c, "Delete appclient") {
-		c.JSON(
+		errors.SendString(
+			c,
 			http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "Unauthorized"},
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
 		)
 		return
 	}
@@ -544,9 +618,12 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 	clientUUID, err := uuid.Parse(idParam)
 	if err != nil {
 		log.Printf("[DeleteClient] UUID Parse: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid uuid"},
+			errors.CodeInvalidInput,
+			"Invalid UUID.",
+			err,
 		)
 		return
 	}
@@ -585,9 +662,12 @@ func (h *ClientHandler) DeleteClient(c *gin.Context) {
 					"error":       err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to deactivate client"},
+			errors.CodeInternalError,
+			"Failed to deactivate client.",
+			err,
 		)
 		return
 	}

@@ -1,8 +1,10 @@
 import axiosInstance from "./axiosInstance";
 import { clearCachedRequests, getCachedRequest } from "../utils/requestCache";
+import { buildSafePaginationParams } from "../utils/safeQueryParams";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 100;
+const MAX_LIMIT = 100;
 const USER_CACHE_PREFIX = "user:";
 const CURRENT_USER_CACHE_KEY = `${USER_CACHE_PREFIX}me`;
 const UUID_PATTERN =
@@ -65,11 +67,20 @@ export const userService = {
   },
 
   async getUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = {}) {
+    const paginationParams = buildSafePaginationParams(
+      { page, limit },
+      {
+        defaultPage: DEFAULT_PAGE,
+        defaultLimit: DEFAULT_LIMIT,
+        maxLimit: MAX_LIMIT,
+      },
+    );
+
     return getCachedRequest(
-      `${USER_CACHE_PREFIX}list:${page}:${limit}`,
+      `${USER_CACHE_PREFIX}list:${paginationParams.page}:${paginationParams.limit}`,
       async () => {
         const res = await axiosInstance.get("/admin/users", {
-          params: { page, limit },
+          params: paginationParams,
         });
         return res.data;
       },
@@ -77,11 +88,20 @@ export const userService = {
   },
 
   async getAdminUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = {}) {
+    const paginationParams = buildSafePaginationParams(
+      { page, limit },
+      {
+        defaultPage: DEFAULT_PAGE,
+        defaultLimit: DEFAULT_LIMIT,
+        maxLimit: MAX_LIMIT,
+      },
+    );
+
     return getCachedRequest(
-      `${USER_CACHE_PREFIX}admins:${page}:${limit}`,
+      `${USER_CACHE_PREFIX}admins:${paginationParams.page}:${paginationParams.limit}`,
       async () => {
         const res = await axiosInstance.get("/admin/users/admins", {
-          params: { page, limit },
+          params: paginationParams,
         });
         return res.data;
       },

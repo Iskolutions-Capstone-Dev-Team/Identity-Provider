@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MicrophoneIcon, StopIcon } from "./componentIcons";
 
 const defaultSpeechToolbarState = {
   activeFieldLabel: "",
@@ -280,22 +281,5 @@ export function FloatingSpeechInputAction({ className = "", colorMode = "light" 
       onTranscript={speechToolbarState.onTranscript}
       variant="floating"
     />
-  );
-}
-
-function MicrophoneIcon({ className = "h-4 w-4" }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M12 1.5a3.75 3.75 0 0 0-3.75 3.75v6a3.75 3.75 0 1 0 7.5 0v-6A3.75 3.75 0 0 0 12 1.5Z" />
-      <path d="M6 10.5a.75.75 0 0 1 .75.75 5.25 5.25 0 1 0 10.5 0 .75.75 0 0 1 1.5 0 6.75 6.75 0 0 1-6 6.705V20.25h2.25a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1 0-1.5h2.25v-2.295a6.75 6.75 0 0 1-6-6.705A.75.75 0 0 1 6 10.5Z" />
-    </svg>
-  );
-}
-
-function StopIcon({ className = "h-4 w-4" }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path fillRule="evenodd" d="M6.75 5.25A1.5 1.5 0 0 0 5.25 6.75v10.5a1.5 1.5 0 0 0 1.5 1.5h10.5a1.5 1.5 0 0 0 1.5-1.5V6.75a1.5 1.5 0 0 0-1.5-1.5H6.75Z" clipRule="evenodd"/>
-    </svg>
   );
 }

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
 import { isInvitationForbiddenError, registrationActivationService } from "../services/registrationActivationService";
 import { buildLoginPath } from "../utils/loginRoute";
+import { EmailIcon, PasswordIcon, EyeIcon, EyeSlashIcon } from "./authIcons";
 
 const initialPasswordValues = {
   password: "",
@@ -17,13 +18,11 @@ const initialPasswordErrors = {
 const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
 function getInputClassName(hasError, hasActionButton = false) {
-  return `h-12 w-full rounded-2xl border bg-white/95 pl-12 ${
-    hasActionButton ? "pr-12" : "pr-4"
-  } text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
-    hasError
+  return `h-12 w-full rounded-2xl border bg-white/95 pl-12 ${hasActionButton ? "pr-12" : "pr-4"
+    } text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${hasError
       ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
       : "border-white/20 focus:border-[#ffd700] focus:ring-[#ffd700]/20"
-  }`;
+    }`;
 }
 
 function getFirstErrorMessage(errors) {
@@ -60,7 +59,7 @@ function getConfirmPasswordError(password, confirmPassword) {
   return "";
 }
 
-function getApiErrorMessage( error, fallbackMessage = "Unable to save your password right now." ) {
+function getApiErrorMessage(error, fallbackMessage = "Unable to save your password right now.") {
   return (
     error?.response?.data?.error ||
     error?.message ||
@@ -139,9 +138,9 @@ export default function RegisterPasswordSetupForm({ clientId, email = "", invita
         field === "password"
           ? getPasswordError(passwordValues.password)
           : getConfirmPasswordError(
-              passwordValues.password,
-              passwordValues.confirmPassword,
-            ),
+            passwordValues.password,
+            passwordValues.confirmPassword,
+          ),
     };
 
     if (field === "password" && passwordValues.confirmPassword) {
@@ -349,40 +348,5 @@ function PasswordSavedState({ loginPath }) {
         Go to Login
       </Link>
     </div>
-  );
-}
-
-function PasswordIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
-      <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function EmailIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5">
-      <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
-      <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
-    </svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-    </svg>
-  );
-}
-
-function EyeSlashIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0 1 12 19c-4.478 0-8.268-2.943-9.542-7a10.056 10.056 0 0 1 2.293-3.607M6.72 6.72A9.956 9.956 0 0 1 12 5c4.478 0 8.268 2.943 9.542 7a9.978 9.978 0 0 1-4.563 5.956M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18"/>
-    </svg>
   );
 }

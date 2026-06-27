@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
@@ -40,9 +41,13 @@ type RegistrationHandler struct {
 // @Router /admin/registration/config [get]
 func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 	if !middleware.HasPermission(c, "View Registration Config") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
@@ -69,9 +74,13 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetRegistrationConfig] %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to fetch registration config",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to fetch registration config.",
+			err,
+		)
 		return
 	}
 	c.JSON(http.StatusOK, config)
@@ -89,27 +98,39 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 // @Router /admin/registration/config/{id} [get]
 func (h *RegistrationHandler) GetClientsByAccountTypeID(c *gin.Context) {
 	if !middleware.HasPermission(c, "View Registration Config") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	idStr := c.Param("id")
 	var id int
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid account type id",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid account type ID.",
+			err,
+		)
 		return
 	}
 
 	config, err := h.Service.GetClientsByAccountTypeID(c.Request.Context(), id)
 	if err != nil {
 		log.Printf("[GetClientsByAccountTypeID] %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to fetch clients for account type",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to fetch clients for account type.",
+			err,
+		)
 		return
 	}
 	c.JSON(http.StatusOK, config)
@@ -128,17 +149,25 @@ func (h *RegistrationHandler) GetClientsByAccountTypeID(c *gin.Context) {
 // @Router /admin/registration/config [post]
 func (h *RegistrationHandler) PostAccountType(c *gin.Context) {
 	if !middleware.HasPermission(c, "Create Registration Config") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	var req dto.UpsertAccountTypeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid request format",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request format.",
+			err,
+		)
 		return
 	}
 
@@ -173,9 +202,13 @@ func (h *RegistrationHandler) PostAccountType(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
 		_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
 
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to create account type",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to create account type.",
+			err,
+		)
 		return
 	}
 
@@ -198,17 +231,25 @@ func (h *RegistrationHandler) PostAccountType(c *gin.Context) {
 // @Router /admin/registration/config [put]
 func (h *RegistrationHandler) PutAccountType(c *gin.Context) {
 	if !middleware.HasPermission(c, "Edit Registration Config") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	var req dto.UpsertAccountTypeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid request format",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request format.",
+			err,
+		)
 		return
 	}
 
@@ -243,9 +284,13 @@ func (h *RegistrationHandler) PutAccountType(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
 		_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
 
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to update account type",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to update account type.",
+			err,
+		)
 		return
 	}
 
@@ -267,18 +312,26 @@ func (h *RegistrationHandler) PutAccountType(c *gin.Context) {
 // @Router /admin/registration/config/{id} [delete]
 func (h *RegistrationHandler) DeleteAccountType(c *gin.Context) {
 	if !middleware.HasPermission(c, "Delete Registration Config") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	idStr := c.Param("id")
 	var id int
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid account type id",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid account type ID.",
+			err,
+		)
 		return
 	}
 
@@ -313,9 +366,13 @@ func (h *RegistrationHandler) DeleteAccountType(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
 		_ = h.LogService.PostSecurityLog(reqCtx, userID[:], logReq)
 
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to delete account type",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to delete account type.",
+			err,
+		)
 		return
 	}
 
@@ -337,18 +394,26 @@ func (h *RegistrationHandler) DeleteAccountType(c *gin.Context) {
 // @Router /admin/registration/sync/{id} [post]
 func (h *RegistrationHandler) SyncAccountTypeUsers(c *gin.Context) {
 	if !middleware.HasPermission(c, "Edit Registration Config") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	idStr := c.Param("id")
 	var id int
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid account type id",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid account type ID.",
+			err,
+		)
 		return
 	}
 
@@ -382,9 +447,13 @@ func (h *RegistrationHandler) SyncAccountTypeUsers(c *gin.Context) {
 func (h *RegistrationHandler) ActivateAccount(c *gin.Context) {
 	var req dto.ActivateAccountRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid request format",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request format.",
+			err,
+		)
 		return
 	}
 
@@ -414,9 +483,13 @@ func (h *RegistrationHandler) ActivateAccount(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, actor, logReq)
 		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, actor, logReq)
 
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to activate account",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to activate account.",
+			err,
+		)
 		return
 	}
 
@@ -441,9 +514,13 @@ func (h *RegistrationHandler) ActivateAccount(c *gin.Context) {
 func (h *RegistrationHandler) CheckInvitation(c *gin.Context) {
 	code := c.Param("code")
 	if code == "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invitation code is required",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invitation code is required.",
+			"invitation code is required",
+		)
 		return
 	}
 
@@ -471,9 +548,13 @@ func (h *RegistrationHandler) CheckInvitation(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, code, logReq)
 		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, code, logReq)
 
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to validate invitation code",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to validate invitation code.",
+			err,
+		)
 		return
 	}
 
@@ -487,9 +568,13 @@ func (h *RegistrationHandler) CheckInvitation(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, code, logReq)
 		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, code, logReq)
 
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "invitation code is invalid or expired",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Invitation code is invalid or expired.",
+			"invitation code is invalid or expired",
+		)
 		return
 	}
 

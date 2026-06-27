@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
@@ -42,7 +43,13 @@ type LogHandler struct {
 // @Router /logs [get]
 func (h *LogHandler) GetLogList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View audit logs") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
@@ -77,9 +84,13 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 		ctx, filters, limit, page)
 	if err != nil {
 		log.Printf("[GetLogList] Service Execution: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "Failed to retrieve logs",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to retrieve logs.",
+			err,
+		)
 		return
 	}
 
@@ -105,7 +116,13 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 // @Router /logs/{id} [get]
 func (h *LogHandler) GetLog(c *gin.Context) {
 	if !middleware.HasPermission(c, "View audit logs") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
@@ -113,9 +130,13 @@ func (h *LogHandler) GetLog(c *gin.Context) {
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
 		log.Printf("[GetLog] Parse ID: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Invalid log ID",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid log ID.",
+			err,
+		)
 		return
 	}
 
@@ -148,9 +169,13 @@ func (h *LogHandler) GetLog(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "Log not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"Log not found.",
+			err,
+		)
 		return
 	}
 
@@ -184,7 +209,13 @@ func (h *LogHandler) GetLog(c *gin.Context) {
 // @Router /logs/security [get]
 func (h *LogHandler) GetSecurityLogList(c *gin.Context) {
 	if !middleware.HasPermission(c, "View security logs") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
@@ -219,9 +250,13 @@ func (h *LogHandler) GetSecurityLogList(c *gin.Context) {
 		ctx, filters, limit, page)
 	if err != nil {
 		log.Printf("[GetSecurityLogList] Service Execution: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "Failed to retrieve logs",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to retrieve logs.",
+			err,
+		)
 		return
 	}
 
@@ -247,7 +282,13 @@ func (h *LogHandler) GetSecurityLogList(c *gin.Context) {
 // @Router /logs/security/{id} [get]
 func (h *LogHandler) GetSecurityLog(c *gin.Context) {
 	if !middleware.HasPermission(c, "View security logs") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
@@ -255,9 +296,13 @@ func (h *LogHandler) GetSecurityLog(c *gin.Context) {
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
 		log.Printf("[GetSecurityLog] Parse ID: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Invalid log ID",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid log ID.",
+			err,
+		)
 		return
 	}
 
@@ -290,9 +335,13 @@ func (h *LogHandler) GetSecurityLog(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "Log not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"Log not found.",
+			err,
+		)
 		return
 	}
 

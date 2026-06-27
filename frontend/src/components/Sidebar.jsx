@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
-import { usePermissionAccess } from "../context/PermissionContext";
+import { usePermissionAccess } from "../providers/PermissionProvider";
 import { buildLogoutPath } from "../auth/utils/logoutRoute";
-import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "../utils/permissionAccess";
-import { AppClientOutlineIcon } from "./app-client/AppClientIconBox";
+import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "../routes/routePermissions";
+import { AppClientOutlineIcon } from "../features/app-clients/components/AppClientIconBox";
 
 const menuSections = [
   {
