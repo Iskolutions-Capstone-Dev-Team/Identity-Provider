@@ -172,7 +172,7 @@ func (h *UserHandler) PostAdminUser(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to create user.",
+			"Failed to create user. User may already exist.",
 			err,
 		)
 		return
@@ -579,7 +579,7 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to update user password.",
+			"Failed to update user password. Check if the user exists.",
 			err,
 		)
 		return
@@ -900,7 +900,7 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to update user status.",
+			"Failed to update user status. Check if the user exists.",
 			err,
 		)
 		return
@@ -1025,7 +1025,7 @@ func (h *UserHandler) PatchUserRole(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to update user roles.",
+			"Failed to update user roles. Check if the user exists.",
 			err,
 		)
 		return
@@ -1116,7 +1116,7 @@ func (h *UserHandler) PatchUserName(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to update user name.",
+			"Failed to update user name. Check if the user exists.",
 			err,
 		)
 		return
