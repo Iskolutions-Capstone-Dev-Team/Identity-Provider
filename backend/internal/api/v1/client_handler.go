@@ -147,7 +147,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to create client.",
+			"Failed to create client. A client with the same name may already exist.",
 			err,
 		)
 		return
@@ -190,7 +190,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to create client.",
+			"Failed to create client. A client with the same name may already exist.",
 			err,
 		)
 		return
