@@ -97,7 +97,7 @@ func (h *RoleHandler) PostRole(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Role creation failed.",
+			"Failed to create role.",
 			err,
 		)
 		return
@@ -383,7 +383,7 @@ func (h *RoleHandler) PutRole(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Update failed.",
+			"Failed to update role. Check if the role exists.",
 			err,
 		)
 		return
@@ -466,7 +466,7 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Deletion failed.",
+			"Failed to delete role. Check if the role exists.",
 			err,
 		)
 		return
