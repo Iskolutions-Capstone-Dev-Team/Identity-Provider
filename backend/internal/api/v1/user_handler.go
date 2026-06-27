@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
@@ -52,9 +53,12 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 	var req dto.UserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostUser] Bind JSON: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid request payload"},
+			errors.CodeInvalidInput,
+			"Invalid request payload.",
+			err,
 		)
 		return
 	}
@@ -88,9 +92,12 @@ func (h *UserHandler) PostUser(c *gin.Context) {
 					"error":        err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to create user"},
+			errors.CodeInternalError,
+			"Failed to create user. User may already exist.",
+			err,
 		)
 		return
 	}
@@ -122,9 +129,12 @@ func (h *UserHandler) PostAdminUser(c *gin.Context) {
 	var req dto.PostAdminUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostAdminUser] Bind JSON: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid request payload"},
+			errors.CodeInvalidInput,
+			"Invalid request payload.",
+			err,
 		)
 		return
 	}
@@ -158,9 +168,12 @@ func (h *UserHandler) PostAdminUser(c *gin.Context) {
 					"error":        err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to create user"},
+			errors.CodeInternalError,
+			"Failed to create user.",
+			err,
 		)
 		return
 	}
@@ -193,8 +206,13 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	// RBAC Check
 	if !middleware.HasPermission(c, "View all users") &&
 		!middleware.HasPermission(c, "View users based on appclient") {
-		c.JSON(http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
@@ -209,9 +227,12 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
 		log.Printf("[GetUserList] UUID Parsing: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Identity parse error"},
+			errors.CodeInternalError,
+			"Identity parse error.",
+			err,
 		)
 		return
 	}
@@ -227,9 +248,12 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetUserList] Service Execution: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to retrieve user list"},
+			errors.CodeInternalError,
+			"Failed to retrieve user list.",
+			err,
 		)
 		return
 	}
@@ -252,8 +276,13 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 
 	// RBAC Check
 	if !middleware.HasPermission(c, "View all users") {
-		c.JSON(http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
@@ -273,8 +302,13 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetAdminUserList] Service Execution: %v", err)
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to retrieve admin list"})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to retrieve admin list.",
+			err,
+		)
 		return
 	}
 
@@ -296,9 +330,12 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		log.Printf("[GetUser] UUID Parse: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID Format"},
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
 		)
 		return
 	}
@@ -335,9 +372,12 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusNotFound,
-			dto.ErrorResponse{Error: "User not found"},
+			errors.CodeNotFound,
+			"User not found.",
+			err,
 		)
 		return
 	}
@@ -377,9 +417,13 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 
 	if !uExists || !cExists {
 		log.Print("[GetMe] Context Extraction: missing identifiers")
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "missing session context",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Missing session context.",
+			"missing session context",
+		)
 		return
 	}
 
@@ -388,9 +432,13 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 
 	if uErr != nil || cErr != nil {
 		log.Printf("[GetMe] Token Generation: invalid uuid format")
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid identification format",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid identification format.",
+			"invalid identification format",
+		)
 		return
 	}
 
@@ -421,9 +469,13 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "user information not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User information not found.",
+			err,
+		)
 		return
 	}
 
@@ -455,24 +507,36 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		log.Printf("[PatchUserPassword] UUID Parse: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID Format"},
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
 		)
 		return
 	}
 
 	if !middleware.HasPermission(c, "Edit user") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	var req dto.UpdatePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchUserPassword] Bind JSON: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid request body"},
+			errors.CodeInvalidInput,
+			"Invalid request body.",
+			err,
 		)
 		return
 	}
@@ -511,9 +575,12 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 		}
 		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
 		_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Update failed"},
+			errors.CodeInternalError,
+			"Update failed.",
+			err,
 		)
 		return
 	}
@@ -549,27 +616,39 @@ func (h *UserHandler) PatchChangePassword(c *gin.Context) {
 	uVal, uExists := c.Get("user_id")
 	if !uExists {
 		log.Print("[PatchChangePassword] Context Extraction: missing user_id")
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "unauthorized access",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"unauthorized access",
+		)
 		return
 	}
 
 	userID, err := uuid.Parse(uVal.(string))
 	if err != nil {
 		log.Printf("[PatchChangePassword] UUID Parse: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid user identification",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid user identification.",
+			err,
+		)
 		return
 	}
 
 	var req dto.ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchChangePassword] Bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid request payload",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request payload.",
+			err,
+		)
 		return
 	}
 
@@ -583,8 +662,10 @@ func (h *UserHandler) PatchChangePassword(c *gin.Context) {
 	if err != nil {
 		log.Printf("[PatchChangePassword] %v", err)
 		status := http.StatusInternalServerError
+		code := errors.CodeInternalError
 		if strings.Contains(err.Error(), "verification") {
 			status = http.StatusUnauthorized
+			code = errors.CodeUnauthorized
 		}
 
 		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
@@ -598,7 +679,13 @@ func (h *UserHandler) PatchChangePassword(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(status, dto.ErrorResponse{Error: err.Error()})
+		errors.Send(
+			c,
+			status,
+			code,
+			"Password change verification failed.",
+			err,
+		)
 		return
 	}
 
@@ -636,9 +723,12 @@ func (h *UserHandler) PatchUserPasswordByEmail(c *gin.Context) {
 	var req dto.UpdatePasswordByEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchUserPasswordByEmail] Bind JSON: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid request body"},
+			errors.CodeInvalidInput,
+			"Invalid request body.",
+			err,
 		)
 		return
 	}
@@ -683,9 +773,12 @@ func (h *UserHandler) PatchUserPasswordByEmail(c *gin.Context) {
 		if actorID != uuid.Nil {
 			_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
 		}
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Update failed"},
+			errors.CodeInternalError,
+			"Update failed.",
+			err,
 		)
 		return
 	}
@@ -723,24 +816,36 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		log.Printf("[PatchUserStatus] UUID Parse: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID Format"},
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
 		)
 		return
 	}
 
 	if !middleware.HasPermission(c, "Edit user") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	var req dto.UpdateStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchUserStatus] Bind JSON: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid input"},
+			errors.CodeInvalidInput,
+			"Invalid input.",
+			err,
 		)
 		return
 	}
@@ -782,15 +887,21 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
 		_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
 		if strings.Contains(err.Error(), "Status Validation") {
-			c.JSON(
+			errors.SendString(
+				c,
 				http.StatusBadRequest,
-				dto.ErrorResponse{Error: "Invalid status provided"},
+				errors.CodeInvalidInput,
+				"Invalid status provided.",
+				"Invalid status provided",
 			)
 			return
 		}
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Update failed"},
+			errors.CodeInternalError,
+			"Update failed.",
+			err,
 		)
 		return
 	}
@@ -826,25 +937,37 @@ func (h *UserHandler) PatchUserRole(c *gin.Context) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		log.Printf("[PatchUserRoles] UUID Parse: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID Format"},
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
 		)
 		return
 	}
 
 	if !middleware.HasPermission(c, "Assign Roles") &&
 		!middleware.HasPermission(c, "Remove Roles") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
 	var req dto.UpdateUserRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchUserRole] Bind JSON: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid input"},
+			errors.CodeInvalidInput,
+			"Invalid input.",
+			err,
 		)
 		return
 	}
@@ -889,17 +1012,21 @@ func (h *UserHandler) PatchUserRole(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
 		_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
 		if strings.Contains(err.Error(), "permitted") {
-			c.JSON(
+			errors.SendString(
+				c,
 				http.StatusForbidden,
-				dto.ErrorResponse{
-					Error: "You don't have permission to edit/remove roles",
-				},
+				errors.CodeForbidden,
+				"You don't have permission to edit/remove roles.",
+				"You don't have permission to edit/remove roles",
 			)
 			return
 		}
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Update failed"},
+			errors.CodeInternalError,
+			"Update failed.",
+			err,
 		)
 		return
 	}
@@ -935,9 +1062,12 @@ func (h *UserHandler) PatchUserName(c *gin.Context) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		log.Printf("[PatchUserName] UUID Parse: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID Format"},
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
 		)
 		return
 	}
@@ -945,9 +1075,12 @@ func (h *UserHandler) PatchUserName(c *gin.Context) {
 	var req dto.UpdateUserNameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PatchUserName] Bind JSON: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid request body"},
+			errors.CodeInvalidInput,
+			"Invalid request body.",
+			err,
 		)
 		return
 	}
@@ -979,9 +1112,12 @@ func (h *UserHandler) PatchUserName(c *gin.Context) {
 					"error":     err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Update failed"},
+			errors.CodeInternalError,
+			"Update failed.",
+			err,
 		)
 		return
 	}
@@ -1010,7 +1146,13 @@ func (h *UserHandler) PatchUserName(c *gin.Context) {
 // @Router /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	if !middleware.HasPermission(c, "Delete user") {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "Unauthorized"})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
 		return
 	}
 
@@ -1018,9 +1160,12 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		log.Printf("[DeleteUser] UUID Parse: %v", err)
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusBadRequest,
-			dto.ErrorResponse{Error: "Invalid ID Format"},
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
 		)
 		return
 	}
@@ -1054,9 +1199,12 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Deletion Failed"},
+			errors.CodeInternalError,
+			"Deletion Failed.",
+			err,
 		)
 		return
 	}
@@ -1101,8 +1249,13 @@ func (h *UserHandler) GetUserAccess(c *gin.Context) {
 
 	if err != nil {
 		log.Printf("[GetUserAccess] fetch: %v", err)
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to fetch clients"})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to fetch clients.",
+			err,
+		)
 		return
 	}
 
@@ -1136,15 +1289,25 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 	targetIDStr := c.Param("id")
 	targetID, err := uuid.Parse(targetIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid target user id"})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid target user ID.",
+			err,
+		)
 		return
 	}
 
 	var req dto.UpdateUserAccessRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid request body"})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request body.",
+			err,
+		)
 		return
 	}
 
@@ -1163,8 +1326,13 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 	err = h.AccessService.SyncAccess(ctx, targetID[:], clientIDs, adminID[:])
 	if err != nil {
 		log.Printf("[PutUserAccess] sync error: %v", err)
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to sync access"})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to sync access.",
+			err,
+		)
 		return
 	}
 
@@ -1204,15 +1372,25 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 	targetIDStr := c.Param("id")
 	targetID, err := uuid.Parse(targetIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid target user id"})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid target user ID.",
+			err,
+		)
 		return
 	}
 
 	var req dto.UpdateUserAccessRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest,
-			dto.ErrorResponse{Error: "invalid request body"})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request body.",
+			err,
+		)
 		return
 	}
 
@@ -1228,8 +1406,13 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 		ctx, targetID, adminID, c.GetStringSlice("permissions"),
 	)
 	if err != nil {
-		c.JSON(http.StatusNotFound,
-			dto.ErrorResponse{Error: "target user not found"})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"Target user not found.",
+			err,
+		)
 		return
 	}
 
@@ -1246,8 +1429,13 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 					"ip":    c.ClientIP(),
 				}),
 			})
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to sync admin access"})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to sync admin access.",
+			err,
+		)
 		return
 	}
 
@@ -1280,8 +1468,13 @@ func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
 		log.Printf("[GetUserDetailedAccess] UUID Parse: %v", err)
-		c.JSON(http.StatusUnauthorized,
-			dto.ErrorResponse{Error: "Invalid session or identity"})
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Invalid session or identity.",
+			err,
+		)
 		return
 	}
 
@@ -1291,8 +1484,13 @@ func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
 	resp, err := h.ClientService.GetAllowedClients(ctx, userID, 1000, 1, "")
 	if err != nil {
 		log.Printf("[GetUserDetailedAccess] fetch: %v", err)
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to fetch clients"})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to fetch clients.",
+			err,
+		)
 		return
 	}
 
