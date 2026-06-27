@@ -579,7 +579,7 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Update failed.",
+			"Failed to update user password.",
 			err,
 		)
 		return
@@ -900,7 +900,7 @@ func (h *UserHandler) PatchUserStatus(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Update failed.",
+			"Failed to update user status.",
 			err,
 		)
 		return
@@ -1025,7 +1025,7 @@ func (h *UserHandler) PatchUserRole(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Update failed.",
+			"Failed to update user roles.",
 			err,
 		)
 		return
@@ -1116,7 +1116,7 @@ func (h *UserHandler) PatchUserName(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Update failed.",
+			"Failed to update user name.",
 			err,
 		)
 		return
@@ -1203,7 +1203,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Deletion Failed.",
+			"Failed to delete user. Check if the user exists.",
 			err,
 		)
 		return
