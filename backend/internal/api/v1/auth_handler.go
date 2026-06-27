@@ -520,7 +520,10 @@ func (h *AuthHandler) CheckSession(c *gin.Context) {
 	}
 
 	// Log success with user email if possible
-	userEmail, _ := h.LogService.GetUserEmail(c.Request.Context(), session.UserId)
+	userEmail, _ := h.LogService.GetUserEmail(
+		c.Request.Context(),
+		session.UserId,
+	)
 	actorName := userEmail
 	if actorName == "" {
 		uID, _ := uuid.FromBytes(session.UserId)
@@ -731,8 +734,16 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		Status:   models.StatusSuccess,
 		Metadata: metadata,
 	}
-	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), clientName, logReq)
-	_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), clientName, logReq)
+	_ = h.LogService.PostAuditLogWithActorString(
+		c.Request.Context(),
+		clientName,
+		logReq,
+	)
+	_ = h.LogService.PostSecurityLogWithActorString(
+		c.Request.Context(),
+		clientName,
+		logReq,
+	)
 
 	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
 	if err != nil {
@@ -779,11 +790,15 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 		return
 	}
 
-	// For refresh, we don't have a clear actor; use refresh token hint in metadata
+	// For refresh, we don't have a clear actor; use refresh token hint in
+	// metadata.
 	metadata := buildMetadata(map[string]interface{}{
-		"refresh_token_hint": req.RefreshToken[:min(8, len(req.RefreshToken))],
-		"ip":                 c.ClientIP(),
-		"user_agent":         c.Request.UserAgent(),
+		"refresh_token_hint": req.RefreshToken[:min(
+			8,
+			len(req.RefreshToken),
+		)],
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
 	})
 
 	resp, err := h.AuthService.RotateRefreshToken(
@@ -794,10 +809,13 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 		log.Printf("[PostTokenRotate] %v", err)
 
 		metadataWithErr := buildMetadata(map[string]interface{}{
-			"refresh_token_hint": req.RefreshToken[:min(8, len(req.RefreshToken))],
-			"ip":                 c.ClientIP(),
-			"user_agent":         c.Request.UserAgent(),
-			"error":              err.Error(),
+			"refresh_token_hint": req.RefreshToken[:min(
+				8,
+				len(req.RefreshToken),
+			)],
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+			"error":      err.Error(),
 		})
 		logReq := &dto.PostAuditLogRequest{
 			Action:   actionTokenRotate,
@@ -827,7 +845,8 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 			status, code = http.StatusForbidden, errors.CodeForbidden
 			msg = "The client is missing the required grant type."
 		} else if strings.Contains(err.Error(), "RotateToken") {
-			status, code = http.StatusInternalServerError, errors.CodeInternalError
+			status = http.StatusInternalServerError
+			code = errors.CodeInternalError
 			msg = "Failed to rotate the refresh token."
 		}
 
