@@ -599,7 +599,8 @@ func (h *UserHandler) PatchUserPassword(c *gin.Context) {
 	})
 }
 
-// PatchChangePassword updates the authenticated user's password after verifying the old one.
+// PatchChangePassword updates the authenticated user's password after
+// verifying the old one.
 // @Summary Change user password
 // @Description Updates the password for the currently authenticated user.
 // @Tags Users
@@ -658,7 +659,12 @@ func (h *UserHandler) PatchChangePassword(c *gin.Context) {
 		actorName = uVal.(string)
 	}
 
-	err = h.Service.ChangePassword(ctx, userID, req.OldPassword, req.NewPassword)
+	err = h.Service.ChangePassword(
+		ctx,
+		userID,
+		req.OldPassword,
+		req.NewPassword,
+	)
 	if err != nil {
 		log.Printf("[PatchChangePassword] %v", err)
 		status := http.StatusInternalServerError
@@ -1358,7 +1364,8 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 
 // PutAdminAccess handles the synchronization of managed clients for an admin.
 // @Summary Sync Admin Managed Clients
-// @Description Updates the list of app-clients that an administrator can manage.
+// @Description Updates the list of app-clients that an administrator
+// @Description can manage.
 // @Tags Users
 // @Accept json
 // @Produce json
