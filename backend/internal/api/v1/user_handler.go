@@ -777,7 +777,7 @@ func (h *UserHandler) PatchUserPasswordByEmail(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Update failed.",
+			"Failed to update password. Check if the user exists.",
 			err,
 		)
 		return
