@@ -31,6 +31,24 @@ type MetricsService interface {
 		userID uuid.UUID,
 		permissions []string,
 	) ([]byte, error)
+	GetClientMetrics(
+		ctx context.Context,
+	) ([]models.MetricCard, error)
+	GetRoleMetrics(
+		ctx context.Context,
+	) ([]models.MetricCard, error)
+	GetUserMetrics(
+		ctx context.Context,
+	) ([]models.MetricCard, error)
+	GetLogMetrics(
+		ctx context.Context,
+	) ([]models.MetricCard, error)
+	GetPermissionMetrics(
+		ctx context.Context,
+	) ([]models.MetricCard, error)
+	GetRegistrationMetrics(
+		ctx context.Context,
+	) ([]models.MetricCard, error)
 }
 
 type metricsService struct {
@@ -724,4 +742,40 @@ func (s *metricsService) GenerateReportPDF(
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (s *metricsService) GetClientMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return s.repo.GetClientMetrics(ctx)
+}
+
+func (s *metricsService) GetRoleMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return s.repo.GetRoleMetrics(ctx)
+}
+
+func (s *metricsService) GetUserMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return s.repo.GetUserMetrics(ctx)
+}
+
+func (s *metricsService) GetLogMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return s.repo.GetLogMetrics(ctx)
+}
+
+func (s *metricsService) GetPermissionMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return s.repo.GetPermissionMetrics(ctx)
+}
+
+func (s *metricsService) GetRegistrationMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return s.repo.GetRegistrationMetrics(ctx)
 }
