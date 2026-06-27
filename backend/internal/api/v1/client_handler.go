@@ -147,7 +147,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Creation failed.",
+			"Failed to create client.",
 			err,
 		)
 		return
@@ -190,7 +190,7 @@ func (h *ClientHandler) PostClient(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Creation failed.",
+			"Failed to create client.",
 			err,
 		)
 		return
