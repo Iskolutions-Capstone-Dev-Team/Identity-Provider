@@ -83,3 +83,96 @@ func (h *MetricsHandler) GetMetricsReportPDF(c *gin.Context) {
 	)
 	c.Data(http.StatusOK, "application/pdf", pdfBytes)
 }
+
+// GetClientMetrics returns card metrics for the clients subgroup.
+func (h *MetricsHandler) GetClientMetrics(c *gin.Context) {
+	metrics, err := h.MetricsService.GetClientMetrics(
+		c.Request.Context(),
+	)
+	if err != nil {
+		log.Printf("[MetricsHandler] GetClientMetrics error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to retrieve client metrics",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, metrics)
+}
+
+// GetRoleMetrics returns card metrics for the roles subgroup.
+func (h *MetricsHandler) GetRoleMetrics(c *gin.Context) {
+	metrics, err := h.MetricsService.GetRoleMetrics(
+		c.Request.Context(),
+	)
+	if err != nil {
+		log.Printf("[MetricsHandler] GetRoleMetrics error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to retrieve role metrics",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, metrics)
+}
+
+// GetUserMetrics returns card metrics for the users subgroup.
+func (h *MetricsHandler) GetUserMetrics(c *gin.Context) {
+	metrics, err := h.MetricsService.GetUserMetrics(
+		c.Request.Context(),
+	)
+	if err != nil {
+		log.Printf("[MetricsHandler] GetUserMetrics error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to retrieve user metrics",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, metrics)
+}
+
+// GetLogMetrics returns card metrics for the logs subgroup.
+func (h *MetricsHandler) GetLogMetrics(c *gin.Context) {
+	metrics, err := h.MetricsService.GetLogMetrics(
+		c.Request.Context(),
+	)
+	if err != nil {
+		log.Printf("[MetricsHandler] GetLogMetrics error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to retrieve log metrics",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, metrics)
+}
+
+// GetPermissionMetrics returns card metrics for the permissions subgroup.
+func (h *MetricsHandler) GetPermissionMetrics(c *gin.Context) {
+	metrics, err := h.MetricsService.GetPermissionMetrics(
+		c.Request.Context(),
+	)
+	if err != nil {
+		log.Printf("[MetricsHandler] GetPermissionMetrics error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to retrieve permission metrics",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, metrics)
+}
+
+// GetRegistrationMetrics returns card metrics for the registration subgroup.
+func (h *MetricsHandler) GetRegistrationMetrics(c *gin.Context) {
+	metrics, err := h.MetricsService.GetRegistrationMetrics(
+		c.Request.Context(),
+	)
+	if err != nil {
+		log.Printf(
+			"[MetricsHandler] GetRegistrationMetrics error: %v",
+			err,
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to retrieve registration metrics",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, metrics)
+}
