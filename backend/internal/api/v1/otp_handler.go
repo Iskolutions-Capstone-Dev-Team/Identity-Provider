@@ -69,7 +69,11 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 			"error":      err.Error(),
 		})
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
-		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
+		_ = h.LogService.PostSecurityLogWithActorString(
+			reqCtx,
+			req.Email,
+			logReq,
+		)
 
 		errors.Send(
 			c,
