@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
@@ -32,7 +33,13 @@ type MailHandler struct {
 func (h *MailHandler) SendOTP(c *gin.Context) {
 	var req dto.OTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			err.Error(),
+			err,
+		)
 		return
 	}
 
@@ -59,8 +66,13 @@ func (h *MailHandler) SendOTP(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
 		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
 
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: err.Error()})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			err.Error(),
+			err,
+		)
 		return
 	}
 
@@ -84,7 +96,13 @@ func (h *MailHandler) SendOTP(c *gin.Context) {
 func (h *MailHandler) SendInvitation(c *gin.Context) {
 	var req dto.InvitationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			err.Error(),
+			err,
+		)
 		return
 	}
 
@@ -119,8 +137,13 @@ func (h *MailHandler) SendInvitation(c *gin.Context) {
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, actorName, logReq)
 		_ = h.LogService.PostSecurityLog(reqCtx, actorID[:], logReq)
 
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: err.Error()})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			err.Error(),
+			err,
+		)
 		return
 	}
 
