@@ -64,13 +64,18 @@ func (h *MailHandler) SendOTP(c *gin.Context) {
 			"error":      err.Error(),
 		})
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
-		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
+		_ = h.LogService.PostSecurityLogWithActorString(
+			reqCtx,
+			req.Email,
+			logReq,
+		)
 
 		errors.Send(
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to send OTP code. Check SMTP or mail service configuration.",
+			"Failed to send OTP code. "+
+				"Check SMTP or mail service configuration.",
 			err,
 		)
 		return
@@ -141,7 +146,8 @@ func (h *MailHandler) SendInvitation(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to send invitation. Check SMTP or mail service configuration.",
+			"Failed to send invitation. "+
+				"Check SMTP or mail service configuration.",
 			err,
 		)
 		return
