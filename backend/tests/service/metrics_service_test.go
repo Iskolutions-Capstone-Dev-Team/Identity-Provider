@@ -44,6 +44,42 @@ func (m *mockMetricsRepository) GetBoundClientIDs(
 	return []string{"id-1"}, nil
 }
 
+func (m *mockMetricsRepository) GetClientMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return []models.MetricCard{}, nil
+}
+
+func (m *mockMetricsRepository) GetRoleMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return []models.MetricCard{}, nil
+}
+
+func (m *mockMetricsRepository) GetUserMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return []models.MetricCard{}, nil
+}
+
+func (m *mockMetricsRepository) GetLogMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return []models.MetricCard{}, nil
+}
+
+func (m *mockMetricsRepository) GetPermissionMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return []models.MetricCard{}, nil
+}
+
+func (m *mockMetricsRepository) GetRegistrationMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return []models.MetricCard{}, nil
+}
+
 type mockCache struct {
 	mu      sync.Mutex
 	store   map[string]string
@@ -294,5 +330,32 @@ func TestGenerateReportPDF(t *testing.T) {
 
 	if len(pdfBytes) == 0 {
 		t.Error("expected non-empty PDF bytes")
+	}
+}
+
+func TestGetGroupMetrics(t *testing.T) {
+	repo := &mockMetricsRepository{}
+	cache := &mockCache{store: make(map[string]string)}
+	svc := service.NewMetricsService(repo, cache, nil)
+
+	ctx := context.Background()
+
+	if _, err := svc.GetClientMetrics(ctx); err != nil {
+		t.Errorf("GetClientMetrics failed: %v", err)
+	}
+	if _, err := svc.GetRoleMetrics(ctx); err != nil {
+		t.Errorf("GetRoleMetrics failed: %v", err)
+	}
+	if _, err := svc.GetUserMetrics(ctx); err != nil {
+		t.Errorf("GetUserMetrics failed: %v", err)
+	}
+	if _, err := svc.GetLogMetrics(ctx); err != nil {
+		t.Errorf("GetLogMetrics failed: %v", err)
+	}
+	if _, err := svc.GetPermissionMetrics(ctx); err != nil {
+		t.Errorf("GetPermissionMetrics failed: %v", err)
+	}
+	if _, err := svc.GetRegistrationMetrics(ctx); err != nil {
+		t.Errorf("GetRegistrationMetrics failed: %v", err)
 	}
 }
