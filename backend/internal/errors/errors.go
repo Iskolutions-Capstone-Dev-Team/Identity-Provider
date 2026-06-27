@@ -8,20 +8,20 @@ import (
 
 // Standard developer error codes
 const (
-	CodeInternalError       = 1000
-	CodeInvalidInput        = 1001
-	CodeUnauthorized        = 1002
-	CodeForbidden           = 1003
-	CodeNotFound            = 1004
-	CodeDatabaseError       = 1005
-	CodeInvalidCredentials  = 1006
-	CodeSessionExpired      = 1007
-	CodeTokenExpired        = 1008
-	CodeMFAFailed           = 1009
-	CodeOTPFailed           = 1010
-	CodeRegistrationFailed  = 1011
-	CodeClientError         = 1012
-	CodeRateLimitExceeded   = 1029
+	CodeInternalError      = 1000
+	CodeInvalidInput       = 1001
+	CodeUnauthorized       = 1002
+	CodeForbidden          = 1003
+	CodeNotFound           = 1004
+	CodeDatabaseError      = 1005
+	CodeInvalidCredentials = 1006
+	CodeSessionExpired     = 1007
+	CodeTokenExpired       = 1008
+	CodeMFAFailed          = 1009
+	CodeOTPFailed          = 1010
+	CodeRegistrationFailed = 1011
+	CodeClientError        = 1012
+	CodeRateLimitExceeded  = 1029
 )
 
 // Send sends a standardized error response to the client.
