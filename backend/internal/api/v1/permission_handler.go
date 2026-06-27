@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
@@ -30,9 +31,12 @@ type PermissionHandler struct {
 func (h *PermissionHandler) GetAllPermissions(c *gin.Context) {
 	permissions, err := h.Service.GetAllPermissions(c.Request.Context())
 	if err != nil {
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "Failed to retrieve permissions"},
+			errors.CodeInternalError,
+			"Failed to retrieve permissions.",
+			err,
 		)
 		return
 	}
@@ -55,18 +59,26 @@ func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
 	uVal, uExists := c.Get("user_id")
 	if !uExists {
 		log.Print("[GetUserPermissions] Context Extraction: missing user_id")
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "missing authentication context",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Missing authentication context.",
+			"missing authentication context",
+		)
 		return
 	}
 
 	uID, err := uuid.Parse(uVal.(string))
 	if err != nil {
 		log.Printf("[GetUserPermissions] UUID Parse Error: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "invalid user context",
-		})
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Invalid user context.",
+			err,
+		)
 		return
 	}
 
@@ -74,9 +86,13 @@ func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
 	user, err := h.UserRepo.GetUserById(ctx, uID[:], nil, true)
 	if err != nil {
 		log.Printf("[GetUserPermissions] Fetch user failed: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to retrieve user",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to retrieve user.",
+			err,
+		)
 		return
 	}
 
@@ -84,9 +100,13 @@ func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
 	permMap, err := h.RoleRepo.FetchPermissionsForRoles(ctx, roleIDs)
 	if err != nil {
 		log.Printf("[GetUserPermissions] Fetch permissions failed: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to retrieve permissions",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to retrieve permissions.",
+			err,
+		)
 		return
 	}
 

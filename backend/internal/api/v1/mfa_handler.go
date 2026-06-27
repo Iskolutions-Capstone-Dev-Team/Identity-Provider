@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -23,28 +24,42 @@ func (h *MFAHandler) GetTOTPSetup(c *gin.Context) {
 	email := c.Query("email")
 	if email == "" {
 		log.Printf("[GetTOTPSetup] Missing email parameter")
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Email parameter is required",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Email parameter is required.",
+			"Email parameter is required",
+		)
 		return
 	}
 
 	user, err := h.UserService.GetUserByEmail(c.Request.Context(), email)
 	if err != nil {
 		log.Printf("[GetTOTPSetup] User Lookup: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "User not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
 		return
 	}
 
-	secret, uri, err := h.MFAService.GenerateTOTPSetup(c.Request.Context(),
-		user.Email)
+	secret, uri, err := h.MFAService.GenerateTOTPSetup(
+		c.Request.Context(),
+		user.Email,
+	)
 	if err != nil {
 		log.Printf("[GetTOTPSetup] Generate Setup: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "Failed to generate TOTP setup",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeMFAFailed,
+			"Failed to generate TOTP setup.",
+			err,
+		)
 		return
 	}
 
@@ -59,9 +74,13 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 	var req dto.TOTPFinalizeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostAuthenticator] Bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Invalid request payload",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request payload.",
+			err,
+		)
 		return
 	}
 
@@ -69,9 +88,13 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 		CheckSessionOrPendingMFA(c)
 	if err != nil {
 		log.Printf("[PostAuthenticator] Auth check failed: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized access",
-		})
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			err,
+		)
 		return
 	}
 
@@ -80,27 +103,44 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PostAuthenticator] User Lookup: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "User not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
 		return
 	}
 
 	userID, _ := uuid.Parse(user.ID)
 	if userID != uID {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "User mismatch",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"User mismatch.",
+			"User mismatch",
+		)
 		return
 	}
 
-	backupCodes, err := h.MFAService.FinalizeTOTP(c.Request.Context(),
-		userID[:], req.Secret, req.Code, req.Name)
+	backupCodes, err := h.MFAService.FinalizeTOTP(
+		c.Request.Context(),
+		userID[:],
+		req.Secret,
+		req.Code,
+		req.Name,
+	)
 	if err != nil {
 		log.Printf("[PostAuthenticator] Finalize TOTP: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: err.Error(),
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeMFAFailed,
+			"Failed to finalize TOTP.",
+			err,
+		)
 		return
 	}
 
@@ -108,9 +148,13 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 		err := h.AuthService.CreateSessionAndSetCookie(c, uID)
 		if err != nil {
 			log.Printf("[PostAuthenticator] CreateSession: %v", err)
-			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-				Error: "Failed to establish session",
-			})
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to establish session.",
+				err,
+			)
 			return
 		}
 		clearCookie()
@@ -132,9 +176,13 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 	var req dto.MFAVerifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostVerifyMFA] Bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Invalid request payload",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request payload.",
+			err,
+		)
 		return
 	}
 
@@ -142,9 +190,13 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 		CheckSessionOrPendingMFA(c)
 	if err != nil {
 		log.Printf("[PostVerifyMFA] Auth check failed: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized access",
-		})
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			err,
+		)
 		return
 	}
 
@@ -153,34 +205,53 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PostVerifyMFA] User Lookup: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "User not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
 		return
 	}
 
 	userID, _ := uuid.Parse(user.ID)
 	if userID != uID {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "User mismatch",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"User mismatch.",
+			"User mismatch",
+		)
 		return
 	}
 
-	success, err := h.MFAService.VerifyCode(c.Request.Context(),
-		userID[:], req.Code)
+	success, err := h.MFAService.VerifyCode(
+		c.Request.Context(),
+		userID[:],
+		req.Code,
+	)
 	if err != nil {
 		log.Printf("[PostVerifyMFA] Verify Code: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "Verification failed",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Verification failed.",
+			err,
+		)
 		return
 	}
 
 	if !success {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Invalid code",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeMFAFailed,
+			"The provided MFA code is incorrect.",
+			"Invalid code",
+		)
 		return
 	}
 
@@ -188,9 +259,13 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 		err := h.AuthService.CreateSessionAndSetCookie(c, uID)
 		if err != nil {
 			log.Printf("[PostVerifyMFA] CreateSession: %v", err)
-			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-				Error: "Failed to establish session",
-			})
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to establish session.",
+				err,
+			)
 			return
 		}
 		clearCookie()
@@ -206,29 +281,43 @@ func (h *MFAHandler) GetAuthenticatorList(c *gin.Context) {
 	email := c.Query("email")
 	if email == "" {
 		log.Printf("[GetAuthenticatorList] Missing email parameter")
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Email parameter is required",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Email parameter is required.",
+			"Email parameter is required",
+		)
 		return
 	}
 
 	user, err := h.UserService.GetUserByEmail(c.Request.Context(), email)
 	if err != nil {
 		log.Printf("[GetAuthenticatorList] User Lookup: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "User not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
 		return
 	}
 
 	userID, _ := uuid.Parse(user.ID)
-	list, err := h.MFAService.GetAuthenticatorList(c.Request.Context(),
-		userID[:])
+	list, err := h.MFAService.GetAuthenticatorList(
+		c.Request.Context(),
+		userID[:],
+	)
 	if err != nil {
 		log.Printf("[GetAuthenticatorList] Fetch List: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "Failed to fetch authenticator list",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to fetch authenticator list.",
+			err,
+		)
 		return
 	}
 
@@ -240,38 +329,57 @@ func (h *MFAHandler) DeleteAuthenticator(c *gin.Context) {
 	var req dto.MFADeleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[DeleteAuthenticator] Bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Invalid request payload",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request payload.",
+			err,
+		)
 		return
 	}
 
 	id, err := uuid.Parse(req.ID)
 	if err != nil {
 		log.Printf("[DeleteAuthenticator] ID Parse: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Invalid authenticator ID",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid authenticator ID.",
+			err,
+		)
 		return
 	}
 
 	user, err := h.UserService.GetUserByEmail(c.Request.Context(), req.Email)
 	if err != nil {
 		log.Printf("[DeleteAuthenticator] User Lookup: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "User not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
 		return
 	}
 
 	userID, _ := uuid.Parse(user.ID)
-	err = h.MFAService.RemoveAuthenticator(c.Request.Context(), id[:],
-		userID[:])
+	err = h.MFAService.RemoveAuthenticator(
+		c.Request.Context(),
+		id[:],
+		userID[:],
+	)
 	if err != nil {
 		log.Printf("[DeleteAuthenticator] Remove: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "Failed to remove authenticator",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to remove authenticator.",
+			err,
+		)
 		return
 	}
 
@@ -289,28 +397,43 @@ func (h *MFAHandler) GetHasTOTP(c *gin.Context) {
 	email := c.Query("email")
 	if email == "" {
 		log.Printf("[GetHasTOTP] Missing email parameter")
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "email query parameter is required",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Email parameter is required.",
+			"email query parameter is required",
+		)
 		return
 	}
 
 	user, err := h.UserService.GetUserByEmail(c.Request.Context(), email)
 	if err != nil {
 		log.Printf("[GetHasTOTP] User Lookup: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "User not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
 		return
 	}
 
 	userID, _ := uuid.Parse(user.ID)
-	has, err := h.MFAService.HasTOTP(c.Request.Context(), userID[:])
+	has, err := h.MFAService.HasTOTP(
+		c.Request.Context(),
+		userID[:],
+	)
 	if err != nil {
 		log.Printf("[GetHasTOTP] HasTOTP: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "Failed to check TOTP status",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to check TOTP status.",
+			err,
+		)
 		return
 	}
 

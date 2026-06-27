@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -26,7 +27,13 @@ func (h *MetricsHandler) GetDashboardMetrics(c *gin.Context) {
 			"[MetricsHandler] GetDashboardMetrics: invalid user ID: %v",
 			err,
 		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user context"})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid user context.",
+			err,
+		)
 		return
 	}
 
@@ -39,9 +46,13 @@ func (h *MetricsHandler) GetDashboardMetrics(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[MetricsHandler] GetDashboardMetrics error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to retrieve dashboard metrics",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to retrieve dashboard metrics.",
+			err,
+		)
 		return
 	}
 
@@ -57,7 +68,13 @@ func (h *MetricsHandler) GetMetricsReportPDF(c *gin.Context) {
 			"[MetricsHandler] GetMetricsReportPDF: invalid user ID: %v",
 			err,
 		)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user context"})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid user context.",
+			err,
+		)
 		return
 	}
 
@@ -70,9 +87,13 @@ func (h *MetricsHandler) GetMetricsReportPDF(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[MetricsHandler] GetMetricsReportPDF error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to generate metrics report",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to generate metrics report.",
+			err,
+		)
 		return
 	}
 
