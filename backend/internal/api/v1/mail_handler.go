@@ -70,7 +70,7 @@ func (h *MailHandler) SendOTP(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			err.Error(),
+			"Failed to send OTP code. Check SMTP or mail service configuration.",
 			err,
 		)
 		return
@@ -141,7 +141,7 @@ func (h *MailHandler) SendInvitation(c *gin.Context) {
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			err.Error(),
+			"Failed to send invitation. Check SMTP or mail service configuration.",
 			err,
 		)
 		return
