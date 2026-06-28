@@ -46,6 +46,7 @@ type MetricsService interface {
 	) ([]models.MetricCard, error)
 	GetLogMetrics(
 		ctx context.Context,
+		permissions []string,
 	) ([]models.MetricCard, error)
 	GetPermissionMetrics(
 		ctx context.Context,
@@ -794,8 +795,11 @@ func (s *metricsService) GetUserMetrics(
 
 func (s *metricsService) GetLogMetrics(
 	ctx context.Context,
+	permissions []string,
 ) ([]models.MetricCard, error) {
-	return s.repo.GetLogMetrics(ctx)
+	hasAudit := slices.Contains(permissions, "View audit logs")
+	hasSecurity := slices.Contains(permissions, "View security logs")
+	return s.repo.GetLogMetrics(ctx, hasAudit, hasSecurity)
 }
 
 func (s *metricsService) GetPermissionMetrics(

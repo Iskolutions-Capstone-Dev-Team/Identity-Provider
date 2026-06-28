@@ -63,7 +63,7 @@ func (m *mockMetricsRepository) GetUserMetrics(
 }
 
 func (m *mockMetricsRepository) GetLogMetrics(
-	ctx context.Context,
+	ctx context.Context, hasAudit, hasSecurity bool,
 ) ([]models.MetricCard, error) {
 	return []models.MetricCard{}, nil
 }
@@ -352,7 +352,7 @@ func TestGetGroupMetrics(t *testing.T) {
 	if _, err := svc.GetUserMetrics(ctx, perms, uID); err != nil {
 		t.Errorf("GetUserMetrics failed: %v", err)
 	}
-	if _, err := svc.GetLogMetrics(ctx); err != nil {
+	if _, err := svc.GetLogMetrics(ctx, perms); err != nil {
 		t.Errorf("GetLogMetrics failed: %v", err)
 	}
 	if _, err := svc.GetPermissionMetrics(ctx); err != nil {

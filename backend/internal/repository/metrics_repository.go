@@ -32,6 +32,7 @@ type MetricsRepository interface {
 	) ([]models.MetricCard, error)
 	GetLogMetrics(
 		ctx context.Context,
+		hasAudit, hasSecurity bool,
 	) ([]models.MetricCard, error)
 	GetPermissionMetrics(
 		ctx context.Context,
@@ -428,59 +429,66 @@ func (r *metricsRepository) GetUserMetrics(
 
 func (r *metricsRepository) GetLogMetrics(
 	ctx context.Context,
+	hasAudit, hasSecurity bool,
 ) ([]models.MetricCard, error) {
-	var audit, security, failed int64
-	err := r.db.GetContext(
-		ctx,
-		&audit,
-		"SELECT COUNT(*) FROM audit_logs",
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"[MetricsRepository] GetLogMetrics audit: %w",
-			err,
-		)
-	}
-	err = r.db.GetContext(
-		ctx,
-		&security,
-		"SELECT COUNT(*) FROM security_logs",
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"[MetricsRepository] GetLogMetrics security: %w",
-			err,
-		)
-	}
-	err = r.db.GetContext(
-		ctx,
-		&failed,
-		"SELECT COUNT(*) FROM audit_logs WHERE status = 'fail'",
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"[MetricsRepository] GetLogMetrics failed: %w",
-			err,
-		)
-	}
+	var cards []models.MetricCard
 
-	return []models.MetricCard{
-		{
+	if hasAudit {
+		var audit, failed int64
+		err := r.db.GetContext(
+			ctx,
+			&audit,
+			"SELECT COUNT(*) FROM audit_logs",
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"[MetricsRepository] GetLogMetrics audit: %w",
+				err,
+			)
+		}
+		err = r.db.GetContext(
+			ctx,
+			&failed,
+			"SELECT COUNT(*) FROM audit_logs WHERE status = 'fail'",
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"[MetricsRepository] GetLogMetrics failed: %w",
+				err,
+			)
+		}
+		cards = append(cards, models.MetricCard{
 			Title:       "Audit Logs",
 			Value:       fmt.Sprintf("%d", audit),
 			Description: "Total recorded audit logs",
-		},
-		{
-			Title:       "Security Logs",
-			Value:       fmt.Sprintf("%d", security),
-			Description: "Total security event logs",
-		},
-		{
+		}, models.MetricCard{
 			Title:       "Failed Activities",
 			Value:       fmt.Sprintf("%d", failed),
 			Description: "Failures logged in audit logs",
-		},
-	}, nil
+		})
+	}
+
+	if hasSecurity {
+		var security int64
+		err := r.db.GetContext(
+			ctx,
+			&security,
+			"SELECT COUNT(*) FROM security_logs",
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"[MetricsRepository] GetLogMetrics security: %w",
+				err,
+			)
+		}
+		cards = append(cards, models.MetricCard{
+			Title:       "Security Logs",
+			Value:       fmt.Sprintf("%d", security),
+			Description: "Total security event logs",
+		})
+	}
+
+	return cards, nil
 }
 
 func (r *metricsRepository) GetPermissionMetrics(

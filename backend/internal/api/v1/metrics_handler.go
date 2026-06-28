@@ -254,8 +254,11 @@ func (h *MetricsHandler) GetLogMetrics(c *gin.Context) {
 		return
 	}
 
+	permissions := c.GetStringSlice("permissions")
+
 	metrics, err := h.MetricsService.GetLogMetrics(
 		c.Request.Context(),
+		permissions,
 	)
 	if err != nil {
 		log.Printf("[MetricsHandler] GetLogMetrics error: %v", err)
