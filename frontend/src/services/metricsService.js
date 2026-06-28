@@ -1,6 +1,12 @@
 import axiosInstance from "./axiosInstance";
 
 let metricsRequestPromise = null;
+let userMetricsPromise = null;
+let roleMetricsPromise = null;
+let clientMetricsPromise = null;
+let permissionMetricsPromise = null;
+let logMetricsPromise = null;
+let registrationMetricsPromise = null;
 
 export const metricsService = {
   async getDashboardMetrics() {
@@ -16,32 +22,74 @@ export const metricsService = {
   },
 
   async getUserMetrics() {
-    const response = await axiosInstance.get("/admin/users/metrics");
+    if (!userMetricsPromise) {
+      userMetricsPromise = axiosInstance
+        .get("/admin/users/metrics")
+        .finally(() => {
+          userMetricsPromise = null;
+        });
+    }
+    const response = await userMetricsPromise;
     return response.data;
   },
 
   async getRoleMetrics() {
-    const response = await axiosInstance.get("/admin/roles/metrics");
+    if (!roleMetricsPromise) {
+      roleMetricsPromise = axiosInstance
+        .get("/admin/roles/metrics")
+        .finally(() => {
+          roleMetricsPromise = null;
+        });
+    }
+    const response = await roleMetricsPromise;
     return response.data;
   },
 
   async getClientMetrics() {
-    const response = await axiosInstance.get("/admin/clients/metrics");
+    if (!clientMetricsPromise) {
+      clientMetricsPromise = axiosInstance
+        .get("/admin/clients/metrics")
+        .finally(() => {
+          clientMetricsPromise = null;
+        });
+    }
+    const response = await clientMetricsPromise;
     return response.data;
   },
 
   async getPermissionMetrics() {
-    const response = await axiosInstance.get("/admin/permissions/metrics");
+    if (!permissionMetricsPromise) {
+      permissionMetricsPromise = axiosInstance
+        .get("/admin/permissions/metrics")
+        .finally(() => {
+          permissionMetricsPromise = null;
+        });
+    }
+    const response = await permissionMetricsPromise;
     return response.data;
   },
 
   async getLogMetrics() {
-    const response = await axiosInstance.get("/admin/logs/metrics");
+    if (!logMetricsPromise) {
+      logMetricsPromise = axiosInstance
+        .get("/admin/logs/metrics")
+        .finally(() => {
+          logMetricsPromise = null;
+        });
+    }
+    const response = await logMetricsPromise;
     return response.data;
   },
 
   async getRegistrationMetrics() {
-    const response = await axiosInstance.get("/admin/registration/metrics");
+    if (!registrationMetricsPromise) {
+      registrationMetricsPromise = axiosInstance
+        .get("/admin/registration/metrics")
+        .finally(() => {
+          registrationMetricsPromise = null;
+        });
+    }
+    const response = await registrationMetricsPromise;
     return response.data;
   },
 
