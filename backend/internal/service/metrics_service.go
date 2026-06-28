@@ -31,6 +31,31 @@ type MetricsService interface {
 		userID uuid.UUID,
 		permissions []string,
 	) ([]byte, error)
+	GetClientMetrics(
+		ctx context.Context,
+		permissions []string,
+		userID uuid.UUID,
+	) ([]models.MetricCard, error)
+	GetRoleMetrics(
+		ctx context.Context,
+	) ([]models.MetricCard, error)
+	GetUserMetrics(
+		ctx context.Context,
+		permissions []string,
+		userID uuid.UUID,
+	) ([]models.MetricCard, error)
+	GetLogMetrics(
+		ctx context.Context,
+		permissions []string,
+	) ([]models.MetricCard, error)
+	GetPermissionMetrics(
+		ctx context.Context,
+	) ([]models.MetricCard, error)
+	GetRegistrationMetrics(
+		ctx context.Context,
+		permissions []string,
+		userID uuid.UUID,
+	) ([]models.MetricCard, error)
 }
 
 type metricsService struct {
@@ -724,4 +749,89 @@ func (s *metricsService) GenerateReportPDF(
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (s *metricsService) GetClientMetrics(
+	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
+) ([]models.MetricCard, error) {
+	var allowedClients []string
+	var err error
+	if !slices.Contains(permissions, "View all appclients") {
+		allowedClients, err = s.repo.GetBoundClientIDs(ctx, userID[:])
+		if err != nil {
+			log.Printf(
+				"[MetricsService] GetBoundClientIDs error: %v",
+				err,
+			)
+			return nil, fmt.Errorf(
+				"failed to get bound client IDs: %w",
+				err,
+			)
+		}
+		if allowedClients == nil {
+			allowedClients = []string{}
+		}
+	}
+	return s.repo.GetClientMetrics(ctx, allowedClients)
+}
+
+func (s *metricsService) GetRoleMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return s.repo.GetRoleMetrics(ctx)
+}
+
+func (s *metricsService) GetUserMetrics(
+	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
+) ([]models.MetricCard, error) {
+	var adminID []byte
+	if !slices.Contains(permissions, "View all users") {
+		adminID = userID[:]
+	}
+	return s.repo.GetUserMetrics(ctx, adminID)
+}
+
+func (s *metricsService) GetLogMetrics(
+	ctx context.Context,
+	permissions []string,
+) ([]models.MetricCard, error) {
+	hasAudit := slices.Contains(permissions, "View audit logs")
+	hasSecurity := slices.Contains(permissions, "View security logs")
+	return s.repo.GetLogMetrics(ctx, hasAudit, hasSecurity)
+}
+
+func (s *metricsService) GetPermissionMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return s.repo.GetPermissionMetrics(ctx)
+}
+
+func (s *metricsService) GetRegistrationMetrics(
+	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
+) ([]models.MetricCard, error) {
+	var allowedClients []string
+	var err error
+	if !slices.Contains(permissions, "View all appclients") {
+		allowedClients, err = s.repo.GetBoundClientIDs(ctx, userID[:])
+		if err != nil {
+			log.Printf(
+				"[MetricsService] GetBoundClientIDs error: %v",
+				err,
+			)
+			return nil, fmt.Errorf(
+				"failed to get bound client IDs: %w",
+				err,
+			)
+		}
+		if allowedClients == nil {
+			allowedClients = []string{}
+		}
+	}
+	return s.repo.GetRegistrationMetrics(ctx, allowedClients)
 }

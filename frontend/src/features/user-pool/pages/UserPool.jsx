@@ -23,6 +23,9 @@ import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS, 
 import { resolveReinviteAccountTypeId } from "../utils/reinviteAccountType";
 import { getUserLabel } from "../utils/userLabels";
 import { UserPoolIcon } from "../components/userpoolIcons";
+import MetricsCard from "../../../components/MetricsCard";
+import { UserIcon } from "../../../components/Icons";
+import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -44,6 +47,11 @@ export default function UserPool() {
   const isLoadingCurrentUser = Boolean(outletContext.isLoadingCurrentUser);
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
   const isDarkMode = colorMode === "dark";
+  const [userMetrics, setUserMetrics] = useState(null);
+
+  useEffect(() => {
+    metricsService.getUserMetrics().then(setUserMetrics).catch(() => {});
+  }, []);
   const isCurrentUserSuperAdmin = hasSuperAdminRole(currentUser?.roles);
   const {
     appClients: appClientOptions,
@@ -258,7 +266,7 @@ export default function UserPool() {
 
   return (
     <>
-      <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+      <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-5 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
         <Breadcrumbs
           colorMode={colorMode}
           items={[
@@ -294,6 +302,16 @@ export default function UserPool() {
             </div>
           )}
         </div>
+
+        <MetricsCard
+          colorMode={colorMode}
+          isLoading={showLoading}
+          metrics={(Array.isArray(userMetrics) ? userMetrics : []).map((m) => ({
+            title: m.title,
+            value: m.value,
+            Icon: UserIcon,
+          }))}
+        />
 
         <div className="relative">
           <UserPoolCard colorMode={colorMode}>

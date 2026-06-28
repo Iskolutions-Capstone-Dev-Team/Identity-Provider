@@ -13,6 +13,9 @@ import PageHeaderActionButton from "../../../components/PageHeaderActionButton";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import { RolesIcon } from "../components/roleIcons";
+import MetricsCard from "../../../components/MetricsCard";
+import { RoleIcon, PermissionIcon } from "../../../components/Icons";
+import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -21,6 +24,13 @@ export default function Roles() {
   const navigate = useNavigate();
   const { colorMode = "light" } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
+  const [roleMetrics, setRoleMetrics] = useState(null);
+  const [permissionMetrics, setPermissionMetrics] = useState(null);
+
+  useEffect(() => {
+    metricsService.getRoleMetrics().then(setRoleMetrics).catch(() => {});
+    metricsService.getPermissionMetrics().then(setPermissionMetrics).catch(() => {});
+  }, []);
   const {
     search,
     setSearch,
@@ -121,7 +131,7 @@ export default function Roles() {
 
   return (
     <>
-      <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+      <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-5 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
         <Breadcrumbs
           colorMode={colorMode}
           items={[
@@ -150,6 +160,27 @@ export default function Roles() {
             </div>
           )}
         </div>
+
+        <MetricsCard
+          colorMode={colorMode}
+          isLoading={showLoading}
+          metrics={[
+            ...(Array.isArray(roleMetrics) ? roleMetrics : [])
+              .filter((m) => m.title !== "Active Roles")
+              .map((m) => ({
+              title: m.title,
+              value: m.value,
+              Icon: RoleIcon,
+            })),
+            ...(Array.isArray(permissionMetrics) ? permissionMetrics : [])
+              .filter((m) => m.title !== "Assigned Permissions")
+              .map((m) => ({
+              title: m.title,
+              value: m.value,
+              Icon: PermissionIcon,
+            })),
+          ]}
+        />
 
         <div className="relative">
           <RolesListCard

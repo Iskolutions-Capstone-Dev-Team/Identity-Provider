@@ -14,6 +14,9 @@ import PageHeaderActionButton from "../../../components/PageHeaderActionButton";
 import { AppClientIcon } from "../components/AppClientIconBox";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
+import MetricsCard from "../../../components/MetricsCard";
+import { AppClientIcon as AppClientMetricIcon } from "../../../components/Icons";
+import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -30,6 +33,11 @@ export default function AppClient() {
         PERMISSIONS.VIEW_CONNECTED_APPCLIENTS,
     );
     const canViewClientList = canViewAllClients || canViewConnectedClients;
+    const [clientMetrics, setClientMetrics] = useState(null);
+
+    useEffect(() => {
+        metricsService.getClientMetrics().then(setClientMetrics).catch(() => { });
+    }, []);
     const {
         search, setSearch, page, setPage,
         paginatedClients, totalPages, totalResults,
@@ -163,7 +171,7 @@ export default function AppClient() {
 
     return (
         <>
-            <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+            <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-5 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
                 <Breadcrumbs
                     colorMode={colorMode}
                     items={[
@@ -194,6 +202,17 @@ export default function AppClient() {
                         </div>
                     )}
                 </div>
+
+                <MetricsCard
+                    colorMode={colorMode}
+                    isLoading={showLoading}
+                    metrics={(Array.isArray(clientMetrics) ? clientMetrics : []).map((m) => ({
+                        title: m.title,
+                        value: m.value,
+                        Icon: AppClientMetricIcon,
+                    }))}
+                />
+
                 <div className="relative">
                     <ConnectedAppClientCard
                         loading={showLoading}
