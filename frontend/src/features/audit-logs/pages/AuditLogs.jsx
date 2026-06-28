@@ -338,7 +338,7 @@ export default function AuditLogs() {
           colorMode={colorMode}
           isLoading={showLoading}
           metrics={(Array.isArray(logMetrics) ? logMetrics : []).map((m) => ({
-            title: m.title,
+            title: m.title === "Audit Logs" ? "Transaction Logs" : m.title,
             value: m.value,
             Icon: LogIcon,
           }))}
