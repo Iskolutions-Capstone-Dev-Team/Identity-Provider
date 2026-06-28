@@ -280,7 +280,7 @@ export default function UserPool() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <PageHeader
-              title="Users"
+              title="User"
               description="Manage user accounts"
               icon={<UserPoolIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
               colorMode={colorMode}

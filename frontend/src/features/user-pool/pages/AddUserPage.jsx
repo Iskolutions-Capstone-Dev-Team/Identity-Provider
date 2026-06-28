@@ -113,7 +113,7 @@ export default function AddUserPage() {
 
       <PageHeader
         title="Create User"
-        description="Add a new user to the system. Fill in the details and set the appropriate access."
+        description="Add a new user and fill in the details and set the appropriate access."
         icon={<CreateUserIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
         colorMode={colorMode}
       />
