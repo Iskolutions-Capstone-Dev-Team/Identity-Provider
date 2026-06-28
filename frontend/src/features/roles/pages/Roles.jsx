@@ -165,12 +165,16 @@ export default function Roles() {
           colorMode={colorMode}
           isLoading={showLoading}
           metrics={[
-            ...(Array.isArray(roleMetrics) ? roleMetrics : []).map((m) => ({
+            ...(Array.isArray(roleMetrics) ? roleMetrics : [])
+              .filter((m) => m.title !== "Active Roles")
+              .map((m) => ({
               title: m.title,
               value: m.value,
               Icon: RoleIcon,
             })),
-            ...(Array.isArray(permissionMetrics) ? permissionMetrics : []).map((m) => ({
+            ...(Array.isArray(permissionMetrics) ? permissionMetrics : [])
+              .filter((m) => m.title !== "Assigned Permissions")
+              .map((m) => ({
               title: m.title,
               value: m.value,
               Icon: PermissionIcon,
