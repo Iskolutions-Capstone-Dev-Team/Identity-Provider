@@ -336,6 +336,7 @@ export default function AuditLogs() {
 
         <MetricsCard
           colorMode={colorMode}
+          isLoading={showLoading}
           metrics={(Array.isArray(logMetrics) ? logMetrics : []).map((m) => ({
             title: m.title,
             value: m.value,

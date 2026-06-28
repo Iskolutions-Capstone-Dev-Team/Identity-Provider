@@ -205,6 +205,7 @@ export default function AppClient() {
 
                 <MetricsCard
                     colorMode={colorMode}
+                    isLoading={showLoading}
                     metrics={(Array.isArray(clientMetrics) ? clientMetrics : []).map((m) => ({
                         title: m.title,
                         value: m.value,

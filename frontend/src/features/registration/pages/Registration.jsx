@@ -466,6 +466,7 @@ export default function Registration() {
 
         <MetricsCard
           colorMode={colorMode}
+          isLoading={showLoading}
           metrics={(Array.isArray(registrationMetrics) ? registrationMetrics : []).map((m) => ({
             title: m.title,
             value: m.value,

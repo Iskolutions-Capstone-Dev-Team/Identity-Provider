@@ -305,6 +305,7 @@ export default function UserPool() {
 
         <MetricsCard
           colorMode={colorMode}
+          isLoading={showLoading}
           metrics={(Array.isArray(userMetrics) ? userMetrics : []).map((m) => ({
             title: m.title,
             value: m.value,

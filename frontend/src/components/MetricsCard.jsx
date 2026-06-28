@@ -29,29 +29,40 @@ export default function MetricsCard({ metrics = [], colorMode = "light", isLoadi
   const captionClassName = isDarkMode ? "text-slate-200" : "text-slate-600";
   const hoverClassName = "transition-transform duration-200 ease-out hover:-translate-y-1";
 
-  if (!metrics || metrics.length === 0) return null;
+  const displayMetrics = metrics && metrics.length > 0 
+    ? metrics 
+    : (isLoading ? Array(4).fill({}) : []);
 
-  const cols = metrics.length;
+  if (displayMetrics.length === 0) return null;
+
+  const cols = displayMetrics.length;
   const lgColsClass = cols === 1 ? "lg:grid-cols-1" : cols === 2 ? "lg:grid-cols-2" : cols === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4";
   const mdColsClass = cols === 1 ? "md:grid-cols-1" : "md:grid-cols-2";
 
   return (
     <div className={`w-full grid gap-4 ${mdColsClass} ${lgColsClass} mt-6`}>
-      {metrics.map((metric, idx) => {
+      {displayMetrics.map((metric, idx) => {
         const Icon = metric.Icon;
         return (
           <div key={idx} className={`rounded-2xl border p-5 ${hoverClassName} ${tone.border} ${cardClassName}`}>
             <div className="flex items-center gap-4">
-              {Icon && (
+              {Icon ? (
                 <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${tone.icon}`}>
                   <Icon className="h-6 w-6" />
                 </span>
-              )}
+              ) : isLoading ? (
+                <SkeletonBlock className="h-14 w-14 shrink-0 rounded-2xl" colorMode={colorMode} />
+              ) : null}
 
               <div className="min-w-0">
-                <p className={`text-xs font-black uppercase tracking-[0.16em] ${tone.accent}`}>
-                  {metric.title}
-                </p>
+                {metric.title ? (
+                  <p className={`text-xs font-black uppercase tracking-[0.16em] ${tone.accent}`}>
+                    {metric.title}
+                  </p>
+                ) : isLoading ? (
+                  <SkeletonBlock className="mb-2 h-4 w-24" colorMode={colorMode} />
+                ) : null}
+                
                 {isLoading ? (
                   <SkeletonBlock className="mt-3 h-10 w-16" colorMode={colorMode} />
                 ) : (
@@ -59,10 +70,14 @@ export default function MetricsCard({ metrics = [], colorMode = "light", isLoadi
                     {typeof metric.value === 'number' ? metric.value.toLocaleString() : metric.value ?? "—"}
                   </p>
                 )}
-                {metric.description && (
+
+                {metric.description && !isLoading && (
                   <p className={`mt-1 text-sm font-medium ${captionClassName}`}>
                     {metric.description}
                   </p>
+                )}
+                {isLoading && !metric.title && (
+                  <SkeletonBlock className="mt-2 h-3 w-32" colorMode={colorMode} />
                 )}
               </div>
             </div>

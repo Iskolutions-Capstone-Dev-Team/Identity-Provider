@@ -163,6 +163,7 @@ export default function Roles() {
 
         <MetricsCard
           colorMode={colorMode}
+          isLoading={showLoading}
           metrics={[
             ...(Array.isArray(roleMetrics) ? roleMetrics : []).map((m) => ({
               title: m.title,
