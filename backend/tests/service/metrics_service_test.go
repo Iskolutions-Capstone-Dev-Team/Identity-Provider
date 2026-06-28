@@ -45,7 +45,7 @@ func (m *mockMetricsRepository) GetBoundClientIDs(
 }
 
 func (m *mockMetricsRepository) GetClientMetrics(
-	ctx context.Context,
+	ctx context.Context, allowedClients []string,
 ) ([]models.MetricCard, error) {
 	return []models.MetricCard{}, nil
 }
@@ -57,7 +57,7 @@ func (m *mockMetricsRepository) GetRoleMetrics(
 }
 
 func (m *mockMetricsRepository) GetUserMetrics(
-	ctx context.Context,
+	ctx context.Context, adminID []byte,
 ) ([]models.MetricCard, error) {
 	return []models.MetricCard{}, nil
 }
@@ -340,13 +340,16 @@ func TestGetGroupMetrics(t *testing.T) {
 
 	ctx := context.Background()
 
-	if _, err := svc.GetClientMetrics(ctx); err != nil {
+	perms := []string{"View all appclients", "View all users"}
+	uID := uuid.New()
+
+	if _, err := svc.GetClientMetrics(ctx, perms, uID); err != nil {
 		t.Errorf("GetClientMetrics failed: %v", err)
 	}
 	if _, err := svc.GetRoleMetrics(ctx); err != nil {
 		t.Errorf("GetRoleMetrics failed: %v", err)
 	}
-	if _, err := svc.GetUserMetrics(ctx); err != nil {
+	if _, err := svc.GetUserMetrics(ctx, perms, uID); err != nil {
 		t.Errorf("GetUserMetrics failed: %v", err)
 	}
 	if _, err := svc.GetLogMetrics(ctx); err != nil {

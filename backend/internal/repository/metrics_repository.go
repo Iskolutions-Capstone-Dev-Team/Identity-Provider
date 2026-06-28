@@ -21,12 +21,14 @@ type MetricsRepository interface {
 		[]string, error)
 	GetClientMetrics(
 		ctx context.Context,
+		allowedClients []string,
 	) ([]models.MetricCard, error)
 	GetRoleMetrics(
 		ctx context.Context,
 	) ([]models.MetricCard, error)
 	GetUserMetrics(
 		ctx context.Context,
+		adminID []byte,
 	) ([]models.MetricCard, error)
 	GetLogMetrics(
 		ctx context.Context,
@@ -209,20 +211,62 @@ func (r *metricsRepository) GetBoundClientIDs(ctx context.Context,
 
 func (r *metricsRepository) GetClientMetrics(
 	ctx context.Context,
+	allowedClients []string,
 ) ([]models.MetricCard, error) {
+	if allowedClients != nil && len(allowedClients) == 0 {
+		return []models.MetricCard{
+			{
+				Title:       "Total Clients",
+				Value:       "0",
+				Description: "Total registered applications",
+			},
+			{
+				Title:       "Active Clients",
+				Value:       "0",
+				Description: "Active applications (not deleted)",
+			},
+		}, nil
+	}
+
 	var total, active int64
-	err := r.db.GetContext(ctx, &total, "SELECT COUNT(*) FROM clients")
+	queryTotal := "SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL"
+	queryActive := "SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL"
+
+	var argsTotal []interface{}
+	var argsActive []interface{}
+
+	if allowedClients != nil {
+		queryTotal += " AND BIN_TO_UUID(id) IN (?)"
+		argsTotal = append(argsTotal, allowedClients)
+		var err error
+		queryTotal, argsTotal, err = sqlx.In(queryTotal, argsTotal...)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"[MetricsRepository] total sqlx.In: %w", err,
+			)
+		}
+		queryTotal = r.db.Rebind(queryTotal)
+
+		queryActive += " AND BIN_TO_UUID(id) IN (?)"
+		argsActive = append(argsActive, allowedClients)
+		queryActive, argsActive, err = sqlx.In(queryActive, argsActive...)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"[MetricsRepository] active sqlx.In: %w", err,
+			)
+		}
+		queryActive = r.db.Rebind(queryActive)
+	}
+
+	err := r.db.GetContext(ctx, &total, queryTotal, argsTotal...)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[MetricsRepository] GetClientMetrics total: %w",
 			err,
 		)
 	}
-	err = r.db.GetContext(
-		ctx,
-		&active,
-		"SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL",
-	)
+
+	err = r.db.GetContext(ctx, &active, queryActive, argsActive...)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[MetricsRepository] GetClientMetrics active: %w",
@@ -248,7 +292,11 @@ func (r *metricsRepository) GetRoleMetrics(
 	ctx context.Context,
 ) ([]models.MetricCard, error) {
 	var total, active int64
-	err := r.db.GetContext(ctx, &total, "SELECT COUNT(*) FROM roles")
+	err := r.db.GetContext(
+		ctx,
+		&total,
+		"SELECT COUNT(*) FROM roles WHERE deleted_at IS NULL",
+	)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[MetricsRepository] GetRoleMetrics total: %w",
@@ -283,32 +331,75 @@ func (r *metricsRepository) GetRoleMetrics(
 
 func (r *metricsRepository) GetUserMetrics(
 	ctx context.Context,
+	adminID []byte,
 ) ([]models.MetricCard, error) {
 	var total, active, suspended int64
-	err := r.db.GetContext(ctx, &total, "SELECT COUNT(*) FROM users")
+	var queryTotal, queryActive, querySuspended string
+	var args []interface{}
+
+	if adminID == nil {
+		queryTotal = "SELECT COUNT(*) FROM users WHERE deleted_at IS NULL"
+		queryActive = "SELECT COUNT(*) FROM users " +
+			"WHERE status = 'active' AND deleted_at IS NULL"
+		querySuspended = "SELECT COUNT(*) FROM users " +
+			"WHERE status = 'suspended' AND deleted_at IS NULL"
+	} else {
+		queryTotal = `
+			SELECT COUNT(id) FROM (
+				SELECT u.id 
+				FROM users u
+				JOIN client_allowed_users cau ON u.id = cau.user_id
+				JOIN admin_allowed_clients aac 
+					ON cau.client_id = aac.client_id
+				WHERE aac.user_id = ? AND u.deleted_at IS NULL
+				UNION
+				SELECT id FROM users 
+				WHERE id = ? AND deleted_at IS NULL
+			) AS bound_users`
+		queryActive = `
+			SELECT COUNT(id) FROM (
+				SELECT u.id 
+				FROM users u
+				JOIN client_allowed_users cau ON u.id = cau.user_id
+				JOIN admin_allowed_clients aac 
+					ON cau.client_id = aac.client_id
+				WHERE aac.user_id = ? AND u.status = 'active' 
+					AND u.deleted_at IS NULL
+				UNION
+				SELECT id FROM users 
+				WHERE id = ? AND status = 'active' AND deleted_at IS NULL
+			) AS bound_users`
+		querySuspended = `
+			SELECT COUNT(id) FROM (
+				SELECT u.id 
+				FROM users u
+				JOIN client_allowed_users cau ON u.id = cau.user_id
+				JOIN admin_allowed_clients aac 
+					ON cau.client_id = aac.client_id
+				WHERE aac.user_id = ? AND u.status = 'suspended' 
+					AND u.deleted_at IS NULL
+				UNION
+				SELECT id FROM users 
+				WHERE id = ? AND status = 'suspended' AND deleted_at IS NULL
+			) AS bound_users`
+		args = []interface{}{adminID, adminID}
+	}
+
+	err := r.db.GetContext(ctx, &total, queryTotal, args...)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[MetricsRepository] GetUserMetrics total: %w",
 			err,
 		)
 	}
-	err = r.db.GetContext(
-		ctx,
-		&active,
-		"SELECT COUNT(*) FROM users "+
-			"WHERE status = 'active' AND deleted_at IS NULL",
-	)
+	err = r.db.GetContext(ctx, &active, queryActive, args...)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[MetricsRepository] GetUserMetrics active: %w",
 			err,
 		)
 	}
-	err = r.db.GetContext(
-		ctx,
-		&suspended,
-		"SELECT COUNT(*) FROM users WHERE status = 'suspended'",
-	)
+	err = r.db.GetContext(ctx, &suspended, querySuspended, args...)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"[MetricsRepository] GetUserMetrics suspended: %w",
@@ -410,7 +501,8 @@ func (r *metricsRepository) GetPermissionMetrics(
 	err = r.db.GetContext(
 		ctx,
 		&assigned,
-		"SELECT COUNT(DISTINCT permission_id) FROM role_permissions",
+		"SELECT COUNT(DISTINCT rp.permission_id) FROM role_permissions rp "+
+			"JOIN roles r ON rp.role_id = r.id WHERE r.deleted_at IS NULL",
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -451,7 +543,8 @@ func (r *metricsRepository) GetRegistrationMetrics(
 	err = r.db.GetContext(
 		ctx,
 		&preapproved,
-		"SELECT COUNT(*) FROM preapproved_clients",
+		"SELECT COUNT(*) FROM preapproved_clients pc JOIN clients c "+
+			"ON pc.client_id = c.id WHERE c.deleted_at IS NULL",
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
