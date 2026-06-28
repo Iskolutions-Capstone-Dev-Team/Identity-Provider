@@ -46,12 +46,7 @@ export default function Navbar({ activeColorMode = "light", onToggleColorMode, s
 
       <div className="relative flex min-h-[4.75rem] items-center justify-between gap-4 px-4 py-3 sm:min-h-[5.25rem] sm:px-6">
         <div className="min-w-0">
-          <p className={`text-[0.62rem] font-bold uppercase tracking-[0.24em] sm:text-[0.7rem] lg:text-[0.76rem] ${navbarTheme.eyebrow}`}>
-            PUP TAGUIG IDENTITY PROVIDER
-          </p>
-          <p className={`mt-1 truncate text-[0.58rem] sm:text-[0.68rem] lg:text-[0.76rem] ${navbarTheme.subtitle}`}>
-            POLYTECHNIC UNIVERSITY OF THE PHILIPPINES &mdash; TAGUIG CAMPUS
-          </p>
+          <div id="navbar-breadcrumbs" className="min-h-[1.25rem]"></div>
         </div>
 
         <div className="flex items-center gap-3">
