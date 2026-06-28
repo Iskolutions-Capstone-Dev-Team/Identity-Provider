@@ -328,7 +328,7 @@ export default function AuditLogs() {
         />
 
         <PageHeader
-          title="Audit Logs"
+          title="Audit Log"
           description="Track transaction and security activity"
           icon={<AuditLogsIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
           colorMode={colorMode}
