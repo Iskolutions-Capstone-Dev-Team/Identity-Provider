@@ -467,7 +467,9 @@ export default function Registration() {
         <MetricsCard
           colorMode={colorMode}
           isLoading={showLoading}
-          metrics={(Array.isArray(registrationMetrics) ? registrationMetrics : []).map((m) => ({
+          metrics={(Array.isArray(registrationMetrics) ? registrationMetrics : [])
+            .filter((m) => m.title !== "Pending Invitations")
+            .map((m) => ({
             title: m.title,
             value: m.value,
             Icon: RegistrationMetricIcon,
