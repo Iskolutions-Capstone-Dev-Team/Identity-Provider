@@ -53,6 +53,8 @@ type MetricsService interface {
 	) ([]models.MetricCard, error)
 	GetRegistrationMetrics(
 		ctx context.Context,
+		permissions []string,
+		userID uuid.UUID,
 	) ([]models.MetricCard, error)
 }
 
@@ -810,6 +812,26 @@ func (s *metricsService) GetPermissionMetrics(
 
 func (s *metricsService) GetRegistrationMetrics(
 	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
 ) ([]models.MetricCard, error) {
-	return s.repo.GetRegistrationMetrics(ctx)
+	var allowedClients []string
+	var err error
+	if !slices.Contains(permissions, "View all appclients") {
+		allowedClients, err = s.repo.GetBoundClientIDs(ctx, userID[:])
+		if err != nil {
+			log.Printf(
+				"[MetricsService] GetBoundClientIDs error: %v",
+				err,
+			)
+			return nil, fmt.Errorf(
+				"failed to get bound client IDs: %w",
+				err,
+			)
+		}
+		if allowedClients == nil {
+			allowedClients = []string{}
+		}
+	}
+	return s.repo.GetRegistrationMetrics(ctx, allowedClients)
 }

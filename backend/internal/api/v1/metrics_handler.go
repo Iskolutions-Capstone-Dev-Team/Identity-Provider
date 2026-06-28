@@ -317,8 +317,29 @@ func (h *MetricsHandler) GetRegistrationMetrics(c *gin.Context) {
 		return
 	}
 
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf(
+			"[MetricsHandler] GetRegistrationMetrics: invalid user ID: %v",
+			err,
+		)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid user context.",
+			err,
+		)
+		return
+	}
+
+	permissions := c.GetStringSlice("permissions")
+
 	metrics, err := h.MetricsService.GetRegistrationMetrics(
 		c.Request.Context(),
+		permissions,
+		userID,
 	)
 	if err != nil {
 		log.Printf(

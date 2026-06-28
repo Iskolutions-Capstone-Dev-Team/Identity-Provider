@@ -75,7 +75,7 @@ func (m *mockMetricsRepository) GetPermissionMetrics(
 }
 
 func (m *mockMetricsRepository) GetRegistrationMetrics(
-	ctx context.Context,
+	ctx context.Context, allowedClients []string,
 ) ([]models.MetricCard, error) {
 	return []models.MetricCard{}, nil
 }
@@ -358,7 +358,7 @@ func TestGetGroupMetrics(t *testing.T) {
 	if _, err := svc.GetPermissionMetrics(ctx); err != nil {
 		t.Errorf("GetPermissionMetrics failed: %v", err)
 	}
-	if _, err := svc.GetRegistrationMetrics(ctx); err != nil {
+	if _, err := svc.GetRegistrationMetrics(ctx, perms, uID); err != nil {
 		t.Errorf("GetRegistrationMetrics failed: %v", err)
 	}
 }

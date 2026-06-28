@@ -39,6 +39,7 @@ type MetricsRepository interface {
 	) ([]models.MetricCard, error)
 	GetRegistrationMetrics(
 		ctx context.Context,
+		allowedClients []string,
 	) ([]models.MetricCard, error)
 }
 
@@ -535,41 +536,121 @@ func (r *metricsRepository) GetPermissionMetrics(
 
 func (r *metricsRepository) GetRegistrationMetrics(
 	ctx context.Context,
+	allowedClients []string,
 ) ([]models.MetricCard, error) {
 	var types, preapproved, pending int64
-	err := r.db.GetContext(
-		ctx,
-		&types,
-		"SELECT COUNT(*) FROM account_types",
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"[MetricsRepository] GetRegistrationMetrics types: %w",
-			err,
+	var err error
+
+	if allowedClients != nil {
+		if len(allowedClients) == 0 {
+			types = 0
+			preapproved = 0
+			pending = 0
+		} else {
+			query, args, err := sqlx.In(
+				`SELECT COUNT(DISTINCT pc.account_type_id)
+				 FROM preapproved_clients pc
+				 JOIN clients c ON pc.client_id = c.id
+				 WHERE BIN_TO_UUID(c.id) IN (?)
+				   AND c.deleted_at IS NULL`,
+				allowedClients,
+			)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"[MetricsRepository] GetRegMetrics types query: %w",
+					err,
+				)
+			}
+			err = r.db.GetContext(ctx, &types, r.db.Rebind(query), args...)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"[MetricsRepository] GetRegMetrics types: %w",
+					err,
+				)
+			}
+
+			query, args, err = sqlx.In(
+				`SELECT COUNT(*)
+				 FROM preapproved_clients pc
+				 JOIN clients c ON pc.client_id = c.id
+				 WHERE BIN_TO_UUID(c.id) IN (?)
+				   AND c.deleted_at IS NULL`,
+				allowedClients,
+			)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"[MetricsRepository] GetRegMetrics preapproved query: %w",
+					err,
+				)
+			}
+			err = r.db.GetContext(ctx, &preapproved, r.db.Rebind(query), args...)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"[MetricsRepository] GetRegMetrics preapproved: %w",
+					err,
+				)
+			}
+
+			query, args, err = sqlx.In(
+				`SELECT COUNT(DISTINCT ic.id)
+				 FROM invitation_codes ic
+				 JOIN preapproved_clients pc ON ic.account_type_id = pc.account_type_id
+				 JOIN clients c ON pc.client_id = c.id
+				 WHERE BIN_TO_UUID(c.id) IN (?)
+				   AND c.deleted_at IS NULL`,
+				allowedClients,
+			)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"[MetricsRepository] GetRegMetrics pending query: %w",
+					err,
+				)
+			}
+			err = r.db.GetContext(ctx, &pending, r.db.Rebind(query), args...)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"[MetricsRepository] GetRegMetrics pending: %w",
+					err,
+				)
+			}
+		}
+	} else {
+		err = r.db.GetContext(
+			ctx,
+			&types,
+			"SELECT COUNT(*) FROM account_types",
 		)
-	}
-	err = r.db.GetContext(
-		ctx,
-		&preapproved,
-		"SELECT COUNT(*) FROM preapproved_clients pc JOIN clients c "+
-			"ON pc.client_id = c.id WHERE c.deleted_at IS NULL",
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"[MetricsRepository] GetRegistrationMetrics preapproved: %w",
-			err,
+		if err != nil {
+			return nil, fmt.Errorf(
+				"[MetricsRepository] GetRegistrationMetrics types: %w",
+				err,
+			)
+		}
+		err = r.db.GetContext(
+			ctx,
+			&preapproved,
+			`SELECT COUNT(*)
+			 FROM preapproved_clients pc
+			 JOIN clients c ON pc.client_id = c.id
+			 WHERE c.deleted_at IS NULL`,
 		)
-	}
-	err = r.db.GetContext(
-		ctx,
-		&pending,
-		"SELECT COUNT(*) FROM invitation_codes",
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"[MetricsRepository] GetRegistrationMetrics pending: %w",
-			err,
+		if err != nil {
+			return nil, fmt.Errorf(
+				"[MetricsRepository] GetRegistrationMetrics preapproved: %w",
+				err,
+			)
+		}
+		err = r.db.GetContext(
+			ctx,
+			&pending,
+			"SELECT COUNT(*) FROM invitation_codes",
 		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"[MetricsRepository] GetRegistrationMetrics pending: %w",
+				err,
+			)
+		}
 	}
 
 	return []models.MetricCard{
