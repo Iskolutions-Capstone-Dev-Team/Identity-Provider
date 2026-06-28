@@ -52,8 +52,8 @@ export default function CreateAppClientPage() {
       />
 
       <PageHeader
-        title="Create App Client"
-        description="Add a new application client and configure its access settings."
+        title="Create Client"
+        description="Add a new application and configure its access settings."
         icon={<CreateAppClientIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
         colorMode={colorMode}
       />
