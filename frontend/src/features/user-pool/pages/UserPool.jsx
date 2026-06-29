@@ -270,7 +270,7 @@ export default function UserPool() {
           colorMode={colorMode}
           items={[
             {
-              label: "User Pool",
+              label: "User",
             },
           ]}
         />

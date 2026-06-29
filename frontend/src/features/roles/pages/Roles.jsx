@@ -136,7 +136,7 @@ export default function Roles() {
           colorMode={colorMode}
           items={[
             {
-              label: "Roles",
+              label: "Role",
             },
           ]}
         />

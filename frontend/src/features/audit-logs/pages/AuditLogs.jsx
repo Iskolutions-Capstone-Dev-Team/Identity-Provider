@@ -324,7 +324,7 @@ export default function AuditLogs() {
           colorMode={colorMode}
           items={[
             {
-              label: "Audit Logs",
+              label: "Audit Log",
             },
           ]}
         />

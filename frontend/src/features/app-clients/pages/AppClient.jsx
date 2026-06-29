@@ -176,7 +176,7 @@ export default function AppClient() {
                     colorMode={colorMode}
                     items={[
                         {
-                            label: "App Client",
+                            label: "Client",
                         },
                     ]}
                 />

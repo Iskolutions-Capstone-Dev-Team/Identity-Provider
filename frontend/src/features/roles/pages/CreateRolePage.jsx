@@ -39,17 +39,17 @@ export default function CreateRolePage() {
         colorMode={colorMode}
         items={[
           {
-            label: "Roles",
+            label: "Role",
             to: "/roles",
           },
           {
-            label: "Create Role",
+            label: "New Role",
           },
         ]}
       />
 
       <PageHeader
-        title="Create Role"
+        title="New Role"
         description="Add a new role and assign the appropriate permissions."
         icon={<CreateRoleIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
         colorMode={colorMode}
