@@ -6,7 +6,7 @@ import { SearchIcon } from "./roleIcons";
 
 export default function RolesListCard({ loading = false, roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
-  const filtersClassName = `flex flex-col gap-5 pb-6 ${
+  const filtersClassName = `flex flex-col gap-5 ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
   const labelClassName = isDarkMode

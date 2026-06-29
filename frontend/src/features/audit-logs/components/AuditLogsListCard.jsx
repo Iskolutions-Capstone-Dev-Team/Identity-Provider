@@ -47,7 +47,7 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
     visibleLogTypeOptions[0] ||
     getLogTypeConfig(logType);
   const showLogTypePicker = visibleLogTypeOptions.length > 1;
-  const filtersClassName = `flex flex-col gap-5 pb-6 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end ${
+  const filtersClassName = `flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
   const labelClassName = isDarkMode
