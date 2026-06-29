@@ -1,4 +1,3 @@
-import AuditLogsCard from "../../audit-logs/components/AuditLogsCard";
 import Pagination from "../../../components/Pagination";
 import RegistrationTable from "./RegistrationTable";
 import ResultsCount from "../../../components/ResultsCount";
@@ -54,7 +53,7 @@ export default function RegistrationListCard({
   };
 
   return (
-    <AuditLogsCard colorMode={colorMode}>
+    <div className="relative space-y-5 sm:space-y-6 lg:space-y-8">
       <div className={filtersClassName}>
         <div className="min-w-0 w-full">
           <SpeechInputToolbar
@@ -111,6 +110,6 @@ export default function RegistrationListCard({
           />
         </div>
       )}
-    </AuditLogsCard>
+    </div>
   );
 }
