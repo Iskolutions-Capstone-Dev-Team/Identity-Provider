@@ -6,7 +6,7 @@ import { FloatingSpeechInputAction } from "./SpeechInputButton";
 import { AccessibilityIcon, FaqIcon, ToggleIcon } from "./componentIcons";
 
 const FAB_CONTAINER_CLASS_NAME =
-  "pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] right-4 z-[140] flex flex-col items-end gap-3 lg:bottom-20 lg:right-6";
+  "pointer-events-none fixed bottom-[1.65rem] left-1/2 -translate-x-1/2 z-[140] flex flex-col items-center gap-3 lg:bottom-20 lg:left-auto lg:right-6 lg:-translate-x-0 lg:items-end";
 const FAB_BUTTON_CLASS_NAME =
   "inline-flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-[#fff8f3] shadow-[0_20px_48px_-24px_rgba(43,3,7,0.82)] ring-[4px] ring-[#f8d24e] transition-[transform,box-shadow,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-[0_24px_56px_-24px_rgba(43,3,7,0.9)] focus:outline-none focus:ring-[6px] focus:ring-[#f8d24e]/35 disabled:cursor-not-allowed disabled:opacity-60";
 const FAB_TOOLTIP_CLASS_NAME =
