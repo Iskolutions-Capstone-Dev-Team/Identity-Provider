@@ -228,8 +228,8 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
       </div>
 
       <div className="min-w-0 lg:justify-self-start">
-        <label className={labelClassName}>Account Type</label>
-        <div className={userTypeGroupClassName} role="tablist" aria-label="Account Type">
+        <label className={labelClassName}>User Type</label>
+        <div className={userTypeGroupClassName} role="tablist" aria-label="User Type">
           {visibleUserTypeOptions.map((option) => {
             const isSelected = option.value === userType;
 
