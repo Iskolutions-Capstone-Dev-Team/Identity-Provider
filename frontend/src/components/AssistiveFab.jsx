@@ -6,7 +6,7 @@ import { FloatingSpeechInputAction } from "./SpeechInputButton";
 import { AccessibilityIcon, FaqIcon, ToggleIcon } from "./componentIcons";
 
 const FAB_CONTAINER_CLASS_NAME =
-  "pointer-events-none fixed bottom-[1.65rem] left-1/2 -translate-x-1/2 z-[140] flex flex-col items-center gap-3 lg:bottom-20 lg:left-auto lg:right-6 lg:-translate-x-0 lg:items-end";
+  "pointer-events-none fixed bottom-[1.65rem] left-1/2 -translate-x-1/2 z-[140] flex h-16 w-16 items-center justify-center lg:bottom-20 lg:left-auto lg:right-6 lg:-translate-x-0";
 const FAB_BUTTON_CLASS_NAME =
   "inline-flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-[#fff8f3] shadow-[0_20px_48px_-24px_rgba(43,3,7,0.82)] ring-[4px] ring-[#f8d24e] transition-[transform,box-shadow,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-[0_24px_56px_-24px_rgba(43,3,7,0.9)] focus:outline-none focus:ring-[6px] focus:ring-[#f8d24e]/35 disabled:cursor-not-allowed disabled:opacity-60";
 const FAB_TOOLTIP_CLASS_NAME =
@@ -16,31 +16,29 @@ const FAB_TOOLTIP_ARROW_CLASS_NAME =
 const FAB_ACTION_STAGGER_MS = 55;
 const FAB_ACTION_TRANSITION_MS = 320;
 const FAB_ACTION_WRAP_BASE_CLASS =
-  "origin-bottom-right will-change-transform transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
+  "absolute inset-0 flex items-center justify-center will-change-transform transition-all duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
 
-function getHiddenActionTransformClassName(distanceFromToggle) {
-  return distanceFromToggle === 0
-    ? "translate-y-4 scale-95"
-    : "translate-y-7 scale-[0.9]";
-}
+const ACTION_POSITIONS = [
+  "max-lg:-translate-x-[113px] max-lg:-translate-y-[41px] lg:-translate-x-[150px] lg:translate-y-0",
+  "max-lg:-translate-x-[50px] max-lg:-translate-y-[108px] lg:-translate-x-[130px] lg:-translate-y-[75px]",
+  "max-lg:translate-x-[50px] max-lg:-translate-y-[108px] lg:-translate-x-[75px] lg:-translate-y-[130px]",
+  "max-lg:translate-x-[113px] max-lg:-translate-y-[41px] lg:translate-x-0 lg:-translate-y-[150px]"
+];
 
-function getActionVisibilityClassName(isOpen, isVisible, distanceFromToggle) {
-  const hiddenTransformClassName =
-    getHiddenActionTransformClassName(distanceFromToggle);
-
+function getActionVisibilityClassName(isOpen, isVisible, actionIndex) {
   if (isOpen) {
-    return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-auto translate-y-0 scale-100 opacity-100`;
+    return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-auto scale-100 opacity-100 ${ACTION_POSITIONS[actionIndex]}`;
   }
 
   if (isVisible) {
-    return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none ${hiddenTransformClassName} opacity-0`;
+    return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none scale-[0.3] opacity-0 translate-x-0 translate-y-0`;
   }
 
-  return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none invisible ${hiddenTransformClassName} opacity-0`;
+  return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none invisible scale-[0.3] opacity-0 translate-x-0 translate-y-0`;
 }
 
 function getActionTransitionStyle(actionIndex, actionCount) {
-  const delay = (actionCount - actionIndex - 1) * FAB_ACTION_STAGGER_MS;
+  const delay = actionIndex * FAB_ACTION_STAGGER_MS;
 
   return {
     transitionDelay: `${delay}ms`,
@@ -160,11 +158,10 @@ export default function AssistiveFab({ colorMode = "light" }) {
     <>
       <div className={FAB_CONTAINER_CLASS_NAME}>
         {fabActions.map((action, actionIndex) => {
-          const distanceFromToggle = fabActions.length - actionIndex - 1;
           const actionVisibilityClassName = getActionVisibilityClassName(
             isOpen,
             areActionsVisible,
-            distanceFromToggle,
+            actionIndex,
           );
           const actionTransitionStyle = getActionTransitionStyle(
             actionIndex,
