@@ -47,7 +47,7 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
   const visibleUserTypeOptions = showAdminUserType
     ? userTypeOptions
     : userTypeOptions.filter((option) => option.value !== ADMIN_USER_TYPE);
-  const containerClassName = `flex flex-col gap-5 border-b pb-6 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(14rem,18rem)_auto] lg:items-end ${
+  const containerClassName = `flex flex-col gap-5 pb-6 lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(14rem,18rem)_auto] lg:items-end ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
   const labelClassName = isDarkMode

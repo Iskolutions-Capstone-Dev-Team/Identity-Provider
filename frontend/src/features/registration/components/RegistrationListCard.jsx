@@ -25,7 +25,7 @@ export default function RegistrationListCard({
   colorMode = "light",
 }) {
   const isDarkMode = colorMode === "dark";
-  const filtersClassName = `flex flex-col gap-5 border-b pb-6 ${
+  const filtersClassName = `flex flex-col gap-5 pb-6 ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
   const labelClassName = isDarkMode
@@ -40,7 +40,7 @@ export default function RegistrationListCard({
   const searchInputClassName = isDarkMode
     ? "h-full w-full bg-transparent text-sm text-[#f6eaec] outline-none transition-colors duration-500 ease-out placeholder:text-[#a58d95]"
     : "h-full w-full bg-transparent text-sm text-[#4a1921] outline-none transition-colors duration-500 ease-out placeholder:text-[#9a7b81]";
-  const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
+  const footerClassName = `flex flex-col gap-4 pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
 

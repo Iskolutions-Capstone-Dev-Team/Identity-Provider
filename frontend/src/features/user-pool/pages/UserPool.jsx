@@ -122,7 +122,7 @@ export default function UserPool() {
       : canDeleteUsers;
   const canReinviteCurrentUserType =
     userType === REGULAR_USER_TYPE && canAddUsers;
-  const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
+  const footerClassName = `flex flex-col gap-4 pt-5 lg:flex-row lg:items-center lg:justify-between ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
 
