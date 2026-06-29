@@ -1,4 +1,3 @@
-import AppClientCard from "./AppClientCard";
 import Pagination from "../../../components/Pagination";
 import ConnectedAppClientTable from "./ConnectedAppClientTable";
 import ResultsCount from "../../../components/ResultsCount";
@@ -36,7 +35,7 @@ export default function ConnectedAppClientCard({ loading = false, clients, total
     };
 
     return (
-        <AppClientCard colorMode={colorMode}>
+        <div className="relative space-y-5 sm:space-y-6 lg:space-y-8">
             <div className={containerClassName}>
                 <div className="min-w-0 w-full">
                     <SpeechInputToolbar
@@ -67,6 +66,6 @@ export default function ConnectedAppClientCard({ loading = false, clients, total
                     <Pagination currentPage={page} totalPages={totalPages} onPageChange={onPageChange} variant="glass" colorMode={colorMode} />
                 </div>
             )}
-        </AppClientCard>
+        </div>
     );
 }
