@@ -194,7 +194,7 @@ export default function AppClient() {
                     </div>
 
                     {canCreateClient && (
-                        <div className="self-end sm:self-center">
+                        <div className="w-full sm:w-auto sm:self-center">
                             <PageHeaderActionButton colorMode={colorMode} onClick={openCreate}>
                                 + Add Client
                             </PageHeaderActionButton>

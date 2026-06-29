@@ -286,7 +286,7 @@ export default function UserPool() {
           </div>
 
           {canAddUsers && (
-            <div className="self-end sm:self-center">
+            <div className="w-full sm:w-auto sm:self-center">
               <PageHeaderActionButton
                 colorMode={colorMode}
                 onClick={() =>

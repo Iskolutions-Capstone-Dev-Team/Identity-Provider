@@ -152,7 +152,7 @@ export default function Roles() {
           </div>
 
           {canCreateRole && (
-            <div className="self-end sm:self-center">
+            <div className="w-full sm:w-auto sm:self-center">
               <PageHeaderActionButton colorMode={colorMode} onClick={openCreate}>
                 + Add Role
               </PageHeaderActionButton>
