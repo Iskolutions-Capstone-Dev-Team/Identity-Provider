@@ -1,4 +1,3 @@
-import RoleCard from "./RoleCard";
 import Pagination from "../../../components/Pagination";
 import RolesListTable from "./RolesListTable";
 import ResultsCount from "../../../components/ResultsCount";
@@ -36,7 +35,7 @@ export default function RolesListCard({ loading = false, roles, totalResults, it
   };
 
   return (
-    <RoleCard colorMode={colorMode}>
+    <div className="relative space-y-5 sm:space-y-6 lg:space-y-8">
       <div className={filtersClassName}>
         <div className="min-w-0 w-full">
           <SpeechInputToolbar
@@ -88,6 +87,6 @@ export default function RolesListCard({ loading = false, roles, totalResults, it
           />
         </div>
       )}
-    </RoleCard>
+    </div>
   );
 }
