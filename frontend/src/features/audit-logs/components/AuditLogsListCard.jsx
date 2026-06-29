@@ -1,5 +1,4 @@
 import { useState } from "react";
-import AuditLogsCard from "./AuditLogsCard";
 import ResultsCount from "../../../components/ResultsCount";
 import Pagination from "../../../components/Pagination";
 import LogsTable from "./LogsTable";
@@ -129,7 +128,7 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
   }
 
   return (
-    <AuditLogsCard colorMode={colorMode}>
+    <div className="relative space-y-5 sm:space-y-6 lg:space-y-8">
       <div className={filtersClassName}>
         <div className="min-w-0 w-full">
           <SpeechInputToolbar
@@ -215,6 +214,6 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
           />
         </div>
       )}
-    </AuditLogsCard>
+    </div>
   );
 }
