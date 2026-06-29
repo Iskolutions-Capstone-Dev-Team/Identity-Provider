@@ -100,20 +100,18 @@ export default function AddUserPage() {
         colorMode={colorMode}
         items={[
           {
-            label: "User Pool",
+            label: "User",
             to: "/user-pool",
-            icon: <UserPoolIcon />,
           },
           {
-            label: "Create User",
-            icon: <CreateUserIcon />,
+            label: "New User",
           },
         ]}
       />
 
       <PageHeader
-        title="Create User"
-        description="Add a new user to the system. Fill in the details and set the appropriate access."
+        title="New User"
+        description="Add a new user and fill in the details and set the appropriate access."
         icon={<CreateUserIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
         colorMode={colorMode}
       />

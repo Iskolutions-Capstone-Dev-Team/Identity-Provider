@@ -42,18 +42,16 @@ export default function CreateRegistrationConfigPage() {
           {
             label: "Registration",
             to: "/registration",
-            icon: <RegistrationIcon />,
           },
           {
-            label: "Create Registration",
-            icon: <CreateRegistrationIcon />,
+            label: "New Registration",
           },
         ]}
       />
 
       <PageHeader
-        title="Create Registration"
-        description="Add a new registration config and pre-approve app clients."
+        title="New Registration"
+        description="Add a new account type and pre-approve app clients."
         icon={<CreateRegistrationIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
         colorMode={colorMode}
       />

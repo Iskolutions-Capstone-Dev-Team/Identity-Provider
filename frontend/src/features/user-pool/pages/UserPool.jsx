@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useUsers } from "../hooks/useUsers";
-import UserPoolCard from "../components/UserPoolCard";
 import UserPoolFilters from "../components/UserPoolFilters";
 import UserPoolTable from "../components/UserPoolTable";
 import Pagination from "../../../components/Pagination";
@@ -123,7 +122,7 @@ export default function UserPool() {
       : canDeleteUsers;
   const canReinviteCurrentUserType =
     userType === REGULAR_USER_TYPE && canAddUsers;
-  const footerClassName = `flex flex-col gap-4 border-t pt-5 lg:flex-row lg:items-center lg:justify-between ${
+  const footerClassName = `flex flex-col items-center gap-4 pt-5 lg:grid lg:grid-cols-3 ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
 
@@ -271,8 +270,7 @@ export default function UserPool() {
           colorMode={colorMode}
           items={[
             {
-              label: "User Pool",
-              icon: <UserPoolIcon />,
+              label: "User",
             },
           ]}
         />
@@ -280,7 +278,7 @@ export default function UserPool() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <PageHeader
-              title="Users"
+              title="User"
               description="Manage user accounts"
               icon={<UserPoolIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
               colorMode={colorMode}
@@ -288,7 +286,7 @@ export default function UserPool() {
           </div>
 
           {canAddUsers && (
-            <div className="self-end sm:self-center">
+            <div className="w-full sm:w-auto sm:self-center">
               <PageHeaderActionButton
                 colorMode={colorMode}
                 onClick={() =>
@@ -314,7 +312,7 @@ export default function UserPool() {
         />
 
         <div className="relative">
-          <UserPoolCard colorMode={colorMode}>
+          <div className="relative space-y-5 sm:space-y-6 lg:space-y-8">
             <ErrorAlert
               message={fetchError}
               onClose={() => setFetchError("")}
@@ -344,21 +342,26 @@ export default function UserPool() {
             />
             {!showLoading && (
               <div className={footerClassName}>
-                <ResultsCount
-                  page={page}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  totalResults={totalResults}
-                  currentResultsCount={paginatedUsers.length}
-                  variant="glass"
-                  colorMode={colorMode}
-                />
-                <Pagination
-                  totalPages={totalPages}
-                  currentPage={page}
-                  onPageChange={setPage}
-                  variant="glass"
-                  colorMode={colorMode}
-                />
+                <div className="flex w-full justify-center lg:justify-start">
+                  <ResultsCount
+                    page={page}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    totalResults={totalResults}
+                    currentResultsCount={paginatedUsers.length}
+                    variant="glass"
+                    colorMode={colorMode}
+                  />
+                </div>
+                <div className="flex w-full justify-center">
+                  <Pagination
+                    totalPages={totalPages}
+                    currentPage={page}
+                    onPageChange={setPage}
+                    variant="glass"
+                    colorMode={colorMode}
+                  />
+                </div>
+                <div className="hidden lg:block"></div>
               </div>
             )}
             <UserPoolModal
@@ -383,7 +386,7 @@ export default function UserPool() {
               includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
               colorMode={colorMode}
             />
-          </UserPoolCard>
+          </div>
         </div>
       </div>
       <DeleteConfirmModal

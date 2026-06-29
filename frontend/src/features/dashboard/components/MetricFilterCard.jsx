@@ -1,4 +1,4 @@
-import { CalendarIcon } from "./dashboardIcons";
+import { CalendarIcon } from "./DashboardIcons";
 
 function SkeletonBlock({ className = "", colorMode = "light" }) {
   const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";

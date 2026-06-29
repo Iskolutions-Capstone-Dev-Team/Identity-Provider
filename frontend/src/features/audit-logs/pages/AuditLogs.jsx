@@ -181,6 +181,7 @@ export default function AuditLogs() {
 
   useEffect(() => {
     let ignore = false;
+    const controller = new AbortController();
 
     const loadLogs = async () => {
       if (isSecurityLogType && !canViewSecurityLogs) {
@@ -200,6 +201,7 @@ export default function AuditLogs() {
           page,
           limit: ITEMS_PER_PAGE,
           actor: search,
+          signal: controller.signal,
         });
         const nextLogs = getAuditLogs(payload).map((log, index) =>
           normalizeLog(log, index),
@@ -213,7 +215,7 @@ export default function AuditLogs() {
         setTotalResults(getTotalResults(payload, nextLogs.length));
         setTotalPages(getTotalPages(payload));
       } catch (fetchError) {
-        if (ignore) {
+        if (ignore || fetchError?.name === "CanceledError") {
           return;
         }
 
@@ -237,6 +239,7 @@ export default function AuditLogs() {
 
     return () => {
       ignore = true;
+      controller.abort();
     };
   }, [
     canViewSecurityLogs,
@@ -321,14 +324,13 @@ export default function AuditLogs() {
           colorMode={colorMode}
           items={[
             {
-              label: "Audit Logs",
-              icon: <AuditLogsIcon />,
+              label: "Audit Log",
             },
           ]}
         />
 
         <PageHeader
-          title="Audit Logs"
+          title="Audit Log"
           description="Track transaction and security activity"
           icon={<AuditLogsIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
           colorMode={colorMode}

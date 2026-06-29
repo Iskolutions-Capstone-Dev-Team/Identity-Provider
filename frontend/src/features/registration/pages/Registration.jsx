@@ -440,7 +440,6 @@ export default function Registration() {
           items={[
             {
               label: "Registration",
-              icon: <RegistrationIcon className="size-6" />,
             },
           ]}
         />
@@ -456,7 +455,7 @@ export default function Registration() {
           </div>
 
           {canCreateRegistration && (
-            <div className="self-end sm:self-center">
+            <div className="w-full sm:w-auto sm:self-center">
               <PageHeaderActionButton colorMode={colorMode} onClick={handleOpenCreate}>
                 + Add Account Type
               </PageHeaderActionButton>

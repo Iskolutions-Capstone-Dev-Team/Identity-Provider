@@ -3,7 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import PageHeader from "../../../components/PageHeader";
 import PageHeaderActionButton from "../../../components/PageHeaderActionButton";
-import { DashboardChartIcon, DownloadIcon } from "../components/dashboardIcons";
+import { DashboardChartIcon, DownloadIcon } from "../components/DashboardIcons";
 import MetricFilterCard from "../components/MetricFilterCard";
 import ReportConfirmModal from "../components/ReportConfirmModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
@@ -227,7 +227,7 @@ export default function Dashboard() {
           </>
         ) : null}
 
-        <section className="grid gap-4 lg:grid-cols-3">
+        <section className="w-full grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {normalizedMetrics.loginStats.map((stat) => (
             <MetricFilterCard
               key={stat.key}

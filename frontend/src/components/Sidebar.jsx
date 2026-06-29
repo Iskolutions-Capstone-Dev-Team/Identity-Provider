@@ -327,13 +327,13 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
         .filter((section) => section.items.length > 0);
   const mobileMenuItems = visibleMenuSections.flatMap((section) => section.items);
   const mobileNavItems = [...mobileMenuItems, { isLogout: true, name: "Logout", key: "logout" }];
-  const shouldShowMobileMoreMenu = mobileNavItems.length > 5;
+  const shouldShowMobileMoreMenu = mobileNavItems.length > 4;
   const visibleMobileMenuItems = shouldShowMobileMoreMenu
-    ? mobileMenuItems.slice(0, 4)
+    ? mobileMenuItems.slice(0, 3)
     : mobileMenuItems;
   const overflowMobileMenuItems = shouldShowMobileMoreMenu
     ? [
-        ...mobileMenuItems.slice(4).map((item) => ({
+        ...mobileMenuItems.slice(3).map((item) => ({
           ...item,
           key: item.path,
           icon: renderSidebarMenuIcon(item, "h-4 w-4 shrink-0 text-current"),
@@ -493,36 +493,52 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
         <div className={`relative overflow-visible rounded-[2rem] border p-2 backdrop-blur-2xl ${theme.mobileShell}`}>
           <div className={`pointer-events-none absolute inset-0 ${theme.mobileOverlay}`} />
 
-          <div className="relative flex items-center gap-2">
-            {visibleMobileMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
+          <div className="relative flex items-center justify-between">
+            <div className="flex flex-1 items-center justify-evenly">
+              {visibleMobileMenuItems.slice(0, 2).map((item) => {
+                const isActive = location.pathname === item.path;
 
-              return (
-                <MobileNavButton key={item.path} isActive={isActive} label={item.name} onClick={() => navigate(item.path)} theme={theme}>
-                  <MobileMenuItemIcon item={item} isActive={isActive} />
-                </MobileNavButton>
-              );
-            })}
+                return (
+                  <MobileNavButton key={item.path} isActive={isActive} label={item.name} onClick={() => navigate(item.path)} theme={theme}>
+                    <MobileMenuItemIcon item={item} isActive={isActive} />
+                  </MobileNavButton>
+                );
+              })}
+            </div>
 
-            {shouldShowMobileMoreMenu ? (
-              <div ref={moreMenuRef} className="relative flex flex-1">
-                <MobileMoreMenu
-                  items={overflowMobileMenuItems}
-                  isOpen={isMoreMenuOpen}
-                  theme={theme}
-                  onItemClick={handleMobileMoreItemClick}
-                />
-                <MobileNavButton isActive={isMoreMenuOpen || isOverflowItemActive} label="More" onClick={() => setIsMoreMenuOpen((prev) => !prev)} theme={theme}>
-                  <MoreMenuIcon className="h-5 w-5 transition-all duration-300" />
+            <div className="pointer-events-none w-16 shrink-0 sm:w-20" />
+
+            <div className="flex flex-1 items-center justify-evenly">
+              {visibleMobileMenuItems.slice(2).map((item) => {
+                const isActive = location.pathname === item.path;
+
+                return (
+                  <MobileNavButton key={item.path} isActive={isActive} label={item.name} onClick={() => navigate(item.path)} theme={theme}>
+                    <MobileMenuItemIcon item={item} isActive={isActive} />
+                  </MobileNavButton>
+                );
+              })}
+
+              {shouldShowMobileMoreMenu ? (
+                <div ref={moreMenuRef} className="relative flex flex-1">
+                  <MobileMoreMenu
+                    items={overflowMobileMenuItems}
+                    isOpen={isMoreMenuOpen}
+                    theme={theme}
+                    onItemClick={handleMobileMoreItemClick}
+                  />
+                  <MobileNavButton isActive={isMoreMenuOpen || isOverflowItemActive} label="More" onClick={() => setIsMoreMenuOpen((prev) => !prev)} theme={theme}>
+                    <MoreMenuIcon className="h-5 w-5 transition-all duration-300" />
+                  </MobileNavButton>
+                </div>
+              ) : (
+                <MobileNavButton isActive={false} label="Logout" onClick={handleLogout} theme={theme}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+                  </svg>
                 </MobileNavButton>
-              </div>
-            ) : (
-              <MobileNavButton isActive={false} label="Logout" onClick={handleLogout} theme={theme}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
-                </svg>
-              </MobileNavButton>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -176,8 +176,7 @@ export default function AppClient() {
                     colorMode={colorMode}
                     items={[
                         {
-                            label: "App Client",
-                            icon: <AppClientIcon className="size-6" />,
+                            label: "Client",
                         },
                     ]}
                 />
@@ -185,8 +184,8 @@ export default function AppClient() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0 flex-1">
                         <PageHeader
-                            title="App Client"
-                            description="Manage application clients and settings"
+                            title="Client"
+                            description="Manage application and settings"
                             icon={
                                 <AppClientIcon className="h-14 w-14 sm:h-16 sm:w-16" />
                             }
@@ -195,7 +194,7 @@ export default function AppClient() {
                     </div>
 
                     {canCreateClient && (
-                        <div className="self-end sm:self-center">
+                        <div className="w-full sm:w-auto sm:self-center">
                             <PageHeaderActionButton colorMode={colorMode} onClick={openCreate}>
                                 + Add Client
                             </PageHeaderActionButton>

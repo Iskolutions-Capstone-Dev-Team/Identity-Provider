@@ -40,20 +40,18 @@ export default function CreateAppClientPage() {
         colorMode={colorMode}
         items={[
           {
-            label: "App Client",
+            label: "Client",
             to: "/app-client",
-            icon: <AppClientIcon className="size-6" />,
           },
           {
-            label: "Create App Client",
-            icon: <CreateAppClientIcon />,
+            label: "New Client",
           },
         ]}
       />
 
       <PageHeader
-        title="Create App Client"
-        description="Add a new application client and configure its access settings."
+        title="New Client"
+        description="Add a new application and configure its access settings."
         icon={<CreateAppClientIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
         colorMode={colorMode}
       />

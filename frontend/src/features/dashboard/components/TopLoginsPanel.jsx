@@ -60,7 +60,9 @@ export function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeri
           <button key={period.key} type="button" onClick={() => onSelectPeriod(period.key)}
             className={`rounded-md px-3 py-2 font-semibold transition ${
               isSelected
-                ? `${accent.bg} ${accent.selectedText}`
+                ? isDarkMode
+                  ? "bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] text-white"
+                  : "bg-[#7b0d15] text-white"
                 : idleClassName
             }`}
           >
