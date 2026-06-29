@@ -227,7 +227,7 @@ export default function Dashboard() {
           </>
         ) : null}
 
-        <section className="grid gap-4 lg:grid-cols-3">
+        <section className="w-full grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {normalizedMetrics.loginStats.map((stat) => (
             <MetricFilterCard
               key={stat.key}
