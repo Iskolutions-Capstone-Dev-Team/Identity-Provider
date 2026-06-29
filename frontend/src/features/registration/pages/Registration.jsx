@@ -440,7 +440,6 @@ export default function Registration() {
           items={[
             {
               label: "Registration",
-              icon: <RegistrationIcon className="size-6" />,
             },
           ]}
         />

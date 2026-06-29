@@ -42,11 +42,9 @@ export default function CreateAppClientPage() {
           {
             label: "App Client",
             to: "/app-client",
-            icon: <AppClientIcon className="size-6" />,
           },
           {
             label: "Create App Client",
-            icon: <CreateAppClientIcon />,
           },
         ]}
       />

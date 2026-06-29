@@ -137,7 +137,6 @@ export default function Roles() {
           items={[
             {
               label: "Roles",
-              icon: <RolesIcon />,
             },
           ]}
         />

@@ -322,7 +322,6 @@ export default function AuditLogs() {
           items={[
             {
               label: "Audit Logs",
-              icon: <AuditLogsIcon />,
             },
           ]}
         />

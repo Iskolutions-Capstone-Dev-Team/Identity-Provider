@@ -41,11 +41,9 @@ export default function CreateRolePage() {
           {
             label: "Roles",
             to: "/roles",
-            icon: <RolesIcon />,
           },
           {
             label: "Create Role",
-            icon: <CreateRoleIcon />,
           },
         ]}
       />

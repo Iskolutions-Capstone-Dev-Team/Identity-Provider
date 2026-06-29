@@ -102,11 +102,9 @@ export default function AddUserPage() {
           {
             label: "User Pool",
             to: "/user-pool",
-            icon: <UserPoolIcon />,
           },
           {
             label: "Create User",
-            icon: <CreateUserIcon />,
           },
         ]}
       />

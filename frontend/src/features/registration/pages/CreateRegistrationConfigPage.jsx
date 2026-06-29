@@ -42,11 +42,9 @@ export default function CreateRegistrationConfigPage() {
           {
             label: "Registration",
             to: "/registration",
-            icon: <RegistrationIcon />,
           },
           {
             label: "Create Account Type",
-            icon: <CreateRegistrationIcon />,
           },
         ]}
       />

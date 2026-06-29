@@ -271,7 +271,6 @@ export default function UserPool() {
           items={[
             {
               label: "User Pool",
-              icon: <UserPoolIcon />,
             },
           ]}
         />

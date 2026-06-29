@@ -177,7 +177,6 @@ export default function AppClient() {
                     items={[
                         {
                             label: "App Client",
-                            icon: <AppClientIcon className="size-6" />,
                         },
                     ]}
                 />

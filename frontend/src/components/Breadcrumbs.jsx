@@ -27,11 +27,6 @@ export default function Breadcrumbs({ items = [], colorMode = "light" }) {
         {items.map((item) => {
           const innerContent = (
             <>
-              {item.icon ? (
-                <span className="shrink-0 [&>svg]:size-4 lg:[&>svg]:size-[1.125rem]" aria-hidden="true">
-                  {item.icon}
-                </span>
-              ) : null}
               <span>{item.label}</span>
             </>
           );

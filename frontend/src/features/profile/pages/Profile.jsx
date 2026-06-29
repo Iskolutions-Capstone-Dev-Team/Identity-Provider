@@ -18,7 +18,6 @@ export default function Profile() {
         items={[
           {
             label: "Profile",
-            icon: <ProfileIcon className="size-4 shrink-0" />,
           },
         ]}
       />
