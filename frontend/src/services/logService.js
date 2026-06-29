@@ -26,9 +26,10 @@ function buildLogParams({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, actor = ""
 }
 
 export const logService = {
-  async getLogs({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, actor = "" } = {}) {
+  async getLogs({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, actor = "", signal } = {}) {
     const response = await axiosInstance.get(LOGS_BASE_PATH, {
       params: buildLogParams({ page, limit, actor }),
+      signal,
     });
     return response.data;
   },
@@ -38,9 +39,10 @@ export const logService = {
     return response.data;
   },
 
-  async getSecurityLogs({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, actor = "" } = {}) {
+  async getSecurityLogs({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, actor = "", signal } = {}) {
     const response = await axiosInstance.get(SECURITY_LOGS_BASE_PATH, {
       params: buildLogParams({ page, limit, actor }),
+      signal,
     });
     return response.data;
   },
