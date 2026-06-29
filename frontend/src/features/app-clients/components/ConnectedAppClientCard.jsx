@@ -21,7 +21,7 @@ export default function ConnectedAppClientCard({ loading = false, clients, total
     const searchInputClassName = isDarkMode
         ? "h-full w-full bg-transparent text-sm text-[#f6eaec] outline-none transition-colors duration-500 ease-out placeholder:text-[#a58d95]"
         : "h-full w-full bg-transparent text-sm text-[#4a1921] outline-none transition-colors duration-500 ease-out placeholder:text-[#9a7b81]";
-    const footerClassName = `flex flex-col gap-4 pt-5 lg:flex-row lg:items-center lg:justify-between ${
+    const footerClassName = `flex flex-col items-center gap-4 pt-5 lg:grid lg:grid-cols-3 ${
         isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
     }`;
     const updateSearchValue = (value) => {
@@ -55,15 +55,20 @@ export default function ConnectedAppClientCard({ loading = false, clients, total
             <ConnectedAppClientTable loading={loading} clients={clients} onView={onView} onEdit={onEdit} onDelete={onDelete} onRotateSecret={onRotateSecret} showEditAction={showEditAction} showDeleteAction={showDeleteAction} showRotateSecretAction={showRotateSecretAction} colorMode={colorMode} />
             {!loading && (
                 <div className={footerClassName}>
-                    <ResultsCount
-                        page={page}
-                        itemsPerPage={itemsPerPage}
-                        totalResults={totalResults}
-                        currentResultsCount={clients.length}
-                        variant="glass"
-                        colorMode={colorMode}
-                    />
-                    <Pagination currentPage={page} totalPages={totalPages} onPageChange={onPageChange} variant="glass" colorMode={colorMode} />
+                    <div className="flex w-full justify-center lg:justify-start">
+                        <ResultsCount
+                            page={page}
+                            itemsPerPage={itemsPerPage}
+                            totalResults={totalResults}
+                            currentResultsCount={clients.length}
+                            variant="glass"
+                            colorMode={colorMode}
+                        />
+                    </div>
+                    <div className="flex w-full justify-center">
+                        <Pagination currentPage={page} totalPages={totalPages} onPageChange={onPageChange} variant="glass" colorMode={colorMode} />
+                    </div>
+                    <div className="hidden lg:block"></div>
                 </div>
             )}
         </div>

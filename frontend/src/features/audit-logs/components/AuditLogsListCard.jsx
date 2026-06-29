@@ -85,7 +85,7 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
   const tooltipBubbleClassName = isDarkMode
     ? "pointer-events-none absolute left-1/2 top-[calc(100%+0.65rem)] z-30 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white/10 bg-[linear-gradient(180deg,rgba(16,23,38,0.98),rgba(30,20,30,0.98))] px-3 py-2 text-xs font-semibold text-[#f6eaec] opacity-0 shadow-[0_18px_40px_-24px_rgba(2,6,23,0.8)] transition duration-200"
     : "pointer-events-none absolute left-1/2 top-[calc(100%+0.65rem)] z-30 -translate-x-1/2 whitespace-nowrap rounded-xl border border-[#eed7ab] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,247,239,0.99))] px-3 py-2 text-xs font-semibold text-[#5d3a41] opacity-0 shadow-[0_18px_40px_-24px_rgba(43,3,7,0.35)] transition duration-200";
-  const footerClassName = `flex flex-col gap-4 pt-5 lg:flex-row lg:items-center lg:justify-between ${
+  const footerClassName = `flex flex-col items-center gap-4 pt-5 lg:grid lg:grid-cols-3 ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
   const updateSearchValue = (value) => {
@@ -197,21 +197,26 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
 
       {!loading && !error && (
         <div className={footerClassName}>
-          <ResultsCount
-            page={page}
-            itemsPerPage={itemsPerPage}
-            totalResults={totalResults}
-            currentResultsCount={logs.length}
-            variant="glass"
-            colorMode={colorMode}
-          />
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-            variant="glass"
-            colorMode={colorMode}
-          />
+          <div className="flex w-full justify-center lg:justify-start">
+            <ResultsCount
+              page={page}
+              itemsPerPage={itemsPerPage}
+              totalResults={totalResults}
+              currentResultsCount={logs.length}
+              variant="glass"
+              colorMode={colorMode}
+            />
+          </div>
+          <div className="flex w-full justify-center">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={onPageChange}
+              variant="glass"
+              colorMode={colorMode}
+            />
+          </div>
+          <div className="hidden lg:block"></div>
         </div>
       )}
     </div>

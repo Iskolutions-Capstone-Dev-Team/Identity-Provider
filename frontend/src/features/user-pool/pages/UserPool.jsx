@@ -122,7 +122,7 @@ export default function UserPool() {
       : canDeleteUsers;
   const canReinviteCurrentUserType =
     userType === REGULAR_USER_TYPE && canAddUsers;
-  const footerClassName = `flex flex-col gap-4 pt-5 lg:flex-row lg:items-center lg:justify-between ${
+  const footerClassName = `flex flex-col items-center gap-4 pt-5 lg:grid lg:grid-cols-3 ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
   }`;
 
@@ -342,21 +342,26 @@ export default function UserPool() {
             />
             {!showLoading && (
               <div className={footerClassName}>
-                <ResultsCount
-                  page={page}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  totalResults={totalResults}
-                  currentResultsCount={paginatedUsers.length}
-                  variant="glass"
-                  colorMode={colorMode}
-                />
-                <Pagination
-                  totalPages={totalPages}
-                  currentPage={page}
-                  onPageChange={setPage}
-                  variant="glass"
-                  colorMode={colorMode}
-                />
+                <div className="flex w-full justify-center lg:justify-start">
+                  <ResultsCount
+                    page={page}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    totalResults={totalResults}
+                    currentResultsCount={paginatedUsers.length}
+                    variant="glass"
+                    colorMode={colorMode}
+                  />
+                </div>
+                <div className="flex w-full justify-center">
+                  <Pagination
+                    totalPages={totalPages}
+                    currentPage={page}
+                    onPageChange={setPage}
+                    variant="glass"
+                    colorMode={colorMode}
+                  />
+                </div>
+                <div className="hidden lg:block"></div>
               </div>
             )}
             <UserPoolModal
