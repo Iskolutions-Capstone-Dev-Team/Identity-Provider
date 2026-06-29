@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useUsers } from "../hooks/useUsers";
-import UserPoolCard from "../components/UserPoolCard";
 import UserPoolFilters from "../components/UserPoolFilters";
 import UserPoolTable from "../components/UserPoolTable";
 import Pagination from "../../../components/Pagination";
@@ -314,7 +313,7 @@ export default function UserPool() {
         />
 
         <div className="relative">
-          <UserPoolCard colorMode={colorMode}>
+          <div className="relative space-y-5 sm:space-y-6 lg:space-y-8">
             <ErrorAlert
               message={fetchError}
               onClose={() => setFetchError("")}
@@ -383,7 +382,7 @@ export default function UserPool() {
               includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
               colorMode={colorMode}
             />
-          </UserPoolCard>
+          </div>
         </div>
       </div>
       <DeleteConfirmModal
