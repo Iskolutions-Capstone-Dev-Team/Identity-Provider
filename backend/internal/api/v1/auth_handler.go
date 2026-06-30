@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
@@ -71,9 +72,13 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 				Status:   models.StatusFail,
 				Metadata: metadata,
 			})
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "no client id given",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeClientError,
+			"Client ID is required.",
+			"no client id given",
+		)
 		return
 	}
 
@@ -153,9 +158,13 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[LoginAndAuthorize] Bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "Invalid request format",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request format.",
+			err,
+		)
 		return
 	}
 
@@ -163,20 +172,33 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 	cID, err := uuid.Parse(req.ClientID)
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] UUID Parse: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid client_id format",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeClientError,
+			"The Client ID format is invalid.",
+			err,
+		)
 		return
 	}
 	uIDStr := c.GetString("user_id")
 	uID, _ := uuid.Parse(uIDStr)
 	perms := c.GetStringSlice("permissions")
 
-	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID, uID, perms)
+	client, err := h.ClientService.GetClientByID(
+		c.Request.Context(),
+		cID,
+		uID,
+		perms,
+	)
 	if err != nil || !slices.Contains(client.Grants, "authorization_code") {
-		c.JSON(http.StatusForbidden, dto.ErrorResponse{
-			Error: "missing grant type",
-		})
+		errors.SendString(
+			c,
+			http.StatusForbidden,
+			errors.CodeForbidden,
+			"The client is missing the required grant type.",
+			"missing grant type",
+		)
 		return
 	}
 
@@ -217,22 +239,33 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 			Status:   models.StatusFail,
 			Metadata: metadataWithErr,
 		}
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), req.Email, logReq)
-		_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), req.Email, logReq)
+		_ = h.LogService.PostAuditLogWithActorString(
+			c.Request.Context(),
+			req.Email,
+			logReq,
+		)
+		_ = h.LogService.PostSecurityLogWithActorString(
+			c.Request.Context(),
+			req.Email,
+			logReq,
+		)
 
 		status := http.StatusInternalServerError
-		msg := "internal error"
+		code := errors.CodeInternalError
+		msg := "An unexpected error occurred. Please try again."
 
 		if strings.Contains(err.Error(), "verification") ||
 			strings.Contains(err.Error(), "UserLookup") {
 			status = http.StatusUnauthorized
-			msg = "invalid credentials"
+			code = errors.CodeInvalidCredentials
+			msg = "Incorrect email or password."
 		} else if strings.Contains(err.Error(), "Validation") {
 			status = http.StatusForbidden
-			msg = "unauthorized redirect uri"
+			code = errors.CodeForbidden
+			msg = "The redirect URI is not authorized for this client."
 		}
 
-		c.JSON(status, dto.ErrorResponse{Error: msg})
+		errors.Send(c, status, code, msg, err)
 		return
 	}
 
@@ -290,30 +323,47 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
 		log.Printf("[Logout] User ID Parse: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid user context",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid user context.",
+			err,
+		)
 		return
 	}
 
 	cID, err := uuid.Parse(req.ClientID)
 	if err != nil {
 		log.Printf("[Logout] Client ID Parse: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid client_id",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeClientError,
+			"The Client ID is invalid.",
+			err,
+		)
 		return
 	}
 
 	actorPerms := c.GetStringSlice("permissions")
 
 	// 1. Get client by id
-	_, err = h.ClientService.GetClientByID(c.Request.Context(), cID, userID, actorPerms)
+	_, err = h.ClientService.GetClientByID(
+		c.Request.Context(),
+		cID,
+		userID,
+		actorPerms,
+	)
 	if err != nil {
 		log.Printf("[Logout] Client Lookup: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "client not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"The requested client application was not found.",
+			err,
+		)
 		return
 	}
 
@@ -348,27 +398,39 @@ func (h *AuthHandler) InternalLogout(c *gin.Context) {
 	var req dto.InternalLogoutRequest
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("[InternalLogout] Bind: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid request payload",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request payload.",
+			err,
+		)
 		return
 	}
 
 	uID, err := uuid.Parse(req.UserID)
 	if err != nil {
 		log.Printf("[InternalLogout] User UUID Parse: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid user_id",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"The User ID is invalid.",
+			err,
+		)
 		return
 	}
 
 	cID, err := uuid.Parse(req.ClientID)
 	if err != nil {
 		log.Printf("[InternalLogout] Client UUID Parse: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid client_id",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeClientError,
+			"The Client ID is invalid.",
+			err,
+		)
 		return
 	}
 
@@ -376,12 +438,21 @@ func (h *AuthHandler) InternalLogout(c *gin.Context) {
 	actorID, _ := uuid.Parse(actorIDStr)
 	actorPerms := c.GetStringSlice("permissions")
 
-	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID, actorID, actorPerms)
+	client, err := h.ClientService.GetClientByID(
+		c.Request.Context(),
+		cID,
+		actorID,
+		actorPerms,
+	)
 	if err != nil {
 		log.Printf("[InternalLogout] Client Lookup: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "client not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"The requested client application was not found.",
+			err,
+		)
 		return
 	}
 
@@ -449,7 +520,10 @@ func (h *AuthHandler) CheckSession(c *gin.Context) {
 	}
 
 	// Log success with user email if possible
-	userEmail, _ := h.LogService.GetUserEmail(c.Request.Context(), session.UserId)
+	userEmail, _ := h.LogService.GetUserEmail(
+		c.Request.Context(),
+		session.UserId,
+	)
 	actorName := userEmail
 	if actorName == "" {
 		uID, _ := uuid.FromBytes(session.UserId)
@@ -499,9 +573,12 @@ func (h *AuthHandler) GetJWKS(c *gin.Context) {
 					"error":      err.Error(),
 				}),
 			})
-		c.JSON(
+		errors.Send(
+			c,
 			http.StatusInternalServerError,
-			dto.ErrorResponse{Error: "failed to generate jwks"},
+			errors.CodeInternalError,
+			"Failed to generate JWKS.",
+			err,
 		)
 		return
 	}
@@ -541,9 +618,13 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	var req dto.TokenExchangeRequest
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("[PostTokenExchange] Bind: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid_request",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid token exchange request.",
+			err,
+		)
 		return
 	}
 
@@ -551,21 +632,34 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 	cID, err := uuid.Parse(req.ClientID)
 	if err != nil {
 		log.Printf("[PostTokenExchange] UUID Parse: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid client_id format",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeClientError,
+			"The Client ID format is invalid.",
+			err,
+		)
 		return
 	}
 	uIDStr := c.GetString("user_id")
 	uID, _ := uuid.Parse(uIDStr)
 	perms := c.GetStringSlice("permissions")
 
-	client, err := h.ClientService.GetClientByID(c.Request.Context(), cID, uID, perms)
+	client, err := h.ClientService.GetClientByID(
+		c.Request.Context(),
+		cID,
+		uID,
+		perms,
+	)
 	if err != nil || (!slices.Contains(client.Grants, "client_credentials") &&
 		!slices.Contains(client.Grants, "authorization_code")) {
-		c.JSON(http.StatusForbidden, dto.ErrorResponse{
-			Error: "missing grant type",
-		})
+		errors.SendString(
+			c,
+			http.StatusForbidden,
+			errors.CodeForbidden,
+			"The client is missing the required grant type.",
+			"missing grant type",
+		)
 		return
 	}
 
@@ -603,21 +697,33 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 			Status:   models.StatusFail,
 			Metadata: metadataWithErr,
 		}
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), clientName, logReq)
-		_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), clientName, logReq)
+		_ = h.LogService.PostAuditLogWithActorString(
+			c.Request.Context(),
+			clientName,
+			logReq,
+		)
+		_ = h.LogService.PostSecurityLogWithActorString(
+			c.Request.Context(),
+			clientName,
+			logReq,
+		)
 
 		status := http.StatusInternalServerError
-		errorMsg := "server_error"
+		code := errors.CodeInternalError
+		msg := "An unexpected error occurred. Please try again."
 
 		if strings.Contains(err.Error(), "verification") {
-			status, errorMsg = http.StatusUnauthorized, "unauthorized"
+			status, code = http.StatusUnauthorized, errors.CodeUnauthorized
+			msg = "The request is unauthorized."
 		} else if strings.Contains(err.Error(), "Code Exchange") {
-			status, errorMsg = http.StatusBadRequest, "invalid_grant"
+			status, code = http.StatusBadRequest, errors.CodeInvalidInput
+			msg = "The authorization code is invalid or has expired."
 		} else if strings.Contains(err.Error(), "UUID Parse") {
-			status, errorMsg = http.StatusBadRequest, "invalid_client"
+			status, code = http.StatusBadRequest, errors.CodeClientError
+			msg = "The Client ID is invalid."
 		}
 
-		c.JSON(status, dto.ErrorResponse{Error: errorMsg})
+		errors.Send(c, status, code, msg, err)
 		return
 	}
 
@@ -628,8 +734,16 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		Status:   models.StatusSuccess,
 		Metadata: metadata,
 	}
-	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), clientName, logReq)
-	_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), clientName, logReq)
+	_ = h.LogService.PostAuditLogWithActorString(
+		c.Request.Context(),
+		clientName,
+		logReq,
+	)
+	_ = h.LogService.PostSecurityLogWithActorString(
+		c.Request.Context(),
+		clientName,
+		logReq,
+	)
 
 	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
 	if err != nil {
@@ -666,17 +780,25 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 	var req dto.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostTokenRotate] Bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid_request",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid refresh token request format.",
+			err,
+		)
 		return
 	}
 
-	// For refresh, we don't have a clear actor; use refresh token hint in metadata
+	// For refresh, we don't have a clear actor; use refresh token hint in
+	// metadata.
 	metadata := buildMetadata(map[string]interface{}{
-		"refresh_token_hint": req.RefreshToken[:min(8, len(req.RefreshToken))],
-		"ip":                 c.ClientIP(),
-		"user_agent":         c.Request.UserAgent(),
+		"refresh_token_hint": req.RefreshToken[:min(
+			8,
+			len(req.RefreshToken),
+		)],
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
 	})
 
 	resp, err := h.AuthService.RotateRefreshToken(
@@ -687,10 +809,13 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 		log.Printf("[PostTokenRotate] %v", err)
 
 		metadataWithErr := buildMetadata(map[string]interface{}{
-			"refresh_token_hint": req.RefreshToken[:min(8, len(req.RefreshToken))],
-			"ip":                 c.ClientIP(),
-			"user_agent":         c.Request.UserAgent(),
-			"error":              err.Error(),
+			"refresh_token_hint": req.RefreshToken[:min(
+				8,
+				len(req.RefreshToken),
+			)],
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+			"error":      err.Error(),
 		})
 		logReq := &dto.PostAuditLogRequest{
 			Action:   actionTokenRotate,
@@ -698,21 +823,34 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 			Status:   models.StatusFail,
 			Metadata: metadataWithErr,
 		}
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), "", logReq)
-		_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), "", logReq)
+		_ = h.LogService.PostAuditLogWithActorString(
+			c.Request.Context(),
+			"",
+			logReq,
+		)
+		_ = h.LogService.PostSecurityLogWithActorString(
+			c.Request.Context(),
+			"",
+			logReq,
+		)
 
 		status := http.StatusInternalServerError
-		errorMsg := "server_error"
+		code := errors.CodeInternalError
+		msg := "An unexpected error occurred. Please try again."
 
 		if strings.Contains(err.Error(), "TokenLookup") {
-			status, errorMsg = http.StatusUnauthorized, "invalid_token"
+			status, code = http.StatusUnauthorized, errors.CodeTokenExpired
+			msg = "The provided refresh token is invalid or has expired."
 		} else if strings.Contains(err.Error(), "missing refresh_token grant") {
-			status, errorMsg = http.StatusForbidden, "missing grant type"
+			status, code = http.StatusForbidden, errors.CodeForbidden
+			msg = "The client is missing the required grant type."
 		} else if strings.Contains(err.Error(), "RotateToken") {
-			status, errorMsg = http.StatusInternalServerError, "rotate_fail"
+			status = http.StatusInternalServerError
+			code = errors.CodeInternalError
+			msg = "Failed to rotate the refresh token."
 		}
 
-		c.JSON(status, dto.ErrorResponse{Error: errorMsg})
+		errors.Send(c, status, code, msg, err)
 		return
 	}
 
@@ -723,8 +861,16 @@ func (h *AuthHandler) PostTokenRotate(c *gin.Context) {
 		Status:   models.StatusSuccess,
 		Metadata: metadata,
 	}
-	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), "", logReq)
-	_ = h.LogService.PostSecurityLogWithActorString(c.Request.Context(), "", logReq)
+	_ = h.LogService.PostAuditLogWithActorString(
+		c.Request.Context(),
+		"",
+		logReq,
+	)
+	_ = h.LogService.PostSecurityLogWithActorString(
+		c.Request.Context(),
+		"",
+		logReq,
+	)
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -734,25 +880,37 @@ func (h *AuthHandler) PostInternalRefresh(c *gin.Context) {
 	var req dto.InternalRefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[PostInternalRefresh] Bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid_request",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request format.",
+			err,
+		)
 		return
 	}
 
 	// Verify that the client is indeed the primary internal client
 	if req.ClientID != os.Getenv("CLIENT_ID") {
-		c.JSON(http.StatusForbidden, dto.ErrorResponse{
-			Error: "client_not_allowed_for_session_refresh",
-		})
+		errors.SendString(
+			c,
+			http.StatusForbidden,
+			errors.CodeForbidden,
+			"This client is not authorized to refresh session.",
+			"client_not_allowed_for_session_refresh",
+		)
 		return
 	}
 
 	sessionID, err := c.Cookie(service.SESSION_COOKIE_NAME)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "session_required",
-		})
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"An active session is required to perform this action.",
+			err,
+		)
 		return
 	}
 
@@ -763,9 +921,13 @@ func (h *AuthHandler) PostInternalRefresh(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PostInternalRefresh] Service Error: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "refresh_fail",
-		})
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeSessionExpired,
+			"Session refresh failed.",
+			err,
+		)
 		return
 	}
 

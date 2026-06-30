@@ -7,7 +7,7 @@ export default function PageHeader({ title, description, colorMode = "light" }) 
     titleClassName,
   ].join(" ");
   const descriptionClasses = [
-    "mt-1 text-xs font-bold uppercase tracking-[0.16em] sm:text-sm",
+    "mt-1 text-xs font-bold first-letter:uppercase tracking-wider sm:text-sm",
     descriptionClassName,
   ].join(" ");
 

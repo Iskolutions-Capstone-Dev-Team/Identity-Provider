@@ -1,0 +1,639 @@
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import ErrorAlert from "../../../components/ErrorAlert";
+import MultiSelect from "../../../components/MultiSelect";
+import { useAllRoles } from "../../roles/hooks/useAllRoles";
+import UserPoolModalSelect from "./UserPoolModalSelect";
+import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
+import UserPoolUserIconBox from "./UserPoolUserIconBox";
+import { getModalTheme } from "../../../components/modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
+import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
+import { CloseIcon, ResendInviteIcon } from "./userpoolIcons";
+
+const initialFormData = {
+  id: "",
+  email: "",
+  givenName: "",
+  middleName: "",
+  surname: "",
+  suffix: "",
+  status: "active",
+  roleId: null,
+  roles: [],
+  accessibleClientIds: [],
+  accessibleClientNames: [],
+  manageableClientIds: [],
+  manageableClientNames: [],
+};
+
+const STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "suspended", label: "Suspend" },
+];
+
+const STATUS_VALUES = new Set(["active", "inactive", "suspended"]);
+const STATUS_DISPLAY_LABELS = {
+  active: "Active",
+  inactive: "Inactive",
+  suspended: "Suspended",
+};
+
+const normalizeText = (value) =>
+  typeof value === "string" ? value.trim() : "";
+
+const normalizeStatus = (value) => {
+  const normalizedValue = normalizeText(value).toLowerCase();
+  return STATUS_VALUES.has(normalizedValue) ? normalizedValue : "active";
+};
+
+const normalizeRoleId = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const normalizedValue = Number.parseInt(value, 10);
+  return Number.isInteger(normalizedValue) && normalizedValue > 0
+    ? normalizedValue
+    : null;
+};
+
+const normalizeClientIds = (clientIds) =>
+  Array.from(new Set((Array.isArray(clientIds) ? clientIds : []).filter(Boolean)));
+
+const normalizeClientNames = (clientNames) =>
+  Array.from(
+    new Set(
+      (Array.isArray(clientNames) ? clientNames : [])
+        .map((clientName) =>
+          typeof clientName === "string" ? clientName.trim() : "",
+        )
+        .filter(Boolean),
+    ),
+  );
+
+const normalizeRoleNames = (roles) => {
+  const normalizedRoles = Array.isArray(roles)
+    ? roles
+    : roles === null || roles === undefined
+      ? []
+      : [roles];
+
+  return Array.from(
+    new Set(
+      normalizedRoles
+        .map((role) => {
+          if (typeof role === "string") {
+            return role.trim();
+          }
+
+          return normalizeText(role?.role_name || role?.roleName || role?.name);
+        })
+        .filter(Boolean),
+    ),
+  );
+};
+
+const getStatusDisplayLabel = (status) =>
+  STATUS_DISPLAY_LABELS[normalizeStatus(status)] || STATUS_DISPLAY_LABELS.active;
+
+const extractErrorMessage = (error) =>
+  error?.response?.data?.error ||
+  error?.response?.data?.message ||
+  error?.message ||
+  "Unable to save user changes.";
+
+const createFormData = (user) => ({
+  id: user?.id || "",
+  email: user?.email || "",
+  givenName: user?.givenName || "",
+  middleName: user?.middleName || "",
+  surname: user?.surname || "",
+  suffix:
+    user?.suffix ||
+    user?.name_suffix ||
+    user?.suffixName ||
+    user?.suffix_name ||
+    "",
+  status: normalizeStatus(user?.status),
+  roleId: normalizeRoleId(user?.roleId),
+  roles: normalizeRoleNames(user?.roles),
+  accessibleClientIds: normalizeClientIds(user?.accessibleClientIds),
+  accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
+  manageableClientIds: normalizeClientIds(user?.manageableClientIds),
+  manageableClientNames: normalizeClientNames(user?.manageableClientNames),
+});
+
+const getSelectedClientOptions = (clientIds = [], clientNames = []) =>
+  normalizeClientIds(clientIds).map((clientId, index) => ({
+    id: clientId,
+    label: normalizeText(clientNames[index]) || clientId,
+  }));
+
+const mergeClientOptions = (baseOptions = [], ...selectedOptionLists) => {
+  const optionMap = new Map();
+
+  baseOptions.forEach((option) => {
+    if (option?.id && option?.label) {
+      optionMap.set(option.id, option);
+    }
+  });
+
+  selectedOptionLists.flat().forEach((option) => {
+    if (option?.id && option?.label && !optionMap.has(option.id)) {
+      optionMap.set(option.id, option);
+    }
+  });
+
+  return Array.from(optionMap.values());
+};
+
+export default function UserPoolModal({ open, mode, user, userType = "regular", appClientOptions = [], isLoadingAppClients = false, isLoadingUserDetails = false, onClose, onSubmit, onReinvite, canEditStatus = true, canEditRole = true, canEditAccess = true, canReinvite = false, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
+  const isViewMode = mode === "view";
+  const isEditMode = mode === "edit";
+  const isDarkMode = colorMode === "dark";
+  const isAdminView = userType === ADMIN_USER_TYPE;
+  const rolesEndpoint =
+    isAdminView && includeSuperAdminRoleOptions ? "all" : userType === ADMIN_USER_TYPE ? "default" : "all";
+  const canEditThisUser = isAdminView
+    ? canEditStatus || canEditRole || canEditAccess
+    : canEditStatus || canEditAccess;
+  const canEditRoleField = isAdminView && canEditRole;
+  const canEditAccessField = canEditAccess;
+  const shouldLoadRoleOptions = open && isAdminView;
+  const availableRoles = useAllRoles({
+    endpoint: rolesEndpoint,
+    enabled: shouldLoadRoleOptions,
+  });
+  const adminRoleOptions = getAdminRoleOptions(availableRoles, {
+    includeSuperAdmin: includeSuperAdminRoleOptions,
+  });
+  const {
+    modalBodyClassName,
+    modalBodyStackClassName,
+    modalBoxClassName,
+    modalCloseButtonClassName,
+    modalFooterActionsClassName,
+    modalFooterClassName,
+    modalHeaderClassName,
+    modalHeaderTitleClassName,
+    modalHelperTextClassName,
+    modalLabelClassName,
+    modalOptionalBadgeClassName,
+    modalOverlayClassName,
+    modalPrimaryButtonClassName,
+    modalReadOnlyInputClassName,
+    modalSecondaryButtonClassName,
+    modalSectionClassName,
+  } = getModalTheme(colorMode);
+  const roleBadgeClassName = isDarkMode
+    ? "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
+    : "inline-flex items-center gap-1 rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
+  const readOnlyAccessClassName = isDarkMode
+    ? "min-h-24 w-full rounded-[1rem] border border-white/10 bg-[rgba(10,15,24,0.76)] px-4 py-4 text-sm text-[#d6c3c7] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+    : "min-h-24 w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-4 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
+  const emptyAccessClassName = isDarkMode
+    ? "italic text-[#a58d95]"
+    : "italic text-[#8f6f76]";
+  const modalHeaderSpacingClassName =
+    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
+  const modalHeaderContentClassName =
+    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
+  const sectionHeaderClassName = isDarkMode
+    ? "mb-5 border-b border-white/10 pb-4"
+    : "mb-5 border-b border-[#7b0d15]/10 pb-4";
+  const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
+  const reinviteButtonClassName = isDarkMode
+    ? "inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-[#f8d24e]/25 bg-[#f8d24e]/10 px-5 text-sm font-semibold text-[#ffe28a] transition duration-300 hover:border-[#f8d24e]/55 hover:bg-[#f8d24e]/16 disabled:cursor-not-allowed disabled:opacity-60"
+    : "inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-[#7b0d15]/15 bg-[#fff4dc] px-5 text-sm font-semibold text-[#7b0d15] transition duration-300 hover:border-[#f8d24e]/70 hover:bg-[#ffe8a6] disabled:cursor-not-allowed disabled:opacity-60";
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [originalUser, setOriginalUser] = useState(initialFormData);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const nextFormData = createFormData(user);
+    setFormData(nextFormData);
+    setOriginalUser(nextFormData);
+    setIsSubmitting(false);
+    isSubmittingRef.current = false;
+    setError("");
+  }, [open, user]);
+
+  const handleStatusChange = (value) => {
+    setFormData((current) => ({
+      ...current,
+      status: normalizeStatus(value),
+    }));
+
+    if (error) {
+      setError("");
+    }
+  };
+
+  const handleAdminRoleChange = (roleId) => {
+    const normalizedRoleId = normalizeRoleId(roleId);
+    const selectedRole = adminRoleOptions.find(
+      (role) => role.id === normalizedRoleId,
+    );
+
+    setFormData((current) => ({
+      ...current,
+      roleId: normalizedRoleId,
+      roles: selectedRole ? [selectedRole.role_name] : [],
+    }));
+
+    if (error) {
+      setError("");
+    }
+  };
+
+  const handleAccessibleClientChange = (accessibleClientIds) => {
+    setFormData((current) => ({
+      ...current,
+      accessibleClientIds,
+    }));
+
+    if (error) {
+      setError("");
+    }
+  };
+
+  const handleManageableClientChange = (manageableClientIds) => {
+    setFormData((current) => ({
+      ...current,
+      manageableClientIds,
+    }));
+
+    if (error) {
+      setError("");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (isSubmittingRef.current) {
+      return;
+    }
+
+    if (isViewMode || !canEditThisUser) {
+      onClose();
+      return;
+    }
+
+    if (!STATUS_VALUES.has(formData.status)) {
+      setError("Select a valid status.");
+      return;
+    }
+
+    try {
+      isSubmittingRef.current = true;
+      setIsSubmitting(true);
+      setError("");
+
+      await onSubmit(
+        {
+          ...formData,
+          userType,
+        },
+        originalUser,
+      );
+
+      onClose();
+    } catch (submitError) {
+      setError(extractErrorMessage(submitError));
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!shouldRender) {
+    return null;
+  }
+
+  const editableAppClientOptions = getAllAppClientSelectOptions(appClientOptions);
+  const editableAppClientIdLookup = new Set(
+    editableAppClientOptions.map((client) => client.id).filter(Boolean),
+  );
+  const selectedAppClientOptions = getSelectedClientOptions(
+    formData.accessibleClientIds,
+    formData.accessibleClientNames,
+  );
+  const selectedManageableClientOptions = getSelectedClientOptions(
+    formData.manageableClientIds,
+    formData.manageableClientNames,
+  );
+  const appClientSelectOptions = mergeClientOptions(
+    editableAppClientOptions,
+    selectedAppClientOptions,
+    selectedManageableClientOptions,
+  );
+  const lockedSelectedClientIds = formData.accessibleClientIds.filter(
+    (clientId) => !editableAppClientIdLookup.has(clientId),
+  );
+  const lockedManageableClientIds = formData.manageableClientIds.filter(
+    (clientId) => !editableAppClientIdLookup.has(clientId),
+  );
+  const roleAccessItems =
+    formData.roles.length > 0
+      ? formData.roles
+      : adminRoleOptions
+          .filter((role) => role.id === formData.roleId)
+          .map((role) => role.role_name);
+  const clientAccessItems = getAppClientNamesByIds(
+    formData.accessibleClientIds,
+    appClientSelectOptions,
+  );
+  const manageableClientItems = getAppClientNamesByIds(
+    formData.manageableClientIds,
+    appClientSelectOptions,
+  );
+  const clientAccessDisplayItems =
+    formData.accessibleClientNames.length > 0
+      ? formData.accessibleClientNames
+      : clientAccessItems;
+  const manageableClientDisplayItems =
+    formData.manageableClientNames.length > 0
+      ? formData.manageableClientNames
+      : manageableClientItems;
+  const roleFieldDescription = isViewMode
+    ? "View the role assigned to this admin account."
+    : "Choose the role for this admin account.";
+  const accessibleClientDescription = isViewMode
+    ? "View which app clients are accessible for sign-in."
+    : "Choose which clients are accessible for sign-in.";
+  const manageableClientDescription = isViewMode
+    ? "View which app clients this admin can manage."
+    : "Choose which clients this admin can manage.";
+  const clientAccessLoadingMessage = isLoadingUserDetails
+    ? "Loading latest user details..."
+    : "Loading app clients...";
+  const statusFieldDescription = isViewMode
+    ? "View the user's account status."
+    : "Choose the user's account status.";
+  const renderSectionHeader = (title, description, isRequired = false) => (
+    <div className={sectionHeaderClassName}>
+      <label className={modalLabelClassName}>
+        {title} {isRequired && <span className="text-red-500">*</span>}
+      </label>
+      <p className={sectionDescriptionClassName}>
+        {description}
+      </p>
+    </div>
+  );
+  const renderReadOnlyAccessItems = (items, emptyLabel) => (
+    <div className={readOnlyAccessClassName}>
+      {items.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {items.map((item, index) => (
+            <span key={`${item}-${index}`} className={roleBadgeClassName}>
+              {item}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <span className={emptyAccessClassName}>{emptyLabel}</span>
+      )}
+    </div>
+  );
+
+  return createPortal(
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
+      <div className={modalBoxClassName}>
+        <div className={modalHeaderSpacingClassName}>
+          <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
+            <div className={modalHeaderContentClassName}>
+              <UserPoolUserIconBox colorMode={colorMode} variant="plain" />
+              <h3 className={modalHeaderTitleClassName}>
+                {isViewMode ? "View User" : "Edit User"}
+              </h3>
+            </div>
+
+            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
+              <CloseIcon />
+            </button>
+          </div>
+        </div>
+
+        <form id="user-pool-form" noValidate className={modalBodyClassName} onSubmit={handleSubmit}>
+          <div className={modalBodyStackClassName}>
+            <ErrorAlert message={error} onClose={() => setError("")} />
+
+            {!isEditMode && (
+              <section className={modalSectionClassName}>
+                {renderSectionHeader(
+                  "Personal Information",
+                  "View the user's basic details.",
+                )}
+                <div className="space-y-5">
+                  <div>
+                    <label className={modalLabelClassName}>User ID</label>
+                    <input type="text" value={formData.id} readOnly className={modalReadOnlyInputClassName} />
+                  </div>
+
+                  <div>
+                    <label className={modalLabelClassName}>Email</label>
+                    <input type="email" value={formData.email} readOnly className={modalReadOnlyInputClassName} />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className={modalLabelClassName}>
+                        First Name
+                      </label>
+                      <input type="text" value={formData.givenName} readOnly className={modalReadOnlyInputClassName} />
+                    </div>
+
+                    <div>
+                      <label className={modalLabelClassName}>Last Name</label>
+                      <input type="text" value={formData.surname} readOnly className={modalReadOnlyInputClassName} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className={modalLabelClassName}>
+                        Middle Name
+                      </label>
+                      <input type="text" value={formData.middleName} readOnly className={modalReadOnlyInputClassName}/>
+                    </div>
+
+                    <div>
+                      <label className={modalLabelClassName}>
+                        Suffix
+                      </label>
+                      <label className={`${modalReadOnlyInputClassName} flex items-center gap-2`}>
+                        <input type="text" value={formData.suffix} readOnly className="grow bg-transparent outline-none" />
+                        <span className={modalOptionalBadgeClassName}>
+                          Optional
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <section className={modalSectionClassName}>
+              <div className="space-y-5">
+                {isAdminView && (
+                  <div>
+                    {renderSectionHeader("Role", roleFieldDescription)}
+
+                    {isViewMode || !canEditRoleField ? (
+                      renderReadOnlyAccessItems(
+                        roleAccessItems,
+                        "No role assigned",
+                      )
+                    ) : (
+                      <UserPoolRoleRadioGroup
+                        options={adminRoleOptions}
+                        selectedValue={formData.roleId}
+                        onChange={handleAdminRoleChange}
+                        colorMode={colorMode}
+                        name="edit-user-role"
+                        allowEmpty
+                        emptyOptionLabel="No role assigned"
+                      />
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  {renderSectionHeader(
+                    "Accessible App Clients",
+                    accessibleClientDescription,
+                  )}
+
+                  {isViewMode || !canEditAccessField ? (
+                    <>
+                      {renderReadOnlyAccessItems(
+                        clientAccessDisplayItems,
+                        "No clients selected",
+                      )}
+                      {isLoadingUserDetails && (
+                        <p className={modalHelperTextClassName}>
+                          {clientAccessLoadingMessage}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <MultiSelect
+                        options={appClientSelectOptions}
+                        selectedValues={formData.accessibleClientIds}
+                        onChange={handleAccessibleClientChange}
+                        placeholder="Select accessible app clients"
+                        variant="userpoolModal"
+                        colorMode={colorMode}
+                        lockedSelectedValues={lockedSelectedClientIds}
+                      />
+                      {(isLoadingAppClients || isLoadingUserDetails) && (
+                        <p className={modalHelperTextClassName}>
+                          {clientAccessLoadingMessage}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div>
+                  {renderSectionHeader(
+                    "Manageable App Clients",
+                    manageableClientDescription,
+                  )}
+
+                  {isViewMode || !canEditAccessField ? (
+                    <>
+                      {renderReadOnlyAccessItems(
+                        manageableClientDisplayItems,
+                        "No manageable clients selected",
+                      )}
+                      {isLoadingUserDetails && (
+                        <p className={modalHelperTextClassName}>
+                          {clientAccessLoadingMessage}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <MultiSelect
+                        options={appClientSelectOptions}
+                        selectedValues={formData.manageableClientIds}
+                        onChange={handleManageableClientChange}
+                        placeholder="Select manageable app clients"
+                        variant="userpoolModal"
+                        colorMode={colorMode}
+                        lockedSelectedValues={lockedManageableClientIds}
+                      />
+                      {(isLoadingAppClients || isLoadingUserDetails) && (
+                        <p className={modalHelperTextClassName}>
+                          {clientAccessLoadingMessage}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section className={modalSectionClassName}>
+              {renderSectionHeader(
+                "Status",
+                statusFieldDescription,
+                !isViewMode,
+              )}
+              {isViewMode || !canEditStatus ? (
+                <input type="text" value={getStatusDisplayLabel(formData.status)} readOnly className={modalReadOnlyInputClassName} />
+              ) : (
+                <UserPoolModalSelect
+                  value={formData.status}
+                  onChange={handleStatusChange}
+                  options={STATUS_OPTIONS}
+                  selectedLabel={getStatusDisplayLabel(formData.status)}
+                  ariaLabel="Status"
+                  colorMode={colorMode}
+                />
+              )}
+            </section>
+          </div>
+        </form>
+
+        <div className={modalFooterClassName}>
+          <div className="flex w-full flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              {!isViewMode && canReinvite && (
+                <button type="button" className={reinviteButtonClassName} onClick={() => onReinvite?.(formData)} disabled={isSubmitting || isLoadingUserDetails}>
+                  <ResendInviteIcon />
+                  Resend Invite
+                </button>
+              )}
+            </div>
+
+            <div className={modalFooterActionsClassName}>
+            <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
+              {isViewMode ? "Close" : "Cancel"}
+            </button>
+
+            {!isViewMode && canEditThisUser && (
+              <button form="user-pool-form" type="submit" className={modalPrimaryButtonClassName} disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save"}
+              </button>
+            )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </dialog>,
+    document.body,
+  );
+}

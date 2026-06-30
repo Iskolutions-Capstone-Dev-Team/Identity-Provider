@@ -30,7 +30,33 @@ type MetricsService interface {
 		ctx context.Context,
 		userID uuid.UUID,
 		permissions []string,
+		filter models.ReportFilter,
 	) ([]byte, error)
+	GetClientMetrics(
+		ctx context.Context,
+		permissions []string,
+		userID uuid.UUID,
+	) ([]models.MetricCard, error)
+	GetRoleMetrics(
+		ctx context.Context,
+	) ([]models.MetricCard, error)
+	GetUserMetrics(
+		ctx context.Context,
+		permissions []string,
+		userID uuid.UUID,
+	) ([]models.MetricCard, error)
+	GetLogMetrics(
+		ctx context.Context,
+		permissions []string,
+	) ([]models.MetricCard, error)
+	GetPermissionMetrics(
+		ctx context.Context,
+	) ([]models.MetricCard, error)
+	GetRegistrationMetrics(
+		ctx context.Context,
+		permissions []string,
+		userID uuid.UUID,
+	) ([]models.MetricCard, error)
 }
 
 type metricsService struct {
@@ -623,14 +649,22 @@ func (s *metricsService) GenerateReportPDF(
 	ctx context.Context,
 	userID uuid.UUID,
 	permissions []string,
+	filter models.ReportFilter,
 ) ([]byte, error) {
-	metrics, err := s.GetDashboardMetrics(ctx, userID, permissions)
-	if err != nil {
-		log.Printf(
-			"[MetricsService] GetDashboardMetrics error: %v",
-			err,
-		)
-		return nil, fmt.Errorf("failed to get dashboard metrics: %w", err)
+	var metrics *models.DashboardMetrics
+	var err error
+	if filter.IncludeSecurityAnalysis || filter.IncludeAuthStats {
+		metrics, err = s.GetDashboardMetrics(ctx, userID, permissions)
+		if err != nil {
+			log.Printf(
+				"[MetricsService] GetDashboardMetrics error: %v",
+				err,
+			)
+			return nil, fmt.Errorf(
+				"failed to get dashboard metrics: %w",
+				err,
+			)
+		}
 	}
 
 	var allowedClients []string
@@ -652,16 +686,22 @@ func (s *metricsService) GenerateReportPDF(
 		}
 	}
 
-	since := time.Now().Add(-24 * time.Hour)
-	failedAttempts, err := s.repo.GetFailedAuthAttempts(
-		ctx, since, allowedClients,
-	)
-	if err != nil {
-		log.Printf(
-			"[MetricsService] GetFailedAuthAttempts error: %v",
-			err,
+	var failedAttempts []models.FailedAuthAttempt
+	if filter.IncludeFailedAttempts {
+		since := time.Now().Add(-24 * time.Hour)
+		failedAttempts, err = s.repo.GetFailedAuthAttempts(
+			ctx, since, allowedClients,
 		)
-		return nil, fmt.Errorf("failed to get failed auth attempts: %w", err)
+		if err != nil {
+			log.Printf(
+				"[MetricsService] GetFailedAuthAttempts error: %v",
+				err,
+			)
+			return nil, fmt.Errorf(
+				"failed to get failed auth attempts: %w",
+				err,
+			)
+		}
 	}
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
@@ -707,14 +747,23 @@ func (s *metricsService) GenerateReportPDF(
 	genDate := time.Now().Format("2006-01-02 15:04:05 MST")
 	addReportHeader(pdf, genDate)
 
-	addReportSectionTitle(pdf, "1. Executive Security Analysis")
-	addReportSecurityTable(pdf, metrics.SecurityAnalysis)
+	if filter.IncludeSecurityAnalysis {
+		addReportSectionTitle(pdf, "1. Executive Security Analysis")
+		addReportSecurityTable(pdf, metrics.SecurityAnalysis)
+	}
 
-	addReportSectionTitle(pdf, "2. Authentication Statistics")
-	addReportAuthStatsTable(pdf, metrics.LoginStats)
+	if filter.IncludeAuthStats {
+		addReportSectionTitle(pdf, "2. Authentication Statistics")
+		addReportAuthStatsTable(pdf, metrics.LoginStats)
+	}
 
-	addReportSectionTitle(pdf, "3. Failed Authentication Attempts (Last 24 Hours)")
-	addReportFailedAttemptsTable(pdf, failedAttempts)
+	if filter.IncludeFailedAttempts {
+		addReportSectionTitle(
+			pdf,
+			"3. Failed Authentication Attempts (Last 24 Hours)",
+		)
+		addReportFailedAttemptsTable(pdf, failedAttempts)
+	}
 
 	var buf bytes.Buffer
 	err = pdf.Output(&buf)
@@ -724,4 +773,89 @@ func (s *metricsService) GenerateReportPDF(
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (s *metricsService) GetClientMetrics(
+	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
+) ([]models.MetricCard, error) {
+	var allowedClients []string
+	var err error
+	if !slices.Contains(permissions, "View all appclients") {
+		allowedClients, err = s.repo.GetBoundClientIDs(ctx, userID[:])
+		if err != nil {
+			log.Printf(
+				"[MetricsService] GetBoundClientIDs error: %v",
+				err,
+			)
+			return nil, fmt.Errorf(
+				"failed to get bound client IDs: %w",
+				err,
+			)
+		}
+		if allowedClients == nil {
+			allowedClients = []string{}
+		}
+	}
+	return s.repo.GetClientMetrics(ctx, allowedClients)
+}
+
+func (s *metricsService) GetRoleMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return s.repo.GetRoleMetrics(ctx)
+}
+
+func (s *metricsService) GetUserMetrics(
+	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
+) ([]models.MetricCard, error) {
+	var adminID []byte
+	if !slices.Contains(permissions, "View all users") {
+		adminID = userID[:]
+	}
+	return s.repo.GetUserMetrics(ctx, adminID)
+}
+
+func (s *metricsService) GetLogMetrics(
+	ctx context.Context,
+	permissions []string,
+) ([]models.MetricCard, error) {
+	hasAudit := slices.Contains(permissions, "View audit logs")
+	hasSecurity := slices.Contains(permissions, "View security logs")
+	return s.repo.GetLogMetrics(ctx, hasAudit, hasSecurity)
+}
+
+func (s *metricsService) GetPermissionMetrics(
+	ctx context.Context,
+) ([]models.MetricCard, error) {
+	return s.repo.GetPermissionMetrics(ctx)
+}
+
+func (s *metricsService) GetRegistrationMetrics(
+	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
+) ([]models.MetricCard, error) {
+	var allowedClients []string
+	var err error
+	if !slices.Contains(permissions, "View all appclients") {
+		allowedClients, err = s.repo.GetBoundClientIDs(ctx, userID[:])
+		if err != nil {
+			log.Printf(
+				"[MetricsService] GetBoundClientIDs error: %v",
+				err,
+			)
+			return nil, fmt.Errorf(
+				"failed to get bound client IDs: %w",
+				err,
+			)
+		}
+		if allowedClients == nil {
+			allowedClients = []string{}
+		}
+	}
+	return s.repo.GetRegistrationMetrics(ctx, allowedClients)
 }

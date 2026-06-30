@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,13 @@ type OTPHandler struct {
 func (h *OTPHandler) SendOTP(c *gin.Context) {
 	var req dto.OTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request format.",
+			err,
+		)
 		return
 	}
 
@@ -62,10 +69,19 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 			"error":      err.Error(),
 		})
 		_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
-		_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
+		_ = h.LogService.PostSecurityLogWithActorString(
+			reqCtx,
+			req.Email,
+			logReq,
+		)
 
-		c.JSON(http.StatusInternalServerError,
-			dto.ErrorResponse{Error: err.Error()})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeOTPFailed,
+			"Failed to send OTP code. Please try again.",
+			err,
+		)
 		return
 	}
 
@@ -89,7 +105,13 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 	var req dto.VerifyOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request format.",
+			err,
+		)
 		return
 	}
 
@@ -159,8 +181,13 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 			reqCtx, req.Email, logReq,
 		)
 
-		c.JSON(http.StatusUnauthorized,
-			dto.ErrorResponse{Error: err.Error()})
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeOTPFailed,
+			"The one-time password is incorrect or has expired.",
+			err,
+		)
 		return
 	}
 
@@ -168,9 +195,13 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 		err := h.AuthService.CreateSessionAndSetCookie(c, uID)
 		if err != nil {
 			log.Printf("[VerifyOTP] CreateSession: %v", err)
-			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-				Error: "Failed to establish session",
-			})
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to establish session.",
+				err,
+			)
 			return
 		}
 		clearCookie()

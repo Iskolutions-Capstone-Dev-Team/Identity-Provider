@@ -1,8 +1,12 @@
 import axiosInstance from "./axiosInstance";
 import { clearCachedRequests, getCachedRequest } from "../utils/requestCache";
+import { buildSafePaginationParams } from "../utils/safeQueryParams";
 
 const CLIENT_CACHE_PREFIX = "client:";
 const MAX_CLIENT_IMAGE_BYTES = 5 * 1024 * 1024;
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
 
 const normalizeStringValue = (value) =>
   typeof value === "string" ? value : "";
@@ -204,19 +208,25 @@ const normalizeRotateSecretPayload = (payload, fallbackClientId) => {
 };
 
 export const clientService = {
-  async getClients({ limit = 10, page = 1, keyword = "" } = {}) {
+  async getClients({ limit = DEFAULT_LIMIT, page = DEFAULT_PAGE, keyword = "" } = {}) {
     const normalizedKeyword =
       typeof keyword === "string" ? keyword.trim() : "";
-    const normalizedPage =
-      Number.isInteger(page) && page > 0 ? page : 1;
+    const paginationParams = buildSafePaginationParams(
+      { page, limit },
+      {
+        defaultPage: DEFAULT_PAGE,
+        defaultLimit: DEFAULT_LIMIT,
+        maxLimit: MAX_LIMIT,
+      },
+    );
 
     return getCachedRequest(
-      `${CLIENT_CACHE_PREFIX}list:${limit}:${normalizedPage}:${normalizedKeyword}`,
+      `${CLIENT_CACHE_PREFIX}list:${paginationParams.limit}:${paginationParams.page}:${normalizedKeyword}`,
       async () => {
         const response = await axiosInstance.get("/admin/clients", {
           params: {
-            limit,
-            page: normalizedPage,
+            limit: paginationParams.limit,
+            page: paginationParams.page,
             ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
           },
         });
@@ -232,7 +242,7 @@ export const clientService = {
         const lastPage =
           payload.last_page ??
           payload.lastPage ??
-          Math.max(1, Math.ceil(total / limit));
+          Math.max(1, Math.ceil(total / paginationParams.limit));
 
         return {
           items,

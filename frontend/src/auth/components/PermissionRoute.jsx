@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { usePermissionAccess } from "../../context/PermissionContext";
+import { usePermissionAccess } from "../../providers/PermissionProvider";
 import { getFirstAccessiblePath } from "../../utils/permissionAccess";
 
 export default function PermissionRoute({ children, requiredPermissions = [] }) {
