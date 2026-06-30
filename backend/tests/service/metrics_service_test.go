@@ -283,16 +283,59 @@ func TestGenerateReportPDF(t *testing.T) {
 
 	svc := service.NewMetricsService(repo, cache, nil)
 
-	pdfBytes, err := svc.GenerateReportPDF(
-		context.Background(),
-		uuid.New(),
-		[]string{"View all appclients"},
-	)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+	tests := []struct {
+		name   string
+		filter models.ReportFilter
+	}{
+		{
+			name: "All sections",
+			filter: models.ReportFilter{
+				IncludeSecurityAnalysis: true,
+				IncludeAuthStats:        true,
+				IncludeFailedAttempts:   true,
+			},
+		},
+		{
+			name: "No security analysis",
+			filter: models.ReportFilter{
+				IncludeSecurityAnalysis: false,
+				IncludeAuthStats:        true,
+				IncludeFailedAttempts:   true,
+			},
+		},
+		{
+			name: "Only failed attempts",
+			filter: models.ReportFilter{
+				IncludeSecurityAnalysis: false,
+				IncludeAuthStats:        false,
+				IncludeFailedAttempts:   true,
+			},
+		},
+		{
+			name: "Empty report",
+			filter: models.ReportFilter{
+				IncludeSecurityAnalysis: false,
+				IncludeAuthStats:        false,
+				IncludeFailedAttempts:   false,
+			},
+		},
 	}
 
-	if len(pdfBytes) == 0 {
-		t.Error("expected non-empty PDF bytes")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pdfBytes, err := svc.GenerateReportPDF(
+				context.Background(),
+				uuid.New(),
+				[]string{"View all appclients"},
+				tt.filter,
+			)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			if len(pdfBytes) == 0 {
+				t.Error("expected non-empty PDF bytes")
+			}
+		})
 	}
 }
