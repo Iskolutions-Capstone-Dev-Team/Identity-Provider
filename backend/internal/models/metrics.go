@@ -46,3 +46,10 @@ type FailedAuthAttempt struct {
 	FailCount   int       `db:"fail_count" json:"fail_count"`
 	LastAttempt time.Time `db:"last_attempt" json:"last_attempt"`
 }
+
+// ReportFilter specifies which sections to include in the generated PDF.
+type ReportFilter struct {
+	IncludeSecurityAnalysis bool `form:"include_security_analysis"`
+	IncludeAuthStats        bool `form:"include_auth_stats"`
+	IncludeFailedAttempts   bool `form:"include_failed_attempts"`
+}
