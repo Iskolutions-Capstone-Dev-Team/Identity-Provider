@@ -1,11 +1,13 @@
 import axiosInstance from "./axiosInstance";
 import { buildAccountTypeOption, getAccountTypeBackendId, normalizeAccountType } from "../utils/accountTypes";
 import { clearCachedRequests, getCachedRequest } from "../utils/requestCache";
+import { buildSafePaginationParams } from "../utils/safeQueryParams";
 
 const REGISTRATION_BASE_PATH = "/admin/registration";
 const REGISTRATION_CACHE_PREFIX = "registration:";
 const CREATE_ACCOUNT_TYPE_PLACEHOLDER_ID = 1;
 const DEFAULT_ITEMS_PER_PAGE = 10;
+const MAX_ITEMS_PER_PAGE = 1000;
 
 function normalizeTextValue(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -166,8 +168,15 @@ export const registrationService = {
     requestConfig = {},
   } = {}) {
     const normalizedKeyword = normalizeTextValue(keyword);
-    const normalizedPage = normalizePositiveInteger(page, 1);
-    const normalizedLimit = normalizePositiveInteger(limit, DEFAULT_ITEMS_PER_PAGE);
+    const { page: normalizedPage, limit: normalizedLimit } =
+      buildSafePaginationParams(
+        { page, limit },
+        {
+          defaultPage: 1,
+          defaultLimit: DEFAULT_ITEMS_PER_PAGE,
+          maxLimit: MAX_ITEMS_PER_PAGE,
+        },
+      );
     const cacheKey = [
       `${REGISTRATION_CACHE_PREFIX}config`,
       normalizedLimit,
@@ -181,10 +190,10 @@ export const registrationService = {
         {
           ...requestConfig,
           params: {
+            ...(requestConfig.params ?? {}),
             limit: normalizedLimit,
             page: normalizedPage,
             ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
-            ...(requestConfig.params ?? {}),
           },
         },
       );

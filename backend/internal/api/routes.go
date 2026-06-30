@@ -32,12 +32,20 @@ type Handlers struct {
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
+	// Open health check endpoints
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	})
+
 	wellKnown := r.Group("/.well-known")
 	{
 		wellKnown.GET("/jwks.json", h.AuthHandler.GetJWKS)
 	}
 
 	v1Group := r.Group("api/v1")
+	v1Group.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	})
 	auth := v1Group.Group("/auth")
 	auth.Use(middleware.RateLimitMiddleware())
 	{
@@ -208,6 +216,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			clients.PUT("/:id", h.ClientHandler.PutClient)
 			clients.PATCH("/:id/secret", h.ClientHandler.PatchClientSecret)
 			clients.DELETE("/:id", h.ClientHandler.DeleteClient)
+			clients.GET("/metrics", h.MetricsHandler.GetClientMetrics)
 		}
 
 		// Role Maintenance
@@ -219,6 +228,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			roles.GET("/all", h.RoleHandler.GetAllRoles)
 			roles.PUT("/:id", h.RoleHandler.PutRole)
 			roles.DELETE("/:id", h.RoleHandler.DeleteRole)
+			roles.GET("/metrics", h.MetricsHandler.GetRoleMetrics)
 		}
 
 		// User Maintenance
@@ -234,6 +244,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.PUT("/:id/access", h.UserHandler.PutUserAccess)
 			users.PUT("/:id/managed-clients", h.UserHandler.PutAdminAccess)
 			users.DELETE("/:id", h.UserHandler.DeleteUser)
+			users.GET("/metrics", h.MetricsHandler.GetUserMetrics)
 		}
 
 		logs := admin.Group("/logs")
@@ -242,11 +253,16 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			logs.GET("/security", h.LogHandler.GetSecurityLogList)
 			logs.GET("/security/:id", h.LogHandler.GetSecurityLog)
 			logs.GET("/:id", h.LogHandler.GetLog)
+			logs.GET("/metrics", h.MetricsHandler.GetLogMetrics)
 		}
 
 		permissions := admin.Group("/permissions")
 		{
 			permissions.GET("/all", h.PermissionHandler.GetAllPermissions)
+			permissions.GET(
+				"/metrics",
+				h.MetricsHandler.GetPermissionMetrics,
+			)
 
 			protectedPerms := permissions.Group("")
 			protectedPerms.Use(middleware.AuthMiddleware(
@@ -288,6 +304,10 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			registrationAdmin.POST(
 				"/sync/:id",
 				h.RegistrationHandler.SyncAccountTypeUsers,
+			)
+			registrationAdmin.GET(
+				"/metrics",
+				h.MetricsHandler.GetRegistrationMetrics,
 			)
 		}
 	}

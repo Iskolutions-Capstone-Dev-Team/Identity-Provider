@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { ACCESSIBILITY_READY_EVENT, ACCESSIBILITY_UNAVAILABLE_EVENT, isAccessibilityWidgetReady, toggleAccessibilityMenu } from "./AccessibilityWidget";
 import OnePortalButton from "./OnePortalButton";
 import { FloatingSpeechInputAction } from "./SpeechInputButton";
+import { AccessibilityIcon, FaqIcon, ToggleIcon } from "./componentIcons";
 
 const FAB_CONTAINER_CLASS_NAME =
-  "pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] right-4 z-[140] flex flex-col items-end gap-3 lg:bottom-6 lg:right-6";
+  "pointer-events-none fixed bottom-[1.65rem] left-1/2 -translate-x-1/2 z-[100] flex h-16 w-16 items-center justify-center lg:bottom-5 lg:left-auto lg:right-6 lg:-translate-x-0";
 const FAB_BUTTON_CLASS_NAME =
   "inline-flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#f8d24e] bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)] text-[#fff8f3] shadow-[0_20px_48px_-24px_rgba(43,3,7,0.82)] ring-[4px] ring-[#f8d24e] transition-[transform,box-shadow,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-[0_24px_56px_-24px_rgba(43,3,7,0.9)] focus:outline-none focus:ring-[6px] focus:ring-[#f8d24e]/35 disabled:cursor-not-allowed disabled:opacity-60";
 const FAB_TOOLTIP_CLASS_NAME =
@@ -15,31 +16,29 @@ const FAB_TOOLTIP_ARROW_CLASS_NAME =
 const FAB_ACTION_STAGGER_MS = 55;
 const FAB_ACTION_TRANSITION_MS = 320;
 const FAB_ACTION_WRAP_BASE_CLASS =
-  "origin-bottom-right will-change-transform transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
+  "absolute inset-0 flex items-center justify-center will-change-transform transition-all duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
 
-function getHiddenActionTransformClassName(distanceFromToggle) {
-  return distanceFromToggle === 0
-    ? "translate-y-4 scale-95"
-    : "translate-y-7 scale-[0.9]";
-}
+const ACTION_POSITIONS = [
+  "max-lg:-translate-x-[113px] max-lg:-translate-y-[41px] lg:-translate-x-[150px] lg:translate-y-0",
+  "max-lg:-translate-x-[50px] max-lg:-translate-y-[108px] lg:-translate-x-[130px] lg:-translate-y-[75px]",
+  "max-lg:translate-x-[50px] max-lg:-translate-y-[108px] lg:-translate-x-[75px] lg:-translate-y-[130px]",
+  "max-lg:translate-x-[113px] max-lg:-translate-y-[41px] lg:translate-x-0 lg:-translate-y-[150px]"
+];
 
-function getActionVisibilityClassName(isOpen, isVisible, distanceFromToggle) {
-  const hiddenTransformClassName =
-    getHiddenActionTransformClassName(distanceFromToggle);
-
+function getActionVisibilityClassName(isOpen, isVisible, actionIndex) {
   if (isOpen) {
-    return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-auto translate-y-0 scale-100 opacity-100`;
+    return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-auto scale-100 opacity-100 ${ACTION_POSITIONS[actionIndex]}`;
   }
 
   if (isVisible) {
-    return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none ${hiddenTransformClassName} opacity-0`;
+    return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none scale-[0.3] opacity-0 translate-x-0 translate-y-0`;
   }
 
-  return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none invisible ${hiddenTransformClassName} opacity-0`;
+  return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none invisible scale-[0.3] opacity-0 translate-x-0 translate-y-0`;
 }
 
-function getActionTransitionStyle(actionIndex, actionCount) {
-  const delay = (actionCount - actionIndex - 1) * FAB_ACTION_STAGGER_MS;
+function getActionTransitionStyle(actionIndex) {
+  const delay = actionIndex * FAB_ACTION_STAGGER_MS;
 
   return {
     transitionDelay: `${delay}ms`,
@@ -159,15 +158,13 @@ export default function AssistiveFab({ colorMode = "light" }) {
     <>
       <div className={FAB_CONTAINER_CLASS_NAME}>
         {fabActions.map((action, actionIndex) => {
-          const distanceFromToggle = fabActions.length - actionIndex - 1;
           const actionVisibilityClassName = getActionVisibilityClassName(
             isOpen,
             areActionsVisible,
-            distanceFromToggle,
+            actionIndex,
           );
           const actionTransitionStyle = getActionTransitionStyle(
-            actionIndex,
-            fabActions.length,
+            actionIndex
           );
 
           return (
@@ -217,34 +214,5 @@ function FabActionTooltip({ label, children }) {
 
       {children}
     </div>
-  );
-}
-
-function ToggleIcon({ isOpen }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-      className={`h-7 w-7 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-        isOpen ? "rotate-45" : "rotate-0"
-      }`}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-    </svg>
-  );
-}
-
-function AccessibilityIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
-      <path d="M12 2.25a1.875 1.875 0 1 0 0 3.75 1.875 1.875 0 0 0 0-3.75Z" />
-      <path d="M7.5 8.25a.75.75 0 0 0 0 1.5h2.977l-.733 10.634a.75.75 0 1 0 1.496.103L12 13.42l.76 7.067a.75.75 0 1 0 1.493-.103L13.52 9.75H16.5a.75.75 0 0 0 0-1.5h-9Z" />
-    </svg>
-  );
-}
-
-function FaqIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-7 w-7">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
-    </svg>
   );
 }

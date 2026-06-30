@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -25,9 +26,13 @@ func (h *PasskeyHandler) BeginRegistration(c *gin.Context) {
 	var req dto.PasskeyBeginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[BeginRegistration] Bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "email is required",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Email parameter is required.",
+			"email is required",
+		)
 		return
 	}
 
@@ -37,13 +42,20 @@ func (h *PasskeyHandler) BeginRegistration(c *gin.Context) {
 	}
 
 	challenge, err := h.PasskeyService.BeginRegistration(
-		c.Request.Context(), req.Email, platformAvailable, c.Request,
+		c.Request.Context(),
+		req.Email,
+		platformAvailable,
+		c.Request,
 	)
 	if err != nil {
 		log.Printf("[BeginRegistration] Service: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to begin registration",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeMFAFailed,
+			"Failed to begin registration.",
+			err,
+		)
 		return
 	}
 
@@ -58,9 +70,13 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 	email := c.Query("email")
 	if email == "" {
 		log.Printf("[FinishRegistration] Missing email parameter")
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "email query parameter is required",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Email query parameter is required.",
+			"email query parameter is required",
+		)
 		return
 	}
 
@@ -68,9 +84,13 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 		CheckSessionOrPendingMFA(c)
 	if err != nil {
 		log.Printf("[FinishRegistration] Auth check failed: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized access",
-		})
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			err,
+		)
 		return
 	}
 
@@ -79,27 +99,42 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[FinishRegistration] User Lookup: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "User not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
 		return
 	}
 
 	userID, _ := uuid.Parse(user.ID)
 	if userID != uID {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "User mismatch",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"User mismatch.",
+			"User mismatch",
+		)
 		return
 	}
 
-	if err := h.PasskeyService.FinishRegistration(
-		c.Request.Context(), email, c.Request,
-	); err != nil {
+	err = h.PasskeyService.FinishRegistration(
+		c.Request.Context(),
+		email,
+		c.Request,
+	)
+	if err != nil {
 		log.Printf("[FinishRegistration] Service: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "passkey registration failed",
-		})
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeMFAFailed,
+			"Passkey registration failed.",
+			err,
+		)
 		return
 	}
 
@@ -107,9 +142,13 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 		err := h.AuthService.CreateSessionAndSetCookie(c, uID)
 		if err != nil {
 			log.Printf("[FinishRegistration] CreateSession: %v", err)
-			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-				Error: "Failed to establish session",
-			})
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to establish session.",
+				err,
+			)
 			return
 		}
 		clearCookie()
@@ -128,9 +167,13 @@ func (h *PasskeyHandler) BeginVerification(c *gin.Context) {
 	var req dto.PasskeyBeginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("[BeginVerification] Bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "email is required",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Email parameter is required.",
+			"email is required",
+		)
 		return
 	}
 
@@ -140,13 +183,20 @@ func (h *PasskeyHandler) BeginVerification(c *gin.Context) {
 	}
 
 	challenge, err := h.PasskeyService.BeginVerification(
-		c.Request.Context(), req.Email, platformAvailable, c.Request,
+		c.Request.Context(),
+		req.Email,
+		platformAvailable,
+		c.Request,
 	)
 	if err != nil {
 		log.Printf("[BeginVerification] Service: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "failed to begin verification",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeMFAFailed,
+			"Failed to begin verification.",
+			err,
+		)
 		return
 	}
 
@@ -162,9 +212,13 @@ func (h *PasskeyHandler) FinishVerification(c *gin.Context) {
 	email := c.Query("email")
 	if email == "" {
 		log.Printf("[FinishVerification] Missing email parameter")
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "email query parameter is required",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Email query parameter is required.",
+			"email query parameter is required",
+		)
 		return
 	}
 
@@ -172,9 +226,13 @@ func (h *PasskeyHandler) FinishVerification(c *gin.Context) {
 		CheckSessionOrPendingMFA(c)
 	if err != nil {
 		log.Printf("[FinishVerification] Auth check failed: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "Unauthorized access",
-		})
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			err,
+		)
 		return
 	}
 
@@ -183,27 +241,42 @@ func (h *PasskeyHandler) FinishVerification(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[FinishVerification] User Lookup: %v", err)
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{
-			Error: "User not found",
-		})
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
 		return
 	}
 
 	userID, _ := uuid.Parse(user.ID)
 	if userID != uID {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "User mismatch",
-		})
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"User mismatch.",
+			"User mismatch",
+		)
 		return
 	}
 
-	if err := h.PasskeyService.FinishVerification(
-		c.Request.Context(), email, c.Request,
-	); err != nil {
+	err = h.PasskeyService.FinishVerification(
+		c.Request.Context(),
+		email,
+		c.Request,
+	)
+	if err != nil {
 		log.Printf("[FinishVerification] Service: %v", err)
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "passkey verification failed",
-		})
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeMFAFailed,
+			"Passkey verification failed.",
+			err,
+		)
 		return
 	}
 
@@ -211,9 +284,13 @@ func (h *PasskeyHandler) FinishVerification(c *gin.Context) {
 		err := h.AuthService.CreateSessionAndSetCookie(c, uID)
 		if err != nil {
 			log.Printf("[FinishVerification] CreateSession: %v", err)
-			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-				Error: "Failed to establish session",
-			})
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to establish session.",
+				err,
+			)
 			return
 		}
 		clearCookie()
@@ -233,18 +310,29 @@ func (h *PasskeyHandler) GetHasPasskey(c *gin.Context) {
 	email := c.Query("email")
 	if email == "" {
 		log.Printf("[GetHasPasskey] Missing email parameter")
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "email query parameter is required",
-		})
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Email query parameter is required.",
+			"email query parameter is required",
+		)
 		return
 	}
 
-	has, err := h.PasskeyService.HasPasskey(c.Request.Context(), email)
+	has, err := h.PasskeyService.HasPasskey(
+		c.Request.Context(),
+		email,
+	)
 	if err != nil {
 		log.Printf("[GetHasPasskey] HasPasskey: %v", err)
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "Failed to check passkey status",
-		})
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to check passkey status.",
+			err,
+		)
 		return
 	}
 
