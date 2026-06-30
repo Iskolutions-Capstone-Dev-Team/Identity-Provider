@@ -53,3 +53,10 @@ type MetricCard struct {
 	Value       string `json:"value"`
 	Description string `json:"description"`
 }
+
+// ReportFilter specifies which sections to include in the generated PDF.
+type ReportFilter struct {
+	IncludeSecurityAnalysis bool `form:"include_security_analysis"`
+	IncludeAuthStats        bool `form:"include_auth_stats"`
+	IncludeFailedAttempts   bool `form:"include_failed_attempts"`
+}

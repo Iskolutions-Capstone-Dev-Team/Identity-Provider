@@ -172,12 +172,12 @@ export default function Dashboard() {
     };
   }, []);
 
-  const handleDownloadReport = async () => {
+  const handleDownloadReport = async (filters) => {
     try {
       setIsDownloadingReport(true);
       setReportError("");
 
-      const reportBlob = await metricsService.downloadReport();
+      const reportBlob = await metricsService.downloadReport(filters);
       downloadBlob(reportBlob, createReportFileName());
     } catch (downloadError) {
       console.error("Metrics report download error:", downloadError);
