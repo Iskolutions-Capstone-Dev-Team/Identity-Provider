@@ -12,6 +12,9 @@ export default defineConfig(({ mode }) => {
     || "http://localhost:8080";
 
   return {
+    test: {
+      environment: 'jsdom',
+    },
     envDir: "..",
     plugins: [
       tailwindcss(),
