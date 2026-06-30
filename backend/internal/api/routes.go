@@ -32,12 +32,20 @@ type Handlers struct {
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
+	// Open health check endpoints
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	})
+
 	wellKnown := r.Group("/.well-known")
 	{
 		wellKnown.GET("/jwks.json", h.AuthHandler.GetJWKS)
 	}
 
 	v1Group := r.Group("api/v1")
+	v1Group.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	})
 	auth := v1Group.Group("/auth")
 	auth.Use(middleware.RateLimitMiddleware())
 	{
