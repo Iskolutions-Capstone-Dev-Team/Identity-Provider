@@ -1,0 +1,329 @@
+import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
+import ErrorAlert from "../../../components/ErrorAlert";
+import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
+import { formatTimestamp } from "../../../utils/formatTimestamp";
+import { getModalTheme } from "../../../components/modalTheme";
+import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
+import { ProfileIcon, CloseIcon } from "./profileIcons";
+
+const initialFieldErrors = {
+  firstName: "",
+  lastName: "",
+  email: "",
+};
+
+const createProfileState = (profileData = {}) => ({
+  ...profileData,
+  firstName: profileData.firstName || "",
+  middleName: profileData.middleName || "",
+  lastName: profileData.lastName || "",
+  suffix: profileData.suffix || "",
+  email: profileData.email || "",
+});
+
+const sanitizeProfile = (profileData = {}) => ({
+  ...profileData,
+  firstName: (profileData.firstName || "").trim(),
+  middleName: (profileData.middleName || "").trim(),
+  lastName: (profileData.lastName || "").trim(),
+  suffix: (profileData.suffix || "").trim(),
+  email: (profileData.email || "").trim(),
+});
+
+function validateProfile(profile, allowEmailEdit) {
+  const nextFieldErrors = { ...initialFieldErrors };
+
+  if (!profile.firstName.trim()) {
+    nextFieldErrors.firstName = "First name is required.";
+  }
+
+  if (!profile.lastName.trim()) {
+    nextFieldErrors.lastName = "Last name is required.";
+  }
+
+  if (allowEmailEdit && !profile.email.trim()) {
+    nextFieldErrors.email = "Email is required.";
+  }
+
+  return nextFieldErrors;
+}
+
+function getProfileUpdateErrorMessage(error) {
+  const responseMessage =
+    error?.response?.data?.error || error?.response?.data?.message;
+
+  if (typeof responseMessage === "string" && responseMessage.trim()) {
+    return responseMessage.trim();
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  return "Unable to update profile right now. Please try again.";
+}
+
+export default function EditProfileModal({ open, onClose, profileData, updateProfile, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
+  const { shouldRender, isClosing } = useModalTransition(open);
+  const [profile, setProfile] = useState(createProfileState());
+  const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
+  const [activeVoiceField, setActiveVoiceField] = useState("firstName");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setFieldErrors(initialFieldErrors);
+    setErrorMessage("");
+    setProfile(createProfileState(profileData));
+    setActiveVoiceField("firstName");
+    setIsSaving(false);
+  }, [open, profileData]);
+
+  const updateProfileField = (name, value) => {
+    setProfile((currentProfile) => ({
+      ...currentProfile,
+      [name]: value,
+    }));
+
+    setFieldErrors((currentErrors) =>
+      currentErrors[name]
+        ? {
+            ...currentErrors,
+            [name]: "",
+          }
+        : currentErrors,
+    );
+
+    if (errorMessage) {
+      setErrorMessage("");
+    }
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    updateProfileField(name, value);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (isSaving) {
+      return;
+    }
+
+    const nextProfile = sanitizeProfile(profile);
+    const nextFieldErrors = validateProfile(nextProfile, allowEmailEdit);
+    const firstError =
+      nextFieldErrors.firstName ||
+      nextFieldErrors.lastName ||
+      nextFieldErrors.email;
+
+    setProfile(nextProfile);
+    setFieldErrors(nextFieldErrors);
+
+    if (firstError) {
+      setErrorMessage(firstError);
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      if (updateProfile) {
+        await updateProfile(nextProfile);
+      }
+
+      if (addAuditLog) {
+        addAuditLog({
+          timestamp: formatTimestamp(new Date().toISOString()),
+          action: "PROFILE_UPDATE",
+          details: "Updated profile information",
+          color: "blue",
+        });
+      }
+
+      onClose();
+    } catch (error) {
+      console.error("Update profile error:", error);
+      setErrorMessage(getProfileUpdateErrorMessage(error));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const activeVoiceFieldLabel =
+    activeVoiceField === "lastName"
+      ? "Last Name"
+      : activeVoiceField === "suffix"
+        ? "Suffix"
+      : activeVoiceField === "middleName"
+        ? "Middle Name"
+        : "First Name";
+
+  const handleVoiceInput = (transcript) => {
+    updateProfileField(activeVoiceField, transcript);
+  };
+
+  if (!shouldRender) {
+    return null;
+  }
+
+  const {
+    modalBodyClassName,
+    modalBodyStackClassName,
+    modalBoxClassName,
+    modalCloseButtonClassName,
+    modalFooterActionsClassName,
+    modalFooterClassName,
+    modalHeaderClassName,
+    modalHeaderTitleClassName,
+    modalHelperTextClassName,
+    modalInputClassName,
+    modalLabelClassName,
+    modalOverlayClassName,
+    modalPrimaryButtonClassName,
+    modalSecondaryButtonClassName,
+    modalSectionClassName,
+  } = getModalTheme(colorMode);
+  const isDarkMode = colorMode === "dark";
+  const fieldErrorClassName = isDarkMode
+    ? "mt-2 text-xs text-red-300"
+    : "mt-2 text-xs text-red-500";
+  const requiredNoteClassName = isDarkMode
+    ? "text-sm text-[#c7adb4]"
+    : "text-sm text-[#8f6f76]";
+  const disabledButtonClassName = isSaving
+    ? "cursor-not-allowed opacity-70"
+    : "";
+  const modalHeaderSpacingClassName =
+    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
+  const modalHeaderContentClassName =
+    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
+  const headerIconClassName =
+    colorMode === "dark" ? "h-10 w-10 text-[#ffe28a]" : "h-10 w-10 text-[#fff0a8]";
+  const getInputClassName = (hasError) =>
+    `${modalInputClassName} ${
+      hasError ? "border-red-400 focus:border-red-500" : ""
+    }`;
+
+  return createPortal(
+    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
+      <div className={modalBoxClassName}>
+        <div className={modalHeaderSpacingClassName}>
+          <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
+            <div className={modalHeaderContentClassName}>
+              <ProfileIcon className={headerIconClassName} />
+              <h3 className={modalHeaderTitleClassName}>Edit Profile</h3>
+            </div>
+
+            <button type="button" className={`${modalCloseButtonClassName} ${disabledButtonClassName} shrink-0`} onClick={onClose} disabled={isSaving}>
+              <CloseIcon />
+            </button>
+          </div>
+        </div>
+
+        <form id="edit-profile-form" noValidate className={modalBodyClassName} onSubmit={handleSubmit}>
+          <div className={modalBodyStackClassName}>
+            <ErrorAlert
+              message={errorMessage}
+              onClose={() => setErrorMessage("")}
+            />
+
+            <section className={modalSectionClassName}>
+              <SpeechInputToolbar
+                activeFieldLabel={activeVoiceFieldLabel}
+                onError={setErrorMessage}
+                onTranscript={handleVoiceInput}
+                colorMode={colorMode}
+              />
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <div>
+                  <label className={modalLabelClassName}>
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input type="text" name="firstName" value={profile.firstName} onChange={handleChange} onFocus={() => setActiveVoiceField("firstName")} placeholder="Enter first name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.firstName))} disabled={isSaving}/>
+                  {fieldErrors.firstName ? (
+                    <p className={fieldErrorClassName}>
+                      {fieldErrors.firstName}
+                    </p>
+                  ) : (
+                    <p className={`${modalHelperTextClassName} mt-2`}>
+                      Max 50 characters
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className={modalLabelClassName}>
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input type="text" name="lastName" value={profile.lastName} onChange={handleChange} onFocus={() => setActiveVoiceField("lastName")} placeholder="Enter last name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.lastName))} disabled={isSaving}/>
+                  {fieldErrors.lastName ? (
+                    <p className={fieldErrorClassName}>{fieldErrors.lastName}</p>
+                  ) : (
+                    <p className={`${modalHelperTextClassName} mt-2`}>
+                      Max 50 characters
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className={modalLabelClassName}>Middle Name</label>
+                  <input type="text" name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className={modalInputClassName} disabled={isSaving}/>
+                </div>
+
+                <div>
+                  <label className={modalLabelClassName}>Suffix</label>
+                  <input type="text" name="suffix" value={profile.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" maxLength={20} className={modalInputClassName} disabled={isSaving}/>
+                  <p className={`${modalHelperTextClassName} mt-2`}>Optional</p>
+                </div>
+              </div>
+            </section>
+
+            {allowEmailEdit && (
+              <section className={modalSectionClassName}>
+                <div>
+                  <label className={modalLabelClassName}>
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className={getInputClassName(Boolean(fieldErrors.email))} disabled={isSaving}/>
+                  {fieldErrors.email ? (
+                    <p className={fieldErrorClassName}>{fieldErrors.email}</p>
+                  ) : (
+                    <p className={`${modalHelperTextClassName} mt-2`}>
+                      Must be an active email account
+                    </p>
+                  )}
+                </div>
+              </section>
+            )}
+
+            <div className={requiredNoteClassName}>
+              Fields marked with <span className="text-red-500">*</span> are
+              required
+            </div>
+          </div>
+        </form>
+
+        <div className={modalFooterClassName}>
+          <div className={modalFooterActionsClassName}>
+            <button type="button" className={`${modalSecondaryButtonClassName} ${disabledButtonClassName}`} onClick={onClose} disabled={isSaving}>
+              Cancel
+            </button>
+
+            <button form="edit-profile-form" type="submit" className={`${modalPrimaryButtonClassName} ${disabledButtonClassName}`} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </dialog>,
+    document.body,
+  );
+}

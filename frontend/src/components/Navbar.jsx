@@ -1,20 +1,5 @@
 import { useNavigate } from "react-router-dom";
-
-function SunIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
-      <path d="M12 2.25a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75ZM7.5 12a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM18.894 6.166a.75.75 0 0 0-1.06-1.06l-1.591 1.59a.75.75 0 1 0 1.06 1.061l1.591-1.59ZM21.75 12a.75.75 0 0 1-.75.75h-2.25a.75.75 0 0 1 0-1.5H21a.75.75 0 0 1 .75.75ZM17.834 18.894a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 1 0-1.061 1.06l1.59 1.591ZM12 18a.75.75 0 0 1 .75.75V21a.75.75 0 0 1-1.5 0v-2.25A.75.75 0 0 1 12 18ZM7.758 17.303a.75.75 0 0 0-1.061-1.06l-1.591 1.59a.75.75 0 0 0 1.06 1.061l1.591-1.59ZM6 12a.75.75 0 0 1-.75.75H3a.75.75 0 0 1 0-1.5h2.25A.75.75 0 0 1 6 12ZM6.697 7.757a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 0 0-1.061 1.06l1.59 1.591Z" />
-    </svg>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
-      <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 0 1 .162.819A8.97 8.97 0 0 0 9 6a9 9 0 0 0 9 9 8.97 8.97 0 0 0 3.463-.69.75.75 0 0 1 .981.98 10.503 10.503 0 0 1-9.694 6.46c-5.799 0-10.5-4.7-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 0 1 .818.162Z" clipRule="evenodd"/>
-    </svg>
-  );
-}
+import { MoonIcon, ProfileIcon, SunIcon } from "./componentIcons";
 
 export default function Navbar({ activeColorMode = "light", onToggleColorMode, showColorModeToggle = false }) {
   const navigate = useNavigate();
@@ -61,12 +46,7 @@ export default function Navbar({ activeColorMode = "light", onToggleColorMode, s
 
       <div className="relative flex min-h-[4.75rem] items-center justify-between gap-4 px-4 py-3 sm:min-h-[5.25rem] sm:px-6">
         <div className="min-w-0">
-          <p className={`text-[0.62rem] font-bold uppercase tracking-[0.24em] sm:text-[0.7rem] lg:text-[0.76rem] ${navbarTheme.eyebrow}`}>
-            PUP TAGUIG IDENTITY PROVIDER
-          </p>
-          <p className={`mt-1 truncate text-[0.58rem] sm:text-[0.68rem] lg:text-[0.76rem] ${navbarTheme.subtitle}`}>
-            POLYTECHNIC UNIVERSITY OF THE PHILIPPINES &mdash; TAGUIG CAMPUS
-          </p>
+          <div id="navbar-breadcrumbs" className="min-h-[1.25rem]"></div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -108,9 +88,7 @@ export default function Navbar({ activeColorMode = "light", onToggleColorMode, s
           ) : null}
 
           <button type="button" onClick={() => navigate("/profile")} aria-label="Open profile" className={iconButtonClassName}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={profileIconClassName}>
-              <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd"/>
-            </svg>
+            <ProfileIcon className={profileIconClassName} />
           </button>
         </div>
       </div>

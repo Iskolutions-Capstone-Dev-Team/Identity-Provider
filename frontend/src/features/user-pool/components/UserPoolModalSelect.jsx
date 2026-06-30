@@ -1,0 +1,125 @@
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  getModalTheme,
+} from "../../../components/modalTheme";
+import { ChevronIcon } from "./userpoolIcons";
+
+function getSelectedOption(options, value) {
+  return options.find((option) => option.value === value) || options[0];
+}
+
+export default function UserPoolModalSelect({ value, onChange, options, selectedLabel, ariaLabel, colorMode = "light" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const selectedOption = getSelectedOption(options, value);
+  const isDarkMode = colorMode === "dark";
+  const {
+    modalSelectButtonClassName,
+    modalSelectMenuClassName,
+    modalSelectOptionClassName,
+    modalSelectOptionSelectedClassName,
+    modalSelectTriggerClassName,
+  } = getModalTheme(colorMode);
+  const valueClassName = isDarkMode
+    ? "truncate text-left text-sm font-medium text-[#f4eaea]"
+    : "truncate text-left text-sm font-medium text-[#4a1921]";
+  const chevronClassName = isDarkMode
+    ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f8d24e]/12 text-[#f8d24e] transition duration-300"
+    : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff2d2] text-[#991b1b] transition duration-300";
+  const menuAnimation = {
+    initial: {
+      opacity: 0,
+      y: -6,
+      scaleY: 0.96,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+      scaleY: 1,
+    },
+    exit: {
+      opacity: 0,
+      y: -4,
+      scaleY: 0.96,
+    },
+    transition: {
+      duration: 0.18,
+      ease: "easeOut",
+    },
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const handlePointerDown = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const handleSelect = (nextValue) => {
+    onChange(nextValue);
+    setIsOpen(false);
+  };
+
+  return (
+    <div ref={dropdownRef} className={modalSelectTriggerClassName}>
+      <button type="button" className={modalSelectButtonClassName} onClick={() => setIsOpen((current) => !current)} aria-haspopup="listbox" aria-expanded={isOpen}>
+        <span className={valueClassName}>
+          {selectedLabel || selectedOption?.label}
+        </span>
+
+        <span className={chevronClassName}>
+          <ChevronIcon
+            className={`h-5 w-5 transition duration-300 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </span>
+      </button>
+
+      <AnimatePresence>
+        {isOpen ? (
+          <motion.div
+            className={`${modalSelectMenuClassName} origin-top`}
+            role="listbox"
+            aria-label={ariaLabel}
+            {...menuAnimation}
+          >
+            {options.map((option) => {
+              const isSelected = option.value === value;
+
+              return (
+                <button key={option.value} type="button" role="option" aria-selected={isSelected} onClick={() => handleSelect(option.value)}
+                  className={`${modalSelectOptionClassName} ${
+                    isSelected ? modalSelectOptionSelectedClassName : ""
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}

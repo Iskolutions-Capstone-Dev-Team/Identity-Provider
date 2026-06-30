@@ -1,20 +1,5 @@
 import { useEffect, useEffectEvent, useState } from "react";
-
-function ErrorIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-      <path d="M12 9v3.75m0 3.75h.008v.008H12v-.008ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-      <path d="M6 18 18 6M6 6l12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
+import { CloseIcon, ErrorIcon } from "./componentIcons";
 
 export default function ErrorAlert({ message, onClose, autoHideDuration = 4000 }) {
   const [isVisible, setIsVisible] = useState(false);

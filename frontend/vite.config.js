@@ -13,7 +13,43 @@ export default defineConfig(({ mode }) => {
 
   return {
     envDir: "..",
-    plugins: [tailwindcss(), react(), sri()],
+    plugins: [
+      tailwindcss(),
+      react(),
+      sri(),
+      {
+        name: "block-unsafe-vite-dep-version-query",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            const requestUrl = new URL(req.url ?? "/", "http://localhost");
+
+            if (!requestUrl.pathname.startsWith("/node_modules/.vite/deps/")) {
+              next();
+              return;
+            }
+
+            const versionParam = requestUrl.searchParams.get("v");
+
+            if (!versionParam) {
+              next();
+              return;
+            }
+
+            const hasSafeVersionParam =
+              /^[a-zA-Z0-9._-]+$/.test(versionParam) &&
+              !versionParam.includes("..");
+
+            if (hasSafeVersionParam) {
+              next();
+              return;
+            }
+
+            res.statusCode = 400;
+            res.end("Bad Request");
+          });
+        },
+      },
+    ],
     server: {
       host: true, 
       port: 5173,

@@ -1,21 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-
-function SuccessIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-      <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-      <path d="M6 18 18 6M6 6l12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
+import { CloseIcon, SuccessIcon } from "./componentIcons";
 
 export default function SuccessAlert({ message, onClose }) {
   const [isVisible, setIsVisible] = useState(false);

@@ -1,7 +1,10 @@
 package dto
 
+// ErrorResponse represents a standardized API error response.
 type ErrorResponse struct {
-	Error string `json:"error" example:"Error description"`
+	Code    int    `json:"code" example:"1001"`
+	Message string `json:"message" example:"User-friendly message"`
+	Error   string `json:"error" example:"Internal technical details"`
 }
 
 type SuccessResponse struct {

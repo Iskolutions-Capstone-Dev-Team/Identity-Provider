@@ -47,6 +47,13 @@ type FailedAuthAttempt struct {
 	LastAttempt time.Time `db:"last_attempt" json:"last_attempt"`
 }
 
+// MetricCard represents metric counts/info for an admin group.
+type MetricCard struct {
+	Title       string `json:"title"`
+	Value       string `json:"value"`
+	Description string `json:"description"`
+}
+
 // ReportFilter specifies which sections to include in the generated PDF.
 type ReportFilter struct {
 	IncludeSecurityAnalysis bool `form:"include_security_analysis"`
