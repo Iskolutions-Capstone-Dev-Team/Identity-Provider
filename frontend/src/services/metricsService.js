@@ -93,8 +93,23 @@ export const metricsService = {
     return response.data;
   },
 
-  async downloadReport() {
-    const response = await axiosInstance.get("/admin/report", {
+  async downloadReport(filters = {}) {
+    const params = new URLSearchParams();
+    
+    if (filters.includeSecurityAnalysis !== undefined) {
+      params.append("include_security_analysis", filters.includeSecurityAnalysis);
+    }
+    if (filters.includeAuthStats !== undefined) {
+      params.append("include_auth_stats", filters.includeAuthStats);
+    }
+    if (filters.includeFailedAttempts !== undefined) {
+      params.append("include_failed_attempts", filters.includeFailedAttempts);
+    }
+
+    const queryString = params.toString();
+    const url = queryString ? `/admin/report?${queryString}` : "/admin/report";
+
+    const response = await axiosInstance.get(url, {
       responseType: "blob",
     });
 
