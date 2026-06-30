@@ -8,7 +8,7 @@ import PageHeader from "../../../components/PageHeader";
 import AddUserForm from "../components/AddUserForm";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../../../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS } from "../../../utils/permissionAccess";
-import { UserPoolIcon, CreateUserIcon } from "../components/userpoolIcons";
+import { CreateUserIcon } from "../components/userpoolIcons";
 
 function getRequestedUserType(location) {
   const searchParams = new URLSearchParams(location.search);

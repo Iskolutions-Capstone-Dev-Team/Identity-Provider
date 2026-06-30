@@ -2,7 +2,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import PageHeader from "../../../components/PageHeader";
 import RegistrationCreateForm from "../components/RegistrationCreateForm";
-import { RegistrationIcon, CreateRegistrationIcon } from "../components/registrationIcons";
+import { CreateRegistrationIcon } from "../components/registrationIcons";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
 import { registrationService } from "../../../services/registrationService";
 import { getAllAppClientSelectOptions } from "../../../utils/userPoolAccess";
