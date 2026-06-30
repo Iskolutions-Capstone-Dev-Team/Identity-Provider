@@ -13,7 +13,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     test: {
+      globals: true,
       environment: 'jsdom',
+      setupFiles: './setupTests.js',
     },
     envDir: "..",
     plugins: [
