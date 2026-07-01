@@ -6,6 +6,7 @@ import (
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -81,10 +82,25 @@ func (h *MetricsHandler) GetMetricsReportPDF(c *gin.Context) {
 
 	permissions := c.GetStringSlice("permissions")
 
+	filter := models.ReportFilter{
+		IncludeSecurityAnalysis: true,
+		IncludeAuthStats:        true,
+		IncludeFailedAttempts:   true,
+	}
+
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		log.Printf("[MetricsHandler] Bind Query: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid query parameters",
+		})
+		return
+	}
+
 	pdfBytes, err := h.MetricsService.GenerateReportPDF(
 		c.Request.Context(),
 		userID,
 		permissions,
+		filter,
 	)
 	if err != nil {
 		log.Printf("[MetricsHandler] GetMetricsReportPDF error: %v", err)

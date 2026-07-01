@@ -37,7 +37,7 @@ function getActionVisibilityClassName(isOpen, isVisible, actionIndex) {
   return `${FAB_ACTION_WRAP_BASE_CLASS} pointer-events-none invisible scale-[0.3] opacity-0 translate-x-0 translate-y-0`;
 }
 
-function getActionTransitionStyle(actionIndex, actionCount) {
+function getActionTransitionStyle(actionIndex) {
   const delay = actionIndex * FAB_ACTION_STAGGER_MS;
 
   return {
@@ -164,8 +164,7 @@ export default function AssistiveFab({ colorMode = "light" }) {
             actionIndex,
           );
           const actionTransitionStyle = getActionTransitionStyle(
-            actionIndex,
-            fabActions.length,
+            actionIndex
           );
 
           return (

@@ -5,7 +5,7 @@ import PageHeader from "../../../components/PageHeader";
 import RoleCreateForm from "../components/RoleCreateForm";
 import { usePermissions } from "../hooks/usePermissions";
 import { useRoles } from "../hooks/useRoles";
-import { RolesIcon, CreateRoleIcon } from "../components/roleIcons";
+import { CreateRoleIcon } from "../components/roleIcons";
 
 export default function CreateRolePage() {
   const navigate = useNavigate();

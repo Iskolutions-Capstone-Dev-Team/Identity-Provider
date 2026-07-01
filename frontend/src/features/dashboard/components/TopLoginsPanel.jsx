@@ -43,7 +43,6 @@ function ClientLogo({ client }) {
 
 export function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeriod }) {
   const isDarkMode = colorMode === "dark";
-  const accent = getDashboardAccent(colorMode);
   const shellClassName = isDarkMode
     ? "border-white/10 bg-[#061224]"
     : "border-[#7b0d15]/10 bg-[#fff8f3]";

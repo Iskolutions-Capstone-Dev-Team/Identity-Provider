@@ -3,7 +3,6 @@ import ProfileCard from "../components/ProfileCard";
 import AuthenticatorsPanel from "../components/AuthenticatorsPanel";
 import { EMPTY_CURRENT_USER } from "../../../hooks/useCurrentUser";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { ProfileIcon } from "../components/profileIcons";
 
 export default function Profile() {
   const outletContext = useOutletContext();

@@ -2,7 +2,6 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import PageHeader from "../../../components/PageHeader";
 import AppClientCreateForm from "../components/AppClientCreateForm";
-import { AppClientIcon } from "../components/AppClientIconBox";
 import { useAppClients } from "../hooks/useAppClients";
 import { CreateAppClientIcon } from "../components/appClientIcons";
 
