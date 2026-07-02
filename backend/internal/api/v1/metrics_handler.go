@@ -3,6 +3,7 @@ package v1
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
@@ -372,4 +373,64 @@ func (h *MetricsHandler) GetRegistrationMetrics(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, metrics)
+}
+
+// GetPaginatedLogins returns a paginated list of logins.
+func (h *MetricsHandler) GetPaginatedLogins(c *gin.Context) {
+	if !middleware.HasPermission(c, "View all appclients") &&
+		!middleware.HasPermission(c, "View connected appclients") {
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf(
+			"[MetricsHandler] GetPaginatedLogins: invalid user ID: %v",
+			err,
+		)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid user context.",
+			err,
+		)
+		return
+	}
+
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	period := c.DefaultQuery("period", "today")
+	permissions := c.GetStringSlice("permissions")
+
+	ctx := c.Request.Context()
+	resp, err := h.MetricsService.GetPaginatedLogins(
+		ctx,
+		userID,
+		permissions,
+		period,
+		limit,
+		page,
+	)
+	if err != nil {
+		log.Printf("[MetricsHandler] GetPaginatedLogins error: %v", err)
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to retrieve paginated logins.",
+			err,
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
