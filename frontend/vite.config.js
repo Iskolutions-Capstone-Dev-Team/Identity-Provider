@@ -12,6 +12,11 @@ export default defineConfig(({ mode }) => {
     || "http://localhost:8080";
 
   return {
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './setupTests.js',
+    },
     envDir: "..",
     plugins: [
       tailwindcss(),
