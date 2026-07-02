@@ -336,13 +336,7 @@ func (s *metricsService) GetDashboardMetrics(
 		log.Printf("[MetricsService] GetTotalLogins error: %v", err)
 		return nil, err
 	}
-
-	weekCount, err := s.repo.GetTotalLogins(ctx, weekStart, allowedClients)
-	if err != nil {
-		log.Printf("[MetricsService] GetTotalLogins error: %v", err)
-		return nil, err
-	}
-
+	
 	monthCount, err := s.repo.GetTotalLogins(ctx, monthStart, allowedClients)
 	if err != nil {
 		log.Printf("[MetricsService] GetTotalLogins error: %v", err)
@@ -403,10 +397,6 @@ func (s *metricsService) GetDashboardMetrics(
 			Today: models.TimeframeStats{
 				Count:      todayCount,
 				TopClients: todayTopClients,
-			},
-			ThisWeek: models.TimeframeStats{
-				Count:      weekCount,
-				TopClients: weekTopClients,
 			},
 			ThisMonth: models.TimeframeStats{
 				Count:      monthCount,
