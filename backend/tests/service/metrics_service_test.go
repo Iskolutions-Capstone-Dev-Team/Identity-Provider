@@ -168,6 +168,13 @@ func TestGetDashboardMetrics(t *testing.T) {
 		)
 	}
 
+	if metrics.LoginStats.Today.FailedCount != 3 {
+		t.Errorf(
+			"expected 3 failed logins, got %d",
+			metrics.LoginStats.Today.FailedCount,
+		)
+	}
+
 	if len(metrics.LoginStats.Today.TopClients) != 1 ||
 		metrics.LoginStats.Today.TopClients[0].ClientName != "App 1" {
 		t.Errorf(
@@ -196,6 +203,12 @@ func TestGetDashboardMetrics(t *testing.T) {
 		t.Errorf(
 			"expected 42 today logins for restricted, got %d",
 			metricsRestricted.LoginStats.Today.Count,
+		)
+	}
+	if metricsRestricted.LoginStats.Today.FailedCount != 3 {
+		t.Errorf(
+			"expected 3 failed logins for restricted, got %d",
+			metricsRestricted.LoginStats.Today.FailedCount,
 		)
 	}
 }
