@@ -159,8 +159,8 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
     ? "Highest login volume by accessible applications"
     : "Highest login volume by application";
   const emptyMessage = isRestrictedView
-    ? "No login activity is available for your accessible applications."
-    : "No login activity is available for this application.";
+    ? "No failed login activity is available."
+    : "No failed login activity is available for this application.";
   const maxLoginCount = clients.reduce((maxCount, client) => {
     const loginCount = Number(client.login_count) || 0;
     return Math.max(maxCount, loginCount);
