@@ -149,7 +149,7 @@ export default function SystemLoginsModal({ open, period, colorMode = "light", o
             </div>
 
             {totalPages > 1 && (
-              <div className="mt-2 flex justify-center pb-2">
+              <div className="mt-2 flex justify-center pb-2 [&>div]:!justify-center">
                 <Pagination
                   totalPages={totalPages}
                   currentPage={currentPage}
