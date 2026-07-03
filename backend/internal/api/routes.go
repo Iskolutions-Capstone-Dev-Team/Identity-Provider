@@ -238,6 +238,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.GET("", h.UserHandler.GetUserList)
 			users.GET("/admins", h.UserHandler.GetAdminUserList)
 			users.GET("/:id", h.UserHandler.GetUser)
+			users.PATCH("/:id", h.UserHandler.PatchUserDetails)
 			users.PATCH("/:id/status", h.UserHandler.PatchUserStatus)
 			users.PATCH("/:id/role", h.UserHandler.PatchUserRole)
 			users.GET("/access", h.UserHandler.GetUserDetailedAccess)
