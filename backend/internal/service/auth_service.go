@@ -554,12 +554,23 @@ func (s *authService) CheckSessionOrPendingMFA(
 	}
 
 	// 2. Try checking the pending MFA token
+	var tokenStr string
 	pendingCookie, err := c.Cookie("idp_mfa_pending")
-	if err != nil || pendingCookie == "" {
+	if err == nil && pendingCookie != "" {
+		tokenStr = pendingCookie
+	} else {
+		// Fallback to Authorization header
+		authHeader := c.GetHeader("Authorization")
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			tokenStr = authHeader[7:]
+		}
+	}
+
+	if tokenStr == "" {
 		return uuid.Nil, false, nil, fmt.Errorf("pending cookie missing")
 	}
 
-	claims, err := s.ValidateMFAPendingToken(pendingCookie)
+	claims, err := s.ValidateMFAPendingToken(tokenStr)
 	if err != nil {
 		return uuid.Nil, false, nil, fmt.Errorf(
 			"token validation failed: %w", err,

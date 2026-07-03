@@ -63,7 +63,6 @@ export const mfaService = {
       },
       {
         skipUnauthorizedRedirect: true,
-        skipAuthHeader: true,
       },
     );
 
@@ -183,7 +182,6 @@ export const mfaService = {
         params: {
           email: getRequiredTextValue(email, "Email address"),
         },
-        skipAuthHeader: true,
         skipUnauthorizedRedirect: true,
       },
     );
