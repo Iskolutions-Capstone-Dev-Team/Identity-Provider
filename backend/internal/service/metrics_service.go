@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/storage"
@@ -57,6 +58,13 @@ type MetricsService interface {
 		permissions []string,
 		userID uuid.UUID,
 	) ([]models.MetricCard, error)
+	GetPaginatedLogins(
+		ctx context.Context,
+		userID uuid.UUID,
+		permissions []string,
+		period string,
+		limit, page int,
+	) (*dto.PaginatedLoginsResponse, error)
 }
 
 type metricsService struct {
@@ -299,13 +307,6 @@ func (s *metricsService) GetDashboardMetrics(
 		0, 0, 0, 0, now.Location(),
 	)
 
-	// This week start (Monday)
-	daysSinceMonday := int(now.Weekday()) - 1
-	if daysSinceMonday < 0 {
-		daysSinceMonday = 6
-	}
-	weekStart := todayStart.AddDate(0, 0, -daysSinceMonday)
-
 	// This month start
 	monthStart := time.Date(
 		now.Year(), now.Month(), 1,
@@ -337,28 +338,38 @@ func (s *metricsService) GetDashboardMetrics(
 		return nil, err
 	}
 
-	weekCount, err := s.repo.GetTotalLogins(ctx, weekStart, allowedClients)
-	if err != nil {
-		log.Printf("[MetricsService] GetTotalLogins error: %v", err)
-		return nil, err
-	}
-
 	monthCount, err := s.repo.GetTotalLogins(ctx, monthStart, allowedClients)
 	if err != nil {
 		log.Printf("[MetricsService] GetTotalLogins error: %v", err)
 		return nil, err
 	}
 
-	todayTopClients, err := s.repo.GetTopClients(
-		ctx, 5, todayStart, allowedClients,
+	todayFailed, err := s.repo.GetFailedAuthAttempts(
+		ctx, todayStart, allowedClients,
 	)
 	if err != nil {
-		log.Printf("[MetricsService] GetTopClients error: %v", err)
+		log.Printf("[MetricsService] GetFailedAuthAttempts error: %v", err)
 		return nil, err
 	}
+	todayFailedCount := 0
+	for _, a := range todayFailed {
+		todayFailedCount += a.FailCount
+	}
 
-	weekTopClients, err := s.repo.GetTopClients(
-		ctx, 5, weekStart, allowedClients,
+	monthFailed, err := s.repo.GetFailedAuthAttempts(
+		ctx, monthStart, allowedClients,
+	)
+	if err != nil {
+		log.Printf("[MetricsService] GetFailedAuthAttempts error: %v", err)
+		return nil, err
+	}
+	monthFailedCount := 0
+	for _, a := range monthFailed {
+		monthFailedCount += a.FailCount
+	}
+
+	todayTopClients, err := s.repo.GetTopClients(
+		ctx, 5, todayStart, allowedClients,
 	)
 	if err != nil {
 		log.Printf("[MetricsService] GetTopClients error: %v", err)
@@ -374,7 +385,6 @@ func (s *metricsService) GetDashboardMetrics(
 	}
 
 	todayTopClients = s.populateClientImageURLs(ctx, todayTopClients)
-	weekTopClients = s.populateClientImageURLs(ctx, weekTopClients)
 	monthTopClients = s.populateClientImageURLs(ctx, monthTopClients)
 
 	s.mu.RLock()
@@ -401,16 +411,14 @@ func (s *metricsService) GetDashboardMetrics(
 	return &models.DashboardMetrics{
 		LoginStats: models.LoginStats{
 			Today: models.TimeframeStats{
-				Count:      todayCount,
-				TopClients: todayTopClients,
-			},
-			ThisWeek: models.TimeframeStats{
-				Count:      weekCount,
-				TopClients: weekTopClients,
+				Count:       todayCount,
+				FailedCount: todayFailedCount,
+				TopClients:  todayTopClients,
 			},
 			ThisMonth: models.TimeframeStats{
-				Count:      monthCount,
-				TopClients: monthTopClients,
+				Count:       monthCount,
+				FailedCount: monthFailedCount,
+				TopClients:  monthTopClients,
 			},
 		},
 		SecurityAnalysis: analysis,
@@ -576,8 +584,11 @@ func addReportAuthStatsTable(
 		clients []models.TopClientLogin
 	}{
 		{"Today - Total Logins", stats.Today.Count, stats.Today.TopClients},
-		{"This Week - Total Logins", stats.ThisWeek.Count, stats.ThisWeek.TopClients},
-		{"This Month - Total Logins", stats.ThisMonth.Count, stats.ThisMonth.TopClients},
+		{
+			"This Month - Total Logins",
+			stats.ThisMonth.Count,
+			stats.ThisMonth.TopClients,
+		},
 	}
 
 	pdf.SetDrawColor(185, 185, 185)
@@ -858,4 +869,58 @@ func (s *metricsService) GetRegistrationMetrics(
 		}
 	}
 	return s.repo.GetRegistrationMetrics(ctx, allowedClients)
+}
+
+func (s *metricsService) GetPaginatedLogins(
+	ctx context.Context,
+	userID uuid.UUID,
+	permissions []string,
+	period string,
+	limit, page int,
+) (*dto.PaginatedLoginsResponse, error) {
+	var since time.Time
+	now := time.Now()
+	if period == "this_month" {
+		since = time.Date(
+			now.Year(), now.Month(), 1,
+			0, 0, 0, 0, now.Location(),
+		)
+	} else {
+		since = time.Date(
+			now.Year(), now.Month(), now.Day(),
+			0, 0, 0, 0, now.Location(),
+		)
+	}
+
+	var adminID []byte
+	if !slices.Contains(permissions, "View all appclients") {
+		adminID = userID[:]
+	}
+
+	if page < 1 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
+	logs, total, err := s.repo.GetPaginatedLogins(
+		ctx, since, limit, offset, adminID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	lastPage := int((total + int64(limit) - 1) / int64(limit))
+	if lastPage < 1 {
+		lastPage = 1
+	}
+
+	return &dto.PaginatedLoginsResponse{
+		Logins:      logs,
+		TotalCount:  total,
+		CurrentPage: page,
+		LastPage:    lastPage,
+	}, nil
 }
