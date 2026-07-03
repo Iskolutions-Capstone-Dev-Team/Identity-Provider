@@ -43,6 +43,8 @@ type UserService interface {
 		newStatus string) error
 	UpdateUserRole(ctx context.Context, id uuid.UUID, roleID *int,
 		adminID uuid.UUID, permissions []string) error
+	UpdateUserAccountAndRole(ctx context.Context, id uuid.UUID,
+		accountTypeID *int, roleID *int) error
 	UpdateUserName(ctx context.Context, id uuid.UUID,
 		req dto.UpdateUserNameRequest) error
 	ChangePassword(ctx context.Context, id uuid.UUID,
@@ -776,6 +778,52 @@ func (s *userService) UpdateUserRole(
 	return fmt.Errorf("permission validation: unauthorized to update roles")
 }
 
+func (s *userService) UpdateUserAccountAndRole(
+	ctx context.Context,
+	id uuid.UUID,
+	accountTypeID *int,
+	roleID *int,
+) error {
+	var nullRoleID sql.NullInt64
+	if roleID != nil {
+		if *roleID > 0 {
+			nullRoleID = sql.NullInt64{
+				Int64: int64(*roleID),
+				Valid: true,
+			}
+		} else {
+			nullRoleID = sql.NullInt64{
+				Valid: false,
+			}
+		}
+		err := s.Repo.UpdateUserRole(ctx, id[:], nullRoleID)
+		if err != nil {
+			return fmt.Errorf("failed to update user role: %w", err)
+		}
+	}
+
+	var nullAccountTypeID sql.NullInt64
+	if accountTypeID != nil {
+		if *accountTypeID > 0 {
+			nullAccountTypeID = sql.NullInt64{
+				Int64: int64(*accountTypeID),
+				Valid: true,
+			}
+		} else {
+			nullAccountTypeID = sql.NullInt64{
+				Valid: false,
+			}
+		}
+		err := s.Repo.UpdateUserAccountType(ctx, id[:], nullAccountTypeID)
+		if err != nil {
+			return fmt.Errorf("failed to update user account type: %w", err)
+		}
+	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+	return nil
+}
+
 /**
  * UpdateUserName modifies the name fields of a specific user.
  */
@@ -877,15 +925,16 @@ func (s *userService) mapToUserResponse(
 	id uuid.UUID,
 ) *dto.UserResponse {
 	resp := &dto.UserResponse{
-		ID:         id.String(),
-		FirstName:  user.FirstName,
-		MiddleName: user.MiddleName,
-		LastName:   user.LastName,
-		NameSuffix: user.NameSuffix,
-		Email:      user.Email,
-		Status:     string(user.Status),
-		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+		ID:          id.String(),
+		FirstName:   user.FirstName,
+		MiddleName:  user.MiddleName,
+		LastName:    user.LastName,
+		NameSuffix:  user.NameSuffix,
+		Email:       user.Email,
+		Status:      string(user.Status),
+		CreatedAt:   user.CreatedAt.Format(TIME_LAYOUT),
+		UpdatedAt:   user.UpdatedAt.Format(TIME_LAYOUT),
+		AccountType: user.AccountType,
 	}
 
 	if user.RoleID.Valid {
@@ -933,16 +982,17 @@ func (s *userService) mapToSimplifiedUserResponse(
 	}
 
 	return &dto.UserSimplifiedResponse{
-		ID:         id.String(),
-		FirstName:  user.FirstName,
-		MiddleName: user.MiddleName,
-		LastName:   user.LastName,
-		NameSuffix: user.NameSuffix,
-		Email:      user.Email,
-		Status:     string(user.Status),
-		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-		Clients:    clients,
+		ID:          id.String(),
+		FirstName:   user.FirstName,
+		MiddleName:  user.MiddleName,
+		LastName:    user.LastName,
+		NameSuffix:  user.NameSuffix,
+		Email:       user.Email,
+		Status:      string(user.Status),
+		CreatedAt:   user.CreatedAt.Format(TIME_LAYOUT),
+		UpdatedAt:   user.UpdatedAt.Format(TIME_LAYOUT),
+		AccountType: user.AccountType,
+		Clients:     clients,
 	}
 }
 
