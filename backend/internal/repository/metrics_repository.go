@@ -41,6 +41,8 @@ type MetricsRepository interface {
 		ctx context.Context,
 		allowedClients []string,
 	) ([]models.MetricCard, error)
+	GetPaginatedLogins(ctx context.Context, since time.Time,
+		limit, offset int, adminID []byte) ([]models.AuditLog, int64, error)
 }
 
 type metricsRepository struct {
@@ -670,4 +672,62 @@ func (r *metricsRepository) GetRegistrationMetrics(
 			Description: "Active registration invitation codes",
 		},
 	}, nil
+}
+
+func (r *metricsRepository) GetPaginatedLogins(
+	ctx context.Context,
+	since time.Time,
+	limit, offset int,
+	adminID []byte,
+) ([]models.AuditLog, int64, error) {
+	var total int64
+	var logs []models.AuditLog
+
+	countQuery := `
+		SELECT COUNT(*) 
+		FROM audit_logs 
+		WHERE action = 'login' AND created_at >= ?`
+
+	dataQuery := `
+		SELECT id, actor, action, target, status, metadata, created_at 
+		FROM audit_logs 
+		WHERE action = 'login' AND created_at >= ?`
+
+	var countArgs []interface{}
+	var dataArgs []interface{}
+
+	if adminID != nil {
+		filterClause := ` AND target IN (
+			SELECT BIN_TO_UUID(client_id) 
+			FROM admin_allowed_clients 
+			WHERE user_id = ?
+		)`
+		countQuery += filterClause
+		dataQuery += filterClause
+		countArgs = []interface{}{since, adminID}
+		dataArgs = []interface{}{since, adminID, limit, offset}
+	} else {
+		countArgs = []interface{}{since}
+		dataArgs = []interface{}{since, limit, offset}
+	}
+
+	dataQuery += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+
+	err := r.db.GetContext(ctx, &total, countQuery, countArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf(
+			"[MetricsRepository] GetPaginatedLogins count: %w",
+			err,
+		)
+	}
+
+	err = r.db.SelectContext(ctx, &logs, dataQuery, dataArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf(
+			"[MetricsRepository] GetPaginatedLogins data: %w",
+			err,
+		)
+	}
+
+	return logs, total, nil
 }

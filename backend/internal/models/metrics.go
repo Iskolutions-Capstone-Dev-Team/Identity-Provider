@@ -20,8 +20,9 @@ type LoginStats struct {
 
 // TimeframeStats holds login count and top client list for a timeframe.
 type TimeframeStats struct {
-	Count      int              `json:"count"`
-	TopClients []TopClientLogin `json:"top_clients"`
+	Count       int              `json:"count"`
+	FailedCount int              `json:"failed_count"`
+	TopClients  []TopClientLogin `json:"top_clients"`
 }
 
 // SecurityAnalysisResult represents the structured output of Gemini analysis.
