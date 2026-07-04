@@ -16,13 +16,10 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks(id) {
-            if (id.includes("node_modules")) {
-              if (id.includes("react")) return "vendor-react";
-              if (id.includes("axios")) return "vendor-axios";
-              return "vendor";
-            }
-          },
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-axios': ['axios']
+          }
         },
       },
     },
