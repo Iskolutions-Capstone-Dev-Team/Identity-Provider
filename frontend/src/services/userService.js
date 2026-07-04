@@ -248,6 +248,29 @@ export const userService = {
     return res.data;
   },
 
+  async updateUserDetails(id, accountTypeId, roleId, mfaCode) {
+    const payload = {
+      account_type_id: normalizeAccountTypeId(accountTypeId),
+      role_id: normalizeRoleId(roleId) ?? null,
+      mfa_code: normalizeTextValue(mfaCode),
+    };
+
+    if (!payload.account_type_id) {
+      throw new Error("Account type is required.");
+    }
+    if (!payload.mfa_code) {
+      throw new Error("MFA code is required.");
+    }
+
+    const res = await axiosInstance.patch(`/admin/users/${id}`, payload, {
+      headers: { "Content-Type": "application/json" },
+      skipUnauthorizedRedirect: true,
+    });
+
+    clearUserCache();
+    return res.data;
+  },
+
   async deleteUser(id) {
     const res = await axiosInstance.delete(`/admin/users/${id}`);
     clearUserCache();

@@ -3,6 +3,7 @@ import { shortenId } from "../../../utils/shortenId";
 import DataTableSkeleton from "../../../components/DataTableSkeleton";
 import EmptySearchState from "../../../components/EmptySearchState";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
+import { getAccountTypeLabel } from "../../../utils/accountTypes";
 import { ViewIcon, EditIcon, DeleteIcon } from "./userpoolIcons";
 
 const headerCellClassName = "border-b  border-white/10 px-4 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90 xl:px-6";
@@ -76,40 +77,44 @@ function getColumnWidths(isAdminView, showActionsColumn) {
   if (isAdminView) {
     if (!showActionsColumn) {
       return [
-        "w-[8rem] lg:w-[12%]",
-        "w-[15rem] lg:w-[25%]",
-        "w-[13rem] lg:w-[25%]",
-        "w-[9rem] lg:w-[20%]",
-        "w-[8.5rem] lg:w-[18%]",
+        "w-[8rem] lg:w-[10%]",
+        "w-[15rem] lg:w-[22%]",
+        "w-[13rem] lg:w-[22%]",
+        "w-[10rem] lg:w-[14%]",
+        "w-[9rem] lg:w-[16%]",
+        "w-[8.5rem] lg:w-[16%]",
       ];
     }
 
     return [
-      "w-[8rem] lg:w-[10%]",
-      "w-[14rem] lg:w-[22%]",
-      "w-[12rem] lg:w-[23%]",
-      "w-[9rem] lg:w-[16%]",
-      "w-[8.5rem] lg:w-[13%]",
-      "w-[9rem] lg:w-[16%]",
+      "w-[8rem] lg:w-[9%]",
+      "w-[14rem] lg:w-[20%]",
+      "w-[12rem] lg:w-[20%]",
+      "w-[10rem] lg:w-[12%]",
+      "w-[9rem] lg:w-[14%]",
+      "w-[8.5rem] lg:w-[11%]",
+      "w-[9rem] lg:w-[14%]",
     ];
   }
 
   if (!showActionsColumn) {
     return [
-      "w-[8rem] lg:w-[11%]",
-      "w-[15rem] lg:w-[24%]",
-      "w-[12rem] lg:w-[21%]",
-      "w-[13rem] lg:w-[26%]",
-      "w-[9rem] lg:w-[18%]",
+      "w-[8rem] lg:w-[9%]",
+      "w-[15rem] lg:w-[21%]",
+      "w-[12rem] lg:w-[18%]",
+      "w-[10rem] lg:w-[14%]",
+      "w-[13rem] lg:w-[23%]",
+      "w-[9rem] lg:w-[15%]",
     ];
   }
 
   return [
-    "w-[8rem] lg:w-[9%]",
-    "w-[14rem] lg:w-[20%]",
-    "w-[11rem] lg:w-[18%]",
-    "w-[13rem] lg:w-[24%]",
-    "w-[9rem] lg:w-[13%]",
+    "w-[8rem] lg:w-[8%]",
+    "w-[14rem] lg:w-[18%]",
+    "w-[11rem] lg:w-[16%]",
+    "w-[10rem] lg:w-[12%]",
+    "w-[13rem] lg:w-[22%]",
+    "w-[9rem] lg:w-[12%]",
     "w-[9.5rem] lg:w-[12%]",
   ];
 }
@@ -168,15 +173,16 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
     { header: "ID", type: "text", width: "w-16", colClassName: columnWidths[0] },
     { header: "Email", type: "text", width: "w-32", colClassName: columnWidths[1] },
     { header: "Name", type: "stackedText", colClassName: columnWidths[2] },
-    { header: accessColumnLabel, type: "badges", colClassName: columnWidths[3] },
-    { header: "Status", type: "badge", width: "w-20", colClassName: columnWidths[4] },
+    { header: "Account Type", type: "text", colClassName: columnWidths[3] },
+    { header: accessColumnLabel, type: "badges", colClassName: columnWidths[4] },
+    { header: "Status", type: "badge", width: "w-20", colClassName: columnWidths[5] },
   ];
 
   if (showActionsColumn) {
     loadingColumns.push({
       header: "Actions",
       type: "actions",
-      colClassName: columnWidths[5],
+      colClassName: columnWidths[6],
     });
   }
 
@@ -204,6 +210,7 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
               <th className={headerCellClassName}>ID</th>
               <th className={emailHeaderCellClassName}>Email</th>
               <th className={headerCellClassName}>Name</th>
+              <th className={headerCellClassName}>Account Type</th>
               <th className={headerCellClassName}>{accessColumnLabel}</th>
               <th className={statusHeaderCellClassName}>Status</th>
               {showActionsColumn && (
@@ -253,6 +260,12 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
                 <td className={sharedBodyCellClassName}>
                   <div className="break-words whitespace-normal leading-6">
                     {getFullName(user)}
+                  </div>
+                </td>
+
+                <td className={sharedBodyCellClassName}>
+                  <div className="break-words whitespace-normal font-medium leading-6">
+                    {getAccountTypeLabel(user.accountType || user.account_type)}
                   </div>
                 </td>
 

@@ -1,4 +1,4 @@
-import { CalendarIcon } from "./DashboardIcons";
+import { CalendarIcon, ShieldExclamationIcon } from "./DashboardIcons";
 
 function SkeletonBlock({ className = "", colorMode = "light" }) {
   const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";
@@ -38,7 +38,11 @@ export default function MetricFilterCard({ stat, colorMode = "light", isLoading 
     <div  className={`relative rounded-2xl border p-5 ${hoverClassName} ${tone.border} ${cardClassName}`}>
       <div className="flex items-center gap-4">
         <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${tone.icon}`}>
-          <CalendarIcon />
+          {stat.type === "failed" ? (
+            <ShieldExclamationIcon className="size-6" />
+          ) : (
+            <CalendarIcon />
+          )}
         </span>
 
         <div className="min-w-0">
