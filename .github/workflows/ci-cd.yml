@@ -159,11 +159,14 @@ jobs:
           PRODUCTION_HOST: ${{ secrets.VPS_IP }}
           PRODUCTION_USER: ${{ secrets.VPS_USER }}
           PRODUCTION_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          PRODUCTION_PASSWORD: ${{ secrets.VPS_PASSWORD }}
         run: |
+          sudo apt-get update && sudo apt-get install -y sshpass
           install -m 700 -d "$HOME/.ssh"
           printf '%s' "$PRODUCTION_KEY" > "$HOME/.ssh/production_key"
           chmod 600 "$HOME/.ssh/production_key"
-          ssh -i "$HOME/.ssh/production_key" \
+          sshpass -p "$PRODUCTION_PASSWORD" \
+            ssh -i "$HOME/.ssh/production_key" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             "$PRODUCTION_USER@$PRODUCTION_HOST" \
