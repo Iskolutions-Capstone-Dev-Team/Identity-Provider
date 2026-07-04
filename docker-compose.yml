@@ -42,8 +42,6 @@ services:
         - VITE_ONE_PORTAL_URL=${VITE_ONE_PORTAL_URL}
     container_name: idp_frontend
     restart: always
-    environment:
-      BACKEND_PROXY_TARGET: http://backend:8080
     ports:
       - "5173:80"
     networks:

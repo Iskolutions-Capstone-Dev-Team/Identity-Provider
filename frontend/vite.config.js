@@ -30,7 +30,6 @@ export default defineConfig(({ mode }) => {
     },
     envDir: "..",
     plugins: [
-      compression({ algorithm: "brotliCompress" }),
       compression({ algorithm: "gzip" }),
       tailwindcss(),
       react(),

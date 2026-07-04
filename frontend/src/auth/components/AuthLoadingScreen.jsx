@@ -9,7 +9,7 @@ export default function AuthLoadingScreen({ message, spinnerOnly = false }) {
 
       <div className="relative flex min-h-screen flex-col items-center justify-center px-4 text-center">
         {spinnerOnly ? (
-          <span className="loading loading-spinner loading-lg text-[#ffd21a]" aria-label="Loading" />
+          <span className="loading loading-spinner loading-lg text-[#ffd21a]" role="status" aria-live="polite" aria-label="Loading" />
         ) : (
           <>
             <div className="relative flex h-44 w-44 items-center justify-center sm:h-48 sm:w-48">
