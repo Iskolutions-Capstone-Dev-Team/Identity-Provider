@@ -238,12 +238,12 @@ function SidebarMenuItem({ isOpen, item, isActive, onClick, theme, onTooltipChan
   return (
     <li className="group relative">
       <span aria-hidden="true" className={`pointer-events-none absolute -left-5 top-1/2 h-9 w-4 -translate-y-1/2 rounded-full transition-all duration-300 ${indicatorClassName} ${indicatorVisibilityClassName}`} />
-      <span aria-hidden="true" className={`pointer-events-none absolute -left-[1.35rem] top-1/2 h-11 w-6 -translate-y-1/2 rounded-full blur-[7px] transition-all duration-300 ${
+      <span aria-hidden="true" className={`pointer-events-none absolute -left-[1.35rem] top-1/2 h-9 w-6 -translate-y-1/2 rounded-full blur-[7px] transition-all duration-300 ${
         isActive
           ? "bg-[#f8d24e]/12 opacity-100"
           : "bg-white/6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
       }`} />
-      <button type="button" onClick={handleClick} onMouseEnter={(event) => handleShowTooltip(event.currentTarget)} onMouseLeave={handleHideTooltip} onFocus={(event) => handleShowTooltip(event.currentTarget)} onBlur={handleHideTooltip} aria-label={item.name} className={`relative flex h-14 w-full items-center overflow-hidden rounded-[1.35rem] transition-all duration-300 focus-visible:bg-white/[0.08] ${alignmentClassName} ${surfaceClassName}`}>
+      <button type="button" onClick={handleClick} onMouseEnter={(event) => handleShowTooltip(event.currentTarget)} onMouseLeave={handleHideTooltip} onFocus={(event) => handleShowTooltip(event.currentTarget)} onBlur={handleHideTooltip} aria-label={item.name} className={`relative flex h-12 w-full items-center overflow-hidden rounded-[1.35rem] transition-all duration-300 focus-visible:bg-white/[0.08] ${alignmentClassName} ${surfaceClassName}`}>
         <SidebarIcon
           item={item}
           isActive={isActive}
@@ -429,10 +429,10 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
             </div>
 
             <div className="idp-sidebar-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-4 pt-5">
-              <div className="space-y-5">
+              <div className={`transition-all duration-300 ${isOpen ? "space-y-4" : "space-y-2"}`}>
                 {visibleMenuSections.map((section) => (
                   <div key={section.title}>
-                    <div className="mb-3 flex h-5 items-center overflow-hidden px-2">
+                    <div className={`flex items-center overflow-hidden px-2 transition-all duration-300 ${isOpen ? "mb-3 h-5" : "mb-0 h-0"}`}>
                       <p
                         className={`whitespace-nowrap text-[0.65rem] font-semibold tracking-[0.28em] transition-all duration-300 ${
                           isOpen
@@ -444,7 +444,7 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
                       </p>
                     </div>
 
-                    <ul className="space-y-2">
+                    <ul className="space-y-1">
                       {section.items.map((item) => {
                         const isActive = location.pathname === item.path;
 
@@ -467,7 +467,7 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
             </div>
 
             <div className="px-3 pb-3 pt-2">
-              <ul className="space-y-2">
+              <ul className="space-y-1">
                 <SidebarMenuItem
                   isOpen={isOpen}
                   item={{
