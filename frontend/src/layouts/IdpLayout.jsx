@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
 import AssistiveFab from "../components/AssistiveFab";
 import AccessibilityWidget from "../components/AccessibilityWidget";
