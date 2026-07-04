@@ -31,7 +31,7 @@ export default function MetricFilterCard({ stat, colorMode = "light", isLoading 
   const countClassName = isDarkMode ? "text-white" : "text-[#2a1518]";
   const captionClassName = isDarkMode ? "text-slate-200" : "text-slate-600";
   const hoverClassName = "transition-transform duration-200 ease-out hover:-translate-y-1";
-  const interactiveClassName = isClickable ? "cursor-pointer hover:border-opacity-100" : "";
+
   const caption = stat.type === "failed" ? "Unsuccessful logins" : "Successful logins";
 
   return (
