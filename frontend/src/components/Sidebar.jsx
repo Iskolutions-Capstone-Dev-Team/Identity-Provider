@@ -432,7 +432,7 @@ export default function Sidebar({ isOpen, toggleSidebar, activeColorMode = "ligh
               <div className={`transition-all duration-300 ${isOpen ? "space-y-4" : "space-y-2"}`}>
                 {visibleMenuSections.map((section) => (
                   <div key={section.title}>
-                    <div className={`flex items-center overflow-hidden px-2 transition-all duration-300 ${isOpen ? "mb-3 h-5" : "mb-0 h-0"}`}>
+                    <div className={`flex items-center overflow-hidden px-2 transition-all duration-300 ${isOpen ? "mb-3 h-5" : "mb-0 h-0"}`} aria-hidden={!isOpen}>
                       <p
                         className={`whitespace-nowrap text-[0.65rem] font-semibold tracking-[0.28em] transition-all duration-300 ${
                           isOpen
