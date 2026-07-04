@@ -67,4 +67,11 @@ describe('IdpLayout', () => {
     expect(screen.getByTestId('terms-modal')).toBeInTheDocument();
     expect(screen.getByTestId('outlet')).toBeInTheDocument();
   });
+
+  it('renders the outlet successfully within the new Suspense boundary', () => {
+    const { container } = render(<IdpLayout />);
+    // Verify that the layout doesn't crash when rendering the Suspense boundary around the outlet
+    expect(container).toBeInTheDocument();
+    expect(screen.getByTestId('outlet')).toBeInTheDocument();
+  });
 });
