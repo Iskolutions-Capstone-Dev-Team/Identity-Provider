@@ -13,16 +13,6 @@ export default defineConfig(({ mode }) => {
     || "http://localhost:8080";
 
   return {
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-            'vendor-axios': ['axios']
-          }
-        },
-      },
-    },
     test: {
       globals: true,
       environment: 'jsdom',
@@ -30,10 +20,11 @@ export default defineConfig(({ mode }) => {
     },
     envDir: "..",
     plugins: [
-      compression({ algorithm: "gzip" }),
       tailwindcss(),
       react(),
       sri(),
+      compression({ algorithm: "brotliCompress" }),
+      compression({ algorithm: "gzip" }),
       {
         name: "block-unsafe-vite-dep-version-query",
         configureServer(server) {
@@ -67,6 +58,19 @@ export default defineConfig(({ mode }) => {
         },
       },
     ],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("node_modules")) {
+              if (id.includes("react")) return "vendor-react";
+              if (id.includes("axios")) return "vendor-axios";
+              return "vendor";
+            }
+          },
+        },
+      },
+    },
     server: {
       host: true, 
       port: 5173,

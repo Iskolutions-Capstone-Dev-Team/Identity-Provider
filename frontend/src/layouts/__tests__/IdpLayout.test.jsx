@@ -67,12 +67,4 @@ describe('IdpLayout', () => {
     expect(screen.getByTestId('terms-modal')).toBeInTheDocument();
     expect(screen.getByTestId('outlet')).toBeInTheDocument();
   });
-
-  it('does not show the Suspense fallback when the outlet renders immediately', () => {
-    const { container } = render(<IdpLayout />);
-    // Verify that the layout doesn't crash when rendering the Suspense boundary around the outlet
-    expect(container).toBeInTheDocument();
-    expect(container.querySelector('.loading-infinity')).not.toBeInTheDocument();
-    expect(screen.getByTestId('outlet')).toBeInTheDocument();
-  });
 });

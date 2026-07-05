@@ -2,12 +2,12 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Navigate, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "../auth/components/ProtectedRoute";
 import PermissionRoute from "../auth/components/PermissionRoute";
-import AuthLoadingScreen from "../auth/components/AuthLoadingScreen";
 import IdpLayout from "../layouts/IdpLayout";
 import { PermissionProvider } from "../providers/PermissionProvider";
 import { ROUTE_PATHS } from "../routes/routePaths";
 import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "../routes/routePermissions";
 import { buildAccessDeniedPath, ACCESS_DENIED_PATH, LEGACY_UNAUTHORIZED_PATH } from "../auth/utils/loginRoute";
+import { authPageBackground, authPagePatternStyle } from "../auth/utils/authBackground";
 
 const Login = lazy(() => import("../auth/pages/Login"));
 const Register = lazy(() => import("../auth/pages/Register"));
@@ -34,18 +34,25 @@ const Placeholder = lazy(() => import("../pages/Placeholder"));
 export default function App() {
   return (
     <Router>
-      <Suspense fallback={<AuthLoadingScreen spinnerOnly />}>
+      <Suspense fallback={
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden" style={{ background: authPageBackground }}>
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 opacity-45 [mask-image:linear-gradient(90deg,#000_0%,transparent_24%,transparent_76%,#000_100%)]" style={authPagePatternStyle} />
+          </div>
+          <span className="loading loading-dots w-10 text-[#f8d24e] relative z-10"></span>
+        </div>
+      }>
         <Routes>
           {/* Public Routes */}
           <Route path={ROUTE_PATHS.ROOT} element={<AuthorizeRedirect />} />
           <Route path={ROUTE_PATHS.LOGIN} element={<Login />} />
           <Route path={ROUTE_PATHS.REGISTER} element={<Register />} />
-          <Route path={ROUTE_PATHS.REGISTER_SET_PASSWORD} element={<RegisterPasswordSetup />}/>
+          <Route path={ROUTE_PATHS.REGISTER_SET_PASSWORD} element={<RegisterPasswordSetup />} />
           <Route path={ROUTE_PATHS.CALLBACK} element={<Callback />} />
           <Route path={ROUTE_PATHS.LOGOUT} element={<Logout />} />
           <Route path={ROUTE_PATHS.ERROR} element={<ErrorPage />} />
           <Route path={ACCESS_DENIED_PATH} element={<AccessDenied />} />
-          <Route path={LEGACY_UNAUTHORIZED_PATH} element={<Navigate to={buildAccessDeniedPath()} replace />}/>
+          <Route path={LEGACY_UNAUTHORIZED_PATH} element={<Navigate to={buildAccessDeniedPath()} replace />} />
           <Route path={ROUTE_PATHS.ONE_PORTAL}
             element={
               <ProtectedRoute>

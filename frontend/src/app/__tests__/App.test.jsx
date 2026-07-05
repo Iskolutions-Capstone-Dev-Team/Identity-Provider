@@ -15,5 +15,4 @@ describe('app/App Component', () => {
     const { container } = render(<App />);
     expect(container).toBeInTheDocument();
   });
-
 });
