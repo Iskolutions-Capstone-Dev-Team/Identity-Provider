@@ -711,7 +711,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     </label>
                   ) : (
                     <div className="relative flex h-full w-full items-center justify-center">
-                      <img src={imagePreview} alt="Preview" className="max-h-52 max-w-full rounded-[1.25rem] object-contain shadow-[0_24px_45px_-30px_rgba(43,3,7,0.45)] transition hover:opacity-90" onClick={() => setShowFullImage(true)}/>
+                      <img src={imagePreview} loading="lazy" alt="Preview" className="max-h-52 max-w-full rounded-[1.25rem] object-contain shadow-[0_24px_45px_-30px_rgba(43,3,7,0.45)] transition hover:opacity-90" onClick={() => setShowFullImage(true)}/>
                       {!isView && (
                         <button type="button" onClick={removeImage} className={previewRemoveButtonClassName}>
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

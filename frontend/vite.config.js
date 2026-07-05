@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import sri from "vite-plugin-sri-gen";
+import compression from "vite-plugin-compression2";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, "..", "");
@@ -22,6 +23,8 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       react(),
       sri(),
+      compression({ algorithm: "brotliCompress" }),
+      compression({ algorithm: "gzip" }),
       {
         name: "block-unsafe-vite-dep-version-query",
         configureServer(server) {
@@ -55,6 +58,19 @@ export default defineConfig(({ mode }) => {
         },
       },
     ],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("node_modules")) {
+              if (id.includes("react")) return "vendor-react";
+              if (id.includes("axios")) return "vendor-axios";
+              return "vendor";
+            }
+          },
+        },
+      },
+    },
     server: {
       host: true, 
       port: 5173,
