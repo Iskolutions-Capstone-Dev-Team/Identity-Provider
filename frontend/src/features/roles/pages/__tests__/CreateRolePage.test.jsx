@@ -7,19 +7,6 @@ vi.mock('../../../../providers/PermissionProvider', () => ({
   usePermissionAccess: () => ({ hasPermission: () => true, hasAnyPermission: () => true, permissions: [] })
 }));
 
-vi.mock('../../hooks/usePermissions', () => ({
-  usePermissions: () => ({
-    permissions: [],
-    loading: false
-  })
-}));
-
-vi.mock('../../hooks/useRoles', () => ({
-  useRoles: () => ({
-    createRole: vi.fn()
-  })
-}));
-
 describe('CreateRolePage', () => {
   it('renders without crashing', () => {
     const { container } = render(<BrowserRouter><CreateRolePage /></BrowserRouter>);

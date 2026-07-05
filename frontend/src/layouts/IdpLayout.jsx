@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
 import AssistiveFab from "../components/AssistiveFab";
 import AccessibilityWidget from "../components/AccessibilityWidget";
@@ -188,20 +188,10 @@ export default function IdpLayout() {
             />
           </div>
 
-          <main className="flex-1 px-4 pb-32 pt-6 sm:px-6 sm:pb-32 sm:pt-7 lg:px-6 lg:pb-8 lg:pt-8 flex flex-col">
-            <div className="flex-1 flex flex-col">
-              <PageTransition pageKey={location.pathname}>
-                <React.Suspense 
-                  fallback={
-                    <div className="flex flex-1 items-center justify-center min-h-[50vh]" role="status" aria-live="polite">
-                      <span className={`loading loading-infinity w-24 sm:w-28 ${isDarkThemeRoute ? "text-[#f8d24e]" : "text-[#7b0d15]"}`} aria-label="Loading" />
-                    </div>
-                  }
-                >
-                  {outlet}
-                </React.Suspense>
-              </PageTransition>
-            </div>
+          <main className="flex-1 px-4 pb-32 pt-6 sm:px-6 sm:pb-32 sm:pt-7 lg:px-6 lg:pb-8 lg:pt-8">
+            <PageTransition pageKey={location.pathname}>
+              {outlet}
+            </PageTransition>
           </main>
         </div>
       </div>

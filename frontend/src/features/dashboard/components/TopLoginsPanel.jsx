@@ -41,7 +41,7 @@ function ClientLogo({ client }) {
   );
 }
 
-function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeriod }) {
+export function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeriod }) {
   const isDarkMode = colorMode === "dark";
   const shellClassName = isDarkMode
     ? "border-white/10 bg-[#061224]"
