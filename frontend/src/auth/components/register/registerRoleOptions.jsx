@@ -1,4 +1,4 @@
-import { ApplicantRoleIcon, GuestRoleIcon, StudentRoleIcon } from "./registerIcons";
+import { AlumniRoleIcon, ApplicantRoleIcon, GuestRoleIcon, StudentRoleIcon } from "./registerIcons";
 
 export const roleOptions = [
   {
@@ -15,5 +15,10 @@ export const roleOptions = [
     id: "applicant",
     label: "Applicant",
     Icon: ApplicantRoleIcon,
+  },
+  {
+    id: "alumni",
+    label: "Alumni",
+    Icon: AlumniRoleIcon,
   },
 ];
