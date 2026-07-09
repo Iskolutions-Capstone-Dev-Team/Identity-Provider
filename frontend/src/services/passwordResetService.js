@@ -1,5 +1,8 @@
 import axios from "axios";
-import { getAccessToken } from "../auth/utils/authCookies";
+import {
+  getAccessToken,
+  getPendingMfaAccessToken,
+} from "../auth/utils/authCookies";
 
 function normalizeTextValue(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -65,13 +68,20 @@ export const passwordResetService = {
   },
 
   async verifyOtp({ email, otp } = {}) {
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    const token = getAccessToken() || getPendingMfaAccessToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
     const response = await passwordResetApi.post(
       "/otp/verify",
       {
         email: getRequiredTextValue(email, "Email address"),
         otp: getRequiredTextValue(otp, "OTP"),
       },
-      getJsonRequestConfig(),
+      { headers },
     );
 
     return response.data;
