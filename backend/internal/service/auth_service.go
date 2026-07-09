@@ -570,18 +570,6 @@ func (s *authService) CheckSessionOrPendingMFA(
 		return uuid.Nil, false, nil, fmt.Errorf("pending cookie missing")
 	}
 
-	claims, err := s.ValidateMFAPendingToken(tokenStr)
-	if err != nil {
-		return uuid.Nil, false, nil, fmt.Errorf(
-			"token validation failed: %w", err,
-		)
-	}
-
-	uID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		return uuid.Nil, false, nil, fmt.Errorf("invalid token user ID")
-	}
-
 	clearCookie := func() {
 		c.SetSameSite(http.SameSiteStrictMode)
 		c.SetCookie(
@@ -595,5 +583,29 @@ func (s *authService) CheckSessionOrPendingMFA(
 		)
 	}
 
-	return uID, true, clearCookie, nil
+	claims, err := s.ValidateMFAPendingToken(tokenStr)
+	if err == nil {
+		if uID, parseErr := uuid.Parse(claims.UserID); parseErr == nil {
+			return uID, true, clearCookie, nil
+		}
+	}
+
+	parsedToken, err := GetParsedToken(tokenStr, s.PublicKey)
+	if err == nil && parsedToken.Valid {
+		if accessClaims, ok := parsedToken.Claims.(*models.UserClaims); ok {
+			var finalUserID string
+			if accessClaims.UserID != "" {
+				finalUserID = accessClaims.UserID
+			} else {
+				finalUserID = accessClaims.Subject
+			}
+			if parsedUID, parseErr := uuid.Parse(
+				finalUserID,
+			); parseErr == nil {
+				return parsedUID, false, func() {}, nil
+			}
+		}
+	}
+
+	return uuid.Nil, false, nil, fmt.Errorf("invalid token or user ID")
 }
