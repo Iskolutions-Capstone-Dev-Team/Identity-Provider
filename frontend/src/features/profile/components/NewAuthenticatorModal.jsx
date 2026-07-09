@@ -191,7 +191,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
   };
 
   const handleFinish = () => {
-    onCreated?.({ type: "authenticator" });
+    onCreated?.({ type: "authenticator", code });
     onClose?.();
   };
 

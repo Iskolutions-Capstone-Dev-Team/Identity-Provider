@@ -12,6 +12,9 @@ import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, get
 import { getAccountTypeLabel, ACCOUNT_TYPE_OPTIONS } from "../../../utils/accountTypes";
 import { CloseIcon, ResendInviteIcon } from "./userpoolIcons";
 import UserPoolMfaModal from "./UserPoolMfaModal";
+import { useCurrentUser } from "../../../hooks/useCurrentUser";
+import { mfaService } from "../../../services/mfaService";
+import { useRegistrationAccountTypes } from "../../registration/hooks/useRegistrationAccountTypes";
 
 const initialFormData = {
   id: "",
@@ -42,10 +45,7 @@ const STATUS_DISPLAY_LABELS = {
   suspended: "Suspended",
 };
 
-const ACCOUNT_TYPE_SELECT_OPTIONS = ACCOUNT_TYPE_OPTIONS.map((opt) => ({
-  value: opt.value,
-  label: opt.label,
-}));
+
 
 const normalizeText = (value) =>
   typeof value === "string" ? value.trim() : "";
@@ -224,6 +224,15 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const [showMfaModal, setShowMfaModal] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const isSubmittingRef = useRef(false);
+  const { currentUser } = useCurrentUser();
+  const { accountTypeOptions, isLoadingAccountTypes } = useRegistrationAccountTypes({
+    enabled: open,
+  });
+
+  const accountTypeSelectOptions = accountTypeOptions.map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+  }));
 
   useEffect(() => {
     if (!open) {
@@ -329,7 +338,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     await submitFormUpdates();
   };
 
-  const submitFormUpdates = async () => {
+  const submitFormUpdates = async (overrideCode) => {
+    const finalCode = typeof overrideCode === "string" ? overrideCode : mfaCode;
     try {
       isSubmittingRef.current = true;
       setIsSubmitting(true);
@@ -339,7 +349,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
         {
           ...formData,
           userType,
-          mfaCode: mfaCode || undefined,
+          mfaCode: finalCode || undefined,
         },
         originalUser,
       );
@@ -537,8 +547,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                 <UserPoolModalSelect
                   value={formData.accountType}
                   onChange={handleAccountTypeChange}
-                  options={ACCOUNT_TYPE_SELECT_OPTIONS}
-                  selectedLabel={getAccountTypeLabel(formData.accountType) || "Select Account Type"}
+                  options={accountTypeSelectOptions}
+                  selectedLabel={getAccountTypeLabel(formData.accountType, accountTypeOptions) || (typeof formData.accountType === "string" ? formData.accountType.trim() : "Select Account Type")}
                   ariaLabel="Account Type"
                   colorMode={colorMode}
                 />
