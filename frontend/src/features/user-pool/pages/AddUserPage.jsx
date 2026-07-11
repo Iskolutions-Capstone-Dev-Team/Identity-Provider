@@ -3,11 +3,13 @@ import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
 import { useUsers } from "../hooks/useUsers";
+import { Card } from "../../../components/ui/card";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import PageHeader from "../../../components/PageHeader";
 import AddUserForm from "../components/AddUserForm";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../../../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS } from "../../../utils/permissionAccess";
+import { toast } from "sonner";
 import { CreateUserIcon } from "../components/userpoolIcons";
 
 function getRequestedUserType(location) {
@@ -73,19 +75,16 @@ export default function AddUserPage() {
   const handleSubmit = async (newUser) => {
     await createUser(newUser);
     wasSubmittedRef.current = true;
-    successMessageRef.current =
-      newUser.accountSetupType === "invitation"
+    const msg = newUser.accountSetupType === "invitation"
         ? "User created and invitation sent!"
         : "User successfully created!";
+    toast.success(msg, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
   };
 
   const handleClose = () => {
     navigate("/user-pool", {
       state: {
         userType: allowedUserType,
-        successMessage: wasSubmittedRef.current
-          ? successMessageRef.current
-          : "",
       },
     });
   };
@@ -116,17 +115,19 @@ export default function AddUserPage() {
         colorMode={colorMode}
       />
 
-      <AddUserForm
-        onClose={handleClose}
-        onSubmit={handleSubmit}
-        userType={allowedUserType}
-        canAssignRoles={canAssignRoles}
-        canManageUserAccess={canManageUserAccess}
-        appClientOptions={appClientOptions}
-        isLoadingAppClients={isLoadingAppClients}
-        includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
-        colorMode={colorMode}
-      />
+      <Card className="p-6">
+        <AddUserForm
+          onClose={handleClose}
+          onSubmit={handleSubmit}
+          userType={allowedUserType}
+          canAssignRoles={canAssignRoles}
+          canManageUserAccess={canManageUserAccess}
+          appClientOptions={appClientOptions}
+          isLoadingAppClients={isLoadingAppClients}
+          includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
+          colorMode={colorMode}
+        />
+      </Card>
     </div>
   );
 }

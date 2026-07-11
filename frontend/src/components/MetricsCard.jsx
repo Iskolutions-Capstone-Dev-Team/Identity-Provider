@@ -1,9 +1,5 @@
-function SkeletonBlock({ className = "", colorMode = "light" }) {
-  const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";
-  return (
-    <span className={`block animate-pulse rounded-lg ${toneClassName} ${className}`} />
-  );
-}
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function getMetricTone(colorMode) {
   return colorMode === "dark"
@@ -22,9 +18,6 @@ function getMetricTone(colorMode) {
 export default function MetricsCard({ metrics = [], colorMode = "light", isLoading = false }) {
   const tone = getMetricTone(colorMode);
   const isDarkMode = colorMode === "dark";
-  const cardClassName = isDarkMode
-    ? "bg-[#061529]/78"
-    : "bg-white/85 shadow-[0_18px_46px_-38px_rgba(43,3,7,0.55)]";
   const countClassName = isDarkMode ? "text-white" : "text-[#2a1518]";
   const captionClassName = isDarkMode ? "text-slate-200" : "text-slate-600";
   const hoverClassName = "transition-transform duration-200 ease-out hover:-translate-y-1";
@@ -44,29 +37,29 @@ export default function MetricsCard({ metrics = [], colorMode = "light", isLoadi
       {displayMetrics.map((metric, idx) => {
         const Icon = metric.Icon;
         return (
-          <div key={idx} className={`rounded-2xl border p-5 ${hoverClassName} ${tone.border} ${cardClassName}`}>
-            <div className="flex items-center gap-4">
+          <Card key={idx} className={`${hoverClassName} ${tone.border} shadow-sm border`}>
+            <CardContent className="flex items-center gap-4 p-4">
               {Icon ? (
-                <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${tone.icon}`}>
+                <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ${tone.icon}`}>
                   <Icon className="h-6 w-6" />
                 </span>
               ) : isLoading ? (
-                <SkeletonBlock className="h-14 w-14 shrink-0 rounded-2xl" colorMode={colorMode} />
+                <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
               ) : null}
 
-              <div className="min-w-0">
+              <div className="min-w-0 flex flex-col justify-center">
                 {metric.title ? (
-                  <p className={`text-xs font-black uppercase tracking-[0.16em] ${tone.accent}`}>
+                  <p className={`text-[11px] font-bold uppercase tracking-wider ${tone.accent}`}>
                     {metric.title}
                   </p>
                 ) : isLoading ? (
-                  <SkeletonBlock className="mb-2 h-4 w-24" colorMode={colorMode} />
+                  <Skeleton className="mb-1 h-3 w-20" />
                 ) : null}
                 
                 {isLoading ? (
-                  <SkeletonBlock className="mt-3 h-10 w-16" colorMode={colorMode} />
+                  <Skeleton className="mt-1 h-8 w-16" />
                 ) : (
-                  <p className={`mt-3 text-4xl font-black ${countClassName}`}>
+                  <p className={`text-3xl font-black leading-none mt-1 ${countClassName}`}>
                     {typeof metric.value === 'number' ? metric.value.toLocaleString() : metric.value ?? "—"}
                   </p>
                 )}
@@ -77,11 +70,11 @@ export default function MetricsCard({ metrics = [], colorMode = "light", isLoadi
                   </p>
                 )}
                 {isLoading && !metric.title && (
-                  <SkeletonBlock className="mt-2 h-3 w-32" colorMode={colorMode} />
+                  <Skeleton className="mt-1 h-3 w-32" />
                 )}
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
       })}
     </div>
