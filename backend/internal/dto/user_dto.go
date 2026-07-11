@@ -99,6 +99,7 @@ type UserResponse struct {
 	Status         string                 `json:"status"`
 	CreatedAt      string                 `json:"created_at"`
 	UpdatedAt      string                 `json:"updated_at"`
+	AccountTypeID  *int                   `json:"account_type_id,omitempty"`
 	AccountType    string                 `json:"account_type"`
 	Roles          *UserRoleResponse      `json:"roles,omitempty"`
 	Clients        []ClientAccessResponse `json:"clients,omitempty"`
@@ -107,17 +108,18 @@ type UserResponse struct {
 
 // UserSimplifiedResponse provides user data without role details.
 type UserSimplifiedResponse struct {
-	ID          string                 `json:"id"`
-	FirstName   string                 `json:"first_name"`
-	MiddleName  string                 `json:"middle_name"`
-	LastName    string                 `json:"last_name"`
-	NameSuffix  string                 `json:"name_suffix"`
-	Email       string                 `json:"email"`
-	Status      string                 `json:"status"`
-	CreatedAt   string                 `json:"created_at"`
-	UpdatedAt   string                 `json:"updated_at"`
-	AccountType string                 `json:"account_type"`
-	Clients     []ClientAccessResponse `json:"clients,omitempty"`
+	ID            string                 `json:"id"`
+	FirstName     string                 `json:"first_name"`
+	MiddleName    string                 `json:"middle_name"`
+	LastName      string                 `json:"last_name"`
+	NameSuffix    string                 `json:"name_suffix"`
+	Email         string                 `json:"email"`
+	Status        string                 `json:"status"`
+	CreatedAt     string                 `json:"created_at"`
+	UpdatedAt     string                 `json:"updated_at"`
+	AccountTypeID *int                   `json:"account_type_id,omitempty"`
+	AccountType   string                 `json:"account_type"`
+	Clients       []ClientAccessResponse `json:"clients,omitempty"`
 }
 
 // UserSimplifiedResponseList is a paginated list of simplified user views.
