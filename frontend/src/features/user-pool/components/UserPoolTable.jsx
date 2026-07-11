@@ -77,23 +77,21 @@ function getColumnWidths(isAdminView, showActionsColumn) {
   if (isAdminView) {
     if (!showActionsColumn) {
       return [
-        "w-[8rem] lg:w-[10%]",
-        "w-[15rem] lg:w-[22%]",
-        "w-[13rem] lg:w-[22%]",
-        "w-[10rem] lg:w-[14%]",
-        "w-[9rem] lg:w-[16%]",
-        "w-[8.5rem] lg:w-[16%]",
+        "w-[8rem] lg:w-[12%]",
+        "w-[15rem] lg:w-[26%]",
+        "w-[13rem] lg:w-[26%]",
+        "w-[9rem] lg:w-[18%]",
+        "w-[8.5rem] lg:w-[18%]",
       ];
     }
 
     return [
-      "w-[8rem] lg:w-[9%]",
-      "w-[14rem] lg:w-[20%]",
-      "w-[12rem] lg:w-[20%]",
-      "w-[10rem] lg:w-[12%]",
-      "w-[9rem] lg:w-[14%]",
-      "w-[8.5rem] lg:w-[11%]",
-      "w-[9rem] lg:w-[14%]",
+      "w-[8rem] lg:w-[10%]",
+      "w-[14rem] lg:w-[25%]",
+      "w-[12rem] lg:w-[25%]",
+      "w-[9rem] lg:w-[15%]",
+      "w-[8.5rem] lg:w-[10%]",
+      "w-[9rem] lg:w-[15%]",
     ];
   }
 
@@ -173,16 +171,16 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
     { header: "ID", type: "text", width: "w-16", colClassName: columnWidths[0] },
     { header: "Email", type: "text", width: "w-32", colClassName: columnWidths[1] },
     { header: "Name", type: "stackedText", colClassName: columnWidths[2] },
-    { header: "Account Type", type: "text", colClassName: columnWidths[3] },
-    { header: accessColumnLabel, type: "badges", colClassName: columnWidths[4] },
-    { header: "Status", type: "badge", width: "w-20", colClassName: columnWidths[5] },
+    ...(!isAdminView ? [{ header: "Account Type", type: "text", colClassName: columnWidths[3] }] : []),
+    { header: accessColumnLabel, type: "badges", colClassName: columnWidths[isAdminView ? 3 : 4] },
+    { header: "Status", type: "badge", width: "w-20", colClassName: columnWidths[isAdminView ? 4 : 5] },
   ];
 
   if (showActionsColumn) {
     loadingColumns.push({
       header: "Actions",
       type: "actions",
-      colClassName: columnWidths[6],
+      colClassName: columnWidths[isAdminView ? 5 : 6],
     });
   }
 
@@ -210,7 +208,9 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
               <th className={headerCellClassName}>ID</th>
               <th className={emailHeaderCellClassName}>Email</th>
               <th className={headerCellClassName}>Name</th>
-              <th className={headerCellClassName}>Account Type</th>
+              {!isAdminView && (
+                <th className={headerCellClassName}>Account Type</th>
+              )}
               <th className={headerCellClassName}>{accessColumnLabel}</th>
               <th className={statusHeaderCellClassName}>Status</th>
               {showActionsColumn && (
@@ -263,11 +263,13 @@ export default function UserPoolTable({ loading = false, users = [], userType = 
                   </div>
                 </td>
 
-                <td className={sharedBodyCellClassName}>
-                  <div className="break-words whitespace-normal font-medium leading-6">
-                    {getAccountTypeLabel(user.accountType || user.account_type)}
-                  </div>
-                </td>
+                {!isAdminView && (
+                  <td className={sharedBodyCellClassName}>
+                    <div className="break-words whitespace-normal font-medium leading-6">
+                      {getAccountTypeLabel(user.accountType || user.account_type)}
+                    </div>
+                  </td>
+                )}
 
                 <td className={sharedBodyCellClassName}>
                   {accessItems.length > 0 ? (
