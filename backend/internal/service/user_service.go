@@ -937,6 +937,11 @@ func (s *userService) mapToUserResponse(
 		AccountType: user.AccountType,
 	}
 
+	if user.AccountTypeID.Valid {
+		val := int(user.AccountTypeID.Int64)
+		resp.AccountTypeID = &val
+	}
+
 	if user.RoleID.Valid {
 		resp.Roles = &dto.UserRoleResponse{
 			ID:          user.Role.ID,
@@ -981,7 +986,7 @@ func (s *userService) mapToSimplifiedUserResponse(
 		})
 	}
 
-	return &dto.UserSimplifiedResponse{
+	resp := &dto.UserSimplifiedResponse{
 		ID:          id.String(),
 		FirstName:   user.FirstName,
 		MiddleName:  user.MiddleName,
@@ -994,6 +999,13 @@ func (s *userService) mapToSimplifiedUserResponse(
 		AccountType: user.AccountType,
 		Clients:     clients,
 	}
+
+	if user.AccountTypeID.Valid {
+		val := int(user.AccountTypeID.Int64)
+		resp.AccountTypeID = &val
+	}
+
+	return resp
 }
 
 /**
