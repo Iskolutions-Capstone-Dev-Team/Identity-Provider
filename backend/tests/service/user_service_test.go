@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
@@ -36,6 +37,11 @@ func TestGetUserByID(t *testing.T) {
 	user := &models.User{
 		ID:    userID[:],
 		Email: "test@example.com",
+		AccountTypeID: sql.NullInt64{
+			Int64: 2,
+			Valid: true,
+		},
+		AccountType: "faculty",
 	}
 
 	// 1. Setup mock expectation: Repository should be called once.
@@ -61,6 +67,14 @@ func TestGetUserByID(t *testing.T) {
 
 	if resp.Email != user.Email {
 		t.Errorf("expected email %s, got %s", user.Email, resp.Email)
+	}
+
+	if resp.AccountTypeID == nil || *resp.AccountTypeID != 2 {
+		t.Errorf("expected AccountTypeID 2, got %v", resp.AccountTypeID)
+	}
+
+	if resp.AccountType != "faculty" {
+		t.Errorf("expected AccountType faculty, got %s", resp.AccountType)
 	}
 }
 
