@@ -940,6 +940,8 @@ func (s *userService) mapToUserResponse(
 	if user.AccountTypeID.Valid {
 		val := int(user.AccountTypeID.Int64)
 		resp.AccountTypeID = &val
+	} else {
+		resp.AccountType = "Custom"
 	}
 
 	if user.RoleID.Valid {
@@ -1003,6 +1005,8 @@ func (s *userService) mapToSimplifiedUserResponse(
 	if user.AccountTypeID.Valid {
 		val := int(user.AccountTypeID.Int64)
 		resp.AccountTypeID = &val
+	} else {
+		resp.AccountType = "Custom"
 	}
 
 	return resp
