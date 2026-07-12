@@ -5,7 +5,6 @@ import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
 import { useUsers } from "../hooks/useUsers";
 import { Card } from "../../../components/ui/card";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
 import AddUserForm from "../components/AddUserForm";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../../../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS } from "../../../utils/permissionAccess";
@@ -108,14 +107,19 @@ export default function AddUserPage() {
         ]}
       />
 
-      <PageHeader
-        title="New User"
-        description="Add a new user and fill in the details and set the appropriate access."
-        icon={<CreateUserIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-        colorMode={colorMode}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+            <CreateUserIcon className="w-8 h-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">New User</h1>
+            <p className="text-muted-foreground mt-1">Add a new user and fill in the details and set the appropriate access.</p>
+          </div>
+        </div>
+      </div>
 
-      <Card className="p-6">
+      <div className="w-full">
         <AddUserForm
           onClose={handleClose}
           onSubmit={handleSubmit}
@@ -127,7 +131,7 @@ export default function AddUserPage() {
           includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
           colorMode={colorMode}
         />
-      </Card>
+      </div>
     </div>
   );
 }

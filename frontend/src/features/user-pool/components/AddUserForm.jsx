@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Fragment } from "react";
 import { motion } from "framer-motion";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Button } from "../../../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Separator } from "../../../components/ui/separator";
 import FadeWrapper from "../../../components/FadeWrapper";
 import MultiSelect from "../../../components/MultiSelect";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
@@ -21,39 +23,14 @@ import { PasswordVisibilityIcon, StepOneIcon, StepTwoIcon } from "./userpoolIcon
 
 const TEMP_PASSWORD_SETUP_VALUE = "temporary_password";
 const INVITATION_SETUP_VALUE = "invitation";
-import {
-  Stepper,
-  StepperIndicator,
-  StepperItem,
-  StepperNav,
-  StepperTitle,
-  StepperTrigger,
-} from "../../../components/reui/stepper";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupButton,
-} from "../../../components/ui/input-group";
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldLabel,
-  FieldTitle,
-} from "../../../components/ui/field";
+import { Stepper, StepperContent, StepperIndicator, StepperItem, StepperNav, StepperPanel, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton } from "../../../components/ui/input-group";
+import { Field, FieldContent, FieldDescription, FieldLabel, FieldTitle } from "../../../components/ui/field";
 import { RadioGroup, RadioGroupItem } from "../../../components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "../../../components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../../../components/ui/select";
+import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "../../../components/ui/combobox";
 import { toast } from "sonner";
-import { LockIcon, EyeIcon, EyeOffIcon, MailIcon } from "lucide-react";
+import { LockIcon, EyeIcon, EyeOffIcon, MailIcon, CheckIcon, LoaderCircleIcon } from "lucide-react";
 
 const SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE = "System Administrator";
 
@@ -129,7 +106,74 @@ const extractErrorMessage = (error) =>
   error?.message ||
   "Unable to create user.";
 
+function AppClientComboboxField({ label, description, options, selectedIds, onChange, error, placeholder, isDarkMode }) {
+  const anchor = useComboboxAnchor();
 
+  const stringifiedSelectedIds = selectedIds.map(id => String(id));
+  
+  const chipClassName = isDarkMode
+    ? "rounded-md border border-[#f8d24e]/25 bg-[#f8d24e]/12 text-[#ffe28a]"
+    : "rounded-md border border-[#7b0d15]/20 bg-[#7b0d15]/10 text-[#7b0d15]";
+  
+  const comboboxContainerClassName = `min-h-[2.625rem] rounded-md transition-[border-color,box-shadow,background-color] duration-200 ${
+    error ? "border-red-400" : ""
+  }`;
+  
+  const inputPlaceholderClassName = isDarkMode
+    ? "placeholder:text-[#a58d95] text-[#f4eaea] bg-transparent outline-none flex-1 ml-1"
+    : "placeholder:text-[#9b7d84] text-[#4a1921] bg-transparent outline-none flex-1 ml-1";
+  
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col space-y-0 w-full">
+        <h3 className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
+          {label} <span className="text-red-500">*</span>
+        </h3>
+        <p className="m-0 text-sm text-muted-foreground">
+          {description}
+        </p>
+      </div>
+      <Field className="w-full">
+        <Combobox
+          multiple
+          autoHighlight
+          items={options}
+          itemToString={(item) => (item ? item.label : "")}
+          value={stringifiedSelectedIds}
+          onValueChange={onChange}
+        >
+          <ComboboxChips ref={anchor} className={comboboxContainerClassName}>
+            <ComboboxValue>
+              {(values) => (
+                <Fragment>
+                  {values.map((val) => {
+                    const opt = options.find(o => String(o.value ?? o.id) === String(val));
+                    return <ComboboxChip key={val} className={chipClassName}>{opt ? opt.label : val}</ComboboxChip>;
+                  })}
+                  <ComboboxChipsInput placeholder={placeholder} className={inputPlaceholderClassName} />
+                </Fragment>
+              )}
+            </ComboboxValue>
+          </ComboboxChips>
+          <ComboboxContent anchor={anchor}>
+            <ComboboxEmpty>No client found.</ComboboxEmpty>
+            <ComboboxList>
+              {(item) => {
+                const optValue = String(item.value ?? item.id);
+                return (
+                  <ComboboxItem key={optValue} value={optValue}>
+                    {item.label}
+                  </ComboboxItem>
+                );
+              }}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+        {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+      </Field>
+    </div>
+  );
+}
 
 export default function AddUserForm({ onClose, onSubmit, userType = "regular", canAssignRoles = true, canManageUserAccess = true, appClientOptions = [], isLoadingAppClients = false, includeSuperAdminRoleOptions = false, colorMode = "light" }) {
   const { hasPermission } = usePermissionAccess();
@@ -137,6 +181,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
   const [stepDirection, setStepDirection] = useState(1);
   const [data, setData] = useState(initialFormData);
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
+  const [error, setError] = useState("");
   const [activeVoiceField, setActiveVoiceField] = useState("givenName");
   const [showTempPassword, setShowTempPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -212,8 +257,8 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
   const sectionTitleClassName = modalLabelClassName;
   const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
   const getInputClassName = (fieldName, hasActionButton = false) =>
-    `${modalInputClassName} ${hasActionButton ? "pr-12" : ""} ${
-      fieldErrors[fieldName] ? "border-red-400 focus:border-red-500" : ""
+    `h-10 rounded-lg px-3 bg-background border-input ${hasActionButton ? "pr-12" : ""} ${
+      fieldErrors[fieldName] ? "border-red-400 focus-visible:ring-red-500 focus-visible:border-red-500" : ""
     }`;
 
   const clearFieldError = (fieldName) => {
@@ -567,22 +612,24 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
     ? SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE
     : selectedAccountTypeOption?.label || "Selected";
   const renderSectionHeader = (title, description, isRequired = false) => (
-    <div className={sectionHeaderClassName}>
-      <label className={sectionTitleClassName}>
+    <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
+      <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
         {title} {isRequired && <span className="text-red-500">*</span>}
-      </label>
-      <p className={sectionDescriptionClassName}>
+      </CardTitle>
+      <CardDescription className="text-sm text-muted-foreground m-0">
         {description}
-      </p>
-    </div>
+      </CardDescription>
+    </CardHeader>
   );
 
   const accountSetupField = (
-    <div>
-      {renderSectionHeader("Account Setup", "Choose how they get access.", true)}
+    <div className="space-y-3">
+      <Label className="text-sm leading-none font-medium">Method</Label>
       <Select value={data.accountSetupType} onValueChange={handleAccountSetupChange}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select account setup method" />
+        <SelectTrigger className="w-full !h-10 rounded-lg bg-background border-input px-3">
+          <SelectValue placeholder="Select account setup method">
+            {ACCOUNT_SETUP_OPTIONS.find((item) => item.value === data.accountSetupType)?.label}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
@@ -597,42 +644,47 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
     </div>
   );
   const accountTypeSection = showAccountTypeField ? (
-    <motion.section className={modalSectionClassName} {...sectionFadeProps}>
-      {renderSectionHeader("Account Type", "Choose the account type.", true)}
-      <RadioGroup value={data.accountType} onValueChange={handleAccountTypeChange} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {availableAccountTypeOptions.map((option) => (
-          <FieldLabel htmlFor={`account-type-${option.value}`} key={option.value}>
-            <Field orientation="horizontal">
-              <FieldContent>
-                <FieldTitle>{option.label}</FieldTitle>
-              </FieldContent>
-              <RadioGroupItem value={option.value} id={`account-type-${option.value}`} />
-            </Field>
-          </FieldLabel>
-        ))}
-      </RadioGroup>
-      {isLoadingAccountTypes && canViewRegistrationConfig && (
-        <p className={modalHelperTextClassName}>
-          Loading latest account types...
-        </p>
-      )}
-      {fieldErrors.accountType && (
-        <p className="mt-2 text-xs text-red-500">
-          {fieldErrors.accountType}
-        </p>
-      )}
+    <motion.section {...sectionFadeProps}>
+      <Card className="w-full bg-card border-border shadow-sm !gap-2">
+        {renderSectionHeader("Account Type", "Choose the account type.", true)}
+        <CardContent>
+          <RadioGroup value={data.accountType} onValueChange={handleAccountTypeChange} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {availableAccountTypeOptions.map((option) => (
+              <FieldLabel htmlFor={`account-type-${option.value}`} key={option.value}>
+                <Field orientation="horizontal">
+                  <FieldContent>
+                    <FieldTitle>{option.label}</FieldTitle>
+                  </FieldContent>
+                  <RadioGroupItem value={option.value} id={`account-type-${option.value}`} />
+                </Field>
+              </FieldLabel>
+            ))}
+          </RadioGroup>
+          {isLoadingAccountTypes && canViewRegistrationConfig && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Loading latest account types...
+            </p>
+          )}
+          {fieldErrors.accountType && (
+            <p className="mt-2 text-xs text-red-500">
+              {fieldErrors.accountType}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </motion.section>
   ) : null;
   const tempPasswordField = showTempPasswordField ? (
-    <div>
-      <SpeechInputToolbar
-        activeFieldLabel={activeVoiceFieldLabel}
-        onError={(err) => toast.error(err, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } })}
-        onTranscript={handleVoiceInput}
-        colorMode={colorMode}
-      />
-
-      {renderSectionHeader("Temporary Password", "Create a temporary password.", true)}
+    <div className="space-y-3 pt-4 border-t border-border">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm leading-none font-medium">Temporary Password</Label>
+        <SpeechInputToolbar
+          activeFieldLabel={activeVoiceFieldLabel}
+          onError={(err) => toast.error(err, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } })}
+          onTranscript={handleVoiceInput}
+          colorMode={colorMode}
+        />
+      </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative w-full">
           <InputGroup className={getInputClassName("tempPassword")}>
@@ -666,7 +718,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
           </InputGroup>
         </div>
 
-        <Button type="button" onClick={generatePassword} className={passwordUtilityButtonClassName}>
+        <Button type="button" variant="secondary" onClick={generatePassword} className="h-10">
           Generate
         </Button>
       </div>
@@ -675,94 +727,82 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
           {fieldErrors.tempPassword}
         </p>
       )}
-      <p className={tempPasswordHintClassName}>
+      <p className="mt-2 text-[11px] text-muted-foreground">
         Use at least 8 characters with one uppercase letter, one number, and one special character.
       </p>
     </div>
   ) : null;
   const accountSetupAndPasswordSection = (
-    <motion.section className={modalSectionClassName} {...sectionFadeProps}>
-      <div className="space-y-6">
-        {accountSetupField}
-        {tempPasswordField}
-      </div>
+    <motion.section {...sectionFadeProps}>
+      <Card className="w-full bg-card border-border shadow-sm !gap-6">
+        {renderSectionHeader("Account Setup", "Choose how they get access.", true)}
+        <CardContent className="space-y-6">
+          {accountSetupField}
+          {tempPasswordField}
+        </CardContent>
+      </Card>
     </motion.section>
   );
   const adminAccessSection =
     showAdminClientFields || showAdminRoleField ? (
-      <motion.section className={modalSectionClassName} {...sectionFadeProps}>
-        <div className="space-y-6">
+      <motion.section className="space-y-6" {...sectionFadeProps}>
+        <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+          {/* Left Side: App Clients */}
           {showAdminClientFields && (
-            <>
-              <div>
-                {renderSectionHeader(
-                  "Accessible App Clients",
-                  "Choose which clients are accessible for sign-in.",
-                  true,
-                )}
-                <MultiSelect
+            <Card className={`w-full bg-card border-border shadow-sm flex-1 ${!showAdminRoleField ? "w-full" : ""}`}>
+              <CardContent className="space-y-8 h-full">
+                <AppClientComboboxField
+                  label="Accessible App Clients"
+                  description="Choose which clients are accessible for sign-in."
                   options={registrationAppClientOptions}
-                  selectedValues={data.adminAccessibleClientIds}
+                  selectedIds={data.adminAccessibleClientIds}
                   onChange={handleMultiSelectFieldChange("adminAccessibleClientIds")}
                   placeholder="Select accessible app clients"
-                  variant="userpoolModal"
-                  hasError={Boolean(fieldErrors.adminAccessibleClientId)}
-                  colorMode={colorMode}
+                  error={fieldErrors.adminAccessibleClientId}
+                  isDarkMode={isDarkMode}
                 />
-                {fieldErrors.adminAccessibleClientId && (
-                  <p className="mt-2 text-xs text-red-500">
-                    {fieldErrors.adminAccessibleClientId}
-                  </p>
-                )}
-              </div>
 
-              <div>
-                {renderSectionHeader(
-                  "Manageable App Clients",
-                  "Choose which clients this admin can manage.",
-                  true,
-                )}
-                <MultiSelect
+                <AppClientComboboxField
+                  label="Manageable App Clients"
+                  description="Choose which clients this admin can manage."
                   options={registrationAppClientOptions}
-                  selectedValues={data.adminManageableClientIds}
+                  selectedIds={data.adminManageableClientIds}
                   onChange={handleMultiSelectFieldChange("adminManageableClientIds")}
                   placeholder="Select manageable app clients"
-                  variant="userpoolModal"
-                  hasError={Boolean(fieldErrors.adminManageableClientId)}
-                  colorMode={colorMode}
+                  error={fieldErrors.adminManageableClientId}
+                  isDarkMode={isDarkMode}
                 />
-                {fieldErrors.adminManageableClientId && (
-                  <p className="mt-2 text-xs text-red-500">
-                    {fieldErrors.adminManageableClientId}
-                  </p>
-                )}
+                
                 {isLoadingAppClients && (
-                  <p className={modalHelperTextClassName}>
+                  <p className="text-sm text-muted-foreground">
                     Loading app clients...
                   </p>
                 )}
-              </div>
-            </>
+              </CardContent>
+            </Card>
           )}
 
+          {/* Right Side: Role */}
           {showAdminRoleField && (
-            <div>
+            <Card className={`w-full bg-card border-border shadow-sm flex-1 flex flex-col !gap-2 ${!showAdminClientFields ? "w-full" : ""}`}>
               {renderSectionHeader("Role", "Choose the admin role.", adminRoleIsRequired)}
-              <UserPoolRoleRadioGroup
-                options={adminRoleOptions}
-                selectedValue={data.selectedAdminRoleId}
-                onChange={handleAdminRoleChange}
-                colorMode={colorMode}
-                name={isAdminView ? "add-admin-user-role" : "add-regular-admin-role"}
-                allowEmpty={isAdminView}
-                emptyOptionLabel="No role assigned"
-              />
-              {fieldErrors.selectedAdminRoleId && (
-                <p className="mt-2 text-xs text-red-500">
-                  {fieldErrors.selectedAdminRoleId}
-                </p>
-              )}
-            </div>
+              <CardContent className="flex-1">
+                <UserPoolRoleRadioGroup
+                  options={adminRoleOptions}
+                  selectedValue={data.selectedAdminRoleId}
+                  onChange={handleAdminRoleChange}
+                  colorMode={colorMode}
+                  name={isAdminView ? "add-admin-user-role" : "add-regular-admin-role"}
+                  allowEmpty={isAdminView}
+                  emptyOptionLabel="No role assigned"
+                />
+                {fieldErrors.selectedAdminRoleId && (
+                  <p className="mt-2 text-xs text-red-500">
+                    {fieldErrors.selectedAdminRoleId}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           )}
         </div>
       </motion.section>
@@ -773,28 +813,36 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
 
   const formBody = (
     <div className={modalBodyStackClassName}>
-      <div className={modalStepsWrapClassName}>
-        <Stepper value={step} className="w-full max-w-lg mx-auto space-y-8">
-          <StepperNav className="mb-10 gap-5">
+      <Card className="w-full bg-card border-border shadow-sm p-6 mb-6">
+        <Stepper
+          className="w-full max-w-md mx-auto space-y-8"
+          value={step}
+          indicators={{
+            completed: (
+              <CheckIcon className="size-3.5" />
+            ),
+            loading: (
+              <LoaderCircleIcon className="size-3.5 animate-spin" />
+            ),
+          }}
+        >
+          <StepperNav>
             {steps.map((s, index) => (
               <StepperItem
                 key={index}
                 step={index + 1}
                 className="relative flex-1 items-start"
               >
-                <StepperTrigger className="flex grow flex-col items-start justify-center gap-3.5" onClick={() => { if(index + 1 < step) setStep(index + 1) }}>
-                  <StepperIndicator className="bg-border data-[state=active]:bg-primary data-[state=completed]:bg-primary h-1 w-full rounded-full">
-                    <span className="sr-only">{index + 1}</span>
-                  </StepperIndicator>
-                  <StepperTitle className="group-data-[state=inactive]/step:text-muted-foreground text-start font-semibold">
-                    {s.title}
-                  </StepperTitle>
+                <StepperTrigger className="relative z-10 flex flex-col gap-2.5 items-center w-full" onClick={() => { if(index + 1 < step) setStep(index + 1) }}>
+                  <StepperIndicator className="size-8 text-sm data-[state=inactive]:bg-secondary data-[state=completed]:bg-[#7b0d15] data-[state=completed]:text-white data-[state=active]:bg-[#7b0d15] data-[state=active]:border-[#7b0d15] data-[state=active]:text-white">{index + 1}</StepperIndicator>
+                  <StepperTitle className="text-sm font-semibold whitespace-nowrap">{s.title}</StepperTitle>
                 </StepperTrigger>
+                {index < steps.length - 1 && <StepperSeparator className="absolute top-4 left-[50%] w-full z-0 h-1 data-[state=completed]:bg-[#7b0d15]" />}
               </StepperItem>
             ))}
           </StepperNav>
         </Stepper>
-      </div>
+      </Card>
 
       <form id="step1-form" onSubmit={(event) => event.preventDefault()} className="space-y-5">
         <FadeWrapper
@@ -802,96 +850,103 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
           keyId="personal-information-section"
           direction={stepDirection}
         >
-            <motion.section className={modalSectionClassName} {...sectionFadeProps}>
-              <SpeechInputToolbar
-                activeFieldLabel={activeVoiceFieldLabel}
-                onError={(err) => toast.error(err, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } })}
-                onTranscript={handleVoiceInput}
-                colorMode={colorMode}
-              />
-
-              {renderSectionHeader(
-                "Personal Information",
-                "Enter the user's basic details.",
-              )}
-
-              <div className="space-y-4">
-                <div>
-                  <Label className={modalLabelClassName}>
-                    Email Address <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="validator w-full">
-                    <InputGroup className={getInputClassName("email")}>
-                      <InputGroupAddon>
-                        <MailIcon className="h-5 w-5" />
-                      </InputGroupAddon>
-                      <InputGroupInput type="email" name="email" value={data.email} onChange={handleChange} onFocus={() => setActiveVoiceField("email")} required placeholder="Enter email" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
-                    </InputGroup>
-                    {fieldErrors.email && (
-                      <p className="mt-2 text-xs text-red-500">
-                        {fieldErrors.email}
-                      </p>
-                    )}
+            <motion.section {...sectionFadeProps}>
+              <Card className="w-full bg-card border-border shadow-sm !gap-6">
+                <div className="flex items-center justify-between">
+                  {renderSectionHeader(
+                    "Personal Information",
+                    "Enter the user's basic details.",
+                  )}
+                  <div className="pr-6">
+                    <SpeechInputToolbar
+                      activeFieldLabel={activeVoiceFieldLabel}
+                      onError={(err) => toast.error(err, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } })}
+                      onTranscript={handleVoiceInput}
+                      colorMode={colorMode}
+                    />
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <CardContent className="space-y-4">
                   <div className="space-y-1">
-                    <Label className={modalLabelClassName}>
-                      First Name <span className="text-red-500">*</span>
+                    <Label className="text-sm leading-none font-medium">
+                      Email Address <span className="text-red-500">*</span>
                     </Label>
-                    <div className="validator w-full">
-                      <InputGroup className={`${getInputClassName("givenName")} validator`}>
-                        <InputGroupInput type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required placeholder="Enter first name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                    <div className="validator w-full mt-1">
+                      <InputGroup className={getInputClassName("email")}>
+                        <InputGroupAddon>
+                          <MailIcon className="h-5 w-5" />
+                        </InputGroupAddon>
+                        <InputGroupInput type="email" name="email" value={data.email} onChange={handleChange} onFocus={() => setActiveVoiceField("email")} required placeholder="Enter email" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
                       </InputGroup>
-                      {fieldErrors.givenName && (
+                      {fieldErrors.email && (
                         <p className="mt-2 text-xs text-red-500">
-                          {fieldErrors.givenName}
+                          {fieldErrors.email}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <Label className={modalLabelClassName}>
-                      Middle Name
-                    </Label>
-                    <InputGroup className={modalInputClassName}>
-                      <InputGroupInput type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
-                    </InputGroup>
-                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="text-sm leading-none font-medium">
+                        First Name <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="validator w-full mt-1">
+                        <InputGroup className={`${getInputClassName("givenName")} validator`}>
+                          <InputGroupInput type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required placeholder="Enter first name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                        </InputGroup>
+                        {fieldErrors.givenName && (
+                          <p className="mt-2 text-xs text-red-500">
+                            {fieldErrors.givenName}
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-                  <div className="space-y-1">
-                    <Label className={modalLabelClassName}>
-                      Last Name <span className="text-red-500">*</span>
-                    </Label>
-                    <div className="validator w-full">
-                      <InputGroup className={`${getInputClassName("surname")} validator`}>
-                        <InputGroupInput type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required placeholder="Enter last name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
-                      </InputGroup>
-                      {fieldErrors.surname && (
-                        <p className="mt-2 text-xs text-red-500">
-                          {fieldErrors.surname}
-                        </p>
-                      )}
+                    <div className="space-y-1">
+                      <Label className="text-sm leading-none font-medium">
+                        Middle Name
+                      </Label>
+                      <div className="mt-1">
+                        <InputGroup className={getInputClassName("middleName")}>
+                          <InputGroupInput type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                        </InputGroup>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-sm leading-none font-medium">
+                        Last Name <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="validator w-full mt-1">
+                        <InputGroup className={`${getInputClassName("surname")} validator`}>
+                          <InputGroupInput type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required placeholder="Enter last name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                        </InputGroup>
+                        {fieldErrors.surname && (
+                          <p className="mt-2 text-xs text-red-500">
+                            {fieldErrors.surname}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between w-full">
+                        <Label className="text-sm leading-none font-medium">
+                          Suffix
+                        </Label>
+                        <span className={`text-[10px] border px-1.5 py-0.5 rounded-md font-medium ${isDarkMode ? "border-[#f8d24e]/40 text-[#f8d24e]" : "border-[#7b0d15]/40 text-[#7b0d15]"}`}>Optional</span>
+                      </div>
+                      <div className="mt-1">
+                        <InputGroup className={getInputClassName("suffix")}>
+                          <InputGroupInput type="text" name="suffix" value={data.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                        </InputGroup>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="space-y-1">
-                    <Label className={modalLabelClassName}>
-                      Suffix
-                    </Label>
-                    <InputGroup className={modalInputClassName}>
-                      <InputGroupInput type="text" name="suffix" value={data.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
-                      <InputGroupAddon align="inline-end">
-                        <span className={modalOptionalBadgeClassName}>
-                          Optional
-                        </span>
-                      </InputGroupAddon>
-                    </InputGroup>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </motion.section>
         </FadeWrapper>
       </form>
@@ -922,27 +977,27 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
   );
 
   const footer = (
-    <div className="flex flex-col-reverse gap-3 md:mb-12 lg:flex-row lg:justify-end xl:mb-16 [&>button]:w-full lg:[&>button]:w-auto">
+    <div className="flex flex-col-reverse gap-3 mt-4 md:mb-12 lg:flex-row lg:justify-end xl:mb-16 [&>button]:w-full lg:[&>button]:w-auto">
         {step === 1 && (
-          <Button type="button" onClick={onClose} className={modalSecondaryButtonClassName}>
+          <Button type="button" variant="outline" onClick={onClose} className="h-10 rounded-lg px-6">
             Cancel
           </Button>
         )}
 
         {step > 1 && (
-          <Button type="button" onClick={previousStep} className={modalSecondaryButtonClassName}>
+          <Button type="button" variant="outline" onClick={previousStep} className="h-10 rounded-lg px-6">
             Back
           </Button>
         )}
 
         {step === 1 && (
-          <Button type="button" onClick={nextStep} className={modalPrimaryButtonClassName}>
+          <Button type="button" onClick={nextStep} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] transition-colors">
             Next
           </Button>
         )}
 
         {step === 2 && (
-          <Button type="button" onClick={handleSubmit} className={modalPrimaryButtonClassName} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] transition-colors" disabled={isSubmitting}>
             {isSubmitting ? "Creating..." : "Create User"}
           </Button>
         )}
