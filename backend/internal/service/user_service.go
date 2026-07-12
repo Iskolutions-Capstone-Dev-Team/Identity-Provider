@@ -141,8 +141,11 @@ func (s *userService) CreateUser(
 		}
 
 		var roleID sql.NullInt64
-		if req.RoleID != nil {
-			roleID = sql.NullInt64{Int64: int64(*req.RoleID), Valid: true}
+		if req.RoleID != nil && *req.RoleID > 0 {
+			roleID = sql.NullInt64{
+				Int64: int64(*req.RoleID),
+				Valid: true,
+			}
 		}
 		if err = s.Repo.UpdateUserRole(ctx, existingUser.ID, roleID); err != nil {
 			return uuid.Nil, fmt.Errorf("re-register (UpdateRole): %w", err)
@@ -176,14 +179,14 @@ func (s *userService) CreateUser(
 			PasswordHash: passwordHash,
 			Status:       models.StatusActive,
 			RoleID: sql.NullInt64{
-				Valid: req.RoleID != nil,
+				Valid: req.RoleID != nil && *req.RoleID > 0,
 			},
 			AccountTypeID: sql.NullInt64{
 				Valid: typeID != 0,
 				Int64: int64(typeID),
 			},
 		}
-		if req.RoleID != nil {
+		if req.RoleID != nil && *req.RoleID > 0 {
 			user.RoleID.Int64 = int64(*req.RoleID)
 		}
 
@@ -292,8 +295,11 @@ func (s *userService) CreateAdminUser(
 		}
 
 		var roleID sql.NullInt64
-		if req.RoleID != nil {
-			roleID = sql.NullInt64{Int64: int64(*req.RoleID), Valid: true}
+		if req.RoleID != nil && *req.RoleID > 0 {
+			roleID = sql.NullInt64{
+				Int64: int64(*req.RoleID),
+				Valid: true,
+			}
 		}
 		if err = s.Repo.UpdateUserRole(ctx, existingUser.ID, roleID); err != nil {
 			return uuid.Nil, fmt.Errorf("re-register (UpdateRole): %w", err)
@@ -327,14 +333,14 @@ func (s *userService) CreateAdminUser(
 			PasswordHash: passwordHash,
 			Status:       models.StatusActive,
 			RoleID: sql.NullInt64{
-				Valid: req.RoleID != nil,
+				Valid: req.RoleID != nil && *req.RoleID > 0,
 			},
 			AccountTypeID: sql.NullInt64{
 				Valid: req.AccountTypeID != 0,
 				Int64: int64(req.AccountTypeID),
 			},
 		}
-		if req.RoleID != nil {
+		if req.RoleID != nil && *req.RoleID > 0 {
 			user.RoleID.Int64 = int64(*req.RoleID)
 		}
 
@@ -762,9 +768,15 @@ func (s *userService) UpdateUserRole(
 		slices.Contains(permissions, "Remove Roles") {
 		var nullRoleID sql.NullInt64
 		if roleID != nil {
-			nullRoleID = sql.NullInt64{
-				Int64: int64(*roleID),
-				Valid: true,
+			if *roleID > 0 {
+				nullRoleID = sql.NullInt64{
+					Int64: int64(*roleID),
+					Valid: true,
+				}
+			} else {
+				nullRoleID = sql.NullInt64{
+					Valid: false,
+				}
 			}
 		}
 		err := s.Repo.UpdateUserRole(ctx, id[:], nullRoleID)
