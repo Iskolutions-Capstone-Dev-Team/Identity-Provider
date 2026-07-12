@@ -298,7 +298,10 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		true,
 		true,
 	)
-	c.JSON(http.StatusOK, redirectLink)
+	c.JSON(http.StatusOK, gin.H{
+		"redirect_url":      redirectLink,
+		"mfa_pending_token": sessionID,
+	})
 }
 
 // Logout terminates the user session and revokes all tokens

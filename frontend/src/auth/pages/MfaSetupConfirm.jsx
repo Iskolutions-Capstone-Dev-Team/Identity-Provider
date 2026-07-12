@@ -4,6 +4,7 @@ import { clearMfaSetup, consumeMfaReturnPath, getMfaSetup, MFA_SETUP_PATH, remem
 import { promotePendingMfaTokenResponse } from "../utils/authCookies";
 import { mfaService } from "../../services/mfaService";
 import ErrorAlert from "../../components/ErrorAlert";
+import InfoAlert from "../../components/InfoAlert";
 import MfaSetupConfirmStep from "../components/mfa/MfaSetupConfirmStep";
 import MfaShell from "../components/mfa/MfaShell";
 import { getDigits } from "../components/mfa/mfaInputUtils";
@@ -24,7 +25,22 @@ export default function MfaSetupConfirm() {
   const [name, setName] = useState("");
   const [backupCodes, setBackupCodes] = useState([]);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleFlowError = (errorObj, defaultMessage) => {
+    const message = getRequestErrorMessage(errorObj, defaultMessage);
+    if (message.toLowerCase().includes("pending cookie missing")) {
+      setError("");
+      setInfo("Session expired. Redirecting to login form, kindly login again.");
+      setTimeout(() => {
+        navigate("/login", { replace: true });
+      }, 3500);
+    } else {
+      setInfo("");
+      setError(message);
+    }
+  };
 
   useEffect(() => {
     const storedSetup = getMfaSetup();
@@ -69,11 +85,9 @@ export default function MfaSetupConfirm() {
 
       setBackupCodes(result.backupCodes);
     } catch (saveError) {
-      setError(
-        getRequestErrorMessage(
-          saveError,
-          "Unable to save this authenticator.",
-        ),
+      handleFlowError(
+        saveError,
+        "Unable to save this authenticator.",
       );
     } finally {
       setIsSaving(false);
@@ -82,8 +96,9 @@ export default function MfaSetupConfirm() {
 
   return (
     <MfaShell>
-      <div className="mb-5">
+      <div className="mb-5 space-y-3">
         <ErrorAlert message={error} onClose={() => setError("")} />
+        <InfoAlert message={info} onClose={() => setInfo("")} />
       </div>
 
       <MfaSetupConfirmStep
