@@ -119,6 +119,7 @@ export default function IdpLayout() {
                 activeColorMode={colorMode}
                 onToggleColorMode={handleToggleColorMode}
                 showColorModeToggle={showColorModeToggle}
+                currentUser={currentUser}
               />
             </div>
           </div>
