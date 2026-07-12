@@ -559,7 +559,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
               <div className="space-y-5">
                 {isAdminView && (
                   <div>
-                    {renderSectionHeader("Role (requires MFA)", roleFieldDescription)}
+                    {renderSectionHeader("Role", roleFieldDescription)}
 
                     {isViewMode || !canEditRoleField ? (
                       renderReadOnlyAccessItems(
