@@ -168,7 +168,7 @@ export const userService = {
       name_suffix: normalizeTextValue(data.name_suffix),
       password: normalizeTextValue(data.password),
       status: normalizeTextValue(data.status).toLowerCase(),
-      role_id: normalizeRoleId(data.role_id) ?? null,
+      role_id: normalizeRoleId(data.role_id) ?? 0,
       account_type_id: accountTypeId,
       allowed_appclients: normalizeStringList(data.allowed_appclients),
     };
@@ -207,7 +207,7 @@ export const userService = {
   async updateUserRole(id, roleId = null) {
     const normalizedRoleId = normalizeRoleId(roleId);
     const payload = {
-      role_id: normalizedRoleId ?? null,
+      role_id: normalizedRoleId ?? 0,
     };
 
     const res = await axiosInstance.patch(`/admin/users/${id}/role`, payload, {
@@ -251,7 +251,7 @@ export const userService = {
   async updateUserDetails(id, accountTypeId, roleId, mfaCode) {
     const payload = {
       account_type_id: normalizeAccountTypeId(accountTypeId),
-      role_id: normalizeRoleId(roleId) ?? null,
+      role_id: normalizeRoleId(roleId) ?? 0,
       mfa_code: normalizeTextValue(mfaCode),
     };
 
