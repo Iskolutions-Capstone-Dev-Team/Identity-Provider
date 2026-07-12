@@ -110,7 +110,7 @@ export function AppSidebar({ currentUser }) {
       <SidebarHeader className="h-16 flex flex-row items-center px-4 group-data-[collapsible=icon]:px-2 transition-all duration-200 ease-linear overflow-hidden">
         <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="h-8 w-8 object-contain shrink-0" />
         <span className="ml-2 text-lg font-bold tracking-tight whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0 truncate">
-          PUPTIDP
+          Identity Provider
         </span>
       </SidebarHeader>
       <SidebarContent>
