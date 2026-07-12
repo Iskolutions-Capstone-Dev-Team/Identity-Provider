@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { getModalTheme } from "../../../components/modalTheme";
 import { getModalTransitionClassName } from "../../../components/modalTransition";
 import ErrorAlert from "../../../components/ErrorAlert";
-import InfoAlert from "../../../components/InfoAlert";
+import UserPoolInfoAlert from "./UserPoolInfoAlert";
 import { AuthenticatorIcon } from "../../../auth/components/mfa/mfaIcons";
 
 export default function UserPoolMfaModal({ open, code, onCodeChange, onVerify, onCancel, isVerifying = false, error = "", colorMode = "light" }) {
@@ -145,7 +145,7 @@ export default function UserPoolMfaModal({ open, code, onCodeChange, onVerify, o
           <div className="space-y-5 py-4">
             {error && <ErrorAlert message={error} />}
 
-            <InfoAlert 
+            <UserPoolInfoAlert 
               colorMode={colorMode} 
               message="For your security, administrative changes to account types or roles require MFA verification." 
             />
