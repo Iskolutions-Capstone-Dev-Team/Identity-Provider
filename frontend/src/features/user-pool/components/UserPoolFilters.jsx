@@ -2,7 +2,7 @@ import { ADMIN_USER_TYPE, REGULAR_USER_TYPE } from "../../../utils/userPoolAcces
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search } from "lucide-react";
+import { Search, Users, Shield } from "lucide-react";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Label } from "@/components/ui/label";
 
@@ -15,10 +15,10 @@ const statusOptions = [
 export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, showAdminUserType = true }) {
   const visibleUserTypeOptions = showAdminUserType
     ? [
-        { value: REGULAR_USER_TYPE, label: "Users" },
-        { value: ADMIN_USER_TYPE, label: "Admin" },
+        { value: REGULAR_USER_TYPE, label: "Users", Icon: Users },
+        { value: ADMIN_USER_TYPE, label: "Admin", Icon: Shield },
       ]
-    : [{ value: REGULAR_USER_TYPE, label: "Users" }];
+    : [{ value: REGULAR_USER_TYPE, label: "Users", Icon: Users }];
 
   return (
     <div className="bg-card border rounded-xl p-4 sm:p-5 shadow-sm w-full">
@@ -45,7 +45,8 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
           <Tabs value={userType} onValueChange={setUserType} className="h-10!">
             <TabsList className="h-full group-data-horizontal/tabs:h-10!">
               {visibleUserTypeOptions.map((opt) => (
-                <TabsTrigger key={opt.value} value={opt.value} className="h-full px-4">
+                <TabsTrigger key={opt.value} value={opt.value} className="h-full px-4 flex items-center gap-2">
+                  <opt.Icon className="h-4 w-4" />
                   {opt.label}
                 </TabsTrigger>
               ))}
