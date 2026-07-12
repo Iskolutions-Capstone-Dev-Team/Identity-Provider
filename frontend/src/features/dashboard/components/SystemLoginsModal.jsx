@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
 import { getModalTheme } from "../../../components/modalTheme";
 import Pagination from "../../../components/Pagination";
-import { LoginsIcon, CloseIcon } from "./DashboardIcons";
+import { EmptyActivityIcon } from "./DashboardIcons";
 
 const DEFAULT_CLIENT_IMAGE = "/assets/images/PUP_Logo.png";
 const ITEMS_PER_PAGE = 5;
@@ -134,13 +134,12 @@ export default function SystemLoginsModal({ open, period, colorMode = "light", o
                     />
                   ))
                 ) : (
-                  <p className={`rounded-xl border px-4 py-3 text-sm text-center ${
-                    isDarkMode
-                      ? "border-white/10 bg-white/[0.03] text-slate-300"
-                      : "border-[#7b0d15]/10 bg-white/70 text-slate-600"
-                  }`}>
-                    No login activity available for this period.
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <EmptyActivityIcon className="mb-2 h-6 w-6 text-slate-400" />
+                    <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                      No login activity available for this period.
+                    </p>
+                  </div>
                 )}
               </div>
             </div>

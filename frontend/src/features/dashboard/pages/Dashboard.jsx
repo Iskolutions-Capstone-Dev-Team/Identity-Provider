@@ -33,7 +33,7 @@ const emptyMetrics = {
 const statPeriods = [
   { key: "today", label: "Today", shortLabel: "Today", type: "success" },
   { key: "this_month", label: "This Month", shortLabel: "Month", type: "success" },
-  { key: "unsuccessful_logins", label: "Unsuccessful Logins", shortLabel: "Failed", type: "failed" },
+  { key: "unsuccessful_logins", label: "Overall", shortLabel: "Failed", type: "failed" },
 ];
 
 function getPeriodCount(periodValue) {
@@ -262,7 +262,7 @@ export default function Dashboard() {
         <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
           <TopLoginsPanel
             clients={selectedTopClients}
-            periods={normalizedMetrics.loginStats}
+            periods={normalizedMetrics.loginStats.filter((p) => p.type !== "failed")}
             selectedPeriod={selectedPeriod}
             selectedPeriodKey={selectedPeriodKey}
             isRestrictedView={isRestrictedMetricsView}

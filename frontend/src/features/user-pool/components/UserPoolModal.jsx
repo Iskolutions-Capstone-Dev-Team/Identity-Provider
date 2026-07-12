@@ -9,7 +9,12 @@ import UserPoolUserIconBox from "./UserPoolUserIconBox";
 import { getModalTheme } from "../../../components/modalTheme";
 import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
+import { getAccountTypeLabel, ACCOUNT_TYPE_OPTIONS } from "../../../utils/accountTypes";
 import { CloseIcon, ResendInviteIcon } from "./userpoolIcons";
+import UserPoolMfaModal from "./UserPoolMfaModal";
+import { useCurrentUser } from "../../../hooks/useCurrentUser";
+import { mfaService } from "../../../services/mfaService";
+import { useRegistrationAccountTypes } from "../../registration/hooks/useRegistrationAccountTypes";
 
 const initialFormData = {
   id: "",
@@ -25,6 +30,7 @@ const initialFormData = {
   accessibleClientNames: [],
   manageableClientIds: [],
   manageableClientNames: [],
+  accountType: "",
 };
 
 const STATUS_OPTIONS = [
@@ -38,6 +44,8 @@ const STATUS_DISPLAY_LABELS = {
   inactive: "Inactive",
   suspended: "Suspended",
 };
+
+
 
 const normalizeText = (value) =>
   typeof value === "string" ? value.trim() : "";
@@ -122,6 +130,7 @@ const createFormData = (user) => ({
   accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
   manageableClientIds: normalizeClientIds(user?.manageableClientIds),
   manageableClientNames: normalizeClientNames(user?.manageableClientNames),
+  accountType: user?.accountType || user?.account_type || "",
 });
 
 const getSelectedClientOptions = (clientIds = [], clientNames = []) =>
@@ -212,7 +221,18 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const [originalUser, setOriginalUser] = useState(initialFormData);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showMfaModal, setShowMfaModal] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
   const isSubmittingRef = useRef(false);
+  const { currentUser } = useCurrentUser();
+  const { accountTypeOptions, isLoadingAccountTypes } = useRegistrationAccountTypes({
+    enabled: open,
+  });
+
+  const accountTypeSelectOptions = accountTypeOptions.map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+  }));
 
   useEffect(() => {
     if (!open) {
@@ -223,6 +243,8 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     setFormData(nextFormData);
     setOriginalUser(nextFormData);
     setIsSubmitting(false);
+    setShowMfaModal(false);
+    setMfaCode("");
     isSubmittingRef.current = false;
     setError("");
   }, [open, user]);
@@ -231,6 +253,17 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
     setFormData((current) => ({
       ...current,
       status: normalizeStatus(value),
+    }));
+
+    if (error) {
+      setError("");
+    }
+  };
+
+  const handleAccountTypeChange = (value) => {
+    setFormData((current) => ({
+      ...current,
+      accountType: value,
     }));
 
     if (error) {
@@ -294,6 +327,19 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
       return;
     }
 
+    const hasAccountTypeChanged = formData.accountType !== originalUser.accountType;
+    const hasRoleChanged = formData.roleId !== originalUser.roleId;
+
+    if (hasAccountTypeChanged || hasRoleChanged) {
+      setShowMfaModal(true);
+      return;
+    }
+
+    await submitFormUpdates();
+  };
+
+  const submitFormUpdates = async (overrideCode) => {
+    const finalCode = typeof overrideCode === "string" ? overrideCode : mfaCode;
     try {
       isSubmittingRef.current = true;
       setIsSubmitting(true);
@@ -303,10 +349,12 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
         {
           ...formData,
           userType,
+          mfaCode: finalCode || undefined,
         },
         originalUser,
       );
 
+      setShowMfaModal(false);
       onClose();
     } catch (submitError) {
       setError(extractErrorMessage(submitError));
@@ -380,6 +428,9 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   const statusFieldDescription = isViewMode
     ? "View the user's account status."
     : "Choose the user's account status.";
+  const accountTypeFieldDescription = isViewMode
+    ? "View the user's account type."
+    : "Choose the user's account type.";
   const renderSectionHeader = (title, description, isRequired = false) => (
     <div className={sectionHeaderClassName}>
       <label className={modalLabelClassName}>
@@ -407,6 +458,7 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
   );
 
   return createPortal(
+    <>
     <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
       <div className={modalBoxClassName}>
         <div className={modalHeaderSpacingClassName}>
@@ -482,6 +534,26 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
                 </div>
               </section>
             )}
+
+            <section className={modalSectionClassName}>
+              {renderSectionHeader(
+                "Account Type",
+                accountTypeFieldDescription,
+                !isViewMode,
+              )}
+              {isViewMode ? (
+                <input type="text" value={getAccountTypeLabel(formData.accountType) || "Regular"} readOnly className={modalReadOnlyInputClassName} />
+              ) : (
+                <UserPoolModalSelect
+                  value={formData.accountType}
+                  onChange={handleAccountTypeChange}
+                  options={accountTypeSelectOptions}
+                  selectedLabel={getAccountTypeLabel(formData.accountType, accountTypeOptions) || (typeof formData.accountType === "string" ? formData.accountType.trim() : "Select Account Type")}
+                  ariaLabel="Account Type"
+                  colorMode={colorMode}
+                />
+              )}
+            </section>
 
             <section className={modalSectionClassName}>
               <div className="space-y-5">
@@ -633,7 +705,21 @@ export default function UserPoolModal({ open, mode, user, userType = "regular", 
           </div>
         </div>
       </div>
-    </dialog>,
+    </dialog>
+    <UserPoolMfaModal
+      open={showMfaModal}
+      code={mfaCode}
+      onCodeChange={setMfaCode}
+      onVerify={submitFormUpdates}
+      onCancel={() => {
+        setShowMfaModal(false);
+        setMfaCode("");
+      }}
+      isVerifying={isSubmitting}
+      error={error}
+      colorMode={colorMode}
+    />
+    </>,
     document.body,
   );
 }

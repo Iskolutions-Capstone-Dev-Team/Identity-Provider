@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardPanel from "./DashboardPanel";
+import { EmptyActivityIcon } from "./DashboardIcons";
 
 const DEFAULT_CLIENT_IMAGE = "/assets/images/PUP_Logo.png";
 
@@ -48,7 +49,7 @@ export function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeri
     : "border-[#7b0d15]/10 bg-[#fff8f3]";
 
   return (
-    <div className={`grid grid-cols-3 overflow-hidden rounded-lg border p-1 text-sm ${shellClassName}`}>
+    <div className={`grid ${periods.length === 2 ? "grid-cols-2" : "grid-cols-3"} overflow-hidden rounded-lg border p-1 text-sm ${shellClassName}`}>
       {periods.map((period) => {
         const isSelected = selectedPeriodKey === period.key;
         const idleClassName = isDarkMode
@@ -159,8 +160,8 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
     ? "Highest login volume by accessible applications"
     : "Highest login volume by application";
   const emptyMessage = isRestrictedView
-    ? "No failed login activity is available."
-    : "No failed login activity is available for this application.";
+    ? "No login activity is available."
+    : "No login activity is available for this application.";
   const maxLoginCount = clients.reduce((maxCount, client) => {
     const loginCount = Number(client.login_count) || 0;
     return Math.max(maxCount, loginCount);
@@ -207,13 +208,12 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
             />
           ))
         ) : (
-          <p className={`rounded-xl border px-4 py-3 text-sm ${
-            isDarkMode
-              ? "border-white/10 bg-white/[0.03] text-slate-300"
-              : "border-[#7b0d15]/10 bg-white/70 text-slate-600"
-          }`}>
-            {emptyMessage}
-          </p>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <EmptyActivityIcon className="mb-2 h-6 w-6 text-slate-400" />
+            <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+              {emptyMessage}
+            </p>
+          </div>
         )}
       </div>
 
