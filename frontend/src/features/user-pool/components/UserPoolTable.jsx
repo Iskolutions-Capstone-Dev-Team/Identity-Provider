@@ -2,22 +2,10 @@ import { shortenId } from "../../../utils/shortenId";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
 import { Eye, Pencil, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function getStatusBadgeClasses(status) {
   if (status === "active") return "bg-green-500 hover:bg-green-600 text-white border-transparent";
@@ -145,8 +133,8 @@ export default function UserPoolTable({
                 <TableCell className="text-center">
                   <TooltipProvider>
                     <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="font-medium cursor-help border-b border-dashed border-gray-400">{shortenId(user.id)}</span>
+                      <TooltipTrigger render={<span className="font-medium cursor-help border-b border-dashed border-gray-400" />}>
+                        {shortenId(user.id)}
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>{user.id}</p>
@@ -160,7 +148,7 @@ export default function UserPoolTable({
                   {accessItems.length > 0 ? (
                     <div className="flex flex-wrap justify-center gap-1">
                       {accessItems.map((item, idx) => (
-                        <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-full px-3 py-1">
+                        <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
                           {item}
                         </Badge>
                       ))}
