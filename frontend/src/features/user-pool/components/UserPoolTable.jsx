@@ -63,7 +63,7 @@ export default function UserPoolTable({
     return (
       <div className="rounded-md border">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-card">
             <TableRow>
               <TableHead className="text-center">ID</TableHead>
               <TableHead className="text-center">Email</TableHead>
@@ -106,7 +106,7 @@ export default function UserPoolTable({
   return (
     <div className="rounded-md border">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-card">
           <TableRow>
             <TableHead className="text-center">ID</TableHead>
             <TableHead className="text-center">Email</TableHead>
