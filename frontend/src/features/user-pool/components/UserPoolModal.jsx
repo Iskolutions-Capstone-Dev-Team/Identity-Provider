@@ -225,20 +225,19 @@ export default function UserPoolModal({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="sm:max-w-3xl">
+        <DialogHeader>
           <DialogTitle>{isViewMode ? "View User" : "Edit User"}</DialogTitle>
         </DialogHeader>
-
-        <ScrollArea className="flex-1 p-6">
-          <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-8">
+        <div className="-mx-4 no-scrollbar max-h-[50vh] overflow-y-auto px-4">
+          <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-8 px-2">
             <ErrorAlert message={error} onClose={() => setError("")} />
 
             {!isEditMode && (
               <section className="space-y-4">
                 <div>
                   <h4 className="text-sm font-semibold">Personal Information</h4>
-                  <p className="text-sm text-muted-foreground">View the user's basic details.</p>
+                  {!isViewMode && <p className="text-sm text-muted-foreground">View the user's basic details.</p>}
                 </div>
                 
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -275,7 +274,7 @@ export default function UserPoolModal({
                 <div className="space-y-4">
                   <div>
                     <h4 className="text-sm font-semibold">Role</h4>
-                    <p className="text-sm text-muted-foreground">{isViewMode ? "View the role assigned to this admin account." : "Choose the role for this admin account."}</p>
+                    {!isViewMode && <p className="text-sm text-muted-foreground">Choose the role for this admin account.</p>}
                   </div>
                   
                   {isViewMode || !canEditRoleField ? (
@@ -306,7 +305,7 @@ export default function UserPoolModal({
               <div className="space-y-4">
                 <div>
                   <h4 className="text-sm font-semibold">Accessible App Clients</h4>
-                  <p className="text-sm text-muted-foreground">{isViewMode ? "View which app clients are accessible for sign-in." : "Choose which clients are accessible for sign-in."}</p>
+                  {!isViewMode && <p className="text-sm text-muted-foreground">Choose which clients are accessible for sign-in.</p>}
                 </div>
                 
                 {isViewMode || !canEditAccessField ? (
@@ -331,7 +330,7 @@ export default function UserPoolModal({
               <div className="space-y-4">
                 <div>
                   <h4 className="text-sm font-semibold">Manageable App Clients</h4>
-                  <p className="text-sm text-muted-foreground">{isViewMode ? "View which app clients this admin can manage." : "Choose which clients this admin can manage."}</p>
+                  {!isViewMode && <p className="text-sm text-muted-foreground">Choose which clients this admin can manage.</p>}
                 </div>
                 
                 {isViewMode || !canEditAccessField ? (
@@ -356,7 +355,7 @@ export default function UserPoolModal({
               <div className="space-y-4">
                 <div>
                   <h4 className="text-sm font-semibold">Status {(!isViewMode) && <span className="text-destructive">*</span>}</h4>
-                  <p className="text-sm text-muted-foreground">{isViewMode ? "View the user's account status." : "Choose the user's account status."}</p>
+                  {!isViewMode && <p className="text-sm text-muted-foreground">Choose the user's account status.</p>}
                 </div>
                 
                 {isViewMode || !canEditStatus ? (
@@ -375,9 +374,9 @@ export default function UserPoolModal({
               </div>
             </section>
           </form>
-        </ScrollArea>
+        </div>
 
-        <DialogFooter className="px-6 py-4 border-t gap-2 sm:justify-between">
+        <DialogFooter className="gap-2 sm:justify-between">
           <div>
             {!isViewMode && canReinvite && (
               <Button 
