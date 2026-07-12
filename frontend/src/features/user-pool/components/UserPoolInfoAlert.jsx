@@ -1,6 +1,6 @@
-import { InfoIcon } from "./componentIcons";
+import { InfoIcon } from "./userpoolIcons";
 
-export default function InfoAlert({ message, colorMode = "light" }) {
+export default function UserPoolInfoAlert({ message, colorMode = "light" }) {
   if (!message) {
     return null;
   }
