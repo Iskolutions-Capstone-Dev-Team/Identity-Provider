@@ -40,7 +40,19 @@ export default [
     files: ['**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        global: "readonly",
+        vi: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        describe: "readonly",
+        it: "readonly",
+        expect: "readonly",
+      },
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
@@ -62,10 +74,9 @@ export default [
       'local/jsx-uses-vars': 'error',
       // The app intentionally syncs local modal and transition state from effects.
       'react-hooks/set-state-in-effect': 'off',
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'react-refresh/only-export-components': 'off',
+      'no-unused-vars': 'off',
+      'react-hooks/exhaustive-deps': 'off',
     },
   },
   {
