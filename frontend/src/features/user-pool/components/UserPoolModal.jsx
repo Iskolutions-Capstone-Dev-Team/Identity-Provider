@@ -397,15 +397,13 @@ export default function UserPoolModal({
             </div>
           ) : (
             <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pb-6">
-              <div className="space-y-2 mt-2">
-                <h4 className="font-semibold text-sm px-1">{isAdminView ? "Role & Status" : "Status"}</h4>
-                <Card className="bg-muted/30 border-border/40">
-                  <CardContent className="px-5 py-3 space-y-4">
-                  {isAdminView && (
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Choose the role for this admin account.</p>
-                      </div>
+              <div className="space-y-6">
+                {isAdminView && (
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-semibold text-sm">Role</h4>
+                      <p className="text-sm text-muted-foreground">Choose the role for this admin account.</p>
+                    </div>
                     {!canEditRoleField ? (
                       <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                         {roleAccessItems.length > 0 ? (
@@ -428,8 +426,9 @@ export default function UserPoolModal({
                   </div>
                 )}
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div>
+                    <h4 className="font-semibold text-sm">Status</h4>
                     <p className="text-sm text-muted-foreground">Choose the user's account status.</p>
                   </div>
                   {!canEditStatus ? (
@@ -444,7 +443,7 @@ export default function UserPoolModal({
                     </div>
                   ) : (
                     <Select value={formData.status} onValueChange={handleStatusChange} onOpenChange={setIsSelectOpen}>
-                      <SelectTrigger className="h-[52px] w-full rounded-lg bg-muted/50 border-border/50">
+                      <SelectTrigger className="h-10 w-full bg-muted/50 border-border/50">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent position="popper">
@@ -454,18 +453,12 @@ export default function UserPoolModal({
                     </Select>
                   )}
                 </div>
-                </CardContent>
-              </Card>
-              </div>
 
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm px-1">Accessible & Manageable Clients</h4>
-                <Card className="bg-muted/30 border-border/40">
-                  <CardContent className="px-5 py-3 space-y-4">
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Choose which clients are accessible for sign-in.</p>
-                    </div>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-semibold text-sm">Accessible Clients</h4>
+                    <p className="text-sm text-muted-foreground">Choose which clients are accessible for sign-in.</p>
+                  </div>
                   {!canEditAccessField ? (
                     <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                       {clientAccessDisplayItems.length > 0 ? (
@@ -486,8 +479,9 @@ export default function UserPoolModal({
                   )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div>
+                    <h4 className="font-semibold text-sm">Manageable Clients</h4>
                     <p className="text-sm text-muted-foreground">Choose which clients this admin can manage.</p>
                   </div>
                   {!canEditAccessField ? (
@@ -509,8 +503,6 @@ export default function UserPoolModal({
                     />
                   )}
                 </div>
-                </CardContent>
-              </Card>
               </div>
             </form>
           )}
