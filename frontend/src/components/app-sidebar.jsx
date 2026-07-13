@@ -28,7 +28,7 @@ import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS
 
 const menuSections = [
   {
-    title: "DASHBOARD",
+    title: "Dashboard",
     items: [
       {
         name: "Dashboard",
@@ -39,7 +39,7 @@ const menuSections = [
     ],
   },
   {
-    title: "IDENTITY MANAGEMENT",
+    title: "Identity Management",
     items: [
       {
         name: "User Pool",
@@ -68,7 +68,7 @@ const menuSections = [
     ],
   },
   {
-    title: "ACTIVITY",
+    title: "Activity",
     items: [
       {
         name: "Audit Logs",
@@ -106,7 +106,7 @@ export function AppSidebar({ currentUser }) {
         .filter((section) => section.items.length > 0)
 
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
+    <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader className="h-16 flex flex-row items-center px-4 group-data-[collapsible=icon]:px-2 transition-all duration-200 ease-linear overflow-hidden">
         <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="h-8 w-8 object-contain shrink-0" />
         <span className="ml-2 text-lg font-bold tracking-tight whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0 truncate">
@@ -116,7 +116,7 @@ export function AppSidebar({ currentUser }) {
       <SidebarContent>
         {visibleMenuSections.map((section) => (
           <SidebarGroup key={section.title}>
-            <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-white">
+            <SidebarGroupLabel>
               {section.title}
             </SidebarGroupLabel>
             <SidebarGroupContent>
