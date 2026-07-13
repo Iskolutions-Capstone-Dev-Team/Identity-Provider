@@ -169,31 +169,33 @@ export default function UserPoolTable({
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors"
                           onClick={() => onView(user)}
                           title={`View ${getUserLabel(user)}`}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-6 w-6" />
                         </Button>
                       )}
                       {showEditAction && (
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors"
                           onClick={() => onEdit(user)}
                           title={`Edit ${getUserLabel(user)}`}
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-6 w-6" />
                         </Button>
                       )}
                       {showDeleteAction && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                          className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors"
                           onClick={() => onDelete(user)}
                           title={`Delete ${getUserLabel(user)}`}
                         >
-                          <Trash className="h-4 w-4" />
+                          <Trash className="h-6 w-6" />
                         </Button>
                       )}
                     </div>
