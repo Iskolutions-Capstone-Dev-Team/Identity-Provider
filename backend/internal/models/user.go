@@ -61,6 +61,7 @@ type User struct {
 	RoleID        sql.NullInt64 `db:"role_id"`
 	AccountTypeID sql.NullInt64 `db:"account_type_id"`
 	Role          Role          `db:"-"`
+	AccountType   string        `db:"-"`
 
 	AllowedClients []Client `db:"-"`
 	ManagedClients []Client `db:"-"`

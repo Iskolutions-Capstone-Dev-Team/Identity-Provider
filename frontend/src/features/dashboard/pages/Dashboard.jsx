@@ -8,6 +8,7 @@ import MetricFilterCard from "../components/MetricFilterCard";
 import ReportConfirmModal from "../components/ReportConfirmModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/TopLoginsPanel";
+import SystemLoginsModal from "../components/SystemLoginsModal";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { metricsService } from "../../../services/metricsService";
@@ -16,9 +17,9 @@ import { PERMISSIONS } from "../../../utils/permissionAccess";
 
 const emptyMetrics = {
   login_stats: {
-    today: { count: 0, top_clients: [] },
-    this_week: { count: 0, top_clients: [] },
-    this_month: { count: 0, top_clients: [] },
+    today: { count: 0, failed_count: 0, top_clients: [] },
+    this_week: { count: 0, failed_count: 0, top_clients: [] },
+    this_month: { count: 0, failed_count: 0, top_clients: [] },
   },
   security_analysis: {
     threat_level: "UNKNOWN",
@@ -30,9 +31,9 @@ const emptyMetrics = {
 };
 
 const statPeriods = [
-  { key: "today", label: "Today", shortLabel: "Today" },
-  { key: "this_week", label: "This Week", shortLabel: "Week" },
-  { key: "this_month", label: "This Month", shortLabel: "Month" },
+  { key: "today", label: "Today", shortLabel: "Today", type: "success" },
+  { key: "this_month", label: "This Month", shortLabel: "Month", type: "success" },
+  { key: "unsuccessful_logins", label: "Overall", shortLabel: "Failed", type: "failed" },
 ];
 
 function getPeriodCount(periodValue) {
@@ -57,11 +58,20 @@ function normalizeMetrics(payload) {
     : [];
 
   return {
-    loginStats: statPeriods.map((period) => ({
-      ...period,
-      count: getPeriodCount(loginStats[period.key]),
-      topClients: getPeriodTopClients(loginStats[period.key]),
-    })),
+    loginStats: statPeriods.map((period) => {
+      if (period.key === "unsuccessful_logins") {
+        return {
+          ...period,
+          count: loginStats.today?.failed_count || 0,
+          topClients: [],
+        };
+      }
+      return {
+        ...period,
+        count: getPeriodCount(loginStats[period.key]),
+        topClients: getPeriodTopClients(loginStats[period.key]),
+      };
+    }),
     legacyTopClients,
     securityAnalysis: source.security_analysis || emptyMetrics.security_analysis,
   };
@@ -125,6 +135,8 @@ export default function Dashboard() {
   const [reportError, setReportError] = useState("");
   const [isReportConfirmOpen, setIsReportConfirmOpen] = useState(false);
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
+  const [isLoginsModalOpen, setIsLoginsModalOpen] = useState(false);
+  const [selectedModalPeriod, setSelectedModalPeriod] = useState(null);
   const showLoading = useDelayedLoading(loading);
   const normalizedMetrics = useMemo(() => normalizeMetrics(metrics), [metrics]);
   const selectedPeriod = normalizedMetrics.loginStats.find(
@@ -137,6 +149,13 @@ export default function Dashboard() {
     normalizedMetrics.securityAnalysis.analyzed_at,
   );
   const isRestrictedMetricsView = !hasPermission(PERMISSIONS.VIEW_ALL_APPCLIENTS);
+
+  const handleCardClick = (stat) => {
+    if (stat.type === "success") {
+      setSelectedModalPeriod(stat);
+      setIsLoginsModalOpen(true);
+    }
+  };
 
   useEffect(() => {
     let ignore = false;
@@ -234,6 +253,8 @@ export default function Dashboard() {
               stat={stat}
               colorMode={colorMode}
               isLoading={showLoading}
+              onClick={() => handleCardClick(stat)}
+              isClickable={stat.type === "success"}
             />
           ))}
         </section>
@@ -241,7 +262,7 @@ export default function Dashboard() {
         <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
           <TopLoginsPanel
             clients={selectedTopClients}
-            periods={normalizedMetrics.loginStats}
+            periods={normalizedMetrics.loginStats.filter((p) => p.type !== "failed")}
             selectedPeriod={selectedPeriod}
             selectedPeriodKey={selectedPeriodKey}
             isRestrictedView={isRestrictedMetricsView}
@@ -265,6 +286,13 @@ export default function Dashboard() {
         isGenerating={isDownloadingReport}
         onCancel={() => setIsReportConfirmOpen(false)}
         onConfirm={handleDownloadReport}
+      />
+
+      <SystemLoginsModal
+        open={isLoginsModalOpen}
+        onClose={() => setIsLoginsModalOpen(false)}
+        period={selectedModalPeriod}
+        colorMode={colorMode}
       />
     </div>
   );

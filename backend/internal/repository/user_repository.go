@@ -45,9 +45,10 @@ type userRepository struct {
 
 type userRow struct {
 	models.User
-	RID   sql.NullInt64  `db:"role_id"`
-	RName sql.NullString `db:"role_name"`
-	RDesc sql.NullString `db:"role_description"`
+	RID         sql.NullInt64  `db:"role_id"`
+	RName       sql.NullString `db:"role_name"`
+	RDesc       sql.NullString `db:"role_description"`
+	AccountType sql.NullString `db:"account_type"`
 }
 
 // GetUserList retrieves a paginated list of non-deleted users.
@@ -69,10 +70,12 @@ func (r *userRepository) GetUserList(ctx context.Context,
 	sql := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name, 
                u.name_suffix, u.email, u.status, u.created_at, 
-               u.updated_at, u.account_type_id, r.id AS role_id, r.role_name AS role_name, 
-               r.description AS role_description
+               u.updated_at, u.account_type_id, r.id AS role_id,
+               r.role_name AS role_name, r.description AS role_description,
+               at.name AS account_type
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN account_types at ON u.account_type_id = at.id
         WHERE u.id IN (?) AND u.deleted_at IS NULL
         ORDER BY u.created_at DESC`
 
@@ -99,6 +102,9 @@ func (r *userRepository) GetUserList(ctx context.Context,
 				RoleName:    row.RName.String,
 				Description: row.RDesc.String,
 			}
+		}
+		if row.AccountType.Valid {
+			user.AccountType = row.AccountType.String
 		}
 		result = append(result, user)
 	}
@@ -135,9 +141,10 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 		       u.name_suffix, u.email, u.status, u.created_at,
 		       u.updated_at, u.account_type_id,
 		       r.id AS role_id, r.role_name AS role_name,
-		       r.description AS role_description
+		       r.description AS role_description, at.name AS account_type
 		FROM users u
 		LEFT JOIN roles r ON u.role_id = r.id
+		LEFT JOIN account_types at ON u.account_type_id = at.id
 		WHERE u.id IN (?) AND u.deleted_at IS NULL
 		ORDER BY u.created_at DESC`
 
@@ -164,6 +171,9 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 				RoleName:    row.RName.String,
 				Description: row.RDesc.String,
 			}
+		}
+		if row.AccountType.Valid {
+			user.AccountType = row.AccountType.String
 		}
 		result = append(result, user)
 	}
@@ -221,9 +231,10 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 		       u.last_name, u.name_suffix, u.email, u.status, u.created_at, 
 		       u.updated_at, u.account_type_id, r.id AS role_id, 
 		       r.role_name AS role_name, 
-		       r.description AS role_description
+		       r.description AS role_description, at.name AS account_type
 		FROM users u
 		LEFT JOIN roles r ON u.role_id = r.id
+		LEFT JOIN account_types at ON u.account_type_id = at.id
 		WHERE u.id IN (?) AND u.deleted_at IS NULL
 		ORDER BY u.created_at DESC
 	`
@@ -255,6 +266,9 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 				Description: row.RDesc.String,
 			}
 		}
+		if row.AccountType.Valid {
+			user.AccountType = row.AccountType.String
+		}
 		result = append(result, user)
 	}
 
@@ -273,10 +287,12 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
 	query := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.name_suffix, u.email, u.password_hash, u.status, 
-               u.created_at, u.updated_at, u.deleted_at, u.account_type_id, r.id AS role_id, 
-               r.role_name AS role_name, r.description AS role_description
+               u.created_at, u.updated_at, u.deleted_at, u.account_type_id,
+               r.id AS role_id, r.role_name AS role_name,
+               r.description AS role_description, at.name AS account_type
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN account_types at ON u.account_type_id = at.id
         WHERE u.email = ? AND u.deleted_at IS NULL`
 
 	err := r.db.SelectContext(ctx, &rows, query, email)
@@ -297,6 +313,9 @@ func (r *userRepository) GetUserByEmail(ctx context.Context,
 			Description: rows[0].RDesc.String,
 		}
 	}
+	if rows[0].AccountType.Valid {
+		user.AccountType = rows[0].AccountType.String
+	}
 
 	if err := r.populateSingleUserClients(ctx, &user); err != nil {
 		return nil, fmt.Errorf("[GetUserByEmail] Prep: %w", err)
@@ -312,10 +331,12 @@ func (r *userRepository) GetUserByEmailIncludeDeleted(ctx context.Context,
 	query := `
         SELECT u.id, u.first_name, u.middle_name, u.last_name,
                u.name_suffix, u.email, u.password_hash, u.status, 
-               u.created_at, u.updated_at, u.deleted_at, u.account_type_id, r.id AS role_id, 
-               r.role_name AS role_name, r.description AS role_description
+               u.created_at, u.updated_at, u.deleted_at, u.account_type_id,
+               r.id AS role_id, r.role_name AS role_name,
+               r.description AS role_description, at.name AS account_type
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN account_types at ON u.account_type_id = at.id
         WHERE u.email = ?`
 
 	err := r.db.SelectContext(ctx, &rows, query, email)
@@ -335,6 +356,9 @@ func (r *userRepository) GetUserByEmailIncludeDeleted(ctx context.Context,
 			RoleName:    rows[0].RName.String,
 			Description: rows[0].RDesc.String,
 		}
+	}
+	if rows[0].AccountType.Valid {
+		user.AccountType = rows[0].AccountType.String
 	}
 
 	if err := r.populateSingleUserClients(ctx, &user); err != nil {
@@ -395,9 +419,10 @@ func (r *userRepository) GetUserById(ctx context.Context,
 		       u.name_suffix, u.email, u.status, u.created_at,
 		       u.updated_at, u.account_type_id, r.id AS role_id,
 		       r.role_name AS role_name,
-		       r.description AS role_description
+		       r.description AS role_description, at.name AS account_type
 		FROM users u
 		LEFT JOIN roles r ON u.role_id = r.id
+		LEFT JOIN account_types at ON u.account_type_id = at.id
 		WHERE u.id = ? AND u.deleted_at IS NULL`
 
 	err := r.db.SelectContext(ctx, &rows, query, id)
@@ -417,6 +442,9 @@ func (r *userRepository) GetUserById(ctx context.Context,
 			RoleName:    rows[0].RName.String,
 			Description: rows[0].RDesc.String,
 		}
+	}
+	if rows[0].AccountType.Valid {
+		user.AccountType = rows[0].AccountType.String
 	}
 
 	if hasViewAll {
@@ -445,9 +473,10 @@ func (r *userRepository) GetUsersByAccountTypeID(ctx context.Context,
                u.name_suffix, u.email, u.status, u.created_at, 
                u.updated_at, u.account_type_id, r.id AS role_id, 
                r.role_name AS role_name, 
-               r.description AS role_description
+               r.description AS role_description, at.name AS account_type
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN account_types at ON u.account_type_id = at.id
         WHERE u.account_type_id = ? AND u.deleted_at IS NULL`
 
 	err := r.db.SelectContext(ctx, &rows, query, accountTypeID)
@@ -469,6 +498,9 @@ func (r *userRepository) GetUsersByAccountTypeID(ctx context.Context,
 				RoleName:    row.RName.String,
 				Description: row.RDesc.String,
 			}
+		}
+		if row.AccountType.Valid {
+			user.AccountType = row.AccountType.String
 		}
 		result = append(result, user)
 	}

@@ -3,6 +3,8 @@ package dto
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 )
 
 // GetAuditLogRequest defines the data for querying audit logs.
@@ -30,4 +32,12 @@ type GetAuditLogListResponse struct {
 	TotalCount  int64
 	CurrentPage int
 	LastPage    int
+}
+
+// PaginatedLoginsResponse defines the response structure for paginated logins.
+type PaginatedLoginsResponse struct {
+	Logins      []models.AuditLog `json:"logins"`
+	TotalCount  int64             `json:"total_count"`
+	CurrentPage int               `json:"current_page"`
+	LastPage    int               `json:"last_page"`
 }

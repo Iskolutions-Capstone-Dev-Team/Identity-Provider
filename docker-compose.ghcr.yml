@@ -41,7 +41,7 @@ services:
       VITE_ONE_PORTAL_URL: ${VITE_ONE_PORTAL_URL}
       BACKEND_PROXY_TARGET: ${BACKEND_PROXY_TARGET}
     ports:
-      - "5173:5173"
+      - "5173:80"
     networks:
       - identity_network
     depends_on:
