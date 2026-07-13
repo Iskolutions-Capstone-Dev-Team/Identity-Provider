@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Fragment } from "react";
 import ErrorAlert from "../../../components/ErrorAlert";
-import MultiSelect from "../../../components/MultiSelect";
+import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
+import { Field } from "@/components/ui/field";
 import { useAllRoles } from "../../roles/hooks/useAllRoles";
+import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -71,6 +73,66 @@ const extractErrorMessage = (error) =>
   error?.message ||
   "Unable to save user changes.";
 
+function AppClientComboboxField({ options, selectedIds, onChange, placeholder, isDarkMode, lockedSelectedValues = [] }) {
+  const anchor = useComboboxAnchor();
+  const stringifiedSelectedIds = selectedIds.map(id => String(id));
+  
+  const chipClassName = isDarkMode
+    ? "rounded-md border border-[#f8d24e]/25 bg-[#f8d24e]/12 text-[#ffe28a]"
+    : "rounded-md border border-[#7b0d15]/20 bg-[#7b0d15]/10 text-[#7b0d15]";
+  
+  const comboboxContainerClassName = `min-h-[2.625rem] rounded-md transition-[border-color,box-shadow,background-color] duration-200`;
+  
+  const inputPlaceholderClassName = isDarkMode
+    ? "placeholder:text-[#a58d95] text-[#f4eaea] bg-transparent outline-none flex-1 ml-1"
+    : "placeholder:text-[#9b7d84] text-[#4a1921] bg-transparent outline-none flex-1 ml-1";
+  
+  return (
+    <Field className="w-full">
+      <Combobox
+        multiple
+        autoHighlight
+        items={options}
+        itemToString={(item) => (item ? item.label : "")}
+        value={stringifiedSelectedIds}
+        onValueChange={onChange}
+      >
+        <ComboboxChips ref={anchor} className={comboboxContainerClassName}>
+          <ComboboxValue>
+            {(values) => (
+              <Fragment>
+                {values.map((val) => {
+                  const opt = options.find(o => String(o.value ?? o.id) === String(val));
+                  const isLocked = lockedSelectedValues.includes(val) || lockedSelectedValues.includes(Number(val));
+                  return (
+                    <ComboboxChip key={val} className={chipClassName} showRemove={!isLocked}>
+                      {opt ? opt.label : val}
+                    </ComboboxChip>
+                  );
+                })}
+                <ComboboxChipsInput placeholder={placeholder} className={inputPlaceholderClassName} />
+              </Fragment>
+            )}
+          </ComboboxValue>
+        </ComboboxChips>
+        <ComboboxContent anchor={anchor}>
+          <ComboboxEmpty>No client found.</ComboboxEmpty>
+          <ComboboxList>
+            {(item) => {
+              const optValue = String(item.value ?? item.id);
+              return (
+                <ComboboxItem key={optValue} value={optValue}>
+                  {item.label}
+                </ComboboxItem>
+              );
+            }}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    </Field>
+  );
+}
+
 const createFormData = (user) => ({
   id: user?.id || "",
   email: user?.email || "",
@@ -125,6 +187,7 @@ export default function UserPoolModal({
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
   const isAdminView = userType === ADMIN_USER_TYPE;
+  const isDarkMode = colorMode === "dark";
   const rolesEndpoint = isAdminView && includeSuperAdminRoleOptions ? "all" : userType === ADMIN_USER_TYPE ? "default" : "all";
   
   const canEditThisUser = isAdminView ? canEditStatus || canEditRole || canEditAccess : canEditStatus || canEditAccess;
@@ -330,52 +393,16 @@ export default function UserPoolModal({
               </div>
             </div>
           ) : (
-            <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-8 px-2 mt-4">
-              <section className="space-y-4">
-                <div>
-                  <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">Personal Information</h4>
-                  <p className="text-sm text-muted-foreground">View the user's basic details.</p>
-                </div>
-                
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>User ID</Label>
-                    <Input value={formData.id} readOnly className="bg-muted h-10 rounded-lg" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input value={formData.email} readOnly className="bg-muted h-10 rounded-lg" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>First Name</Label>
-                    <Input value={formData.givenName} readOnly className="bg-muted h-10 rounded-lg" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Last Name</Label>
-                    <Input value={formData.surname} readOnly className="bg-muted h-10 rounded-lg" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Middle Name</Label>
-                    <Input value={formData.middleName} readOnly className="bg-muted h-10 rounded-lg" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between w-full">
-                      <Label>Suffix</Label>
-                      <span className="text-[10px] border px-1.5 py-0.5 rounded-md font-medium border-[#7b0d15]/40 text-[#7b0d15] dark:border-[#f8d24e]/40 dark:text-[#f8d24e]">Optional</span>
-                    </div>
-                    <Input value={formData.suffix} readOnly className="bg-muted h-10 rounded-lg" />
-                  </div>
-                </div>
-              </section>
-
-              <section className="space-y-6 mt-6">
-                {isAdminView && (
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">Role</h4>
-                      <p className="text-sm text-muted-foreground">Choose the role for this admin account.</p>
-                    </div>
-                    
+            <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pb-6">
+              <div className="space-y-2 mt-2">
+                <h4 className="font-semibold text-sm px-1">{isAdminView ? "Role & Status" : "Status"}</h4>
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-3 space-y-4">
+                  {isAdminView && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Choose the role for this admin account.</p>
+                      </div>
                     {!canEditRoleField ? (
                       <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                         {roleAccessItems.length > 0 ? (
@@ -385,28 +412,23 @@ export default function UserPoolModal({
                         )}
                       </div>
                     ) : (
-                      <RadioGroup 
-                        value={formData.roleId?.toString() || ""} 
-                        onValueChange={(val) => handleAdminRoleChange(val)}
-                        className="gap-4"
-                      >
-                        {adminRoleOptions.map((role) => (
-                          <div key={role.id} className="flex items-center space-x-2">
-                            <RadioGroupItem value={role.id.toString()} id={`role-${role.id}`} />
-                            <Label htmlFor={`role-${role.id}`}>{role.role_name}</Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
+                      <UserPoolRoleRadioGroup
+                        options={adminRoleOptions}
+                        selectedValue={formData.roleId?.toString() || ""}
+                        onChange={(val) => handleAdminRoleChange(val)}
+                        colorMode={colorMode}
+                        name="edit-admin-role"
+                        allowEmpty={true}
+                        emptyOptionLabel="No role assigned"
+                      />
                     )}
                   </div>
                 )}
 
                 <div className="space-y-4">
                   <div>
-                    <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">Status <span className="text-destructive">*</span></h4>
-                    <p className="text-sm text-muted-foreground">Choose the user's account status.</p>
+                    <p className="text-xs text-muted-foreground">Choose the user's account status.</p>
                   </div>
-                  
                   {!canEditStatus ? (
                     <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2 items-center">
                       {formData.status?.toLowerCase() === 'active' ? (
@@ -419,7 +441,7 @@ export default function UserPoolModal({
                     </div>
                   ) : (
                     <Select value={formData.status} onValueChange={handleStatusChange}>
-                      <SelectTrigger className="h-10 rounded-lg">
+                      <SelectTrigger className="h-[52px] w-full rounded-lg bg-muted/50 border-border/50">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -429,13 +451,18 @@ export default function UserPoolModal({
                     </Select>
                   )}
                 </div>
+                </CardContent>
+              </Card>
+              </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">Accessible App Clients</h4>
-                    <p className="text-sm text-muted-foreground">Choose which clients are accessible for sign-in.</p>
-                  </div>
-                  
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm px-1">Accessible & Manageable Clients</h4>
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-3 space-y-4">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Choose which clients are accessible for sign-in.</p>
+                    </div>
                   {!canEditAccessField ? (
                     <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                       {clientAccessDisplayItems.length > 0 ? (
@@ -445,11 +472,12 @@ export default function UserPoolModal({
                       )}
                     </div>
                   ) : (
-                    <MultiSelect
+                    <AppClientComboboxField
                       options={appClientSelectOptions}
-                      selectedValues={formData.accessibleClientIds}
+                      selectedIds={formData.accessibleClientIds}
                       onChange={(vals) => setFormData((curr) => ({ ...curr, accessibleClientIds: vals }))}
                       placeholder="Select accessible app clients"
+                      isDarkMode={isDarkMode}
                       lockedSelectedValues={formData.accessibleClientIds.filter((clientId) => !editableAppClientIdLookup.has(clientId))}
                     />
                   )}
@@ -457,10 +485,8 @@ export default function UserPoolModal({
 
                 <div className="space-y-4">
                   <div>
-                    <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">Manageable App Clients</h4>
-                    <p className="text-sm text-muted-foreground">Choose which clients this admin can manage.</p>
+                    <p className="text-xs text-muted-foreground">Choose which clients this admin can manage.</p>
                   </div>
-                  
                   {!canEditAccessField ? (
                     <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                       {manageableClientDisplayItems.length > 0 ? (
@@ -470,16 +496,19 @@ export default function UserPoolModal({
                       )}
                     </div>
                   ) : (
-                    <MultiSelect
+                    <AppClientComboboxField
                       options={appClientSelectOptions}
-                      selectedValues={formData.manageableClientIds}
+                      selectedIds={formData.manageableClientIds}
                       onChange={(vals) => setFormData((curr) => ({ ...curr, manageableClientIds: vals }))}
                       placeholder="Select manageable app clients"
+                      isDarkMode={isDarkMode}
                       lockedSelectedValues={formData.manageableClientIds.filter((clientId) => !editableAppClientIdLookup.has(clientId))}
                     />
                   )}
                 </div>
-              </section>
+                </CardContent>
+              </Card>
+              </div>
             </form>
           )}
         </div>
