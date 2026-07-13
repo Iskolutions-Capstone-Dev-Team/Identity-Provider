@@ -6,7 +6,7 @@ export default function DeleteConfirmModal({ open, message = "Delete this app cl
     <AlertDialog open={open} onOpenChange={(isOpen) => { if (!isOpen && onCancel) onCancel(); }}>
       <AlertDialogContent size="sm">
         <AlertDialogHeader>
-          <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+          <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-[#f8d24e]/20 dark:text-[#f8d24e]">
             <Trash2Icon />
           </AlertDialogMedia>
           <AlertDialogTitle>{message}</AlertDialogTitle>
@@ -16,7 +16,9 @@ export default function DeleteConfirmModal({ open, message = "Delete this app cl
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel variant="ghost" onClick={onCancel}>Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={onConfirm}>Delete</AlertDialogAction>
+          <AlertDialogAction variant="destructive" onClick={onConfirm} className="dark:bg-[#f8d24e]/20 dark:text-[#f8d24e] dark:hover:bg-[#f8d24e]/30">
+            Delete
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
