@@ -11,9 +11,18 @@ function HoverCard({
 }
 
 function HoverCardTrigger({
+  asChild,
+  children,
   ...props
 }) {
-  return (<PreviewCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />);
+  return (
+    <PreviewCardPrimitive.Trigger 
+      data-slot="hover-card-trigger" 
+      render={asChild ? children : undefined}
+      {...(asChild ? {} : { children })}
+      {...props} 
+    />
+  );
 }
 
 function HoverCardContent({
