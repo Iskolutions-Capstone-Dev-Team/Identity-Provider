@@ -6,7 +6,7 @@ import ErrorAlert from "../components/ErrorAlert";
 import Navbar from "../components/Navbar";
 import PageTransition from "../components/PageTransition";
 import { AppSidebar } from "../components/app-sidebar";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import TermsAgreementModal from "../components/TermAgreementModal";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { DEFAULT_FORBIDDEN_ALERT_MESSAGE, IDP_FORBIDDEN_ALERT_EVENT } from "../utils/forbiddenAlert";
@@ -87,7 +87,6 @@ export default function IdpLayout() {
   return (
     <SidebarProvider>
       <TooltipProvider>
-      <div className="relative min-h-screen w-full flex bg-background text-foreground font-[Poppins]">
         <AccessibilityWidget colorMode={colorMode} />
         <AssistiveFab colorMode={colorMode} />
 
@@ -112,8 +111,8 @@ export default function IdpLayout() {
 
         <AppSidebar currentUser={currentUser} />
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="relative z-40 shrink-0 border-b flex items-center bg-background px-4">
+        <SidebarInset className="font-[Poppins] text-foreground overflow-hidden">
+          <div className="relative z-40 shrink-0 border-b flex items-center px-4">
             <div className="flex-1">
               <Navbar
                 activeColorMode={colorMode}
@@ -124,13 +123,12 @@ export default function IdpLayout() {
             </div>
           </div>
 
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="flex-1 p-4 sm:p-6 lg:p-8">
             <PageTransition pageKey={location.pathname}>
               {outlet}
             </PageTransition>
-          </main>
-        </div>
-      </div>
+          </div>
+        </SidebarInset>
       </TooltipProvider>
     </SidebarProvider>
   );
