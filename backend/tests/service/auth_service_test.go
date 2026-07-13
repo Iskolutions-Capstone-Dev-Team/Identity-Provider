@@ -171,4 +171,3 @@ func TestCheckSessionOrPendingMFA_Fallback(t *testing.T) {
 		}
 	})
 }
-
