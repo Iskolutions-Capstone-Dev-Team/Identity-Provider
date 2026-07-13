@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, Fragment } from "react";
+import { toast } from "sonner";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
 import { Field } from "@/components/ui/field";
@@ -207,6 +208,7 @@ export default function UserPoolModal({
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
   const isSubmittingRef = useRef(false);
 
   useEffect(() => {
@@ -258,6 +260,7 @@ export default function UserPoolModal({
       setIsSubmitting(true);
       setError("");
       await onSubmit({ ...formData, userType }, originalUser);
+      toast.success("User updated successfully", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
       onClose();
     } catch (submitError) {
       setError(extractErrorMessage(submitError));
@@ -285,7 +288,7 @@ export default function UserPoolModal({
         <DialogHeader className="-mx-4 -mt-4 rounded-t-xl border-b p-4 bg-[#7b0d15] text-white dark:bg-transparent dark:text-foreground">
           <DialogTitle>{isViewMode ? "View User" : "Edit User"}</DialogTitle>
         </DialogHeader>
-        <div className="-mx-4 no-scrollbar max-h-[50vh] overflow-y-auto px-4">
+        <div className={cn("-mx-4 no-scrollbar max-h-[50vh] px-4", isSelectOpen ? "overflow-hidden" : "overflow-y-auto")}>
           <div className="px-2 mb-4 mt-2">
             <ErrorAlert message={error} onClose={() => setError("")} />
           </div>
@@ -399,9 +402,9 @@ export default function UserPoolModal({
                 <Card className="bg-muted/30 border-border/40">
                   <CardContent className="px-5 py-3 space-y-4">
                   {isAdminView && (
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <div>
-                        <p className="text-xs text-muted-foreground">Choose the role for this admin account.</p>
+                        <p className="text-sm text-muted-foreground">Choose the role for this admin account.</p>
                       </div>
                     {!canEditRoleField ? (
                       <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
@@ -425,9 +428,9 @@ export default function UserPoolModal({
                   </div>
                 )}
 
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <div>
-                    <p className="text-xs text-muted-foreground">Choose the user's account status.</p>
+                    <p className="text-sm text-muted-foreground">Choose the user's account status.</p>
                   </div>
                   {!canEditStatus ? (
                     <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2 items-center">
@@ -440,11 +443,11 @@ export default function UserPoolModal({
                       )}
                     </div>
                   ) : (
-                    <Select value={formData.status} onValueChange={handleStatusChange}>
+                    <Select value={formData.status} onValueChange={handleStatusChange} onOpenChange={setIsSelectOpen}>
                       <SelectTrigger className="h-[52px] w-full rounded-lg bg-muted/50 border-border/50">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper">
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="suspended">Suspend</SelectItem>
                       </SelectContent>
@@ -459,9 +462,9 @@ export default function UserPoolModal({
                 <h4 className="font-semibold text-sm px-1">Accessible & Manageable Clients</h4>
                 <Card className="bg-muted/30 border-border/40">
                   <CardContent className="px-5 py-3 space-y-4">
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     <div>
-                      <p className="text-xs text-muted-foreground">Choose which clients are accessible for sign-in.</p>
+                      <p className="text-sm text-muted-foreground">Choose which clients are accessible for sign-in.</p>
                     </div>
                   {!canEditAccessField ? (
                     <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
@@ -483,9 +486,9 @@ export default function UserPoolModal({
                   )}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <div>
-                    <p className="text-xs text-muted-foreground">Choose which clients this admin can manage.</p>
+                    <p className="text-sm text-muted-foreground">Choose which clients this admin can manage.</p>
                   </div>
                   {!canEditAccessField ? (
                     <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
@@ -532,7 +535,7 @@ export default function UserPoolModal({
               {isViewMode ? "Close" : "Cancel"}
             </Button>
             {!isViewMode && canEditThisUser && (
-              <Button type="submit" form="user-pool-form" disabled={isSubmitting}>
+              <Button type="submit" form="user-pool-form" disabled={isSubmitting} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200">
                 {isSubmitting ? "Saving..." : "Save"}
               </Button>
             )}
