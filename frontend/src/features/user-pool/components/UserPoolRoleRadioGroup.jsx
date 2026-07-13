@@ -33,7 +33,7 @@ export default function UserPoolRoleRadioGroup({ options = [], selectedValue = n
     >
       {selectableOptions.map((option, index) => {
         const optionId = option.id ?? `empty-option-${index}`;
-        const optionValue = option.id ?? "";
+        const optionValue = option.id != null ? String(option.id) : "";
         return (
           <FieldLabel htmlFor={`${name}-${optionId}`} key={optionId}>
             <Field orientation="horizontal">
