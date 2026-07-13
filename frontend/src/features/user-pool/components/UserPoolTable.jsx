@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-function getStatusBadgeClasses(status) {
-  if (status === "active") return "bg-green-500 hover:bg-green-600 text-white border-transparent";
-  if (status === "inactive" || status === "suspended") return "bg-red-500 hover:bg-red-600 text-white border-transparent";
-  return "bg-secondary text-secondary-foreground border-transparent";
+function getStatusBadgeVariant(status) {
+  if (status === "active") return "success-outline";
+  if (status === "inactive" || status === "suspended") return "destructive-outline";
+  return "default";
 }
 
 function getFullName(user) {
@@ -158,7 +158,7 @@ export default function UserPoolTable({
                   )}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Badge className={`capitalize font-semibold rounded-full px-3 ${getStatusBadgeClasses(user.status)}`}>
+                  <Badge variant={getStatusBadgeVariant(user.status)} className="capitalize font-semibold rounded-full px-3">
                     {user.status}
                   </Badge>
                 </TableCell>
