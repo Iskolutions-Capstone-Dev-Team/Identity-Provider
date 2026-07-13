@@ -411,11 +411,11 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     try {
       setFetchError("");
       await userService.deleteUser(userId);
-      setSuccessMessage(`User ${label} deleted successfully`);
       await fetchUsers(userType, { showLoading: false });
     } catch (error) {
       console.error("Delete error:", error);
       setFetchError(`Failed to delete ${label}.`);
+      throw error;
     }
   };
 

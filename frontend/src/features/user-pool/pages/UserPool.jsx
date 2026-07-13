@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useUsers } from "../hooks/useUsers";
@@ -164,11 +165,17 @@ export default function UserPool() {
     setOpenReinvite(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!userToDelete) return;
-    deleteUser(userToDelete.id, getUserLabel(userToDelete));
-    setOpenDelete(false);
-    setUserToDelete(null);
+    try {
+      await deleteUser(userToDelete.id, getUserLabel(userToDelete));
+      toast.success(`${userToDelete?.email} deleted successfully`, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+    } catch (e) {
+      toast.error(`Failed to delete user`, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+    } finally {
+      setOpenDelete(false);
+      setUserToDelete(null);
+    }
   };
 
   const handleConfirmReinvite = async () => {
@@ -320,7 +327,7 @@ export default function UserPool() {
 
       <DeleteConfirmModal
         open={openDelete}
-        message={`Delete user ${getUserLabel(userToDelete)}?`}
+        message={`Delete ${userToDelete?.email}?`}
         colorMode={colorMode}
         onCancel={() => {
           setOpenDelete(false);
