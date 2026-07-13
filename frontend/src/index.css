@@ -17,14 +17,7 @@ body {
   min-height: 100%;
 }
 
-/* Ultra-lightweight mode transitions (avoids lag on large pages like UserPool) */
-body, 
-.bg-background, 
-.bg-card,
-.text-foreground,
-.text-card-foreground {
-  transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
-}
+
 
 .steps .step-primary {
   color: #991b1b !important;

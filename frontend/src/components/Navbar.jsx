@@ -19,7 +19,7 @@ export default function Navbar({ activeColorMode = "light", onToggleColorMode, s
   const avatarBgClass = isDarkMode ? "bg-white text-black" : "bg-[#7b0d15] text-[#f8d24e]";
 
   return (
-    <nav className="relative z-20 flex w-full items-center justify-between gap-4 py-3 bg-background text-foreground transition-all duration-300">
+    <nav className="relative z-20 flex w-full items-center justify-between gap-4 py-3 bg-background text-foreground">
       <div className="flex items-center min-w-0 flex-1">
         <SidebarTrigger className="-ml-2 mr-2" />
         <div id="navbar-breadcrumbs" className="min-h-[1.25rem] flex items-center"></div>
