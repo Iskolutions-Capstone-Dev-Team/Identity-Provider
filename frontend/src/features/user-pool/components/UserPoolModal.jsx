@@ -2,33 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import ErrorAlert from "../../../components/ErrorAlert";
 import MultiSelect from "../../../components/MultiSelect";
 import { useAllRoles } from "../../roles/hooks/useAllRoles";
-import {
-  ADMIN_USER_TYPE,
-  getAdminRoleOptions,
-  getAllAppClientSelectOptions,
-  getAppClientNamesByIds,
-} from "../../../utils/userPoolAccess";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Mail } from "lucide-react";
+import { Mail, CheckIcon, User, Copy, CopyCheck } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
 
 const initialFormData = {
   id: "",
@@ -158,6 +143,7 @@ export default function UserPoolModal({
   const [originalUser, setOriginalUser] = useState(initialFormData);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const isSubmittingRef = useRef(false);
 
   useEffect(() => {
@@ -167,8 +153,15 @@ export default function UserPoolModal({
     setOriginalUser(nextFormData);
     setIsSubmitting(false);
     isSubmittingRef.current = false;
+    setIsCopied(false);
     setError("");
   }, [open, user]);
+
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(formData.id);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   const handleStatusChange = (value) => {
     setFormData((current) => ({ ...current, status: normalizeStatus(value) }));
@@ -225,155 +218,270 @@ export default function UserPoolModal({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="sm:max-w-3xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-3xl" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
+        <DialogHeader className="-mx-4 -mt-4 rounded-t-xl border-b p-4 bg-[#7b0d15] text-white dark:bg-transparent dark:text-foreground">
           <DialogTitle>{isViewMode ? "View User" : "Edit User"}</DialogTitle>
         </DialogHeader>
         <div className="-mx-4 no-scrollbar max-h-[50vh] overflow-y-auto px-4">
-          <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-8 px-2">
+          <div className="px-2 mb-4 mt-2">
             <ErrorAlert message={error} onClose={() => setError("")} />
+          </div>
 
-            {!isEditMode && (
+          {isViewMode ? (
+            <div className="space-y-6 pt-0 pb-4 px-2">
+              <Card className="bg-muted/30 border-border/40 shadow-sm">
+                <CardContent className="px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      {formData.givenName} {formData.middleName ? formData.middleName.charAt(0) + '. ' : ''}{formData.surname}
+                    </h2>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <p className="text-sm text-muted-foreground font-mono">
+                        ID: {formData.id}
+                      </p>
+                      <Button size="icon-sm" variant="ghost" aria-label="Copy ID" onClick={handleCopyId}>
+                        {isCopied ? <CopyCheck aria-hidden="true" className="text-[#00d053]" /> : <Copy aria-hidden="true" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {isAdminView && roleAccessItems.length > 0 && (
+                      <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold bg-muted/50 border-border/50 text-foreground">
+                        <User className="w-3.5 h-3.5 mr-1.5" />
+                        {roleAccessItems[0]}
+                      </Badge>
+                    )}
+                    <Badge 
+                      variant={formData.status?.toLowerCase() === 'active' ? 'success-outline' : 'destructive-outline'}
+                      className={cn(
+                        "rounded-full px-3 py-1 font-semibold",
+                        formData.status?.toLowerCase() === 'active' 
+                          ? "bg-[#00d053]/10 border-transparent text-[#00d053] hover:bg-[#00d053]/20" 
+                          : "bg-[#ff2f3e]/10 border-transparent text-[#ff2f3e] hover:bg-[#ff2f3e]/20"
+                      )}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5" />
+                      <span className="capitalize">{formData.status}</span>
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">Personal Information</h4>
+                  <Card className="bg-muted/30 border-border/40">
+                    <CardContent className="px-5 py-3 space-y-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground font-semibold">Email Address</Label>
+                    <p className="font-medium text-sm mt-0.5 break-all">{formData.email || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground font-semibold">First Name</Label>
+                    <p className="font-medium text-sm mt-0.5">{formData.givenName || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground font-semibold">Last Name</Label>
+                    <p className="font-medium text-sm mt-0.5">{formData.surname || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground font-semibold">Middle Name</Label>
+                    <p className="font-medium text-sm mt-0.5">{formData.middleName || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground font-semibold">Suffix</Label>
+                    <p className="font-medium text-sm mt-0.5">{formData.suffix || "-"}</p>
+                  </div>
+                  </CardContent>
+                </Card>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Accessible App Clients</h4>
+                    <Card className="min-h-[4rem] border-border/40 bg-muted/30">
+                      <CardContent className="px-3 py-2 flex flex-wrap gap-2">
+                      {clientAccessDisplayItems.length > 0 ? (
+                        clientAccessDisplayItems.map((item, idx) => (
+                          <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground self-center">No clients selected</span>
+                      )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Manageable App Clients</h4>
+                    <Card className="min-h-[4rem] border-border/40 bg-muted/30">
+                      <CardContent className="px-3 py-2 flex flex-wrap gap-2">
+                      {manageableClientDisplayItems.length > 0 ? (
+                        manageableClientDisplayItems.map((item, idx) => (
+                          <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground self-center">No manageable clients selected</span>
+                      )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-8 px-2 mt-4">
               <section className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-semibold">Personal Information</h4>
-                  {!isViewMode && <p className="text-sm text-muted-foreground">View the user's basic details.</p>}
+                  <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">Personal Information</h4>
+                  <p className="text-sm text-muted-foreground">View the user's basic details.</p>
                 </div>
                 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>User ID</Label>
-                    <Input value={formData.id} readOnly className="bg-muted" />
+                    <Input value={formData.id} readOnly className="bg-muted h-10 rounded-lg" />
                   </div>
                   <div className="space-y-2">
                     <Label>Email</Label>
-                    <Input value={formData.email} readOnly className="bg-muted" />
+                    <Input value={formData.email} readOnly className="bg-muted h-10 rounded-lg" />
                   </div>
                   <div className="space-y-2">
                     <Label>First Name</Label>
-                    <Input value={formData.givenName} readOnly className="bg-muted" />
+                    <Input value={formData.givenName} readOnly className="bg-muted h-10 rounded-lg" />
                   </div>
                   <div className="space-y-2">
                     <Label>Last Name</Label>
-                    <Input value={formData.surname} readOnly className="bg-muted" />
+                    <Input value={formData.surname} readOnly className="bg-muted h-10 rounded-lg" />
                   </div>
                   <div className="space-y-2">
                     <Label>Middle Name</Label>
-                    <Input value={formData.middleName} readOnly className="bg-muted" />
+                    <Input value={formData.middleName} readOnly className="bg-muted h-10 rounded-lg" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Suffix <span className="text-muted-foreground text-xs font-normal ml-2">Optional</span></Label>
-                    <Input value={formData.suffix} readOnly className="bg-muted" />
+                    <div className="flex items-center justify-between w-full">
+                      <Label>Suffix</Label>
+                      <span className="text-[10px] border px-1.5 py-0.5 rounded-md font-medium border-[#7b0d15]/40 text-[#7b0d15] dark:border-[#f8d24e]/40 dark:text-[#f8d24e]">Optional</span>
+                    </div>
+                    <Input value={formData.suffix} readOnly className="bg-muted h-10 rounded-lg" />
                   </div>
                 </div>
               </section>
-            )}
 
-            <section className="space-y-6">
-              {isAdminView && (
+              <section className="space-y-6 mt-6">
+                {isAdminView && (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">Role</h4>
+                      <p className="text-sm text-muted-foreground">Choose the role for this admin account.</p>
+                    </div>
+                    
+                    {!canEditRoleField ? (
+                      <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
+                        {roleAccessItems.length > 0 ? (
+                          roleAccessItems.map((item, idx) => <Badge key={idx}>{item}</Badge>)
+                        ) : (
+                          <span className="text-sm text-muted-foreground">No role assigned</span>
+                        )}
+                      </div>
+                    ) : (
+                      <RadioGroup 
+                        value={formData.roleId?.toString() || ""} 
+                        onValueChange={(val) => handleAdminRoleChange(val)}
+                        className="gap-4"
+                      >
+                        {adminRoleOptions.map((role) => (
+                          <div key={role.id} className="flex items-center space-x-2">
+                            <RadioGroupItem value={role.id.toString()} id={`role-${role.id}`} />
+                            <Label htmlFor={`role-${role.id}`}>{role.role_name}</Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-semibold">Role</h4>
-                    {!isViewMode && <p className="text-sm text-muted-foreground">Choose the role for this admin account.</p>}
+                    <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">Status <span className="text-destructive">*</span></h4>
+                    <p className="text-sm text-muted-foreground">Choose the user's account status.</p>
                   </div>
                   
-                  {isViewMode || !canEditRoleField ? (
-                    <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
-                      {roleAccessItems.length > 0 ? (
-                        roleAccessItems.map((item, idx) => <Badge key={idx}>{item}</Badge>)
+                  {!canEditStatus ? (
+                    <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2 items-center">
+                      {formData.status?.toLowerCase() === 'active' ? (
+                        <Badge variant="success-outline">Active</Badge>
+                      ) : formData.status?.toLowerCase() === 'suspended' ? (
+                        <Badge variant="destructive-outline">Suspended</Badge>
                       ) : (
-                        <span className="text-sm text-muted-foreground">No role assigned</span>
+                        <Badge variant="outline" className="capitalize">{formData.status}</Badge>
                       )}
                     </div>
                   ) : (
-                    <RadioGroup 
-                      value={formData.roleId?.toString() || ""} 
-                      onValueChange={(val) => handleAdminRoleChange(val)}
-                      className="gap-4"
-                    >
-                      {adminRoleOptions.map((role) => (
-                        <div key={role.id} className="flex items-center space-x-2">
-                          <RadioGroupItem value={role.id.toString()} id={`role-${role.id}`} />
-                          <Label htmlFor={`role-${role.id}`}>{role.role_name}</Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
+                    <Select value={formData.status} onValueChange={handleStatusChange}>
+                      <SelectTrigger className="h-10 rounded-lg">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="suspended">Suspend</SelectItem>
+                      </SelectContent>
+                    </Select>
                   )}
                 </div>
-              )}
 
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-semibold">Accessible App Clients</h4>
-                  {!isViewMode && <p className="text-sm text-muted-foreground">Choose which clients are accessible for sign-in.</p>}
-                </div>
-                
-                {isViewMode || !canEditAccessField ? (
-                  <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
-                    {clientAccessDisplayItems.length > 0 ? (
-                      clientAccessDisplayItems.map((item, idx) => <Badge variant="outline" key={idx}>{item}</Badge>)
-                    ) : (
-                      <span className="text-sm text-muted-foreground">No clients selected</span>
-                    )}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">Accessible App Clients</h4>
+                    <p className="text-sm text-muted-foreground">Choose which clients are accessible for sign-in.</p>
                   </div>
-                ) : (
-                  <MultiSelect
-                    options={appClientSelectOptions}
-                    selectedValues={formData.accessibleClientIds}
-                    onChange={(vals) => setFormData((curr) => ({ ...curr, accessibleClientIds: vals }))}
-                    placeholder="Select accessible app clients"
-                    lockedSelectedValues={formData.accessibleClientIds.filter((clientId) => !editableAppClientIdLookup.has(clientId))}
-                  />
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-semibold">Manageable App Clients</h4>
-                  {!isViewMode && <p className="text-sm text-muted-foreground">Choose which clients this admin can manage.</p>}
+                  
+                  {!canEditAccessField ? (
+                    <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
+                      {clientAccessDisplayItems.length > 0 ? (
+                        clientAccessDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>)
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No clients selected</span>
+                      )}
+                    </div>
+                  ) : (
+                    <MultiSelect
+                      options={appClientSelectOptions}
+                      selectedValues={formData.accessibleClientIds}
+                      onChange={(vals) => setFormData((curr) => ({ ...curr, accessibleClientIds: vals }))}
+                      placeholder="Select accessible app clients"
+                      lockedSelectedValues={formData.accessibleClientIds.filter((clientId) => !editableAppClientIdLookup.has(clientId))}
+                    />
+                  )}
                 </div>
-                
-                {isViewMode || !canEditAccessField ? (
-                  <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
-                    {manageableClientDisplayItems.length > 0 ? (
-                      manageableClientDisplayItems.map((item, idx) => <Badge variant="outline" key={idx}>{item}</Badge>)
-                    ) : (
-                      <span className="text-sm text-muted-foreground">No manageable clients selected</span>
-                    )}
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">Manageable App Clients</h4>
+                    <p className="text-sm text-muted-foreground">Choose which clients this admin can manage.</p>
                   </div>
-                ) : (
-                  <MultiSelect
-                    options={appClientSelectOptions}
-                    selectedValues={formData.manageableClientIds}
-                    onChange={(vals) => setFormData((curr) => ({ ...curr, manageableClientIds: vals }))}
-                    placeholder="Select manageable app clients"
-                    lockedSelectedValues={formData.manageableClientIds.filter((clientId) => !editableAppClientIdLookup.has(clientId))}
-                  />
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-semibold">Status {(!isViewMode) && <span className="text-destructive">*</span>}</h4>
-                  {!isViewMode && <p className="text-sm text-muted-foreground">Choose the user's account status.</p>}
+                  
+                  {!canEditAccessField ? (
+                    <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
+                      {manageableClientDisplayItems.length > 0 ? (
+                        manageableClientDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>)
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No manageable clients selected</span>
+                      )}
+                    </div>
+                  ) : (
+                    <MultiSelect
+                      options={appClientSelectOptions}
+                      selectedValues={formData.manageableClientIds}
+                      onChange={(vals) => setFormData((curr) => ({ ...curr, manageableClientIds: vals }))}
+                      placeholder="Select manageable app clients"
+                      lockedSelectedValues={formData.manageableClientIds.filter((clientId) => !editableAppClientIdLookup.has(clientId))}
+                    />
+                  )}
                 </div>
-                
-                {isViewMode || !canEditStatus ? (
-                  <Input value={formData.status} readOnly className="bg-muted capitalize" />
-                ) : (
-                  <Select value={formData.status} onValueChange={handleStatusChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="suspended">Suspend</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            </section>
-          </form>
+              </section>
+            </form>
+          )}
         </div>
 
         <DialogFooter className="gap-2 sm:justify-between">
