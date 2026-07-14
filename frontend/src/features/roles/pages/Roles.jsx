@@ -5,17 +5,17 @@ import { useRoles } from "../hooks/useRoles";
 import { usePermissions } from "../hooks/usePermissions";
 import RolesListCard from "../components/RolesListCard";
 import RoleModal from "../components/RoleModal";
-import SuccessAlert from "../../../components/SuccessAlert";
+import { toast } from "sonner";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
-import PageHeaderActionButton from "../../../components/PageHeaderActionButton";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
-import { RolesIcon } from "../components/roleIcons";
 import MetricsCard from "../../../components/MetricsCard";
 import { RoleIcon, PermissionIcon } from "../../../components/Icons";
 import { metricsService } from "../../../services/metricsService";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { Shield, Plus } from "lucide-react";
+import { createPortal } from "react-dom";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -26,6 +26,11 @@ export default function Roles() {
   const { hasPermission } = usePermissionAccess();
   const [roleMetrics, setRoleMetrics] = useState(null);
   const [permissionMetrics, setPermissionMetrics] = useState(null);
+  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+
+  useEffect(() => {
+    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+  }, []);
 
   useEffect(() => {
     metricsService.getRoleMetrics().then(setRoleMetrics).catch(() => {});
@@ -40,8 +45,6 @@ export default function Roles() {
     totalPages,
     totalResults,
     loading,
-    successMessage,
-    setSuccessMessage,
     updateRole,
     deleteRole,
   } = useRoles();
@@ -59,9 +62,6 @@ export default function Roles() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const showLoading = useDelayedLoading(loading);
-  const closeSuccessAlert = useCallback(() => {
-    setSuccessMessage("");
-  }, [setSuccessMessage]);
   const visibleRoles = paginatedRoles.map((role) => ({
     ...role,
     canEdit: canEditRole && role.canEdit,
@@ -101,62 +101,78 @@ export default function Roles() {
     setShowDeleteAlert(true);
   };
 
-  const confirmDelete = () => {
-    deleteRole(deleteTarget);
-    setShowDeleteAlert(false);
-    setDeleteTarget(null);
+  const confirmDelete = async () => {
+    try {
+      await deleteRole(deleteTarget);
+      toast.success("Role successfully deleted!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+    } catch (e) {
+      toast.error("Failed to delete role", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+    } finally {
+      setShowDeleteAlert(false);
+      setDeleteTarget(null);
+    }
   };
 
-  const handleSubmit = (data) => {
+  const handleSubmit = async (data) => {
     if (mode === "edit") {
-      updateRole(data);
+      try {
+        await updateRole(data);
+        toast.success("Role successfully updated!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+        setModalOpen(false);
+      } catch (e) {
+        toast.error("Failed to update role", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+      }
+    } else {
+      setModalOpen(false);
     }
-
-    setModalOpen(false);
   };
 
   useEffect(() => {
     const routeState = location.state || {};
 
     if (routeState.successMessage) {
-      setSuccessMessage(routeState.successMessage);
+      toast.success(routeState.successMessage, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [
     location.pathname,
     location.state,
     navigate,
-    setSuccessMessage,
   ]);
 
   return (
     <>
-      <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-5 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-        <Breadcrumbs
-          colorMode={colorMode}
-          items={[
-            {
-              label: "Role",
-            },
-          ]}
-        />
+      <div className="flex flex-col gap-6 w-full">
+        {breadcrumbsContainer && createPortal(
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Role</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>,
+          breadcrumbsContainer
+        )}
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <PageHeader
-              title="Role"
-              description="Manage roles and permissions"
-              icon={<RolesIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-              colorMode={colorMode}
-            />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-primary/10 text-primary rounded-xl">
+              <Shield className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Role</h1>
+              <p className="text-muted-foreground">Manage roles and permissions</p>
+            </div>
           </div>
 
           {canCreateRole && (
-            <div className="w-full sm:w-auto sm:self-center">
-              <PageHeaderActionButton colorMode={colorMode} onClick={openCreate}>
-                + Add Role
-              </PageHeaderActionButton>
-            </div>
+            <Button 
+              className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200"
+              onClick={openCreate}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Role
+            </Button>
           )}
         </div>
 
@@ -214,18 +230,12 @@ export default function Roles() {
       <DeleteConfirmModal
         open={showDeleteAlert}
         message="Delete this role?"
-        theme="glass"
         colorMode={colorMode}
         onCancel={() => {
           setShowDeleteAlert(false);
           setDeleteTarget(null);
         }}
         onConfirm={confirmDelete}
-      />
-
-      <SuccessAlert
-        message={successMessage}
-        onClose={closeSuccessAlert}
       />
     </>
   );
