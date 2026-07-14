@@ -131,7 +131,10 @@ export default function Roles() {
     const routeState = location.state || {};
 
     if (routeState.successMessage) {
-      toast.success(routeState.successMessage, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      toast.success(routeState.successMessage, { 
+        id: "role-route-success",
+        style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } 
+      });
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [
