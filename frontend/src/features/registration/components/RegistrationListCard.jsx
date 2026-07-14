@@ -3,6 +3,8 @@ import RegistrationTable from "./RegistrationTable";
 import ResultsCount from "../../../components/ResultsCount";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { SearchIcon } from "./registrationIcons";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 export default function RegistrationListCard({
   children,
@@ -53,27 +55,21 @@ export default function RegistrationListCard({
   };
 
   return (
-    <div className="relative space-y-5 sm:space-y-6 lg:space-y-8">
-      <div className={filtersClassName}>
-        <div className="min-w-0 w-full">
-          <SpeechInputToolbar
-            activeFieldLabel="Registration Search"
-            onTranscript={handleSearchVoiceInput}
-            colorMode={colorMode}
-          />
-          <label className={labelClassName}>
-            What registration setting are you looking for?
-          </label>
-          <label className={searchFieldClassName}>
-            <SearchIcon className={searchIconClassName} />
-            <input
-              type="search"
-              value={search}
-              placeholder="Search by account type or client..."
-              className={searchInputClassName}
-              onChange={handleSearchChange}
+    <div className="flex flex-col gap-6">
+      <div className="bg-card border rounded-xl p-4 sm:p-5 shadow-sm w-full">
+        <div className="flex flex-col lg:flex-row lg:items-end gap-4 lg:gap-6 w-full">
+          <div className="flex-1 w-full flex flex-col gap-2 relative">
+            <SpeechInputToolbar
+              activeFieldLabel="Registration Search"
+              onTranscript={handleSearchVoiceInput}
+              colorMode={colorMode}
             />
-          </label>
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">What registration setting are you looking for?</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input type="search" value={search} placeholder="Search by account type or client..." className="pl-9 h-10" onChange={handleSearchChange}/>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -92,27 +88,25 @@ export default function RegistrationListCard({
       )}
 
       {showFooter && !loading && (
-        <div className={footerClassName}>
-          <div className="flex w-full justify-center lg:justify-start">
+        <div className="flex flex-col sm:grid sm:grid-cols-3 items-center gap-4">
+          <div className="flex justify-start w-full order-2 sm:order-1">
             <ResultsCount
               page={page}
               itemsPerPage={itemsPerPage}
               totalResults={totalResults}
               currentResultsCount={rows.length}
-              variant="glass"
               colorMode={colorMode}
             />
           </div>
-          <div className="flex w-full justify-center">
+          <div className="flex justify-center w-full order-1 sm:order-2">
             <Pagination
               currentPage={page}
               totalPages={totalPages}
               onPageChange={onPageChange}
-              variant="glass"
               colorMode={colorMode}
             />
           </div>
-          <div className="hidden lg:block"></div>
+          <div className="hidden sm:block order-3"></div>
         </div>
       )}
     </div>
