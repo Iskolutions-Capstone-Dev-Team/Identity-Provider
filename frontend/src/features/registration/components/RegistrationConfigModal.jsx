@@ -1,11 +1,65 @@
-import { createPortal } from "react-dom";
-import { useEffect, useMemo, useState } from "react";
-import ErrorAlert from "../../../components/ErrorAlert";
+import { useEffect, useMemo, useState, Fragment } from "react";
 import MultiSelect from "../../../components/MultiSelect";
-import { getModalTheme } from "../../../components/modalTheme";
-import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
 import { ACCOUNT_TYPE_OPTIONS, getAccountTypeOption } from "../../../utils/accountTypes";
-import { RegistrationIcon, CloseIcon } from "./registrationIcons";
+import { RegistrationIcon } from "./registrationIcons";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Badge } from "@/components/ui/badge";
+import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
+
+function AppClientComboboxField({ options, selectedIds, onChange, placeholder, isDarkMode, lockedSelectedValues = [] }) {
+  const anchor = useComboboxAnchor();
+  const stringifiedSelectedIds = selectedIds.map(id => String(id));
+  
+  const chipClassName = isDarkMode
+    ? "rounded-md border border-[#f8d24e]/25 bg-[#f8d24e]/12 text-[#ffe28a]"
+    : "rounded-md border border-[#7b0d15]/20 bg-[#7b0d15]/10 text-[#7b0d15]";
+  
+  const comboboxContainerClassName = `min-h-[2.625rem] rounded-md transition-[border-color,box-shadow,background-color] duration-200`;
+  
+  const inputPlaceholderClassName = isDarkMode
+    ? "placeholder:text-[#a58d95] text-[#f4eaea] bg-transparent outline-none flex-1 ml-1"
+    : "placeholder:text-[#9b7d84] text-[#4a1921] bg-transparent outline-none flex-1 ml-1";
+  
+  return (
+    <Combobox multiple autoHighlight items={options} itemToString={(item) => (item ? item.label : "")} value={stringifiedSelectedIds} onValueChange={onChange}>
+      <ComboboxChips ref={anchor} className={comboboxContainerClassName}>
+        <ComboboxValue>
+          {(values) => (
+            <Fragment>
+              {values.map((val) => {
+                const opt = options.find(o => String(o.value ?? o.id) === String(val));
+                const isLocked = lockedSelectedValues.includes(val) || lockedSelectedValues.includes(Number(val));
+                return (
+                  <ComboboxChip key={val} className={chipClassName} showRemove={!isLocked}>
+                    {opt ? opt.label : val}
+                  </ComboboxChip>
+                );
+              })}
+              <ComboboxChipsInput placeholder={placeholder} className={inputPlaceholderClassName} />
+            </Fragment>
+          )}
+        </ComboboxValue>
+      </ComboboxChips>
+      <ComboboxContent anchor={anchor}>
+        <ComboboxEmpty>No client found.</ComboboxEmpty>
+        <ComboboxList>
+          {(item) => {
+            const optValue = String(item.value ?? item.id);
+            return (
+              <ComboboxItem key={optValue} value={optValue}>
+                {item.label}
+              </ComboboxItem>
+            );
+          }}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  );
+}
 
 function getClientNames(clientIds = [], appClientOptions = []) {
   const clientLabelLookup = new Map(
@@ -23,116 +77,42 @@ function getClientNames(clientIds = [], appClientOptions = []) {
 export default function RegistrationConfigModal({ open, mode = "view", config = null, appClientOptions = [], isLoadingAppClients = false, appClientsError = "", onClose, onSave, colorMode = "light" }) {
   const [accountTypeName, setAccountTypeName] = useState("");
   const [selectedClientIds, setSelectedClientIds] = useState([]);
-  const [error, setError] = useState("");
   const [accountTypeNameError, setAccountTypeNameError] = useState("");
-  const [cachedConfig, setCachedConfig] = useState(config);
-  const [cachedMode, setCachedMode] = useState(mode);
-  const isModalOpen = open && (Boolean(config) || mode === "create");
-  const { shouldRender, isClosing } = useModalTransition(isModalOpen);
-  const currentConfig = open ? config : cachedConfig;
-  const currentMode = open ? mode : cachedMode;
-  const isCreateMode = currentMode === "create";
-  const isViewMode = currentMode === "view";
-  const isDarkMode = colorMode === "dark";
+
+  const isCreateMode = mode === "create";
+  const isViewMode = mode === "view";
+  
   const isLockedDefaultAccountType =
     !isCreateMode &&
     Boolean(
       getAccountTypeOption(
-        currentConfig?.accountTypeValue ??
-          currentConfig?.accountType ??
-          currentConfig?.label,
+        config?.accountTypeValue ?? config?.accountType ?? config?.label,
         ACCOUNT_TYPE_OPTIONS,
       ),
     );
-  const {
-    modalBodyClassName,
-    modalBodyStackClassName,
-    modalBoxClassName,
-    modalCloseButtonClassName,
-    modalFooterActionsClassName,
-    modalFooterClassName,
-    modalHeaderClassName,
-    modalHeaderTitleClassName,
-    modalHelperTextClassName,
-    modalInputClassName,
-    modalLabelClassName,
-    modalOverlayClassName,
-    modalPrimaryButtonClassName,
-    modalReadOnlyInputClassName,
-    modalSecondaryButtonClassName,
-    modalSectionClassName,
-  } = getModalTheme(colorMode);
-  const readOnlyListClassName = isDarkMode
-    ? "min-h-24 w-full rounded-[1rem] border border-white/10 bg-[rgba(10,15,24,0.76)] px-4 py-4 text-sm text-[#d6c3c7] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-    : "min-h-24 w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-4 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
-  const clientBadgeClassName = isDarkMode
-    ? "inline-flex items-center rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
-    : "inline-flex items-center rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
-  const emptyListClassName = isDarkMode
-    ? "italic text-[#a58d95]"
-    : "italic text-[#8f6f76]";
-  const helperErrorClassName = isDarkMode
-    ? "mt-3 text-xs text-[#ffd8dd]"
-    : "mt-3 text-xs text-[#991b1b]";
-  const disabledAccountTypeInputClassName =
-    `${modalReadOnlyInputClassName} disabled:cursor-not-allowed disabled:opacity-100`;
-  const accountTypeInputClassName = `${modalInputClassName} ${
-    accountTypeNameError ? "border-red-400 focus:border-red-500" : ""
-  }`;
-  const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
-  const modalHeaderContentClassName =
-    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
-  const headerIconClassName =
-    colorMode === "dark" ? "h-10 w-10 text-[#ffe28a]" : "h-10 w-10 text-[#fff0a8]";
-  const sectionHeaderClassName = isDarkMode
-    ? "mb-5 border-b border-white/10 pb-4"
-    : "mb-5 border-b border-[#7b0d15]/10 pb-4";
-  const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
 
   useEffect(() => {
-    if (!isModalOpen) {
-      return;
-    }
+    if (!open) return;
 
-    setCachedConfig(config);
-    setCachedMode(mode);
-  }, [config, isModalOpen, mode]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    setAccountTypeName(currentConfig?.label ?? "");
-    setSelectedClientIds(
-      Array.isArray(currentConfig?.clientIds) ? currentConfig.clientIds : [],
-    );
-    setError("");
+    setAccountTypeName(config?.label ?? "");
+    setSelectedClientIds(Array.isArray(config?.clientIds) ? config.clientIds : []);
     setAccountTypeNameError("");
-  }, [currentConfig, open]);
+  }, [config, open]);
 
   const displayedClientNames = useMemo(
     () => {
       if (isViewMode) {
-        return Array.isArray(currentConfig?.clientNames) &&
-          currentConfig.clientNames.length > 0
-          ? currentConfig.clientNames
-          : getClientNames(currentConfig?.clientIds, appClientOptions);
+        return Array.isArray(config?.clientNames) && config.clientNames.length > 0
+          ? config.clientNames
+          : getClientNames(config?.clientIds, appClientOptions);
       }
-
       return getClientNames(selectedClientIds, appClientOptions);
     },
-    [
-      appClientOptions,
-      currentConfig,
-      isViewMode,
-      selectedClientIds,
-    ],
+    [appClientOptions, config, isViewMode, selectedClientIds],
   );
 
   const handleSubmit = async (event) => {
-    event.preventDefault();
+    if (event) event.preventDefault();
 
     if (isViewMode) {
       onClose();
@@ -141,187 +121,153 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
 
     const normalizedAccountTypeName = accountTypeName.trim();
     const nextAccountTypeName = isLockedDefaultAccountType
-      ? normalizedAccountTypeName || currentConfig?.label?.trim() || ""
+      ? normalizedAccountTypeName || config?.label?.trim() || ""
       : normalizedAccountTypeName;
 
     if (!nextAccountTypeName) {
       setAccountTypeNameError("Account type name is required.");
-      setError("Account type name is required.");
       return;
     }
 
     try {
-      setError("");
       setAccountTypeNameError("");
       await onSave({
-        ...currentConfig,
+        ...config,
         name: nextAccountTypeName,
         label: nextAccountTypeName,
         clientIds: selectedClientIds,
       });
       onClose();
     } catch (saveError) {
-      setError(
-        saveError?.message || "Unable to save registration settings.",
-      );
+      // Could show toast here
     }
   };
-
-  if (!shouldRender || (!currentConfig && !isCreateMode)) {
-    return null;
-  }
 
   const modalTitle = isCreateMode
     ? "Create Registration"
     : isViewMode
       ? "View Registration"
       : "Edit Registration";
-  const accountTypeDescription = isViewMode
-    ? "View the configured account type."
-    : isLockedDefaultAccountType
-      ? "Default account type names cannot be changed."
-      : isCreateMode
-        ? "Enter the account type name."
-        : "Update the account type name.";
-  const clientListDescription = isViewMode
-    ? "View the app clients pre-approved for this account type."
-    : "Select the app clients to pre-approve for this account type.";
-  const renderSectionHeader = (title, description, isRequired = false) => (
-    <div className={sectionHeaderClassName}>
-      <label className={modalLabelClassName}>
-        {title} {isRequired && <span className="text-red-500">*</span>}
-      </label>
-      <p className={sectionDescriptionClassName}>
-        {description}
-      </p>
-    </div>
-  );
 
-  return createPortal(
-    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
-      <div className={modalBoxClassName}>
-        <div className={modalHeaderSpacingClassName}>
-          <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
-            <div className={modalHeaderContentClassName}>
-              <RegistrationIcon className={headerIconClassName} />
-              <h3 className={modalHeaderTitleClassName}>{modalTitle}</h3>
-            </div>
+  return (
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="sm:max-w-3xl" closeButtonClassName={!isCreateMode ? "text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground" : undefined}>
+        <DialogHeader className={!isCreateMode ? "-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[#7b0d15] text-white dark:bg-transparent dark:text-foreground" : undefined}>
+          <DialogTitle>{modalTitle}</DialogTitle>
+          {isCreateMode && (
+            <DialogDescription>
+              Configure the account type and pre-approved app clients.
+            </DialogDescription>
+          )}
+        </DialogHeader>
 
-            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
-              <CloseIcon />
-            </button>
-          </div>
-        </div>
-
-        <form className={modalBodyClassName} onSubmit={handleSubmit}>
-          <div className={modalBodyStackClassName}>
-            <ErrorAlert message={error} onClose={() => setError("")} />
-
-            <section className={modalSectionClassName}>
-              <div className="space-y-5">
-                <div>
-                  {renderSectionHeader(
-                    "Account Type",
-                    accountTypeDescription,
-                    !isViewMode && !isLockedDefaultAccountType,
-                  )}
-                  {isViewMode || isLockedDefaultAccountType ? (
-                    <input
-                      type="text"
-                      value={accountTypeName || currentConfig?.label || ""}
-                      readOnly
-                      disabled
-                      aria-disabled="true"
-                      className={disabledAccountTypeInputClassName}
-                    />
-                  ) : (
-                    <>
-                      <input
-                        type="text"
-                        value={accountTypeName}
-                        onChange={(event) => {
-                          setAccountTypeName(event.target.value);
-                          setAccountTypeNameError("");
-                          setError("");
-                        }}
-                        placeholder="Enter account type"
-                        className={accountTypeInputClassName}
-                      />
-                      {accountTypeNameError && (
-                        <p className="mt-2 text-xs text-red-500">
-                          {accountTypeNameError}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                <div>
-                  {renderSectionHeader(
-                    "Client List",
-                    clientListDescription,
-                  )}
-
-                  {isViewMode ? (
-                    <div className={readOnlyListClassName}>
-                      {displayedClientNames.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {displayedClientNames.map((clientName) => (
-                            <span
-                              key={`${currentConfig?.accountType || accountTypeName}-${clientName}`}
-                              className={clientBadgeClassName}
-                            >
-                              {clientName}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className={emptyListClassName}>
-                          No pre-approved clients
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      <MultiSelect
-                        options={appClientOptions}
-                        selectedValues={selectedClientIds}
-                        onChange={setSelectedClientIds}
-                        placeholder="Select app clients"
-                        variant="userpoolModal"
-                        colorMode={colorMode}
-                      />
-                      {isLoadingAppClients && (
-                        <p className={modalHelperTextClassName}>
-                          Loading app clients...
-                        </p>
-                      )}
-                      {appClientsError && !isLoadingAppClients && (
-                        <p className={helperErrorClassName}>{appClientsError}</p>
-                      )}
-                    </>
-                  )}
-                </div>
+        <form id="registration-modal-form" onSubmit={handleSubmit} className="space-y-6 -mx-4 no-scrollbar max-h-[60vh] px-4 overflow-y-auto pb-2">
+          {isViewMode ? (
+            <div className="space-y-6 pt-4 pb-4 px-2">
+              <Card className="bg-muted/30 border-border/40 shadow-sm">
+                <CardContent className="px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      {accountTypeName || config?.label || ""}
+                    </h2>
+                  </div>
+                </CardContent>
+              </Card>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">
+                  Accessible Clients
+                </h4>
+                <Card className="bg-muted/30 border-border/40 shadow-sm">
+                  <CardContent className="px-5 py-4">
+                    {displayedClientNames.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {displayedClientNames.map((clientName) => (
+                          <Badge key={clientName} variant="secondary" className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
+                            {clientName}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">No pre-approved clients</span>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
-            </section>
-          </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <Field className="w-full">
+                <FieldLabel htmlFor="account-type-name">
+                  Account Type {!isLockedDefaultAccountType && <span className="text-destructive">*</span>}
+                </FieldLabel>
+                {isLockedDefaultAccountType ? (
+                  <Input
+                    id="account-type-name"
+                    value={accountTypeName || config?.label || ""}
+                    readOnly
+                    disabled
+                    className="h-10 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed border-input opacity-70 hover:opacity-70"
+                  />
+                ) : (
+                  <div>
+                    <Input
+                      id="account-type-name"
+                      value={accountTypeName}
+                      onChange={(e) => {
+                        setAccountTypeName(e.target.value);
+                        setAccountTypeNameError("");
+                      }}
+                      placeholder="Enter account type"
+                      className={`h-10 rounded-lg ${accountTypeNameError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    />
+                    {accountTypeNameError && (
+                      <p className="mt-1 text-xs text-destructive">{accountTypeNameError}</p>
+                    )}
+                  </div>
+                )}
+              </Field>
+
+              <Field className="w-full">
+                <FieldLabel>
+                  Accessible Clients
+                </FieldLabel>
+                <div>
+                  <AppClientComboboxField
+                    options={appClientOptions}
+                    selectedIds={selectedClientIds}
+                    onChange={setSelectedClientIds}
+                    placeholder="Select app clients"
+                    isDarkMode={colorMode === "dark"}
+                  />
+                  {isLoadingAppClients && (
+                    <p className="mt-2 text-xs text-muted-foreground">Loading app clients...</p>
+                  )}
+                  {appClientsError && !isLoadingAppClients && (
+                    <p className="mt-2 text-xs text-destructive">{appClientsError}</p>
+                  )}
+                </div>
+              </Field>
+            </div>
+          )}
         </form>
 
-        <div className={modalFooterClassName}>
-          <div className={modalFooterActionsClassName}>
-            <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>
               {isViewMode ? "Close" : "Cancel"}
-            </button>
-
+            </Button>
             {!isViewMode && (
-              <button type="button" className={modalPrimaryButtonClassName} onClick={handleSubmit}>
+              <Button 
+                type="submit" 
+                form="registration-modal-form" 
+                className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200"
+              >
                 {isCreateMode ? "Create" : "Save"}
-              </button>
+              </Button>
             )}
           </div>
-        </div>
-      </div>
-    </dialog>,
-    document.body,
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
