@@ -1,9 +1,62 @@
 import { Fragment, useMemo, useState } from "react";
-import FadeWrapper from "../../../components/FadeWrapper";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import { getModalTheme } from "../../../components/modalTheme";
 import { RoleShieldIcon, RoleDetailsIcon } from "./roleIcons";
+import { User, Settings, Monitor, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
+import { Frame, FrameHeader, FramePanel, FrameTitle } from "@/components/reui/frame";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Stepper, StepperContent, StepperIndicator, StepperItem, StepperNav, StepperPanel, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";
+
+const PERMISSION_GROUPS = [
+  {
+    value: "userpool",
+    trigger: "Userpool",
+    icon: <User className="text-muted-foreground size-4" />,
+    permissions: [
+      "Activate user", "Add user", "Assign appclient to user", "Assign Roles", 
+      "Delete User", "Edit User", "View All Users", "View Users based on Appclient", 
+      "Remove appclient from user", "Remove Roles", "Suspend user"
+    ]
+  },
+  {
+    value: "role",
+    trigger: "Role",
+    icon: <RoleShieldIcon className="text-muted-foreground size-4" />,
+    permissions: [
+      "Add roles", "Delete Roles", "Edit Roles", "View roles"
+    ]
+  },
+  {
+    value: "appclient",
+    trigger: "AppClient",
+    icon: <Monitor className="text-muted-foreground size-4" />,
+    permissions: [
+      "Add appclient", "Delete appclient", "Edit appclient", "View all appclients", "View Connected Appclients"
+    ]
+  },
+  {
+    value: "auditlogs",
+    trigger: "Audit Logs",
+    icon: <FileText className="text-muted-foreground size-4" />,
+    permissions: [
+      "View Audit Logs", "View Security Logs"
+    ]
+  },
+  {
+    value: "registrationconfig",
+    trigger: "Registration Config",
+    icon: <Settings className="text-muted-foreground size-4" />,
+    permissions: [
+      "Create Registration Config", "Edit Registration Config", "View Registration Config", "Delete Registration Config"
+    ]
+  }
+];
 
 const toPositiveInt = (value) => {
   const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
@@ -17,17 +70,14 @@ const normalizePermissionLabel = (permission) => {
   if (typeof permission === "string") {
     return permission.trim();
   }
-
   if (!permission || typeof permission !== "object") {
     return "";
   }
-
   const label =
     permission.permission ??
     permission.permission_name ??
     permission.name ??
     permission.PermissionName;
-
   return typeof label === "string" ? label.trim() : "";
 };
 
@@ -40,130 +90,30 @@ const normalizePermissionId = (permission) => {
       permission.ID,
     );
   }
-
   return toPositiveInt(permission);
 };
 
 const normalizePermissionOption = (permission = {}) => {
   const id = normalizePermissionId(permission);
   const label = normalizePermissionLabel(permission);
-
   if (id === null || !label) {
     return null;
   }
-
-  return {
-    id,
-    permission: label,
-  };
+  return { id, permission: label };
 };
 
-function getPermissionCardClassName({ isSelected, isViewMode, isDarkMode }) {
-  return `flex items-center gap-3 rounded-[1rem] border px-4 py-3 text-sm font-medium transition duration-300 ${
-    isSelected
-      ? isDarkMode
-        ? "border-[#f8d24e]/35 bg-[#f8d24e]/12 text-[#ffe28a]"
-        : "border-[#f8d24e]/70 bg-[#fff4dc] text-[#7b0d15]"
-      : isDarkMode
-        ? "border-white/10 bg-white/[0.04] text-[#d6c3c7]"
-        : "border-[#7b0d15]/10 bg-white/78 text-[#5d3a41]"
-  } ${
-    isViewMode
-      ? "cursor-default"
-      : isDarkMode
-        ? "hover:border-[#f8d24e]/35 hover:bg-[#f8d24e]/10"
-        : "hover:border-[#f8d24e]/45 hover:bg-[#fffaf2]"
-  }`;
-}
-
-function RoleStepIndicator({ currentStep, colorMode = "light" }) {
-  const isDarkMode = colorMode === "dark";
-  const activeStepClassName = isDarkMode
-    ? "border-[#f8d24e]/20 bg-[#f8d24e]/10 text-[#ffe28a]"
-    : "border-[#7b0d15]/10 bg-[#f8eef0] text-[#7b0d15]";
-  const inactiveStepClassName = isDarkMode
-    ? "border-white/10 bg-white/[0.04] text-[#cbb8bd]"
-    : "border-[#7b0d15]/10 bg-white/75 text-[#8f6f76]";
-  const activeLabelClassName = isDarkMode ? "text-[#ffe28a]" : "text-[#7b0d15]";
-  const inactiveLabelClassName = isDarkMode ? "text-[#cbb8bd]" : "text-[#8f6f76]";
-  const lineClassName =
-    currentStep >= 2
-      ? isDarkMode
-        ? "border-[#f8d24e]/45"
-        : "border-[#7b0d15]/25"
-      : isDarkMode
-        ? "border-white/15"
-        : "border-[#7b0d15]/15";
-  const steps = [
-    {
-      label: "Role Details",
-      shortLabel: "Details",
-      icon: <RoleDetailsIcon className="h-4 w-4" />,
-    },
-    {
-      label: "Permissions",
-      shortLabel: "Permissions",
-      icon: <RoleShieldIcon className="h-4 w-4" />,
-    },
-  ];
-
-  const getStepIconClassName = (isActive) =>
-    `inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] border transition-colors duration-300 ${
-      isActive ? activeStepClassName : inactiveStepClassName
-    }`;
-  const getStepLabelClassName = (isActive) =>
-    `text-center text-xs font-semibold leading-tight transition-colors duration-300 sm:text-sm ${
-      isActive ? activeLabelClassName : inactiveLabelClassName
-    }`;
-
-  return (
-    <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(5.75rem,auto)_1fr_minmax(5.75rem,auto)] items-start gap-2 px-3 py-4 sm:gap-3 sm:px-4">
-      {steps.map((stepItem, index) => {
-        const isActive = currentStep >= index + 1;
-
-        return (
-          <Fragment key={stepItem.label}>
-            <div className="flex min-w-0 flex-col items-center gap-2">
-              <span className={getStepIconClassName(isActive)}>
-                {stepItem.icon}
-              </span>
-              <span className={getStepLabelClassName(isActive)}>
-                <span className="sm:hidden">{stepItem.shortLabel}</span>
-                <span className="hidden sm:inline">{stepItem.label}</span>
-              </span>
-            </div>
-
-            {index === 0 && (
-              <span className={`mt-5 h-px flex-1 border-t-2 border-dotted ${lineClassName}`} aria-hidden="true" />
-            )}
-          </Fragment>
-        );
-      })}
-    </div>
-  );
-}
+const steps = [
+  { title: "Role Details" },
+  { title: "Permissions" },
+];
 
 export default function RoleCreateForm({ permissionOptions = [], isPermissionOptionsLoading = false, onClose, onSubmit, colorMode = "light" }) {
-  const isViewMode = false;
-  const isDarkMode = colorMode === "dark";
-  const isRoleNameEditable = true;
   const shouldUseSteps = true;
-  const {
-    modalBodyStackClassName,
-    modalHelperTextClassName,
-    modalLabelClassName,
-    modalPrimaryButtonClassName,
-    modalReadOnlyInputClassName,
-    modalSecondaryButtonClassName,
-    modalSectionClassName,
-    modalStepsWrapClassName,
-  } = getModalTheme(colorMode);
 
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedPermissionIds, setSelectedPermissionIds] = useState([]);
   const [step, setStep] = useState(1);
-  const [stepDirection, setStepDirection] = useState(1);
   const [activeVoiceField, setActiveVoiceField] = useState("name");
   const [error, setError] = useState("");
   const [touched, setTouched] = useState({
@@ -178,49 +128,18 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
         .filter(Boolean),
     [permissionOptions],
   );
+  
   const mergedPermissionOptions = useMemo(() => {
     return normalizedPermissionOptions;
   }, [normalizedPermissionOptions]);
 
-  const editableFieldBaseClassName = isDarkMode
-    ? "w-full rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,25,0.72),rgba(22,28,40,0.88))] px-4 text-sm text-[#f4eaea] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out placeholder:text-[#9f8790] focus:border-[#f8d24e]/55"
-    : "w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out placeholder:text-[#9b7d84] focus:border-[#d4a017]";
-  const editableInputBaseClassName = `${editableFieldBaseClassName} h-14`;
-  const editableTextAreaBaseClassName =
-    `${editableFieldBaseClassName} min-h-28 resize-none py-3`;
-  const emptyContentClassName = isDarkMode
-    ? "italic text-[#a58d95]"
-    : "italic text-[#8f6f76]";
-  const permissionCheckboxClassName = isDarkMode
-    ? "checkbox h-5 w-5 rounded border-white/20 bg-transparent checked:border-[#f8d24e] checked:bg-[#7b0d15] checked:text-white"
-    : "checkbox h-5 w-5 rounded border-[#7b0d15]/20 bg-transparent checked:border-[#7b0d15] checked:bg-[#7b0d15] checked:text-white";
-  const pageFormClassName = "space-y-5";
-  const pageFooterActionsClassName =
-    "flex flex-col-reverse gap-3 md:mb-12 lg:flex-row lg:justify-end xl:mb-16 [&>button]:w-full lg:[&>button]:w-auto";
-  const sectionHeaderClassName = isDarkMode
-    ? "mb-5 border-b border-white/10 pb-4"
-    : "mb-5 border-b border-[#7b0d15]/10 pb-4";
-  const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
-  const fieldLabelRowClassName = "mb-2 flex flex-wrap items-center gap-2";
-  const fieldLabelClassName = `${modalLabelClassName} !mb-0`;
-
   const fieldErrors = useMemo(
     () => ({
-      name: isRoleNameEditable && !roleName.trim() ? "Role name is required." : "",
+      name: !roleName.trim() ? "Role name is required." : "",
       description: !description.trim() ? "Description is required." : "",
     }),
-    [description, isRoleNameEditable, roleName],
+    [description, roleName],
   );
-
-  const getEditableInputClassName = (hasError) =>
-    `${editableInputBaseClassName} ${
-      hasError ? "border-red-400 focus:border-red-500" : ""
-    }`;
-
-  const getEditableTextAreaClassName = (hasError) =>
-    `${editableTextAreaBaseClassName} ${
-      hasError ? "border-red-400 focus:border-red-500" : ""
-    }`;
 
   const clearAlertError = () => {
     if (error) {
@@ -234,18 +153,15 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
 
   const validateForm = () => {
     const firstError = fieldErrors.name || fieldErrors.description;
-
     if (!firstError) {
       setError("");
       return true;
     }
-
     setError(firstError);
     return false;
   };
 
-  const activeVoiceFieldLabel =
-    activeVoiceField === "description" ? "Role Description" : "Role Name";
+  const activeVoiceFieldLabel = activeVoiceField === "description" ? "Role Description" : "Role Name";
 
   const handleRoleNameChange = (value) => {
     setRoleName(normalizeTextValue(value));
@@ -266,15 +182,10 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
       );
       return;
     }
-
     handleRoleNameChange(transcript);
   };
 
   const togglePermission = (permissionId) => {
-    if (isViewMode) {
-      return;
-    }
-
     setSelectedPermissionIds((currentIds) =>
       currentIds.includes(permissionId)
         ? currentIds.filter((currentId) => currentId !== permissionId)
@@ -284,17 +195,9 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
   };
 
   const goToPermissionsStep = () => {
-    setTouched({
-      name: true,
-      description: true,
-    });
-
-    if (!validateForm()) {
-      return;
-    }
-
+    setTouched({ name: true, description: true });
+    if (!validateForm()) return;
     setError("");
-    setStepDirection(1);
     setStep(2);
   };
 
@@ -306,7 +209,6 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
 
   const goToDetailsStep = () => {
     setError("");
-    setStepDirection(-1);
     setStep(1);
   };
 
@@ -318,11 +220,7 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
       return;
     }
 
-    setTouched({
-      name: true,
-      description: true,
-    });
-
+    setTouched({ name: true, description: true });
     if (!validateForm()) {
       setStep(1);
       return;
@@ -335,32 +233,35 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
     });
   };
 
-  const roleDetailsDescription = "Enter the role name and description.";
-  const permissionsDescription = "Select the permissions assigned to this role.";
   const showRoleDetails = !shouldUseSteps || step === 1;
   const showPermissions = !shouldUseSteps || step === 2;
-  const renderSectionHeader = (title, description) => (
-    <div className={sectionHeaderClassName}>
-      <label className={modalLabelClassName}>
-        {title}
-      </label>
-      <p className={sectionDescriptionClassName}>
-        {description}
-      </p>
-    </div>
-  );
 
   const formContent = (
-    <div className={modalBodyStackClassName}>
+    <div className="space-y-6">
       {shouldUseSteps && (
-        <div className={modalStepsWrapClassName}>
-          <RoleStepIndicator currentStep={step} colorMode={colorMode} />
-        </div>
+        <Card className="w-full bg-card border-border shadow-sm p-6 mb-6">
+          <Stepper
+            value={step}
+            onValueChange={setStep}
+            orientation="horizontal"
+            className="w-full max-w-3xl mx-auto"
+          >
+            <StepperNav>
+              {steps.map((s, index) => (
+                <StepperItem key={index} step={index + 1} className="flex flex-col items-center flex-1 relative">
+                  <StepperTrigger className="relative z-10 flex flex-col gap-2.5 items-center w-full" onClick={() => { if(index + 1 < step) setStep(index + 1) }}>
+                    <StepperIndicator className="size-8 text-sm data-[state=inactive]:bg-secondary data-[state=completed]:bg-[#7b0d15] data-[state=completed]:text-white data-[state=active]:bg-[#7b0d15] data-[state=active]:border-[#7b0d15] data-[state=active]:text-white">{index + 1}</StepperIndicator>
+                    <StepperTitle className="text-sm font-semibold whitespace-nowrap">{s.title}</StepperTitle>
+                  </StepperTrigger>
+                  {index < steps.length - 1 && <StepperSeparator className="absolute top-4 left-[50%] w-full z-0 h-1 data-[state=completed]:bg-[#7b0d15]" />}
+                </StepperItem>
+              ))}
+            </StepperNav>
+          </Stepper>
+        </Card>
       )}
 
-      <ErrorAlert message={error} onClose={() => setError("")} />
-
-      {!isViewMode && (!shouldUseSteps || step === 1) && (
+      {(!shouldUseSteps || step === 1) && (
         <SpeechInputToolbar
           activeFieldLabel={activeVoiceFieldLabel}
           onError={setError}
@@ -369,151 +270,134 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
         />
       )}
 
-      <FadeWrapper
-        isVisible={showRoleDetails}
-        keyId="role-details-section"
-        direction={stepDirection}
-      >
-        <div className="space-y-5">
-          <section className={modalSectionClassName}>
-            {renderSectionHeader("Role Details", roleDetailsDescription)}
-            <div className="space-y-5">
+      {showRoleDetails && (
+        <div className="animate-in fade-in zoom-in-95 duration-200">
+          <Card className="w-full bg-card border-border shadow-sm !gap-6">
+            <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
+              <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
+                ROLE DETAILS
+              </CardTitle>
+              <CardDescription className="text-sm text-muted-foreground m-0">
+                Enter the role's basic details.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
               <div>
-                <div className={fieldLabelRowClassName}>
-                  <label className={fieldLabelClassName}>
-                    Role Name{" "}
-                    {isRoleNameEditable && (
-                      <span className="text-red-500">*</span>
-                    )}
-                  </label>
-                </div>
-
-                <input
-                  type="text"
-                  required
-                  value={roleName}
-                  onChange={(event) =>
-                    handleRoleNameChange(event.target.value)
-                  }
-                  onBlur={() => setFieldTouched("name")}
-                  onFocus={() => setActiveVoiceField("name")}
-                  placeholder="(e.g., admin)"
-                  autoCapitalize="none"
-                  className={getEditableInputClassName(
-                    touched.name && Boolean(fieldErrors.name),
+                <Field className="w-full">
+                  <FieldLabel htmlFor="role-name">
+                    Name <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input id="role-name" type="text" required value={roleName} onChange={(event) => handleRoleNameChange(event.target.value)} onBlur={() => setFieldTouched("name")} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., admin)" autoCapitalize="none" className="h-10 rounded-lg"/>
+                  {touched.name && fieldErrors.name && (
+                    <p className="mt-1 text-xs text-destructive">{fieldErrors.name}</p>
                   )}
-                />
-
-                {isRoleNameEditable && touched.name && fieldErrors.name && (
-                  <p className="mt-2 text-xs text-red-500">{fieldErrors.name}</p>
-                )}
+                </Field>
               </div>
 
               <div>
-                <div className={fieldLabelRowClassName}>
-                  <label className={fieldLabelClassName}>
-                    Role Description{" "}
-                    {!isViewMode && (
-                      <span className="text-red-500">*</span>
-                    )}
-                  </label>
-                </div>
-
-                <textarea
-                  required
-                  value={description}
-                  onChange={(event) =>
-                    handleDescriptionChange(event.target.value)
-                  }
-                  onBlur={() => setFieldTouched("description")}
-                  onFocus={() => setActiveVoiceField("description")}
-                  rows="4"
-                  placeholder="Role description"
-                  className={getEditableTextAreaClassName(
-                    touched.description && Boolean(fieldErrors.description),
+                <Field className="w-full">
+                  <FieldLabel htmlFor="role-description">
+                    Description <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Textarea id="role-description" required value={description} onChange={(event) => handleDescriptionChange(event.target.value)} onBlur={() => setFieldTouched("description")} onFocus={() => setActiveVoiceField("description")} rows={4} placeholder="Type role description here…" className="rounded-lg"/>
+                  {touched.description && fieldErrors.description && (
+                    <p className="mt-1 text-xs text-destructive">{fieldErrors.description}</p>
                   )}
-                />
-                {touched.description && fieldErrors.description && (
-                  <p className="mt-2 text-xs text-red-500">
-                    {fieldErrors.description}
-                  </p>
-                )}
+                </Field>
               </div>
-            </div>
-          </section>
+            </CardContent>
+          </Card>
         </div>
-      </FadeWrapper>
+      )}
 
-      <FadeWrapper
-        isVisible={showPermissions}
-        keyId="role-permissions-section"
-        direction={stepDirection}
-      >
-        <section className={modalSectionClassName}>
-          <div className="space-y-5">
-            <div>
-              {renderSectionHeader("Permissions", permissionsDescription)}
-
+      {showPermissions && (
+        <div className="animate-in fade-in zoom-in-95 duration-200">
+          <Card className="w-full bg-card border-border shadow-sm !gap-6">
+            <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
+              <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
+                PERMISSIONS
+              </CardTitle>
+              <CardDescription className="text-sm text-muted-foreground m-0">
+                Assign permissions for this role.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
               {isPermissionOptionsLoading && mergedPermissionOptions.length === 0 ? (
-                <p className={modalHelperTextClassName}>Loading permissions...</p>
+                <div className="p-4 text-sm text-muted-foreground">Loading permissions...</div>
               ) : mergedPermissionOptions.length > 0 ? (
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {mergedPermissionOptions.map((permission) => {
-                    const isSelected = selectedPermissionIds.includes(permission.id);
+                <div className="space-y-6">
+                  {PERMISSION_GROUPS.map((group) => {
+                    const groupPermissions = mergedPermissionOptions.filter((p) =>
+                      group.permissions.some((gp) => gp.toLowerCase() === p.permission.toLowerCase())
+                    );
+                    if (groupPermissions.length === 0) return null;
 
                     return (
-                      <label key={permission.id}
-                        className={getPermissionCardClassName({
-                          isSelected,
-                          isViewMode,
-                          isDarkMode,
-                        })}
-                      >
-                        <input type="checkbox" className={permissionCheckboxClassName} checked={isSelected} onChange={() => togglePermission(permission.id)} disabled={isViewMode} />
-                        <span className="break-words">{permission.permission}</span>
-                      </label>
+                      <Frame key={group.value} className="w-full" spacing="sm">
+                        <FrameHeader>
+                          <FrameTitle>{group.trigger}</FrameTitle>
+                        </FrameHeader>
+                        <FramePanel className="overflow-hidden p-0">
+                          <FieldGroup className="gap-0">
+                            {groupPermissions.map((permission, index) => {
+                              const isSelected = selectedPermissionIds.includes(permission.id);
+                              return (
+                                <Fragment key={permission.id}>
+                                  <Field>
+                                    <FieldLabel className="p-3 cursor-pointer hover:bg-muted/50 transition-colors">
+                                      <Checkbox checked={isSelected} onCheckedChange={() => togglePermission(permission.id)}/>
+                                      <FieldTitle className="ml-2 leading-none font-medium text-sm">
+                                        {permission.permission}
+                                      </FieldTitle>
+                                    </FieldLabel>
+                                  </Field>
+                                  {index < groupPermissions.length - 1 && <Separator />}
+                                </Fragment>
+                              );
+                            })}
+                          </FieldGroup>
+                        </FramePanel>
+                      </Frame>
                     );
                   })}
                 </div>
               ) : (
-                <div className={modalReadOnlyInputClassName}>
-                  <span className={emptyContentClassName}>No permissions available</span>
-                </div>
+                <div className="p-4 text-sm text-muted-foreground italic">No permissions available</div>
               )}
-            </div>
-          </div>
-        </section>
-      </FadeWrapper>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 
   const footerActions = (
-    <div className={pageFooterActionsClassName}>
+    <div className="flex flex-col-reverse gap-3 mt-4 md:mb-12 lg:flex-row lg:justify-end xl:mb-16 [&>button]:w-full lg:[&>button]:w-auto">
       {step === 1 ? (
-        <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
+        <Button type="button" variant="outline" onClick={onClose} className="h-10 rounded-lg px-6">
           Cancel
-        </button>
+        </Button>
       ) : (
-        <button type="button" className={modalSecondaryButtonClassName} onClick={goToDetailsStep}>
+        <Button type="button" variant="outline" onClick={goToDetailsStep} className="h-10 rounded-lg px-6">
           Back
-        </button>
+        </Button>
       )}
 
       {step === 1 ? (
-        <button type="button" className={modalPrimaryButtonClassName} onClick={handleNextClick}>
+        <Button type="button" onClick={handleNextClick} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] transition-colors">
           Next
-        </button>
+        </Button>
       ) : (
-        <button form="role-form" type="submit" className={modalPrimaryButtonClassName}>
-          Create
-        </button>
+        <Button form="role-form" type="submit" className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] transition-colors">
+          Create Role
+        </Button>
       )}
     </div>
   );
 
   return (
     <div className="space-y-6">
-      <form id="role-form" noValidate className={pageFormClassName} onSubmit={handleSubmit}>
+      <form id="role-form" noValidate className="space-y-5" onSubmit={handleSubmit}>
         {formContent}
       </form>
       {footerActions}

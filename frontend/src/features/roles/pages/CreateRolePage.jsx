@@ -1,7 +1,6 @@
-import { useRef } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import RoleCreateForm from "../components/RoleCreateForm";
 import { usePermissions } from "../hooks/usePermissions";
 import { useRoles } from "../hooks/useRoles";
@@ -15,22 +14,19 @@ export default function CreateRolePage() {
     permissions: permissionOptions,
     loading: isPermissionOptionsLoading,
   } = usePermissions();
-  const wasSubmittedRef = useRef(false);
-
   const handleClose = () => {
-    navigate("/roles", {
-      state: {
-        successMessage: wasSubmittedRef.current
-          ? "Role successfully created!"
-          : "",
-      },
-    });
+    navigate("/roles");
   };
 
   const handleSubmit = async (data) => {
-    await createRole(data);
-    wasSubmittedRef.current = true;
-    handleClose();
+    try {
+      await createRole(data);
+      navigate("/roles", {
+        state: { successMessage: "Role successfully created!" },
+      });
+    } catch (error) {
+      toast.error("Failed to create role", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+    }
   };
 
   return (
@@ -48,12 +44,17 @@ export default function CreateRolePage() {
         ]}
       />
 
-      <PageHeader
-        title="New Role"
-        description="Add a new role and assign the appropriate permissions."
-        icon={<CreateRoleIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-        colorMode={colorMode}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+            <CreateRoleIcon className="w-8 h-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight uppercase">New Role</h1>
+            <p className="text-muted-foreground mt-1">Add a new role and assign the appropriate permissions.</p>
+          </div>
+        </div>
+      </div>
 
       <RoleCreateForm
         permissionOptions={permissionOptions}
