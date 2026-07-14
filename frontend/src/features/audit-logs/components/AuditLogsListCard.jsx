@@ -2,9 +2,12 @@ import { useState } from "react";
 import ResultsCount from "../../../components/ResultsCount";
 import Pagination from "../../../components/Pagination";
 import LogsTable from "./LogsTable";
-import DataTableSkeleton from "../../../components/DataTableSkeleton";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { SearchIcon, SecurityLogIcon, TransactionLogIcon } from "./auditLogIcons";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Field, FieldLabel } from "@/components/ui/field";
 
 const LOG_TYPE_OPTIONS = [
   {
@@ -47,47 +50,6 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
     visibleLogTypeOptions[0] ||
     getLogTypeConfig(logType);
   const showLogTypePicker = visibleLogTypeOptions.length > 1;
-  const filtersClassName = `flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end ${
-    isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
-  }`;
-  const labelClassName = isDarkMode
-    ? "mb-2 block text-sm font-semibold tracking-[0.01em] text-[#f2dfe2] transition-colors duration-500 ease-out"
-    : "mb-2 block text-sm font-semibold tracking-[0.01em] text-[#4b2027] transition-colors duration-500 ease-out";
-  const searchFieldClassName = isDarkMode
-    ? "group flex h-14 w-full lg:max-w-xl items-center gap-3 rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(30,20,28,0.88))] px-4 shadow-[0_18px_45px_-36px_rgba(2,6,23,0.72)] transition-[background-color,border-color,box-shadow] duration-500 ease-out focus-within:border-[#f8d24e]/55 focus-within:ring-4 focus-within:ring-[#f8d24e]/12"
-    : "group flex h-14 w-full lg:max-w-xl items-center gap-3 rounded-[1.35rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,243,0.9))] px-4 shadow-[0_18px_45px_-36px_rgba(43,3,7,0.45)] transition-[background-color,border-color,box-shadow] duration-500 ease-out focus-within:border-[#f8d24e]/70 focus-within:ring-4 focus-within:ring-[#f8d24e]/15";
-  const searchIconClassName = isDarkMode
-    ? "h-5 w-5 shrink-0 text-white/45 transition-colors duration-500 ease-out group-focus-within:text-[#f8d24e]"
-    : "h-5 w-5 shrink-0 text-[#7b0d15]/55 transition-colors duration-500 ease-out group-focus-within:text-[#7b0d15]";
-  const searchInputClassName = isDarkMode
-    ? "h-full w-full bg-transparent text-sm text-[#f6eaec] outline-none transition-colors duration-500 ease-out placeholder:text-[#a58d95]"
-    : "h-full w-full bg-transparent text-sm text-[#4a1921] outline-none transition-colors duration-500 ease-out placeholder:text-[#9a7b81]";
-  const errorClassName = isDarkMode
-    ? "rounded-[1.75rem] border border-[#f8d24e]/15 bg-[linear-gradient(180deg,rgba(48,18,24,0.96),rgba(27,16,21,0.96))] px-6 py-12 text-center text-sm font-medium text-[#f2dfe2] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.75)]"
-    : "rounded-[1.75rem] border border-[#b42318]/15 bg-[linear-gradient(180deg,rgba(255,247,247,0.98),rgba(255,255,255,0.94))] px-6 py-12 text-center text-sm font-medium text-[#991b1b] shadow-[0_22px_55px_-38px_rgba(43,3,7,0.35)]";
-  const logTypeGroupClassName = isDarkMode
-    ? "inline-grid h-14 w-fit grid-cols-2 gap-1.5 rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(30,20,28,0.88))] p-1.5 shadow-[0_18px_45px_-36px_rgba(2,6,23,0.72)]"
-    : "inline-grid h-14 w-fit grid-cols-2 gap-1.5 rounded-[1.35rem] border border-[#eed7ab] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,247,239,0.94))] p-1.5 shadow-[0_18px_45px_-36px_rgba(43,3,7,0.45)]";
-  const getLogTypeButtonClassName = (isSelected) =>
-    `flex h-full w-14 items-center justify-center rounded-[1rem] transition duration-300 ${
-      isSelected
-        ? isDarkMode
-          ? "bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] text-white shadow-[0_16px_28px_-22px_rgba(2,6,23,0.82)]"
-          : "bg-[#7b0d15] text-white shadow-[0_16px_28px_-22px_rgba(123,13,21,0.45)]"
-        : isDarkMode
-          ? "bg-white/[0.03] text-[#d6c3c7] hover:bg-[#f8d24e]/10 hover:text-[#ffe28a]"
-          : "bg-white/75 text-[#5d3a41] hover:bg-[#fff4dc] hover:text-[#7b0d15]"
-    } focus-visible:outline-none focus-visible:ring-2 ${
-      isDarkMode
-        ? "focus-visible:ring-[#f8d24e]/70"
-        : "focus-visible:ring-[#7b0d15]/30"
-    }`;
-  const tooltipBubbleClassName = isDarkMode
-    ? "pointer-events-none absolute left-1/2 top-[calc(100%+0.65rem)] z-30 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white/10 bg-[linear-gradient(180deg,rgba(16,23,38,0.98),rgba(30,20,30,0.98))] px-3 py-2 text-xs font-semibold text-[#f6eaec] opacity-0 shadow-[0_18px_40px_-24px_rgba(2,6,23,0.8)] transition duration-200"
-    : "pointer-events-none absolute left-1/2 top-[calc(100%+0.65rem)] z-30 -translate-x-1/2 whitespace-nowrap rounded-xl border border-[#eed7ab] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,247,239,0.99))] px-3 py-2 text-xs font-semibold text-[#5d3a41] opacity-0 shadow-[0_18px_40px_-24px_rgba(43,3,7,0.35)] transition duration-200";
-  const footerClassName = `flex flex-col items-center gap-4 pt-5 lg:grid lg:grid-cols-3 ${
-    isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
-  }`;
   const updateSearchValue = (value) => {
     setSearch(value);
     onPageChange(1);
@@ -99,104 +61,56 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
     updateSearchValue(transcript);
   };
 
-  let content = (
-    <LogsTable
-      logs={logs}
-      onView={onView}
-      colorMode={colorMode}
-      emptyMessage={selectedLogType.emptyMessage}
-      logTypeLabel={selectedLogType.detailLabel}
-    />
-  );
-
-  if (loading) {
-    content = (
-      <DataTableSkeleton
-        theme={isDarkMode ? "userpoolDark" : "userpool"}
-        columns={[
-          { header: "Timestamp", type: "text", width: "w-28" },
-          { header: "Actor", type: "text", width: "w-24" },
-          { header: "Target", type: "text", width: "w-24" },
-          { header: "Status", type: "badge", width: "w-20" },
-          { header: "Action", type: "text", width: "w-24" },
-          { header: "Actions", type: "iconButton" },
-        ]}
-      />
-    );
-  } else if (error) {
-    content = <div className={errorClassName}>{error}</div>;
-  }
-
   return (
     <div className="relative space-y-5 sm:space-y-6 lg:space-y-8">
-      <div className={filtersClassName}>
-        <div className="min-w-0 w-full">
-          <SpeechInputToolbar
-            activeFieldLabel={`${selectedLogType.label} Search`}
-            onTranscript={handleSearchVoiceInput}
-            colorMode={colorMode}
-          />
-          <label className={labelClassName}>
-            {selectedLogType.searchPrompt}
-          </label>
-          <label className={searchFieldClassName}>
-            <SearchIcon className={searchIconClassName} />
-            <input type="search" value={search} placeholder="Search by actor..." className={searchInputClassName} onChange={handleSearchChange}/>
-          </label>
-        </div>
-
-        {showLogTypePicker && (
-          <div className="min-w-0 lg:justify-self-end">
-            <label className={labelClassName}>Log Type</label>
-            <div className={logTypeGroupClassName} role="tablist" aria-label="Log Type">
-              {visibleLogTypeOptions.map((option) => {
-                const isSelected = option.value === logType;
-
-                return (
-                  <div key={option.value} className="relative">
-                    <button type="button" className={getLogTypeButtonClassName(isSelected)}
-                      onClick={() => {
-                        onLogTypeChange(option.value);
-                        setActiveTooltip(null);
-                      }}
-                      onMouseEnter={() => setActiveTooltip(option.value)}
-                      onMouseLeave={() =>
-                        setActiveTooltip((current) =>
-                          current === option.value ? null : current,
-                        )
-                      }
-                      onFocus={() => setActiveTooltip(option.value)}
-                      onBlur={() =>
-                        setActiveTooltip((current) =>
-                          current === option.value ? null : current,
-                        )
-                      }
-                      role="tab"
-                      aria-selected={isSelected}
-                      aria-label={option.label}
-                    >
-                      {option.icon}
-                    </button>
-                    <span
-                      className={`${tooltipBubbleClassName} ${
-                        activeTooltip === option.value ? "opacity-100" : ""
-                      }`}
-                      role="tooltip"
-                    >
-                      {option.label}
-                    </span>
-                  </div>
-                );
-              })}
+      <div className="bg-card border rounded-xl p-4 sm:p-5 shadow-sm w-full">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end justify-between">
+          <div className="min-w-0 w-full lg:max-w-xl space-y-1">
+            <SpeechInputToolbar
+              activeFieldLabel={`${selectedLogType.label} Search`}
+              onTranscript={handleSearchVoiceInput}
+              colorMode={colorMode}
+            />
+            <FieldLabel>{selectedLogType.searchPrompt}</FieldLabel>
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <SearchIcon className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <Input type="search" placeholder="Search by actor..." className="pl-9 h-10 w-full rounded-lg" value={search} onChange={handleSearchChange}/>
             </div>
           </div>
-        )}
+
+          {showLogTypePicker && (
+            <div className="min-w-0 lg:justify-self-end space-y-1">
+              <FieldLabel>Log Type</FieldLabel>
+              <Tabs value={logType} onValueChange={(val) => {
+                onLogTypeChange(val);
+                setActiveTooltip(null);
+              }} className="h-10!">
+                <TabsList className="h-full group-data-horizontal/tabs:h-10!">
+                  {visibleLogTypeOptions.map((option) => (
+                    <TabsTrigger key={option.value} value={option.value} className="h-full px-4 flex items-center gap-2">
+                      {option.icon} <span className="hidden sm:inline">{option.label}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
+        </div>
       </div>
 
-      {content}
+      <LogsTable
+        loading={loading}
+        logs={logs}
+        onView={onView}
+        colorMode={colorMode}
+        emptyMessage={selectedLogType.emptyMessage}
+        logTypeLabel={selectedLogType.detailLabel}
+      />
 
       {!loading && !error && (
-        <div className={footerClassName}>
+        <div className="flex flex-col items-center gap-4 pt-5 lg:grid lg:grid-cols-3 border-[#7b0d15]/10 dark:border-white/10">
           <div className="flex w-full justify-center lg:justify-start">
             <ResultsCount
               page={page}
