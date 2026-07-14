@@ -61,27 +61,31 @@ export default function LogMetadataModal({ open, log, logType = "transaction", l
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold bg-muted/50 border-border/50 text-foreground">
-                      <Check className="w-3.5 h-3.5 mr-1.5" />
-                      {log?.action}
-                    </Badge>
-                    <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold bg-muted/50 border-border/50 text-foreground">
-                      <User className="w-3.5 h-3.5 mr-1.5" />
-                      {log?.target}
-                    </Badge>
-                    <Badge 
-                      variant={log?.status?.toLowerCase() === 'success' || log?.status?.toLowerCase() === 'active' ? 'success-outline' : 'destructive-outline'}
-                      className={cn(
-                        "rounded-full px-3 py-1 font-semibold",
-                        log?.status?.toLowerCase() === 'success' || log?.status?.toLowerCase() === 'active'
-                          ? "bg-[#00d053]/10 border-transparent text-[#00d053] hover:bg-[#00d053]/20" 
-                          : "bg-[#ff2f3e]/10 border-transparent text-[#ff2f3e] hover:bg-[#ff2f3e]/20"
-                      )}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5" />
-                      <span className="capitalize">{log?.status}</span>
-                    </Badge>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold bg-muted/50 border-border/50 text-foreground">
+                        <Check className="w-3.5 h-3.5 mr-1.5" />
+                        {log?.action}
+                      </Badge>
+                      <Badge 
+                        variant={log?.status?.toLowerCase() === 'success' || log?.status?.toLowerCase() === 'active' ? 'success-outline' : 'destructive-outline'}
+                        className={cn(
+                          "rounded-full px-3 py-1 font-semibold",
+                          log?.status?.toLowerCase() === 'success' || log?.status?.toLowerCase() === 'active'
+                            ? "bg-[#00d053]/10 border-transparent text-[#00d053] hover:bg-[#00d053]/20" 
+                            : "bg-[#ff2f3e]/10 border-transparent text-[#ff2f3e] hover:bg-[#ff2f3e]/20"
+                        )}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5" />
+                        <span className="capitalize">{log?.status}</span>
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold bg-muted/50 border-border/50 text-foreground">
+                        <User className="w-3.5 h-3.5 mr-1.5" />
+                        {log?.target}
+                      </Badge>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
