@@ -1,11 +1,11 @@
 import { useNavigate, useOutletContext } from "react-router-dom";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
 import RegistrationCreateForm from "../components/RegistrationCreateForm";
 import { CreateRegistrationIcon } from "../components/registrationIcons";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
 import { registrationService } from "../../../services/registrationService";
 import { getAllAppClientSelectOptions } from "../../../utils/userPoolAccess";
+import { toast } from "sonner";
 
 export default function CreateRegistrationConfigPage() {
   const navigate = useNavigate();
@@ -22,16 +22,27 @@ export default function CreateRegistrationConfigPage() {
   const handleSave = async (nextConfig) => {
     const accountTypeName = nextConfig?.name || nextConfig?.label || "";
 
-    await registrationService.createAccountType({
-      name: accountTypeName,
-      clientIds: nextConfig.clientIds,
-    });
+    try {
+      await registrationService.createAccountType({
+        name: accountTypeName,
+        clientIds: nextConfig.clientIds,
+      });
 
-    navigate("/registration", {
-      state: {
-        successMessage: `Created ${accountTypeName} account type.`,
-      },
-    });
+      navigate("/registration", {
+        state: {
+          successMessage: `Created ${accountTypeName} account type.`,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to create account type:", error);
+      toast.error(
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unable to create account type.",
+        { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } }
+      );
+    }
   };
 
   return (
@@ -49,12 +60,17 @@ export default function CreateRegistrationConfigPage() {
         ]}
       />
 
-      <PageHeader
-        title="New Registration"
-        description="Add a new account type and pre-approve app clients."
-        icon={<CreateRegistrationIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-        colorMode={colorMode}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+            <CreateRegistrationIcon className="w-8 h-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">New Registration</h1>
+            <p className="text-muted-foreground">Add a new account type and pre-approve app clients.</p>
+          </div>
+        </div>
+      </div>
 
       <RegistrationCreateForm
         appClientOptions={appClientOptions}

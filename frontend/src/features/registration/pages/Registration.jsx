@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
-import DataTableSkeleton from "../../../components/DataTableSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
-import ErrorAlert from "../../../components/ErrorAlert";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
-import PageHeaderActionButton from "../../../components/PageHeaderActionButton";
-import SuccessAlert from "../../../components/SuccessAlert";
 import RegistrationConfigModal from "../components/RegistrationConfigModal";
 import RegistrationSyncConfirmModal from "../components/RegistrationSyncConfirmModal";
 import RegistrationListCard from "../components/RegistrationListCard";
 import { RegistrationIcon } from "../components/registrationIcons";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { registrationService } from "../../../services/registrationService";
@@ -21,6 +20,7 @@ import { getAllAppClientSelectOptions } from "../../../utils/userPoolAccess";
 import MetricsCard from "../../../components/MetricsCard";
 import { RegistrationIcon as RegistrationMetricIcon } from "../../../components/Icons";
 import { metricsService } from "../../../services/metricsService";
+import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -99,19 +99,14 @@ export default function Registration() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
-  const [actionError, setActionError] = useState("");
   const [selectedConfig, setSelectedConfig] = useState(null);
   const [modalMode, setModalMode] = useState("view");
-  const [successMessage, setSuccessMessage] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [syncTarget, setSyncTarget] = useState(null);
   const [isSyncingUsers, setIsSyncingUsers] = useState(false);
   const showLoading = useDelayedLoading(isLoadingRegistration);
   const isDarkMode = colorMode === "dark";
-  const closeSuccessAlert = useCallback(() => {
-    setSuccessMessage("");
-  }, []);
   const searchKeyword = search.trim();
   const appClientOptions = useMemo(
     () => getAllAppClientSelectOptions(appClients),
@@ -212,7 +207,10 @@ export default function Registration() {
     const routeState = location.state || {};
 
     if (routeState.successMessage) {
-      setSuccessMessage(routeState.successMessage);
+      toast.success(routeState.successMessage, { 
+        id: "registration-route-success", 
+        style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } 
+      });
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [
@@ -260,6 +258,8 @@ export default function Registration() {
         clientIds,
         clientNames,
         totalClientCount,
+        created_at: fullConfig.created_at,
+        updated_at: fullConfig.updated_at,
       };
     } catch (error) {
       console.error("Failed to load full registration config:", error);
@@ -273,17 +273,14 @@ export default function Registration() {
       return;
     }
 
-    setActionError("");
     navigate("/registration/create");
   };
 
   const handleOpenView = async (row) => {
-    setActionError("");
-
     const fullConfig = await getFullRegistrationConfig(row);
 
     if (!fullConfig) {
-      setActionError("Unable to view this account type right now.");
+      toast.error("Unable to view this account type right now.", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
       return;
     }
 
@@ -296,12 +293,10 @@ export default function Registration() {
       return;
     }
 
-    setActionError("");
-
     const fullConfig = await getFullRegistrationConfig(row);
 
     if (!fullConfig) {
-      setActionError("Unable to edit this account type right now.");
+      toast.error("Unable to edit this account type right now.", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
       return;
     }
 
@@ -314,12 +309,10 @@ export default function Registration() {
       return;
     }
 
-    setActionError("");
-
     const backendId = await resolveAccountTypeId(row);
 
     if (!backendId) {
-      setActionError("Unable to delete this account type right now.");
+      toast.error("Unable to delete this account type right now.", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
       return;
     }
 
@@ -343,17 +336,28 @@ export default function Registration() {
       throw new Error("Unable to update this account type right now.");
     }
 
-    await registrationService.updateAccountType({
-      accountTypeId: backendId,
-      name: accountTypeName,
-      clientIds: nextConfig.clientIds,
-    });
-    await loadRegistrationConfig({ showLoading: false });
-    setSyncTarget({
-      backendId,
-      label: accountTypeName,
-    });
-    setSuccessMessage(`Updated pre-approved clients for ${accountTypeName}.`);
+    try {
+      await registrationService.updateAccountType({
+        accountTypeId: backendId,
+        name: accountTypeName,
+        clientIds: nextConfig.clientIds,
+      });
+      await loadRegistrationConfig({ showLoading: false });
+      setSyncTarget({
+        backendId,
+        label: accountTypeName,
+      });
+      toast.success(`Updated pre-approved clients for ${accountTypeName}.`, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+    } catch (error) {
+      console.error("Failed to update account type:", error);
+      toast.error(
+        getRegistrationActionError(
+          error,
+          "Unable to update this account type.",
+        ),
+        { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } }
+      );
+    }
   };
 
   const handleCancelSync = () => {
@@ -370,17 +374,17 @@ export default function Registration() {
     }
 
     try {
-      setActionError("");
       setIsSyncingUsers(true);
       await registrationService.syncAccountTypeUsers(syncTarget.backendId);
-      setSuccessMessage(`Updated all ${syncTarget.label} users.`);
+      toast.success(`Updated all ${syncTarget.label} users.`, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
     } catch (error) {
       console.error("Failed to sync account type users:", error);
-      setActionError(
+      toast.error(
         getRegistrationActionError(
           error,
           "Unable to update users for this account type.",
         ),
+        { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } }
       );
     } finally {
       setIsSyncingUsers(false);
@@ -394,17 +398,17 @@ export default function Registration() {
     }
 
     try {
-      setActionError("");
       await registrationService.deleteAccountType(deleteTarget.backendId);
       await loadRegistrationConfig({ showLoading: false });
-      setSuccessMessage(`Deleted ${deleteTarget.label} account type.`);
+      toast.success(`Deleted ${deleteTarget.label} account type.`, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
     } catch (error) {
       console.error("Failed to delete account type:", error);
-      setActionError(
+      toast.error(
         getRegistrationActionError(
           error,
           "Unable to delete this account type.",
         ),
+        { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } }
       );
     } finally {
       setDeleteTarget(null);
@@ -417,14 +421,42 @@ export default function Registration() {
 
   if (showLoading) {
     tableContent = (
-      <DataTableSkeleton
-        theme={isDarkMode ? "userpoolDark" : "userpool"}
-        columns={[
-          { header: "Account Type", type: "text", width: "w-28" },
-          { header: "Client List", type: "badges" },
-          { header: "Action", type: "actions" },
-        ]}
-      />
+      <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-1/3 text-center">Account Type</TableHead>
+                <TableHead className="w-1/3 text-center">Client List</TableHead>
+                <TableHead className="w-1/3 text-center">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell className="text-center p-5">
+                    <Skeleton className="h-4 w-32 mx-auto" />
+                  </TableCell>
+                  <TableCell className="text-center p-5">
+                    <div className="flex justify-center gap-2">
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full hidden sm:block" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center p-5">
+                    <div className="flex justify-center gap-2">
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     );
     showTableFooter = false;
   } else if (registrationError) {
@@ -444,22 +476,25 @@ export default function Registration() {
           ]}
         />
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <PageHeader
-              title="Registration"
-              description="Configure pre-approved app clients for each account type."
-              icon={<RegistrationIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-              colorMode={colorMode}
-            />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-primary/10 text-primary rounded-xl">
+              <RegistrationIcon className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Registration</h1>
+              <p className="text-muted-foreground">Configure pre-approved app clients for each account type.</p>
+            </div>
           </div>
 
           {canCreateRegistration && (
-            <div className="w-full sm:w-auto sm:self-center">
-              <PageHeaderActionButton colorMode={colorMode} onClick={handleOpenCreate}>
-                + Add Account Type
-              </PageHeaderActionButton>
-            </div>
+            <Button 
+              className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200"
+              onClick={handleOpenCreate}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Account Type
+            </Button>
           )}
         </div>
 
@@ -495,11 +530,6 @@ export default function Registration() {
             showDeleteAction={canDeleteRegistration}
             colorMode={colorMode}
           >
-            <ErrorAlert
-              message={actionError}
-              onClose={() => setActionError("")}
-            />
-
             {!showLoading && !registrationError && appClientsError && (
               shouldLoadEditableAppClients ? (
                 <div className={warningBoxClassName}>{appClientsError}</div>
@@ -551,11 +581,6 @@ export default function Registration() {
         colorMode={colorMode}
         onCancel={handleCancelSync}
         onConfirm={handleConfirmSync}
-      />
-
-      <SuccessAlert
-        message={successMessage}
-        onClose={closeSuccessAlert}
       />
     </>
   );
