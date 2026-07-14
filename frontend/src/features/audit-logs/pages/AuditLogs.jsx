@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
 import AuditLogsListCard from "../components/AuditLogsListCard";
 import LogMetadataModal from "../components/LogMetadataModal";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
@@ -12,6 +10,8 @@ import { PERMISSIONS } from "../../../utils/permissionAccess";
 import { AuditLogsIcon } from "../components/auditLogIcons";
 import MetricsCard from "../../../components/MetricsCard";
 import { LogIcon } from "../../../components/Icons";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { createPortal } from "react-dom";
 import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
@@ -167,6 +167,11 @@ export default function AuditLogs() {
   const showLoading = useDelayedLoading(loading);
   const selectedLogTypeLabel = getLogTypeLabel(logType);
   const isSecurityLogType = logType === SECURITY_LOG_TYPE;
+  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+
+  useEffect(() => {
+    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+  }, []);
 
   useEffect(() => {
     metricsService.getLogMetrics().then(setLogMetrics).catch(() => {});
@@ -320,21 +325,28 @@ export default function AuditLogs() {
   return (
     <>
       <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-5 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-        <Breadcrumbs
-          colorMode={colorMode}
-          items={[
-            {
-              label: "Audit Log",
-            },
-          ]}
-        />
+        {breadcrumbsContainer && createPortal(
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Audit Log</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>,
+          breadcrumbsContainer
+        )}
 
-        <PageHeader
-          title="Audit Log"
-          description="Track transaction and security activity"
-          icon={<AuditLogsIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-          colorMode={colorMode}
-        />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-primary/10 text-primary rounded-xl">
+              <AuditLogsIcon className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Audit Log</h1>
+              <p className="text-muted-foreground">Track transaction and security activity</p>
+            </div>
+          </div>
+        </div>
 
         <MetricsCard
           colorMode={colorMode}
