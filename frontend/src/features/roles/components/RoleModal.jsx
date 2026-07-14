@@ -253,7 +253,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
 
   const fieldErrors = useMemo(
     () => ({
-      name: isRoleNameEditable && !roleName.trim() ? "Role name is required." : "",
+      name: isRoleNameEditable && !roleName.trim() ? "Name is required." : "",
       description: !description.trim() ? "Description is required." : "",
     }),
     [description, isRoleNameEditable, roleName],

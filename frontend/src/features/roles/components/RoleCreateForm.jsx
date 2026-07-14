@@ -135,7 +135,7 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
 
   const fieldErrors = useMemo(
     () => ({
-      name: !roleName.trim() ? "Role name is required." : "",
+      name: !roleName.trim() ? "Name is required." : "",
       description: !description.trim() ? "Description is required." : "",
     }),
     [description, roleName],
