@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { AppClientLogoUpload } from "./AppClientLogoUpload";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
@@ -95,6 +94,9 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
   const [accessTokenTTL, setAccessTokenTTL] = useState(TOKEN_TTL_LIMITS.accessToken.defaultValue);
   const [refreshTokenTTL, setRefreshTokenTTL] = useState(TOKEN_TTL_LIMITS.refreshToken.defaultValue);
   const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [showFullImage, setShowFullImage] = useState(false);
   const [activeVoiceField, setActiveVoiceField] = useState("name");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
@@ -202,12 +204,36 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
     if (error) setError("");
   };
 
-  const handleLogoChange = (file) => {
-    setImageFile(file);
-    if (file) {
-      clearFieldError("imageFile");
-      setError("");
+  const validateAndProcessFile = (file) => {
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      const message = "System logo must be a PNG or JPG file.";
+      setFieldErrors((current) => ({ ...current, imageFile: message }));
+      setError(message);
+      return;
     }
+    if (file.size > MAX_LOGO_BYTES) {
+      const message = "System logo must be 5MB max.";
+      setFieldErrors((current) => ({ ...current, imageFile: message }));
+      setError(message);
+      return;
+    }
+    clearFieldError("imageFile");
+    setError("");
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageChange = (event) => validateAndProcessFile(event.target.files?.[0]);
+  const handleDragOver = (event) => { event.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = () => setIsDragging(false);
+  const handleDrop = (event) => { event.preventDefault(); setIsDragging(false); validateAndProcessFile(event.dataTransfer.files?.[0]); };
+  const removeImage = () => {
+    setImagePreview(null); setImageFile(null); clearFieldError("imageFile");
+    const input = document.getElementById("dropzone-file-create");
+    if (input) input.value = "";
   };
 
   const nextStep = () => {
@@ -265,13 +291,42 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
         <div className="space-y-5 rounded-lg border bg-card text-card-foreground shadow-sm p-6">
           <section>
             {renderSectionHeader("System Logo", "Upload the app client's system logo.", true)}
-            <AppClientLogoUpload 
-              onFilesChange={handleLogoChange}
-              maxFiles={1}
-              maxSize={MAX_LOGO_BYTES}
-              accept="image/png, image/jpeg"
-              simulateUpload={true}
-            />
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`relative flex min-h-56 w-full flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${
+                fieldErrors.imageFile ? "border-destructive bg-destructive/10" : 
+                isDragging ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
+              }`}
+            >
+              {!imagePreview ? (
+                <label htmlFor="dropzone-file-create" className="flex h-full w-full cursor-pointer flex-col items-center justify-center">
+                  <div className="space-y-3">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 0 1 2.828 0L16 16m-2-2l1.586-1.586a2 2 0 0 1 2.828 0L20 14m-6-6h.01M6 20h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Click to upload</p>
+                      <p className="mt-1 text-sm text-muted-foreground">or drag and drop</p>
+                      <p className="mt-2 text-xs uppercase tracking-widest text-muted-foreground">PNG or JPG | Max 5MB</p>
+                    </div>
+                  </div>
+                  <input id="dropzone-file-create" type="file" className="hidden" accept="image/png, image/jpeg" onChange={handleImageChange}/>
+                </label>
+              ) : (
+                <div className="relative flex h-full w-full items-center justify-center">
+                  <img src={imagePreview} alt="Preview" className="max-h-52 max-w-full rounded-xl object-contain shadow-md transition hover:opacity-90" onClick={() => setShowFullImage(true)}/>
+                  <button type="button" onClick={removeImage} className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background border shadow-sm transition hover:bg-muted">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
             {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
           </section>
 
@@ -401,6 +456,19 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
         {formContent}
         {footerActions}
       </div>
+
+      {showFullImage && (
+        <Dialog open={showFullImage} onOpenChange={setShowFullImage}>
+          <DialogContent className="max-w-4xl p-0 border-none bg-transparent shadow-none" hideCloseButton>
+            <div className="relative flex items-center justify-center">
+              <button type="button" onClick={() => setShowFullImage(false)} className="absolute -right-4 -top-4 rounded-full bg-background p-2 shadow-md hover:bg-muted">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+              <img src={imagePreview} className="max-h-[85vh] w-auto rounded-lg object-contain" alt="Full Preview" />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import AppClientIconBox from "./AppClientIconBox";
@@ -9,14 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AppClientLogoUpload } from "./AppClientLogoUpload";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Frame, FrameHeader, FramePanel, FrameTitle } from "@/components/reui/frame";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Copy, CopyCheck, ChevronRightIcon, Link as LinkIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
 const GRANT_OPTIONS = [
@@ -78,22 +71,13 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageLocation, setImageLocation] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [activeVoiceField, setActiveVoiceField] = useState("name");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
+  const [showFullImage, setShowFullImage] = useState(false);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
   const detailsRequestRef = useRef({ clientId: "", inFlight: false });
-
-  const handleCopyId = () => {
-    const idToCopy = client?.id || client?.clientId;
-    if (idToCopy) {
-      navigator.clipboard.writeText(idToCopy);
-      setIsCopied(true);
-      toast.success("Client ID copied to clipboard");
-      setTimeout(() => setIsCopied(false), 2000);
-    }
-  };
 
   useEffect(() => {
     if (!open) {
@@ -115,6 +99,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setAccessTokenTTL(getTokenTTLValue(client.access_token_ttl, TOKEN_TTL_LIMITS.accessToken.defaultValue));
     setRefreshTokenTTL(getTokenTTLValue(client.refresh_token_ttl, TOKEN_TTL_LIMITS.refreshToken.defaultValue));
     setImageFile(null);
+    setIsDragging(false);
     setActiveVoiceField("name");
     setError("");
     setFieldErrors(initialFieldErrors);
@@ -250,15 +235,49 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     if (error) setError("");
   };
 
-  const handleLogoChange = (file) => {
-    setImageFile(file);
-    if (file) {
-      clearFieldError("imageFile");
-      setError("");
-    } else {
-      // User removed the image
-      setImageLocation("");
+  const validateAndProcessFile = (file) => {
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      const message = "System logo must be a PNG or JPG file.";
+      setFieldErrors((current) => ({ ...current, imageFile: message }));
+      setError(message);
+      return;
     }
+
+    if (file.size > MAX_LOGO_BYTES) {
+      const message = "System logo must be 5MB max.";
+      setFieldErrors((current) => ({ ...current, imageFile: message }));
+      setError(message);
+      return;
+    }
+
+    clearFieldError("imageFile");
+    setError("");
+    setImageFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageChange = (event) => validateAndProcessFile(event.target.files?.[0]);
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    if (!isView) setIsDragging(true);
+  };
+  const handleDragLeave = () => setIsDragging(false);
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setIsDragging(false);
+    if (!isView) validateAndProcessFile(event.dataTransfer.files?.[0]);
+  };
+  const removeImage = (event) => {
+    event.stopPropagation();
+    setImagePreview(null);
+    setImageFile(null);
+    setImageLocation("");
+    clearFieldError("imageFile");
   };
 
   const handleSubmit = async (event) => {
@@ -316,171 +335,68 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   return (
     <>
       <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
-        <DialogContent className="sm:max-w-3xl" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
-          <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[#7b0d15] text-white dark:bg-transparent dark:text-foreground">
-            <DialogTitle>
-              {isView ? "View App Client" : "Edit App Client"}
-            </DialogTitle>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden bg-card text-card-foreground border-border">
+          <DialogHeader className="px-6 py-4 border-b border-border bg-muted/50">
+            <div className="flex items-center gap-4">
+              <AppClientIconBox colorMode={colorMode} variant="plain" />
+              <DialogTitle className="text-xl">
+                {isView ? "View App Client" : "Edit App Client"}
+              </DialogTitle>
+            </div>
           </DialogHeader>
 
-          <form id="app-client-form" noValidate className="-mx-4 no-scrollbar max-h-[70vh] px-4 overflow-y-auto" onSubmit={handleSubmit}>
-            {error && <div className="mb-6"><ErrorAlert message={error} onClose={() => setError("")} /></div>}
+          <form id="app-client-form" noValidate className="p-6 overflow-y-auto max-h-[70vh]" onSubmit={handleSubmit}>
+            <div className="space-y-8">
+              <ErrorAlert message={error} onClose={() => setError("")} />
 
-            {isDetailsLoading && (
-              <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-200">
-                Loading latest app client details...
-              </div>
-            )}
+              {isDetailsLoading && (
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-200">
+                  Loading latest app client details...
+                </div>
+              )}
 
-            {isView ? (
-              <div className="space-y-6 pt-0 pb-4 px-2 mt-4">
-                <Card className="bg-muted/30 border-border/40 shadow-sm">
-                  <CardContent className="px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="size-16">
-                        <AvatarImage src={imagePreview} alt={name || "App Client Logo"} />
-                        <AvatarFallback>{name ? name.substring(0, 2).toUpperCase() : "AC"}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h2 className="text-2xl font-bold tracking-tight">
-                          {name || "Unnamed Client"}
-                        </h2>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <p className="text-sm text-muted-foreground font-mono">
-                            ID: {client?.id || client?.clientId || ""}
-                          </p>
-                          <Button size="icon-sm" variant="ghost" aria-label="Copy ID" onClick={handleCopyId}>
-                            {isCopied ? <CopyCheck aria-hidden="true" className="text-[#00d053]" /> : <Copy aria-hidden="true" />}
-                          </Button>
+              <section>
+                {renderSectionHeader("System Logo", isView ? "View the app client's system logo." : "Update the app client's system logo.", !isView)}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`relative flex min-h-56 w-full flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors ${
+                    fieldErrors.imageFile && !isView ? "border-destructive bg-destructive/10" : 
+                    isDragging && !isView ? "border-primary bg-primary/10" : 
+                    isView ? "border-muted" : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
+                  }`}
+                >
+                  {!imagePreview ? (
+                    <label htmlFor="dropzone-file" className={`flex h-full w-full flex-col items-center justify-center ${isView ? "cursor-default" : "cursor-pointer"}`}>
+                      <div className="space-y-3">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 0 1 2.828 0L16 16m-2-2l1.586-1.586a2 2 0 0 1 2.828 0L20 14m-6-6h.01M6 20h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">Click to upload</p>
+                          <p className="mt-1 text-sm text-muted-foreground">or drag and drop</p>
+                          <p className="mt-2 text-xs uppercase tracking-widest text-muted-foreground">PNG or JPG | Max 5MB</p>
                         </div>
                       </div>
+                      <input id="dropzone-file" type="file" className="hidden" accept="image/png, image/jpeg" onChange={handleImageChange} disabled={isView}/>
+                    </label>
+                  ) : (
+                    <div className="relative flex h-full w-full items-center justify-center">
+                      <img src={imagePreview} alt="Preview" className="max-h-52 max-w-full rounded-xl object-contain shadow-md transition hover:opacity-90" onClick={() => setShowFullImage(true)}/>
+                      {!isView && (
+                        <button type="button" onClick={removeImage} className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background border shadow-sm transition hover:bg-muted">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-
-                {description && (
-                  <Card className="bg-muted/30 border-border/40 shadow-sm">
-                    <CardContent className="px-5 py-4">
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{description}</p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <div className="w-full">
-                  <Frame stacked dense spacing="sm" className="w-full">
-                    <Collapsible defaultOpen>
-                      <CollapsibleTrigger className="flex w-full group">
-                        <FrameHeader className="flex grow flex-row items-center justify-between gap-2">
-                          <FrameTitle className="text-sm font-medium">
-                            Links
-                          </FrameTitle>
-                          <ChevronRightIcon aria-hidden="true" className="text-muted-foreground size-4 transition-transform group-data-[state=open]:rotate-90 group-data-[panel-open]:rotate-90 group-data-[open]:rotate-90" />
-                        </FrameHeader>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <FramePanel className="space-y-3 p-4">
-                          <div className="flex items-center gap-2">
-                            <LinkIcon className="size-4 text-muted-foreground shrink-0" />
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap min-w-[120px]">Base URL</span>
-                            {baseURL ? (
-                              <a href={baseURL} target="_blank" rel="noreferrer" className="text-sm hover:underline break-all">{baseURL}</a>
-                            ) : (
-                              <span className="text-sm text-muted-foreground"></span>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <LinkIcon className="size-4 text-muted-foreground shrink-0" />
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap min-w-[120px]">Redirect URL</span>
-                            {redirectURL ? (
-                              <span className="text-sm break-all">{redirectURL}</span>
-                            ) : (
-                              <span className="text-sm text-muted-foreground"></span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <LinkIcon className="size-4 text-muted-foreground shrink-0" />
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap min-w-[120px]">Logout URL</span>
-                            {logoutURL ? (
-                              <span className="text-sm break-all">{logoutURL}</span>
-                            ) : (
-                              <span className="text-sm text-muted-foreground"></span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <LinkIcon className="size-4 text-muted-foreground shrink-0" />
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap min-w-[120px]">One Portal Link</span>
-                            {onePortalRedirectLink ? (
-                              <span className="text-sm break-all">{onePortalRedirectLink}</span>
-                            ) : (
-                              <span className="text-sm text-muted-foreground"></span>
-                            )}
-                          </div>
-                        </FramePanel>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </Frame>
+                  )}
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="bg-muted/30 border-border/40 shadow-sm">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Grants</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedGrants.map(g => <Badge key={g} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">{g}</Badge>)}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/30 border-border/40 shadow-sm">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Token Expiration</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Access Token:</span>
-                        <span>{accessTokenTTL} mins</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Refresh Token:</span>
-                        <span>{refreshTokenTTL} hours</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                <section>
-                {renderSectionHeader("System Logo", isView ? "View the app client's system logo." : "Update the app client's system logo.", !isView)}
-                
-                {isView ? (
-                  <div className="flex justify-center p-4 rounded-xl border border-border bg-muted/30">
-                    {imagePreview ? (
-                      <img src={imagePreview} alt="System Logo" className="max-h-52 max-w-full rounded-xl object-contain shadow-sm" />
-                    ) : (
-                      <div className="flex h-32 w-full flex-col items-center justify-center text-muted-foreground">
-                        <AppClientIconBox colorMode={colorMode} variant="plain" className="mb-2 opacity-50" />
-                        <span className="text-sm">No logo available</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <AppClientLogoUpload 
-                      onFilesChange={handleLogoChange}
-                      maxFiles={1}
-                      maxSize={MAX_LOGO_BYTES}
-                      accept="image/png, image/jpeg"
-                      simulateUpload={true}
-                      initialPreview={imagePreview}
-                    />
-                    {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
-                  </>
-                )}
+                {!isView && fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
               </section>
 
               <section>
@@ -592,24 +508,34 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                   </div>
                 </div>
               </section>
-              </div>
-            )}
+            </div>
           </form>
 
-          <DialogFooter className="gap-2 sm:gap-0 mt-2">
-            <div className="flex gap-2 w-full sm:w-auto sm:justify-end">
-              <Button type="button" variant="outline" onClick={onClose}>
-                {isView ? "Close" : "Cancel"}
+          <DialogFooter className="px-6 py-4 border-t border-border bg-muted/50">
+            <Button type="button" variant="outline" onClick={onClose}>
+              {isView ? "Close" : "Cancel"}
+            </Button>
+            {!isView && (
+              <Button type="submit" form="app-client-form" disabled={isDetailsLoading}>
+                {mode === "create" ? "Create" : "Save"}
               </Button>
-              {!isView && (
-                <Button type="submit" form="app-client-form" disabled={isDetailsLoading}>
-                  {mode === "create" ? "Create" : "Save"}
-                </Button>
-              )}
-            </div>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {showFullImage && (
+        <Dialog open={showFullImage} onOpenChange={setShowFullImage}>
+          <DialogContent className="max-w-4xl p-0 border-none bg-transparent shadow-none" hideCloseButton>
+            <div className="relative flex items-center justify-center">
+              <button type="button" onClick={() => setShowFullImage(false)} className="absolute -right-4 -top-4 rounded-full bg-background p-2 shadow-md hover:bg-muted">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+              <img src={imagePreview} className="max-h-[85vh] w-auto rounded-lg object-contain" alt="Full Preview" />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

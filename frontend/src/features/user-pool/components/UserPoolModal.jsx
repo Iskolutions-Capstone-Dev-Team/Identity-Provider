@@ -225,6 +225,7 @@ export default function UserPoolModal({
   const handleCopyId = () => {
     navigator.clipboard.writeText(formData.id);
     setIsCopied(true);
+    toast.success("User ID copied to clipboard");
     setTimeout(() => setIsCopied(false), 2000);
   };
 
