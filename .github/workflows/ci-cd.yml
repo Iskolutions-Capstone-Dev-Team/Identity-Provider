@@ -141,10 +141,10 @@ jobs:
             cd "$HOME/Identity-Provider"
             git pull origin development
             echo "${{ secrets.GH_PAT }}" | \
-              docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
+              sudo docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
               --password-stdin
-            docker compose -f docker-compose.ghcr.yml pull
-            docker compose -f docker-compose.ghcr.yml up -d
+            sudo docker compose -f docker-compose.ghcr.yml pull
+            sudo docker compose -f docker-compose.ghcr.yml up -d
 
   deploy-production:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -198,7 +198,7 @@ jobs:
             cd "$HOME/Identity-Provider"
             git pull origin main
             echo "${{ secrets.GH_PAT }}" | \
-              docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
+              sudo docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
               --password-stdin
-            docker compose -f docker-compose.ghcr.yml pull
-            docker compose -f docker-compose.ghcr.yml up -d
+            sudo docker compose -f docker-compose.ghcr.yml pull
+            sudo docker compose -f docker-compose.ghcr.yml up -d
