@@ -11,12 +11,19 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AppClientLogoUpload } from "./AppClientLogoUpload";
 import { Separator } from "@/components/ui/separator";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Frame, FrameHeader, FramePanel, FrameTitle } from "@/components/reui/frame";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Copy, CopyCheck, ChevronRightIcon, Link as LinkIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Field, FieldLabel, FieldGroup, FieldTitle } from "@/components/ui/field";
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
 const GRANT_OPTIONS = [
@@ -551,40 +558,54 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
               <section>
                 <div className="space-y-5">
                   <div>
-                    {renderSectionHeader("Grants", isView ? "View the grant types enabled for this client." : "Select the grant types required for this client.", !isView)}
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {GRANT_OPTIONS.map((grant) => {
-                        const isSelected = selectedGrants.includes(grant);
-                        return (
-                          <label key={grant} className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition duration-300 ${isSelected ? "border-primary bg-primary/10 text-primary" : "bg-card hover:bg-muted/50"} ${isView ? "cursor-default" : "cursor-pointer"}`}>
-                            <Checkbox checked={isSelected} onCheckedChange={() => !isView && toggleGrant(grant)} disabled={isView} required={!isView && selectedGrants.length === 0} />
-                            <span className="break-all">{grant}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    {!isView && selectedGrants.length === 0 && <p className="mt-3 text-xs text-destructive">At least one grant is required.</p>}
+                    <Field className="space-y-2">
+                      <FieldLabel>Grants {!isView && <span className="text-destructive">*</span>}</FieldLabel>
+                      <FieldGroup className="flex w-full flex-row flex-wrap gap-4">
+                        {GRANT_OPTIONS.map((grant) => {
+                          const isSelected = selectedGrants.includes(grant);
+                          const formatGrantName = (name) => name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                          
+                          return (
+                            <FieldLabel key={grant} className="relative p-0 !w-auto flex-1 min-w-fit" style={{ pointerEvents: isView ? "none" : "auto" }}>
+                              <Field orientation="horizontal" className="justify-center">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => !isView && toggleGrant(grant)}
+                                  disabled={isView}
+                                  className="absolute -top-2 -right-2 size-5 rounded-full border-none shadow-none z-10"
+                                />
+                                <FieldTitle className="justify-center text-center">{formatGrantName(grant)}</FieldTitle>
+                              </Field>
+                            </FieldLabel>
+                          );
+                        })}
+                      </FieldGroup>
+                      {!isView && selectedGrants.length === 0 && <p className="mt-3 text-xs text-destructive">At least one grant is required.</p>}
+                    </Field>
                   </div>
 
                   <div>
-                    {renderSectionHeader("Token Expiration", isView ? "View the configured token expiration values." : "Update the token expiration values for this client.", !isView)}
                     <div className="grid gap-5 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Access Token expiration {!isView && <span className="text-destructive">*</span>}</Label>
-                        <div className={`flex overflow-hidden rounded-md border focus-within:ring-1 focus-within:ring-ring ${fieldErrors.accessTokenTTL ? "border-destructive" : "border-input"}`}>
-                          <input type="number" required={!isView} min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL} onChange={(e) => updateFieldValue("accessTokenTTL", e.target.value, setAccessTokenTTL)} disabled={isView} className="flex-1 bg-transparent px-3 py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50" />
-                          <div className="flex items-center border-l bg-muted px-3 text-sm text-muted-foreground">min</div>
-                        </div>
+                        <InputGroup className={`h-10 rounded-lg ${fieldErrors.accessTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
+                          <InputGroupInput type="number" required={!isView} min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL} onChange={(e) => updateFieldValue("accessTokenTTL", e.target.value, setAccessTokenTTL)} disabled={isView} />
+                          <InputGroupAddon align="inline-end">
+                            <InputGroupText>min</InputGroupText>
+                          </InputGroupAddon>
+                        </InputGroup>
                         {!isView && fieldErrors.accessTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.accessTokenTTL}</p>}
                         {!isView && !fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1-1,440 minutes (24 hours)</p>}
                       </div>
 
                       <div className="space-y-2">
                         <Label>Refresh Token expiration {!isView && <span className="text-destructive">*</span>}</Label>
-                        <div className={`flex overflow-hidden rounded-md border focus-within:ring-1 focus-within:ring-ring ${fieldErrors.refreshTokenTTL ? "border-destructive" : "border-input"}`}>
-                          <input type="number" required={!isView} min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL} onChange={(e) => updateFieldValue("refreshTokenTTL", e.target.value, setRefreshTokenTTL)} disabled={isView} className="flex-1 bg-transparent px-3 py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50" />
-                          <div className="flex items-center border-l bg-muted px-3 text-sm text-muted-foreground">hr</div>
-                        </div>
+                        <InputGroup className={`h-10 rounded-lg ${fieldErrors.refreshTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
+                          <InputGroupInput type="number" required={!isView} min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL} onChange={(e) => updateFieldValue("refreshTokenTTL", e.target.value, setRefreshTokenTTL)} disabled={isView} />
+                          <InputGroupAddon align="inline-end">
+                            <InputGroupText>hr</InputGroupText>
+                          </InputGroupAddon>
+                        </InputGroup>
                         {!isView && fieldErrors.refreshTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.refreshTokenTTL}</p>}
                         {!isView && !fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1 - 8,760 hours (1 year)</p>}
                       </div>

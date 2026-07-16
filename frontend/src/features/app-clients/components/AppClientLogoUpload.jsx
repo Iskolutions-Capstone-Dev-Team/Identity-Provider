@@ -209,7 +209,7 @@ export function AppClientLogoUpload({
       </div>
 
       {uploadFiles.length > 0 && (
-        <div className="mt-4 space-y-3">
+        <div className={cn("space-y-3", uploadFiles.length < maxFiles && "mt-4")}>
           {uploadFiles.map((fileItem) => (
             <div
               key={fileItem.id}

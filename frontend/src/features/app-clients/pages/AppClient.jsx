@@ -300,7 +300,7 @@ export default function AppClient() {
                 onConfirm={confirmDelete}
             />
 
-            <SuccessAlert message={successMessage} onClose={closeSuccessAlert} />
+
         </>
     );
 }

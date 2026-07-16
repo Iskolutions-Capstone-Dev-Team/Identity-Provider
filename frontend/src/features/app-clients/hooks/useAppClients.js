@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { clientService } from "../../../services/clientService";
+import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -181,7 +182,7 @@ export function useAppClients({ enabled = true } = {}) {
   const createClient = async (payload) => {
     const response = await clientService.createClient(payload);
 
-    setSuccessMessage("App client successfully created!");
+    toast.success("App client successfully created!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
     await refreshClients({ showLoading: false });
     return response;
   };
@@ -189,7 +190,7 @@ export function useAppClients({ enabled = true } = {}) {
   const updateClient = async (payload) => {
     try {
       await clientService.updateClient(payload.id, payload);
-      setSuccessMessage("App client successfully updated!");
+      toast.success("App client successfully updated!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
       await refreshClients({ showLoading: false });
     } catch (error) {
       console.error("Update failed:", error);
@@ -199,7 +200,7 @@ export function useAppClients({ enabled = true } = {}) {
 
   const deleteClient = async (id) => {
     await clientService.deleteClient(id);
-    setSuccessMessage("App client successfully deleted!");
+    toast.success("App client successfully deleted!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
     await refreshClients({ showLoading: false });
   };
 
