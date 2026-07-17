@@ -309,17 +309,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   };
   const activeVoiceFieldLabel = voiceFieldLabels[activeVoiceField] || "Name";
 
-  const renderSectionHeader = (title, description, isRequired = false) => (
-    <div className="mb-5 border-b border-border pb-4">
-      <Label className="text-base font-semibold">
-        {title} {isRequired && <span className="text-destructive">*</span>}
-      </Label>
-      <p className="text-sm text-muted-foreground mt-1">
-        {description}
-      </p>
-    </div>
-  );
-
   return (
     <>
       <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
@@ -461,8 +450,8 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
               </div>
             ) : (
               <div className="space-y-8">
-                <section>
-                {renderSectionHeader("System Logo", isView ? "View the app client's system logo." : "Update the app client's system logo.", !isView)}
+                <Field className="space-y-2">
+                  <FieldLabel>System Logo {!isView && <span className="text-destructive">*</span>}</FieldLabel>
                 
                 {isView ? (
                   <div className="flex justify-center p-4 rounded-xl border border-border bg-muted/30">
@@ -488,16 +477,10 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
                   </>
                 )}
-              </section>
+                </Field>
 
               <section>
-                {renderSectionHeader("Client Details", isView ? "View the app client's basic details." : "Update the app client's name and description.")}
                 <div className="space-y-5">
-                  <div className="space-y-2">
-                    <Label>Client Id</Label>
-                    <Input value={client?.id || client?.clientId || ""} readOnly disabled className="bg-muted"/>
-                  </div>
-
                   {!isView && (
                     <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
                   )}
@@ -523,7 +506,6 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
               </section>
 
               <section>
-                {renderSectionHeader("Application URLs", isView ? "View the configured application URLs." : "Update the base, redirect, logout, and One Portal redirect URLs.")}
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Base URLs {!isView && <span className="text-destructive">*</span>}</Label>
