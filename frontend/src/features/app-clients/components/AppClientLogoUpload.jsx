@@ -100,14 +100,6 @@ export function AppClientLogoUpload({
           const increment = Math.random() * 15 + 5
           const newProgress = Math.min(file.progress + increment, 100)
 
-          if (newProgress > 50 && Math.random() < 0.1) {
-            return {
-              ...file,
-              status: "error",
-              error: "Upload failed. Please try again.",
-            }
-          }
-
           if (newProgress >= 100) {
             return {
               ...file,

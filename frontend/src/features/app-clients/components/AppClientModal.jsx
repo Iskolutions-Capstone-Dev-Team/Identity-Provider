@@ -509,28 +509,28 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Base URLs {!isView && <span className="text-destructive">*</span>}</Label>
-                    <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" disabled={isView} className={fieldErrors.baseURL ? "border-destructive focus-visible:ring-destructive" : ""} />
+                    <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" disabled={isView} className={`h-10 rounded-lg ${fieldErrors.baseURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
                     {!isView && fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
                     {!isView && !fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
                   </div>
 
                   <div className="space-y-2">
                     <Label>Redirect URLs {!isView && <span className="text-destructive">*</span>}</Label>
-                    <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" disabled={isView} className={fieldErrors.redirectURL ? "border-destructive focus-visible:ring-destructive" : ""} />
+                    <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" disabled={isView} className={`h-10 rounded-lg ${fieldErrors.redirectURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
                     {!isView && fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
                     {!isView && !fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
                   </div>
 
                   <div className="space-y-2">
                     <Label>Logout URLs {!isView && <span className="text-destructive">*</span>}</Label>
-                    <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" disabled={isView} className={fieldErrors.logoutURL ? "border-destructive focus-visible:ring-destructive" : ""} />
+                    <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" disabled={isView} className={`h-10 rounded-lg ${fieldErrors.logoutURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
                     {!isView && fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
                     {!isView && !fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
                   </div>
 
                   <div className="space-y-2">
                     <Label>One Portal Redirect Link</Label>
-                    <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder={isView ? "" : "https://one-portal.example.com"} disabled={isView} className={fieldErrors.onePortalRedirectLink ? "border-destructive focus-visible:ring-destructive" : ""} />
+                    <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder={isView ? "" : "https://one-portal.example.com"} disabled={isView} className={`h-10 rounded-lg ${fieldErrors.onePortalRedirectLink ? "border-destructive focus-visible:ring-destructive" : ""}`} />
                     {!isView && fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
                     {!isView && !fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
                   </div>
@@ -554,7 +554,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                                   checked={isSelected}
                                   onCheckedChange={() => !isView && toggleGrant(grant)}
                                   disabled={isView}
-                                  className="absolute -top-2 -right-2 size-5 rounded-full border-none shadow-none z-10"
+                                  className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10"
                                 />
                                 <FieldTitle className="justify-center text-center">{formatGrantName(grant)}</FieldTitle>
                               </Field>

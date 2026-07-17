@@ -9,7 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { AppClientLogoUpload } from "./AppClientLogoUpload";
+import { Stepper, StepperContent, StepperIndicator, StepperItem, StepperNav, StepperPanel, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";
+import { CheckIcon, LoaderCircleIcon } from "lucide-react";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
@@ -35,53 +40,6 @@ const isValidHttpUrl = (value) => {
 
 const parseTokenTTL = (value) => Number.parseInt(value, 10);
 const isValidTokenTTL = (value, { min, max }) => Number.isInteger(value) && value >= min && value <= max;
-
-function AppClientStepIndicator({ currentStep }) {
-  const steps = [
-    { label: "Basic Info", shortLabel: "Info", icon: <AppClientIcon className="h-4 w-4" /> },
-    {
-      label: "URLs", shortLabel: "URLs",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-          <path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" />
-          <path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" />
-        </svg>
-      ),
-    },
-    {
-      label: "Grants", shortLabel: "Grants",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-          <path fillRule="evenodd" d="M14.5 1A4.5 4.5 0 0 0 10 5.5V9H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1.5V5.5a3 3 0 1 1 6 0v2.75a.75.75 0 0 0 1.5 0V5.5A4.5 4.5 0 0 0 14.5 1Z" clipRule="evenodd" />
-        </svg>
-      ),
-    },
-  ];
-
-  return (
-    <div className="mx-auto grid w-full max-w-[38rem] grid-cols-[minmax(4.5rem,auto)_1fr_minmax(4.5rem,auto)_1fr_minmax(4.5rem,auto)] items-start gap-2 px-3 py-4 sm:gap-3 sm:px-4">
-      {steps.map((stepItem, index) => {
-        const stepNumber = index + 1;
-        const isActive = currentStep >= stepNumber;
-        const lineIsActive = currentStep > stepNumber;
-        return (
-          <Fragment key={stepItem.label}>
-            <div className="flex min-w-0 flex-col items-center gap-2">
-              <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors duration-300 ${isActive ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/50 text-muted-foreground"}`}>
-                {stepItem.icon}
-              </span>
-              <span className={`text-center text-xs font-semibold leading-tight transition-colors duration-300 sm:text-sm ${isActive ? "text-primary" : "text-muted-foreground"}`}>
-                <span className="sm:hidden">{stepItem.shortLabel}</span>
-                <span className="hidden sm:inline">{stepItem.label}</span>
-              </span>
-            </div>
-            {index < steps.length - 1 && <span className={`mt-5 h-px flex-1 border-t-2 border-dotted ${lineIsActive ? "border-primary/50" : "border-border"}`} aria-hidden="true" />}
-          </Fragment>
-        );
-      })}
-    </div>
-  );
-}
 
 export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "light" }) {
   const [step, setStep] = useState(1);
@@ -245,152 +203,197 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
   };
 
   const renderSectionHeader = (title, description, isRequired = false) => (
-    <div className="mb-5 border-b border-border pb-4">
-      <Label className="text-base font-semibold">
+    <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
+      <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
         {title} {isRequired && <span className="text-destructive">*</span>}
-      </Label>
-      <p className="text-sm text-muted-foreground mt-1">{description}</p>
-    </div>
+      </CardTitle>
+      <CardDescription className="text-sm text-muted-foreground m-0">
+        {description}
+      </CardDescription>
+    </CardHeader>
   );
 
+  const stepperSteps = [
+    { title: "Basic Info" },
+    { title: "URLs" },
+    { title: "Grants" },
+  ];
+
   const formContent = (
-    <div className="space-y-6 max-w-4xl mx-auto w-full">
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <AppClientStepIndicator currentStep={step} />
+    <div className="space-y-6 w-full">
+      <div className="w-full bg-card border border-border shadow-sm p-6 rounded-lg mb-6">
+        <Stepper
+          className="w-full max-w-md mx-auto space-y-8"
+          value={step}
+          indicators={{
+            completed: <CheckIcon className="size-3.5" />,
+            loading: <LoaderCircleIcon className="size-3.5 animate-spin" />,
+          }}
+        >
+          <StepperNav>
+            {stepperSteps.map((s, index) => (
+              <StepperItem key={index} step={index + 1} className="relative flex-1 items-start">
+                <StepperTrigger className="relative z-10 flex flex-col gap-2.5 items-center w-full" onClick={() => { if(index + 1 < step) setStep(index + 1) }}>
+                  <StepperIndicator className="size-8 text-sm data-[state=inactive]:bg-secondary data-[state=completed]:bg-[#7b0d15] data-[state=completed]:text-white data-[state=active]:bg-[#7b0d15] data-[state=active]:border-[#7b0d15] data-[state=active]:text-white">{index + 1}</StepperIndicator>
+                  <StepperTitle className="text-sm font-semibold whitespace-nowrap">{s.title}</StepperTitle>
+                </StepperTrigger>
+                {index < stepperSteps.length - 1 && <StepperSeparator className="absolute top-4 left-[50%] w-full z-0 h-1 data-[state=completed]:bg-[#7b0d15]" />}
+              </StepperItem>
+            ))}
+          </StepperNav>
+        </Stepper>
       </div>
 
       <ErrorAlert message={error} onClose={() => setError("")} />
 
       <FadeWrapper isVisible={step === 1} keyId="app-client-basic-info">
-        <div className="space-y-5 rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-          <section>
-            {renderSectionHeader("System Logo", "Upload the app client's system logo.", true)}
-            <AppClientLogoUpload 
-              onFilesChange={handleLogoChange}
-              maxFiles={1}
-              maxSize={MAX_LOGO_BYTES}
-              accept="image/png, image/jpeg"
-              simulateUpload={true}
-            />
-            {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
-          </section>
-
-          <section>
-            <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
-            {renderSectionHeader("Client Details", "Enter the app client's name and description.")}
-            
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <Label>Name <span className="text-destructive">*</span></Label>
-                <Input required minLength={5} maxLength={100} value={name} onChange={(e) => updateFieldValue("name", e.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)" className={fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : ""} />
-                {fieldErrors.name && <p className={inlineErrorClassName}>{fieldErrors.name}</p>}
-                {!fieldErrors.name && <p className="text-xs text-muted-foreground">Must be 5-100 characters</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onFocus={() => setActiveVoiceField("description")} rows="3" placeholder="Short description of the application (optional)" />
-              </div>
+        <Card className="w-full bg-card border-border shadow-sm !gap-6">
+          <div className="flex items-center justify-between">
+            {renderSectionHeader("Client Details", "Enter the app client's name, description, and system logo.")}
+            <div className="pr-6">
+              <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
             </div>
-          </section>
-        </div>
+          </div>
+          
+          <CardContent className="space-y-5">
+            <div className="space-y-2">
+              <Label>System Logo <span className="text-destructive">*</span></Label>
+              <AppClientLogoUpload 
+                onFilesChange={handleLogoChange}
+                maxFiles={1}
+                maxSize={MAX_LOGO_BYTES}
+                accept="image/png, image/jpeg"
+                simulateUpload={true}
+              />
+              {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Name <span className="text-destructive">*</span></Label>
+              <Input required minLength={5} maxLength={100} value={name} onChange={(e) => updateFieldValue("name", e.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)" className={`h-10 rounded-lg ${fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+              {fieldErrors.name && <p className={inlineErrorClassName}>{fieldErrors.name}</p>}
+              {!fieldErrors.name && <p className="text-xs text-muted-foreground">Must be 5-100 characters</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onFocus={() => setActiveVoiceField("description")} rows="4" placeholder="Short description of the application (optional)" className="rounded-lg" />
+            </div>
+          </CardContent>
+        </Card>
       </FadeWrapper>
 
       <FadeWrapper isVisible={step === 2} keyId="app-client-urls">
-        <div className="space-y-5 rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-          <section>
-            <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
+        <Card className="w-full bg-card border-border shadow-sm !gap-6">
+          <div className="flex items-center justify-between">
             {renderSectionHeader("Application URLs", "Set the base, redirect, logout, and One Portal redirect URLs.")}
+            <div className="pr-6">
+              <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
+            </div>
+          </div>
 
-            <div className="space-y-5">
+          <CardContent className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>Base URL <span className="text-destructive">*</span></Label>
-                <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" className={fieldErrors.baseURL ? "border-destructive focus-visible:ring-destructive" : ""} />
+                <Label>Base URLs <span className="text-destructive">*</span></Label>
+                <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" className={`h-10 rounded-lg ${fieldErrors.baseURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
                 {fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
                 {!fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
               </div>
 
               <div className="space-y-2">
-                <Label>Redirect URL <span className="text-destructive">*</span></Label>
-                <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" className={fieldErrors.redirectURL ? "border-destructive focus-visible:ring-destructive" : ""} />
+                <Label>Redirect URLs <span className="text-destructive">*</span></Label>
+                <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" className={`h-10 rounded-lg ${fieldErrors.redirectURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
                 {fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
                 {!fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
               </div>
 
               <div className="space-y-2">
-                <Label>Logout URL <span className="text-destructive">*</span></Label>
-                <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" className={fieldErrors.logoutURL ? "border-destructive focus-visible:ring-destructive" : ""} />
+                <Label>Logout URLs <span className="text-destructive">*</span></Label>
+                <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" className={`h-10 rounded-lg ${fieldErrors.logoutURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
                 {fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
                 {!fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
               </div>
 
               <div className="space-y-2">
                 <Label>One Portal Redirect Link</Label>
-                <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder="https://one-portal.example.com" className={fieldErrors.onePortalRedirectLink ? "border-destructive focus-visible:ring-destructive" : ""} />
+                <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder="https://one-portal.example.com" className={`h-10 rounded-lg ${fieldErrors.onePortalRedirectLink ? "border-destructive focus-visible:ring-destructive" : ""}`} />
                 {fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
                 {!fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
               </div>
-            </div>
-          </section>
-        </div>
+          </CardContent>
+        </Card>
       </FadeWrapper>
 
       <FadeWrapper isVisible={step === 3} keyId="app-client-grants">
-        <div className="space-y-5 rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-          <section>
-            {renderSectionHeader("Grants", "Select the grant types required for this client.", true)}
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {GRANT_OPTIONS.map((grant) => {
-                const isSelected = grants.includes(grant);
-                return (
-                  <label key={grant} className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition duration-300 cursor-pointer ${isSelected ? "border-primary bg-primary/10 text-primary" : "bg-card hover:bg-muted/50"}`}>
-                    <Checkbox checked={isSelected} onCheckedChange={() => toggleGrant(grant)} required={grants.length === 0} />
-                    <span className="break-all">{grant}</span>
-                  </label>
-                );
-              })}
+        <Card className="w-full bg-card border-border shadow-sm !gap-6">
+          {renderSectionHeader("Grants & Expirations", "Select the grant types and configure token expirations for this client.")}
+          <CardContent>
+            <div className="space-y-3">
+              <Label>Grants <span className="text-destructive">*</span></Label>
+              <FieldGroup className="flex w-full flex-row flex-wrap gap-4">
+                {GRANT_OPTIONS.map((grant) => {
+                  const isSelected = grants.includes(grant);
+                  const formatGrantName = (name) => name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                  return (
+                    <FieldLabel key={grant} className="relative p-0 !w-auto flex-1 min-w-fit">
+                      <Field orientation="horizontal" className="justify-center">
+                        <Checkbox 
+                          checked={isSelected} 
+                          onCheckedChange={() => toggleGrant(grant)} 
+                          className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10" 
+                        />
+                        <FieldTitle className="justify-center text-center">{formatGrantName(grant)}</FieldTitle>
+                      </Field>
+                    </FieldLabel>
+                  );
+                })}
+              </FieldGroup>
             </div>
             {grants.length === 0 && <p className="mt-3 text-xs text-destructive">At least one grant is required.</p>}
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Access Token expiration <span className="text-destructive">*</span></Label>
-                <div className={`flex overflow-hidden rounded-md border focus-within:ring-1 focus-within:ring-ring ${fieldErrors.accessTokenTTL ? "border-destructive" : "border-input"}`}>
-                  <input type="number" required min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL} onChange={(e) => updateFieldValue("accessTokenTTL", e.target.value, setAccessTokenTTL)} className="flex-1 bg-transparent px-3 py-2 text-sm outline-none" />
-                  <div className="flex items-center border-l bg-muted px-3 text-sm text-muted-foreground">min</div>
-                </div>
+                <InputGroup className={`h-10 rounded-lg ${fieldErrors.accessTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
+                  <InputGroupInput type="number" required min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL} onChange={(e) => updateFieldValue("accessTokenTTL", e.target.value, setAccessTokenTTL)} />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>min</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
                 {fieldErrors.accessTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.accessTokenTTL}</p>}
                 {!fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1-1,440 minutes (24 hours)</p>}
               </div>
 
               <div className="space-y-2">
                 <Label>Refresh Token expiration <span className="text-destructive">*</span></Label>
-                <div className={`flex overflow-hidden rounded-md border focus-within:ring-1 focus-within:ring-ring ${fieldErrors.refreshTokenTTL ? "border-destructive" : "border-input"}`}>
-                  <input type="number" required min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL} onChange={(e) => updateFieldValue("refreshTokenTTL", e.target.value, setRefreshTokenTTL)} className="flex-1 bg-transparent px-3 py-2 text-sm outline-none" />
-                  <div className="flex items-center border-l bg-muted px-3 text-sm text-muted-foreground">hr</div>
-                </div>
+                <InputGroup className={`h-10 rounded-lg ${fieldErrors.refreshTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
+                  <InputGroupInput type="number" required min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL} onChange={(e) => updateFieldValue("refreshTokenTTL", e.target.value, setRefreshTokenTTL)} />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>hr</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
                 {fieldErrors.refreshTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.refreshTokenTTL}</p>}
                 {!fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1 - 8,760 hours (1 year)</p>}
               </div>
             </div>
-          </section>
-        </div>
+          </CardContent>
+        </Card>
       </FadeWrapper>
     </div>
   );
 
   const footerActions = (
-    <div className="flex flex-col-reverse gap-3 md:mb-12 lg:flex-row lg:justify-end xl:mb-16 [&>button]:w-full lg:[&>button]:w-auto max-w-4xl mx-auto w-full">
+    <div className="flex flex-col-reverse gap-3 mt-4 md:mb-12 lg:flex-row lg:justify-end xl:mb-16 [&>button]:w-full lg:[&>button]:w-auto w-full">
       {step === 1 ? (
-        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+        <Button type="button" variant="outline" onClick={onClose} className="h-10 rounded-lg px-6">Cancel</Button>
       ) : (
-        <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>Back</Button>
+        <Button type="button" variant="outline" onClick={() => setStep(step - 1)} className="h-10 rounded-lg px-6">Back</Button>
       )}
 
       {step < 3 ? (
-        <Button type="button" onClick={nextStep}>Next</Button>
+        <Button type="button" onClick={nextStep} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] transition-colors">Next</Button>
       ) : (
-        <Button type="button" onClick={handleSubmit}>Create Client</Button>
+        <Button type="button" onClick={handleSubmit} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] transition-colors">Create Client</Button>
       )}
     </div>
   );
