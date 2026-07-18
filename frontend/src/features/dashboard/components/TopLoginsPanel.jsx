@@ -1,33 +1,8 @@
 import { useEffect, useState } from "react";
-import DashboardPanel from "./DashboardPanel";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
+import { Skeleton } from "../../../components/ui/skeleton";
 
 const DEFAULT_CLIENT_IMAGE = "/assets/images/PUP_Logo.png";
-
-function SkeletonBlock({ className = "", colorMode = "light" }) {
-  const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";
-
-  return (
-    <span className={`block animate-pulse rounded-lg ${toneClassName} ${className}`} />
-  );
-}
-
-function getDashboardAccent(colorMode) {
-  return colorMode === "dark"
-    ? {
-        bg: "bg-[#f8d24e]",
-        text: "text-[#f8d24e]",
-        iconBg: "bg-[#f8d24e]/18",
-        iconText: "text-[#f8d24e]",
-        selectedText: "text-[#2a1518]",
-      }
-    : {
-        bg: "bg-[#7b0d15]",
-        text: "text-[#7b0d15]",
-        iconBg: "bg-[#7b0d15]/10",
-        iconText: "text-[#7b0d15]",
-        selectedText: "text-white",
-      };
-}
 
 function ClientLogo({ client }) {
   const [imageSrc, setImageSrc] = useState(client.image_url || DEFAULT_CLIENT_IMAGE);
@@ -41,28 +16,17 @@ function ClientLogo({ client }) {
   );
 }
 
-export function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeriod }) {
-  const isDarkMode = colorMode === "dark";
-  const shellClassName = isDarkMode
-    ? "border-white/10 bg-[#061224]"
-    : "border-[#7b0d15]/10 bg-[#fff8f3]";
-
+export function PeriodTabs({ periods, selectedPeriodKey, onSelectPeriod }) {
   return (
-    <div className={`grid grid-cols-3 overflow-hidden rounded-lg border p-1 text-sm ${shellClassName}`}>
+    <div className="grid grid-cols-3 overflow-hidden rounded-lg bg-muted p-1 text-sm text-muted-foreground">
       {periods.map((period) => {
         const isSelected = selectedPeriodKey === period.key;
-        const idleClassName = isDarkMode
-          ? "text-slate-300 hover:bg-white/[0.04] hover:text-white"
-          : "text-slate-600 hover:bg-[#7b0d15]/5 hover:text-[#7b0d15]";
-
         return (
           <button key={period.key} type="button" onClick={() => onSelectPeriod(period.key)}
-            className={`rounded-md px-3 py-2 font-semibold transition ${
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
               isSelected
-                ? isDarkMode
-                  ? "bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] text-white"
-                  : "bg-[#7b0d15] text-white"
-                : idleClassName
+                ? "bg-background text-foreground shadow-sm"
+                : "hover:bg-background/50 hover:text-foreground"
             }`}
           >
             {period.shortLabel}
@@ -73,9 +37,7 @@ export function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeri
   );
 }
 
-function TopLoginRow({ client, maxLoginCount, totalLoginCount, colorMode }) {
-  const isDarkMode = colorMode === "dark";
-  const accent = getDashboardAccent(colorMode);
+function TopLoginRow({ client, maxLoginCount, totalLoginCount }) {
   const loginCount = Number(client.login_count) || 0;
   const barWidth = maxLoginCount > 0
     ? `${Math.max((loginCount / maxLoginCount) * 100, 4)}%`
@@ -87,37 +49,29 @@ function TopLoginRow({ client, maxLoginCount, totalLoginCount, colorMode }) {
   return (
     <div>
       <div className="flex min-w-0 items-center gap-3">
-        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border p-1 ${
-          isDarkMode ? "border-white/10 bg-white/[0.04]" : "border-[#7b0d15]/10 bg-white"
-        }`}>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-background p-1">
           <ClientLogo client={client} />
         </span>
         <div className="min-w-0">
-          <p className={`truncate text-sm font-semibold ${
-            isDarkMode ? "text-white" : "text-[#2a1518]"
-          }`}>
+          <p className="truncate text-sm font-semibold text-foreground">
             {client.client_name || "Unnamed Client"}
           </p>
-          <p className={`truncate text-xs ${
-            isDarkMode ? "text-slate-400" : "text-slate-500"
-          }`}>
+          <p className="truncate text-xs text-muted-foreground">
             {client.client_id || "No client ID"}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto] items-center gap-4">
-        <div className={`h-2 rounded-full ${
-          isDarkMode ? "bg-white/10" : "bg-[#7b0d15]/10"
-        }`}>
-          <div className={`h-full rounded-full ${accent.bg}`} style={{ width: barWidth }}/>
+      <div className="mt-3 grid grid-cols-[1fr_auto] items-center gap-4">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+          <div className="h-full rounded-full bg-primary transition-all" style={{ width: barWidth }}/>
         </div>
 
         <div className="w-20 text-right">
-          <p className={`text-lg font-black ${accent.text}`}>
+          <p className="text-lg font-bold text-foreground">
             {loginCount.toLocaleString()}
           </p>
-          <p className={`text-xs ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
+          <p className="text-xs font-medium text-muted-foreground">
             {percentage.toFixed(1)}%
           </p>
         </div>
@@ -126,24 +80,24 @@ function TopLoginRow({ client, maxLoginCount, totalLoginCount, colorMode }) {
   );
 }
 
-function TopLoginRowsSkeleton({ colorMode }) {
+function TopLoginRowsSkeleton() {
   return (
     <>
       {[0, 1, 2].map((item) => (
         <div key={item}>
           <div className="flex min-w-0 items-center gap-3">
-            <SkeletonBlock className="h-10 w-10 rounded-xl" colorMode={colorMode} />
+            <Skeleton className="h-10 w-10 rounded-xl" />
             <div className="min-w-0 flex-1">
-              <SkeletonBlock className="h-4 w-44" colorMode={colorMode} />
-              <SkeletonBlock className="mt-2 h-3 w-52" colorMode={colorMode} />
+              <Skeleton className="h-4 w-44" />
+              <Skeleton className="mt-2 h-3 w-52" />
             </div>
           </div>
 
-          <div className="grid grid-cols-[1fr_auto] items-center gap-4">
-            <SkeletonBlock className="h-2 w-full rounded-full" colorMode={colorMode} />
+          <div className="mt-3 grid grid-cols-[1fr_auto] items-center gap-4">
+            <Skeleton className="h-2 w-full rounded-full" />
             <div className="w-20">
-              <SkeletonBlock className="ml-auto h-5 w-10" colorMode={colorMode} />
-              <SkeletonBlock className="ml-auto mt-2 h-3 w-14" colorMode={colorMode} />
+              <Skeleton className="ml-auto h-5 w-10" />
+              <Skeleton className="ml-auto mt-2 h-3 w-14" />
             </div>
           </div>
         </div>
@@ -152,8 +106,7 @@ function TopLoginRowsSkeleton({ colorMode }) {
   );
 }
 
-export default function TopLoginsPanel({ clients, periods, selectedPeriod, selectedPeriodKey, isRestrictedView = false, colorMode = "light", isLoading = false, onSelectPeriod }) {
-  const isDarkMode = colorMode === "dark";
+export default function TopLoginsPanel({ clients, periods, selectedPeriod, selectedPeriodKey, isRestrictedView = false, isLoading = false, onSelectPeriod }) {
   const totalLoginCount = Number(selectedPeriod?.count) || 0;
   const subtitle = isRestrictedView
     ? "Highest login volume by accessible applications"
@@ -165,58 +118,46 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
     const loginCount = Number(client.login_count) || 0;
     return Math.max(maxCount, loginCount);
   }, 0);
-  const scrollClassName = isDarkMode
-    ? "[scrollbar-width:thin] [scrollbar-color:rgba(248,210,78,0.58)_rgba(255,255,255,0.06)] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/[0.06] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#f8d24e]/55 hover:[&::-webkit-scrollbar-thumb]:bg-[#f8d24e]/75"
-    : "[scrollbar-width:thin] [scrollbar-color:rgba(123,13,21,0.5)_rgba(123,13,21,0.08)] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#7b0d15]/[0.08] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#7b0d15]/50 hover:[&::-webkit-scrollbar-thumb]:bg-[#7b0d15]/70";
+  
+  const scrollClassName = "[scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50";
 
   return (
-    <DashboardPanel colorMode={colorMode} className="p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <Card className="flex flex-col border-border bg-card shadow-sm">
+      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between pb-4">
         <div>
-          <h2 className={`text-xl font-black uppercase tracking-[0.03em] ${
-            isDarkMode ? "text-white" : "text-[#7b0d15]"
-          }`}>
-            Top Logins
-          </h2>
-          <p className={`mt-1 text-sm ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-            {subtitle}
-          </p>
+          <CardTitle className="text-xl font-bold uppercase tracking-wide">Top Logins</CardTitle>
+          <CardDescription className="mt-1">{subtitle}</CardDescription>
         </div>
 
         <PeriodTabs
           periods={periods}
           selectedPeriodKey={selectedPeriodKey}
-          colorMode={colorMode}
           onSelectPeriod={onSelectPeriod}
         />
-      </div>
+      </CardHeader>
 
-      <div className={`mt-8 space-y-5 ${
-        clients.length > 4 ? `max-h-[30rem] overflow-y-auto pr-3 ${scrollClassName}` : ""
-      }`}>
-        {isLoading ? (
-          <TopLoginRowsSkeleton colorMode={colorMode} />
-        ) : clients.length > 0 ? (
-          clients.map((client) => (
-            <TopLoginRow
-              key={client.client_id || client.client_name}
-              client={client}
-              maxLoginCount={maxLoginCount}
-              totalLoginCount={totalLoginCount}
-              colorMode={colorMode}
-            />
-          ))
-        ) : (
-          <p className={`rounded-xl border px-4 py-3 text-sm ${
-            isDarkMode
-              ? "border-white/10 bg-white/[0.03] text-slate-300"
-              : "border-[#7b0d15]/10 bg-white/70 text-slate-600"
-          }`}>
-            {emptyMessage}
-          </p>
-        )}
-      </div>
-
-    </DashboardPanel>
+      <CardContent>
+        <div className={`space-y-6 ${
+          clients.length > 4 ? `max-h-[30rem] overflow-y-auto pr-3 ${scrollClassName}` : ""
+        }`}>
+          {isLoading ? (
+            <TopLoginRowsSkeleton />
+          ) : clients.length > 0 ? (
+            clients.map((client) => (
+              <TopLoginRow
+                key={client.client_id || client.client_name}
+                client={client}
+                maxLoginCount={maxLoginCount}
+                totalLoginCount={totalLoginCount}
+              />
+            ))
+          ) : (
+            <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+              {emptyMessage}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

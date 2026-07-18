@@ -13,6 +13,8 @@ import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { metricsService } from "../../../services/metricsService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const emptyMetrics = {
   login_stats: {
@@ -98,22 +100,6 @@ function downloadBlob(blob, fileName) {
   window.URL.revokeObjectURL(url);
 }
 
-function DashboardMessage({ message, colorMode = "light" }) {
-  if (!message) {
-    return null;
-  }
-
-  const isDarkMode = colorMode === "dark";
-  const className = isDarkMode
-    ? "border-white/10 bg-white/[0.04] text-slate-200"
-    : "border-[#7b0d15]/10 bg-white/80 text-slate-700";
-
-  return (
-    <p className={`rounded-xl border px-4 py-3 text-sm font-medium ${className}`}>
-      {message}
-    </p>
-  );
-}
 
 export default function Dashboard() {
   const { colorMode = "light" } = useOutletContext() || {};
@@ -189,7 +175,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-5 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+    <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
       <Breadcrumbs
         colorMode={colorMode}
         items={[
@@ -200,7 +186,7 @@ export default function Dashboard() {
         ]}
       />
 
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <PageHeader
           title="Dashboard"
           description="Authentication metrics and security intelligence"
@@ -219,15 +205,25 @@ export default function Dashboard() {
         </PageHeaderActionButton>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-6">
         {!showLoading ? (
-          <>
-            <DashboardMessage message={error} colorMode={colorMode} />
-            <DashboardMessage message={reportError} colorMode={colorMode} />
-          </>
+          <div className="space-y-3">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {reportError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{reportError}</AlertDescription>
+              </Alert>
+            )}
+          </div>
         ) : null}
 
-        <section className="w-full grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <section className="w-full grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {normalizedMetrics.loginStats.map((stat) => (
             <MetricFilterCard
               key={stat.key}
@@ -238,7 +234,7 @@ export default function Dashboard() {
           ))}
         </section>
 
-        <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <TopLoginsPanel
             clients={selectedTopClients}
             periods={normalizedMetrics.loginStats}
