@@ -49,7 +49,7 @@ export default function AnimatedTags({
                         filter: "blur(0px)",
                       }
                 }
-                className="group flex cursor-pointer flex-row items-center justify-center gap-1.5 rounded-md border dark:border-white/10 bg-primary dark:bg-transparent px-2 py-0.5 text-xs text-primary-foreground dark:text-gray-300 group-hover:bg-primary dark:group-hover:bg-white/5 group-hover:text-foreground dark:group-hover:text-gray-200"
+                className="group flex cursor-pointer flex-row items-center justify-center gap-1.5 rounded-md border border-[#7b0d15] dark:border-white/10 bg-[#7b0d15] dark:bg-transparent px-2 py-0.5 text-xs text-white dark:text-gray-300 hover:bg-[#5a0b12] dark:hover:bg-white/5"
                 exit={
                   shouldReduceMotion
                     ? { opacity: 0, transition: { duration: 0 } }
@@ -92,7 +92,7 @@ export default function AnimatedTags({
                       filter: "blur(0px)",
                     }
               }
-              className="group flex cursor-pointer flex-row items-center justify-center gap-1.5 rounded-md border dark:border-white/10 bg-background dark:bg-transparent px-2 py-0.5 text-xs text-foreground dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-200"
+              className="group flex cursor-pointer flex-row items-center justify-center gap-1.5 rounded-md border border-[#7b0d15]/20 dark:border-white/10 bg-[#7b0d15]/10 dark:bg-transparent px-2 py-0.5 text-xs text-[#7b0d15] dark:text-gray-300 hover:bg-[#7b0d15]/20 dark:hover:bg-white/5 dark:hover:text-gray-200"
               exit={
                 shouldReduceMotion
                   ? { opacity: 0, transition: { duration: 0 } }
@@ -114,7 +114,7 @@ export default function AnimatedTags({
             >
               {tag}{" "}
               <Plus
-                className="ease group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center rounded-full transition-all duration-200"
+                className="ease flex items-center justify-center rounded-full transition-all duration-200"
                 size={12}
               />
             </motion.div>
