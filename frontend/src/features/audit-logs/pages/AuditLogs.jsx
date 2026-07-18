@@ -12,6 +12,7 @@ import MetricsCard from "../../../components/MetricsCard";
 import { LogIcon } from "../../../components/Icons";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { createPortal } from "react-dom";
+import { FileCheck, FileSearchCorner } from "lucide-react";
 import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
@@ -339,7 +340,7 @@ export default function AuditLogs() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-primary/10 text-primary rounded-xl">
-              <AuditLogsIcon className="w-8 h-8" />
+              <FileSearchCorner className="w-8 h-8" />
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Audit Log</h1>
@@ -354,7 +355,7 @@ export default function AuditLogs() {
           metrics={(Array.isArray(logMetrics) ? logMetrics : []).map((m) => ({
             title: m.title === "Audit Logs" ? "Transaction Logs" : m.title,
             value: m.value,
-            Icon: LogIcon,
+            Icon: FileCheck,
           }))}
         />
 

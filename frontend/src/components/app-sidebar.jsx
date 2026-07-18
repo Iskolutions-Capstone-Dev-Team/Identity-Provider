@@ -14,10 +14,11 @@ import {
 import {
   LayoutDashboard,
   Users,
-  Shield,
-  AppWindow,
-  FileSignature,
+  ShieldUser,
+  MonitorCog,
+  FileCheckCorner,
   Activity,
+  FileSearchCorner,
   LogOut
 } from "lucide-react"
 
@@ -51,19 +52,19 @@ const menuSections = [
         name: "Roles",
         path: "/roles",
         requiredPermissions: [PERMISSIONS.VIEW_ROLES],
-        icon: Shield,
+        icon: ShieldUser,
       },
       {
         name: "App Client",
         path: "/app-client",
         requiredPermissions: APP_CLIENT_PAGE_PERMISSIONS,
-        icon: AppWindow,
+        icon: MonitorCog,
       },
       {
         name: "Registration",
         path: "/registration",
         requiredPermissions: REGISTRATION_PAGE_PERMISSIONS,
-        icon: FileSignature,
+        icon: FileCheckCorner,
       },
     ],
   },
@@ -74,7 +75,7 @@ const menuSections = [
         name: "Audit Logs",
         path: "/audit-logs",
         requiredPermissions: [PERMISSIONS.VIEW_AUDIT_LOGS],
-        icon: Activity,
+        icon: FileSearchCorner,
       },
     ],
   },

@@ -9,7 +9,7 @@ import RegistrationConfigModal from "../components/RegistrationConfigModal";
 import RegistrationSyncConfirmModal from "../components/RegistrationSyncConfirmModal";
 import RegistrationListCard from "../components/RegistrationListCard";
 import { RegistrationIcon } from "../components/registrationIcons";
-import { Plus } from "lucide-react";
+import { Plus, FileText, FileCheckCorner } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
@@ -18,7 +18,6 @@ import { mergeAccountTypeOptions } from "../../../utils/accountTypes";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import { getAllAppClientSelectOptions } from "../../../utils/userPoolAccess";
 import MetricsCard from "../../../components/MetricsCard";
-import { RegistrationIcon as RegistrationMetricIcon } from "../../../components/Icons";
 import { metricsService } from "../../../services/metricsService";
 import { toast } from "sonner";
 
@@ -479,7 +478,7 @@ export default function Registration() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-primary/10 text-primary rounded-xl">
-              <RegistrationIcon className="w-8 h-8" />
+              <FileCheckCorner className="w-8 h-8" />
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Registration</h1>
@@ -506,7 +505,7 @@ export default function Registration() {
             .map((m) => ({
             title: m.title,
             value: m.value,
-            Icon: RegistrationMetricIcon,
+            Icon: FileText,
           }))}
         />
 

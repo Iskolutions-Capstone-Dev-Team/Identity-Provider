@@ -14,13 +14,11 @@ import SuccessAlert from "../../../components/SuccessAlert";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Monitor, MonitorCog } from "lucide-react";
 import { createPortal } from "react-dom";
-import { AppClientIcon } from "../components/AppClientIconBox";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import MetricsCard from "../../../components/MetricsCard";
-import { AppClientIcon as AppClientMetricIcon } from "../../../components/Icons";
 import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
@@ -195,7 +193,7 @@ export default function AppClient() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="p-3 bg-primary/10 text-primary rounded-xl">
-                            <AppClientIcon className="h-8 w-8" />
+                            <MonitorCog className="h-8 w-8" />
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold tracking-tight">Client</h1>
@@ -217,7 +215,7 @@ export default function AppClient() {
                     metrics={(Array.isArray(clientMetrics) ? clientMetrics : []).map((m) => ({
                         title: m.title,
                         value: m.value,
-                        Icon: AppClientMetricIcon,
+                        Icon: Monitor,
                     }))}
                 />
 

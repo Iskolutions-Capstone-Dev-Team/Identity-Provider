@@ -10,11 +10,10 @@ import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import MetricsCard from "../../../components/MetricsCard";
-import { RoleIcon, PermissionIcon } from "../../../components/Icons";
 import { metricsService } from "../../../services/metricsService";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Shield, Plus } from "lucide-react";
+import { Shield, Plus, ShieldCheck, Lock, ShieldUser } from "lucide-react";
 import { createPortal } from "react-dom";
 
 const ITEMS_PER_PAGE = 10;
@@ -160,7 +159,7 @@ export default function Roles() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-primary/10 text-primary rounded-xl">
-              <Shield className="w-8 h-8" />
+              <ShieldUser className="w-8 h-8" />
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Role</h1>
@@ -188,14 +187,14 @@ export default function Roles() {
               .map((m) => ({
                 title: m.title,
                 value: m.value,
-                Icon: RoleIcon,
+                Icon: ShieldCheck,
               })),
             ...(Array.isArray(permissionMetrics) ? permissionMetrics : [])
               .filter((m) => m.title !== "Assigned Permissions")
               .map((m) => ({
                 title: m.title,
                 value: m.value,
-                Icon: PermissionIcon,
+                Icon: Lock,
               })),
           ]}
         />
