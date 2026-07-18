@@ -33,12 +33,12 @@ func TestGetUserById(t *testing.T) {
 	rows := sqlmock.NewRows([]string{
 		"id", "first_name", "middle_name", "last_name", "name_suffix",
 		"email", "status", "created_at", "updated_at",
-		"account_type_id",
+		"account_type_id", "account_type",
 		"role_id", "role_name", "role_description",
 	}).AddRow(
 		userID[:], "John", "Doe", "Smith", "",
 		email, "active", now, now,
-		nil,
+		nil, nil,
 		1, "Admin", "Administrator role",
 	)
 

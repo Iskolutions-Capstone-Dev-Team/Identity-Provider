@@ -8,6 +8,7 @@ import { mfaService } from "../../services/mfaService";
 import { passwordResetService } from "../../services/passwordResetService";
 import { userService } from "../../services/userService";
 import ErrorAlert from "../../components/ErrorAlert";
+import InfoAlert from "../../components/InfoAlert";
 import MfaAuthenticatorCodeStep from "./mfa/MfaAuthenticatorCodeStep";
 import MfaBackupCodeStep from "./mfa/MfaBackupCodeStep";
 import MfaLoadingStep from "./mfa/MfaLoadingStep";
@@ -54,6 +55,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
   const [backupCode, setBackupCode] = useState("");
   const [mode, setMode] = useState("email");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [hasSentOtp, setHasSentOtp] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
@@ -79,6 +81,20 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
     navigate(consumeMfaReturnPath(), { replace: true });
   };
 
+  const handleFlowError = (errorObj, defaultMessage) => {
+    const message = getRequestErrorMessage(errorObj, defaultMessage);
+    if (message.toLowerCase().includes("pending cookie missing")) {
+      setError("");
+      setInfo("Session expired. Redirecting to login form, kindly login again.");
+      setTimeout(() => {
+        onBackToLogin?.();
+      }, 3500);
+    } else {
+      setInfo("");
+      setError(message);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -99,11 +115,9 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
         }
       } catch (loadError) {
         if (isMounted) {
-          setError(
-            getRequestErrorMessage(
-              loadError,
-              "Unable to prepare MFA. Please sign in again.",
-            ),
+          handleFlowError(
+            loadError,
+            "Unable to prepare MFA. Please sign in again.",
           );
         }
       } finally {
@@ -133,9 +147,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
       await passwordResetService.sendOtp({ email });
       setHasSentOtp(true);
     } catch (otpError) {
-      setError(
-        getRequestErrorMessage(otpError, "Unable to send an OTP right now."),
-      );
+      handleFlowError(otpError, "Unable to send an OTP right now.");
     } finally {
       setIsSendingOtp(false);
     }
@@ -164,11 +176,9 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
 
       setStep(MFA_STEPS.AUTHENTICATOR);
     } catch (authenticatorError) {
-      setError(
-        getRequestErrorMessage(
-          authenticatorError,
-          "Unable to check your authenticator apps.",
-        ),
+      handleFlowError(
+        authenticatorError,
+        "Unable to check your authenticator apps.",
       );
     } finally {
       setIsCheckingAuthenticators(false);
@@ -251,11 +261,9 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
       rememberMfaSetup({ ...nextSetup, email });
       setQrCodeUrl(nextQrCodeUrl);
     } catch (setupError) {
-      setError(
-        getRequestErrorMessage(
-          setupError,
-          "Unable to load authenticator setup.",
-        ),
+      handleFlowError(
+        setupError,
+        "Unable to load authenticator setup.",
       );
     }
   };
@@ -274,9 +282,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
       await passwordResetService.verifyOtp({ email, otp: code });
       finishMfa();
     } catch (verifyError) {
-      setError(
-        getRequestErrorMessage(verifyError, "Unable to verify this code."),
-      );
+      handleFlowError(verifyError, "Unable to verify this code.");
     } finally {
       setIsVerifying(false);
     }
@@ -296,11 +302,9 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
       await mfaService.verifyCode({ email, code });
       finishMfa();
     } catch (verifyError) {
-      setError(
-        getRequestErrorMessage(
-          verifyError,
-          "Unable to verify this authenticator code.",
-        ),
+      handleFlowError(
+        verifyError,
+        "Unable to verify this authenticator code.",
       );
     } finally {
       setIsVerifying(false);
@@ -323,11 +327,9 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
       await mfaService.verifyCode({ email, code: normalizedBackupCode });
       finishMfa();
     } catch (verifyError) {
-      setError(
-        getRequestErrorMessage(
-          verifyError,
-          "Unable to verify this backup code.",
-        ),
+      handleFlowError(
+        verifyError,
+        "Unable to verify this backup code.",
       );
     } finally {
       setIsVerifying(false);
@@ -378,9 +380,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
 
       setBackupCodes(result.backupCodes);
     } catch (saveError) {
-      setError(
-        getRequestErrorMessage(saveError, "Unable to save this authenticator."),
-      );
+      handleFlowError(saveError, "Unable to save this authenticator.");
     } finally {
       setIsSaving(false);
     }
@@ -474,8 +474,9 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
             <img src="/assets/images/IDP_Logo.png" alt="Identity Provider" className="h-20 w-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)]" />
           </div>
 
-          <div className="mb-5">
+          <div className="mb-5 space-y-3">
             <ErrorAlert message={error} onClose={() => setError("")} />
+            <InfoAlert message={info} onClose={() => setInfo("")} />
           </div>
 
           {renderStep()}

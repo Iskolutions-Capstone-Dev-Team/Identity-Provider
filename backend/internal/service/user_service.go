@@ -43,6 +43,8 @@ type UserService interface {
 		newStatus string) error
 	UpdateUserRole(ctx context.Context, id uuid.UUID, roleID *int,
 		adminID uuid.UUID, permissions []string) error
+	UpdateUserAccountAndRole(ctx context.Context, id uuid.UUID,
+		accountTypeID *int, roleID *int) error
 	UpdateUserName(ctx context.Context, id uuid.UUID,
 		req dto.UpdateUserNameRequest) error
 	ChangePassword(ctx context.Context, id uuid.UUID,
@@ -139,8 +141,11 @@ func (s *userService) CreateUser(
 		}
 
 		var roleID sql.NullInt64
-		if req.RoleID != nil {
-			roleID = sql.NullInt64{Int64: int64(*req.RoleID), Valid: true}
+		if req.RoleID != nil && *req.RoleID > 0 {
+			roleID = sql.NullInt64{
+				Int64: int64(*req.RoleID),
+				Valid: true,
+			}
 		}
 		if err = s.Repo.UpdateUserRole(ctx, existingUser.ID, roleID); err != nil {
 			return uuid.Nil, fmt.Errorf("re-register (UpdateRole): %w", err)
@@ -174,14 +179,14 @@ func (s *userService) CreateUser(
 			PasswordHash: passwordHash,
 			Status:       models.StatusActive,
 			RoleID: sql.NullInt64{
-				Valid: req.RoleID != nil,
+				Valid: req.RoleID != nil && *req.RoleID > 0,
 			},
 			AccountTypeID: sql.NullInt64{
 				Valid: typeID != 0,
 				Int64: int64(typeID),
 			},
 		}
-		if req.RoleID != nil {
+		if req.RoleID != nil && *req.RoleID > 0 {
 			user.RoleID.Int64 = int64(*req.RoleID)
 		}
 
@@ -290,8 +295,11 @@ func (s *userService) CreateAdminUser(
 		}
 
 		var roleID sql.NullInt64
-		if req.RoleID != nil {
-			roleID = sql.NullInt64{Int64: int64(*req.RoleID), Valid: true}
+		if req.RoleID != nil && *req.RoleID > 0 {
+			roleID = sql.NullInt64{
+				Int64: int64(*req.RoleID),
+				Valid: true,
+			}
 		}
 		if err = s.Repo.UpdateUserRole(ctx, existingUser.ID, roleID); err != nil {
 			return uuid.Nil, fmt.Errorf("re-register (UpdateRole): %w", err)
@@ -325,14 +333,14 @@ func (s *userService) CreateAdminUser(
 			PasswordHash: passwordHash,
 			Status:       models.StatusActive,
 			RoleID: sql.NullInt64{
-				Valid: req.RoleID != nil,
+				Valid: req.RoleID != nil && *req.RoleID > 0,
 			},
 			AccountTypeID: sql.NullInt64{
 				Valid: req.AccountTypeID != 0,
 				Int64: int64(req.AccountTypeID),
 			},
 		}
-		if req.RoleID != nil {
+		if req.RoleID != nil && *req.RoleID > 0 {
 			user.RoleID.Int64 = int64(*req.RoleID)
 		}
 
@@ -760,9 +768,15 @@ func (s *userService) UpdateUserRole(
 		slices.Contains(permissions, "Remove Roles") {
 		var nullRoleID sql.NullInt64
 		if roleID != nil {
-			nullRoleID = sql.NullInt64{
-				Int64: int64(*roleID),
-				Valid: true,
+			if *roleID > 0 {
+				nullRoleID = sql.NullInt64{
+					Int64: int64(*roleID),
+					Valid: true,
+				}
+			} else {
+				nullRoleID = sql.NullInt64{
+					Valid: false,
+				}
 			}
 		}
 		err := s.Repo.UpdateUserRole(ctx, id[:], nullRoleID)
@@ -774,6 +788,52 @@ func (s *userService) UpdateUserRole(
 	}
 
 	return fmt.Errorf("permission validation: unauthorized to update roles")
+}
+
+func (s *userService) UpdateUserAccountAndRole(
+	ctx context.Context,
+	id uuid.UUID,
+	accountTypeID *int,
+	roleID *int,
+) error {
+	var nullRoleID sql.NullInt64
+	if roleID != nil {
+		if *roleID > 0 {
+			nullRoleID = sql.NullInt64{
+				Int64: int64(*roleID),
+				Valid: true,
+			}
+		} else {
+			nullRoleID = sql.NullInt64{
+				Valid: false,
+			}
+		}
+		err := s.Repo.UpdateUserRole(ctx, id[:], nullRoleID)
+		if err != nil {
+			return fmt.Errorf("failed to update user role: %w", err)
+		}
+	}
+
+	var nullAccountTypeID sql.NullInt64
+	if accountTypeID != nil {
+		if *accountTypeID > 0 {
+			nullAccountTypeID = sql.NullInt64{
+				Int64: int64(*accountTypeID),
+				Valid: true,
+			}
+		} else {
+			nullAccountTypeID = sql.NullInt64{
+				Valid: false,
+			}
+		}
+		err := s.Repo.UpdateUserAccountType(ctx, id[:], nullAccountTypeID)
+		if err != nil {
+			return fmt.Errorf("failed to update user account type: %w", err)
+		}
+	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+	return nil
 }
 
 /**
@@ -877,15 +937,23 @@ func (s *userService) mapToUserResponse(
 	id uuid.UUID,
 ) *dto.UserResponse {
 	resp := &dto.UserResponse{
-		ID:         id.String(),
-		FirstName:  user.FirstName,
-		MiddleName: user.MiddleName,
-		LastName:   user.LastName,
-		NameSuffix: user.NameSuffix,
-		Email:      user.Email,
-		Status:     string(user.Status),
-		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
+		ID:          id.String(),
+		FirstName:   user.FirstName,
+		MiddleName:  user.MiddleName,
+		LastName:    user.LastName,
+		NameSuffix:  user.NameSuffix,
+		Email:       user.Email,
+		Status:      string(user.Status),
+		CreatedAt:   user.CreatedAt.Format(TIME_LAYOUT),
+		UpdatedAt:   user.UpdatedAt.Format(TIME_LAYOUT),
+		AccountType: user.AccountType,
+	}
+
+	if user.AccountTypeID.Valid {
+		val := int(user.AccountTypeID.Int64)
+		resp.AccountTypeID = &val
+	} else {
+		resp.AccountType = "Custom"
 	}
 
 	if user.RoleID.Valid {
@@ -932,18 +1000,28 @@ func (s *userService) mapToSimplifiedUserResponse(
 		})
 	}
 
-	return &dto.UserSimplifiedResponse{
-		ID:         id.String(),
-		FirstName:  user.FirstName,
-		MiddleName: user.MiddleName,
-		LastName:   user.LastName,
-		NameSuffix: user.NameSuffix,
-		Email:      user.Email,
-		Status:     string(user.Status),
-		CreatedAt:  user.CreatedAt.Format(TIME_LAYOUT),
-		UpdatedAt:  user.UpdatedAt.Format(TIME_LAYOUT),
-		Clients:    clients,
+	resp := &dto.UserSimplifiedResponse{
+		ID:          id.String(),
+		FirstName:   user.FirstName,
+		MiddleName:  user.MiddleName,
+		LastName:    user.LastName,
+		NameSuffix:  user.NameSuffix,
+		Email:       user.Email,
+		Status:      string(user.Status),
+		CreatedAt:   user.CreatedAt.Format(TIME_LAYOUT),
+		UpdatedAt:   user.UpdatedAt.Format(TIME_LAYOUT),
+		AccountType: user.AccountType,
+		Clients:     clients,
 	}
+
+	if user.AccountTypeID.Valid {
+		val := int(user.AccountTypeID.Int64)
+		resp.AccountTypeID = &val
+	} else {
+		resp.AccountType = "Custom"
+	}
+
+	return resp
 }
 
 /**

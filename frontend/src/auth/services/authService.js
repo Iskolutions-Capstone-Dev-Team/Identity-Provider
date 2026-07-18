@@ -1,4 +1,5 @@
 import axiosInstance from "../../services/axiosInstance";
+import { storePendingMfaTokenResponse } from "../utils/authCookies";
 
 const authClientId = import.meta.env.VITE_CLIENT_ID;
 const normalizeTextValue = (value) =>
@@ -30,7 +31,13 @@ export const authService = {
       skipAuthRefresh: true,
     });
 
-    return getLoginRedirectUrl(response.data);
+    const redirectUrl = getLoginRedirectUrl(response.data);
+    const pendingToken = response.data?.mfa_pending_token;
+    if (pendingToken) {
+      storePendingMfaTokenResponse({ access_token: pendingToken });
+    }
+
+    return redirectUrl;
   },
 
   async exchangeCode(code) {

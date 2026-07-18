@@ -80,6 +80,20 @@ func (m *mockMetricsRepository) GetRegistrationMetrics(
 	return []models.MetricCard{}, nil
 }
 
+func (m *mockMetricsRepository) GetPaginatedLogins(
+	ctx context.Context, since time.Time, limit, offset int, adminID []byte,
+) ([]models.AuditLog, int64, error) {
+	return []models.AuditLog{
+		{
+			ID:     1,
+			Actor:  &[]string{"user@test.com"}[0],
+			Action: "login",
+			Target: "client-1",
+			Status: "success",
+		},
+	}, 1, nil
+}
+
 type mockCache struct {
 	mu      sync.Mutex
 	store   map[string]string
@@ -168,6 +182,13 @@ func TestGetDashboardMetrics(t *testing.T) {
 		)
 	}
 
+	if metrics.LoginStats.Today.FailedCount != 3 {
+		t.Errorf(
+			"expected 3 failed logins, got %d",
+			metrics.LoginStats.Today.FailedCount,
+		)
+	}
+
 	if len(metrics.LoginStats.Today.TopClients) != 1 ||
 		metrics.LoginStats.Today.TopClients[0].ClientName != "App 1" {
 		t.Errorf(
@@ -196,6 +217,12 @@ func TestGetDashboardMetrics(t *testing.T) {
 		t.Errorf(
 			"expected 42 today logins for restricted, got %d",
 			metricsRestricted.LoginStats.Today.Count,
+		)
+	}
+	if metricsRestricted.LoginStats.Today.FailedCount != 3 {
+		t.Errorf(
+			"expected 3 failed logins for restricted, got %d",
+			metricsRestricted.LoginStats.Today.FailedCount,
 		)
 	}
 }
@@ -403,5 +430,30 @@ func TestGetGroupMetrics(t *testing.T) {
 	}
 	if _, err := svc.GetRegistrationMetrics(ctx, perms, uID); err != nil {
 		t.Errorf("GetRegistrationMetrics failed: %v", err)
+	}
+}
+
+func TestGetPaginatedLogins(t *testing.T) {
+	repo := &mockMetricsRepository{}
+	cache := &mockCache{store: make(map[string]string)}
+	svc := service.NewMetricsService(repo, cache, nil)
+
+	ctx := context.Background()
+	perms := []string{"View all appclients"}
+	uID := uuid.New()
+
+	resp, err := svc.GetPaginatedLogins(
+		ctx, uID, perms, "today", 10, 1,
+	)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if resp.TotalCount != 1 {
+		t.Errorf("expected 1 log, got %d", resp.TotalCount)
+	}
+
+	if len(resp.Logins) != 1 || *resp.Logins[0].Actor != "user@test.com" {
+		t.Errorf("unexpected logins data: %v", resp.Logins)
 	}
 }

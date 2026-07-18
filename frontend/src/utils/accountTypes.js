@@ -293,7 +293,7 @@ export function getAccountTypeOption(value, options = ACCOUNT_TYPE_OPTIONS) {
 }
 
 export function getAccountTypeLabel(value, options = ACCOUNT_TYPE_OPTIONS) {
-  return getAccountTypeOption(value, options)?.label || "";
+  return getAccountTypeOption(value, options)?.label || (typeof value === "string" ? value.trim() : "");
 }
 
 export function getAccountTypeValue(value, options = ACCOUNT_TYPE_OPTIONS) {

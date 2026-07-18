@@ -1,3 +1,11 @@
+export function InfoIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+      <path d="M11.25 11.25l.041-.02a.75.75 0 011.084.678V16.5m-1.5-5.25v-1.5m0 0h1.5m-1.5 0A2.25 2.25 0 0112 7.5a2.25 2.25 0 012.25 2.25m-2.25 0a2.25 2.25 0 00-2.25 2.25M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 export function UserPoolIcon({ className = "size-6" }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
