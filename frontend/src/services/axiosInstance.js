@@ -11,7 +11,7 @@ const REQUEST_TIMEOUT_MS = 10000;
 const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api/v1",
   withCredentials: true,
   timeout: REQUEST_TIMEOUT_MS,
 });
