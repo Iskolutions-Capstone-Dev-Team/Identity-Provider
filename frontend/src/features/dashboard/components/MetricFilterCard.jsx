@@ -1,13 +1,13 @@
-import { CalendarIcon } from "./DashboardIcons";
+import { CalendarDays } from "lucide-react";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Skeleton } from "../../../components/ui/skeleton";
 
 export default function MetricFilterCard({ stat, colorMode = "light", isLoading = false }) {
   return (
-    <Card className="shadow-sm border-border bg-card">
-      <CardContent className="flex items-center gap-4 p-6">
+    <Card className="shadow-sm border-border bg-card transition-transform duration-200 ease-out hover:-translate-y-1">
+      <CardContent className="flex items-center gap-4 px-4 py-3">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <CalendarIcon />
+          <CalendarDays className="h-6 w-6" />
         </span>
 
         <div className="min-w-0">
