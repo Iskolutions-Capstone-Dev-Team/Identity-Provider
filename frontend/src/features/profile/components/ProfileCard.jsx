@@ -3,11 +3,11 @@ import EditProfileModal from "./EditProfileModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import ProfileDetails from "./ProfileDetails";
 import ActionButtons from "./ActionButtons";
-import SuccessAlert from "../../../components/SuccessAlert";
 import { userService } from "../../../services/userService";
 import { Mail } from "lucide-react";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
+import { toast } from "sonner";
 
 function formatProfileName(profile = {}) {
   return [profile.firstName, profile.middleName, profile.lastName, profile.suffix]
@@ -29,7 +29,6 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
   const [isEditOpen, setEditOpen] = useState(false);
   const [isPasswordOpen, setPasswordOpen] = useState(false);
   const [currentProfile, setCurrentProfile] = useState(profile);
-  const [toastMessage, setToastMessage] = useState("");
 
   useEffect(() => {
     setCurrentProfile(profile);
@@ -52,8 +51,7 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
 
     setCurrentProfile(nextProfile);
     updateCurrentUser?.(nextProfile);
-    setToastMessage("Profile updated successfully!");
-    setTimeout(() => setToastMessage(""), 2000);
+    toast.success("Profile updated successfully!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
   };
 
   const profileName = formatProfileName(currentProfile) || "Profile";
@@ -64,7 +62,7 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
         <div className="px-2 py-2 sm:px-8 sm:py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b">
           <div className="flex items-center gap-4 sm:gap-5">
             <Avatar className="size-16 sm:size-20 border-none ring-0 after:hidden">
-              <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] text-xl sm:text-2xl font-bold tracking-wider border-none ring-0 outline-none">
+              <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-white dark:text-black text-xl sm:text-2xl font-bold tracking-wider border-none ring-0 outline-none">
                 {profileInitials}
               </AvatarFallback>
             </Avatar>
@@ -106,13 +104,8 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
         showCurrentPassword={true}
         emailAddress={currentProfile.email}
         addAuditLog={addAuditLog}
-        setToastMessage={setToastMessage}
-        enableSuccessAlert={false}
+        enableSuccessAlert={true}
         colorMode={colorMode}
-      />
-      <SuccessAlert
-        message={toastMessage}
-        onClose={() => setToastMessage("")}
       />
     </>
   );
