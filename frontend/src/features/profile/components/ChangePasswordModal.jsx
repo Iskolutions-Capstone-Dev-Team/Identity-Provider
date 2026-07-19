@@ -1,14 +1,13 @@
-import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import InputEmailStep from "./InputEmailStep";
 import ChangePasswordStep, { getPasswordValidationState } from "./ChangePasswordStep";
 import OtpVerificationStep from "./OtpVerificationStep";
 import SuccessStep from "./SuccessStep";
-import SuccessAlert from "../../../components/SuccessAlert";
-import { getModalTheme } from "../../../components/modalTheme";
-import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
 import { passwordResetService } from "../../../services/passwordResetService";
 import { PasswordLockIcon, CloseIcon } from "./profileIcons";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../components/ui/dialog";
+import { Button } from "../../../components/ui/button";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMPTY_OTP = ["", "", "", "", "", ""];
@@ -74,7 +73,6 @@ function getDisabledPrimaryButtonClassName(isDarkMode) {
 
 export default function ChangePasswordModal({ isOpen, onClose, showCurrentPassword = true, addAuditLog, setToastMessage, enableSuccessAlert = false, colorMode = "light", emailAddress = "" }) {
   const isForgotPasswordFlow = !showCurrentPassword;
-  const { shouldRender, isClosing } = useModalTransition(isOpen);
   const [step, setStep] = useState(() => getInitialStep(showCurrentPassword));
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -125,7 +123,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
   }, [step, otpTimerKey]);
 
   useEffect(() => {
-    if (!shouldRender) {
+    if (!isOpen) {
       setStep(getInitialStep(showCurrentPassword));
       setRecoveryEmail("");
       setEmailError("");
@@ -139,7 +137,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
       setIsVerifyingOtp(false);
       setIsUpdatingPassword(false);
     }
-  }, [shouldRender, showCurrentPassword]);
+  }, [isOpen, showCurrentPassword]);
 
   useEffect(() => {
     if (step !== "success") {
@@ -147,6 +145,8 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     }
 
     const message = "Password changed successfully!";
+    
+    toast.success(message, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
 
     if (setToastMessage) {
       setToastMessage(message);
@@ -392,40 +392,14 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     }
   };
 
-  if (!shouldRender) {
-    return null;
-  }
-
   const currentStepMeta = getStepMeta(step, showCurrentPassword);
   const otpEmailAddress = otpTargetEmail || "your email address";
-  const {
-    modalBodyClassName,
-    modalBodyStackClassName,
-    modalBoxClassName,
-    modalCloseButtonClassName,
-    modalFooterActionsClassName,
-    modalFooterClassName,
-    modalHeaderClassName,
-    modalHeaderTitleClassName,
-    modalOverlayClassName,
-    modalPrimaryButtonClassName,
-    modalSecondaryButtonClassName,
-  } = getModalTheme(colorMode);
+  
   const isDarkMode = colorMode === "dark";
-  const passwordModalBoxClassName = `${modalBoxClassName} !max-w-2xl`;
-  const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
-  const modalHeaderContentClassName =
-    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
-  const headerIconClassName =
-    colorMode === "dark" ? "h-10 w-10 text-[#ffe28a]" : "h-10 w-10 text-[#fff0a8]";
   const requiredFieldsClassName = isDarkMode
     ? "text-sm text-[#c7adb4]"
     : "text-sm text-[#8f6f76]";
-  const getPrimaryButtonClassName = (isDisabled = false) =>
-    `${modalPrimaryButtonClassName} ${
-      isDisabled ? getDisabledPrimaryButtonClassName(isDarkMode) : ""
-    }`;
+    
   const isFormStep = step === "email" || step === "password";
   const isPrimaryDisabled =
     step === "email"
@@ -458,126 +432,93 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
 
   return (
     <>
-      {createPortal(
-        <dialog open
-          className={getModalTransitionClassName(
-            modalOverlayClassName,
-            isClosing,
-          )}
-        >
-          <div className={passwordModalBoxClassName}>
-            <div className={modalHeaderSpacingClassName}>
-              <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
-                <div className={modalHeaderContentClassName}>
-                  <PasswordLockIcon className={headerIconClassName} />
-                  <h3 className={modalHeaderTitleClassName}>
-                    {currentStepMeta.title}
-                  </h3>
-                </div>
+      <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()}>
+        <DialogContent className="sm:max-w-2xl" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
+          <DialogHeader className="-mx-4 -mt-4 rounded-t-xl border-b p-4 bg-[#7b0d15] text-white dark:bg-transparent dark:text-foreground">
+            <DialogTitle>{currentStepMeta.title}</DialogTitle>
+          </DialogHeader>
 
-                {currentStepMeta.showCloseButton && (
-                  <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
-                    <CloseIcon />
-                  </button>
-                )}
-              </div>
-            </div>
+          <div className="-mx-4 no-scrollbar max-h-[60vh] overflow-y-auto px-4">
+            <div className="space-y-6 mt-4 pb-6 px-2">
+              {step === "email" && (
+                <InputEmailStep
+                  email={recoveryEmail}
+                  setEmail={handleRecoveryEmailChange}
+                  errorMessage={emailError}
+                  onClearError={() => setEmailError("")}
+                  colorMode={colorMode}
+                />
+              )}
 
-            <div className={modalBodyClassName}>
-              <div className={modalBodyStackClassName}>
-                {step === "email" && (
-                  <InputEmailStep
-                    email={recoveryEmail}
-                    setEmail={handleRecoveryEmailChange}
-                    errorMessage={emailError}
-                    onClearError={() => setEmailError("")}
-                    colorMode={colorMode}
-                  />
-                )}
+              {step === "password" && (
+                <ChangePasswordStep
+                  form={form}
+                  setForm={setForm}
+                  showCurrentPassword={showCurrentPassword}
+                  colorMode={colorMode}
+                  errorMessage={passwordError}
+                  onClearError={() => setPasswordError("")}
+                />
+              )}
 
-                {step === "password" && (
-                  <ChangePasswordStep
-                    form={form}
-                    setForm={setForm}
-                    showCurrentPassword={showCurrentPassword}
-                    colorMode={colorMode}
-                    errorMessage={passwordError}
-                    onClearError={() => setPasswordError("")}
-                  />
-                )}
+              {step === "otp" && (
+                <OtpVerificationStep
+                  otp={otp}
+                  setOtp={handleOtpChange}
+                  timer={timer}
+                  canResend={canResend}
+                  onResend={handleResend}
+                  onVerify={verifyOTP}
+                  errorMessage={otpError}
+                  onClearError={() => setOtpError("")}
+                  emailAddress={otpEmailAddress}
+                  colorMode={colorMode}
+                />
+              )}
 
-                {step === "otp" && (
-                  <OtpVerificationStep
-                    otp={otp}
-                    setOtp={handleOtpChange}
-                    timer={timer}
-                    canResend={canResend}
-                    onResend={handleResend}
-                    onVerify={verifyOTP}
-                    errorMessage={otpError}
-                    onClearError={() => setOtpError("")}
-                    emailAddress={otpEmailAddress}
-                    colorMode={colorMode}
-                  />
-                )}
-
-                {step === "success" && (
-                  <SuccessStep
-                    colorMode={colorMode}
-                    showCurrentPassword={showCurrentPassword}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className={modalFooterClassName}>
-              {isFormStep ? (
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className={requiredFieldsClassName}>
-                    <span className="text-red-500">*</span> Required fields
-                  </div>
-                  <div className={modalFooterActionsClassName}>
-                    <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
-                      Cancel
-                    </button>
-                    <button type="button" disabled={isPrimaryDisabled} className={getPrimaryButtonClassName(isPrimaryDisabled)}
-                      onClick={
-                        step === "email"
-                          ? handleEmailContinue
-                          : handlePasswordContinue
-                      }
-                    >
-                      {primaryButtonLabel}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className={modalFooterActionsClassName}>
-                  {step === "otp" && (
-                    <button type="button" disabled={isPrimaryDisabled} className={getPrimaryButtonClassName(isPrimaryDisabled)} onClick={verifyOTP}>
-                      {otpButtonLabel}
-                    </button>
-                  )}
-
-                  {step === "success" && (
-                    <button type="button" className={modalPrimaryButtonClassName} onClick={onClose}>
-                      Close
-                    </button>
-                  )}
-                </div>
+              {step === "success" && (
+                <SuccessStep
+                  colorMode={colorMode}
+                  showCurrentPassword={showCurrentPassword}
+                />
               )}
             </div>
           </div>
-        </dialog>,
-        document.body,
-      )}
 
-      {enableSuccessAlert && (
-        <SuccessAlert
-          message={successMessage}
-          onClose={() => setSuccessMessage("")}
-        />
-      )}
+          <DialogFooter className="gap-2 sm:justify-end">
+            {isFormStep ? (
+              <div className="flex w-full justify-end gap-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="button" disabled={isPrimaryDisabled} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200"
+                  onClick={
+                    step === "email"
+                      ? handleEmailContinue
+                      : handlePasswordContinue
+                  }
+                >
+                  {primaryButtonLabel}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex w-full justify-end gap-2">
+                {step === "otp" && (
+                  <Button type="button" disabled={isPrimaryDisabled} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200" onClick={verifyOTP}>
+                    {otpButtonLabel}
+                  </Button>
+                )}
+
+                {step === "success" && (
+                  <Button type="button" className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200" onClick={onClose}>
+                    Close
+                  </Button>
+                )}
+              </div>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
