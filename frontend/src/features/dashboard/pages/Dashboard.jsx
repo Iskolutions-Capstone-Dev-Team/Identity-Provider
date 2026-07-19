@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
-import PageHeaderActionButton from "../../../components/PageHeaderActionButton";
-import { DashboardChartIcon, DownloadIcon } from "../components/DashboardIcons";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { LayoutDashboard, Download } from "lucide-react";
+import { createPortal } from "react-dom";
 import MetricFilterCard from "../components/MetricFilterCard";
 import ReportConfirmModal from "../components/ReportConfirmModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
@@ -104,6 +104,12 @@ function downloadBlob(blob, fileName) {
 export default function Dashboard() {
   const { colorMode = "light" } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
+  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+
+  useEffect(() => {
+    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+  }, []);
+
   const [metrics, setMetrics] = useState(null);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("today");
   const [loading, setLoading] = useState(true);
@@ -176,33 +182,32 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-      <Breadcrumbs
-        colorMode={colorMode}
-        items={[
-          {
-            label: "Dashboard",
-            icon: <DashboardChartIcon />,
-          },
-        ]}
-      />
+      {breadcrumbsContainer && createPortal(
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbPage>Dashboard</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>,
+        breadcrumbsContainer
+      )}
 
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <PageHeader
-          title="Dashboard"
-          description="Authentication metrics and security intelligence"
-          icon={<DashboardChartIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-          colorMode={colorMode}
-        />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-primary/10 text-primary rounded-xl">
+            <LayoutDashboard className="w-8 h-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-muted-foreground">Authentication metrics and security intelligence.</p>
+          </div>
+        </div>
 
-        <PageHeaderActionButton
-          colorMode={colorMode}
-          onClick={() => setIsReportConfirmOpen(true)}
-        >
-          <span className="inline-flex items-center gap-3">
-            Generate Report
-            <DownloadIcon />
-          </span>
-        </PageHeaderActionButton>
+        <Button className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200" onClick={() => setIsReportConfirmOpen(true)}>
+          <Download className="w-4 h-4 mr-2" />
+          Generate Report
+        </Button>
       </div>
 
       <div className="space-y-6">
