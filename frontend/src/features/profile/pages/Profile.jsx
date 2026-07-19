@@ -11,7 +11,7 @@ export default function Profile() {
   const colorMode = outletContext?.colorMode || "light";
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+    <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 py-8 sm:px-0 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem]">
       <Breadcrumbs
         colorMode={colorMode}
         items={[
