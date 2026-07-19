@@ -889,9 +889,11 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-1">
-                      <Label className="text-sm leading-none font-medium">
-                        First Name <span className="text-red-500">*</span>
-                      </Label>
+                      <div className="flex items-center min-h-[24px]">
+                        <Label className="text-sm leading-none font-medium">
+                          First Name <span className="text-red-500">*</span>
+                        </Label>
+                      </div>
                       <div className="validator w-full">
                         <InputGroup className={`${getInputClassName("givenName")} validator`}>
                           <InputGroupInput type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required placeholder="Enter first name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
@@ -905,9 +907,11 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-sm leading-none font-medium">
-                        Middle Name
-                      </Label>
+                      <div className="flex items-center min-h-[24px]">
+                        <Label className="text-sm leading-none font-medium">
+                          Middle Name
+                        </Label>
+                      </div>
                       <div className="w-full">
                         <InputGroup className={getInputClassName("middleName")}>
                           <InputGroupInput type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
@@ -916,9 +920,11 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-sm leading-none font-medium">
-                        Last Name <span className="text-red-500">*</span>
-                      </Label>
+                      <div className="flex items-center min-h-[24px]">
+                        <Label className="text-sm leading-none font-medium">
+                          Last Name <span className="text-red-500">*</span>
+                        </Label>
+                      </div>
                       <div className="validator w-full">
                         <InputGroup className={`${getInputClassName("surname")} validator`}>
                           <InputGroupInput type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required placeholder="Enter last name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
@@ -932,7 +938,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                     </div>
 
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center justify-between w-full min-h-[24px]">
                         <Label className="text-sm leading-none font-medium">
                           Suffix
                         </Label>
