@@ -1,7 +1,16 @@
+import { useState, useEffect } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Trash2Icon } from 'lucide-react'
 
 export default function DeleteConfirmModal({ open, message = "Delete this app client?", onCancel, onConfirm, theme, colorMode }) {
+  const [displayMessage, setDisplayMessage] = useState(message);
+
+  useEffect(() => {
+    if (open) {
+      setDisplayMessage(message);
+    }
+  }, [open, message]);
+
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => { if (!isOpen && onCancel) onCancel(); }}>
       <AlertDialogContent size="sm">
@@ -9,7 +18,7 @@ export default function DeleteConfirmModal({ open, message = "Delete this app cl
           <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-[#f8d24e]/20 dark:text-[#f8d24e]">
             <Trash2Icon />
           </AlertDialogMedia>
-          <AlertDialogTitle>{message}</AlertDialogTitle>
+          <AlertDialogTitle>{displayMessage}</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone.
           </AlertDialogDescription>
