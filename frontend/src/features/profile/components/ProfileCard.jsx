@@ -5,7 +5,9 @@ import ProfileDetails from "./ProfileDetails";
 import ActionButtons from "./ActionButtons";
 import SuccessAlert from "../../../components/SuccessAlert";
 import { userService } from "../../../services/userService";
-import { EmailIcon } from "./profileIcons";
+import { Mail } from "lucide-react";
+import { Card, CardContent } from "../../../components/ui/card";
+import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
 
 function formatProfileName(profile = {}) {
   return [profile.firstName, profile.middleName, profile.lastName, profile.suffix]
@@ -56,104 +58,38 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
 
   const profileName = formatProfileName(currentProfile) || "Profile";
   const profileInitials = getProfileInitials(currentProfile);
-  const wrapperClassName = `relative overflow-hidden rounded-[2rem] backdrop-blur-2xl transition-[border-color,box-shadow] duration-500 ease-out ${
-    isDarkMode
-      ? "border border-white/10 shadow-[0_32px_90px_-54px_rgba(2,6,23,0.9)]"
-      : "border border-white/70 shadow-[0_32px_90px_-54px_rgba(43,3,7,0.85)]"
-  }`;
-
   return (
     <>
-      <div className={wrapperClassName}>
-        <div
-          className={`pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,248,243,0.86))] transition-opacity duration-500 ease-out ${
-            isDarkMode ? "opacity-0" : "opacity-100"
-          }`}
-        />
-        <div
-          className={`pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(17,24,39,0.92),rgba(33,21,30,0.92))] transition-opacity duration-500 ease-out ${
-            isDarkMode ? "opacity-100" : "opacity-0"
-          }`}
-        />
-        <div
-          className={`pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(248,210,78,0.18),transparent_24%),linear-gradient(180deg,rgba(123,13,21,0.04),transparent_38%)] transition-opacity duration-500 ease-out ${
-            isDarkMode ? "opacity-0" : "opacity-100"
-          }`}
-        />
-        <div
-          className={`pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(248,210,78,0.12),transparent_24%),linear-gradient(180deg,rgba(123,13,21,0.1),transparent_38%)] transition-opacity duration-500 ease-out ${
-            isDarkMode ? "opacity-100" : "opacity-0"
-          }`}
-        />
+      <Card className="flex flex-col border-border bg-card shadow-sm overflow-hidden">
+        <div className="px-2 py-2 sm:px-8 sm:py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b">
+          <div className="flex items-center gap-4 sm:gap-5">
+            <Avatar className="size-16 sm:size-20 border-none ring-0 after:hidden">
+              <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] text-xl sm:text-2xl font-bold tracking-wider border-none ring-0 outline-none">
+                {profileInitials}
+              </AvatarFallback>
+            </Avatar>
 
-        <div className="relative">
-          <div className="relative overflow-hidden border-b border-white/10 px-5 py-6 text-white sm:px-8 sm:py-7">
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: "url(/assets/images/pup_bg.png)" }}
-            />
-            <div
-              className={`absolute inset-0 bg-[linear-gradient(135deg,rgba(43,3,7,0.94),rgba(123,13,21,0.84),rgba(24,2,4,0.96))] transition-opacity duration-500 ease-out ${
-                isDarkMode ? "opacity-0" : "opacity-100"
-              }`}
-            />
-            <div
-              className={`absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(123,13,21,0.76),rgba(31,18,27,0.96))] transition-opacity duration-500 ease-out ${
-                isDarkMode ? "opacity-100" : "opacity-0"
-              }`}
-            />
-            <div className="pointer-events-none absolute inset-0">
-              <div
-                className={`absolute left-[-4rem] top-[-4rem] h-40 w-40 rounded-full bg-[#f8d24e]/20 blur-3xl transition-opacity duration-500 ease-out ${
-                  isDarkMode ? "opacity-0" : "opacity-100"
-                }`}
-              />
-              <div
-                className={`absolute left-[-4rem] top-[-4rem] h-40 w-40 rounded-full bg-[#f8d24e]/14 blur-3xl transition-opacity duration-500 ease-out ${
-                  isDarkMode ? "opacity-100" : "opacity-0"
-                }`}
-              />
-              <div
-                className={`absolute bottom-[-5rem] right-[-1rem] h-52 w-52 rounded-full bg-white/10 blur-3xl transition-opacity duration-500 ease-out ${
-                  isDarkMode ? "opacity-0" : "opacity-100"
-                }`}
-              />
-              <div
-                className={`absolute bottom-[-5rem] right-[-1rem] h-52 w-52 rounded-full bg-[#7b0d15]/20 blur-3xl transition-opacity duration-500 ease-out ${
-                  isDarkMode ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            </div>
-
-            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-4 sm:gap-5">
-                <div className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[1.75rem] border border-white/12 bg-white/10 text-xl font-semibold tracking-[0.08em] text-white shadow-[0_22px_45px_-28px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:h-20 sm:w-20 sm:text-2xl">
-                  {profileInitials}
-                </div>
-
-                <div className="min-w-0 space-y-3">
-                  <h2 className="text-2xl font-semibold tracking-[0.01em] text-white sm:text-[2.1rem]">
-                    {profileName}
-                  </h2>
-                  <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-white/88 backdrop-blur-sm">
-                    <EmailIcon />
-                    <span className="truncate">{currentProfile.email}</span>
-                  </div>
-                </div>
+            <div className="min-w-0 space-y-1.5 sm:space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                {profileName}
+              </h2>
+              <div className="inline-flex max-w-full items-center gap-2 text-sm text-muted-foreground font-medium">
+                <Mail className="size-4" />
+                <span className="truncate">{currentProfile.email}</span>
               </div>
             </div>
           </div>
-
-          <div className="space-y-8 px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-            <ProfileDetails profile={currentProfile} colorMode={colorMode} />
-            <ActionButtons
-              openEdit={() => setEditOpen(true)}
-              openPassword={() => setPasswordOpen(true)}
-              colorMode={colorMode}
-            />
-          </div>
         </div>
-      </div>
+
+        <CardContent className="space-y-8 p-4 sm:p-6 lg:p-8">
+          <ProfileDetails profile={currentProfile} colorMode={colorMode} />
+          <ActionButtons
+            openEdit={() => setEditOpen(true)}
+            openPassword={() => setPasswordOpen(true)}
+            colorMode={colorMode}
+          />
+        </CardContent>
+      </Card>
 
       <EditProfileModal
         open={isEditOpen}
