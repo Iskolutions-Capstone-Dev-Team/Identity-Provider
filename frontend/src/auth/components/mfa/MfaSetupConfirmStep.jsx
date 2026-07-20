@@ -1,5 +1,7 @@
 import { useState } from "react";
-import MfaCodeInput from "./MfaCodeInput";
+import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CircleHelp } from "lucide-react";
 import { InfoCircleIcon, ClipboardCheckIcon, ClipboardDocumentIcon, ArrowLeftIcon } from "./mfaIcons";
 
 export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving, colorMode = "dark", onCodeChange, onNameChange, onSubmit, onBack, onContinue }) {
@@ -64,9 +66,9 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className={titleClassName}>
+        <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight text-center">
           {hasBackupCodes ? "Backup Codes" : "Enter the code"}
-        </h1>
+        </h3>
       </div>
 
       {hasBackupCodes ? (
@@ -101,37 +103,58 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
           </div>
         </div>
       ) : (
-        <form onSubmit={onSubmit} className="mx-auto w-full max-w-[594px] space-y-5">
+        <div className="mx-auto w-full max-w-[594px] space-y-5">
           <div>
-            <label className={labelClassName}>
+            <label className="mb-2 block text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               App Name
             </label>
-            <input type="text" value={name} onChange={(event) => onNameChange(event.target.value)} placeholder="Enter the App Name(e.g., Google Auth)" className="h-13 w-full rounded-2xl border border-white/20 bg-white/95 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#ffd700] focus:ring-4 focus:ring-[#ffd700]/20"/>
+            <div className="flex w-full items-center rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className="ml-1 mr-2 flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground cursor-help outline-none transition-colors">
+                    <CircleHelp className="size-4 text-emerald-500" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-72 p-3">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold leading-none tracking-tight">Authenticator Name</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Your app name should not be identical to your other existing auth app.
+                    </p>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <input 
+                type="text" 
+                value={name} 
+                onChange={(event) => onNameChange(event.target.value)} 
+                placeholder="Enter the App Name(e.g., Google Auth)" 
+                className="flex h-9 w-full bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
           </div>
 
           <div className="space-y-3">
-            <label className={verificationLabelClassName}>
+            <label className="block text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Verification Code
             </label>
-            <MfaCodeInput
-              value={code}
-              onChange={onCodeChange}
-              disabled={isSaving}
-              fullWidth
-            />
+            <div className="flex flex-col items-center">
+                <InputOTP maxLength={6} value={code} onChange={onCodeChange} disabled={isSaving}>
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} className="w-10 h-12 text-lg sm:w-14 sm:h-16 sm:text-2xl" />
+                    <InputOTPSlot index={1} className="w-10 h-12 text-lg sm:w-14 sm:h-16 sm:text-2xl" />
+                    <InputOTPSlot index={2} className="w-10 h-12 text-lg sm:w-14 sm:h-16 sm:text-2xl" />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={3} className="w-10 h-12 text-lg sm:w-14 sm:h-16 sm:text-2xl" />
+                    <InputOTPSlot index={4} className="w-10 h-12 text-lg sm:w-14 sm:h-16 sm:text-2xl" />
+                    <InputOTPSlot index={5} className="w-10 h-12 text-lg sm:w-14 sm:h-16 sm:text-2xl" />
+                  </InputOTPGroup>
+                </InputOTP>
+            </div>
           </div>
-
-          <div className="space-y-4">
-            <button type="submit" disabled={isSaving} className="btn h-11 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-sm font-semibold text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
-              {isSaving ? "Saving..." : "Save Authenticator"}
-            </button>
-
-            <button type="button" onClick={onBack} disabled={isSaving} className={backButtonClassName}>
-              <ArrowLeftIcon />
-              Back
-            </button>
-          </div>
-        </form>
+        </div>
       )}
 
       {hasBackupCodes ? (

@@ -1,16 +1,15 @@
 import { InfoCircleIcon } from "./mfaIcons";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 export default function MfaSetupQrStep({ qrCodeUrl, isLoading, colorMode = "dark", onNext }) {
   const isDarkMode = colorMode === "dark";
-  const titleClassName = isDarkMode
-    ? "text-3xl font-semibold text-white"
-    : "text-3xl font-semibold text-[#351018]";
-  const noteClassName = isDarkMode
-    ? "rounded-2xl border border-blue-300/35 bg-blue-950/28 px-4 py-4 text-left text-blue-50 shadow-[0_18px_45px_-36px_rgba(37,99,235,0.72)]"
-    : "rounded-2xl border border-[#f8d24e]/55 bg-[#fff4dc] px-4 py-4 text-left text-[#351018] shadow-[0_18px_45px_-36px_rgba(123,13,21,0.22)]";
-  const noteIconClassName = isDarkMode
-    ? "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-300/14 text-blue-100"
-    : "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f8d24e]/25 text-[#7b0d15]";
+  const titleClassName = "scroll-m-20 text-2xl font-semibold tracking-tight text-center";
+  
+  const alertClassName = isDarkMode
+    ? "bg-blue-950/20 text-blue-100 border-blue-900/50"
+    : "bg-blue-50 text-blue-900 border-blue-200";
 
   return (
     <div className="space-y-6 text-center">
@@ -18,16 +17,12 @@ export default function MfaSetupQrStep({ qrCodeUrl, isLoading, colorMode = "dark
         <h1 className={titleClassName}>Scan the QR code</h1>
       </div>
 
-      <div className={noteClassName}>
-        <div className="flex gap-3">
-          <div className={noteIconClassName}>
-            <InfoCircleIcon />
-          </div>
-          <p className="text-sm font-medium leading-6">
-            Note: Scan this QR code using any authenticator app before clicking Next.
-          </p>
-        </div>
-      </div>
+      <Alert className={alertClassName}>
+        <Info className="h-4 w-4" />
+        <AlertDescription className="ml-2">
+          Note: Scan this QR code using any authenticator app before clicking Next.
+        </AlertDescription>
+      </Alert>
 
       <div className="mx-auto flex min-h-[18rem] max-w-[18rem] items-center justify-center rounded-[1.5rem] border border-white/18 bg-white p-4 shadow-[0_24px_60px_-35px_rgba(0,0,0,0.9)]">
         {isLoading ? (
@@ -38,10 +33,6 @@ export default function MfaSetupQrStep({ qrCodeUrl, isLoading, colorMode = "dark
           <p className="text-sm text-slate-500">QR code unavailable</p>
         )}
       </div>
-
-      <button type="button" disabled={isLoading || !qrCodeUrl} onClick={onNext} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
-        Next
-      </button>
     </div>
   );
 }

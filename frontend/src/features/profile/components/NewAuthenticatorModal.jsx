@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import QRCode from "qrcode";
+import { toast } from "sonner";
 import ErrorAlert from "../../../components/ErrorAlert";
-import { getModalTheme } from "../../../components/modalTheme";
-import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../components/ui/dialog";
+import { Button } from "../../../components/ui/button";
 import MfaSetupConfirmStep from "../../../auth/components/mfa/MfaSetupConfirmStep";
 import MfaSetupQrStep from "../../../auth/components/mfa/MfaSetupQrStep";
 import { getDigits } from "../../../auth/components/mfa/mfaInputUtils";
 import { createPasskeyCredential } from "../../../auth/utils/webAuthn";
 import { mfaService } from "../../../services/mfaService";
-import { PhoneIcon, ConnectionSetupIcon, PasskeyIcon, CloseIcon } from "./profileIcons";
+import { PhoneIcon, ConnectionSetupIcon, PasskeyIcon } from "./profileIcons";
+import { Smartphone, KeySquare } from "lucide-react";
 
 function getRequestErrorMessage(error, fallbackMessage) {
   return (
@@ -20,31 +21,24 @@ function getRequestErrorMessage(error, fallbackMessage) {
   );
 }
 
-function ConnectionOptionButton({ title, description, icon, colorMode, onClick, disabled }) {
-  const isDarkMode = colorMode === "dark";
-  const buttonClassName = isDarkMode
-    ? "group flex min-h-[5.5rem] w-full items-center gap-4 rounded-[1.25rem] border border-white/12 bg-white/[0.04] px-5 py-4 text-left transition hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/10 disabled:cursor-not-allowed disabled:opacity-60"
-    : "group flex min-h-[5.5rem] w-full items-center gap-4 rounded-[1.25rem] border border-[#7b0d15]/12 bg-[#fffaf2] px-5 py-4 text-left shadow-[0_18px_36px_-32px_rgba(43,3,7,0.5)] transition hover:border-[#f8d24e]/80 hover:bg-[#fff4dc] disabled:cursor-not-allowed disabled:opacity-60";
-  const iconClassName = isDarkMode
-    ? "flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-[#f8d24e]/35 bg-[#f8d24e]/10 text-[#ffe28a]"
-    : "flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-[#f8d24e]/55 bg-[#f8d24e]/18 text-[#7b0d15]";
-  const titleClassName = isDarkMode
-    ? "block text-base font-bold text-white"
-    : "block text-base font-bold text-[#351018]";
-  const descriptionClassName = isDarkMode
-    ? "mt-1 block text-sm font-semibold leading-5 text-[#d8c6cc]"
-    : "mt-1 block text-sm font-semibold leading-5 text-[#7b5560]";
-
+function ConnectionOptionButton({ title, description, icon, onClick, disabled }) {
   return (
-    <button type="button" className={buttonClassName} onClick={onClick} disabled={disabled}>
-      <span className={iconClassName}>
+    <Button
+      variant="outline"
+      className="group/button h-auto justify-start gap-3 px-4 py-3 text-left w-full"
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <div className="bg-muted text-accent-foreground group-hover/button:bg-background rounded-md flex size-10 shrink-0 items-center justify-center">
         {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className={titleClassName}>{title}</span>
-        <span className={descriptionClassName}>{description}</span>
-      </span>
-    </button>
+      </div>
+      <div className="flex flex-col gap-0.5 min-w-0">
+        <span className="truncate font-semibold">{title}</span>
+        <span className="text-muted-foreground text-xs font-normal truncate">
+          {description}
+        </span>
+      </div>
+    </Button>
   );
 }
 
@@ -59,22 +53,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
-  const { shouldRender, isClosing } = useModalTransition(open);
-  const {
-    modalBodyClassName,
-    modalBoxClassName,
-    modalCloseButtonClassName,
-    modalHeaderClassName,
-    modalHeaderTitleClassName,
-    modalOverlayClassName,
-  } = getModalTheme(colorMode);
-  const headerIconClassName =
-    colorMode === "dark" ? "h-10 w-10 text-[#ffe28a]" : "h-10 w-10 text-[#fff0a8]";
-  const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
-  const setupBodyClassName = colorMode === "dark"
-    ? "rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(35,38,48,0.96),rgba(27,29,38,0.96))] p-5 text-white shadow-[0_22px_45px_-36px_rgba(2,6,23,0.72)] sm:p-6"
-    : "rounded-[1.5rem] border border-[#7b0d15]/10 bg-[#fffaf2] p-5 text-[#351018] shadow-[0_22px_45px_-36px_rgba(43,3,7,0.45)] sm:p-6";
+
 
   useEffect(() => {
     if (open) {
@@ -147,6 +126,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
 
       await mfaService.finishPasskeyRegistration(email, credential);
       onCreated?.({ type: "passkey" });
+      toast.success("Passkey added successfully", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
       onClose?.();
     } catch (passkeyError) {
       setError(
@@ -158,7 +138,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
   };
 
   const handleSaveAuthenticator = async (event) => {
-    event.preventDefault();
+    event?.preventDefault?.();
     setError("");
 
     if (code.length !== 6) {
@@ -192,43 +172,29 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
 
   const handleFinish = () => {
     onCreated?.({ type: "authenticator", code });
+    toast.success("Authenticator app added successfully", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
     onClose?.();
   };
 
-  if (!shouldRender) {
+  if (!open) {
     return null;
   }
 
-  return createPortal(
-    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
-      <div className={`${modalBoxClassName} !max-w-xl`}>
-        <div className={modalHeaderSpacingClassName}>
-          <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
-            <div className="flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16">
-              {connectionType === "passkey" ? (
-                <PasskeyIcon className={headerIconClassName} />
-              ) : connectionType === "authenticator" ? (
-                <PhoneIcon className={headerIconClassName} />
-              ) : (
-                <ConnectionSetupIcon className={headerIconClassName} />
-              )}
-              <h3 className={modalHeaderTitleClassName}>
-                {connectionType === "authenticator"
-                  ? "New Authenticator"
-                  : connectionType === "passkey"
-                    ? "New Passkey"
-                    : "New Connection"}
-              </h3>
-            </div>
+  return (
+    <Dialog open={open} onOpenChange={(val) => !val && onClose?.()}>
+      <DialogContent className="sm:max-w-md" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
+        <DialogHeader className="-mx-4 -mt-4 rounded-t-xl border-b p-4 bg-[#7b0d15] text-white dark:bg-transparent dark:text-foreground">
+          <DialogTitle>
+            {connectionType === "authenticator"
+              ? "New Authenticator"
+              : connectionType === "passkey"
+                ? "New Passkey"
+                : "New Connection"}
+          </DialogTitle>
+        </DialogHeader>
 
-            <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
-              <CloseIcon />
-            </button>
-          </div>
-        </div>
-
-        <div className={modalBodyClassName}>
-          <div className="space-y-5">
+        <div className="-mx-4 no-scrollbar max-h-[60vh] overflow-y-auto px-4">
+          <div className="space-y-5 px-2 mt-4 pb-6">
             <ErrorAlert message={error} onClose={() => setError("")} />
 
             {step === "choice" ? (
@@ -236,22 +202,20 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
                 <ConnectionOptionButton
                   title="Authenticator App"
                   description="Scan a QR code and verify a 6-digit code."
-                  icon={<PhoneIcon className="h-6 w-6" />}
-                  colorMode={colorMode}
+                  icon={<Smartphone className="size-5" />}
                   onClick={handleSelectAuthenticator}
                   disabled={isRegisteringPasskey}
                 />
                 <ConnectionOptionButton
                   title="Passkey"
                   description="Use your device, browser, or security key."
-                  icon={<PasskeyIcon className="h-6 w-6" />}
-                  colorMode={colorMode}
+                  icon={<KeySquare className="size-5" />}
                   onClick={handleSelectPasskey}
                   disabled={isRegisteringPasskey}
                 />
               </div>
             ) : (
-              <div className={setupBodyClassName}>
+              <div className="space-y-4">
                 {step === "qr" ? (
                 <MfaSetupQrStep
                   qrCodeUrl={qrCodeUrl}
@@ -285,8 +249,65 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
             )}
           </div>
         </div>
-      </div>
-    </dialog>,
-    document.body,
+
+        {(step === "choice" || step === "qr" || step === "confirm") && (
+          <DialogFooter className="gap-2 sm:justify-end">
+            <div className="flex gap-2 w-full sm:w-auto">
+              {step === "confirm" ? (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setCode("");
+                    setError("");
+                    setStep("qr");
+                  }} 
+                  disabled={isSaving} 
+                  className="flex-1 sm:flex-none"
+                >
+                  Back
+                </Button>
+              ) : (
+                <Button type="button" variant="outline" onClick={onClose} disabled={isRegisteringPasskey} className="flex-1 sm:flex-none">
+                  Cancel
+                </Button>
+              )}
+              {step === "qr" && (
+                <Button 
+                  type="button" 
+                  disabled={!qrCodeUrl} 
+                  onClick={() => {
+                    setCode("");
+                    setError("");
+                    setStep("confirm");
+                  }} 
+                  className={
+                    colorMode === "dark"
+                      ? "flex-1 sm:flex-none"
+                      : "flex-1 sm:flex-none bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] font-bold transition-colors duration-200"
+                  }
+                >
+                  Next
+                </Button>
+              )}
+              {step === "confirm" && (
+                <Button 
+                  type="button" 
+                  disabled={isSaving} 
+                  onClick={handleSaveAuthenticator} 
+                  className={
+                    colorMode === "dark"
+                      ? "flex-1 sm:flex-none"
+                      : "flex-1 sm:flex-none bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] font-bold transition-colors duration-200"
+                  }
+                >
+                  {isSaving ? "Saving..." : "Save Authenticator"}
+                </Button>
+              )}
+            </div>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

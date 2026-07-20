@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import ErrorAlert from "../../../components/ErrorAlert";
-import SuccessAlert from "../../../components/SuccessAlert";
+import { toast } from "sonner";
 import NewAuthenticatorModal from "./NewAuthenticatorModal";
 import { mfaService } from "../../../services/mfaService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
@@ -63,7 +63,6 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
   const [authenticators, setAuthenticators] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [authenticatorToDelete, setAuthenticatorToDelete] = useState(null);
   const [isNewConnectionOpen, setIsNewConnectionOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -106,7 +105,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
         id: authenticatorToDelete.id,
       });
       setAuthenticatorToDelete(null);
-      setSuccessMessage("Authenticator removed successfully.");
+      toast.success("Authenticator removed successfully.", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
       await loadAuthenticators();
     } catch (deleteError) {
       setError(
@@ -231,18 +230,9 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
         email={email}
         colorMode={colorMode}
         onClose={() => setIsNewConnectionOpen(false)}
-        onCreated={async ({ type } = {}) => {
-          setSuccessMessage(
-            type === "passkey"
-              ? "Passkey connected successfully."
-              : "Authenticator connected successfully.",
-          );
+        onCreated={async () => {
           await loadAuthenticators();
         }}
-      />
-      <SuccessAlert
-        message={successMessage}
-        onClose={() => setSuccessMessage("")}
       />
     </>
   );
