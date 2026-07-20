@@ -205,6 +205,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			c.JSON(http.StatusOK, gin.H{"status": "IdP is operational"})
 		})
 		admin.GET("/metrics", h.MetricsHandler.GetDashboardMetrics)
+		admin.GET("/metrics/logins", h.MetricsHandler.GetPaginatedLogins)
 		admin.GET("/report", h.MetricsHandler.GetMetricsReportPDF)
 
 		// Service Provider (Client) Maintenance
@@ -238,6 +239,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.GET("", h.UserHandler.GetUserList)
 			users.GET("/admins", h.UserHandler.GetAdminUserList)
 			users.GET("/:id", h.UserHandler.GetUser)
+			users.PATCH("/:id", h.UserHandler.PatchUserDetails)
 			users.PATCH("/:id/status", h.UserHandler.PatchUserStatus)
 			users.PATCH("/:id/role", h.UserHandler.PatchUserRole)
 			users.GET("/access", h.UserHandler.GetUserDetailedAccess)

@@ -32,6 +32,7 @@ const initialFormData = {
   accessibleClientNames: [],
   manageableClientIds: [],
   manageableClientNames: [],
+  accountType: "",
 };
 
 const STATUS_VALUES = new Set(["active", "inactive", "suspended"]);
@@ -148,6 +149,7 @@ const createFormData = (user) => ({
   accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
   manageableClientIds: normalizeClientIds(user?.manageableClientIds),
   manageableClientNames: normalizeClientNames(user?.manageableClientNames),
+  accountType: user?.accountType || user?.account_type || "",
 });
 
 const getSelectedClientOptions = (clientIds = [], clientNames = []) =>
@@ -210,6 +212,15 @@ export default function UserPoolModal({
   const [isCopied, setIsCopied] = useState(false);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const isSubmittingRef = useRef(false);
+  const { currentUser } = useCurrentUser();
+  const { accountTypeOptions, isLoadingAccountTypes } = useRegistrationAccountTypes({
+    enabled: open,
+  });
+
+  const accountTypeSelectOptions = accountTypeOptions.map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+  }));
 
   useEffect(() => {
     if (!open) return;
@@ -217,6 +228,8 @@ export default function UserPoolModal({
     setFormData(nextFormData);
     setOriginalUser(nextFormData);
     setIsSubmitting(false);
+    setShowMfaModal(false);
+    setMfaCode("");
     isSubmittingRef.current = false;
     setIsCopied(false);
     setError("");
@@ -232,6 +245,17 @@ export default function UserPoolModal({
   const handleStatusChange = (value) => {
     setFormData((current) => ({ ...current, status: normalizeStatus(value) }));
     if (error) setError("");
+  };
+
+  const handleAccountTypeChange = (value) => {
+    setFormData((current) => ({
+      ...current,
+      accountType: value,
+    }));
+
+    if (error) {
+      setError("");
+    }
   };
 
   const handleAdminRoleChange = (roleId) => {

@@ -37,6 +37,7 @@ func InitializeHandlers(db *sqlx.DB,
 			LogService:    service.LogService,
 			ClientService: service.ClientService,
 			AccessService: service.ClientAllowedUserService,
+			MFAService:    service.MFAService,
 		},
 
 		LogHandler: &v1.LogHandler{

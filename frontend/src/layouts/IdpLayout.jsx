@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
 import AssistiveFab from "../components/AssistiveFab";
 import AccessibilityWidget from "../components/AccessibilityWidget";
@@ -125,7 +125,9 @@ export default function IdpLayout() {
 
           <div className="flex-1 p-4 sm:p-6 lg:p-8">
             <PageTransition pageKey={location.pathname}>
-              {outlet}
+              <Suspense fallback={<div className="flex min-h-[60vh] w-full items-center justify-center"><span className="loading loading-dots w-15 text-[#f8d24e]"></span></div>}>
+                {outlet}
+              </Suspense>
             </PageTransition>
           </div>
         </SidebarInset>

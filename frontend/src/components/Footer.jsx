@@ -11,6 +11,7 @@ export default function Footer() {
             <div>
               <img
                 src="/assets/images/PUPIDP-logo.png"
+                loading="lazy"
                 alt="PUP IDP Logo"
                 className="h-16 w-16 object-contain"
               />

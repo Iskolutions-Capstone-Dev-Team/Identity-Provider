@@ -431,8 +431,11 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     const previousRoleId = isAdminUserUpdate
       ? normalizeRoleId(originalUser?.roleId)
       : null;
+    const nextAccountType = normalizeAccountType(updatedUser?.accountType);
+    const previousAccountType = normalizeAccountType(originalUser?.accountType);
     const shouldUpdateStatus = Boolean(nextStatus) && nextStatus !== previousStatus;
     const shouldUpdateRole = isAdminUserUpdate && nextRoleId !== previousRoleId;
+    const shouldUpdateAccountType = nextAccountType && nextAccountType !== previousAccountType;
     const shouldUpdateAccessibleClients = !areSameArrays(
       nextAccessibleClientIds,
       previousAccessibleClientIds,
@@ -443,11 +446,13 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     let accessWasUpdated = false;
     let manageableClientsWereUpdated = false;
     let roleWasUpdated = false;
+    let accountTypeWasUpdated = false;
 
     try {
       if (
         !shouldUpdateStatus &&
         !shouldUpdateRole &&
+        !shouldUpdateAccountType &&
         !shouldUpdateAccessibleClients &&
         !shouldUpdateManageableClients
       ) {
@@ -473,9 +478,23 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         manageableClientsWereUpdated = true;
       }
 
-      if (shouldUpdateRole) {
-        await userService.updateUserRole(updatedUser.id, nextRoleId);
-        roleWasUpdated = true;
+      if (shouldUpdateRole || shouldUpdateAccountType) {
+        if (!updatedUser.mfaCode) {
+           throw new Error("MFA Code is required to update Account Type or Role.");
+        }
+        
+        const nextAccountTypeId = normalizeAccountTypeId(updatedUser?.accountTypeId) || getAccountTypeBackendId(nextAccountType);
+        const finalRoleId = nextRoleId !== previousRoleId ? nextRoleId : previousRoleId;
+        
+        await userService.updateUserDetails(
+          updatedUser.id, 
+          nextAccountTypeId, 
+          finalRoleId, 
+          updatedUser.mfaCode
+        );
+        
+        roleWasUpdated = shouldUpdateRole;
+        accountTypeWasUpdated = shouldUpdateAccountType;
       }
 
       if (shouldUpdateStatus) {
@@ -495,6 +514,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       if (
         shouldUpdateStatus ||
         shouldUpdateRole ||
+        shouldUpdateAccountType ||
         shouldUpdateAccessibleClients ||
         shouldUpdateManageableClients
       ) {

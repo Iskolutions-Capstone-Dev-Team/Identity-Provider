@@ -36,6 +36,7 @@ type UserHandler struct {
 	LogService    service.LogService
 	ClientService service.ClientService
 	AccessService service.ClientAllowedUserService
+	MFAService    service.MFAService
 }
 
 // PostUser creates a new user in the system
@@ -1514,4 +1515,145 @@ func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+// PatchUserDetails updates a user's account type and role.
+// @Summary Edit user details (Account Type & Role)
+// @Description Updates user account type and role, requiring MFA.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param request body dto.UpdateUserDetailsRequest true "Update Data"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users/{id} [patch]
+func (h *UserHandler) PatchUserDetails(c *gin.Context) {
+	id := c.Param("id")
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		log.Printf("[PatchUserDetails] UUID Parse: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
+		)
+		return
+	}
+
+	if !middleware.HasPermission(c, "Edit user") &&
+		!middleware.HasPermission(c, "Assign Roles") {
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
+		return
+	}
+
+	var req dto.UpdateUserDetailsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PatchUserDetails] Bind JSON: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid input.",
+			err,
+		)
+		return
+	}
+
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	// Verify administrative MFA before allowing role/account changes
+	success, err := h.MFAService.VerifyCode(ctx, actorID[:], req.MFACode)
+	if err != nil {
+		log.Printf("[PatchUserDetails] MFA Verification: %v", err)
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to verify MFA code.",
+			err,
+		)
+		return
+	}
+	if !success {
+		log.Printf("[PatchUserDetails] MFA Verification: invalid mfa code")
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Invalid MFA code provided.",
+			"Invalid MFA code",
+		)
+		return
+	}
+
+	metadata := buildMetadata(map[string]interface{}{
+		"target_id":       id,
+		"account_type_id": req.AccountTypeID,
+		"role_id":         req.RoleID,
+		"ip":              c.ClientIP(),
+		"user_agent":      c.Request.UserAgent(),
+	})
+
+	err = h.Service.UpdateUserAccountAndRole(
+		ctx,
+		userID,
+		req.AccountTypeID,
+		req.RoleID,
+	)
+	if err != nil {
+		log.Printf("[PatchUserDetails] %v", err)
+		logReq := &dto.PostAuditLogRequest{
+			Action: "update_user_details",
+			Target: id,
+			Status: models.StatusFail,
+			Metadata: buildMetadata(map[string]interface{}{
+				"target_id":       id,
+				"account_type_id": req.AccountTypeID,
+				"role_id":         req.RoleID,
+				"ip":              c.ClientIP(),
+				"user_agent":      c.Request.UserAgent(),
+				"error":           err.Error(),
+			}),
+		}
+		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+		_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to update user details.",
+			err,
+		)
+		return
+	}
+
+	logReq := &dto.PostAuditLogRequest{
+		Action:   "update_user_details",
+		Target:   id,
+		Status:   models.StatusSuccess,
+		Metadata: metadata,
+	}
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+	_ = h.LogService.PostSecurityLog(ctx, actorID[:], logReq)
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "User details updated successfully",
+	})
 }

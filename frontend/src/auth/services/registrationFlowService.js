@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getAccessToken, getPendingMfaAccessToken } from "../utils/authCookies";
 import { normalizeAccountType } from "../../utils/accountTypes";
 
 function normalizeTextValue(value) {
@@ -126,13 +127,20 @@ export const registrationFlowService = {
   },
 
   async verifyOtp({ email, otp } = {}) {
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    const token = getAccessToken() || getPendingMfaAccessToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
     const response = await registrationFlowApi.post(
       "/otp/verify",
       {
         email: getRequiredTextValue(email, "Email address"),
         otp: getRequiredTextValue(otp, "OTP"),
       },
-      getJsonRequestConfig(),
+      { headers },
     );
 
     return response.data;

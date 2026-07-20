@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import sri from "vite-plugin-sri-gen";
 import path from "path";
+import compression from "vite-plugin-compression2";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, "..", "");
@@ -13,6 +14,11 @@ export default defineConfig(({ mode }) => {
     || "http://localhost:8080";
 
   return {
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './setupTests.js',
+    },
     envDir: "..",
     resolve: {
       alias: {
@@ -23,6 +29,8 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       react(),
       sri(),
+      compression({ algorithm: "brotliCompress" }),
+      compression({ algorithm: "gzip" }),
       {
         name: "block-unsafe-vite-dep-version-query",
         configureServer(server) {
@@ -56,6 +64,10 @@ export default defineConfig(({ mode }) => {
         },
       },
     ],
+    build: {
+      rollupOptions: {
+      },
+    },
     server: {
       host: true, 
       port: 5173,

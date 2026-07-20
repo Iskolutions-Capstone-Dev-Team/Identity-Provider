@@ -5,6 +5,7 @@ import { MFA_SETUP_CONFIRM_PATH, rememberMfaSetup } from "../utils/mfaFlow";
 import { mfaService } from "../../services/mfaService";
 import { userService } from "../../services/userService";
 import ErrorAlert from "../../components/ErrorAlert";
+import InfoAlert from "../../components/InfoAlert";
 import MfaLoadingStep from "../components/mfa/MfaLoadingStep";
 import MfaSetupQrStep from "../components/mfa/MfaSetupQrStep";
 import MfaShell from "../components/mfa/MfaShell";
@@ -22,7 +23,22 @@ export default function MfaSetup() {
   const navigate = useNavigate();
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleFlowError = (errorObj, defaultMessage) => {
+    const message = getRequestErrorMessage(errorObj, defaultMessage);
+    if (message.toLowerCase().includes("pending cookie missing")) {
+      setError("");
+      setInfo("Session expired. Redirecting to login form, kindly login again.");
+      setTimeout(() => {
+        navigate("/login", { replace: true });
+      }, 3500);
+    } else {
+      setInfo("");
+      setError(message);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -52,11 +68,9 @@ export default function MfaSetup() {
           return;
         }
 
-        setError(
-          getRequestErrorMessage(
-            setupError,
-            "Unable to load authenticator setup.",
-          ),
+        handleFlowError(
+          setupError,
+          "Unable to load authenticator setup.",
         );
       } finally {
         if (isMounted) {
@@ -74,8 +88,9 @@ export default function MfaSetup() {
 
   return (
     <MfaShell>
-      <div className="mb-5">
+      <div className="mb-5 space-y-3">
         <ErrorAlert message={error} onClose={() => setError("")} />
+        <InfoAlert message={info} onClose={() => setInfo("")} />
       </div>
 
       {isLoading ? (

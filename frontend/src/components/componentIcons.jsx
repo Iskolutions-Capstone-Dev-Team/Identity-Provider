@@ -163,3 +163,12 @@ export function LockOpenIcon() {
     </svg>
   );
 }
+
+// InfoIcon — used in InfoAlert
+export function InfoIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+      <path d="M12 11.25v4.5m0-9v.008H12v-.008ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}

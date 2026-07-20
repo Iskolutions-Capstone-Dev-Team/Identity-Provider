@@ -117,14 +117,23 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 
 	reqCtx := c.Request.Context()
 
+	var tokenStr string
 	var isPending bool
 	var clearCookie func()
 	var uID uuid.UUID
-
 	pendingCookie, errCookie := c.Cookie("idp_mfa_pending")
 	if errCookie == nil && pendingCookie != "" {
+		tokenStr = pendingCookie
+	} else {
+		authHeader := c.GetHeader("Authorization")
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			tokenStr = authHeader[7:]
+		}
+	}
+
+	if tokenStr != "" {
 		claims, errVal := h.AuthService.
-			ValidateMFAPendingToken(pendingCookie)
+			ValidateMFAPendingToken(tokenStr)
 		if errVal == nil {
 			parsedID, errParse := uuid.Parse(claims.UserID)
 			if errParse == nil {
