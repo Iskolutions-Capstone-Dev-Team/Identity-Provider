@@ -231,7 +231,7 @@ export default function UserPool() {
 
         {canAddUsers && (
           <Button 
-            className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200"
+            className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200"
             onClick={() => navigate(`/user-pool/create?type=${userType}`, { state: { userType } })}
           >
             <Plus className="w-4 h-4 mr-2" />
