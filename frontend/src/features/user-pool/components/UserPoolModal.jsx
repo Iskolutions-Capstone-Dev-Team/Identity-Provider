@@ -4,6 +4,8 @@ import ErrorAlert from "../../../components/ErrorAlert";
 import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
 import { Field } from "@/components/ui/field";
 import { useAllRoles } from "../../roles/hooks/useAllRoles";
+import { useCurrentUser } from "../../../hooks/useCurrentUser";
+import { useRegistrationAccountTypes } from "../../registration/hooks/useRegistrationAccountTypes";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
