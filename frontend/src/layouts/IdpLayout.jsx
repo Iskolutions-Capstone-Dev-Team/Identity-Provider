@@ -125,7 +125,15 @@ export default function IdpLayout() {
 
           <div className="flex-1 p-4 sm:p-6 lg:p-8">
             <PageTransition pageKey={location.pathname}>
-              <Suspense fallback={<div className="flex min-h-[60vh] w-full items-center justify-center"><span className="loading loading-dots w-15 text-[#f8d24e]"></span></div>}>
+              <Suspense fallback={
+                <div className="flex min-h-[60vh] w-full items-center justify-center">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="bg-[#7b0d15] dark:bg-white size-2 animate-bounce rounded-full [animation-delay:-0.3s]" />
+                    <span className="bg-[#7b0d15] dark:bg-white size-2 animate-bounce rounded-full [animation-delay:-0.15s]" />
+                    <span className="bg-[#7b0d15] dark:bg-white size-2 animate-bounce rounded-full" />
+                  </div>
+                </div>
+              }>
                 {outlet}
               </Suspense>
             </PageTransition>
