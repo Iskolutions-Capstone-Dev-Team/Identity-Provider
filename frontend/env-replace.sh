@@ -19,6 +19,13 @@ for file in /usr/share/nginx/html/assets/*.js; do
         sed -i "s|__${var}__|${escaped_val}|g" "$file"
       fi
     done
+    
+    # If the app was pre-compressed by Vite (e.g., vite-plugin-compression),
+    # the .gz file will still have the old placeholders! We must update it.
+    if [ -f "${file}.gz" ]; then
+      rm -f "${file}.gz"
+      gzip -c "$file" > "${file}.gz"
+    fi
   fi
 done
 
