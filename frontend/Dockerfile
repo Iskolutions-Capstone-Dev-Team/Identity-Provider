@@ -50,7 +50,9 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Add the runtime environment injection script
 COPY env-replace.sh /docker-entrypoint.d/40-env-replace.sh
-RUN chmod +x /docker-entrypoint.d/40-env-replace.sh
+# Fix line endings (Windows CRLF to Linux LF) to prevent 'not found' errors
+RUN sed -i 's/\r$//' /docker-entrypoint.d/40-env-replace.sh && \
+    chmod +x /docker-entrypoint.d/40-env-replace.sh
 
 # Expose Nginx port
 EXPOSE 5173
