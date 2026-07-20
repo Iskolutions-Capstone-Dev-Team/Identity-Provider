@@ -6,6 +6,10 @@ import NewAuthenticatorModal from "./NewAuthenticatorModal";
 import { mfaService } from "../../../services/mfaService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { PhoneIcon, PasskeyIcon, AddedIcon, LastUsedIcon, DeleteIcon } from "./profileIcons";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
+import { Button } from "../../../components/ui/button";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../components/ui/carousel";
+import { Smartphone, KeySquare, Trash } from 'lucide-react';
 
 const AUTHENTICATORS_PER_SLIDE = 3;
 
@@ -92,15 +96,10 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     loadAuthenticators();
   }, [loadAuthenticators]);
 
-  useEffect(() => {
-    setCurrentSlide(0);
-  }, [authenticators.length]);
-
   const handleDeleteAuthenticator = async () => {
-    if (!authenticatorToDelete?.id) {
-      return;
-    }
-
+    if (!authenticatorToDelete) return;
+    
+    setError("");
     try {
       await mfaService.deleteAuthenticator({
         email,
@@ -119,168 +118,105 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     }
   };
 
-  const wrapperClassName = isDarkMode
-    ? "relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.92),rgba(33,21,30,0.92))] p-5 shadow-[0_22px_45px_-36px_rgba(2,6,23,0.72)] sm:p-6"
-    : "relative overflow-hidden rounded-[1.5rem] border border-[#7b0d15]/10 bg-white/80 p-5 shadow-[0_22px_45px_-36px_rgba(43,3,7,0.55)] sm:p-6";
-  const headingClassName = isDarkMode
-    ? "text-xl font-semibold text-[#f4eaea]"
-    : "text-xl font-semibold text-[#351018]";
-  const bodyTextClassName = isDarkMode
-    ? "text-sm text-[#c7adb4]"
-    : "text-sm text-[#7b5560]";
-  const emptyClassName = isDarkMode
-    ? "rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,248,243,0.025))] px-4 py-5 text-center text-sm text-[#c7adb4]"
-    : "rounded-2xl border border-[#7b0d15]/10 bg-[#fffaf2] px-4 py-5 text-center text-sm text-[#7b5560]";
-  const newConnectionButtonClassName = isDarkMode
-    ? "inline-flex h-12 items-center justify-center gap-2 rounded-[1rem] border border-[#f8d24e]/30 bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] px-5 text-sm font-semibold text-white shadow-[0_18px_40px_-26px_rgba(2,6,23,0.75)] transition-[background-color,background-image,border-color,color,box-shadow] duration-500 ease-out hover:border-[#f8d24e] hover:bg-none hover:bg-[#f8d24e] hover:text-[#7b0d15]"
-    : "inline-flex h-12 items-center justify-center gap-2 rounded-[1rem] border border-[#7b0d15] bg-[#7b0d15] px-5 text-sm font-semibold text-white shadow-[0_18px_40px_-26px_rgba(123,13,21,0.6)] transition-[background-color,border-color,color,box-shadow] duration-500 ease-out hover:border-[#f8d24e] hover:bg-[#f8d24e] hover:text-[#7b0d15]";
-  const cardClassName = isDarkMode
-    ? "relative min-h-[13.5rem] overflow-hidden rounded-[1.25rem] border border-white/15 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,248,243,0.025))] p-4 shadow-[0_18px_42px_-34px_rgba(2,6,23,0.85)] sm:max-w-[18rem]"
-    : "relative min-h-[13.5rem] overflow-hidden rounded-[1.25rem] border border-[#7b0d15]/12 bg-white/78 p-4 shadow-[0_18px_42px_-34px_rgba(43,3,7,0.55)] sm:max-w-[18rem]";
-  const cardTitleClassName = isDarkMode
-    ? "break-words text-base font-bold text-[#f4eaea]"
-    : "break-words text-base font-bold text-[#351018]";
-  const cardTypeClassName = isDarkMode
-    ? "mt-1 text-sm font-semibold text-[#c7adb4]"
-    : "mt-1 text-sm font-semibold text-[#7b5560]";
-  const metadataClassName = isDarkMode
-    ? "space-y-2 border-t border-white/10 pt-3 text-xs font-semibold text-[#c7adb4]"
-    : "space-y-2 border-t border-[#7b0d15]/10 pt-3 text-xs font-semibold text-[#7b5560]";
-  const metadataIconClassName = isDarkMode ? "text-[#ffd700]" : "text-[#7b0d15]";
-  const deleteButtonClassName =
-    "btn absolute right-4 top-4 h-10 w-10 rounded-[0.9rem] border border-red-400/45 bg-red-500/10 p-0 text-red-500 shadow-none transition hover:border-red-500/70 hover:bg-red-500/15 hover:text-red-400";
-  const carouselButtonClassName = isDarkMode
-    ? "btn btn-circle h-11 min-h-11 w-11 border border-[#f8d24e]/35 bg-[#f8d24e]/10 text-[#ffe28a] shadow-none transition hover:border-[#f8d24e]/70 hover:bg-[#f8d24e]/20"
-    : "btn btn-circle h-11 min-h-11 w-11 border border-[#7b0d15]/20 bg-white text-[#7b0d15] shadow-none transition hover:border-[#f8d24e] hover:bg-[#fff4dc]";
-  const pageDotClassName = isDarkMode
-    ? "h-2 w-2 rounded-full bg-white/18 transition-[width,background-color] duration-300 hover:bg-white/35"
-    : "h-2 w-2 rounded-full bg-[#d8cfd0] transition-[width,background-color] duration-300 hover:bg-[#c7adb4]";
-  const activePageDotClassName =
-    "h-2 w-5 rounded-full bg-[#7b0d15] transition-[width,background-color] duration-300";
-  const slideCount = Math.ceil(authenticators.length / AUTHENTICATORS_PER_SLIDE);
-  const hasCarouselControls = slideCount > 1;
-  const carouselSlides = Array.from({ length: slideCount }, (_, slideIndex) =>
-    authenticators.slice(
-      slideIndex * AUTHENTICATORS_PER_SLIDE,
-      slideIndex * AUTHENTICATORS_PER_SLIDE + AUTHENTICATORS_PER_SLIDE,
-    ),
-  );
+  const renderAuthenticatorCard = (authenticator) => {
+    const isPasskey = String(authenticator.type || "").toLowerCase() === "passkey";
+    
+    return (
+      <Card key={authenticator.id} className="mx-auto w-full max-w-xs overflow-hidden p-0 relative h-full">
+        <CardContent className="flex flex-col items-center p-0 h-full">
+          <div className="flex w-full flex-col items-center justify-center bg-gradient-to-b from-[#7b0d15]/10 to-transparent dark:from-white/10 py-12">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 scale-150 rounded-full bg-[#7b0d15]/20 dark:bg-white/20 blur-2xl" />
+              {isPasskey ? (
+                <KeySquare aria-hidden="true" className="relative size-16 text-[#7b0d15] dark:text-white" strokeWidth="1.5" />
+              ) : (
+                <Smartphone aria-hidden="true" className="relative size-16 text-[#7b0d15] dark:text-white" strokeWidth="1.5" />
+              )}
+            </div>
+            <h3 className="text-foreground text-lg font-semibold px-4 text-center">
+              {authenticator.name || "Authenticator app"}
+            </h3>
+            <p className="text-muted-foreground text-sm">{getAuthenticatorTypeLabel(authenticator.type)}</p>
+          </div>
 
-  const goToPreviousSlide = () => {
-    setCurrentSlide((slide) => (slide === 0 ? slideCount - 1 : slide - 1));
+          <div className="w-full space-y-1 px-3 pb-6 mt-auto">
+            <div className="rounded-lg flex items-center justify-between px-2 sm:px-3 py-2.5 bg-muted/40 gap-2">
+              <span className="text-foreground text-xs sm:text-sm font-medium flex items-center gap-1.5 shrink-0">
+                <AddedIcon /> Added
+              </span>
+              <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">
+                {formatDate(authenticator.created_at)}
+              </span>
+            </div>
+            <div className="rounded-lg flex items-center justify-between px-2 sm:px-3 py-2.5 gap-2">
+              <span className="text-foreground text-xs sm:text-sm font-medium flex items-center gap-1.5 shrink-0">
+                <LastUsedIcon /> Last used
+              </span>
+              <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">
+                {formatDate(authenticator.last_used_at)}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+        <Button variant="ghost" size="icon" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} className="absolute right-2 top-2 text-[#7b0d15] hover:bg-[#7b0d15]/10 hover:text-[#7b0d15] dark:text-white dark:hover:bg-white/10 dark:hover:text-white">
+          <Trash className="w-5 h-5" />
+        </Button>
+      </Card>
+    );
   };
-
-  const goToNextSlide = () => {
-    setCurrentSlide((slide) => (slide + 1) % slideCount);
-  };
-
-  const renderAuthenticatorCard = (authenticator) => (
-    <article key={authenticator.id} className={cardClassName}>
-      <div className="flex min-w-0 flex-col gap-4">
-        <AuthenticatorIcon colorMode={colorMode} type={authenticator.type} />
-
-        <div className="min-w-0 pr-10">
-          <h4 className={cardTitleClassName}>
-            {authenticator.name || "Authenticator app"}
-          </h4>
-          <p className={cardTypeClassName}>
-            Type: {getAuthenticatorTypeLabel(authenticator.type)}
-          </p>
-        </div>
-
-        <div className={metadataClassName}>
-          <p className="flex items-center gap-2">
-            <span className={metadataIconClassName}><AddedIcon /></span>
-            <span>Added: {formatDate(authenticator.created_at)}</span>
-          </p>
-          <p className="flex items-center gap-2">
-            <span className={metadataIconClassName}><LastUsedIcon /></span>
-            <span>Last used: {formatDate(authenticator.last_used_at)}</span>
-          </p>
-        </div>
-      </div>
-
-      <button type="button" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} title="Delete authenticator" className={deleteButtonClassName}>
-        <DeleteIcon />
-      </button>
-    </article>
-  );
 
   return (
     <>
-      <section className={wrapperClassName}>
-        <div className="space-y-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <h3 className={headingClassName}>Authenticator Apps</h3>
-              <p className={`mt-1 ${bodyTextClassName}`}>
-                Manage the authenticator apps connected to your account.
-              </p>
-            </div>
-
-            <button type="button" className={newConnectionButtonClassName} onClick={() => setIsNewConnectionOpen(true)}>
-              + New Connection
-            </button>
+      <Card className="flex flex-col border-border bg-card shadow-sm">
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4 border-b">
+          <div className="min-w-0">
+            <CardTitle className="text-xl font-bold uppercase tracking-wide">Authenticator Apps</CardTitle>
+            <CardDescription className="mt-1">Manage the authenticator apps connected to your account.</CardDescription>
           </div>
-
+          <Button onClick={() => setIsNewConnectionOpen(true)} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#7b0d15]/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
+            + New Connection
+          </Button>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 lg:p-8">
           <ErrorAlert message={error} onClose={() => setError("")} />
 
           {isLoading ? (
             <div className="grid gap-3">
               {[0, 1].map((item) => (
-                <div key={item}
-                  className={`h-24 animate-pulse rounded-2xl ${
-                    isDarkMode
-                      ? "bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,248,243,0.025))]"
-                      : "bg-slate-200/40"
-                  }`}
-                />
+                <div key={item} className="h-24 animate-pulse rounded-2xl bg-muted" />
               ))}
             </div>
           ) : authenticators.length === 0 ? (
-            <div className={emptyClassName}>
+            <div className="rounded-2xl border border-border bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">
               No authenticator apps are connected yet.
             </div>
           ) : (
-            <div className="relative">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden">
-                {authenticators.map(renderAuthenticatorCard)}
-              </div>
-
-              <div className="carousel hidden w-full overflow-hidden lg:block">
-                <div className="flex w-full transition-transform duration-500 ease-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-                  {carouselSlides.map((slideAuthenticators, slideIndex) => (
-                    <div key={slideIndex} className="carousel-item w-full shrink-0">
-                      <div className="grid w-full justify-center gap-3 sm:grid-cols-[repeat(3,minmax(15rem,18rem))]">
-                        {slideAuthenticators.map(renderAuthenticatorCard)}
+            <div className="w-full px-0 sm:px-12">
+              <Carousel
+                opts={{
+                  align: "start",
+                }}
+                className="w-full"
+              >
+                <CarouselContent>
+                  {authenticators.map((authenticator, index) => (
+                    <CarouselItem
+                      key={authenticator.id}
+                      className="sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
+                    >
+                      <div className="p-1 h-full">
+                        {renderAuthenticatorCard(authenticator)}
                       </div>
-                    </div>
+                    </CarouselItem>
                   ))}
-                </div>
-              </div>
-
-              {hasCarouselControls ? (
-                <div className="mt-4 hidden items-center justify-center gap-3 lg:absolute lg:-left-3 lg:-right-3 lg:top-1/2 lg:mt-0 lg:flex lg:-translate-y-1/2 lg:justify-between">
-                  <button type="button" className={carouselButtonClassName} onClick={goToPreviousSlide} aria-label="Show previous authenticators">
-                    &#10094;
-                  </button>
-                  <button type="button" className={carouselButtonClassName} onClick={goToNextSlide} aria-label="Show next authenticators">
-                    &#10095;
-                  </button>
-                </div>
-              ) : null}
-
-              {hasCarouselControls ? (
-                <div className="mt-4 hidden items-center justify-center gap-2 lg:flex" aria-label="Authenticator carousel pages">
-                  {carouselSlides.map((_, slideIndex) => (
-                    <button key={slideIndex} type="button" className={slideIndex === currentSlide ? activePageDotClassName : pageDotClassName} onClick={() => setCurrentSlide(slideIndex)} aria-label={`Show authenticator page ${slideIndex + 1}`} aria-current={slideIndex === currentSlide ? "page" : undefined}/>
-                  ))}
-                </div>
-              ) : null}
+                </CarouselContent>
+                <CarouselPrevious className="hidden sm:inline-flex bg-[#7b0d15] text-white hover:bg-[#7b0d15]/90 border-0 hover:text-white dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black" />
+                <CarouselNext className="hidden sm:inline-flex bg-[#7b0d15] text-white hover:bg-[#7b0d15]/90 border-0 hover:text-white dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black" />
+              </Carousel>
             </div>
           )}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <DeleteConfirmModal
         open={Boolean(authenticatorToDelete)}
