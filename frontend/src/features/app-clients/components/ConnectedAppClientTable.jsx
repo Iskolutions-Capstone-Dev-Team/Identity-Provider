@@ -103,16 +103,15 @@ export default function ConnectedAppClientTable({
               ) : (
                 clients.map((client) => {
                   const imageSrc = client.image ? (client.image.startsWith("data:") ? client.image : `${client.image}`) : undefined;
-                  const fallbackText = (client.name || "A").substring(0, 1).toUpperCase();
                   
                   return (
                     <TableRow key={client.clientId || client.id}>
                       <TableCell className="pl-4">
                         <div className="flex items-center gap-3">
-                          <Avatar size="sm">
+                          <Avatar className="h-9 w-9 dark:border dark:border-gray-300">
                             <AvatarImage src={imageSrc} alt={client.name} className="object-cover" />
-                            <AvatarFallback className="bg-muted text-muted-foreground font-semibold">
-                              {fallbackText}
+                            <AvatarFallback className="bg-[#7b0d15] text-[#ffd21a] dark:bg-white dark:text-black font-medium">
+                              {(client.name || "A").charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col text-left">
