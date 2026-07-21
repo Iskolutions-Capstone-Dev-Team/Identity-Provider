@@ -6,6 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Frame, FramePanel } from "@/components/reui/frame";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 function getStatusBadgeVariant(status) {
   if (status === "active") return "success-outline";
@@ -22,6 +24,24 @@ function getFullName(user) {
 
 function getUserLabel(user) {
   return user.displayName || user.email || "User";
+}
+
+function getInitials(user) {
+  const firstName = user.givenName?.trim() || "";
+  const lastName = user.surname?.trim() || "";
+  
+  if (firstName && lastName) {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  } else if (firstName) {
+    return firstName[0].toUpperCase();
+  } else if (lastName) {
+    return lastName[0].toUpperCase();
+  } else if (user.displayName) {
+    const parts = user.displayName.split(" ").filter(Boolean);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    return parts[0][0].toUpperCase();
+  }
+  return "U";
 }
 
 function normalizeClientNameList(clientNames = []) {
@@ -61,13 +81,15 @@ export default function UserPoolTable({
 
   if (loading) {
     return (
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader className="bg-card">
-            <TableRow>
-              <TableHead className="text-center">ID</TableHead>
+      <div className="mx-auto flex w-full flex-col">
+        <Frame spacing="xs">
+          <FramePanel className="p-0!">
+            <Table>
+              <TableHeader>
+                <TableRow>
+              <TableHead className="pl-6 w-[25%]">Name</TableHead>
               <TableHead className="text-center">Email</TableHead>
-              <TableHead className="text-center">Name</TableHead>
+              <TableHead className="text-center">ID</TableHead>
               <TableHead className="text-center">{accessColumnLabel}</TableHead>
               <TableHead className="text-center">Status</TableHead>
               {showActionsColumn && <TableHead className="text-center">Actions</TableHead>}
@@ -76,9 +98,14 @@ export default function UserPoolTable({
           <TableBody>
             {Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={index}>
-                <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+                <TableCell className="pl-6">
+                  <div className="flex items-center justify-start gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </TableCell>
                 <TableCell className="text-center"><Skeleton className="h-4 w-40 mx-auto" /></TableCell>
-                <TableCell className="text-center"><Skeleton className="h-4 w-32 mx-auto" /></TableCell>
+                <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center gap-2">
                     <Skeleton className="h-6 w-16 rounded-full" />
@@ -99,18 +126,22 @@ export default function UserPoolTable({
             ))}
           </TableBody>
         </Table>
+        </FramePanel>
+      </Frame>
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader className="bg-card">
-          <TableRow>
-            <TableHead className="text-center">ID</TableHead>
+    <div className="mx-auto flex w-full flex-col">
+      <Frame spacing="xs">
+        <FramePanel className="p-0!">
+          <Table>
+            <TableHeader>
+              <TableRow>
+            <TableHead className="pl-6 w-[25%]">Name</TableHead>
             <TableHead className="text-center">Email</TableHead>
-            <TableHead className="text-center">Name</TableHead>
+            <TableHead className="text-center">ID</TableHead>
             <TableHead className="text-center">{accessColumnLabel}</TableHead>
             <TableHead className="text-center">Status</TableHead>
             {showActionsColumn && <TableHead className="text-center">Actions</TableHead>}
@@ -130,6 +161,17 @@ export default function UserPoolTable({
 
             return (
               <TableRow key={user.id}>
+                <TableCell className="pl-6">
+                  <div className="flex items-center justify-start gap-3">
+                    <Avatar className="h-9 w-9 dark:border dark:border-gray-300">
+                      <AvatarFallback className="bg-[#7b0d15] text-[#ffd21a] dark:bg-white dark:text-black font-medium">
+                        {getInitials(user)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">{getFullName(user)}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">{user.email}</TableCell>
                 <TableCell className="text-center">
                   <TooltipProvider>
                     <Tooltip>
@@ -142,8 +184,6 @@ export default function UserPoolTable({
                     </Tooltip>
                   </TooltipProvider>
                 </TableCell>
-                <TableCell className="text-center">{user.email}</TableCell>
-                <TableCell className="text-center">{getFullName(user)}</TableCell>
                 <TableCell className="text-center">
                   {accessItems.length > 0 ? (
                     <div className="flex flex-wrap justify-center gap-1">
@@ -206,6 +246,8 @@ export default function UserPoolTable({
           })}
         </TableBody>
       </Table>
+      </FramePanel>
+      </Frame>
     </div>
   );
 }
