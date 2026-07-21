@@ -1,6 +1,8 @@
+import { useState } from "react";
+import { toast } from "sonner";
 import { shortenId } from "../../../utils/shortenId";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
-import { Eye, Pencil, Trash } from "lucide-react";
+import { Eye, Pencil, Trash, Copy, CopyCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +25,35 @@ function getFullName(user) {
 }
 
 function getUserLabel(user) {
-  return user.displayName || user.email || "User";
+  return getFullName(user);
+}
+
+function CopyUserIdButton({ id }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    if (!id) return;
+    navigator.clipboard.writeText(id);
+    setCopied(true);
+    toast.success("User ID copied to clipboard");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex items-center justify-center p-0.5 text-muted-foreground hover:text-foreground transition-colors rounded ml-1"
+      title="Copy User ID"
+    >
+      {copied ? (
+        <CopyCheck className="h-3.5 w-3.5 text-[#00d053]" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" />
+      )}
+    </button>
+  );
 }
 
 function getInitials(user) {
@@ -172,9 +202,12 @@ export default function UserPoolTable({
                       <span className="text-sm font-medium whitespace-nowrap">
                         {getFullName(user)}
                       </span>
-                      <span className="text-muted-foreground text-xs break-all">
-                        {user.id}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground text-xs break-all">
+                          {user.id}
+                        </span>
+                        <CopyUserIdButton id={user.id} />
+                      </div>
                     </div>
                   </div>
                 </TableCell>

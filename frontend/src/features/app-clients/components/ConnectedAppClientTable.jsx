@@ -1,5 +1,7 @@
+import { useState } from "react";
+import { toast } from "sonner";
 import EmptySearchState from "../../../components/EmptySearchState";
-import { KeyRound, Eye, Pencil, Trash2 } from "lucide-react";
+import { KeyRound, Eye, Pencil, Trash2, Copy, CopyCheck } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Frame, FramePanel } from "@/components/reui/frame";
@@ -11,6 +13,34 @@ function renderActionButton({ label, onClick, children, className }) {
   return (
     <button type="button" className={className} onClick={onClick} aria-label={label}>
       {children}
+    </button>
+  );
+}
+
+function CopyClientIdButton({ id }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    if (!id) return;
+    navigator.clipboard.writeText(id);
+    setCopied(true);
+    toast.success("Client ID copied to clipboard");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex items-center justify-center p-0.5 text-muted-foreground hover:text-foreground transition-colors rounded ml-1"
+      title="Copy Client ID"
+    >
+      {copied ? (
+        <CopyCheck className="h-3.5 w-3.5 text-[#00d053]" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" />
+      )}
     </button>
   );
 }
@@ -118,9 +148,12 @@ export default function ConnectedAppClientTable({
                             <span className="text-sm font-medium">
                               {client.name}
                             </span>
-                            <span className="text-muted-foreground text-xs">
-                              {client.id || client.clientId}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-muted-foreground text-xs">
+                                {client.id || client.clientId}
+                              </span>
+                              <CopyClientIdButton id={getClientId(client)} />
+                            </div>
                           </div>
                         </div>
                       </TableCell>
