@@ -85,7 +85,7 @@ export default function IdpLayout() {
   });
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="app-sidebar-custom">
       <TooltipProvider>
         <AccessibilityWidget colorMode={colorMode} />
         <AssistiveFab colorMode={colorMode} />
