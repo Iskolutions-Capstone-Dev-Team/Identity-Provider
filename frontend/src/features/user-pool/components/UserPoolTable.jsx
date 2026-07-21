@@ -87,9 +87,8 @@ export default function UserPoolTable({
             <Table>
               <TableHeader>
                 <TableRow>
-              <TableHead className="text-center w-[200px] max-w-[200px]">Name</TableHead>
+              <TableHead className="text-center w-[30%]">Name</TableHead>
               <TableHead className="text-center">Email</TableHead>
-              <TableHead className="text-center">ID</TableHead>
               <TableHead className="text-center">{accessColumnLabel}</TableHead>
               <TableHead className="text-center">Status</TableHead>
               {showActionsColumn && <TableHead className="text-center">Actions</TableHead>}
@@ -98,14 +97,16 @@ export default function UserPoolTable({
           <TableBody>
             {Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={index}>
-                <TableCell className="pl-6">
-                  <div className="flex items-center justify-start gap-3">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <Skeleton className="h-4 w-32" />
+                <TableCell className="pl-6 w-[30%]">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell className="text-center"><Skeleton className="h-4 w-40 mx-auto" /></TableCell>
-                <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center gap-2">
                     <Skeleton className="h-6 w-16 rounded-full" />
@@ -139,9 +140,8 @@ export default function UserPoolTable({
           <Table>
             <TableHeader>
               <TableRow>
-            <TableHead className="text-center w-[200px] max-w-[200px]">Name</TableHead>
+            <TableHead className="text-center w-[30%]">Name</TableHead>
             <TableHead className="text-center">Email</TableHead>
-            <TableHead className="text-center">ID</TableHead>
             <TableHead className="text-center">{accessColumnLabel}</TableHead>
             <TableHead className="text-center">Status</TableHead>
             {showActionsColumn && <TableHead className="text-center">Actions</TableHead>}
@@ -150,7 +150,7 @@ export default function UserPoolTable({
         <TableBody>
           {users.length === 0 && (
             <TableRow>
-              <TableCell colSpan={showActionsColumn ? 6 : 5} className="h-24 text-center">
+              <TableCell colSpan={showActionsColumn ? 5 : 4} className="h-24 text-center">
                 No users found.
               </TableCell>
             </TableRow>
@@ -161,33 +161,24 @@ export default function UserPoolTable({
 
             return (
               <TableRow key={user.id}>
-                <TableCell className="pl-6 w-[200px] max-w-[200px] whitespace-normal">
-                  <div className="flex items-center justify-start gap-3 w-full">
+                <TableCell className="pl-6 w-[30%]">
+                  <div className="flex items-center justify-start gap-3">
                     <Avatar className="h-9 w-9 dark:border dark:border-gray-300 shrink-0">
                       <AvatarFallback className="bg-[#7b0d15] text-[#ffd21a] dark:bg-white dark:text-black font-medium">
                         {getInitials(user)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-sm font-medium break-words whitespace-normal leading-tight">
+                    <div className="flex flex-col text-left min-w-0">
+                      <span className="text-sm font-medium whitespace-nowrap">
                         {getFullName(user)}
+                      </span>
+                      <span className="text-muted-foreground text-xs break-all">
+                        {user.id}
                       </span>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">{user.email}</TableCell>
-                <TableCell className="text-center">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger render={<span className="font-medium cursor-help border-b border-dashed border-gray-400" />}>
-                        {shortenId(user.id)}
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{user.id}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TableCell>
                 <TableCell className="text-center">
                   {accessItems.length > 0 ? (
                     <div className="flex flex-wrap justify-center gap-1">
