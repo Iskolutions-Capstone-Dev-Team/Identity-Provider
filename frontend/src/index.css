@@ -345,3 +345,34 @@ body {
     @apply font-sans;
   }
 }
+
+html:not(.dark) .app-sidebar-custom {
+  background: radial-gradient(circle at 12% 14%, rgba(145, 31, 42, 0.5), transparent 30rem), radial-gradient(circle at 84% 20%, rgba(248, 210, 78, 0.08), transparent 26rem), linear-gradient(135deg, #1c0306 0%, #4f0d17 48%, #230407 100%) !important;
+  color: white !important;
+}
+html:not(.dark) .app-sidebar-custom [data-sidebar="sidebar"] {
+  background: transparent !important;
+  border-right: none !important;
+}
+html:not(.dark) .app-sidebar-custom .text-sidebar-foreground,
+html:not(.dark) .app-sidebar-custom [data-sidebar="menu-button"],
+html:not(.dark) .app-sidebar-custom [data-sidebar="group-label"] {
+  color: white !important;
+}
+html:not(.dark) .app-sidebar-custom [data-sidebar="menu-button"]:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffd21a !important;
+}
+html:not(.dark) .app-sidebar-custom [data-sidebar="menu-button"][data-active] {
+  background-color: #f8d24e !important;
+  color: #7b0d15 !important;
+}
+
+html.dark .app-sidebar-custom [data-sidebar="menu-button"]:hover {
+  background-color: #27272a !important; /* zinc-800 */
+  color: white !important;
+}
+html.dark .app-sidebar-custom [data-sidebar="menu-button"][data-active] {
+  background-color: #3f3f46 !important; /* zinc-700 */
+  color: white !important;
+}
