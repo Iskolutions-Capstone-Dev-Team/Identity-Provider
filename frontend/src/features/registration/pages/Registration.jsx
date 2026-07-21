@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Frame, FramePanel } from "@/components/reui/frame";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import RegistrationConfigModal from "../components/RegistrationConfigModal";
@@ -420,22 +421,26 @@ export default function Registration() {
 
   if (showLoading) {
     tableContent = (
-      <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-1/3 text-center">Account Type</TableHead>
-                <TableHead className="w-1/3 text-center">Client List</TableHead>
-                <TableHead className="w-1/3 text-center">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell className="text-center p-5">
-                    <Skeleton className="h-4 w-32 mx-auto" />
-                  </TableCell>
+      <div className="mx-auto flex w-full flex-col">
+        <Frame spacing="xs">
+          <FramePanel className="p-0!">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-6 w-1/3">Account Type</TableHead>
+                  <TableHead className="w-1/3 text-center">Client List</TableHead>
+                  <TableHead className="w-1/3 text-center">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="pl-6 p-5">
+                      <div className="flex items-center justify-start gap-3">
+                        <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    </TableCell>
                   <TableCell className="text-center p-5">
                     <div className="flex justify-center gap-2">
                       <Skeleton className="h-6 w-24 rounded-full" />
@@ -452,9 +457,10 @@ export default function Registration() {
                   </TableCell>
                 </TableRow>
               ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableBody>
+            </Table>
+          </FramePanel>
+        </Frame>
       </div>
     );
     showTableFooter = false;
