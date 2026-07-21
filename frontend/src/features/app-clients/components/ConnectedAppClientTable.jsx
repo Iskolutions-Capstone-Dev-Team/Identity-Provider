@@ -33,7 +33,7 @@ export default function ConnectedAppClientTable({
     ? "px-6 py-16 text-center text-sm text-[#bda8af]"
     : "px-6 py-16 text-center text-sm text-[#8f6f76]";
     
-  const actionButtonClassName = "inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors";
+  const actionButtonClassName = "inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors";
 
   if (loading) {
     return (

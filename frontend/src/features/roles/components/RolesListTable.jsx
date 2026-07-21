@@ -117,19 +117,19 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
               </TableCell>
               <TableCell className="text-center">
                 <div className="flex justify-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors" onClick={() => onView(role)} title={`View Role`}>
-                    <Eye className="h-6 w-6" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(role)} title={`View Role`}>
+                    <Eye className="h-4 w-4" />
                   </Button>
                   
                   {role.canEdit && (
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors" onClick={() => onEdit(role)} title={`Edit Role`}>
-                      <Pencil className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(role)} title={`Edit Role`}>
+                      <Pencil className="h-4 w-4" />
                     </Button>
                   )}
                   
                   {role.canDelete && (
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors" onClick={() => onDelete(role.id)} title={`Delete Role`}>
-                      <Trash className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onDelete(role.id)} title={`Delete Role`}>
+                      <Trash className="h-4 w-4" />
                     </Button>
                   )}
                 </div>

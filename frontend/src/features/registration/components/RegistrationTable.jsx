@@ -86,19 +86,19 @@ export default function RegistrationTable({ rows = [], onView, onEdit, onDelete,
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-2">
-                      <Button variant="ghost" size="icon" className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors" onClick={() => onView(row)} title={`View ${row.label} registration settings`}>
-                        <Eye className="h-6 w-6" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(row)} title={`View ${row.label} registration settings`}>
+                        <Eye className="h-4 w-4" />
                       </Button>
 
                       {showEditAction && (
-                        <Button variant="ghost" size="icon" className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors" onClick={() => onEdit(row)} title={`Edit ${row.label} registration settings`}>
-                          <Pencil className="h-6 w-6" />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(row)} title={`Edit ${row.label} registration settings`}>
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       )}
 
                       {showDeleteAction && row.canDelete !== false && (
-                        <Button variant="ghost" size="icon" className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors" onClick={() => onDelete(row)} title={`Delete ${row.label} registration settings`}>
-                          <Trash className="h-6 w-6" />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onDelete(row)} title={`Delete ${row.label} registration settings`}>
+                          <Trash className="h-4 w-4" />
                         </Button>
                       )}
                     </div>

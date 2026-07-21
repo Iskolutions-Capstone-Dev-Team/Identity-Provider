@@ -213,33 +213,33 @@ export default function UserPoolTable({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors"
+                          className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors"
                           onClick={() => onView(user)}
                           title={`View ${getUserLabel(user)}`}
                         >
-                          <Eye className="h-6 w-6" />
+                          <Eye className="h-4 w-4" />
                         </Button>
                       )}
                       {showEditAction && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors"
+                          className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors"
                           onClick={() => onEdit(user)}
                           title={`Edit ${getUserLabel(user)}`}
                         >
-                          <Pencil className="h-6 w-6" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       )}
                       {showDeleteAction && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-10 w-10 text-black hover:bg-[#7b0d15] hover:text-white dark:text-white dark:hover:bg-[#f8d24e] dark:hover:text-[#7b0d15] transition-colors"
+                          className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors"
                           onClick={() => onDelete(user)}
                           title={`Delete ${getUserLabel(user)}`}
                         >
-                          <Trash className="h-6 w-6" />
+                          <Trash className="h-4 w-4" />
                         </Button>
                       )}
                     </div>

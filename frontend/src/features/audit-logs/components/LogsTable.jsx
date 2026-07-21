@@ -143,7 +143,7 @@ export default function LogsTable({ loading = false, logs, onView, colorMode = "
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center">
-                    <Button variant="ghost" size="icon" onClick={() => onView(log)} aria-label={`View ${log.actor} ${logTypeLabel} details`}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(log)} aria-label={`View ${log.actor} ${logTypeLabel} details`}>
                       <ViewLogIcon className="h-4 w-4" />
                     </Button>
                   </div>
