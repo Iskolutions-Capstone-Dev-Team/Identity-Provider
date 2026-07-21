@@ -3,6 +3,15 @@ import { Eye, Pencil, Trash } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Frame, FramePanel } from "@/components/reui/frame";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+function getInitials(text) {
+  if (!text) return "A";
+  const parts = text.trim().split(/\s+/);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  return parts[0][0].toUpperCase();
+}
 
 const MAX_VISIBLE_CLIENT_SLOTS = 5;
 
@@ -17,12 +26,13 @@ function getRemainingClientCount(totalClientCount = 0) {
 
 export default function RegistrationTable({ rows = [], onView, onEdit, onDelete, showEditAction = true, showDeleteAction = true, colorMode = "light" }) {
   return (
-    <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-1/3 text-center">Account Type</TableHead>
+    <div className="mx-auto flex w-full flex-col">
+      <Frame spacing="xs">
+        <FramePanel className="p-0!">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pl-6 w-1/3">Account Type</TableHead>
               <TableHead className="w-1/3 text-center">Client List</TableHead>
               <TableHead className="w-1/3 text-center">Action</TableHead>
             </TableRow>
@@ -42,8 +52,15 @@ export default function RegistrationTable({ rows = [], onView, onEdit, onDelete,
 
               return (
                 <TableRow key={row.accountType} className="hover:bg-muted/50 transition-colors">
-                  <TableCell className="text-center font-medium">
-                    {row.label}
+                  <TableCell className="pl-6 font-medium">
+                    <div className="flex items-center justify-start gap-3">
+                      <Avatar className="h-9 w-9 dark:border dark:border-gray-300">
+                        <AvatarFallback className="bg-[#7b0d15] text-[#ffd21a] dark:bg-white dark:text-black font-medium">
+                          {getInitials(row.label)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate">{row.label}</span>
+                    </div>
                   </TableCell>
                   <TableCell className="text-center">
                     {row.clientNames.length > 0 ? (
@@ -91,7 +108,8 @@ export default function RegistrationTable({ rows = [], onView, onEdit, onDelete,
             })}
           </TableBody>
         </Table>
-      </div>
+        </FramePanel>
+      </Frame>
     </div>
   );
 }

@@ -4,6 +4,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Frame, FramePanel } from "@/components/reui/frame";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+function getInitials(text) {
+  if (!text) return "A";
+  const parts = text.trim().split(/\s+/);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  return parts[0][0].toUpperCase();
+}
 
 function getStatusClasses(status) {
   const normalizedStatus = typeof status === "string" ? status.trim().toLowerCase() : "";
@@ -22,12 +31,14 @@ function getStatusClasses(status) {
 export default function LogsTable({ loading = false, logs, onView, colorMode = "light", emptyMessage = "No logs found", logTypeLabel = "log" }) {
   if (loading) {
     return (
-      <div className="rounded-md border bg-card text-card-foreground">
-        <Table>
+      <div className="mx-auto flex w-full flex-col">
+        <Frame spacing="xs">
+          <FramePanel className="p-0!">
+            <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[200px] pl-6">Actor</TableHead>
               <TableHead className="w-[180px] text-center">Timestamp</TableHead>
-              <TableHead className="w-[200px] text-center">Actor</TableHead>
               <TableHead className="w-[250px] text-center">Target</TableHead>
               <TableHead className="w-[120px] text-center">Status</TableHead>
               <TableHead className="w-[150px] text-center">Action</TableHead>
@@ -37,8 +48,13 @@ export default function LogsTable({ loading = false, logs, onView, colorMode = "
           <TableBody>
             {Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={index}>
+                <TableCell className="pl-6">
+                  <div className="flex items-center justify-start gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </TableCell>
                 <TableCell className="text-center"><Skeleton className="h-4 w-28 mx-auto" /></TableCell>
-                <TableCell className="text-center"><Skeleton className="h-4 w-32 mx-auto" /></TableCell>
                 <TableCell className="text-center"><Skeleton className="h-4 w-32 mx-auto" /></TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center">
@@ -55,17 +71,21 @@ export default function LogsTable({ loading = false, logs, onView, colorMode = "
             ))}
           </TableBody>
         </Table>
+        </FramePanel>
+      </Frame>
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border bg-card text-card-foreground mt-4">
-      <Table>
+    <div className="mx-auto flex w-full flex-col mt-4">
+      <Frame spacing="xs">
+        <FramePanel className="p-0!">
+          <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[200px] pl-6">Actor</TableHead>
             <TableHead className="w-[180px] text-center">Timestamp</TableHead>
-            <TableHead className="w-[200px] text-center">Actor</TableHead>
             <TableHead className="w-[250px] text-center">Target</TableHead>
             <TableHead className="w-[120px] text-center">Status</TableHead>
             <TableHead className="w-[150px] text-center">Action</TableHead>
@@ -82,10 +102,17 @@ export default function LogsTable({ loading = false, logs, onView, colorMode = "
           ) : (
             logs.map((log, index) => (
               <TableRow key={log.rowKey ?? log.id ?? `${log.timestamp}-${index}`}>
-                <TableCell className="font-medium text-center">{log.timestamp}</TableCell>
-                <TableCell className="w-[200px] break-words text-center" title={log.actor}>
-                  {log.actor}
+                <TableCell className="w-[200px] pl-6" title={log.actor}>
+                  <div className="flex items-center justify-start gap-3">
+                    <Avatar className="h-9 w-9 dark:border dark:border-gray-300 shrink-0">
+                      <AvatarFallback className="bg-[#7b0d15] text-[#ffd21a] dark:bg-white dark:text-black font-medium">
+                        {getInitials(log.actor)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">{log.actor}</span>
+                  </div>
                 </TableCell>
+                <TableCell className="font-medium text-center">{log.timestamp}</TableCell>
                 <TableCell className="w-[250px] break-words text-center" title={log.target}>
                   {log.target}
                 </TableCell>
@@ -109,8 +136,10 @@ export default function LogsTable({ loading = false, logs, onView, colorMode = "
               </TableRow>
             ))
           )}
-        </TableBody>
-      </Table>
+          </TableBody>
+        </Table>
+        </FramePanel>
+      </Frame>
     </div>
   );
 }

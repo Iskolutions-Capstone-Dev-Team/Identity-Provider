@@ -5,6 +5,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye, Pencil, Trash } from "lucide-react"
+import { Frame, FramePanel } from "@/components/reui/frame";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+function getInitials(text) {
+  if (!text) return "R";
+  const parts = text.trim().split(/\s+/);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  return parts[0][0].toUpperCase();
+}
 
 export default function RolesListTable({ loading = false, roles, onView, onEdit, onDelete, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
@@ -12,11 +21,13 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
 
   if (loading) {
     return (
-      <div className="rounded-md border bg-card text-card-foreground">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-center">Role Name</TableHead>
+      <div className="mx-auto flex w-full flex-col">
+        <Frame spacing="xs">
+          <FramePanel className="p-0!">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-6 w-[25%]">Role Name</TableHead>
               <TableHead className="text-center">Description</TableHead>
               <TableHead className="text-center">Permissions</TableHead>
               <TableHead className="text-center">Actions</TableHead>
@@ -25,7 +36,12 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
           <TableBody>
             {Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={index}>
-                <TableCell className="text-center"><Skeleton className="h-4 w-28 mx-auto" /></TableCell>
+                <TableCell className="pl-6">
+                  <div className="flex items-center justify-start gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                </TableCell>
                 <TableCell className="text-center"><Skeleton className="h-4 w-48 mx-auto" /></TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center gap-1 w-full max-w-[24rem] mx-auto">
@@ -44,20 +60,24 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
             ))}
           </TableBody>
         </Table>
+        </FramePanel>
+      </Frame>
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border bg-card text-card-foreground">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="text-center">Role Name</TableHead>
-            <TableHead className="text-center">Description</TableHead>
-            <TableHead className="text-center">Permissions</TableHead>
-            <TableHead className="text-center">Actions</TableHead>
-          </TableRow>
+    <div className="mx-auto flex w-full flex-col">
+      <Frame spacing="xs">
+        <FramePanel className="p-0!">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pl-6 w-[25%]">Role Name</TableHead>
+                <TableHead className="text-center">Description</TableHead>
+                <TableHead className="text-center">Permissions</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
+              </TableRow>
         </TableHeader>
 
         <TableBody>
@@ -71,8 +91,15 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
 
           {roles.map((role) => (
             <TableRow key={role.id}>
-              <TableCell className="font-medium text-center">
-                {role.role_name}
+              <TableCell className="pl-6 font-medium">
+                <div className="flex items-center justify-start gap-3">
+                  <Avatar className="h-9 w-9 dark:border dark:border-gray-300">
+                    <AvatarFallback className="bg-[#7b0d15] text-[#ffd21a] dark:bg-white dark:text-black font-medium">
+                      {getInitials(role.role_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="truncate">{role.role_name}</span>
+                </div>
               </TableCell>
               <TableCell className="text-center">{role.description}</TableCell>
               <TableCell className="text-center">
@@ -111,6 +138,8 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
           ))}
         </TableBody>
       </Table>
+      </FramePanel>
+      </Frame>
     </div>
   );
 }
