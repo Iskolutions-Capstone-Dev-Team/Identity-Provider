@@ -27,7 +27,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="pl-6 w-[25%]">Role Name</TableHead>
+                  <TableHead className="text-center w-[25%]">Role Name</TableHead>
               <TableHead className="text-center">Description</TableHead>
               <TableHead className="text-center">Permissions</TableHead>
               <TableHead className="text-center">Actions</TableHead>
@@ -73,7 +73,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-6 w-[25%]">Role Name</TableHead>
+                <TableHead className="text-center w-[25%]">Role Name</TableHead>
                 <TableHead className="text-center">Description</TableHead>
                 <TableHead className="text-center">Permissions</TableHead>
                 <TableHead className="text-center">Actions</TableHead>

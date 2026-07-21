@@ -87,7 +87,7 @@ export default function UserPoolTable({
             <Table>
               <TableHeader>
                 <TableRow>
-              <TableHead className="pl-6 w-[25%]">Name</TableHead>
+              <TableHead className="text-center w-[25%]">Name</TableHead>
               <TableHead className="text-center">Email</TableHead>
               <TableHead className="text-center">ID</TableHead>
               <TableHead className="text-center">{accessColumnLabel}</TableHead>
@@ -139,7 +139,7 @@ export default function UserPoolTable({
           <Table>
             <TableHeader>
               <TableRow>
-            <TableHead className="pl-6 w-[25%]">Name</TableHead>
+            <TableHead className="text-center w-[25%]">Name</TableHead>
             <TableHead className="text-center">Email</TableHead>
             <TableHead className="text-center">ID</TableHead>
             <TableHead className="text-center">{accessColumnLabel}</TableHead>

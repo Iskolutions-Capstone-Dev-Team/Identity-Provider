@@ -43,7 +43,7 @@ export default function ConnectedAppClientTable({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="pl-4 w-[30%]">Client Name</TableHead>
+                  <TableHead className="text-center w-[30%]">Client Name</TableHead>
                   <TableHead className="text-center w-[25%]">Created</TableHead>
                   <TableHead className="text-center w-[20%]">Secret</TableHead>
                   <TableHead className="text-center w-[25%]">Actions</TableHead>
@@ -87,7 +87,7 @@ export default function ConnectedAppClientTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-center pl-4 w-[30%]">Client Name</TableHead>
+                <TableHead className="text-center w-[30%]">Client Name</TableHead>
                 <TableHead className="text-center w-[25%]">Created</TableHead>
                 <TableHead className="text-center w-[20%]">Secret</TableHead>
                 <TableHead className="text-center w-[25%]">Actions</TableHead>

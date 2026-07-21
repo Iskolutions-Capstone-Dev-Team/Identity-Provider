@@ -32,7 +32,7 @@ export default function RegistrationTable({ rows = [], onView, onEdit, onDelete,
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-6 w-1/3">Account Type</TableHead>
+                <TableHead className="text-center w-1/3">Account Type</TableHead>
               <TableHead className="w-1/3 text-center">Client List</TableHead>
               <TableHead className="w-1/3 text-center">Action</TableHead>
             </TableRow>

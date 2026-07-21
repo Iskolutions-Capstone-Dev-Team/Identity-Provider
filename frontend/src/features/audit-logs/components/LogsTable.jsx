@@ -37,7 +37,7 @@ export default function LogsTable({ loading = false, logs, onView, colorMode = "
             <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px] pl-6">Actor</TableHead>
+              <TableHead className="text-center w-[200px]">Actor</TableHead>
               <TableHead className="w-[180px] text-center">Timestamp</TableHead>
               <TableHead className="w-[250px] text-center">Target</TableHead>
               <TableHead className="w-[120px] text-center">Status</TableHead>
@@ -84,7 +84,7 @@ export default function LogsTable({ loading = false, logs, onView, colorMode = "
           <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[200px] pl-6">Actor</TableHead>
+            <TableHead className="text-center w-[200px]">Actor</TableHead>
             <TableHead className="w-[180px] text-center">Timestamp</TableHead>
             <TableHead className="w-[250px] text-center">Target</TableHead>
             <TableHead className="w-[120px] text-center">Status</TableHead>
