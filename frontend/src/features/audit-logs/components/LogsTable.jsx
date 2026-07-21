@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 function getInitials(text) {
   if (!text) return "A";
   const parts = text.trim().split(/\s+/);
@@ -109,7 +109,22 @@ export default function LogsTable({ loading = false, logs, onView, colorMode = "
                         {getInitials(log.actor)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="truncate">{log.actor}</span>
+                    {log.actor && log.actor.length > 20 ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-pointer">
+                              {log.actor.substring(0, 20)}...
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-none">
+                            <p className="break-all">{log.actor}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span>{log.actor}</span>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="font-medium text-center">{log.timestamp}</TableCell>
