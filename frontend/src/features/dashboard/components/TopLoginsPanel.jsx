@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "../../
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../../../components/ui/empty";
 import { ScrollArea, ScrollBar } from "../../../components/ui/scroll-area";
 import { Activity } from "lucide-react";
+import { IconStack } from "../../../components/reui/icon-stack";
 
 function getInitials(name) {
   if (!name) return "CL";
@@ -191,10 +192,12 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
                 ))
               ) : (
                 <div className="flex items-center justify-center p-4">
-                  <Empty className="py-16">
+                  <Empty className="py-10 max-w-md">
                     <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        <Activity />
+                      <EmptyMedia>
+                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
+                          <Activity className="text-[#7b0d15] dark:text-primary size-5" />
+                        </IconStack>
                       </EmptyMedia>
                       <EmptyTitle>No login activity</EmptyTitle>
                       <EmptyDescription>

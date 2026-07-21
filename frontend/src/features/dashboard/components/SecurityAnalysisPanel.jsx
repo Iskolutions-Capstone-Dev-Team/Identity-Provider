@@ -14,7 +14,7 @@ function SecurityMetric({ icon, label, value, isLoading = false }) {
   return (
     <Card className="w-full shadow-none bg-muted/30">
       <CardContent className="flex flex-col gap-3 px-4 py-2.5">
-        <div className="bg-primary rounded-md [&_svg]:text-primary-foreground flex size-11 items-center justify-center [&_svg]:size-5">
+        <div className="flex size-11 items-center justify-center [&_svg]:size-5 bg-[#7b0d15] rounded-md [&_svg]:text-[#f8d24e] dark:bg-primary dark:rounded-md dark:[&_svg]:text-primary-foreground">
           {icon}
         </div>
         <span className="text-foreground block text-sm leading-tight font-medium">

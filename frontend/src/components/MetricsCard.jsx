@@ -22,7 +22,7 @@ export default function MetricsCard({ metrics = [], colorMode = "light", isLoadi
           <Card key={idx} className={`${hoverClassName} border-border bg-card shadow-sm border`}>
             <CardContent className="flex items-center gap-4 px-4 py-3">
               {Icon ? (
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#7b0d15] text-[#f8d24e] dark:bg-primary/10 dark:text-primary">
                   <Icon className="h-6 w-6" />
                 </span>
               ) : isLoading ? (
