@@ -87,7 +87,7 @@ export default function UserPoolTable({
             <Table>
               <TableHeader>
                 <TableRow>
-              <TableHead className="text-center w-[25%]">Name</TableHead>
+              <TableHead className="text-center w-[200px] max-w-[200px]">Name</TableHead>
               <TableHead className="text-center">Email</TableHead>
               <TableHead className="text-center">ID</TableHead>
               <TableHead className="text-center">{accessColumnLabel}</TableHead>
@@ -139,7 +139,7 @@ export default function UserPoolTable({
           <Table>
             <TableHeader>
               <TableRow>
-            <TableHead className="text-center w-[25%]">Name</TableHead>
+            <TableHead className="text-center w-[200px] max-w-[200px]">Name</TableHead>
             <TableHead className="text-center">Email</TableHead>
             <TableHead className="text-center">ID</TableHead>
             <TableHead className="text-center">{accessColumnLabel}</TableHead>
@@ -161,14 +161,18 @@ export default function UserPoolTable({
 
             return (
               <TableRow key={user.id}>
-                <TableCell className="pl-6">
-                  <div className="flex items-center justify-start gap-3">
-                    <Avatar className="h-9 w-9 dark:border dark:border-gray-300">
+                <TableCell className="pl-6 w-[200px] max-w-[200px] whitespace-normal">
+                  <div className="flex items-center justify-start gap-3 w-full">
+                    <Avatar className="h-9 w-9 dark:border dark:border-gray-300 shrink-0">
                       <AvatarFallback className="bg-[#7b0d15] text-[#ffd21a] dark:bg-white dark:text-black font-medium">
                         {getInitials(user)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="truncate">{getFullName(user)}</span>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-sm font-medium break-words whitespace-normal leading-tight">
+                        {getFullName(user)}
+                      </span>
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">{user.email}</TableCell>
