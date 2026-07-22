@@ -103,7 +103,7 @@ export default function Roles() {
   const confirmDelete = async () => {
     try {
       await deleteRole(deleteTarget);
-      toast.success("Role successfully deleted!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      toast.success("Role successfully deleted!");
     } catch (e) {
       toast.error("Failed to delete role", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
     } finally {
@@ -116,7 +116,7 @@ export default function Roles() {
     if (mode === "edit") {
       try {
         await updateRole(data);
-        toast.success("Role successfully updated!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+        toast.success("Role successfully updated!");
         setModalOpen(false);
       } catch (e) {
         toast.error("Failed to update role", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
@@ -131,8 +131,7 @@ export default function Roles() {
 
     if (routeState.successMessage) {
       toast.success(routeState.successMessage, { 
-        id: "role-route-success",
-        style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } 
+        id: "role-route-success"
       });
       navigate(location.pathname, { replace: true, state: {} });
     }

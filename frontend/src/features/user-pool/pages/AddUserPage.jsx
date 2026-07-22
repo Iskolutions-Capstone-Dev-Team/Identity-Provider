@@ -77,7 +77,7 @@ export default function AddUserPage() {
     const msg = newUser.accountSetupType === "invitation"
         ? "User created and invitation sent!"
         : "User successfully created!";
-    toast.success(msg, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+    toast.success(msg);
   };
 
   const handleClose = () => {

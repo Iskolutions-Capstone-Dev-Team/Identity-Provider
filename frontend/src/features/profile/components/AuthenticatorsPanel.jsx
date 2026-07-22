@@ -105,7 +105,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
         id: authenticatorToDelete.id,
       });
       setAuthenticatorToDelete(null);
-      toast.success("Authenticator removed successfully.", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      toast.success("Authenticator removed successfully.");
       await loadAuthenticators();
     } catch (deleteError) {
       setError(

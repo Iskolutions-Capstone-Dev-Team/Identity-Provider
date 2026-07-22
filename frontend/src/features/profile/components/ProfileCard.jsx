@@ -51,7 +51,7 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
 
     setCurrentProfile(nextProfile);
     updateCurrentUser?.(nextProfile);
-    toast.success("Profile updated successfully!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+    toast.success("Profile updated successfully!");
   };
 
   const profileName = formatProfileName(currentProfile) || "Profile";

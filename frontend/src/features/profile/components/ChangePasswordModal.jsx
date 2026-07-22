@@ -146,7 +146,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
 
     const message = "Password changed successfully!";
     
-    toast.success(message, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+    toast.success(message);
 
     if (setToastMessage) {
       setToastMessage(message);

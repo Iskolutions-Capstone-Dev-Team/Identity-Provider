@@ -7,6 +7,7 @@ import { useAllRoles } from "../../roles/hooks/useAllRoles";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import { useRegistrationAccountTypes } from "../../registration/hooks/useRegistrationAccountTypes";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
+import UserPoolAuthAppMfaModal from "./UserPoolAuthAppMfaModal";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -213,6 +214,10 @@ export default function UserPoolModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
+  const [showMfaModal, setShowMfaModal] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaError, setMfaError] = useState("");
+  const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
   const isSubmittingRef = useRef(false);
   const { currentUser } = useCurrentUser();
   const { accountTypeOptions, isLoadingAccountTypes } = useRegistrationAccountTypes({
@@ -233,6 +238,10 @@ export default function UserPoolModal({
     isSubmittingRef.current = false;
     setIsCopied(false);
     setError("");
+    setShowMfaModal(false);
+    setMfaCode("");
+    setMfaError("");
+    setIsVerifyingMfa(false);
   }, [open, user]);
 
   const handleCopyId = () => {
@@ -285,13 +294,34 @@ export default function UserPoolModal({
       setIsSubmitting(true);
       setError("");
       await onSubmit({ ...formData, userType }, originalUser);
-      toast.success("User updated successfully", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      toast.success("User updated successfully");
       onClose();
     } catch (submitError) {
-      setError(extractErrorMessage(submitError));
+      const errMsg = extractErrorMessage(submitError);
+      if (errMsg.toLowerCase().includes("mfa") || submitError?.response?.data?.mfaRequired) {
+        setShowMfaModal(true);
+        setMfaError("");
+      } else {
+        setError(errMsg);
+      }
     } finally {
       isSubmittingRef.current = false;
       setIsSubmitting(false);
+    }
+  };
+
+  const handleMfaVerify = async () => {
+    try {
+      setIsVerifyingMfa(true);
+      setMfaError("");
+      await onSubmit({ ...formData, userType, mfaCode }, originalUser);
+      toast.success("User updated successfully");
+      setShowMfaModal(false);
+      onClose();
+    } catch (mfaErr) {
+      setMfaError(extractErrorMessage(mfaErr) || "Invalid verification code. Please try again.");
+    } finally {
+      setIsVerifyingMfa(false);
     }
   };
 
@@ -309,7 +339,8 @@ export default function UserPoolModal({
   const accountTypeDisplayLabel = accountTypeOptions.find((opt) => opt.value === formData.accountType)?.label || formData.accountType;
 
   return (
-    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+    <>
+      <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
       <DialogContent className="sm:max-w-3xl" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
         <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
           <DialogTitle>{isViewMode ? "View User" : "Edit User"}</DialogTitle>
@@ -594,5 +625,16 @@ export default function UserPoolModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <UserPoolAuthAppMfaModal
+      open={showMfaModal}
+      code={mfaCode}
+      onCodeChange={setMfaCode}
+      onVerify={handleMfaVerify}
+      onClose={() => setShowMfaModal(false)}
+      isVerifying={isVerifyingMfa}
+      error={mfaError}
+    />
+    </>
   );
 }

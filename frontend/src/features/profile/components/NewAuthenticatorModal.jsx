@@ -126,7 +126,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
 
       await mfaService.finishPasskeyRegistration(email, credential);
       onCreated?.({ type: "passkey" });
-      toast.success("Passkey added successfully", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      toast.success("Passkey added successfully");
       onClose?.();
     } catch (passkeyError) {
       setError(
@@ -172,7 +172,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
 
   const handleFinish = () => {
     onCreated?.({ type: "authenticator", code });
-    toast.success("Authenticator app added successfully", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+    toast.success("Authenticator app added successfully");
     onClose?.();
   };
 

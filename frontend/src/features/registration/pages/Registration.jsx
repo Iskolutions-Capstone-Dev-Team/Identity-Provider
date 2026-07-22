@@ -208,8 +208,7 @@ export default function Registration() {
 
     if (routeState.successMessage) {
       toast.success(routeState.successMessage, { 
-        id: "registration-route-success", 
-        style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } 
+        id: "registration-route-success" 
       });
       navigate(location.pathname, { replace: true, state: {} });
     }
@@ -347,7 +346,7 @@ export default function Registration() {
         backendId,
         label: accountTypeName,
       });
-      toast.success(`Updated pre-approved clients for ${accountTypeName}.`, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      toast.success(`Updated pre-approved clients for ${accountTypeName}.`);
     } catch (error) {
       console.error("Failed to update account type:", error);
       toast.error(
@@ -376,7 +375,7 @@ export default function Registration() {
     try {
       setIsSyncingUsers(true);
       await registrationService.syncAccountTypeUsers(syncTarget.backendId);
-      toast.success(`Updated all ${syncTarget.label} users.`, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      toast.success(`Updated all ${syncTarget.label} users.`);
     } catch (error) {
       console.error("Failed to sync account type users:", error);
       toast.error(
@@ -400,7 +399,7 @@ export default function Registration() {
     try {
       await registrationService.deleteAccountType(deleteTarget.backendId);
       await loadRegistrationConfig({ showLoading: false });
-      toast.success(`Deleted ${deleteTarget.label} account type.`, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      toast.success(`Deleted ${deleteTarget.label} account type.`);
     } catch (error) {
       console.error("Failed to delete account type:", error);
       toast.error(

@@ -7,7 +7,6 @@ import UserPoolFilters from "../components/UserPoolFilters";
 import UserPoolTable from "../components/UserPoolTable";
 import Pagination from "../../../components/Pagination";
 import UserPoolModal from "../components/UserPoolModal";
-import SuccessAlert from "../../../components/SuccessAlert";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import InvitationConfirmModal from "../components/InvitationConfirmModal";
 import ResultsCount from "../../../components/ResultsCount";
@@ -116,11 +115,13 @@ export default function UserPool() {
   useEffect(() => {
     const routeState = location.state || {};
     if (routeState.userType) setUserType(routeState.userType);
-    if (routeState.successMessage) setSuccessMessage(routeState.successMessage);
+    if (routeState.successMessage) {
+      toast.success(routeState.successMessage);
+    }
     if (routeState.userType || routeState.successMessage) {
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.pathname, location.state, navigate, setSuccessMessage, setUserType]);
+  }, [location.pathname, location.state, navigate, setUserType]);
 
   const openUserModal = async (user, mode) => {
     const canOpenModal = mode === "edit" ? canEditCurrentUserType : canViewCurrentUserType;
@@ -169,7 +170,7 @@ export default function UserPool() {
     if (!userToDelete) return;
     try {
       await deleteUser(userToDelete.id, getUserLabel(userToDelete));
-      toast.success(`${userToDelete?.email} deleted successfully`, { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      toast.success(`${userToDelete?.email} deleted successfully`);
     } catch (e) {
       toast.error(`Failed to delete user`, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
     } finally {
@@ -349,7 +350,6 @@ export default function UserPool() {
         }}
         onConfirm={handleConfirmReinvite}
       />
-      <SuccessAlert message={successMessage} onClose={() => setSuccessMessage("")} />
     </div>
   );
 }
