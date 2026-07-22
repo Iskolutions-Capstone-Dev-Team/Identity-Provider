@@ -230,8 +230,6 @@ export default function UserPoolModal({
     setFormData(nextFormData);
     setOriginalUser(nextFormData);
     setIsSubmitting(false);
-    setShowMfaModal(false);
-    setMfaCode("");
     isSubmittingRef.current = false;
     setIsCopied(false);
     setError("");
@@ -312,7 +310,7 @@ export default function UserPoolModal({
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
       <DialogContent className="sm:max-w-3xl" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
-        <DialogHeader className="-mx-4 -mt-4 rounded-t-xl border-b p-4 bg-[#7b0d15] text-white dark:bg-transparent dark:text-foreground">
+        <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
           <DialogTitle>{isViewMode ? "View User" : "Edit User"}</DialogTitle>
         </DialogHeader>
         <div className={cn("-mx-4 no-scrollbar max-h-[50vh] px-4", isSelectOpen ? "overflow-hidden" : "overflow-y-auto")}>

@@ -43,7 +43,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && canClose) onClose(); }}>
       <DialogContent className="sm:max-w-xl" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
-        <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[#7b0d15] text-white dark:bg-transparent dark:text-foreground">
+        <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
           <DialogTitle>Client Secret</DialogTitle>
         </DialogHeader>
 
