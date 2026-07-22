@@ -2,12 +2,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { shortenId } from "../../../utils/shortenId";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
-import { Eye, Pencil, Trash, Copy, CopyCheck } from "lucide-react";
+import { Eye, Pencil, Trash, Copy, CopyCheck, Ellipsis } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -215,11 +216,44 @@ export default function UserPoolTable({
                 <TableCell className="text-center">
                   {accessItems.length > 0 ? (
                     <div className="flex flex-wrap justify-center gap-1">
-                      {accessItems.map((item, idx) => (
-                        <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
-                          {item}
-                        </Badge>
-                      ))}
+                      {accessItems.length > 5 ? (
+                        <>
+                          {accessItems.slice(0, 5).map((item, idx) => (
+                            <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
+                              {item}
+                            </Badge>
+                          ))}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Badge asChild className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2.5 py-1 inline-flex items-center justify-center transition-colors cursor-pointer">
+                                <button type="button" aria-label="View all accessible clients">
+                                  <Ellipsis className="w-3.5 h-3.5" />
+                                </button>
+                              </Badge>
+                            </PopoverTrigger>
+                            <PopoverContent align="center" className="w-72 p-3 bg-popover text-popover-foreground border shadow-md rounded-lg">
+                              <div className="space-y-2">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-left">
+                                  All Accessible Clients ({accessItems.length})
+                                </h4>
+                                <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pt-1 pr-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/25 hover:[&::-webkit-scrollbar-thumb]:bg-foreground/40 [&::-webkit-scrollbar-track]:bg-transparent">
+                                  {accessItems.map((item, idx) => (
+                                    <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2.5 py-1 text-xs">
+                                      {item}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </>
+                      ) : (
+                        accessItems.map((item, idx) => (
+                          <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
+                            {item}
+                          </Badge>
+                        ))
+                      )}
                     </div>
                   ) : (
                     <span className="text-muted-foreground text-sm">{emptyAccessLabel}</span>
