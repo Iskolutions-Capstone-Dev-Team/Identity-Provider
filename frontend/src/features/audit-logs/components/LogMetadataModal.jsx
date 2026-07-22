@@ -46,8 +46,8 @@ export default function LogMetadataModal({ open, log, logType = "transaction", l
           <DialogTitle>{modalTitle}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 -mx-4 no-scrollbar max-h-[60vh] px-4 overflow-y-auto pb-2">
-          <div className="space-y-6 pt-0 pb-4 px-2">
+        <div className="space-y-6 -mx-4 no-scrollbar max-h-[60vh] px-4 overflow-y-auto pt-2 pb-2">
+          <div className="space-y-6 pt-3 pb-4 px-2">
             <section>
               <Card className="bg-muted/30 border-border/40 shadow-sm">
                 <CardContent className="px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
