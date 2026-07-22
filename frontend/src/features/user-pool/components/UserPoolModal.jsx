@@ -306,6 +306,7 @@ export default function UserPoolModal({
   const roleAccessItems = formData.roles.length > 0 ? formData.roles : adminRoleOptions.filter((role) => role.id === formData.roleId).map((role) => role.role_name);
   const clientAccessDisplayItems = formData.accessibleClientNames.length > 0 ? formData.accessibleClientNames : getAppClientNamesByIds(formData.accessibleClientIds, appClientSelectOptions);
   const manageableClientDisplayItems = formData.manageableClientNames.length > 0 ? formData.manageableClientNames : getAppClientNamesByIds(formData.manageableClientIds, appClientSelectOptions);
+  const accountTypeDisplayLabel = accountTypeOptions.find((opt) => opt.value === formData.accountType)?.label || formData.accountType;
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
@@ -335,25 +336,33 @@ export default function UserPoolModal({
                       </Button>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {isAdminView && roleAccessItems.length > 0 && (
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isAdminView && roleAccessItems.length > 0 && (
+                        <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold bg-muted/50 border-border/50 text-foreground">
+                          <User className="w-3.5 h-3.5 mr-1.5" />
+                          {roleAccessItems[0]}
+                        </Badge>
+                      )}
+                      <Badge 
+                        variant={formData.status?.toLowerCase() === 'active' ? 'success-outline' : 'destructive-outline'}
+                        className={cn(
+                          "rounded-full px-3 py-1 font-semibold",
+                          formData.status?.toLowerCase() === 'active' 
+                            ? "bg-[#00d053]/10 border-transparent text-[#00d053] hover:bg-[#00d053]/20" 
+                            : "bg-[#ff2f3e]/10 border-transparent text-[#ff2f3e] hover:bg-[#ff2f3e]/20"
+                        )}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5" />
+                        <span className="capitalize">{formData.status}</span>
+                      </Badge>
+                    </div>
+                    {formData.accountType && (
                       <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold bg-muted/50 border-border/50 text-foreground">
-                        <User className="w-3.5 h-3.5 mr-1.5" />
-                        {roleAccessItems[0]}
+                        <CheckIcon className="w-3.5 h-3.5 mr-1.5" />
+                        {accountTypeDisplayLabel}
                       </Badge>
                     )}
-                    <Badge 
-                      variant={formData.status?.toLowerCase() === 'active' ? 'success-outline' : 'destructive-outline'}
-                      className={cn(
-                        "rounded-full px-3 py-1 font-semibold",
-                        formData.status?.toLowerCase() === 'active' 
-                          ? "bg-[#00d053]/10 border-transparent text-[#00d053] hover:bg-[#00d053]/20" 
-                          : "bg-[#ff2f3e]/10 border-transparent text-[#ff2f3e] hover:bg-[#ff2f3e]/20"
-                      )}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5" />
-                      <span className="capitalize">{formData.status}</span>
-                    </Badge>
                   </div>
                 </CardContent>
               </Card>
