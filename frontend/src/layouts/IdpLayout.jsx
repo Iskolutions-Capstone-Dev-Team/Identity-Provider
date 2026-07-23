@@ -1,6 +1,5 @@
 import { useEffect, useState, Suspense } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
-import AssistiveFab from "../components/AssistiveFab";
 import AccessibilityWidget from "../components/AccessibilityWidget";
 import ErrorAlert from "../components/ErrorAlert";
 import Navbar from "../components/Navbar";
@@ -88,7 +87,6 @@ export default function IdpLayout() {
     <SidebarProvider className="app-sidebar-custom">
       <TooltipProvider>
         <AccessibilityWidget colorMode={colorMode} />
-        <AssistiveFab colorMode={colorMode} />
 
         <div className="pointer-events-none fixed inset-x-4 top-24 z-[120] flex justify-center sm:justify-end">
           <div className="pointer-events-auto w-full max-w-sm">
