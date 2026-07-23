@@ -19,10 +19,9 @@ const FAB_ACTION_WRAP_BASE_CLASS =
   "absolute inset-0 flex items-center justify-center will-change-transform transition-all duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
 
 const ACTION_POSITIONS = [
-  "max-lg:-translate-x-[113px] max-lg:-translate-y-[41px] lg:-translate-x-[150px] lg:translate-y-0",
-  "max-lg:-translate-x-[50px] max-lg:-translate-y-[108px] lg:-translate-x-[130px] lg:-translate-y-[75px]",
-  "max-lg:translate-x-[50px] max-lg:-translate-y-[108px] lg:-translate-x-[75px] lg:-translate-y-[130px]",
-  "max-lg:translate-x-[113px] max-lg:-translate-y-[41px] lg:translate-x-0 lg:-translate-y-[150px]"
+  "max-lg:-translate-x-[113px] max-lg:-translate-y-[41px] lg:-translate-x-[140px] lg:translate-y-0",
+  "max-lg:-translate-x-[50px] max-lg:-translate-y-[108px] lg:-translate-x-[95px] lg:-translate-y-[95px]",
+  "max-lg:translate-x-[50px] max-lg:-translate-y-[108px] lg:translate-x-0 lg:-translate-y-[140px]"
 ];
 
 function getActionVisibilityClassName(isOpen, isVisible, actionIndex) {
@@ -87,15 +86,6 @@ export default function AssistiveFab({ colorMode = "light" }) {
       content: (
         <button type="button" aria-label="Open web accessibility" title="Open web accessibility" className={FAB_BUTTON_CLASS_NAME} disabled={!isAccessibilityReady} onClick={handleAccessibilityClick}>
           <AccessibilityIcon />
-        </button>
-      ),
-    },
-    {
-      key: "faq",
-      tooltipLabel: "FAQ",
-      content: (
-        <button type="button" aria-label="Open FAQ" title="Open FAQ" className={FAB_BUTTON_CLASS_NAME} onClick={handleFaqClick}>
-          <FaqIcon />
         </button>
       ),
     },
