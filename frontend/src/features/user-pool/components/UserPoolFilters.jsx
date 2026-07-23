@@ -45,7 +45,7 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
           <Tabs value={userType} onValueChange={setUserType} className="h-10!">
             <TabsList className="h-full group-data-horizontal/tabs:h-10!">
               {visibleUserTypeOptions.map((opt) => (
-                <TabsTrigger key={opt.value} value={opt.value} className="h-full px-4 flex items-center gap-2">
+                <TabsTrigger key={opt.value} value={opt.value} className="h-full px-4 flex items-center gap-2 transition-colors data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-[active]:!bg-[#7b0d15] data-[active]:!text-[#f8d24e] dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15] dark:data-[active]:!bg-[#f8d24e] dark:data-[active]:!text-[#7b0d15]">
                   <opt.Icon className="h-4 w-4" />
                   {opt.label}
                 </TabsTrigger>
