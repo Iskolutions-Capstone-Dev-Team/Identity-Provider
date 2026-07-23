@@ -463,136 +463,147 @@ export default function UserPoolModal({
           ) : (
             <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pb-6">
               <div className="space-y-6">
-                {isAdminView && (
-                  <div className="space-y-3">
+                {/* 1st Card: Account Type */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-4 space-y-3">
                     <div>
-                      <h4 className="font-semibold text-sm">Role</h4>
-                      <p className="text-sm text-muted-foreground">Choose the role for this admin account.</p>
+                      <h4 className="font-semibold text-sm">Account Type</h4>
+                      <p className="text-sm text-muted-foreground">Choose the user's account type.</p>
                     </div>
-                    {!canEditRoleField ? (
-                      <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
-                        {roleAccessItems.length > 0 ? (
-                          roleAccessItems.map((item, idx) => <Badge key={idx}>{item}</Badge>)
+                    {!canEditStatus ? (
+                      <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2 items-center">
+                        <Badge variant="outline" className="capitalize">{accountTypeDisplayLabel || formData.accountType || "-"}</Badge>
+                      </div>
+                    ) : (
+                      <Select value={formData.accountType} onValueChange={handleAccountTypeChange} onOpenChange={setIsSelectOpen}>
+                        <SelectTrigger className="h-10 w-full bg-muted/50 border-border/50">
+                          <SelectValue placeholder="Select Account Type" />
+                        </SelectTrigger>
+                        <SelectContent position="popper">
+                          {accountTypeSelectOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 2nd Card: Role, Accessible, & Manageable Clients */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-4 space-y-6">
+                    {isAdminView && (
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="font-semibold text-sm">Role</h4>
+                          <p className="text-sm text-muted-foreground">Choose the role for this admin account.</p>
+                        </div>
+                        {!canEditRoleField ? (
+                          <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
+                            {roleAccessItems.length > 0 ? (
+                              roleAccessItems.map((item, idx) => <Badge key={idx}>{item}</Badge>)
+                            ) : (
+                              <span className="text-sm text-muted-foreground">No role assigned</span>
+                            )}
+                          </div>
                         ) : (
-                          <span className="text-sm text-muted-foreground">No role assigned</span>
+                          <UserPoolRoleRadioGroup
+                            options={adminRoleOptions}
+                            selectedValue={formData.roleId?.toString() || ""}
+                            onChange={(val) => handleAdminRoleChange(val)}
+                            colorMode={colorMode}
+                            name="edit-admin-role"
+                            allowEmpty={true}
+                            emptyOptionLabel="No role assigned"
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-semibold text-sm">Accessible Clients</h4>
+                        <p className="text-sm text-muted-foreground">Choose which clients are accessible for sign-in.</p>
+                      </div>
+                      {!canEditAccessField ? (
+                        <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
+                          {clientAccessDisplayItems.length > 0 ? (
+                            clientAccessDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>)
+                          ) : (
+                            <span className="text-sm text-muted-foreground">No clients selected</span>
+                          )}
+                        </div>
+                      ) : (
+                        <AppClientComboboxField
+                          options={appClientSelectOptions}
+                          selectedIds={formData.accessibleClientIds}
+                          onChange={(vals) => setFormData((curr) => ({ ...curr, accessibleClientIds: vals }))}
+                          placeholder="Select accessible app clients"
+                          isDarkMode={isDarkMode}
+                          lockedSelectedValues={formData.accessibleClientIds.filter((clientId) => !editableAppClientIdLookup.has(clientId))}
+                        />
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-semibold text-sm">Manageable Clients</h4>
+                        <p className="text-sm text-muted-foreground">Choose which clients this admin can manage.</p>
+                      </div>
+                      {!canEditAccessField ? (
+                        <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
+                          {manageableClientDisplayItems.length > 0 ? (
+                            manageableClientDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>)
+                          ) : (
+                            <span className="text-sm text-muted-foreground">No manageable clients selected</span>
+                          )}
+                        </div>
+                      ) : (
+                        <AppClientComboboxField
+                          options={appClientSelectOptions}
+                          selectedIds={formData.manageableClientIds}
+                          onChange={(vals) => setFormData((curr) => ({ ...curr, manageableClientIds: vals }))}
+                          placeholder="Select manageable app clients"
+                          isDarkMode={isDarkMode}
+                          lockedSelectedValues={formData.manageableClientIds.filter((clientId) => !editableAppClientIdLookup.has(clientId))}
+                        />
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 3rd Card: Status */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-4 space-y-3">
+                    <div>
+                      <h4 className="font-semibold text-sm">Status</h4>
+                      <p className="text-sm text-muted-foreground">Choose the user's account status.</p>
+                    </div>
+                    {!canEditStatus ? (
+                      <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2 items-center">
+                        {formData.status?.toLowerCase() === 'active' ? (
+                          <Badge variant="success-outline">Active</Badge>
+                        ) : formData.status?.toLowerCase() === 'suspended' ? (
+                          <Badge variant="destructive-outline">Suspended</Badge>
+                        ) : (
+                          <Badge variant="outline" className="capitalize">{formData.status}</Badge>
                         )}
                       </div>
                     ) : (
-                      <UserPoolRoleRadioGroup
-                        options={adminRoleOptions}
-                        selectedValue={formData.roleId?.toString() || ""}
-                        onChange={(val) => handleAdminRoleChange(val)}
-                        colorMode={colorMode}
-                        name="edit-admin-role"
-                        allowEmpty={true}
-                        emptyOptionLabel="No role assigned"
-                      />
+                      <Select value={formData.status} onValueChange={handleStatusChange} onOpenChange={setIsSelectOpen}>
+                        <SelectTrigger className="h-10 w-full bg-muted/50 border-border/50">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent position="popper">
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="suspended">Suspend</SelectItem>
+                        </SelectContent>
+                      </Select>
                     )}
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-semibold text-sm">Status</h4>
-                    <p className="text-sm text-muted-foreground">Choose the user's account status.</p>
-                  </div>
-                  {!canEditStatus ? (
-                    <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2 items-center">
-                      {formData.status?.toLowerCase() === 'active' ? (
-                        <Badge variant="success-outline">Active</Badge>
-                      ) : formData.status?.toLowerCase() === 'suspended' ? (
-                        <Badge variant="destructive-outline">Suspended</Badge>
-                      ) : (
-                        <Badge variant="outline" className="capitalize">{formData.status}</Badge>
-                      )}
-                    </div>
-                  ) : (
-                    <Select value={formData.status} onValueChange={handleStatusChange} onOpenChange={setIsSelectOpen}>
-                      <SelectTrigger className="h-10 w-full bg-muted/50 border-border/50">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent position="popper">
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="suspended">Suspend</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-semibold text-sm">Account Type</h4>
-                    <p className="text-sm text-muted-foreground">Choose the user's account type.</p>
-                  </div>
-                  {!canEditStatus ? (
-                    <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2 items-center">
-                      <Badge variant="outline" className="capitalize">{accountTypeDisplayLabel || formData.accountType || "-"}</Badge>
-                    </div>
-                  ) : (
-                    <Select value={formData.accountType} onValueChange={handleAccountTypeChange} onOpenChange={setIsSelectOpen}>
-                      <SelectTrigger className="h-10 w-full bg-muted/50 border-border/50">
-                        <SelectValue placeholder="Select Account Type" />
-                      </SelectTrigger>
-                      <SelectContent position="popper">
-                        {accountTypeSelectOptions.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-semibold text-sm">Accessible Clients</h4>
-                    <p className="text-sm text-muted-foreground">Choose which clients are accessible for sign-in.</p>
-                  </div>
-                  {!canEditAccessField ? (
-                    <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
-                      {clientAccessDisplayItems.length > 0 ? (
-                        clientAccessDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>)
-                      ) : (
-                        <span className="text-sm text-muted-foreground">No clients selected</span>
-                      )}
-                    </div>
-                  ) : (
-                    <AppClientComboboxField
-                      options={appClientSelectOptions}
-                      selectedIds={formData.accessibleClientIds}
-                      onChange={(vals) => setFormData((curr) => ({ ...curr, accessibleClientIds: vals }))}
-                      placeholder="Select accessible app clients"
-                      isDarkMode={isDarkMode}
-                      lockedSelectedValues={formData.accessibleClientIds.filter((clientId) => !editableAppClientIdLookup.has(clientId))}
-                    />
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-semibold text-sm">Manageable Clients</h4>
-                    <p className="text-sm text-muted-foreground">Choose which clients this admin can manage.</p>
-                  </div>
-                  {!canEditAccessField ? (
-                    <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
-                      {manageableClientDisplayItems.length > 0 ? (
-                        manageableClientDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>)
-                      ) : (
-                        <span className="text-sm text-muted-foreground">No manageable clients selected</span>
-                      )}
-                    </div>
-                  ) : (
-                    <AppClientComboboxField
-                      options={appClientSelectOptions}
-                      selectedIds={formData.manageableClientIds}
-                      onChange={(vals) => setFormData((curr) => ({ ...curr, manageableClientIds: vals }))}
-                      placeholder="Select manageable app clients"
-                      isDarkMode={isDarkMode}
-                      lockedSelectedValues={formData.manageableClientIds.filter((clientId) => !editableAppClientIdLookup.has(clientId))}
-                    />
-                  )}
-                </div>
+                  </CardContent>
+                </Card>
               </div>
             </form>
           )}
