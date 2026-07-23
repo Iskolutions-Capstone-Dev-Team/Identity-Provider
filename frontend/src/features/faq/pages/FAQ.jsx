@@ -1,28 +1,39 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
-import FAQAccordionItem from "../components/FAQAccordionItem";
-import { FAQHeaderIcon } from "../components/faqIcons";
-import FAQPanel from "../components/FAQPanel";
+import { createPortal } from "react-dom";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { CircleHelp, Users, ShieldUser, MonitorCog, FileCheckCorner, FileSearchCorner, Info } from "lucide-react";
 import FAQSkeleton from "../components/FAQSkeleton";
-import FAQTopicButton from "../components/FAQTopicButton";
 import FAQ_TOPICS from "../components/faqTopics";
 import FAQ_THEME from "../components/faqTheme";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 
 const SKELETON_DELAY_MS = 2000;
 
+const topicIcons = {
+  "user-pool": Users,
+  "roles": ShieldUser,
+  "app-client": MonitorCog,
+  "registration": FileCheckCorner,
+  "audit-logs": FileSearchCorner,
+  "other": Info,
+};
+
 export default function FAQ() {
   const { colorMode = "light" } = useOutletContext() || {};
-  const [activeTopicId, setActiveTopicId] = useState(FAQ_TOPICS[0].id);
-  const [openQuestionId, setOpenQuestionId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
   const isDarkMode = colorMode === "dark";
   const theme = FAQ_THEME[isDarkMode ? "dark" : "light"];
   const showSkeleton = useDelayedLoading(isLoading, SKELETON_DELAY_MS);
-  const activeTopic =
-    FAQ_TOPICS.find((topic) => topic.id === activeTopicId) || FAQ_TOPICS[0];
+
+  useEffect(() => {
+    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -34,90 +45,103 @@ export default function FAQ() {
     };
   }, []);
 
-  const handleTopicSelect = (topicId) => {
-    setActiveTopicId(topicId);
-    setOpenQuestionId("");
-  };
-
-  const handleQuestionToggle = (questionId) => {
-    setOpenQuestionId((currentId) =>
-      currentId === questionId ? "" : questionId,
-    );
-  };
-
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-      <Breadcrumbs
-        colorMode={colorMode}
-        items={[
-          {
-            label: "FAQ",
-            icon: <FAQHeaderIcon />,
-          },
-        ]}
-      />
+    <div className="flex flex-col gap-6 w-full">
+      {breadcrumbsContainer && createPortal(
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbPage>FAQ</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>,
+        breadcrumbsContainer
+      )}
 
-      <PageHeader
-        title="FAQ"
-        description="Frequently asked questions"
-        icon={<FAQHeaderIcon />}
-        colorMode={colorMode}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-primary/10 dark:text-primary rounded-xl">
+            <CircleHelp className="w-8 h-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">FAQ</h1>
+            <p className="text-muted-foreground">Frequently asked questions</p>
+          </div>
+        </div>
+      </div>
 
       {showSkeleton ? (
-        <FAQSkeleton theme={theme} />
+        <FAQSkeleton />
       ) : (
-        <div className="grid gap-6 xl:grid-cols-[24rem_minmax(0,1fr)]">
-          <FAQPanel theme={theme}>
-            <div className="space-y-4 p-4 sm:p-5 lg:p-6">
-              <h2 className={`text-base font-bold ${theme.panelTitle}`}>
-                Browse by Topic
-              </h2>
-
-              <div className={`space-y-2 border-t pt-4 ${theme.divider}`}>
-                {FAQ_TOPICS.map((topic) => (
-                  <FAQTopicButton
+        <Tabs defaultValue={FAQ_TOPICS[0].id} orientation="vertical" className="w-full">
+          <div className="grid gap-6 xl:grid-cols-[22rem_minmax(0,1fr)] w-full items-start">
+            {/* 1st Card: Left side Topics Sidebar */}
+            <TabsList className="w-full shrink-0 flex flex-col gap-1.5 h-auto p-2 bg-muted rounded-xl">
+              {FAQ_TOPICS.map((topic) => {
+                const Icon = topicIcons[topic.id] || Info;
+                return (
+                  <TabsTrigger
                     key={topic.id}
-                    topic={topic}
-                    isActive={activeTopic.id === topic.id}
-                    onClick={() => handleTopicSelect(topic.id)}
-                    theme={theme}
-                  />
-                ))}
-              </div>
-            </div>
-          </FAQPanel>
+                    value={topic.id}
+                    className="group justify-start gap-3 px-3.5 py-3 rounded-lg w-full text-left font-medium cursor-pointer transition-colors data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-[active]:!bg-[#7b0d15] data-[active]:!text-[#f8d24e] dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15] dark:data-[active]:!bg-[#f8d24e] dark:data-[active]:!text-[#7b0d15]"
+                  >
+                    <Icon className="size-5 shrink-0 text-muted-foreground group-data-active:!text-[#f8d24e] group-data-[active]:!text-[#f8d24e] dark:group-data-active:!text-[#7b0d15] dark:group-data-[active]:!text-[#7b0d15]" />
+                    <span className="truncate">{topic.title}</span>
+                    <Badge className="ml-auto rounded-full px-2.5 py-0.5 text-xs font-semibold shrink-0 bg-[#7b0d15]/10 border border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 group-data-active:!bg-[#f8d24e]/20 group-data-active:!border-[#f8d24e]/30 group-data-active:!text-[#f8d24e] group-data-[active]:!bg-[#f8d24e]/20 group-data-[active]:!border-[#f8d24e]/30 group-data-[active]:!text-[#f8d24e] dark:group-data-active:!bg-[#7b0d15]/20 dark:group-data-active:!border-[#7b0d15]/30 dark:group-data-active:!text-[#7b0d15] dark:group-data-[active]:!bg-[#7b0d15]/20 dark:group-data-[active]:!border-[#7b0d15]/30 dark:group-data-[active]:!text-[#7b0d15]">
+                      {topic.questions.length}
+                    </Badge>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
 
-          <FAQPanel theme={theme}>
-            <div className="space-y-5 p-4 sm:p-5 lg:p-6">
-              <div className={`flex flex-col gap-3 border-b pb-5 sm:flex-row sm:items-center sm:justify-between ${theme.divider}`}>
-                <div className="min-w-0">
-                  <p className={`text-xs font-bold uppercase tracking-[0.18em] ${theme.muted}`}>
-                    {activeTopic.title}
-                  </p>
-                  <h2 className={`mt-1 text-2xl font-black ${theme.panelTitle}`}>
-                    System Guide
-                  </h2>
-                </div>
-                <span className={`self-start rounded-full border px-3 py-1.5 text-xs font-bold sm:self-center ${theme.badge}`}>
-                  {activeTopic.questions.length} questions
-                </span>
-              </div>
+            {/* 2nd Card: Right side Questions & Answers */}
+            <Card className="w-full bg-card border-border shadow-sm">
+              <CardContent className="p-6">
+                {FAQ_TOPICS.map((topic) => (
+                  <TabsContent key={topic.id} value={topic.id} className="mt-0 space-y-6 outline-none">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-5">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                          {topic.title}
+                        </p>
+                        <h2 className="text-2xl font-bold tracking-tight text-foreground mt-1">
+                          System Guide
+                        </h2>
+                      </div>
+                      <Badge className="rounded-full px-3 py-1 text-xs font-bold w-fit bg-[#7b0d15]/10 border border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20">
+                        {topic.questions.length} questions
+                      </Badge>
+                    </div>
 
-              <div className="space-y-3">
-                {activeTopic.questions.map((item) => (
-                  <FAQAccordionItem
-                    key={item.id}
-                    item={item}
-                    isOpen={openQuestionId === item.id}
-                    onToggle={() => handleQuestionToggle(item.id)}
-                    theme={theme}
-                  />
+                    <Accordion type="single" collapsible defaultValue={topic.questions[0]?.id} className="space-y-3 border-0">
+                      {topic.questions.map((item) => (
+                        <AccordionItem
+                          key={item.id}
+                          value={item.id}
+                          className="border-border rounded-lg border px-4 not-last:border-b"
+                        >
+                          <AccordionTrigger className="items-center py-4 font-medium hover:no-underline text-base text-left">
+                            {item.question}
+                          </AccordionTrigger>
+                          <AccordionContent className="text-muted-foreground pt-0 pb-4 text-sm leading-relaxed space-y-2">
+                            {Array.isArray(item.answer) ? (
+                              item.answer.map((paragraph, index) => (
+                                <p key={index}>{paragraph}</p>
+                              ))
+                            ) : (
+                              <p>{item.answer}</p>
+                            )}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </TabsContent>
                 ))}
-              </div>
-            </div>
-          </FAQPanel>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        </Tabs>
       )}
     </div>
   );
