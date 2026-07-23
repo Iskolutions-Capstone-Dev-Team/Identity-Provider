@@ -1,8 +1,10 @@
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE } from "../../../utils/userPoolAccess";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Users, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Users, Shield, Table, WalletCards, ChevronDown } from "lucide-react";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Label } from "@/components/ui/label";
 
@@ -12,7 +14,7 @@ const statusOptions = [
   { value: "suspended", label: "Suspended" },
 ];
 
-export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, showAdminUserType = true }) {
+export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, viewType = "table", setViewType, showAdminUserType = true }) {
   const visibleUserTypeOptions = showAdminUserType
     ? [
         { value: REGULAR_USER_TYPE, label: "Users", Icon: Users },
@@ -68,6 +70,33 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="w-full lg:w-[130px] shrink-0 flex flex-col gap-2">
+          <Label>View</Label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-10! px-3 flex items-center gap-2 bg-background border shadow-sm w-full justify-between">
+                <div className="flex items-center gap-2 text-foreground font-normal">
+                  {viewType === "card" ? <WalletCards className="w-4 h-4 opacity-70" /> : <Table className="w-4 h-4 opacity-70" />}
+                  <span>{viewType === "card" ? "Card" : "Table"}</span>
+                </div>
+                <ChevronDown className="w-4 h-4 opacity-50 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[130px]">
+              <DropdownMenuRadioGroup value={viewType} onValueChange={setViewType}>
+                <DropdownMenuRadioItem value="table" className="cursor-pointer gap-2">
+                  <Table className="w-4 h-4 opacity-70" />
+                  Table
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="card" className="cursor-pointer gap-2">
+                  <WalletCards className="w-4 h-4 opacity-70" />
+                  Card
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

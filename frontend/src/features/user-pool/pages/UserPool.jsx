@@ -5,6 +5,7 @@ import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useUsers } from "../hooks/useUsers";
 import UserPoolFilters from "../components/UserPoolFilters";
 import UserPoolTable from "../components/UserPoolTable";
+import UserPoolCards from "../components/UserPoolCards";
 import Pagination from "../../../components/Pagination";
 import UserPoolModal from "../components/UserPoolModal";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
@@ -20,7 +21,6 @@ import { resolveReinviteAccountTypeId } from "../utils/reinviteAccountType";
 import { getUserLabel } from "../utils/userLabels";
 import MetricsCard from "../../../components/MetricsCard";
 import { metricsService } from "../../../services/metricsService";
-
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Users, Plus, User } from "lucide-react";
@@ -92,6 +92,14 @@ export default function UserPool() {
   const [openReinvite, setOpenReinvite] = useState(false);
   const [userToReinvite, setUserToReinvite] = useState(null);
   const [isSendingReinvite, setIsSendingReinvite] = useState(false);
+  const [viewType, setViewType] = useState(() => {
+    return localStorage.getItem("userPoolViewType") || "table";
+  });
+  
+  useEffect(() => {
+    localStorage.setItem("userPoolViewType", viewType);
+  }, [viewType]);
+  
   const selectedUserRequestRef = useRef(0);
   
   const showLoading = useDelayedLoading(
@@ -231,10 +239,7 @@ export default function UserPool() {
         </div>
 
         {canAddUsers && (
-          <Button 
-            className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200"
-            onClick={() => navigate(`/user-pool/create?type=${userType}`, { state: { userType } })}
-          >
+          <Button className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200" onClick={() => navigate(`/user-pool/create?type=${userType}`, { state: { userType } })}>
             <Plus className="w-4 h-4 mr-2" />
             Add User
           </Button>
@@ -261,23 +266,41 @@ export default function UserPool() {
           setUserType={setUserType}
           status={status}
           setStatus={setStatus}
+          viewType={viewType}
+          setViewType={setViewType}
           showAdminUserType={canViewAdminUsers}
           colorMode={colorMode}
         />
         
-        <UserPoolTable
-          loading={showLoading}
-          users={paginatedUsers}
-          userType={userType}
-          appClients={appClientOptions}
-          onView={handleView}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
-          showViewAction={canViewCurrentUserType}
-          showEditAction={canEditCurrentUserType}
-          showDeleteAction={canDeleteCurrentUserType}
-          colorMode={colorMode}
-        />
+        {viewType === "table" ? (
+          <UserPoolTable
+            loading={showLoading}
+            users={paginatedUsers}
+            userType={userType}
+            appClients={appClientOptions}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDeleteClick}
+            showViewAction={canViewCurrentUserType}
+            showEditAction={canEditCurrentUserType}
+            showDeleteAction={canDeleteCurrentUserType}
+            colorMode={colorMode}
+          />
+        ) : (
+          <UserPoolCards
+            loading={showLoading}
+            users={paginatedUsers}
+            userType={userType}
+            appClients={appClientOptions}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDeleteClick}
+            showViewAction={canViewCurrentUserType}
+            showEditAction={canEditCurrentUserType}
+            showDeleteAction={canDeleteCurrentUserType}
+            colorMode={colorMode}
+          />
+        )}
 
         {!showLoading && (
           <div className="flex flex-col sm:grid sm:grid-cols-3 items-center gap-4">

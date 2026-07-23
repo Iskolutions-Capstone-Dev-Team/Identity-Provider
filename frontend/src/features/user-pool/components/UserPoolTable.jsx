@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { shortenId } from "../../../utils/shortenId";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
-import { Eye, Pencil, Trash, Copy, CopyCheck, Ellipsis } from "lucide-react";
+import { Eye, Pencil, Trash, Copy, CopyCheck, Ellipsis, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { IconStack } from "@/components/reui/icon-stack";
 
 function getStatusBadgeVariant(status) {
   if (status === "active") return "success-outline";
@@ -182,7 +184,21 @@ export default function UserPoolTable({
           {users.length === 0 && (
             <TableRow>
               <TableCell colSpan={showActionsColumn ? 5 : 4} className="h-24 text-center">
-                No users found.
+                <div className="flex items-center justify-center w-full py-10">
+                  <Empty className="max-w-md">
+                    <EmptyHeader>
+                      <EmptyMedia>
+                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
+                          <User className="text-[#7b0d15] dark:text-primary size-5" />
+                        </IconStack>
+                      </EmptyMedia>
+                      <EmptyTitle>No users found</EmptyTitle>
+                      <EmptyDescription>
+                        We couldn't find any users matching your criteria.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </div>
               </TableCell>
             </TableRow>
           )}
