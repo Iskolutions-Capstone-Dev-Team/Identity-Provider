@@ -272,7 +272,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
         </div>
 
         <DialogFooter className="gap-2 sm:justify-end">
-          <div className="flex gap-2">
+          <div className="flex w-full justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
               Cancel
             </Button>
