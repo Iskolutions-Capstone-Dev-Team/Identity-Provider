@@ -27,6 +27,7 @@ import {
 import { useLocation, useNavigate, Link } from "react-router-dom"
 import { usePermissionAccess } from "../providers/PermissionProvider"
 import { buildLogoutPath } from "../auth/utils/logoutRoute"
+import { handleOnePortalClick } from "./OnePortalButton"
 import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "../routes/routePermissions"
 
 const menuSections = [
@@ -171,6 +172,12 @@ export function AppSidebar({ currentUser }) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleOnePortalClick} className="flex items-center gap-3 cursor-pointer" tooltip="One Portal">
+              <img src="/assets/images/PUP_Logo.png" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain"/>
+              <span className="truncate transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">One Portal</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 cursor-pointer" tooltip="Logout">
               <LogOut className="h-4 w-4 shrink-0" />
