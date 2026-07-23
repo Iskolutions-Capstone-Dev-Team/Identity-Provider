@@ -20,7 +20,8 @@ import {
   Activity,
   FileSearchCorner,
   CircleHelp,
-  LogOut
+  LogOut,
+  FileText
 } from "lucide-react"
 
 import { useLocation, useNavigate, Link } from "react-router-dom"
@@ -86,6 +87,18 @@ const menuSections = [
       },
     ],
   },
+  {
+    title: "API Reference",
+    items: [
+      {
+        name: "Documentation",
+        path: "http://localhost:8080/swagger/external/index.html",
+        isExternal: true,
+        requiredPermissions: [],
+        icon: FileText,
+      },
+    ],
+  },
 ]
 
 export function AppSidebar({ currentUser }) {
@@ -136,7 +149,13 @@ export function AppSidebar({ currentUser }) {
                       <SidebarMenuButton 
                         isActive={isActive} 
                         tooltip={item.name}
-                        render={<Link to={item.path} />}
+                        render={
+                          item.isExternal ? (
+                            <a href={item.path} target="_blank" rel="noopener noreferrer" />
+                          ) : (
+                            <Link to={item.path} />
+                          )
+                        }
                         className="gap-3"
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
