@@ -1,12 +1,13 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import EmptySearchState from "../../../components/EmptySearchState";
 import { ViewIcon, EditIcon, DeleteIcon } from "./roleIcons";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, Pencil, Trash } from "lucide-react"
+import { Eye, Pencil, Trash, ShieldUser } from "lucide-react"
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { IconStack } from "@/components/reui/icon-stack";
 
 function getInitials(text) {
   if (!text) return "R";
@@ -84,7 +85,21 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
           {roles.length === 0 && (
             <TableRow>
               <TableCell colSpan={4} className="h-24 text-center">
-                <EmptySearchState message="No roles found" colorMode={colorMode} />
+                <div className="flex items-center justify-center w-full py-10">
+                  <Empty className="max-w-md">
+                    <EmptyHeader>
+                      <EmptyMedia>
+                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
+                          <ShieldUser className="text-[#7b0d15] dark:text-primary size-5" />
+                        </IconStack>
+                      </EmptyMedia>
+                      <EmptyTitle>No roles found</EmptyTitle>
+                      <EmptyDescription>
+                        We couldn't find any roles matching your criteria.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </div>
               </TableCell>
             </TableRow>
           )}
