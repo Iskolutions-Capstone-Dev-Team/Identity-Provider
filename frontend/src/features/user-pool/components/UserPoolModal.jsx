@@ -609,7 +609,7 @@ export default function UserPoolModal({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:justify-between">
+        <DialogFooter className="flex-row items-center justify-between gap-2">
           <div>
             {!isViewMode && canReinvite && (
               <Button 
@@ -623,7 +623,7 @@ export default function UserPoolModal({
               </Button>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 ml-auto justify-end">
             <Button type="button" variant="outline" onClick={onClose}>
               {isViewMode ? "Close" : "Cancel"}
             </Button>
