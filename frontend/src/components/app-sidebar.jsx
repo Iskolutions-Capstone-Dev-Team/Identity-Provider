@@ -19,6 +19,7 @@ import {
   FileCheckCorner,
   Activity,
   FileSearchCorner,
+  CircleHelp,
   LogOut
 } from "lucide-react"
 
@@ -76,6 +77,12 @@ const menuSections = [
         path: "/audit-logs",
         requiredPermissions: [PERMISSIONS.VIEW_AUDIT_LOGS],
         icon: FileSearchCorner,
+      },
+      {
+        name: "FAQ",
+        path: "/faq",
+        requiredPermissions: [],
+        icon: CircleHelp,
       },
     ],
   },
