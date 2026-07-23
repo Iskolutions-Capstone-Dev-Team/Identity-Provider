@@ -351,7 +351,7 @@ export default function UserPoolModal({
           </div>
 
           {isViewMode ? (
-            <div className="space-y-6 pt-0 pb-4 px-2">
+            <div className="space-y-6 pt-3 pb-4 px-2">
               <Card className="bg-muted/30 border-border/40 shadow-sm">
                 <CardContent className="px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                   <div>
@@ -461,7 +461,7 @@ export default function UserPoolModal({
               </div>
             </div>
           ) : (
-            <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pb-6">
+            <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pt-3 pb-6">
               <div className="space-y-6">
                 {/* 1st Card: Account Type */}
                 <Card className="bg-muted/30 border-border/40">

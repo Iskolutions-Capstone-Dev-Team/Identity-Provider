@@ -418,7 +418,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
           )}
         </DialogHeader>
 
-        <form id="role-form" noValidate onSubmit={handleDialogSubmit} className="space-y-6 -mx-4 no-scrollbar max-h-[60vh] px-4 overflow-y-auto pb-2">
+        <form id="role-form" noValidate onSubmit={handleDialogSubmit} className="space-y-6 -mx-4 no-scrollbar max-h-[60vh] px-4 overflow-y-auto pt-3 pb-2">
           {shouldUseSteps && (
             <div className="w-full">
               <RoleStepIndicator currentStep={step} colorMode={colorMode} />
@@ -428,7 +428,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
           <ErrorAlert message={error} onClose={() => setError("")} />
 
           {isViewMode ? (
-            <div className="space-y-6 pt-4 pb-4 px-2">
+            <div className="space-y-6 pt-3 pb-4 px-2">
               <Card className="bg-muted/30 border-border/40 shadow-sm">
                 <CardContent className="px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                   <div>
@@ -552,157 +552,161 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
               )}
 
               {showRoleDetails && (
-                <div className="space-y-5 animate-in fade-in zoom-in-95 duration-200">
-                  <div>
-                    <Field className="w-full">
-                      <FieldLabel htmlFor="role-name">
-                        Name {isRoleNameEditable && <span className="text-destructive">*</span>}
-                      </FieldLabel>
-                      {isRoleNameEditable ? (
-                        <>
-                          <Input
-                            id="role-name"
-                            type="text"
-                            required
-                            value={roleName}
-                            onChange={(event) => handleRoleNameChange(event.target.value)}
-                            onBlur={() => setFieldTouched("name")}
-                            onFocus={() => setActiveVoiceField("name")}
-                            placeholder="(e.g., admin)"
-                            autoCapitalize="none"
-                            className="h-10 rounded-lg"
-                          />
-                          {touched.name && fieldErrors.name && (
-                            <p className="mt-1 text-xs text-destructive">{fieldErrors.name}</p>
-                          )}
-                        </>
-                      ) : (
-                        <Input id="role-name" disabled value={roleName} className="h-10 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed border-input opacity-70 hover:opacity-70" />
-                      )}
-                    </Field>
-                  </div>
+                <Card className="bg-muted/30 border-border/40 animate-in fade-in zoom-in-95 duration-200">
+                  <CardContent className="p-5 space-y-5">
+                    <div>
+                      <Field className="w-full">
+                        <FieldLabel htmlFor="role-name">
+                          Name {isRoleNameEditable && <span className="text-destructive">*</span>}
+                        </FieldLabel>
+                        {isRoleNameEditable ? (
+                          <>
+                            <Input
+                              id="role-name"
+                              type="text"
+                              required
+                              value={roleName}
+                              onChange={(event) => handleRoleNameChange(event.target.value)}
+                              onBlur={() => setFieldTouched("name")}
+                              onFocus={() => setActiveVoiceField("name")}
+                              placeholder="(e.g., admin)"
+                              autoCapitalize="none"
+                              className="h-10 rounded-lg"
+                            />
+                            {touched.name && fieldErrors.name && (
+                              <p className="mt-1 text-xs text-destructive">{fieldErrors.name}</p>
+                            )}
+                          </>
+                        ) : (
+                          <Input id="role-name" disabled value={roleName} className="h-10 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed border-input opacity-70 hover:opacity-70" />
+                        )}
+                      </Field>
+                    </div>
 
-                  <div>
-                    <Field className="w-full">
-                      <FieldLabel htmlFor="role-description">
-                        Description <span className="text-destructive">*</span>
-                      </FieldLabel>
-                      <Textarea
-                        id="role-description"
-                        required
-                        value={description}
-                        onChange={(event) => handleDescriptionChange(event.target.value)}
-                        onBlur={() => setFieldTouched("description")}
-                        onFocus={() => setActiveVoiceField("description")}
-                        rows={4}
-                        placeholder="Type role description here…"
-                        className="rounded-lg"
-                      />
-                      {touched.description && fieldErrors.description && (
-                        <p className="mt-1 text-xs text-destructive">{fieldErrors.description}</p>
-                      )}
-                    </Field>
-                  </div>
-                </div>
+                    <div>
+                      <Field className="w-full">
+                        <FieldLabel htmlFor="role-description">
+                          Description <span className="text-destructive">*</span>
+                        </FieldLabel>
+                        <Textarea
+                          id="role-description"
+                          required
+                          value={description}
+                          onChange={(event) => handleDescriptionChange(event.target.value)}
+                          onBlur={() => setFieldTouched("description")}
+                          onFocus={() => setActiveVoiceField("description")}
+                          rows={4}
+                          placeholder="Type role description here…"
+                          className="rounded-lg"
+                        />
+                        {touched.description && fieldErrors.description && (
+                          <p className="mt-1 text-xs text-destructive">{fieldErrors.description}</p>
+                        )}
+                      </Field>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               {showPermissions && (
-                <div className="animate-in fade-in zoom-in-95 duration-200 space-y-6">
-                  {isPermissionOptionsLoading && mergedPermissionOptions.length === 0 ? (
-                    <div className="p-4 text-sm text-muted-foreground">Loading permissions...</div>
-                  ) : mergedPermissionOptions.length > 0 ? (
-                    <div className="space-y-2">
-                      <FieldLabel className="text-sm font-medium">Permissions</FieldLabel>
-                      <div className="space-y-6">
-                        {PERMISSION_GROUPS.map((group, groupIdx) => {
-                          const groupPermissions = mergedPermissionOptions.filter((p) =>
-                            group.permissions.some(gp => gp.toLowerCase() === p.permission.toLowerCase())
+                <Card className="bg-muted/30 border-border/40 animate-in fade-in zoom-in-95 duration-200">
+                  <CardContent className="p-5 space-y-6">
+                    {isPermissionOptionsLoading && mergedPermissionOptions.length === 0 ? (
+                      <div className="p-4 text-sm text-muted-foreground">Loading permissions...</div>
+                    ) : mergedPermissionOptions.length > 0 ? (
+                      <div className="space-y-2">
+                        <FieldLabel className="text-sm font-medium">Permissions</FieldLabel>
+                        <div className="space-y-6">
+                          {PERMISSION_GROUPS.map((group, groupIdx) => {
+                            const groupPermissions = mergedPermissionOptions.filter((p) =>
+                              group.permissions.some(gp => gp.toLowerCase() === p.permission.toLowerCase())
+                            );
+                          if (groupPermissions.length === 0) return null;
+                          
+                          return (
+                            <Frame key={group.value} className="w-full" spacing="sm">
+                              <FrameHeader>
+                                <FrameTitle>{group.trigger}</FrameTitle>
+                              </FrameHeader>
+                              <FramePanel className="overflow-hidden p-0">
+                                <FieldGroup className="gap-0">
+                                  {groupPermissions.map((permission, index) => {
+                                    const isSelected = selectedPermissionIds.includes(permission.id);
+                                    return (
+                                      <Fragment key={permission.id}>
+                                        <Field>
+                                          <FieldLabel className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                                            <Checkbox
+                                              checked={isSelected}
+                                              onCheckedChange={() => togglePermission(permission.id)}
+                                            />
+                                            <FieldTitle className="ml-2 leading-none font-medium text-sm">
+                                              {permission.permission}
+                                            </FieldTitle>
+                                          </FieldLabel>
+                                        </Field>
+                                        {index < groupPermissions.length - 1 && <Separator />}
+                                      </Fragment>
+                                    );
+                                  })}
+                                </FieldGroup>
+                              </FramePanel>
+                            </Frame>
                           );
-                        if (groupPermissions.length === 0) return null;
+                        })}
                         
-                        return (
-                          <Frame key={group.value} className="w-full" spacing="sm">
-                            <FrameHeader>
-                              <FrameTitle>{group.trigger}</FrameTitle>
-                            </FrameHeader>
-                            <FramePanel className="overflow-hidden p-0">
-                              <FieldGroup className="gap-0">
-                                {groupPermissions.map((permission, index) => {
-                                  const isSelected = selectedPermissionIds.includes(permission.id);
-                                  return (
-                                    <Fragment key={permission.id}>
-                                      <Field>
-                                        <FieldLabel className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
-                                          <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={() => togglePermission(permission.id)}
-                                          />
-                                          <FieldTitle className="ml-2 leading-none font-medium text-sm">
-                                            {permission.permission}
-                                          </FieldTitle>
-                                        </FieldLabel>
-                                      </Field>
-                                      {index < groupPermissions.length - 1 && <Separator />}
-                                    </Fragment>
-                                  );
-                                })}
-                              </FieldGroup>
-                            </FramePanel>
-                          </Frame>
-                        );
-                      })}
-                      
-                      {/* Handling Uncategorized permissions */}
-                      {(() => {
-                        const categorizedPermissions = PERMISSION_GROUPS.flatMap(g => g.permissions.map(p => p.toLowerCase()));
-                        const otherPermissions = mergedPermissionOptions.filter(
-                          (p) => !categorizedPermissions.includes(p.permission.toLowerCase())
-                        );
-                        
-                        if (otherPermissions.length === 0) return null;
-                        return (
-                          <Frame key="other" className="w-full" spacing="sm">
-                            <FrameHeader>
-                              <FrameTitle>Other</FrameTitle>
-                            </FrameHeader>
-                            <FramePanel className="overflow-hidden p-0">
-                              <FieldGroup className="gap-0">
-                                {otherPermissions.map((permission, index) => {
-                                  const isSelected = selectedPermissionIds.includes(permission.id);
-                                  return (
-                                    <Fragment key={permission.id}>
-                                      <Field>
-                                        <FieldLabel className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
-                                          <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={() => togglePermission(permission.id)}
-                                          />
-                                          <FieldTitle className="ml-2 leading-none font-medium text-sm">
-                                            {permission.permission}
-                                          </FieldTitle>
-                                        </FieldLabel>
-                                      </Field>
-                                      {index < otherPermissions.length - 1 && <Separator />}
-                                    </Fragment>
-                                  );
-                                })}
-                              </FieldGroup>
-                            </FramePanel>
-                          </Frame>
-                        );
-                      })()}
+                        {/* Handling Uncategorized permissions */}
+                        {(() => {
+                          const categorizedPermissions = PERMISSION_GROUPS.flatMap(g => g.permissions.map(p => p.toLowerCase()));
+                          const otherPermissions = mergedPermissionOptions.filter(
+                            (p) => !categorizedPermissions.includes(p.permission.toLowerCase())
+                          );
+                          
+                          if (otherPermissions.length === 0) return null;
+                          return (
+                            <Frame key="other" className="w-full" spacing="sm">
+                              <FrameHeader>
+                                <FrameTitle>Other</FrameTitle>
+                              </FrameHeader>
+                              <FramePanel className="overflow-hidden p-0">
+                                <FieldGroup className="gap-0">
+                                  {otherPermissions.map((permission, index) => {
+                                    const isSelected = selectedPermissionIds.includes(permission.id);
+                                    return (
+                                      <Fragment key={permission.id}>
+                                        <Field>
+                                          <FieldLabel className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                                            <Checkbox
+                                              checked={isSelected}
+                                              onCheckedChange={() => togglePermission(permission.id)}
+                                            />
+                                            <FieldTitle className="ml-2 leading-none font-medium text-sm">
+                                              {permission.permission}
+                                            </FieldTitle>
+                                          </FieldLabel>
+                                        </Field>
+                                        {index < otherPermissions.length - 1 && <Separator />}
+                                      </Fragment>
+                                    );
+                                  })}
+                                </FieldGroup>
+                              </FramePanel>
+                            </Frame>
+                          );
+                        })()}
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 text-sm text-muted-foreground italic">No permissions available</div>
-                  )}
-                </div>
+                    ) : (
+                      <div className="p-4 text-sm text-muted-foreground italic">No permissions available</div>
+                    )}
+                  </CardContent>
+                </Card>
               )}
             </>
           )}
         </form>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex-row items-center justify-between gap-2">
           {isCreateMode ? (
             <>
               {step === 1 ? (
@@ -725,7 +729,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
               )}
             </>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex gap-2 ml-auto justify-end">
               <Button type="button" variant="outline" onClick={onClose}>
                 {isViewMode ? "Close" : "Cancel"}
               </Button>

@@ -319,7 +319,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
             </DialogTitle>
           </DialogHeader>
 
-          <form id="app-client-form" noValidate className="-mx-4 no-scrollbar max-h-[70vh] px-4 overflow-y-auto" onSubmit={handleSubmit}>
+          <form id="app-client-form" noValidate className="-mx-4 no-scrollbar max-h-[70vh] px-4 overflow-y-auto pt-3" onSubmit={handleSubmit}>
             {error && <div className="mb-6"><ErrorAlert message={error} onClose={() => setError("")} /></div>}
 
             {isDetailsLoading && (
@@ -329,7 +329,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
             )}
 
             {isView ? (
-              <div className="space-y-6 pt-0 pb-4 px-2 mt-4">
+              <div className="space-y-6 pt-3 pb-4 px-2">
                 <Card className="bg-muted/30 border-border/40 shadow-sm">
                   <CardContent className="px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                     <div className="flex items-center gap-4">
@@ -449,158 +449,138 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                 </div>
               </div>
             ) : (
-              <div className="space-y-8">
-                <Field className="space-y-2">
-                  <FieldLabel>System Logo {!isView && <span className="text-destructive">*</span>}</FieldLabel>
-                
-                {isView ? (
-                  <div className="flex justify-center p-4 rounded-xl border border-border bg-muted/30">
-                    {imagePreview ? (
-                      <img src={imagePreview} alt="System Logo" className="max-h-52 max-w-full rounded-xl object-contain shadow-sm" />
-                    ) : (
-                      <div className="flex h-32 w-full flex-col items-center justify-center text-muted-foreground">
-                        <AppClientIconBox colorMode={colorMode} variant="plain" className="mb-2 opacity-50" />
-                        <span className="text-sm">No logo available</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <AppClientLogoUpload 
-                      onFilesChange={handleLogoChange}
-                      maxFiles={1}
-                      maxSize={MAX_LOGO_BYTES}
-                      accept="image/png, image/jpeg"
-                      simulateUpload={true}
-                      initialPreview={imagePreview}
-                    />
-                    {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
-                  </>
-                )}
-                </Field>
-
-              <section>
-                <div className="space-y-5">
-                  {!isView && (
-                    <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
-                  )}
-
-                  <div className="space-y-2">
-                    <Label>Name {!isView && <span className="text-destructive">*</span>}</Label>
-                    <Input required minLength={5} maxLength={100} value={name} onChange={(e) => updateFieldValue("name", e.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)" disabled={isView} className={fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : ""} />
-                    {!isView && fieldErrors.name && <p className={inlineErrorClassName}>{fieldErrors.name}</p>}
-                    {!isView && !fieldErrors.name && <p className="text-xs text-muted-foreground">Must be 5-100 characters</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    {isView ? (
-                      <div className="min-h-24 w-full rounded-md border bg-muted px-3 py-2 text-sm">
-                        {description?.trim() || ""}
-                      </div>
-                    ) : (
-                      <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onFocus={() => setActiveVoiceField("description")} rows="3" placeholder="Application description" />
-                    )}
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <div className="grid gap-5 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Base URLs {!isView && <span className="text-destructive">*</span>}</Label>
-                    <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" disabled={isView} className={`h-10 rounded-lg ${fieldErrors.baseURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
-                    {!isView && fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
-                    {!isView && !fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Redirect URLs {!isView && <span className="text-destructive">*</span>}</Label>
-                    <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" disabled={isView} className={`h-10 rounded-lg ${fieldErrors.redirectURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
-                    {!isView && fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
-                    {!isView && !fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Logout URLs {!isView && <span className="text-destructive">*</span>}</Label>
-                    <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" disabled={isView} className={`h-10 rounded-lg ${fieldErrors.logoutURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
-                    {!isView && fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
-                    {!isView && !fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>One Portal Redirect Link</Label>
-                    <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder={isView ? "" : "https://one-portal.example.com"} disabled={isView} className={`h-10 rounded-lg ${fieldErrors.onePortalRedirectLink ? "border-destructive focus-visible:ring-destructive" : ""}`} />
-                    {!isView && fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
-                    {!isView && !fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <div className="space-y-5">
-                  <div>
+              <div className="space-y-6 pt-3 pb-4 px-2">
+                {/* 1st Card: System Logo, Name, and Description */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="p-5 space-y-5">
                     <Field className="space-y-2">
-                      <FieldLabel>Grants {!isView && <span className="text-destructive">*</span>}</FieldLabel>
-                      <FieldGroup className="flex w-full flex-row flex-wrap gap-4">
-                        {GRANT_OPTIONS.map((grant) => {
-                          const isSelected = selectedGrants.includes(grant);
-                          const formatGrantName = (name) => name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-                          
-                          return (
-                            <FieldLabel key={grant} className="relative p-0 !w-auto flex-1 min-w-fit" style={{ pointerEvents: isView ? "none" : "auto" }}>
-                              <Field orientation="horizontal" className="justify-center">
-                                <Checkbox
-                                  checked={isSelected}
-                                  onCheckedChange={() => !isView && toggleGrant(grant)}
-                                  disabled={isView}
-                                  className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10"
-                                />
-                                <FieldTitle className="justify-center text-center">{formatGrantName(grant)}</FieldTitle>
-                              </Field>
-                            </FieldLabel>
-                          );
-                        })}
-                      </FieldGroup>
-                      {!isView && selectedGrants.length === 0 && <p className="mt-3 text-xs text-destructive">At least one grant is required.</p>}
+                      <FieldLabel>System Logo {!isView && <span className="text-destructive">*</span>}</FieldLabel>
+                      <AppClientLogoUpload 
+                        onFilesChange={handleLogoChange}
+                        maxFiles={1}
+                        maxSize={MAX_LOGO_BYTES}
+                        accept="image/png, image/jpeg"
+                        simulateUpload={true}
+                        initialPreview={imagePreview}
+                      />
+                      {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
                     </Field>
-                  </div>
 
-                  <div>
-                    <div className="grid gap-5 md:grid-cols-2">
+                    <div className="space-y-5">
+                      {!isView && (
+                        <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
+                      )}
+
                       <div className="space-y-2">
-                        <Label>Access Token expiration {!isView && <span className="text-destructive">*</span>}</Label>
-                        <InputGroup className={`h-10 rounded-lg ${fieldErrors.accessTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
-                          <InputGroupInput type="number" required={!isView} min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL} onChange={(e) => updateFieldValue("accessTokenTTL", e.target.value, setAccessTokenTTL)} disabled={isView} />
-                          <InputGroupAddon align="inline-end">
-                            <InputGroupText>min</InputGroupText>
-                          </InputGroupAddon>
-                        </InputGroup>
-                        {!isView && fieldErrors.accessTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.accessTokenTTL}</p>}
-                        {!isView && !fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1-1,440 minutes (24 hours)</p>}
+                        <Label>Name {!isView && <span className="text-destructive">*</span>}</Label>
+                        <Input required minLength={5} maxLength={100} value={name} onChange={(e) => updateFieldValue("name", e.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)" disabled={isView} className={fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : ""} />
+                        {!isView && fieldErrors.name && <p className={inlineErrorClassName}>{fieldErrors.name}</p>}
+                        {!isView && !fieldErrors.name && <p className="text-xs text-muted-foreground">Must be 5-100 characters</p>}
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Refresh Token expiration {!isView && <span className="text-destructive">*</span>}</Label>
-                        <InputGroup className={`h-10 rounded-lg ${fieldErrors.refreshTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
-                          <InputGroupInput type="number" required={!isView} min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL} onChange={(e) => updateFieldValue("refreshTokenTTL", e.target.value, setRefreshTokenTTL)} disabled={isView} />
-                          <InputGroupAddon align="inline-end">
-                            <InputGroupText>hr</InputGroupText>
-                          </InputGroupAddon>
-                        </InputGroup>
-                        {!isView && fieldErrors.refreshTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.refreshTokenTTL}</p>}
-                        {!isView && !fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1 - 8,760 hours (1 year)</p>}
+                        <Label>Description</Label>
+                        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onFocus={() => setActiveVoiceField("description")} rows="3" placeholder="Application description" />
                       </div>
                     </div>
-                  </div>
-                </div>
-              </section>
+                  </CardContent>
+                </Card>
+
+                {/* 2nd Card: URLs, Grants, Token Expiration */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="p-5 space-y-6">
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Base URLs {!isView && <span className="text-destructive">*</span>}</Label>
+                        <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" disabled={isView} className={`h-10 rounded-lg ${fieldErrors.baseURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                        {!isView && fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
+                        {!isView && !fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Redirect URLs {!isView && <span className="text-destructive">*</span>}</Label>
+                        <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" disabled={isView} className={`h-10 rounded-lg ${fieldErrors.redirectURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                        {!isView && fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
+                        {!isView && !fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Logout URLs {!isView && <span className="text-destructive">*</span>}</Label>
+                        <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" disabled={isView} className={`h-10 rounded-lg ${fieldErrors.logoutURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                        {!isView && fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
+                        {!isView && !fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>One Portal Redirect Link</Label>
+                        <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder={isView ? "" : "https://one-portal.example.com"} disabled={isView} className={`h-10 rounded-lg ${fieldErrors.onePortalRedirectLink ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                        {!isView && fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
+                        {!isView && !fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      <Field className="space-y-2">
+                        <FieldLabel>Grants {!isView && <span className="text-destructive">*</span>}</FieldLabel>
+                        <FieldGroup className="flex w-full flex-row flex-wrap gap-4">
+                          {GRANT_OPTIONS.map((grant) => {
+                            const isSelected = selectedGrants.includes(grant);
+                            const formatGrantName = (name) => name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                            
+                            return (
+                              <FieldLabel key={grant} className="relative p-0 !w-auto flex-1 min-w-fit" style={{ pointerEvents: isView ? "none" : "auto" }}>
+                                <Field orientation="horizontal" className="justify-center">
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => !isView && toggleGrant(grant)}
+                                    disabled={isView}
+                                    className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10"
+                                  />
+                                  <FieldTitle className="justify-center text-center">{formatGrantName(grant)}</FieldTitle>
+                                </Field>
+                              </FieldLabel>
+                            );
+                          })}
+                        </FieldGroup>
+                        {!isView && selectedGrants.length === 0 && <p className="mt-3 text-xs text-destructive">At least one grant is required.</p>}
+                      </Field>
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      <div className="grid gap-5 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Access Token expiration {!isView && <span className="text-destructive">*</span>}</Label>
+                          <InputGroup className={`h-10 rounded-lg ${fieldErrors.accessTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
+                            <InputGroupInput type="number" required={!isView} min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL} onChange={(e) => updateFieldValue("accessTokenTTL", e.target.value, setAccessTokenTTL)} disabled={isView} />
+                            <InputGroupAddon align="inline-end">
+                              <InputGroupText>min</InputGroupText>
+                            </InputGroupAddon>
+                          </InputGroup>
+                          {!isView && fieldErrors.accessTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.accessTokenTTL}</p>}
+                          {!isView && !fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1-1,440 minutes (24 hours)</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Refresh Token expiration {!isView && <span className="text-destructive">*</span>}</Label>
+                          <InputGroup className={`h-10 rounded-lg ${fieldErrors.refreshTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
+                            <InputGroupInput type="number" required={!isView} min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL} onChange={(e) => updateFieldValue("refreshTokenTTL", e.target.value, setRefreshTokenTTL)} disabled={isView} />
+                            <InputGroupAddon align="inline-end">
+                              <InputGroupText>hr</InputGroupText>
+                            </InputGroupAddon>
+                          </InputGroup>
+                          {!isView && fieldErrors.refreshTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.refreshTokenTTL}</p>}
+                          {!isView && !fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1 - 8,760 hours (1 year)</p>}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </form>
 
-          <DialogFooter className="gap-2 sm:gap-0 mt-2">
-            <div className="flex gap-2 w-full sm:w-auto sm:justify-end">
+          <DialogFooter className="flex-row items-center justify-between gap-2 mt-2">
+            <div className="flex gap-2 ml-auto justify-end">
               <Button type="button" variant="outline" onClick={onClose}>
                 {isView ? "Close" : "Cancel"}
               </Button>

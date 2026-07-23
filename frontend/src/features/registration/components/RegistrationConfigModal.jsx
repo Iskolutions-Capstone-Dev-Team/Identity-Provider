@@ -161,9 +161,9 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
           )}
         </DialogHeader>
 
-        <form id="registration-modal-form" onSubmit={handleSubmit} className="space-y-6 -mx-4 no-scrollbar max-h-[60vh] px-4 overflow-y-auto pb-2">
+        <form id="registration-modal-form" onSubmit={handleSubmit} className="space-y-6 -mx-4 no-scrollbar max-h-[60vh] px-4 overflow-y-auto pt-3 pb-2">
           {isViewMode ? (
-            <div className="space-y-6 pt-4 pb-4 px-2">
+            <div className="space-y-6 pt-3 pb-4 px-2">
               <Card className="bg-muted/30 border-border/40 shadow-sm">
                 <CardContent className="px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                   <div>
@@ -195,64 +195,74 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
-              <Field className="w-full">
-                <FieldLabel htmlFor="account-type-name">
-                  Account Type {!isLockedDefaultAccountType && <span className="text-destructive">*</span>}
-                </FieldLabel>
-                {isLockedDefaultAccountType ? (
-                  <Input
-                    id="account-type-name"
-                    value={accountTypeName || config?.label || ""}
-                    readOnly
-                    disabled
-                    className="h-10 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed border-input opacity-70 hover:opacity-70"
-                  />
-                ) : (
-                  <div>
-                    <Input
-                      id="account-type-name"
-                      value={accountTypeName}
-                      onChange={(e) => {
-                        setAccountTypeName(e.target.value);
-                        setAccountTypeNameError("");
-                      }}
-                      placeholder="Enter account type"
-                      className={`h-10 rounded-lg ${accountTypeNameError ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    />
-                    {accountTypeNameError && (
-                      <p className="mt-1 text-xs text-destructive">{accountTypeNameError}</p>
+            <div className="space-y-6 pt-3 pb-4 px-2">
+              {/* 1st Card: Account Type */}
+              <Card className="bg-muted/30 border-border/40">
+                <CardContent className="p-5">
+                  <Field className="w-full">
+                    <FieldLabel htmlFor="account-type-name">
+                      Account Type {!isLockedDefaultAccountType && <span className="text-destructive">*</span>}
+                    </FieldLabel>
+                    {isLockedDefaultAccountType ? (
+                      <Input
+                        id="account-type-name"
+                        value={accountTypeName || config?.label || ""}
+                        readOnly
+                        disabled
+                        className="h-10 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed border-input opacity-70 hover:opacity-70"
+                      />
+                    ) : (
+                      <div>
+                        <Input
+                          id="account-type-name"
+                          value={accountTypeName}
+                          onChange={(e) => {
+                            setAccountTypeName(e.target.value);
+                            setAccountTypeNameError("");
+                          }}
+                          placeholder="Enter account type"
+                          className={`h-10 rounded-lg ${accountTypeNameError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                        />
+                        {accountTypeNameError && (
+                          <p className="mt-1 text-xs text-destructive">{accountTypeNameError}</p>
+                        )}
+                      </div>
                     )}
-                  </div>
-                )}
-              </Field>
+                  </Field>
+                </CardContent>
+              </Card>
 
-              <Field className="w-full">
-                <FieldLabel>
-                  Accessible Clients
-                </FieldLabel>
-                <div>
-                  <AppClientComboboxField
-                    options={appClientOptions}
-                    selectedIds={selectedClientIds}
-                    onChange={setSelectedClientIds}
-                    placeholder="Select app clients"
-                    isDarkMode={colorMode === "dark"}
-                  />
-                  {isLoadingAppClients && (
-                    <p className="mt-2 text-xs text-muted-foreground">Loading app clients...</p>
-                  )}
-                  {appClientsError && !isLoadingAppClients && (
-                    <p className="mt-2 text-xs text-destructive">{appClientsError}</p>
-                  )}
-                </div>
-              </Field>
+              {/* 2nd Card: Accessible Clients */}
+              <Card className="bg-muted/30 border-border/40">
+                <CardContent className="p-5">
+                  <Field className="w-full">
+                    <FieldLabel>
+                      Accessible Clients
+                    </FieldLabel>
+                    <div>
+                      <AppClientComboboxField
+                        options={appClientOptions}
+                        selectedIds={selectedClientIds}
+                        onChange={setSelectedClientIds}
+                        placeholder="Select app clients"
+                        isDarkMode={colorMode === "dark"}
+                      />
+                      {isLoadingAppClients && (
+                        <p className="mt-2 text-xs text-muted-foreground">Loading app clients...</p>
+                      )}
+                      {appClientsError && !isLoadingAppClients && (
+                        <p className="mt-2 text-xs text-destructive">{appClientsError}</p>
+                      )}
+                    </div>
+                  </Field>
+                </CardContent>
+              </Card>
             </div>
           )}
         </form>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <div className="flex gap-2">
+        <DialogFooter className="flex-row items-center justify-between gap-2">
+          <div className="flex gap-2 ml-auto justify-end">
             <Button variant="outline" onClick={onClose}>
               {isViewMode ? "Close" : "Cancel"}
             </Button>
