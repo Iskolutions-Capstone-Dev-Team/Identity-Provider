@@ -97,7 +97,7 @@ export default function RegistrationCreateForm({
   return (
     <div className="space-y-6">
       <form id="registration-config-form" noValidate onSubmit={handleSubmit}>
-        <div className="animate-in fade-in zoom-in-95 duration-200">
+        <div>
           <Card className="w-full bg-card border-border shadow-sm !gap-6">
             <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
               <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">

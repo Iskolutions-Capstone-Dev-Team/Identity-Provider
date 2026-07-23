@@ -5,7 +5,6 @@ import { Label } from "../../../components/ui/label";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Separator } from "../../../components/ui/separator";
-import FadeWrapper from "../../../components/FadeWrapper";
 import MultiSelect from "../../../components/MultiSelect";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { useAllRoles } from "../../roles/hooks/useAllRoles";
@@ -644,7 +643,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
     </div>
   );
   const accountTypeSection = showAccountTypeField ? (
-    <motion.section {...sectionFadeProps}>
+    <section>
       <Card className="w-full bg-card border-border shadow-sm !gap-2">
         {renderSectionHeader("Account Type", "Choose the account type.", true)}
         <CardContent>
@@ -672,7 +671,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
           )}
         </CardContent>
       </Card>
-    </motion.section>
+    </section>
   ) : null;
   const tempPasswordField = showTempPasswordField ? (
     <div className="space-y-3 pt-4 border-t border-border">
@@ -733,7 +732,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
     </div>
   ) : null;
   const accountSetupAndPasswordSection = (
-    <motion.section {...sectionFadeProps}>
+    <section>
       <Card className="w-full bg-card border-border shadow-sm !gap-6">
         {renderSectionHeader("Account Setup", "Choose how they get access.", true)}
         <CardContent className="space-y-6">
@@ -741,11 +740,11 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
           {tempPasswordField}
         </CardContent>
       </Card>
-    </motion.section>
+    </section>
   );
   const adminAccessSection =
     showAdminClientFields || showAdminRoleField ? (
-      <motion.section className="space-y-6" {...sectionFadeProps}>
+      <section className="space-y-6">
         <div className="flex flex-col lg:flex-row gap-6 items-stretch">
           {/* Left Side: App Clients */}
           {showAdminClientFields && (
@@ -805,7 +804,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
             </Card>
           )}
         </div>
-      </motion.section>
+      </section>
     ) : null;
   const stepTwoAnimationKey = isAdminAccountSetup
     ? "account-setup-step-admin"
@@ -834,7 +833,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                 className="relative flex-1 items-start"
               >
                 <StepperTrigger className="relative z-10 flex flex-col gap-2.5 items-center w-full" onClick={() => { if(index + 1 < step) setStep(index + 1) }}>
-                  <StepperIndicator className="size-8 text-sm data-[state=inactive]:bg-secondary data-[state=completed]:bg-[#7b0d15] data-[state=completed]:text-white data-[state=active]:bg-[#7b0d15] data-[state=active]:border-[#7b0d15] data-[state=active]:text-white">{index + 1}</StepperIndicator>
+                  <StepperIndicator className="size-8 text-sm data-[state=inactive]:bg-secondary data-[state=completed]:bg-[#7b0d15] data-[state=completed]:text-[#ffffff] data-[state=active]:bg-[#7b0d15] data-[state=active]:border-[#7b0d15] data-[state=active]:text-[#ffffff]">{index + 1}</StepperIndicator>
                   <StepperTitle className="text-sm font-semibold whitespace-nowrap">{s.title}</StepperTitle>
                 </StepperTrigger>
                 {index < steps.length - 1 && <StepperSeparator className="absolute top-4 left-[50%] w-full z-0 h-1 data-[state=completed]:bg-[#7b0d15]" />}
@@ -844,141 +843,145 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
         </Stepper>
       </Card>
 
-      <form id="step1-form" onSubmit={(event) => event.preventDefault()} className="space-y-5">
-        <FadeWrapper
-          isVisible={step === 1}
-          keyId="personal-information-section"
-          direction={stepDirection}
+      {step === 1 && (
+        <motion.form
+          key="user-step-1"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+          id="step1-form"
+          onSubmit={(event) => event.preventDefault()}
+          className="space-y-5"
         >
-            <motion.section {...sectionFadeProps}>
-              <Card className="w-full bg-card border-border shadow-sm !gap-6">
-                <div className="flex items-center justify-between">
-                  {renderSectionHeader(
-                    "Personal Information",
-                    "Enter the user's basic details.",
-                  )}
-                  <div className="pr-6">
-                    <SpeechInputToolbar
-                      activeFieldLabel={activeVoiceFieldLabel}
-                      onError={(err) => toast.error(err, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } })}
-                      onTranscript={handleVoiceInput}
-                      colorMode={colorMode}
-                    />
+          <section>
+            <Card className="w-full bg-card border-border shadow-sm !gap-6">
+              <div className="flex items-center justify-between">
+                {renderSectionHeader(
+                  "Personal Information",
+                  "Enter the user's basic details.",
+                )}
+                <div className="pr-6">
+                  <SpeechInputToolbar
+                    activeFieldLabel={activeVoiceFieldLabel}
+                    onError={(err) => toast.error(err, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } })}
+                    onTranscript={handleVoiceInput}
+                    colorMode={colorMode}
+                  />
+                </div>
+              </div>
+
+              <CardContent className="space-y-4">
+                <div className="space-y-1">
+                  <Label className="text-sm leading-none font-medium">
+                    Email Address <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="validator w-full">
+                    <InputGroup className={getInputClassName("email")}>
+                      <InputGroupAddon>
+                        <MailIcon className="h-5 w-5" />
+                      </InputGroupAddon>
+                      <InputGroupInput type="email" name="email" value={data.email} onChange={handleChange} onFocus={() => setActiveVoiceField("email")} required placeholder="Enter email" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                    </InputGroup>
+                    {fieldErrors.email && (
+                      <p className="mt-2 text-xs text-red-500">
+                        {fieldErrors.email}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1">
-                    <Label className="text-sm leading-none font-medium">
-                      Email Address <span className="text-red-500">*</span>
-                    </Label>
+                    <div className="flex items-center min-h-[24px]">
+                      <Label className="text-sm leading-none font-medium">
+                        First Name <span className="text-red-500">*</span>
+                      </Label>
+                    </div>
                     <div className="validator w-full">
-                      <InputGroup className={getInputClassName("email")}>
-                        <InputGroupAddon>
-                          <MailIcon className="h-5 w-5" />
-                        </InputGroupAddon>
-                        <InputGroupInput type="email" name="email" value={data.email} onChange={handleChange} onFocus={() => setActiveVoiceField("email")} required placeholder="Enter email" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                      <InputGroup className={`${getInputClassName("givenName")} validator`}>
+                        <InputGroupInput type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required placeholder="Enter first name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
                       </InputGroup>
-                      {fieldErrors.email && (
+                      {fieldErrors.givenName && (
                         <p className="mt-2 text-xs text-red-500">
-                          {fieldErrors.email}
+                          {fieldErrors.givenName}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center min-h-[24px]">
-                        <Label className="text-sm leading-none font-medium">
-                          First Name <span className="text-red-500">*</span>
-                        </Label>
-                      </div>
-                      <div className="validator w-full">
-                        <InputGroup className={`${getInputClassName("givenName")} validator`}>
-                          <InputGroupInput type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required placeholder="Enter first name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
-                        </InputGroup>
-                        {fieldErrors.givenName && (
-                          <p className="mt-2 text-xs text-red-500">
-                            {fieldErrors.givenName}
-                          </p>
-                        )}
-                      </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center min-h-[24px]">
+                      <Label className="text-sm leading-none font-medium">
+                        Middle Name
+                      </Label>
                     </div>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center min-h-[24px]">
-                        <Label className="text-sm leading-none font-medium">
-                          Middle Name
-                        </Label>
-                      </div>
-                      <div className="w-full">
-                        <InputGroup className={getInputClassName("middleName")}>
-                          <InputGroupInput type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
-                        </InputGroup>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center min-h-[24px]">
-                        <Label className="text-sm leading-none font-medium">
-                          Last Name <span className="text-red-500">*</span>
-                        </Label>
-                      </div>
-                      <div className="validator w-full">
-                        <InputGroup className={`${getInputClassName("surname")} validator`}>
-                          <InputGroupInput type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required placeholder="Enter last name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
-                        </InputGroup>
-                        {fieldErrors.surname && (
-                          <p className="mt-2 text-xs text-red-500">
-                            {fieldErrors.surname}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between w-full min-h-[24px]">
-                        <Label className="text-sm leading-none font-medium">
-                          Suffix
-                        </Label>
-                        <span className={`text-[10px] border px-1.5 py-0.5 rounded-md font-medium ${isDarkMode ? "border-[#f8d24e]/40 text-[#f8d24e]" : "border-[#7b0d15]/40 text-[#7b0d15]"}`}>Optional</span>
-                      </div>
-                      <div className="w-full">
-                        <InputGroup className={getInputClassName("suffix")}>
-                          <InputGroupInput type="text" name="suffix" value={data.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
-                        </InputGroup>
-                      </div>
+                    <div className="w-full">
+                      <InputGroup className={getInputClassName("middleName")}>
+                        <InputGroupInput type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                      </InputGroup>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </motion.section>
-        </FadeWrapper>
-      </form>
 
-      <form id="step2-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          handleSubmit();
-        }}
-        className="space-y-5"
-      >
-        <div className="space-y-5">
-          {!isAdminView && (
-            <FadeWrapper isVisible={step === 2} keyId="account-type-section">
-              {accountTypeSection}
-            </FadeWrapper>
-          )}
+                  <div className="space-y-1">
+                    <div className="flex items-center min-h-[24px]">
+                      <Label className="text-sm leading-none font-medium">
+                        Last Name <span className="text-red-500">*</span>
+                      </Label>
+                    </div>
+                    <div className="validator w-full">
+                      <InputGroup className={`${getInputClassName("surname")} validator`}>
+                        <InputGroupInput type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required placeholder="Enter last name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                      </InputGroup>
+                      {fieldErrors.surname && (
+                        <p className="mt-2 text-xs text-red-500">
+                          {fieldErrors.surname}
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
-          <FadeWrapper isVisible={step === 2} keyId={stepTwoAnimationKey}>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between w-full min-h-[24px]">
+                      <Label className="text-sm leading-none font-medium">
+                        Suffix
+                      </Label>
+                      <span className={`text-[10px] border px-1.5 py-0.5 rounded-md font-medium ${isDarkMode ? "border-[#f8d24e]/40 text-[#f8d24e]" : "border-[#7b0d15]/40 text-[#7b0d15]"}`}>Optional</span>
+                    </div>
+                    <div className="w-full">
+                      <InputGroup className={getInputClassName("suffix")}>
+                        <InputGroupInput type="text" name="suffix" value={data.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                      </InputGroup>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        </motion.form>
+      )}
+
+      {step === 2 && (
+        <motion.form
+          key="user-step-2"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+          id="step2-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSubmit();
+          }}
+          className="space-y-5"
+        >
+          <div className="space-y-5">
+            {!isAdminView && accountTypeSection}
             <div className="space-y-5">
-            {adminAccessSection}
-            {accountSetupAndPasswordSection}
+              {adminAccessSection}
+              {accountSetupAndPasswordSection}
             </div>
-          </FadeWrapper>
-        </div>
-      </form>
+          </div>
+        </motion.form>
+      )}
     </div>
   );
 

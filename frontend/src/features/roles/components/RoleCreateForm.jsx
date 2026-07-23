@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { RoleShieldIcon, RoleDetailsIcon } from "./roleIcons";
@@ -271,7 +272,12 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
       )}
 
       {showRoleDetails && (
-        <div className="animate-in fade-in zoom-in-95 duration-200">
+        <motion.div
+          key="role-step-1"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+        >
           <Card className="w-full bg-card border-border shadow-sm !gap-6">
             <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
               <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
@@ -307,11 +313,16 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
               </div>
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
       )}
 
       {showPermissions && (
-        <div className="animate-in fade-in zoom-in-95 duration-200">
+        <motion.div
+          key="role-step-2"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+        >
           <Card className="w-full bg-card border-border shadow-sm !gap-6">
             <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
               <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
@@ -366,7 +377,7 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
               )}
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
       )}
     </div>
   );

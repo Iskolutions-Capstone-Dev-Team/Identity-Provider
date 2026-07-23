@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from "react";
-import FadeWrapper from "../../../components/FadeWrapper";
+import { motion } from "framer-motion";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { AppClientIcon } from "./AppClientIconBox";
@@ -246,139 +246,160 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
 
       <ErrorAlert message={error} onClose={() => setError("")} />
 
-      <FadeWrapper isVisible={step === 1} keyId="app-client-basic-info">
-        <Card className="w-full bg-card border-border shadow-sm !gap-6">
-          <div className="flex items-center justify-between">
-            {renderSectionHeader("Client Details", "Enter the app client's name, description, and system logo.")}
-            <div className="pr-6">
-              <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
+      {step === 1 && (
+        <motion.div
+          key="app-client-step-1"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+        >
+          <Card className="w-full bg-card border-border shadow-sm !gap-6">
+            <div className="flex items-center justify-between">
+              {renderSectionHeader("Client Details", "Enter the app client's name, description, and system logo.")}
+              <div className="pr-6">
+                <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
+              </div>
             </div>
-          </div>
-          
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label>System Logo <span className="text-destructive">*</span></Label>
-              <AppClientLogoUpload 
-                onFilesChange={handleLogoChange}
-                maxFiles={1}
-                maxSize={MAX_LOGO_BYTES}
-                accept="image/png, image/jpeg"
-                simulateUpload={true}
-              />
-              {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Name <span className="text-destructive">*</span></Label>
-              <Input required minLength={5} maxLength={100} value={name} onChange={(e) => updateFieldValue("name", e.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)" className={`h-10 rounded-lg ${fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}`} />
-              {fieldErrors.name && <p className={inlineErrorClassName}>{fieldErrors.name}</p>}
-              {!fieldErrors.name && <p className="text-xs text-muted-foreground">Must be 5-100 characters</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onFocus={() => setActiveVoiceField("description")} rows="4" placeholder="Short description of the application (optional)" className="rounded-lg" />
-            </div>
-          </CardContent>
-        </Card>
-      </FadeWrapper>
-
-      <FadeWrapper isVisible={step === 2} keyId="app-client-urls">
-        <Card className="w-full bg-card border-border shadow-sm !gap-6">
-          <div className="flex items-center justify-between">
-            {renderSectionHeader("Application URLs", "Set the base, redirect, logout, and One Portal redirect URLs.")}
-            <div className="pr-6">
-              <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
-            </div>
-          </div>
-
-          <CardContent className="grid gap-5 md:grid-cols-2">
+            
+            <CardContent className="space-y-5">
               <div className="space-y-2">
-                <Label>Base URLs <span className="text-destructive">*</span></Label>
-                <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" className={`h-10 rounded-lg ${fieldErrors.baseURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
-                {fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
-                {!fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                <Label>System Logo <span className="text-destructive">*</span></Label>
+                <AppClientLogoUpload 
+                  onFilesChange={handleLogoChange}
+                  maxFiles={1}
+                  maxSize={MAX_LOGO_BYTES}
+                  accept="image/png, image/jpeg"
+                  simulateUpload={true}
+                />
+                {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label>Redirect URLs <span className="text-destructive">*</span></Label>
-                <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" className={`h-10 rounded-lg ${fieldErrors.redirectURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
-                {fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
-                {!fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                <Label>Name <span className="text-destructive">*</span></Label>
+                <Input required minLength={5} maxLength={100} value={name} onChange={(e) => updateFieldValue("name", e.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)" className={`h-10 rounded-lg ${fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                {fieldErrors.name && <p className={inlineErrorClassName}>{fieldErrors.name}</p>}
+                {!fieldErrors.name && <p className="text-xs text-muted-foreground">Must be 5-100 characters</p>}
               </div>
 
               <div className="space-y-2">
-                <Label>Logout URLs <span className="text-destructive">*</span></Label>
-                <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" className={`h-10 rounded-lg ${fieldErrors.logoutURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
-                {fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
-                {!fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                <Label>Description</Label>
+                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onFocus={() => setActiveVoiceField("description")} rows="4" placeholder="Short description of the application (optional)" className="rounded-lg" />
               </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
-              <div className="space-y-2">
-                <Label>One Portal Redirect Link</Label>
-                <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder="https://one-portal.example.com" className={`h-10 rounded-lg ${fieldErrors.onePortalRedirectLink ? "border-destructive focus-visible:ring-destructive" : ""}`} />
-                {fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
-                {!fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
-              </div>
-          </CardContent>
-        </Card>
-      </FadeWrapper>
-
-      <FadeWrapper isVisible={step === 3} keyId="app-client-grants">
-        <Card className="w-full bg-card border-border shadow-sm !gap-6">
-          {renderSectionHeader("Grants & Expirations", "Select the grant types and configure token expirations for this client.")}
-          <CardContent>
-            <div className="space-y-3">
-              <Label>Grants <span className="text-destructive">*</span></Label>
-              <FieldGroup className="flex w-full flex-row flex-wrap gap-4">
-                {GRANT_OPTIONS.map((grant) => {
-                  const isSelected = grants.includes(grant);
-                  const formatGrantName = (name) => name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-                  return (
-                    <FieldLabel key={grant} className="relative p-0 !w-auto flex-1 min-w-fit">
-                      <Field orientation="horizontal" className="justify-center">
-                        <Checkbox 
-                          checked={isSelected} 
-                          onCheckedChange={() => toggleGrant(grant)} 
-                          className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10" 
-                        />
-                        <FieldTitle className="justify-center text-center">{formatGrantName(grant)}</FieldTitle>
-                      </Field>
-                    </FieldLabel>
-                  );
-                })}
-              </FieldGroup>
-            </div>
-            {grants.length === 0 && <p className="mt-3 text-xs text-destructive">At least one grant is required.</p>}
-
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Access Token expiration <span className="text-destructive">*</span></Label>
-                <InputGroup className={`h-10 rounded-lg ${fieldErrors.accessTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
-                  <InputGroupInput type="number" required min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL} onChange={(e) => updateFieldValue("accessTokenTTL", e.target.value, setAccessTokenTTL)} />
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupText>min</InputGroupText>
-                  </InputGroupAddon>
-                </InputGroup>
-                {fieldErrors.accessTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.accessTokenTTL}</p>}
-                {!fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1-1,440 minutes (24 hours)</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Refresh Token expiration <span className="text-destructive">*</span></Label>
-                <InputGroup className={`h-10 rounded-lg ${fieldErrors.refreshTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
-                  <InputGroupInput type="number" required min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL} onChange={(e) => updateFieldValue("refreshTokenTTL", e.target.value, setRefreshTokenTTL)} />
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupText>hr</InputGroupText>
-                  </InputGroupAddon>
-                </InputGroup>
-                {fieldErrors.refreshTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.refreshTokenTTL}</p>}
-                {!fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1 - 8,760 hours (1 year)</p>}
+      {step === 2 && (
+        <motion.div
+          key="app-client-step-2"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+        >
+          <Card className="w-full bg-card border-border shadow-sm !gap-6">
+            <div className="flex items-center justify-between">
+              {renderSectionHeader("Application URLs", "Set the base, redirect, logout, and One Portal redirect URLs.")}
+              <div className="pr-6">
+                <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </FadeWrapper>
+
+            <CardContent className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Base URLs <span className="text-destructive">*</span></Label>
+                  <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" className={`h-10 rounded-lg ${fieldErrors.baseURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                  {fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
+                  {!fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Redirect URLs <span className="text-destructive">*</span></Label>
+                  <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" className={`h-10 rounded-lg ${fieldErrors.redirectURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                  {fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
+                  {!fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Logout URLs <span className="text-destructive">*</span></Label>
+                  <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" className={`h-10 rounded-lg ${fieldErrors.logoutURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                  {fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
+                  {!fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>One Portal Redirect Link</Label>
+                  <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder="https://one-portal.example.com" className={`h-10 rounded-lg ${fieldErrors.onePortalRedirectLink ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                  {fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
+                  {!fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {step === 3 && (
+        <motion.div
+          key="app-client-step-3"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+        >
+          <Card className="w-full bg-card border-border shadow-sm !gap-6">
+            {renderSectionHeader("Grants & Expirations", "Select the grant types and configure token expirations for this client.")}
+            <CardContent>
+              <div className="space-y-3">
+                <Label>Grants <span className="text-destructive">*</span></Label>
+                <FieldGroup className="flex w-full flex-row flex-wrap gap-4">
+                  {GRANT_OPTIONS.map((grant) => {
+                    const isSelected = grants.includes(grant);
+                    const formatGrantName = (name) => name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                    return (
+                      <FieldLabel key={grant} className="relative p-0 !w-auto flex-1 min-w-fit">
+                        <Field orientation="horizontal" className="justify-center">
+                          <Checkbox 
+                            checked={isSelected} 
+                            onCheckedChange={() => toggleGrant(grant)} 
+                            className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10" 
+                          />
+                          <FieldTitle className="justify-center text-center">{formatGrantName(grant)}</FieldTitle>
+                        </Field>
+                      </FieldLabel>
+                    );
+                  })}
+                </FieldGroup>
+              </div>
+              {grants.length === 0 && <p className="mt-3 text-xs text-destructive">At least one grant is required.</p>}
+
+              <div className="mt-6 grid gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Access Token expiration <span className="text-destructive">*</span></Label>
+                  <InputGroup className={`h-10 rounded-lg ${fieldErrors.accessTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
+                    <InputGroupInput type="number" required min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL} onChange={(e) => updateFieldValue("accessTokenTTL", e.target.value, setAccessTokenTTL)} />
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupText>min</InputGroupText>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {fieldErrors.accessTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.accessTokenTTL}</p>}
+                  {!fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1-1,440 minutes (24 hours)</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Refresh Token expiration <span className="text-destructive">*</span></Label>
+                  <InputGroup className={`h-10 rounded-lg ${fieldErrors.refreshTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
+                    <InputGroupInput type="number" required min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL} onChange={(e) => updateFieldValue("refreshTokenTTL", e.target.value, setRefreshTokenTTL)} />
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupText>hr</InputGroupText>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {fieldErrors.refreshTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.refreshTokenTTL}</p>}
+                  {!fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1 - 8,760 hours (1 year)</p>}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 
