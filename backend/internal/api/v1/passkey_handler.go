@@ -36,6 +36,47 @@ func (h *PasskeyHandler) BeginRegistration(c *gin.Context) {
 		return
 	}
 
+	uID, _, _, err := h.AuthService.
+		CheckSessionOrPendingMFA(c)
+	if err != nil {
+		log.Printf("[BeginRegistration] Auth check failed: %v", err)
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			err,
+		)
+		return
+	}
+
+	user, err := h.UserService.GetUserByEmail(
+		c.Request.Context(), req.Email,
+	)
+	if err != nil {
+		log.Printf("[BeginRegistration] User Lookup: %v", err)
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
+		return
+	}
+
+	userID, _ := uuid.Parse(user.ID)
+	if userID != uID {
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"User mismatch.",
+			"User mismatch",
+		)
+		return
+	}
+
 	platformAvailable := false
 	if req.PlatformAvailable != nil {
 		platformAvailable = *req.PlatformAvailable
@@ -173,6 +214,47 @@ func (h *PasskeyHandler) BeginVerification(c *gin.Context) {
 			errors.CodeInvalidInput,
 			"Email parameter is required.",
 			"email is required",
+		)
+		return
+	}
+
+	uID, _, _, err := h.AuthService.
+		CheckSessionOrPendingMFA(c)
+	if err != nil {
+		log.Printf("[BeginVerification] Auth check failed: %v", err)
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			err,
+		)
+		return
+	}
+
+	user, err := h.UserService.GetUserByEmail(
+		c.Request.Context(), req.Email,
+	)
+	if err != nil {
+		log.Printf("[BeginVerification] User Lookup: %v", err)
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
+		return
+	}
+
+	userID, _ := uuid.Parse(user.ID)
+	if userID != uID {
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"User mismatch.",
+			"User mismatch",
 		)
 		return
 	}
@@ -316,6 +398,47 @@ func (h *PasskeyHandler) GetHasPasskey(c *gin.Context) {
 			errors.CodeInvalidInput,
 			"Email query parameter is required.",
 			"email query parameter is required",
+		)
+		return
+	}
+
+	uID, _, _, err := h.AuthService.
+		CheckSessionOrPendingMFA(c)
+	if err != nil {
+		log.Printf("[GetHasPasskey] Auth check failed: %v", err)
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			err,
+		)
+		return
+	}
+
+	user, err := h.UserService.GetUserByEmail(
+		c.Request.Context(), email,
+	)
+	if err != nil {
+		log.Printf("[GetHasPasskey] User Lookup: %v", err)
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"User not found.",
+			err,
+		)
+		return
+	}
+
+	userID, _ := uuid.Parse(user.ID)
+	if userID != uID {
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"User mismatch.",
+			"User mismatch",
 		)
 		return
 	}

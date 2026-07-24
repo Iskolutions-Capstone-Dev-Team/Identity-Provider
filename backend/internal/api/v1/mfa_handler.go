@@ -407,6 +407,20 @@ func (h *MFAHandler) GetHasTOTP(c *gin.Context) {
 		return
 	}
 
+	uID, _, _, err := h.AuthService.
+		CheckSessionOrPendingMFA(c)
+	if err != nil {
+		log.Printf("[GetHasTOTP] Auth check failed: %v", err)
+		errors.Send(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			err,
+		)
+		return
+	}
+
 	user, err := h.UserService.GetUserByEmail(c.Request.Context(), email)
 	if err != nil {
 		log.Printf("[GetHasTOTP] User Lookup: %v", err)
@@ -421,6 +435,17 @@ func (h *MFAHandler) GetHasTOTP(c *gin.Context) {
 	}
 
 	userID, _ := uuid.Parse(user.ID)
+	if userID != uID {
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"User mismatch.",
+			"User mismatch",
+		)
+		return
+	}
+
 	has, err := h.MFAService.HasTOTP(
 		c.Request.Context(),
 		userID[:],
