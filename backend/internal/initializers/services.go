@@ -59,6 +59,7 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		passkeyRepo,
 		userSvc,
 		clientRepo,
+		appCache,
 	)
 	if err != nil {
 		panic(err)
