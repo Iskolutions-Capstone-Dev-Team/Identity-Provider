@@ -278,7 +278,7 @@ export function AppClientLogoUpload({
       {errors.length > 0 && (
         <Alert variant="destructive" className="mt-5">
           <CircleAlertIcon />
-          <AlertTitle>File upload error(s)</AlertTitle>
+          <AlertTitle>File upload error</AlertTitle>
           <AlertDescription>
             {errors.map((error, index) => (
               <p key={index} className="last:mb-0">
