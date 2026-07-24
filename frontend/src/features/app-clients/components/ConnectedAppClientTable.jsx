@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import EmptySearchState from "../../../components/EmptySearchState";
-import { KeyRound, Eye, Pencil, Trash2, Copy, CopyCheck } from "lucide-react";
+import { KeyRound, Eye, Pencil, Trash2, Copy, CopyCheck, Monitor } from "lucide-react";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { IconStack } from "@/components/reui/icon-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Frame, FramePanel } from "@/components/reui/frame";
@@ -30,12 +31,7 @@ function CopyClientIdButton({ id }) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className="inline-flex items-center justify-center p-0.5 text-muted-foreground hover:text-foreground transition-colors rounded ml-1"
-      title="Copy Client ID"
-    >
+    <button type="button" onClick={handleCopy} className="inline-flex items-center justify-center p-0.5 text-muted-foreground hover:text-foreground transition-colors rounded ml-1" title="Copy Client ID">
       {copied ? (
         <CopyCheck className="h-3.5 w-3.5 text-[#00d053]" />
       ) : (
@@ -126,8 +122,22 @@ export default function ConnectedAppClientTable({
             <TableBody>
               {clients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className={emptyStateClassName}>
-                    <EmptySearchState message="No app clients found" colorMode={colorMode} />
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    <div className="flex items-center justify-center w-full py-10">
+                      <Empty className="max-w-md">
+                        <EmptyHeader>
+                          <EmptyMedia>
+                            <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
+                              <Monitor className="text-[#7b0d15] dark:text-primary size-5" />
+                            </IconStack>
+                          </EmptyMedia>
+                          <EmptyTitle>No app clients found</EmptyTitle>
+                          <EmptyDescription>
+                            We couldn't find any app clients matching your criteria.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (

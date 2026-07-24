@@ -5,6 +5,7 @@ import { useAppClients } from "../hooks/useAppClients";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import AppClientFilters from "../components/AppClientFilters";
 import ConnectedAppClientTable from "../components/ConnectedAppClientTable";
+import ConnectedAppClientCards from "../components/ConnectedAppClientCards";
 import ResultsCount from "../../../components/ResultsCount";
 import Pagination from "../../../components/Pagination";
 import AppClientModal from "../components/AppClientModal";
@@ -46,6 +47,14 @@ export default function AppClient() {
     useEffect(() => {
         metricsService.getClientMetrics().then(setClientMetrics).catch(() => { });
     }, []);
+    
+    const [viewType, setViewType] = useState(() => {
+        return localStorage.getItem("appClientsViewType") || "table";
+    });
+
+    useEffect(() => {
+        localStorage.setItem("appClientsViewType", viewType);
+    }, [viewType]);
     const {
         search, setSearch, page, setPage,
         paginatedClients, totalPages, totalResults,
@@ -223,20 +232,37 @@ export default function AppClient() {
                     <AppClientFilters
                         search={search}
                         setSearch={setSearch}
+                        viewType={viewType}
+                        setViewType={setViewType}
                     />
 
-                    <ConnectedAppClientTable
-                        loading={showLoading}
-                        clients={paginatedClients}
-                        onView={openView}
-                        onEdit={openEdit}
-                        onDelete={handleDeleteClick}
-                        onRotateSecret={handleRotateClick}
-                        showEditAction={canEditClient}
-                        showDeleteAction={canDeleteClient}
-                        showRotateSecretAction={canRotateClientSecret}
-                        colorMode={colorMode}
-                    />
+                    {viewType === "table" ? (
+                        <ConnectedAppClientTable
+                            loading={showLoading}
+                            clients={paginatedClients}
+                            onView={openView}
+                            onEdit={openEdit}
+                            onDelete={handleDeleteClick}
+                            onRotateSecret={handleRotateClick}
+                            showEditAction={canEditClient}
+                            showDeleteAction={canDeleteClient}
+                            showRotateSecretAction={canRotateClientSecret}
+                            colorMode={colorMode}
+                        />
+                    ) : (
+                        <ConnectedAppClientCards
+                            loading={showLoading}
+                            clients={paginatedClients}
+                            onView={openView}
+                            onEdit={openEdit}
+                            onDelete={handleDeleteClick}
+                            onRotateSecret={handleRotateClick}
+                            showEditAction={canEditClient}
+                            showDeleteAction={canDeleteClient}
+                            showRotateSecretAction={canRotateClientSecret}
+                            colorMode={colorMode}
+                        />
+                    )}
 
                     {!showLoading && (
                         <div className="flex flex-col items-center gap-4 pt-2 lg:grid lg:grid-cols-3">
