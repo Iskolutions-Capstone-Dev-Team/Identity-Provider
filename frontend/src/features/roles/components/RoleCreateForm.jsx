@@ -293,7 +293,7 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
                   <FieldLabel htmlFor="role-name">
                     Name <span className="text-destructive">*</span>
                   </FieldLabel>
-                  <Input id="role-name" type="text" required value={roleName} onChange={(event) => handleRoleNameChange(event.target.value)} onBlur={() => setFieldTouched("name")} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., admin)" autoCapitalize="none" className="h-10 rounded-lg"/>
+                  <Input id="role-name" type="text" required value={roleName} onChange={(event) => handleRoleNameChange(event.target.value)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., admin)" autoCapitalize="none" spellCheck={false} className="h-10 rounded-lg"/>
                   {touched.name && fieldErrors.name && (
                     <p className="mt-1 text-xs text-destructive">{fieldErrors.name}</p>
                   )}
@@ -305,7 +305,7 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
                   <FieldLabel htmlFor="role-description">
                     Description <span className="text-destructive">*</span>
                   </FieldLabel>
-                  <Textarea id="role-description" required value={description} onChange={(event) => handleDescriptionChange(event.target.value)} onBlur={() => setFieldTouched("description")} onFocus={() => setActiveVoiceField("description")} rows={4} placeholder="Type role description here…" className="rounded-lg"/>
+                  <Textarea id="role-description" required value={description} onChange={(event) => handleDescriptionChange(event.target.value)} onFocus={() => setActiveVoiceField("description")} rows={4} placeholder="Type role description here…" className="rounded-lg"/>
                   {touched.description && fieldErrors.description && (
                     <p className="mt-1 text-xs text-destructive">{fieldErrors.description}</p>
                   )}
@@ -356,7 +356,7 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
                                 <Fragment key={permission.id}>
                                   <Field>
                                     <FieldLabel className="p-3 cursor-pointer hover:bg-muted/50 transition-colors">
-                                      <Checkbox checked={isSelected} onCheckedChange={() => togglePermission(permission.id)}/>
+                                      <Checkbox checked={isSelected} onCheckedChange={() => togglePermission(permission.id)} className="data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-[#f8d24e] dark:data-checked:!border-[#f8d24e] dark:data-checked:!text-[#7b0d15]" />
                                       <FieldTitle className="ml-2 leading-none font-medium text-sm">
                                         {permission.permission}
                                       </FieldTitle>

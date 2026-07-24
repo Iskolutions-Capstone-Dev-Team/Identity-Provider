@@ -567,10 +567,10 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                               required
                               value={roleName}
                               onChange={(event) => handleRoleNameChange(event.target.value)}
-                              onBlur={() => setFieldTouched("name")}
                               onFocus={() => setActiveVoiceField("name")}
                               placeholder="(e.g., admin)"
                               autoCapitalize="none"
+                              spellCheck={false}
                               className="h-10 rounded-lg"
                             />
                             {touched.name && fieldErrors.name && (
@@ -593,7 +593,6 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                           required
                           value={description}
                           onChange={(event) => handleDescriptionChange(event.target.value)}
-                          onBlur={() => setFieldTouched("description")}
                           onFocus={() => setActiveVoiceField("description")}
                           rows={4}
                           placeholder="Type role description here…"
@@ -639,6 +638,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                                             <Checkbox
                                               checked={isSelected}
                                               onCheckedChange={() => togglePermission(permission.id)}
+                                              className="data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-[#f8d24e] dark:data-checked:!border-[#f8d24e] dark:data-checked:!text-[#7b0d15]"
                                             />
                                             <FieldTitle className="ml-2 leading-none font-medium text-sm">
                                               {permission.permission}
