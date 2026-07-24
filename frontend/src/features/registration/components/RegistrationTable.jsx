@@ -1,8 +1,10 @@
-import EmptySearchState from "../../../components/EmptySearchState";
-import { Eye, Pencil, Trash } from "lucide-react";
+import { Eye, Pencil, Trash, FileText } from "lucide-react";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { IconStack } from "@/components/reui/icon-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -24,7 +26,53 @@ function getRemainingClientCount(totalClientCount = 0) {
   return Math.max(0, totalClientCount - MAX_VISIBLE_CLIENT_SLOTS);
 }
 
-export default function RegistrationTable({ rows = [], onView, onEdit, onDelete, showEditAction = true, showDeleteAction = true, colorMode = "light" }) {
+export default function RegistrationTable({ loading = false, rows = [], onView, onEdit, onDelete, showEditAction = true, showDeleteAction = true, colorMode = "light" }) {
+  if (loading) {
+    return (
+      <div className="mx-auto flex w-full flex-col">
+        <Frame spacing="xs">
+          <FramePanel className="p-0!">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-center w-1/3">Account Type</TableHead>
+                  <TableHead className="w-1/3 text-center">Client List</TableHead>
+                  <TableHead className="w-1/3 text-center">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="pl-6 p-5">
+                      <div className="flex items-center justify-start gap-3">
+                        <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    </TableCell>
+                  <TableCell className="text-center p-5">
+                    <div className="flex justify-center gap-2">
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full hidden sm:block" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center p-5">
+                    <div className="flex justify-center gap-2">
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              </TableBody>
+            </Table>
+          </FramePanel>
+        </Frame>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex w-full flex-col">
       <Frame spacing="xs">
@@ -41,7 +89,21 @@ export default function RegistrationTable({ rows = [], onView, onEdit, onDelete,
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={3} className="h-32 text-center">
-                  <EmptySearchState message="No account type found" colorMode={colorMode} />
+                  <div className="flex items-center justify-center w-full py-10">
+                    <Empty className="max-w-md">
+                      <EmptyHeader>
+                        <EmptyMedia>
+                          <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
+                            <FileText className="text-[#7b0d15] dark:text-primary size-5" />
+                          </IconStack>
+                        </EmptyMedia>
+                        <EmptyTitle>No account type found</EmptyTitle>
+                        <EmptyDescription>
+                          We couldn't find any account types matching your criteria.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

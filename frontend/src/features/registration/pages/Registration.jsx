@@ -418,52 +418,7 @@ export default function Registration() {
   let tableContent = null;
   let showTableFooter = true;
 
-  if (showLoading) {
-    tableContent = (
-      <div className="mx-auto flex w-full flex-col">
-        <Frame spacing="xs">
-          <FramePanel className="p-0!">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-center w-1/3">Account Type</TableHead>
-                  <TableHead className="w-1/3 text-center">Client List</TableHead>
-                  <TableHead className="w-1/3 text-center">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="pl-6 p-5">
-                      <div className="flex items-center justify-start gap-3">
-                        <Skeleton className="h-9 w-9 rounded-full shrink-0" />
-                        <Skeleton className="h-4 w-32" />
-                      </div>
-                    </TableCell>
-                  <TableCell className="text-center p-5">
-                    <div className="flex justify-center gap-2">
-                      <Skeleton className="h-6 w-24 rounded-full" />
-                      <Skeleton className="h-6 w-24 rounded-full" />
-                      <Skeleton className="h-6 w-24 rounded-full hidden sm:block" />
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center p-5">
-                    <div className="flex justify-center gap-2">
-                      <Skeleton className="h-8 w-8 rounded-md" />
-                      <Skeleton className="h-8 w-8 rounded-md" />
-                      <Skeleton className="h-8 w-8 rounded-md" />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              </TableBody>
-            </Table>
-          </FramePanel>
-        </Frame>
-      </div>
-    );
-    showTableFooter = false;
-  } else if (registrationError) {
+  if (registrationError) {
     tableContent = <div className={errorBoxClassName}>{registrationError}</div>;
     showTableFooter = false;
   }
