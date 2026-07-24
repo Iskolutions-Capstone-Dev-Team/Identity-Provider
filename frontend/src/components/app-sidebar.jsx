@@ -136,7 +136,7 @@ export function AppSidebar({ currentUser }) {
               {section.title}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="max-md:gap-3">
                 {section.items.map((item) => {
                   const isActive = location.pathname === item.path
                   return (
@@ -151,7 +151,7 @@ export function AppSidebar({ currentUser }) {
                             <Link to={item.path} />
                           )
                         }
-                        className="gap-3"
+                        className="gap-3 max-md:h-7 max-md:text-xs"
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
                         <span className="truncate transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">{item.name}</span>
@@ -165,21 +165,21 @@ export function AppSidebar({ currentUser }) {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
+        <SidebarMenu className="max-md:gap-3">
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleOnePortalClick} className="flex items-center gap-3 cursor-pointer" tooltip="One Portal">
+            <SidebarMenuButton onClick={handleOnePortalClick} className="flex items-center gap-3 cursor-pointer max-md:h-7 max-md:text-xs" tooltip="One Portal">
               <img src="/assets/images/PUP_Logo.png" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain"/>
               <span className="truncate transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">One Portal</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton isActive={location.pathname === "/faq"} tooltip="Get Help" render={<Link to="/faq" />} className="gap-3 cursor-pointer">
+            <SidebarMenuButton isActive={location.pathname === "/faq"} tooltip="Get Help" render={<Link to="/faq" />} className="gap-3 cursor-pointer max-md:h-7 max-md:text-xs">
               <CircleHelp className="h-4 w-4 shrink-0" />
               <span className="truncate transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">Get Help</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 cursor-pointer" tooltip="Logout">
+            <SidebarMenuButton onClick={handleLogout} className="flex items-center gap-3 cursor-pointer max-md:h-7 max-md:text-xs" tooltip="Logout">
               <LogOut className="h-4 w-4 shrink-0" />
               <span className="truncate transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">Logout</span>
             </SidebarMenuButton>

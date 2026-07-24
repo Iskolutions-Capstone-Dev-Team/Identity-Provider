@@ -24,15 +24,20 @@ export default function RegistrationListCard({
   onView,
   onEdit,
   onDelete,
+  colorMode = "light",
+  globalViewType,
   tableContent = null,
   showFooter = true,
   showEditAction = true,
   showDeleteAction = true,
-  colorMode = "light",
 }) {
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("registrationViewType") || "table";
+    return localStorage.getItem("registrationViewType") || globalViewType || "table";
   });
+
+  useEffect(() => {
+    if (globalViewType) setViewType(globalViewType);
+  }, [globalViewType]);
 
   useEffect(() => {
     localStorage.setItem("registrationViewType", viewType);

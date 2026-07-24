@@ -149,7 +149,7 @@ function getTotalPages(payload) {
 }
 
 export default function AuditLogs() {
-  const { colorMode = "light" } = useOutletContext() || {};
+  const { colorMode = "light", globalViewType } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
   const canViewSecurityLogs = hasPermission(PERMISSIONS.VIEW_SECURITY_LOGS);
   const [logType, setLogType] = useState(TRANSACTION_LOG_TYPE);
@@ -361,6 +361,7 @@ export default function AuditLogs() {
 
         <div className="relative">
           <AuditLogsListCard
+            globalViewType={globalViewType}
             logs={logs}
             totalResults={totalResults}
             itemsPerPage={ITEMS_PER_PAGE}

@@ -45,11 +45,15 @@ function getVisibleLogTypeOptions(canViewSecurityLogs) {
     : LOG_TYPE_OPTIONS.filter((option) => option.value !== "security");
 }
 
-export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, loading, error, onView, logType = "transaction", onLogTypeChange, canViewSecurityLogs = false, colorMode = "light" }) {
+export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, loading, error, onView, logType = "transaction", onLogTypeChange, canViewSecurityLogs = false, colorMode = "light", globalViewType }) {
   const [activeTooltip, setActiveTooltip] = useState(null);
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("auditLogsViewType") || "table";
+    return localStorage.getItem("auditLogsViewType") || globalViewType || "table";
   });
+
+  useEffect(() => {
+    if (globalViewType) setViewType(globalViewType);
+  }, [globalViewType]);
 
   useEffect(() => {
     localStorage.setItem("auditLogsViewType", viewType);

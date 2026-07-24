@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Settings, Palette, LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-export default function Navbar({ activeColorMode = "light", onToggleColorMode, showColorModeToggle = false, currentUser }) {
+export default function Navbar({ activeColorMode = "light", setColorMode, onToggleColorMode, showColorModeToggle = false, currentUser, globalViewType, setGlobalViewType }) {
   const navigate = useNavigate();
   const isDarkMode = activeColorMode === "dark";
 
@@ -25,26 +26,73 @@ export default function Navbar({ activeColorMode = "light", onToggleColorMode, s
         <div id="navbar-breadcrumbs" className="min-h-[1.25rem] flex items-center"></div>
       </div>
 
-      <div className="flex items-center gap-2">
-        {showColorModeToggle && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onToggleColorMode}
-            aria-pressed={isDarkMode}
-            aria-label={isDarkMode ? "Switch page to light mode" : "Switch page to dark mode"}
-            title={isDarkMode ? "Switch page to light mode" : "Switch page to dark mode"}
-          >
-            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-        )}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-0.5">
+          {showColorModeToggle && (
+            <Button variant="ghost" size="icon" onClick={onToggleColorMode} aria-pressed={isDarkMode} aria-label={isDarkMode ? "Switch page to light mode" : "Switch page to dark mode"} title={isDarkMode ? "Switch page to light mode" : "Switch page to dark mode"}>
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+          )}
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Settings" title="Settings">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" sideOffset={12}>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Palette className="mr-2 h-4 w-4" />
+                  Theme
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuRadioGroup
+                      value={activeColorMode}
+                      onValueChange={setColorMode}
+                    >
+                      <DropdownMenuRadioItem value="light">
+                        Light
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="dark">
+                        Dark
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <LayoutTemplate className="mr-2 h-4 w-4" />
+                  View
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuRadioGroup
+                      value={globalViewType}
+                      onValueChange={setGlobalViewType}
+                    >
+                      <DropdownMenuRadioItem value="card">
+                        Card
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="table">
+                        Table
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        </div>
 
         <HoverCard>
           <HoverCardTrigger asChild>
-            <div 
-              className="flex cursor-pointer items-center gap-2"
-              onClick={() => navigate("/profile")}
-            >
+            <div className="flex cursor-pointer items-center gap-2" onClick={() => navigate("/profile")}>
               <Avatar className="size-8">
                 <AvatarFallback className={avatarBgClass}>{initials}</AvatarFallback>
               </Avatar>

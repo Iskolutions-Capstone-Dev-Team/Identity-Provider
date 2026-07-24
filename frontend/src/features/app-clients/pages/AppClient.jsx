@@ -27,7 +27,7 @@ const ITEMS_PER_PAGE = 10;
 export default function AppClient() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { colorMode = "light" } = useOutletContext();
+    const { colorMode = "light", globalViewType } = useOutletContext() || {};
     const { hasPermission } = usePermissionAccess();
     const canCreateClient = hasPermission(PERMISSIONS.ADD_APPCLIENT);
     const canEditClient = hasPermission(PERMISSIONS.EDIT_APPCLIENT);
@@ -49,8 +49,14 @@ export default function AppClient() {
     }, []);
     
     const [viewType, setViewType] = useState(() => {
-        return localStorage.getItem("appClientsViewType") || "table";
+        return localStorage.getItem("appClientsViewType") || globalViewType || "table";
     });
+
+    useEffect(() => {
+        if (globalViewType) {
+            setViewType(globalViewType);
+        }
+    }, [globalViewType]);
 
     useEffect(() => {
         localStorage.setItem("appClientsViewType", viewType);

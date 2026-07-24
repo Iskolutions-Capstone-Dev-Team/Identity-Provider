@@ -21,7 +21,7 @@ const ITEMS_PER_PAGE = 10;
 export default function Roles() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { colorMode = "light" } = useOutletContext() || {};
+  const { colorMode = "light", globalViewType } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
   const [roleMetrics, setRoleMetrics] = useState(null);
   const [permissionMetrics, setPermissionMetrics] = useState(null);
@@ -200,6 +200,7 @@ export default function Roles() {
 
         <div className="relative">
           <RolesListCard
+            globalViewType={globalViewType}
             loading={showLoading}
             roles={visibleRoles}
             totalResults={totalResults}

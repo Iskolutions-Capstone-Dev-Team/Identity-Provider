@@ -24,6 +24,10 @@ export default function IdpLayout() {
     const legacyAppClientColorMode = window.localStorage.getItem("appClientColorMode");
     return legacyUserPoolColorMode === "dark" || legacyAppClientColorMode === "dark" ? "dark" : "light";
   });
+  const [globalViewType, setGlobalViewType] = useState(() => {
+    if (typeof window === "undefined") return "table";
+    return window.localStorage.getItem("idpGlobalViewType") || "table";
+  });
   
   const { currentUser, isLoadingCurrentUser, updateCurrentUser } = useCurrentUser();
   const showColorModeToggle = true;
@@ -61,6 +65,11 @@ export default function IdpLayout() {
     }
   }, [colorMode]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("idpGlobalViewType", globalViewType);
+  }, [globalViewType]);
+
   const handleContinue = () => {
     sessionStorage.setItem("termsAccepted", "true");
     setOpenTerms(false);
@@ -81,6 +90,7 @@ export default function IdpLayout() {
     colorMode,
     userPoolColorMode: colorMode,
     appClientColorMode: colorMode,
+    globalViewType,
   });
 
   return (
@@ -107,16 +117,21 @@ export default function IdpLayout() {
           termsHref="/terms"
         />
 
-        <AppSidebar currentUser={currentUser} />
+        <AppSidebar 
+          currentUser={currentUser} 
+        />
 
         <SidebarInset className="font-[Poppins] text-foreground overflow-hidden">
           <div className="relative z-40 shrink-0 border-b flex items-center px-4">
             <div className="flex-1">
               <Navbar
                 activeColorMode={colorMode}
+                setColorMode={setColorMode}
                 onToggleColorMode={handleToggleColorMode}
                 showColorModeToggle={showColorModeToggle}
                 currentUser={currentUser}
+                globalViewType={globalViewType}
+                setGlobalViewType={setGlobalViewType}
               />
             </div>
           </div>

@@ -71,7 +71,7 @@ function getRegistrationActionError(error, fallbackMessage) {
 export default function Registration() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { colorMode = "light" } = useOutletContext() || {};
+  const { colorMode = "light", globalViewType } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
   const canCreateRegistration = hasPermission(
     PERMISSIONS.CREATE_REGISTRATION_CONFIG,
@@ -471,6 +471,7 @@ export default function Registration() {
 
         <div className="relative">
           <RegistrationListCard
+            globalViewType={globalViewType}
             loading={showLoading}
             rows={rows}
             totalResults={totalResults}

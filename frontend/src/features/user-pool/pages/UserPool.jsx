@@ -39,6 +39,7 @@ export default function UserPool() {
   const colorMode = outletContext.colorMode || "light";
   const currentUser = outletContext.currentUser || {};
   const isLoadingCurrentUser = Boolean(outletContext.isLoadingCurrentUser);
+  const globalViewType = outletContext.globalViewType;
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
   const [userMetrics, setUserMetrics] = useState(null);
   const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
@@ -93,9 +94,15 @@ export default function UserPool() {
   const [userToReinvite, setUserToReinvite] = useState(null);
   const [isSendingReinvite, setIsSendingReinvite] = useState(false);
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("userPoolViewType") || "table";
+    return localStorage.getItem("userPoolViewType") || globalViewType || "table";
   });
   
+  useEffect(() => {
+    if (globalViewType) {
+      setViewType(globalViewType);
+    }
+  }, [globalViewType]);
+
   useEffect(() => {
     localStorage.setItem("userPoolViewType", viewType);
   }, [viewType]);

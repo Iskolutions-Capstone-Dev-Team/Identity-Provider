@@ -10,10 +10,14 @@ import RolesListCards from "./RolesListCards";
 import ResultsCount from "../../../components/ResultsCount";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 
-export default function RolesListCard({ loading = false, roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, colorMode = "light" }) {
+export default function RolesListCard({ loading = false, roles, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, colorMode = "light", globalViewType }) {
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("rolesViewType") || "table";
+    return localStorage.getItem("rolesViewType") || globalViewType || "table";
   });
+
+  useEffect(() => {
+    if (globalViewType) setViewType(globalViewType);
+  }, [globalViewType]);
 
   useEffect(() => {
     localStorage.setItem("rolesViewType", viewType);
