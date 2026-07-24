@@ -551,7 +551,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
               )}
 
               {showRoleDetails && (
-                <Card className="bg-muted/30 border-border/40 animate-in fade-in zoom-in-95 duration-200">
+                <Card className="bg-muted/30 border-border/40">
                   <CardContent className="p-5 space-y-5">
                     <div>
                       <Field className="w-full">
@@ -607,7 +607,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
               )}
 
               {showPermissions && (
-                <Card className="bg-muted/30 border-border/40 animate-in fade-in zoom-in-95 duration-200">
+                <Card className="bg-muted/30 border-border/40">
                   <CardContent className="p-5 space-y-6">
                     {isPermissionOptionsLoading && mergedPermissionOptions.length === 0 ? (
                       <div className="p-4 text-sm text-muted-foreground">Loading permissions...</div>
