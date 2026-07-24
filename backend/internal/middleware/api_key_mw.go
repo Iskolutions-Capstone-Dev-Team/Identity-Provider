@@ -16,7 +16,10 @@ import (
 func APIKeyMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey := c.GetHeader("X-API-Key")
-		expectedKey := os.Getenv("VITE_BACKEND_API_KEY")
+		expectedKey := os.Getenv("BACKEND_API_KEY")
+		if expectedKey == "" {
+			expectedKey = os.Getenv("VITE_BACKEND_API_KEY")
+		}
 
 		if apiKey == "" || apiKey != expectedKey {
 			log.Printf("[APIKeyMiddleware] Auth Failure: invalid API key")
