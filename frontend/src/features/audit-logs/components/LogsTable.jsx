@@ -1,5 +1,7 @@
-import EmptySearchState from "../../../components/EmptySearchState";
+import { FileSearchCorner } from "lucide-react";
 import { ViewLogIcon } from "./auditLogIcons";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { IconStack } from "@/components/reui/icon-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,7 +98,21 @@ export default function LogsTable({ loading = false, logs, onView, colorMode = "
           {logs.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="h-48 text-center">
-                <EmptySearchState message={emptyMessage} colorMode={colorMode} />
+                <div className="flex items-center justify-center w-full py-10 mt-4">
+                  <Empty className="max-w-md">
+                    <EmptyHeader>
+                      <EmptyMedia>
+                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
+                          <FileSearchCorner className="text-[#7b0d15] dark:text-primary size-5" />
+                        </IconStack>
+                      </EmptyMedia>
+                      <EmptyTitle>{emptyMessage}</EmptyTitle>
+                      <EmptyDescription>
+                        We couldn't find any {logTypeLabel}s matching your criteria.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </div>
               </TableCell>
             </TableRow>
           ) : (

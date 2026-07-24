@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ResultsCount from "../../../components/ResultsCount";
 import Pagination from "../../../components/Pagination";
 import LogsTable from "./LogsTable";
+import AuditLogsCards from "./AuditLogsCards";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { SearchIcon, SecurityLogIcon, TransactionLogIcon } from "./auditLogIcons";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { Table, WalletCards, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 const LOG_TYPE_OPTIONS = [
   {
@@ -43,6 +47,14 @@ function getVisibleLogTypeOptions(canViewSecurityLogs) {
 
 export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, loading, error, onView, logType = "transaction", onLogTypeChange, canViewSecurityLogs = false, colorMode = "light" }) {
   const [activeTooltip, setActiveTooltip] = useState(null);
+  const [viewType, setViewType] = useState(() => {
+    return localStorage.getItem("auditLogsViewType") || "table";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("auditLogsViewType", viewType);
+  }, [viewType]);
+
   const isDarkMode = colorMode === "dark";
   const visibleLogTypeOptions = getVisibleLogTypeOptions(canViewSecurityLogs);
   const selectedLogType =
@@ -97,17 +109,55 @@ export default function AuditLogsListCard({ logs, totalResults, itemsPerPage, se
               </Tabs>
             </div>
           )}
+
+          <div className="w-full lg:w-[130px] shrink-0 space-y-1">
+            <FieldLabel>View</FieldLabel>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-10 px-3 flex items-center gap-2 bg-background border shadow-sm w-full justify-between">
+                  <div className="flex items-center gap-2 text-foreground font-normal">
+                    {viewType === "card" ? <WalletCards className="w-4 h-4 opacity-70" /> : <Table className="w-4 h-4 opacity-70" />}
+                    <span>{viewType === "card" ? "Card" : "Table"}</span>
+                  </div>
+                  <ChevronDown className="w-4 h-4 opacity-50 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[130px]">
+                <DropdownMenuRadioGroup value={viewType} onValueChange={setViewType}>
+                  <DropdownMenuRadioItem value="table" className="cursor-pointer gap-2">
+                    <Table className="w-4 h-4 opacity-70" />
+                    Table
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="card" className="cursor-pointer gap-2">
+                    <WalletCards className="w-4 h-4 opacity-70" />
+                    Card
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
-      <LogsTable
-        loading={loading}
-        logs={logs}
-        onView={onView}
-        colorMode={colorMode}
-        emptyMessage={selectedLogType.emptyMessage}
-        logTypeLabel={selectedLogType.detailLabel}
-      />
+      {viewType === "table" ? (
+        <LogsTable
+          loading={loading}
+          logs={logs}
+          onView={onView}
+          colorMode={colorMode}
+          emptyMessage={selectedLogType.emptyMessage}
+          logTypeLabel={selectedLogType.detailLabel}
+        />
+      ) : (
+        <AuditLogsCards
+          loading={loading}
+          logs={logs}
+          onView={onView}
+          colorMode={colorMode}
+          emptyMessage={selectedLogType.emptyMessage}
+          logTypeLabel={selectedLogType.detailLabel}
+        />
+      )}
 
       {!loading && !error && (
         <div className="flex flex-col items-center gap-4 pt-5 lg:grid lg:grid-cols-3 border-[#7b0d15]/10 dark:border-white/10">
