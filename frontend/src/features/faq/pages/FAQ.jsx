@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { CircleHelp, Users, ShieldUser, MonitorCog, FileCheckCorner, FileSearchCorner, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CircleHelp, Users, ShieldUser, MonitorCog, FileCheckCorner, FileSearchCorner, Info, MailQuestion } from "lucide-react";
 import FAQSkeleton from "../components/FAQSkeleton";
 import FAQ_TOPICS from "../components/faqTopics";
 import FAQ_THEME from "../components/faqTheme";
@@ -68,6 +69,10 @@ export default function FAQ() {
             <p className="text-muted-foreground">Frequently asked questions</p>
           </div>
         </div>
+        <Button onClick={() => window.location.href = "mailto:iskolutions.team@gmail.com"} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200">
+          <MailQuestion className="w-4 h-4 mr-2" />
+          Get Help
+        </Button>
       </div>
 
       {showSkeleton ? (
@@ -126,9 +131,11 @@ export default function FAQ() {
                           </AccordionTrigger>
                           <AccordionContent className="text-muted-foreground pt-0 pb-4 text-sm leading-relaxed space-y-2">
                             {Array.isArray(item.answer) ? (
-                              item.answer.map((paragraph, index) => (
-                                <p key={index}>{paragraph}</p>
-                              ))
+                              <ul className="list-disc list-outside ml-4 space-y-1">
+                                {item.answer.map((paragraph, index) => (
+                                  <li key={index}>{paragraph}</li>
+                                ))}
+                              </ul>
                             ) : (
                               <p>{item.answer}</p>
                             )}
