@@ -125,7 +125,7 @@ export default function RegistrationCreateForm({
                     className="h-10 rounded-lg"
                   />
                   {accountTypeNameError && (
-                    <p className="mt-1 text-xs text-destructive">
+                    <p className="!mt-0 text-xs text-destructive">
                       {accountTypeNameError}
                     </p>
                   )}
@@ -150,7 +150,7 @@ export default function RegistrationCreateForm({
                     </p>
                   )}
                   {appClientsError && !isLoadingAppClients && (
-                    <p className="mt-2 text-xs text-destructive">{appClientsError}</p>
+                    <p className="!mt-0 text-xs text-destructive">{appClientsError}</p>
                   )}
                 </Field>
               </div>

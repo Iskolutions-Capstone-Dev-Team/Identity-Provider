@@ -27,7 +27,7 @@ const initialFieldErrors = {
   imageFile: "", name: "", baseURL: "", redirectURL: "",
   logoutURL: "", onePortalRedirectLink: "", accessTokenTTL: "", refreshTokenTTL: "",
 };
-const inlineErrorClassName = "mt-0 text-xs text-destructive";
+const inlineErrorClassName = "!mt-0 text-xs text-destructive";
 
 const isValidHttpUrl = (value) => {
   try {
@@ -244,7 +244,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
         </Stepper>
       </div>
 
-      <ErrorAlert message={error} onClose={() => setError("")} />
+
 
       {step === 1 && (
         <motion.div
@@ -375,7 +375,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
                   })}
                 </FieldGroup>
               </div>
-              {grants.length === 0 && <p className="mt-0 text-xs text-destructive">At least one grant is required.</p>}
+              {grants.length === 0 && <p className="!mt-0 text-xs text-destructive">At least one grant is required.</p>}
 
               <div className="mt-6 grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">

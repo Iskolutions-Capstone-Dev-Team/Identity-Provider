@@ -224,7 +224,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
                           className={`h-10 rounded-lg ${accountTypeNameError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         />
                         {accountTypeNameError && (
-                          <p className="mt-1 text-xs text-destructive">{accountTypeNameError}</p>
+                          <p className="!mt-0 text-xs text-destructive">{accountTypeNameError}</p>
                         )}
                       </div>
                     )}
@@ -251,7 +251,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
                         <p className="mt-2 text-xs text-muted-foreground">Loading app clients...</p>
                       )}
                       {appClientsError && !isLoadingAppClients && (
-                        <p className="mt-2 text-xs text-destructive">{appClientsError}</p>
+                        <p className="!mt-0 text-xs text-destructive">{appClientsError}</p>
                       )}
                     </div>
                   </Field>

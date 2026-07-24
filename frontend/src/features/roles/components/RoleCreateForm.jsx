@@ -295,7 +295,7 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
                   </FieldLabel>
                   <Input id="role-name" type="text" required value={roleName} onChange={(event) => handleRoleNameChange(event.target.value)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., admin)" autoCapitalize="none" spellCheck={false} className="h-10 rounded-lg"/>
                   {touched.name && fieldErrors.name && (
-                    <p className="mt-1 text-xs text-destructive">{fieldErrors.name}</p>
+                    <p className="!mt-0 text-xs text-destructive">{fieldErrors.name}</p>
                   )}
                 </Field>
               </div>
@@ -307,7 +307,7 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
                   </FieldLabel>
                   <Textarea id="role-description" required value={description} onChange={(event) => handleDescriptionChange(event.target.value)} onFocus={() => setActiveVoiceField("description")} rows={4} placeholder="Type role description here…" className="rounded-lg"/>
                   {touched.description && fieldErrors.description && (
-                    <p className="mt-1 text-xs text-destructive">{fieldErrors.description}</p>
+                    <p className="!mt-0 text-xs text-destructive">{fieldErrors.description}</p>
                   )}
                 </Field>
               </div>

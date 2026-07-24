@@ -168,7 +168,7 @@ function AppClientComboboxField({ label, description, options, selectedIds, onCh
             </ComboboxList>
           </ComboboxContent>
         </Combobox>
-        {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+        {error && <p className="!mt-0 text-xs text-red-500">{error}</p>}
       </Field>
     </div>
   );
@@ -665,7 +665,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
             </p>
           )}
           {fieldErrors.accountType && (
-            <p className="mt-2 text-xs text-red-500">
+            <p className="!mt-0 text-xs text-red-500">
               {fieldErrors.accountType}
             </p>
           )}
@@ -722,7 +722,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
         </Button>
       </div>
       {fieldErrors.tempPassword && (
-        <p className="mt-2 text-xs text-red-500">
+        <p className="!mt-0 text-xs text-red-500">
           {fieldErrors.tempPassword}
         </p>
       )}
@@ -796,7 +796,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                   emptyOptionLabel="No role assigned"
                 />
                 {fieldErrors.selectedAdminRoleId && (
-                  <p className="mt-2 text-xs text-red-500">
+                  <p className="!mt-0 text-xs text-red-500">
                     {fieldErrors.selectedAdminRoleId}
                   </p>
                 )}
@@ -883,7 +883,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                       <InputGroupInput type="email" name="email" value={data.email} onChange={handleChange} onFocus={() => setActiveVoiceField("email")} required placeholder="Enter email" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
                     </InputGroup>
                     {fieldErrors.email && (
-                      <p className="mt-2 text-xs text-red-500">
+                      <p className="!mt-0 text-xs text-red-500">
                         {fieldErrors.email}
                       </p>
                     )}
@@ -902,7 +902,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                         <InputGroupInput type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required placeholder="Enter first name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
                       </InputGroup>
                       {fieldErrors.givenName && (
-                        <p className="mt-2 text-xs text-red-500">
+                        <p className="!mt-0 text-xs text-red-500">
                           {fieldErrors.givenName}
                         </p>
                       )}
@@ -933,7 +933,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                         <InputGroupInput type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required placeholder="Enter last name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
                       </InputGroup>
                       {fieldErrors.surname && (
-                        <p className="mt-2 text-xs text-red-500">
+                        <p className="!mt-0 text-xs text-red-500">
                           {fieldErrors.surname}
                         </p>
                       )}

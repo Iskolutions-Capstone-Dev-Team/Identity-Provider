@@ -39,7 +39,7 @@ const initialFieldErrors = {
   imageFile: "", name: "", baseURL: "", redirectURL: "",
   logoutURL: "", onePortalRedirectLink: "", accessTokenTTL: "", refreshTokenTTL: "",
 };
-const inlineErrorClassName = "mt-0 text-xs text-destructive";
+const inlineErrorClassName = "!mt-0 text-xs text-destructive";
 
 const isValidHttpUrl = (value) => {
   try {
@@ -323,7 +323,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
           </DialogHeader>
 
           <form id="app-client-form" noValidate className="-mx-4 no-scrollbar max-h-[70vh] px-4 overflow-y-auto pt-3" onSubmit={handleSubmit}>
-            {error && <div className="mb-6"><ErrorAlert message={error} onClose={() => setError("")} /></div>}
+
 
             {isDetailsLoading && (
               <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-200">
@@ -559,7 +559,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                             );
                           })}
                         </FieldGroup>
-                        {!isView && selectedGrants.length === 0 && <p className="mt-0 text-xs text-destructive">At least one grant is required.</p>}
+                        {!isView && selectedGrants.length === 0 && <p className="!mt-0 text-xs text-destructive">At least one grant is required.</p>}
                       </Field>
                     </div>
 

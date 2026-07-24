@@ -4,6 +4,8 @@ import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const initialFieldErrors = {
   firstName: "",
@@ -171,19 +173,11 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
   }
 
   const isDarkMode = colorMode === "dark";
-  const fieldErrorClassName = isDarkMode
-    ? "mt-2 text-xs text-red-300"
-    : "mt-2 text-xs text-red-500";
+  const fieldErrorClassName = "!mt-0 text-xs text-destructive";
   const requiredNoteClassName = isDarkMode
     ? "text-sm text-[#c7adb4]"
     : "text-sm text-[#8f6f76]";
 
-  const getInputClassName = (hasError) =>
-    `flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-      hasError ? "border-red-500 focus-visible:ring-red-500" : "border-input"
-    }`;
-
-  const labelClassName = "text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70";
   const helperTextClassName = "text-sm text-muted-foreground";
 
   return (
@@ -194,9 +188,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
         </DialogHeader>
 
         <div className="-mx-4 no-scrollbar max-h-[60vh] overflow-y-auto px-4">
-          <div className="px-2 mb-4 mt-2">
-            <ErrorAlert message={errorMessage} onClose={() => setErrorMessage("")} />
-          </div>
+
 
           <form id="edit-profile-form" noValidate onSubmit={handleSubmit} className="space-y-6 px-2 pb-6">
             <div className="space-y-4">
@@ -210,11 +202,11 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
                   <div className="flex items-center min-h-[24px]">
-                    <label className={labelClassName}>
+                    <Label>
                       First Name <span className="text-red-500">*</span>
-                    </label>
+                    </Label>
                   </div>
-                  <input type="text" name="firstName" value={profile.firstName} onChange={handleChange} onFocus={() => setActiveVoiceField("firstName")} placeholder="Enter first name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.firstName))} disabled={isSaving}/>
+                  <Input type="text" name="firstName" value={profile.firstName} onChange={handleChange} onFocus={() => setActiveVoiceField("firstName")} placeholder="Enter first name" maxLength={50} className="h-10 rounded-lg" disabled={isSaving}/>
                   {fieldErrors.firstName && (
                     <p className={fieldErrorClassName}>
                       {fieldErrors.firstName}
@@ -224,18 +216,18 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
 
                 <div className="space-y-2">
                   <div className="flex items-center min-h-[24px]">
-                    <label className={labelClassName}>Middle Name</label>
+                    <Label>Middle Name</Label>
                   </div>
-                  <input type="text" name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className={getInputClassName(false)} disabled={isSaving}/>
+                  <Input type="text" name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className="h-10 rounded-lg" disabled={isSaving}/>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center min-h-[24px]">
-                    <label className={labelClassName}>
+                    <Label>
                       Last Name <span className="text-red-500">*</span>
-                    </label>
+                    </Label>
                   </div>
-                  <input type="text" name="lastName" value={profile.lastName} onChange={handleChange} onFocus={() => setActiveVoiceField("lastName")} placeholder="Enter last name" maxLength={50} className={getInputClassName(Boolean(fieldErrors.lastName))} disabled={isSaving}/>
+                  <Input type="text" name="lastName" value={profile.lastName} onChange={handleChange} onFocus={() => setActiveVoiceField("lastName")} placeholder="Enter last name" maxLength={50} className="h-10 rounded-lg" disabled={isSaving}/>
                   {fieldErrors.lastName && (
                     <p className={fieldErrorClassName}>{fieldErrors.lastName}</p>
                   )}
@@ -243,20 +235,20 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between min-h-[24px]">
-                    <label className={labelClassName}>Suffix</label>
+                    <Label>Suffix</Label>
                     <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-[#7b0d15]/30 text-[#7b0d15] dark:border-[#f8d24e]/30 dark:text-[#ffe28a] tracking-wider bg-[#7b0d15]/5 dark:bg-[#f8d24e]/10">Optional</span>
                   </div>
-                  <input type="text" name="suffix" value={profile.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" maxLength={20} className={getInputClassName(false)} disabled={isSaving}/>
+                  <Input type="text" name="suffix" value={profile.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" maxLength={20} className="h-10 rounded-lg" disabled={isSaving}/>
                 </div>
               </div>
             </div>
 
             {allowEmailEdit && (
               <div className="space-y-2">
-                <label className={labelClassName}>
+                <Label>
                   Email Address <span className="text-red-500">*</span>
-                </label>
-                <input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className={getInputClassName(Boolean(fieldErrors.email))} disabled={isSaving}/>
+                </Label>
+                <Input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className="h-10 rounded-lg" disabled={isSaving}/>
                 {fieldErrors.email ? (
                   <p className={fieldErrorClassName}>{fieldErrors.email}</p>
                 ) : (

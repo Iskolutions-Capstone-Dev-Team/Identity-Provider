@@ -347,7 +347,7 @@ export default function UserPoolModal({
         </DialogHeader>
         <div className={cn("-mx-4 no-scrollbar max-h-[50vh] px-4", isSelectOpen ? "overflow-hidden" : "overflow-y-auto")}>
           <div className="px-2 mb-4 mt-2">
-            <ErrorAlert message={error} onClose={() => setError("")} />
+
           </div>
 
           {isViewMode ? (

@@ -425,7 +425,6 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
             </div>
           )}
 
-          <ErrorAlert message={error} onClose={() => setError("")} />
 
           {isViewMode ? (
             <div className="space-y-6 pt-3 pb-4 px-2">
@@ -574,7 +573,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                               className="h-10 rounded-lg"
                             />
                             {touched.name && fieldErrors.name && (
-                              <p className="mt-1 text-xs text-destructive">{fieldErrors.name}</p>
+                              <p className="!mt-0 text-xs text-destructive">{fieldErrors.name}</p>
                             )}
                           </>
                         ) : (
@@ -599,7 +598,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                           className="rounded-lg"
                         />
                         {touched.description && fieldErrors.description && (
-                          <p className="mt-1 text-xs text-destructive">{fieldErrors.description}</p>
+                          <p className="!mt-0 text-xs text-destructive">{fieldErrors.description}</p>
                         )}
                       </Field>
                     </div>
