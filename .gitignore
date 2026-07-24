@@ -43,3 +43,6 @@ CompileDaemon
 # --- Frontend ---
 node_modules
 dist
+
+# --- Others ---
+*.sql.gz
