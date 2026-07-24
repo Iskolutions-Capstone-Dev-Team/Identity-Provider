@@ -80,12 +80,6 @@ const menuSections = [
         requiredPermissions: [PERMISSIONS.VIEW_AUDIT_LOGS],
         icon: FileSearchCorner,
       },
-      {
-        name: "FAQ",
-        path: "/faq",
-        requiredPermissions: [],
-        icon: CircleHelp,
-      },
     ],
   },
   {
@@ -176,6 +170,12 @@ export function AppSidebar({ currentUser }) {
             <SidebarMenuButton onClick={handleOnePortalClick} className="flex items-center gap-3 cursor-pointer" tooltip="One Portal">
               <img src="/assets/images/PUP_Logo.png" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain"/>
               <span className="truncate transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">One Portal</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton isActive={location.pathname === "/faq"} tooltip="Get Help" render={<Link to="/faq" />} className="gap-3 cursor-pointer">
+              <CircleHelp className="h-4 w-4 shrink-0" />
+              <span className="truncate transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">Get Help</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
