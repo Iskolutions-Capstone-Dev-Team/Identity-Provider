@@ -27,7 +27,7 @@ const initialFieldErrors = {
   imageFile: "", name: "", baseURL: "", redirectURL: "",
   logoutURL: "", onePortalRedirectLink: "", accessTokenTTL: "", refreshTokenTTL: "",
 };
-const inlineErrorClassName = "mt-2 text-xs text-destructive";
+const inlineErrorClassName = "mt-0 text-xs text-destructive";
 
 const isValidHttpUrl = (value) => {
   try {
@@ -107,7 +107,6 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
     setFieldErrors(nextFieldErrors);
     const firstError = nextFieldErrors.imageFile || nextFieldErrors.name;
     if (firstError) {
-      setError(firstError);
       return false;
     }
     return true;
@@ -131,7 +130,6 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
     setFieldErrors(nextFieldErrors);
     const firstError = nextFieldErrors.baseURL || nextFieldErrors.redirectURL || nextFieldErrors.logoutURL || nextFieldErrors.onePortalRedirectLink;
     if (firstError) {
-      setError(firstError);
       return false;
     }
     return true;
@@ -142,13 +140,15 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
     const parsedRefreshTokenTTL = parseTokenTTL(refreshTokenTTL);
     const nextFieldErrors = { ...initialFieldErrors, imageFile: fieldErrors.imageFile, name: fieldErrors.name, baseURL: fieldErrors.baseURL, redirectURL: fieldErrors.redirectURL, logoutURL: fieldErrors.logoutURL, onePortalRedirectLink: fieldErrors.onePortalRedirectLink };
 
-    if (!isValidTokenTTL(parsedAccessTokenTTL, TOKEN_TTL_LIMITS.accessToken)) nextFieldErrors.accessTokenTTL = "Expiration must be between 1 and 1,440 minutes.";
-    if (!isValidTokenTTL(parsedRefreshTokenTTL, TOKEN_TTL_LIMITS.refreshToken)) nextFieldErrors.refreshTokenTTL = "Expiration must be between 1 and 8,760 hours.";
+    if (!accessTokenTTL) nextFieldErrors.accessTokenTTL = "Access Token expiration is required.";
+    else if (!isValidTokenTTL(parsedAccessTokenTTL, TOKEN_TTL_LIMITS.accessToken)) nextFieldErrors.accessTokenTTL = "Expiration must be between 1 and 1,440 minutes.";
+    
+    if (!refreshTokenTTL) nextFieldErrors.refreshTokenTTL = "Refresh Token expiration is required.";
+    else if (!isValidTokenTTL(parsedRefreshTokenTTL, TOKEN_TTL_LIMITS.refreshToken)) nextFieldErrors.refreshTokenTTL = "Expiration must be between 1 and 8,760 hours.";
 
     setFieldErrors(nextFieldErrors);
     const firstError = nextFieldErrors.accessTokenTTL || nextFieldErrors.refreshTokenTTL;
     if (firstError) {
-      setError(firstError);
       return false;
     }
     return true;
@@ -276,14 +276,17 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
 
               <div className="space-y-2">
                 <Label>Name <span className="text-destructive">*</span></Label>
-                <Input required minLength={5} maxLength={100} value={name} onChange={(e) => updateFieldValue("name", e.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)" className={`h-10 rounded-lg ${fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                <Input required minLength={5} maxLength={100} value={name} onChange={(e) => updateFieldValue("name", e.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)" spellCheck={false} className="h-10 rounded-lg" />
                 {fieldErrors.name && <p className={inlineErrorClassName}>{fieldErrors.name}</p>}
                 {!fieldErrors.name && <p className="text-xs text-muted-foreground">Must be 5-100 characters</p>}
               </div>
 
               <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onFocus={() => setActiveVoiceField("description")} rows="4" placeholder="Short description of the application (optional)" className="rounded-lg" />
+                <Label className="flex items-center justify-between">
+                  Description
+                  <span className="text-[10px] border px-1.5 py-0.5 rounded-md font-medium border-[#7b0d15]/40 text-[#7b0d15] dark:border-[#f8d24e]/40 dark:text-[#f8d24e]">Optional</span>
+                </Label>
+                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onFocus={() => setActiveVoiceField("description")} rows="4" placeholder="Short description of the application" className="rounded-lg" />
               </div>
             </CardContent>
           </Card>
@@ -308,28 +311,31 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
             <CardContent className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Base URLs <span className="text-destructive">*</span></Label>
-                  <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" className={`h-10 rounded-lg ${fieldErrors.baseURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                  <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" className="h-10 rounded-lg" />
                   {fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
                   {!fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label>Redirect URLs <span className="text-destructive">*</span></Label>
-                  <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" className={`h-10 rounded-lg ${fieldErrors.redirectURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                  <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" className="h-10 rounded-lg" />
                   {fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
                   {!fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label>Logout URLs <span className="text-destructive">*</span></Label>
-                  <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" className={`h-10 rounded-lg ${fieldErrors.logoutURL ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                  <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" className="h-10 rounded-lg" />
                   {fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
                   {!fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>One Portal Redirect Link</Label>
-                  <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder="https://one-portal.example.com" className={`h-10 rounded-lg ${fieldErrors.onePortalRedirectLink ? "border-destructive focus-visible:ring-destructive" : ""}`} />
+                  <Label className="flex items-center justify-between">
+                    One Portal Redirect Link
+                    <span className="text-[10px] border px-1.5 py-0.5 rounded-md font-medium border-[#7b0d15]/40 text-[#7b0d15] dark:border-[#f8d24e]/40 dark:text-[#f8d24e]">Optional</span>
+                  </Label>
+                  <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder="https://one-portal.example.com" className="h-10 rounded-lg" />
                   {fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
                   {!fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
                 </div>
@@ -360,7 +366,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
                           <Checkbox 
                             checked={isSelected} 
                             onCheckedChange={() => toggleGrant(grant)} 
-                            className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10" 
+                            className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10 data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-[#f8d24e] dark:data-checked:!border-[#f8d24e] dark:data-checked:!text-black" 
                           />
                           <FieldTitle className="justify-center text-center">{formatGrantName(grant)}</FieldTitle>
                         </Field>
@@ -369,12 +375,12 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
                   })}
                 </FieldGroup>
               </div>
-              {grants.length === 0 && <p className="mt-3 text-xs text-destructive">At least one grant is required.</p>}
+              {grants.length === 0 && <p className="mt-0 text-xs text-destructive">At least one grant is required.</p>}
 
               <div className="mt-6 grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Access Token expiration <span className="text-destructive">*</span></Label>
-                  <InputGroup className={`h-10 rounded-lg ${fieldErrors.accessTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
+                  <InputGroup className="h-10 rounded-lg">
                     <InputGroupInput type="number" required min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL} onChange={(e) => updateFieldValue("accessTokenTTL", e.target.value, setAccessTokenTTL)} />
                     <InputGroupAddon align="inline-end">
                       <InputGroupText>min</InputGroupText>
@@ -386,7 +392,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
 
                 <div className="space-y-2">
                   <Label>Refresh Token expiration <span className="text-destructive">*</span></Label>
-                  <InputGroup className={`h-10 rounded-lg ${fieldErrors.refreshTokenTTL ? "border-destructive focus-within:border-destructive focus-within:ring-destructive" : ""}`}>
+                  <InputGroup className="h-10 rounded-lg">
                     <InputGroupInput type="number" required min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL} onChange={(e) => updateFieldValue("refreshTokenTTL", e.target.value, setRefreshTokenTTL)} />
                     <InputGroupAddon align="inline-end">
                       <InputGroupText>hr</InputGroupText>
