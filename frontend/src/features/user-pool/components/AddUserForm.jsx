@@ -833,10 +833,10 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                 className="relative flex-1 items-start"
               >
                 <StepperTrigger className="relative z-10 flex flex-col gap-2.5 items-center w-full" onClick={() => { if(index + 1 < step) setStep(index + 1) }}>
-                  <StepperIndicator className="size-8 text-sm data-[state=inactive]:bg-secondary data-[state=completed]:bg-[#7b0d15] data-[state=completed]:text-[#ffffff] data-[state=active]:bg-[#7b0d15] data-[state=active]:border-[#7b0d15] data-[state=active]:text-[#ffffff]">{index + 1}</StepperIndicator>
+                  <StepperIndicator className="size-8 text-sm data-[state=inactive]:bg-secondary data-[state=completed]:bg-[#7b0d15] data-[state=completed]:text-[#ffffff] dark:data-[state=completed]:bg-white dark:data-[state=completed]:text-black data-[state=active]:bg-[#7b0d15] data-[state=active]:border-[#7b0d15] data-[state=active]:text-[#ffffff] dark:data-[state=active]:bg-white dark:data-[state=active]:border-white dark:data-[state=active]:text-black">{index + 1}</StepperIndicator>
                   <StepperTitle className="text-sm font-semibold whitespace-nowrap">{s.title}</StepperTitle>
                 </StepperTrigger>
-                {index < steps.length - 1 && <StepperSeparator className="absolute top-4 left-[50%] w-full z-0 h-1 data-[state=completed]:bg-[#7b0d15]" />}
+                {index < steps.length - 1 && <StepperSeparator className="absolute top-4 left-[50%] w-full z-0 h-1 data-[state=completed]:bg-[#7b0d15] dark:data-[state=completed]:bg-white" />}
               </StepperItem>
             ))}
           </StepperNav>
