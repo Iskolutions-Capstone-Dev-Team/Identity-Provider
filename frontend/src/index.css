@@ -17,6 +17,24 @@ body {
   min-height: 100%;
 }
 
+/* Remove default browser autofill background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: black !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active,
+html[class*="dark"] input:-webkit-autofill,
+html[data-theme="dark"] input:-webkit-autofill {
+  -webkit-text-fill-color: white !important;
+}
+
 .steps .step-primary {
   color: #991b1b !important;
 }
