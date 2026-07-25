@@ -453,11 +453,14 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
               </div>
             ) : (
               <div className="space-y-6 pt-3 pb-4 px-2">
-                {/* 1st Card: System Logo, Name, and Description */}
+                {/* 1st Card: System Logo */}
                 <Card className="bg-muted/30 border-border/40">
-                  <CardContent className="p-5 space-y-5">
+                  <CardContent className="px-5 py-0 space-y-5">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase">System Logo {!isView && <span className="text-red-500">*</span>}</h4>
+                      <p className="text-sm text-muted-foreground">Update the client's system logo.</p>
+                    </div>
                     <Field className="space-y-2">
-                      <FieldLabel>System Logo {!isView && <span className="text-destructive">*</span>}</FieldLabel>
                       <AppClientLogoUpload 
                         onFilesChange={handleLogoChange}
                         maxFiles={1}
@@ -468,8 +471,16 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                       />
                       {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
                     </Field>
+                  </CardContent>
+                </Card>
 
-                    <div className="space-y-5">
+                {/* 2nd Card: Client Details */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-0 space-y-5">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase">Client Details</h4>
+                      <p className="text-sm text-muted-foreground">Update the client's name and description.</p>
+                    </div>
                       {!isView && (
                         <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
                       )}
@@ -496,13 +507,16 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                           disabled={isView}
                         />
                       </div>
-                    </div>
                   </CardContent>
                 </Card>
 
-                {/* 2nd Card: URLs, Grants, Token Expiration */}
+                {/* 3rd Card: Application URLs */}
                 <Card className="bg-muted/30 border-border/40">
-                  <CardContent className="p-5 space-y-6">
+                  <CardContent className="px-5 py-0 space-y-6">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase">Application URLs</h4>
+                      <p className="text-sm text-muted-foreground">Update the base, redirect, logout, and One Portal redirect URLs.</p>
+                    </div>
                     <div className="grid gap-5 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Base URLs {!isView && <span className="text-destructive">*</span>}</Label>
@@ -536,9 +550,18 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                       </div>
                     </div>
 
-                    <div className="space-y-3 pt-2">
+                  </CardContent>
+                </Card>
+
+                {/* 4th Card: Grants & Token Expiration */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-0 space-y-8">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-sm uppercase">Grants {!isView && <span className="text-red-500">*</span>}</h4>
+                        <p className="text-sm text-muted-foreground">Select the grant types required for this client.</p>
+                      </div>
                       <Field className="space-y-2">
-                        <FieldLabel>Grants {!isView && <span className="text-destructive">*</span>}</FieldLabel>
                         <FieldGroup className="flex w-full flex-row flex-wrap gap-4">
                           {GRANT_OPTIONS.map((grant) => {
                             const isSelected = selectedGrants.includes(grant);
@@ -563,7 +586,11 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                       </Field>
                     </div>
 
-                    <div className="space-y-3 pt-2">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-sm uppercase">Token Expiration {!isView && <span className="text-red-500">*</span>}</h4>
+                        <p className="text-sm text-muted-foreground">Update the token expiration values for this client.</p>
+                      </div>
                       <div className="grid gap-5 md:grid-cols-2">
                         <div className="space-y-2">
                           <Label>Access Token expiration {!isView && <span className="text-destructive">*</span>}</Label>
