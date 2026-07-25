@@ -466,7 +466,7 @@ export default function UserPoolModal({
               <div className="space-y-6">
                 {/* 1st Card: Account Type */}
                 <Card className="bg-muted/30 border-border/40">
-                  <CardContent className="px-5 py-4 space-y-3">
+                  <CardContent className="px-5 py-0 space-y-4">
                     <div>
                       <h4 className="font-semibold text-sm">Account Type <span className="text-red-500">*</span></h4>
                       <p className="text-sm text-muted-foreground">Choose the user's account type.</p>
@@ -494,7 +494,7 @@ export default function UserPoolModal({
 
                 {/* 2nd Card: Role, Accessible, & Manageable Clients */}
                 <Card className="bg-muted/30 border-border/40">
-                  <CardContent className="px-5 py-4 space-y-6">
+                  <CardContent className="px-5 py-0 space-y-5">
                     {isAdminView && (
                       <div className="space-y-3">
                         <div>
@@ -577,7 +577,7 @@ export default function UserPoolModal({
 
                 {/* 3rd Card: Status */}
                 <Card className="bg-muted/30 border-border/40">
-                  <CardContent className="px-5 py-4 space-y-3">
+                  <CardContent className="px-5 py-0 space-y-4">
                     <div>
                       <h4 className="font-semibold text-sm">Status <span className="text-red-500">*</span></h4>
                       <p className="text-sm text-muted-foreground">Choose the user's account status.</p>
