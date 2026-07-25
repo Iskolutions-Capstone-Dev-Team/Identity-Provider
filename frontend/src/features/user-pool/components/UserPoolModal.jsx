@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Mail, CheckIcon, User, Copy, CopyCheck } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 
 const initialFormData = {
@@ -467,7 +468,7 @@ export default function UserPoolModal({
                 <Card className="bg-muted/30 border-border/40">
                   <CardContent className="px-5 py-4 space-y-3">
                     <div>
-                      <h4 className="font-semibold text-sm">Account Type</h4>
+                      <h4 className="font-semibold text-sm">Account Type <span className="text-red-500">*</span></h4>
                       <p className="text-sm text-muted-foreground">Choose the user's account type.</p>
                     </div>
                     {!canEditStatus ? (
@@ -578,7 +579,7 @@ export default function UserPoolModal({
                 <Card className="bg-muted/30 border-border/40">
                   <CardContent className="px-5 py-4 space-y-3">
                     <div>
-                      <h4 className="font-semibold text-sm">Status</h4>
+                      <h4 className="font-semibold text-sm">Status <span className="text-red-500">*</span></h4>
                       <p className="text-sm text-muted-foreground">Choose the user's account status.</p>
                     </div>
                     {!canEditStatus ? (
