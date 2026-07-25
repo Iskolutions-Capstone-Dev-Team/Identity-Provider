@@ -552,7 +552,11 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
 
               {showRoleDetails && (
                 <Card className="bg-muted/30 border-border/40">
-                  <CardContent className="p-5 space-y-5">
+                  <CardContent className="px-5 py-0 space-y-5">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase">Role Details</h4>
+                      <p className="text-sm text-muted-foreground">Enter the description.</p>
+                    </div>
                     <div>
                       <Field className="w-full">
                         <FieldLabel htmlFor="role-name">
@@ -608,13 +612,16 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
 
               {showPermissions && (
                 <Card className="bg-muted/30 border-border/40">
-                  <CardContent className="p-5 space-y-6">
+                  <CardContent className="px-5 py-0 space-y-6">
                     {isPermissionOptionsLoading && mergedPermissionOptions.length === 0 ? (
                       <div className="p-4 text-sm text-muted-foreground">Loading permissions...</div>
                     ) : mergedPermissionOptions.length > 0 ? (
                       <div className="space-y-2">
-                        <FieldLabel className="text-sm font-medium">Permissions</FieldLabel>
-                        <div className="space-y-6">
+                        <div>
+                          <h4 className="font-semibold text-sm uppercase">Permissions</h4>
+                          <p className="text-sm text-muted-foreground">Select the permissions assigned to this role.</p>
+                        </div>
+                        <div className="space-y-6 mt-4">
                           {PERMISSION_GROUPS.map((group, groupIdx) => {
                             const groupPermissions = mergedPermissionOptions.filter((p) =>
                               group.permissions.some(gp => gp.toLowerCase() === p.permission.toLowerCase())
