@@ -13,6 +13,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Field, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { AppClientLogoUpload } from "./AppClientLogoUpload";
+import { Separator } from "@/components/ui/separator";
 import { Stepper, StepperContent, StepperIndicator, StepperItem, StepperNav, StepperPanel, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";
 import { CheckIcon, LoaderCircleIcon } from "lucide-react";
 
@@ -203,13 +204,16 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
   };
 
   const renderSectionHeader = (title, description, isRequired = false) => (
-    <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
-      <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
-        {title} {isRequired && <span className="text-destructive">*</span>}
-      </CardTitle>
-      <CardDescription className="text-sm text-muted-foreground m-0">
-        {description}
-      </CardDescription>
+    <CardHeader className="!flex !flex-col items-start !gap-3 pb-0 w-full">
+      <div className="space-y-1">
+        <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
+          {title} {isRequired && <span className="text-destructive">*</span>}
+        </CardTitle>
+        <CardDescription className="text-sm text-muted-foreground m-0">
+          {description}
+        </CardDescription>
+      </div>
+      <Separator />
     </CardHeader>
   );
 

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
 
 function AppClientComboboxField({ options, selectedIds, onChange, placeholder, isDarkMode, lockedSelectedValues = [] }) {
@@ -99,13 +100,16 @@ export default function RegistrationCreateForm({
       <form id="registration-config-form" noValidate onSubmit={handleSubmit}>
         <div>
           <Card className="w-full bg-card border-border shadow-sm !gap-6">
-            <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
-              <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
-                ACCOUNT TYPE
-              </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground m-0">
-                Enter the account type name and pre-approve app clients.
-              </CardDescription>
+            <CardHeader className="!flex !flex-col items-start !gap-3 pb-0 w-full">
+              <div className="space-y-1">
+                <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
+                  ACCOUNT TYPE
+                </CardTitle>
+                <CardDescription className="text-sm text-muted-foreground m-0">
+                  Enter the account type name and pre-approve app clients.
+                </CardDescription>
+              </div>
+              <Separator />
             </CardHeader>
             <CardContent className="space-y-5">
               <div>

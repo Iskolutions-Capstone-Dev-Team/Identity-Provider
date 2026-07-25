@@ -279,13 +279,16 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
           transition={{ duration: 0.28, ease: "easeOut" }}
         >
           <Card className="w-full bg-card border-border shadow-sm !gap-6">
-            <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
-              <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
-                ROLE DETAILS
-              </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground m-0">
-                Enter the role's basic details.
-              </CardDescription>
+            <CardHeader className="!flex !flex-col items-start !gap-3 pb-0 w-full">
+              <div className="space-y-1">
+                <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
+                  ROLE DETAILS
+                </CardTitle>
+                <CardDescription className="text-sm text-muted-foreground m-0">
+                  Enter the role's basic details.
+                </CardDescription>
+              </div>
+              <Separator />
             </CardHeader>
             <CardContent className="space-y-5">
               <div>
@@ -324,13 +327,16 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
           transition={{ duration: 0.28, ease: "easeOut" }}
         >
           <Card className="w-full bg-card border-border shadow-sm !gap-6">
-            <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
-              <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
-                PERMISSIONS
-              </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground m-0">
-                Assign permissions for this role.
-              </CardDescription>
+            <CardHeader className="!flex !flex-col items-start !gap-3 pb-0 w-full">
+              <div className="space-y-1">
+                <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
+                  PERMISSIONS
+                </CardTitle>
+                <CardDescription className="text-sm text-muted-foreground m-0">
+                  Assign permissions for this role.
+                </CardDescription>
+              </div>
+              <Separator />
             </CardHeader>
             <CardContent className="space-y-5">
               {isPermissionOptionsLoading && mergedPermissionOptions.length === 0 ? (

@@ -124,7 +124,7 @@ function AppClientComboboxField({ label, description, options, selectedIds, onCh
   
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-col space-y-0 w-full">
+      <div className="flex flex-col space-y-1 w-full mb-1">
         <h3 className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
           {label} <span className="text-red-500">*</span>
         </h3>
@@ -132,6 +132,7 @@ function AppClientComboboxField({ label, description, options, selectedIds, onCh
           {description}
         </p>
       </div>
+      <Separator />
       <Field className="w-full">
         <Combobox
           multiple
@@ -611,13 +612,16 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
     ? SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE
     : selectedAccountTypeOption?.label || "Selected";
   const renderSectionHeader = (title, description, isRequired = false) => (
-    <CardHeader className="!flex !flex-col items-start !gap-0 pb-0 w-full">
-      <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
-        {title} {isRequired && <span className="text-red-500">*</span>}
-      </CardTitle>
-      <CardDescription className="text-sm text-muted-foreground m-0">
-        {description}
-      </CardDescription>
+    <CardHeader className="!flex !flex-col items-start !gap-3 pb-0 w-full">
+      <div className="space-y-1">
+        <CardTitle className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
+          {title} {isRequired && <span className="text-red-500">*</span>}
+        </CardTitle>
+        <CardDescription className="text-sm text-muted-foreground m-0">
+          {description}
+        </CardDescription>
+      </div>
+      <Separator />
     </CardHeader>
   );
 
