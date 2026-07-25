@@ -1,4 +1,5 @@
-import { EmailIcon, ShieldIcon, FacebookIcon } from "./authIcons";
+import { ShieldAlert } from "lucide-react";
+import { EmailIcon, FacebookIcon } from "./authIcons";
 
 export default function LoginFooter() {
   return (
@@ -6,7 +7,7 @@ export default function LoginFooter() {
       <div className="mx-auto flex w-full max-w-[34rem] flex-col items-center justify-center gap-4 border-t border-white/15 pt-4 sm:flex-row sm:gap-12 lg:mx-0 lg:justify-start">
         <aside className="flex items-center justify-center gap-4 text-center sm:justify-start sm:text-left">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center text-white">
-            <ShieldIcon />
+            <ShieldAlert className="size-10" strokeWidth={1.5} />
           </div>
           <div className="space-y-1.5 text-xs font-medium tracking-[0.12em] text-white/70 sm:text-sm">
             <a href="https://www.pup.edu.ph/privacy/" className="block transition duration-300 hover:text-[#f8d24e]">
