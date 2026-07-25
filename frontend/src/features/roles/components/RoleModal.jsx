@@ -557,6 +557,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                       <h4 className="font-semibold text-sm uppercase">Role Details</h4>
                       <p className="text-sm text-muted-foreground">Enter the description.</p>
                     </div>
+                    <Separator />
                     <div>
                       <Field className="w-full">
                         <FieldLabel htmlFor="role-name">
@@ -621,6 +622,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                           <h4 className="font-semibold text-sm uppercase">Permissions</h4>
                           <p className="text-sm text-muted-foreground">Select the permissions assigned to this role.</p>
                         </div>
+                        <Separator />
                         <div className="space-y-6 mt-4">
                           {PERMISSION_GROUPS.map((group, groupIdx) => {
                             const groupPermissions = mergedPermissionOptions.filter((p) =>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
+import { Separator } from "@/components/ui/separator";
 
 function AppClientComboboxField({ options, selectedIds, onChange, placeholder, isDarkMode, lockedSelectedValues = [] }) {
   const anchor = useComboboxAnchor();
@@ -196,13 +197,15 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
             </div>
           ) : (
             <div className="space-y-6 pt-3 pb-4 px-2">
-              {/* 1st Card: Account Type */}
-              <Card className="bg-muted/30 border-border/40">
-                <CardContent className="p-5">
-                  <Field className="w-full">
-                    <FieldLabel htmlFor="account-type-name">
-                      Account Type {!isLockedDefaultAccountType && <span className="text-destructive">*</span>}
-                    </FieldLabel>
+                {/* 1st Card: Account Type */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-0 space-y-5">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase">Account Type {!isLockedDefaultAccountType && <span className="text-red-500">*</span>}</h4>
+                      <p className="text-sm text-muted-foreground">{isLockedDefaultAccountType ? "Default account type names cannot be changed." : "Update the account type name."}</p>
+                    </div>
+                    <Separator />
+                    <Field className="w-full">
                     {isLockedDefaultAccountType ? (
                       <Input
                         id="account-type-name"
@@ -234,11 +237,13 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
 
               {/* 2nd Card: Accessible Clients */}
               <Card className="bg-muted/30 border-border/40">
-                <CardContent className="p-5">
+                <CardContent className="px-5 py-0 space-y-5">
+                  <div>
+                    <h4 className="font-semibold text-sm uppercase">Client List</h4>
+                    <p className="text-sm text-muted-foreground">Select the app clients to pre-approve for this account type.</p>
+                  </div>
+                  <Separator />
                   <Field className="w-full">
-                    <FieldLabel>
-                      Accessible Clients
-                    </FieldLabel>
                     <div>
                       <AppClientComboboxField
                         options={appClientOptions}

@@ -468,9 +468,10 @@ export default function UserPoolModal({
                 <Card className="bg-muted/30 border-border/40">
                   <CardContent className="px-5 py-0 space-y-4">
                     <div>
-                      <h4 className="font-semibold text-sm">Account Type <span className="text-red-500">*</span></h4>
+                      <h4 className="font-semibold text-sm uppercase">Account Type <span className="text-red-500">*</span></h4>
                       <p className="text-sm text-muted-foreground">Choose the user's account type.</p>
                     </div>
+                    <Separator />
                     {!canEditStatus ? (
                       <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2 items-center">
                         <Badge variant="outline" className="capitalize">{accountTypeDisplayLabel || formData.accountType || "-"}</Badge>
@@ -498,9 +499,10 @@ export default function UserPoolModal({
                     {isAdminView && (
                       <div className="space-y-3">
                         <div>
-                          <h4 className="font-semibold text-sm">Role</h4>
+                          <h4 className="font-semibold text-sm uppercase">Role</h4>
                           <p className="text-sm text-muted-foreground">Choose the role for this admin account.</p>
                         </div>
+                        <Separator />
                         {!canEditRoleField ? (
                           <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                             {roleAccessItems.length > 0 ? (
@@ -525,9 +527,10 @@ export default function UserPoolModal({
 
                     <div className="space-y-3">
                       <div>
-                        <h4 className="font-semibold text-sm">Accessible Clients</h4>
+                        <h4 className="font-semibold text-sm uppercase">Accessible Clients</h4>
                         <p className="text-sm text-muted-foreground">Choose which clients are accessible for sign-in.</p>
                       </div>
+                      <Separator />
                       {!canEditAccessField ? (
                         <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                           {clientAccessDisplayItems.length > 0 ? (
@@ -550,9 +553,10 @@ export default function UserPoolModal({
 
                     <div className="space-y-3">
                       <div>
-                        <h4 className="font-semibold text-sm">Manageable Clients</h4>
+                        <h4 className="font-semibold text-sm uppercase">Manageable Clients</h4>
                         <p className="text-sm text-muted-foreground">Choose which clients this admin can manage.</p>
                       </div>
+                      <Separator />
                       {!canEditAccessField ? (
                         <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                           {manageableClientDisplayItems.length > 0 ? (
@@ -579,9 +583,10 @@ export default function UserPoolModal({
                 <Card className="bg-muted/30 border-border/40">
                   <CardContent className="px-5 py-0 space-y-4">
                     <div>
-                      <h4 className="font-semibold text-sm">Status <span className="text-red-500">*</span></h4>
+                      <h4 className="font-semibold text-sm uppercase">Status <span className="text-red-500">*</span></h4>
                       <p className="text-sm text-muted-foreground">Choose the user's account status.</p>
                     </div>
+                    <Separator />
                     {!canEditStatus ? (
                       <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2 items-center">
                         {formData.status?.toLowerCase() === 'active' ? (

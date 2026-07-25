@@ -460,6 +460,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                       <h4 className="font-semibold text-sm uppercase">System Logo {!isView && <span className="text-red-500">*</span>}</h4>
                       <p className="text-sm text-muted-foreground">Update the client's system logo.</p>
                     </div>
+                    <Separator />
                     <Field className="space-y-2">
                       <AppClientLogoUpload 
                         onFilesChange={handleLogoChange}
@@ -481,6 +482,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                       <h4 className="font-semibold text-sm uppercase">Client Details</h4>
                       <p className="text-sm text-muted-foreground">Update the client's name and description.</p>
                     </div>
+                    <Separator />
                       {!isView && (
                         <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
                       )}
@@ -517,6 +519,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                       <h4 className="font-semibold text-sm uppercase">Application URLs</h4>
                       <p className="text-sm text-muted-foreground">Update the base, redirect, logout, and One Portal redirect URLs.</p>
                     </div>
+                    <Separator />
                     <div className="grid gap-5 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Base URLs {!isView && <span className="text-destructive">*</span>}</Label>
@@ -561,6 +564,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                         <h4 className="font-semibold text-sm uppercase">Grants {!isView && <span className="text-red-500">*</span>}</h4>
                         <p className="text-sm text-muted-foreground">Select the grant types required for this client.</p>
                       </div>
+                      <Separator />
                       <Field className="space-y-2">
                         <FieldGroup className="flex w-full flex-row flex-wrap gap-4">
                           {GRANT_OPTIONS.map((grant) => {
@@ -591,6 +595,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                         <h4 className="font-semibold text-sm uppercase">Token Expiration {!isView && <span className="text-red-500">*</span>}</h4>
                         <p className="text-sm text-muted-foreground">Update the token expiration values for this client.</p>
                       </div>
+                      <Separator />
                       <div className="grid gap-5 md:grid-cols-2">
                         <div className="space-y-2">
                           <Label>Access Token expiration {!isView && <span className="text-destructive">*</span>}</Label>
