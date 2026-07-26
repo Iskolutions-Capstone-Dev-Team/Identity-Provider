@@ -3,6 +3,7 @@ import LoginHeader from "../components/LoginHeader";
 import LoginFooter from "../components/LoginFooter";
 import { authPageBackground, authPagePatternStyle } from "../utils/authBackground";
 import { clearAccessibilityWidget } from "../../components/AccessibilityWidget";
+import { Badge } from "@/components/ui/badge";
 
 export default function AuthLayout({ children, allowPageScroll = false }) {
   useEffect(() => {
@@ -28,23 +29,23 @@ export default function AuthLayout({ children, allowPageScroll = false }) {
 
           <div className="hidden flex-1 items-center lg:flex lg:py-0">
             <section className="max-w-full lg:max-w-[34rem]">
-              <h1 className="whitespace-nowrap text-[clamp(2rem,5vw,3.15rem)] font-bold leading-[1.05] text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.35)]">
+              <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.35)] whitespace-nowrap">
                 Welcome <span className="text-[#ffd21a]">PUPTian!</span>
               </h1>
 
               <div className="mt-5 h-1.5 w-20 rounded-full bg-[#ffd21a] lg:mt-7" />
 
-              <p className="mt-5 max-w-md text-sm leading-6 text-white/65 sm:text-base lg:mt-7">
+              <p className="text-sm leading-7 [&:not(:first-child)]:mt-6 text-white/65 max-w-[500px]">
                 One secure gateway for connected PUPT applications, services, and platforms.
               </p>
 
-              <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.12em] text-white/85 lg:mt-6">
-                <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2">
+              <div className="mt-4 flex flex-wrap gap-3 lg:mt-6">
+                <Badge variant="outline" className="rounded-full border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/85 hover:bg-white/20">
                   Centralized Access
-                </span>
-                <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2">
+                </Badge>
+                <Badge variant="outline" className="rounded-full border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/85 hover:bg-white/20">
                   Single Sign-On
-                </span>
+                </Badge>
               </div>
             </section>
           </div>
