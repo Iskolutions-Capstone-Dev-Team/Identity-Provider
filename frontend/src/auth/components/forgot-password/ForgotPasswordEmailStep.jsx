@@ -1,5 +1,5 @@
 import ErrorAlert from "../../../components/ErrorAlert";
-import { MailIcon } from "./ForgotPasswordIcons";
+import { Mail } from "lucide-react";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
 
@@ -21,7 +21,7 @@ export default function ForgotPasswordEmailStep({ email, setEmail, errorMessage,
 
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center text-[#7b0d15]/60 z-10">
-              <MailIcon />
+              <Mail className="size-5" />
             </span>
             <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email address" autoFocus required
               className={`h-12 w-full rounded-xl bg-background pl-10 pr-4 text-base shadow-sm ${
