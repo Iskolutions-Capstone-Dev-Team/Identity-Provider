@@ -3,7 +3,10 @@ import { Link } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
 import { isInvitationForbiddenError, registrationActivationService } from "../services/registrationActivationService";
 import { buildLoginPath } from "../utils/loginRoute";
-import { EmailIcon, PasswordIcon, EyeIcon, EyeSlashIcon } from "./authIcons";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Card, CardContent } from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 
 const initialPasswordValues = {
   password: "",
@@ -221,8 +224,8 @@ export default function RegisterPasswordSetupForm({ clientId, email = "", invita
 
   return (
     <div className="relative z-20 w-full max-w-[34rem] px-1 sm:px-0">
-      <div className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
-        <div className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-7 sm:px-8 sm:py-8">
+      <Card className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
+        <CardContent className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-7 sm:px-8 sm:py-8">
           {isComplete ? (
             <PasswordSavedState loginPath={loginPath} />
           ) : (
@@ -240,10 +243,10 @@ export default function RegisterPasswordSetupForm({ clientId, email = "", invita
                 </div>
 
                 {maskedEmail ? (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/85">
-                    <EmailIcon />
+                  <Badge variant="outline" className="inline-flex items-center gap-2 border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/85">
+                    <Mail className="size-4" strokeWidth={1.5} />
                     {maskedEmail}
-                  </div>
+                  </Badge>
                 ) : null}
               </div>
 
@@ -254,7 +257,7 @@ export default function RegisterPasswordSetupForm({ clientId, email = "", invita
                   <FormLabel required>Password</FormLabel>
                   <div className="relative">
                     <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
-                      <PasswordIcon />
+                      <Lock className="size-5" />
                     </span>
                     <input type={showPassword ? "text" : "password"} value={passwordValues.password}
                       onChange={(event) =>
@@ -265,14 +268,8 @@ export default function RegisterPasswordSetupForm({ clientId, email = "", invita
                       placeholder="Create your password"
                       className={getInputClassName(passwordErrors.password, true)}
                     />
-                    <button type="button"
-                      onClick={() =>
-                        setShowPassword((currentValue) => !currentValue)
-                      }
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center text-slate-400 transition duration-300 hover:text-[#7b0d15]" aria-label={showPassword ? "Hide password" : "Show password"}>
+                      {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                     </button>
                   </div>
                   <FieldError message={passwordErrors.password} />
@@ -317,15 +314,15 @@ export default function RegisterPasswordSetupForm({ clientId, email = "", invita
                 </div>
 
                 <div className="space-y-3 pt-1">
-                  <button type="submit" disabled={isSubmitting} className="h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:border-[#f8d24e]/40 disabled:bg-[#f8d24e]/60 disabled:text-[#7b0d15]/70 disabled:shadow-none">
+                  <Button type="submit" disabled={isSubmitting} className="h-12 w-full rounded-xl bg-[#ffd700] text-sm font-bold text-[#6f0f15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:bg-[#f8d24e]/60 disabled:text-[#7b0d15]/70 disabled:shadow-none">
                     {isSubmitting ? "SAVING..." : "SAVE PASSWORD"}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -343,10 +340,13 @@ function PasswordSavedState({ loginPath }) {
           Your account is ready. You can now sign in using your new password.
         </p>
       </div>
-
-      <Link to={loginPath} className="flex h-12 w-full items-center justify-center rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold tracking-[0.04em] text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
-        Go to Login
-      </Link>
+      <div className="pt-2">
+        <Button asChild className="h-12 w-full rounded-xl bg-[#ffd700] text-sm font-bold text-[#6f0f15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:bg-[#991b1b] hover:text-white">
+          <Link to={loginPath}>
+            Go to Login
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 }

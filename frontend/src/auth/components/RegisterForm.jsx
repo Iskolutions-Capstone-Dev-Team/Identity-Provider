@@ -273,20 +273,12 @@ export default function RegisterForm({ clientId }) {
     }
   };
 
-  const handleVerificationChange = (index, value) => {
-    if (!/^\d?$/.test(value)) {
-      return;
-    }
-
-    const nextCode = [...verificationCode];
-    nextCode[index] = value;
+  const handleVerificationChange = (value) => {
+    const nextCode = value.split("");
+    while (nextCode.length < verificationLength) nextCode.push("");
     setVerificationCode(nextCode);
     setVerificationError("");
     setError("");
-
-    if (value && index < verificationLength - 1) {
-      verificationInputsRef.current[index + 1]?.focus();
-    }
   };
 
   const handleVerificationKeyDown = (index, event) => {
