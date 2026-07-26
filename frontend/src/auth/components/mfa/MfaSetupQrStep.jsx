@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 
-export default function MfaSetupQrStep({ qrCodeUrl, isLoading, colorMode = "dark", onNext }) {
+export default function MfaSetupQrStep({ qrCodeUrl, isLoading, colorMode = "dark", hideButtons = false, onNext }) {
   const isDarkMode = colorMode === "dark";
   const titleClassName = `scroll-m-20 text-2xl font-semibold tracking-tight text-center ${isDarkMode ? "text-white" : "text-foreground"}`;
 
@@ -36,9 +36,11 @@ export default function MfaSetupQrStep({ qrCodeUrl, isLoading, colorMode = "dark
           )}
         </div>
 
-        <Button onClick={onNext} disabled={isLoading || !qrCodeUrl} className="h-12 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300">
-          Next
-        </Button>
+        {!hideButtons && (
+          <Button onClick={onNext}  disabled={isLoading || !qrCodeUrl} className="h-12 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300">
+            Next
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

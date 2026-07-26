@@ -221,6 +221,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
                   qrCodeUrl={qrCodeUrl}
                   isLoading={!qrCodeUrl && !error}
                   colorMode={colorMode}
+                  hideButtons={true}
                   onNext={() => {
                     setCode("");
                     setError("");
