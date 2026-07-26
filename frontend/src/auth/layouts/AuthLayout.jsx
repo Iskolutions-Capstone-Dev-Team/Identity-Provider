@@ -4,6 +4,7 @@ import LoginFooter from "../components/LoginFooter";
 import { authPageBackground, authPagePatternStyle } from "../utils/authBackground";
 import { clearAccessibilityWidget } from "../../components/AccessibilityWidget";
 import { Badge } from "@/components/ui/badge";
+import DotField from "@/components/ui/DotField";
 
 export default function AuthLayout({ children, allowPageScroll = false }) {
   useEffect(() => {
@@ -16,8 +17,24 @@ export default function AuthLayout({ children, allowPageScroll = false }) {
       }`}
       style={{ background: authPageBackground }}
     >
+      <div className="absolute inset-0 overflow-hidden">
+        <DotField
+          dotRadius={1.5}
+          dotSpacing={14}
+          bulgeStrength={67}
+          glowRadius={160}
+          sparkle={false}
+          waveAmplitude={0}
+          cursorRadius={500}
+          cursorForce={0.1}
+          bulgeOnly
+          gradientFrom="rgba(255, 255, 255, 0.15)"
+          gradientTo="rgba(255, 255, 255, 0.05)"
+          glowColor="rgba(0, 0, 0, 0.2)"
+        />
+      </div>
 
-      <div className={`relative mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-5 py-5 sm:px-8 lg:grid lg:grid-cols-[minmax(28rem,1fr)_minmax(27rem,35rem)] lg:items-stretch lg:gap-6 lg:px-10 lg:py-7 xl:grid-cols-[minmax(32rem,1fr)_minmax(30rem,37rem)] xl:gap-8 ${
+      <div className={`relative z-10 mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-5 py-5 sm:px-8 lg:grid lg:grid-cols-[minmax(28rem,1fr)_minmax(27rem,35rem)] lg:items-stretch lg:gap-6 lg:px-10 lg:py-7 xl:grid-cols-[minmax(32rem,1fr)_minmax(30rem,37rem)] xl:gap-8 ${
           allowPageScroll ? "" : "lg:h-screen lg:min-h-0"
         }`}
       >
