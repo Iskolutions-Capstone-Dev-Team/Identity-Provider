@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { authService } from "../services/authService";
 import ErrorAlert from "../../components/ErrorAlert";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 import { buildAccessDeniedPath } from "../utils/loginRoute";
 import { beginPendingMfaSession } from "../utils/authCookies";
-import { EmailIcon, PasswordIcon, EyeIcon, EyeSlashIcon } from "./authIcons";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Separator } from "../../components/ui/separator";
+import { Card, CardContent } from "../../components/ui/card";
 
 export default function LoginForm({ clientId, redirectUri = "", initialError = "", onLoginSuccess }) {
   const navigate = useNavigate();
@@ -95,17 +96,6 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
     }));
   };
 
-  const handleEmailBlur = () => {
-    const emailError = getEmailError(email);
-
-    setFieldErrors((prev) => ({
-      ...prev,
-      email: emailError,
-    }));
-
-    setError(emailError);
-  };
-
   const handlePasswordChange = (e) => {
     const nextPassword = e.target.value;
     setPassword(nextPassword);
@@ -115,17 +105,6 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
       ...prev,
       password: "",
     }));
-  };
-
-  const handlePasswordBlur = () => {
-    const passwordError = getPasswordError(password);
-
-    setFieldErrors((prev) => ({
-      ...prev,
-      password: passwordError,
-    }));
-
-    setError(passwordError);
   };
 
   const handleSubmit = async (e) => {
@@ -180,8 +159,8 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
   return (
     <>
       <div className="w-full max-w-[34.5rem] px-1 sm:px-0">
-        <div className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
-          <div className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 sm:py-7 lg:px-10">
+        <Card className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
+          <CardContent className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 sm:py-7 lg:px-10">
             <div className="space-y-5">
               <div className="space-y-3 text-center">
                 <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="float-logo mx-auto block h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)] transition duration-300 hover:scale-105"/>
@@ -209,9 +188,9 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                   </label>
                   <div className="relative">
                     <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
-                      <EmailIcon />
+                      <Mail className="size-5" />
                     </span>
-                    <Input type="email" value={email} onChange={handleEmailChange} onBlur={handleEmailBlur} required placeholder="Enter your email"
+                    <Input type="email" value={email} onChange={handleEmailChange} required placeholder="Enter your email"
                       className={`h-12 w-full rounded-xl bg-background pl-10 pr-4 text-base shadow-sm ${
                         fieldErrors.email
                           ? "border-destructive focus-visible:ring-destructive"
@@ -243,9 +222,9 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
 
                   <div className="relative w-full">
                     <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
-                      <PasswordIcon />
+                      <Lock className="size-5" />
                     </span>
-                    <Input type={showPassword ? "text" : "password"} value={password} onChange={handlePasswordChange} onBlur={handlePasswordBlur} required placeholder="Enter your password"
+                    <Input type={showPassword ? "text" : "password"} value={password} onChange={handlePasswordChange} required placeholder="Enter your password"
                       className={`h-12 w-full rounded-xl bg-background pl-10 pr-10 text-base shadow-sm ${
                         fieldErrors.password
                           ? "border-destructive focus-visible:ring-destructive"
@@ -254,9 +233,9 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                     />
                     <button type="button" onClick={toggleShowPassword} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]" aria-label={showPassword ? "Hide password" : "Show password"}>
                       {showPassword ? (
-                        <EyeSlashIcon />
+                        <EyeOff className="size-5" />
                       ) : (
-                        <EyeIcon />
+                        <Eye className="size-5" />
                       )}
                     </button>
                   </div>
@@ -285,8 +264,8 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                 </Link>
               </form>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       <ForgotPasswordModal
