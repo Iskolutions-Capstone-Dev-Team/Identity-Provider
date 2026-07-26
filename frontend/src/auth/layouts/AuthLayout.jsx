@@ -16,9 +16,6 @@ export default function AuthLayout({ children, allowPageScroll = false }) {
       }`}
       style={{ background: authPageBackground }}
     >
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 opacity-45 [mask-image:linear-gradient(90deg,#000_0%,transparent_24%,transparent_76%,#000_100%)]" style={authPagePatternStyle}/>
-      </div>
 
       <div className={`relative mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-5 py-5 sm:px-8 lg:grid lg:grid-cols-[minmax(28rem,1fr)_minmax(27rem,35rem)] lg:items-stretch lg:gap-6 lg:px-10 lg:py-7 xl:grid-cols-[minmax(32rem,1fr)_minmax(30rem,37rem)] xl:gap-8 ${
           allowPageScroll ? "" : "lg:h-screen lg:min-h-0"
