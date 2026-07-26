@@ -234,6 +234,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
                   backupCodes={backupCodes}
                   isSaving={isSaving}
                   colorMode={colorMode}
+                  hideButtons={true}
                   onCodeChange={(value) => setCode(getDigits(value))}
                   onNameChange={setName}
                   onSubmit={handleSaveAuthenticator}
