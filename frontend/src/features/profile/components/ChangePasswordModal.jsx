@@ -432,7 +432,7 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()}>
+      <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()} dismissible={false}>
         <DialogContent className="sm:max-w-2xl" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
           <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
             <DialogTitle>{currentStepMeta.title}</DialogTitle>
