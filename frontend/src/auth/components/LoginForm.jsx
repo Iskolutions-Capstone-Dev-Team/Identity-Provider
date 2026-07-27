@@ -163,7 +163,7 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
           <CardContent className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 sm:py-7 lg:px-10">
             <div className="space-y-5">
               <div className="space-y-3 text-center">
-                <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="float-logo mx-auto block h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)] transition duration-300 hover:scale-105"/>
+                <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="mx-auto block h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)] transition duration-300 hover:scale-105"/>
                 <div className="space-y-2 text-center">
                   <h2 className="text-2xl font-semibold tracking-tight text-white">
                     Sign in <span className="text-[#ffd700]">PUPTian!</span>
