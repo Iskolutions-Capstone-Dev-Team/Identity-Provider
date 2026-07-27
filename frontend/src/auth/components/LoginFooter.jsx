@@ -1,5 +1,7 @@
 import { ShieldAlert } from "lucide-react";
 import { EmailIcon, FacebookIcon } from "./authIcons";
+import { Link } from "react-router-dom";
+import { ROUTE_PATHS } from "../../routes/routePaths";
 
 export default function LoginFooter() {
   return (
@@ -10,9 +12,9 @@ export default function LoginFooter() {
             <ShieldAlert className="size-10" strokeWidth={1.5} />
           </div>
           <div className="space-y-1.5 text-xs font-medium tracking-[0.12em] text-white/70 sm:text-sm">
-            <a href="https://www.pup.edu.ph/privacy/" className="block transition duration-300 hover:text-[#f8d24e]">
+            <Link to={ROUTE_PATHS.PRIVACY_POLICY} className="block transition duration-300 hover:text-[#f8d24e]">
               Privacy Policy
-            </a>
+            </Link>
             <a href="https://www.pup.edu.ph/terms/" className="block transition duration-300 hover:text-[#f8d24e]">
               Terms of Service
             </a>
