@@ -19,4 +19,6 @@ export const ROUTE_PATHS = Object.freeze({
   REGISTRATION: "/registration",
   REGISTRATION_CREATE: "/registration/create",
   PROFILE: "/profile",
+  PRIVACY_POLICY: "/privacy-policy",
+  INTERNAL_PRIVACY_POLICY: "/internal/privacy-policy",
 });
