@@ -5,18 +5,9 @@ import { Separator } from "../../../components/ui/separator";
 
 function MfaMethodButton({ label, icon, isActive, isLoading = false, loadingText = "Checking...", disabled = false, onClick }) {
   return (
-    <Button variant="outline" className={`group/button h-auto justify-start gap-4 px-4 py-3 text-left w-full transition duration-300 ${isActive ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-white hover:bg-[#ffd700]/20 hover:text-white" : "border-white/12 bg-white/6 text-white/80 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white"}`} onClick={onClick} disabled={disabled || isLoading}>
-      <div className={`rounded-full flex size-10 shrink-0 items-center justify-center ${isActive ? "bg-[#ffd700]/20 text-[#ffd700]" : "bg-white/10 text-white/70 group-hover/button:bg-[#ffd700]/20 group-hover/button:text-[#ffd700]"}`}>
-        {icon}
-      </div>
-      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-        <span className="truncate font-semibold">{label}</span>
-        {isLoading && (
-          <span className="text-white/60 text-xs font-normal truncate">
-            {loadingText}
-          </span>
-        )}
-      </div>
+    <Button variant="outline" type="button" className={`h-12 w-full flex items-center justify-center gap-2 rounded-xl transition duration-300 ${isActive ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-[#ffd700] hover:bg-[#ffd700]/20 hover:text-[#ffd700]" : "border-white/12 bg-white/6 text-white/70 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-[#ffd700]"}`} onClick={onClick} disabled={disabled || isLoading}>
+      {icon}
+      <span className="text-sm">{isLoading ? loadingText : label}</span>
     </Button>
   );
 }
@@ -47,7 +38,7 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
       <form onSubmit={onVerify} className="space-y-4">
         <MfaMethodButton
           label="Email"
-          icon={<Mail className="size-5" />}
+          icon={<Mail className="size-4" />}
           isActive={isEmailMode}
           onClick={onSelectEmail}
         />
@@ -75,28 +66,20 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
 
       <div className="flex items-center gap-4">
         <Separator className="flex-1 bg-white/20" />
-        <span className="text-sm font-medium text-white/70">other verification methods</span>
+        <span className="text-sm font-medium text-white/70">Or continue with</span>
         <Separator className="flex-1 bg-white/20" />
       </div>
 
-      <div className="space-y-3">
-        <MfaMethodButton
-          label="Authenticator app"
-          icon={<Smartphone className="size-5" />}
-          isActive={isAuthenticatorMode}
-          isLoading={isCheckingAuthenticators}
-          disabled={isCheckingAuthenticators}
-          onClick={onSelectAuthenticator}
-        />
+      <div className="flex gap-4">
+        <Button type="button" variant="outline" className={`h-12 flex-1 flex items-center justify-center gap-2 rounded-xl transition duration-300 ${isAuthenticatorMode ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-[#ffd700] hover:bg-[#ffd700]/20 hover:text-[#ffd700]" : "border-white/12 bg-white/6 text-white/70 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-[#ffd700]"}`} onClick={onSelectAuthenticator} disabled={isCheckingAuthenticators}>
+          <Smartphone className="size-4" />
+          <span className="text-sm">Authenticator</span>
+        </Button>
 
-        <MfaMethodButton
-          label="Passkey"
-          icon={<KeySquare className="size-5" />}
-          isActive={isPasskeyMode}
-          isLoading={isCheckingPasskey}
-          disabled={isCheckingPasskey}
-          onClick={onSelectPasskey}
-        />
+        <Button type="button" variant="outline" className={`h-12 flex-1 flex items-center justify-center gap-2 rounded-xl transition duration-300 ${isPasskeyMode ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-[#ffd700] hover:bg-[#ffd700]/20 hover:text-[#ffd700]" : "border-white/12 bg-white/6 text-white/70 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-[#ffd700]"}`} onClick={onSelectPasskey} disabled={isCheckingPasskey}>
+          <KeySquare className="size-4" />
+          <span className="text-sm">Passkey</span>
+        </Button>
       </div>
 
       {onCancel ? (
