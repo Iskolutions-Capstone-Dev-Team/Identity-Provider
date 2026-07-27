@@ -1,19 +1,22 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { User, Database, AlertTriangle } from "lucide-react";
 import { buildLogoutPath } from "../auth/utils/logoutRoute";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ROUTE_PATHS } from "../routes/routePaths";
+import PrivacyPolicyModal from "../pages/PrivacyPolicyModal";
 
 export default function TermsAgreementModal({ open, onClose, onContinue, colorMode = "light", currentUser = null }) {
   const navigate = useNavigate();
   const [agreed, setAgreed] = useState(false);
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const isDarkMode = colorMode === "dark";
 
   const linkClassName = isDarkMode
-    ? "font-semibold text-[#ffe28a] underline decoration-[#ffe28a] underline-offset-4 transition hover:text-[#fff1ba] outline-none focus:outline-none focus-visible:outline-none"
-    : "font-semibold text-[#7b0d15] underline decoration-[#7b0d15] underline-offset-4 transition hover:text-[#5a0b12] outline-none focus:outline-none focus-visible:outline-none";
+    ? "font-semibold text-[#ffe28a] transition hover:text-[#fff1ba] outline-none focus:outline-none focus-visible:outline-none hover:underline cursor-pointer"
+    : "font-semibold text-[#7b0d15] transition hover:text-[#5a0b12] outline-none focus:outline-none focus-visible:outline-none hover:underline cursor-pointer";
 
   useEffect(() => {
     if (open) {
@@ -43,7 +46,7 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
   return (
     <Dialog open={open} dismissible={false}>
       <DialogContent 
-        className="sm:max-w-xl" 
+        className="sm:max-w-2xl" 
         showCloseButton={false}
       >
         <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
@@ -78,11 +81,7 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
                   Data Privacy & Legitimate Purposes
                 </h4>
                 <p className="text-sm text-muted-foreground leading-relaxed text-justify">
-                  Your consent for collection, storage, use, processing, and protection of personal data for legitimate purposes, processed in accordance with our{" "}
-                  <a href="https://www.pup.edu.ph/privacy/" className={linkClassName} target="_blank" rel="noreferrer">
-                    Privacy Policy
-                  </a>{" "}
-                  and the Data Privacy Act of 2012 (Republic Act No. 10173).
+                  Your consent for collection, storage, use, processing, and protection of personal data for legitimate purposes, processed in accordance with our Privacy Policy and the Data Privacy Act of 2012 (Republic Act No. 10173).
                 </p>
               </div>
             </div>
@@ -101,7 +100,7 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
             </div>
 
             {/* Checkbox agreement */}
-            <div className="flex items-start gap-3 sm:gap-4 mt-6 pt-4 border-t border-border/50">
+            <div className="flex items-start gap-3 sm:gap-4 mt-6 pt-4 border-t border-border/50 px-1">
               <Checkbox 
                 id="terms-agreement-checkbox" 
                 checked={agreed} 
@@ -114,7 +113,10 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
                 <a href="https://www.pup.edu.ph/terms/" className={linkClassName} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
                   Terms and Conditions
                 </a>
-                , and I acknowledge the Privacy Policy.
+                , and I acknowledge the {" "}
+                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPrivacyPolicy(true); }} className={linkClassName}>
+                  Privacy Policy
+                </button>.
               </label>
             </div>
           </section>
@@ -129,6 +131,8 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <PrivacyPolicyModal open={showPrivacyPolicy} onClose={setShowPrivacyPolicy} />
     </Dialog>
   );
 }
