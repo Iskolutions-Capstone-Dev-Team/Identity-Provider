@@ -1,4 +1,6 @@
 import { FacebookIcon, YouTubeIcon } from "./componentIcons";
+import { Link } from "react-router-dom";
+import { ROUTE_PATHS } from "../routes/routePaths";
 
 export default function Footer() {
   return (
@@ -47,7 +49,7 @@ export default function Footer() {
       </div>
 
       <div className="mt-6 flex justify-center gap-2 text-[.46rem] sm:text-[.85rem] opacity-90 text-center">
-        <a href="#" className="hover:text-yellow-400 font-bold">Privacy Policy</a>
+        <Link to={ROUTE_PATHS.INTERNAL_PRIVACY_POLICY} className="hover:text-yellow-400 font-bold">Privacy Policy</Link>
         <span>•</span>
         <a href="#" className="hover:text-yellow-400 font-bold">Terms of Service</a>
         <span>•</span>

@@ -3,19 +3,23 @@ import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useAppClients } from "../hooks/useAppClients";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import ConnectedAppClientCard from "../components/ConnectedAppClientCard";
+import AppClientFilters from "../components/AppClientFilters";
+import ConnectedAppClientTable from "../components/ConnectedAppClientTable";
+import ConnectedAppClientCards from "../components/ConnectedAppClientCards";
+import ResultsCount from "../../../components/ResultsCount";
+import Pagination from "../../../components/Pagination";
 import AppClientModal from "../components/AppClientModal";
 import ClientSecretModal from "../components/ClientSecretModal";
 import SecretConfirmModal from "../components/SecretConfirmModal";
 import SuccessAlert from "../../../components/SuccessAlert";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
-import PageHeader from "../../../components/PageHeader";
-import PageHeaderActionButton from "../../../components/PageHeaderActionButton";
-import { AppClientIcon } from "../components/AppClientIconBox";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { Plus, Monitor, MonitorCog } from "lucide-react";
+import { createPortal } from "react-dom";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import MetricsCard from "../../../components/MetricsCard";
-import { AppClientIcon as AppClientMetricIcon } from "../../../components/Icons";
 import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
@@ -23,7 +27,7 @@ const ITEMS_PER_PAGE = 10;
 export default function AppClient() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { colorMode = "light" } = useOutletContext();
+    const { colorMode = "light", globalViewType } = useOutletContext() || {};
     const { hasPermission } = usePermissionAccess();
     const canCreateClient = hasPermission(PERMISSIONS.ADD_APPCLIENT);
     const canEditClient = hasPermission(PERMISSIONS.EDIT_APPCLIENT);
@@ -34,10 +38,29 @@ export default function AppClient() {
     );
     const canViewClientList = canViewAllClients || canViewConnectedClients;
     const [clientMetrics, setClientMetrics] = useState(null);
+    const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+
+    useEffect(() => {
+        setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+    }, []);
 
     useEffect(() => {
         metricsService.getClientMetrics().then(setClientMetrics).catch(() => { });
     }, []);
+    
+    const [viewType, setViewType] = useState(() => {
+        return localStorage.getItem("appClientsViewType") || globalViewType || "table";
+    });
+
+    useEffect(() => {
+        if (globalViewType) {
+            setViewType(globalViewType);
+        }
+    }, [globalViewType]);
+
+    useEffect(() => {
+        localStorage.setItem("appClientsViewType", viewType);
+    }, [viewType]);
     const {
         search, setSearch, page, setPage,
         paginatedClients, totalPages, totalResults,
@@ -85,12 +108,12 @@ export default function AppClient() {
         setEditViewOpen(true);
     };
 
-    const handleDeleteClick = (clientId) => {
+    const handleDeleteClick = (client) => {
         if (!canDeleteClient) {
             return;
         }
 
-        setDeleteTarget(clientId);
+        setDeleteTarget(client);
         setShowDeleteAlert(true);
     };
 
@@ -100,10 +123,9 @@ export default function AppClient() {
         }
 
         try {
-            await deleteClient(deleteTarget);
+            await deleteClient(deleteTarget.id || deleteTarget.clientId);
         } finally {
             setShowDeleteAlert(false);
-            setDeleteTarget(null);
         }
     };
 
@@ -172,33 +194,33 @@ export default function AppClient() {
     return (
         <>
             <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-5 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-                <Breadcrumbs
-                    colorMode={colorMode}
-                    items={[
-                        {
-                            label: "Client",
-                        },
-                    ]}
-                />
+                {breadcrumbsContainer && createPortal(
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbPage>Client</BreadcrumbPage>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>,
+                    breadcrumbsContainer
+                )}
 
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0 flex-1">
-                        <PageHeader
-                            title="Client"
-                            description="Manage application and settings"
-                            icon={
-                                <AppClientIcon className="h-14 w-14 sm:h-16 sm:w-16" />
-                            }
-                            colorMode={colorMode}
-                        />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] rounded-xl">
+                            <MonitorCog className="h-8 w-8" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight">Client</h1>
+                            <p className="text-muted-foreground">Manage application and settings</p>
+                        </div>
                     </div>
 
                     {canCreateClient && (
-                        <div className="w-full sm:w-auto sm:self-center">
-                            <PageHeaderActionButton colorMode={colorMode} onClick={openCreate}>
-                                + Add Client
-                            </PageHeaderActionButton>
-                        </div>
+                        <Button className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200" onClick={openCreate}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Client
+                        </Button>
                     )}
                 </div>
 
@@ -208,30 +230,64 @@ export default function AppClient() {
                     metrics={(Array.isArray(clientMetrics) ? clientMetrics : []).map((m) => ({
                         title: m.title,
                         value: m.value,
-                        Icon: AppClientMetricIcon,
+                        Icon: Monitor,
                     }))}
                 />
 
-                <div className="relative">
-                    <ConnectedAppClientCard
-                        loading={showLoading}
-                        clients={paginatedClients}
-                        totalResults={totalResults}
-                        itemsPerPage={ITEMS_PER_PAGE}
+                <div className="flex flex-col gap-5">
+                    <AppClientFilters
                         search={search}
                         setSearch={setSearch}
-                        page={page}
-                        totalPages={totalPages}
-                        onPageChange={setPage}
-                        onView={openView}
-                        onEdit={openEdit}
-                        onDelete={handleDeleteClick}
-                        onRotateSecret={handleRotateClick}
-                        showEditAction={canEditClient}
-                        showDeleteAction={canDeleteClient}
-                        showRotateSecretAction={canRotateClientSecret}
-                        colorMode={colorMode}
+                        viewType={viewType}
+                        setViewType={setViewType}
                     />
+
+                    {viewType === "table" ? (
+                        <ConnectedAppClientTable
+                            loading={showLoading}
+                            clients={paginatedClients}
+                            onView={openView}
+                            onEdit={openEdit}
+                            onDelete={handleDeleteClick}
+                            onRotateSecret={handleRotateClick}
+                            showEditAction={canEditClient}
+                            showDeleteAction={canDeleteClient}
+                            showRotateSecretAction={canRotateClientSecret}
+                            colorMode={colorMode}
+                        />
+                    ) : (
+                        <ConnectedAppClientCards
+                            loading={showLoading}
+                            clients={paginatedClients}
+                            onView={openView}
+                            onEdit={openEdit}
+                            onDelete={handleDeleteClick}
+                            onRotateSecret={handleRotateClick}
+                            showEditAction={canEditClient}
+                            showDeleteAction={canDeleteClient}
+                            showRotateSecretAction={canRotateClientSecret}
+                            colorMode={colorMode}
+                        />
+                    )}
+
+                    {!showLoading && (
+                        <div className="flex flex-col items-center gap-4 pt-2 lg:grid lg:grid-cols-3">
+                            <div className="flex w-full justify-center lg:justify-start">
+                                <ResultsCount
+                                    page={page}
+                                    itemsPerPage={ITEMS_PER_PAGE}
+                                    totalResults={totalResults}
+                                    currentResultsCount={paginatedClients.length}
+                                    variant="glass"
+                                    colorMode={colorMode}
+                                />
+                            </div>
+                            <div className="flex w-full justify-center">
+                                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} variant="glass" colorMode={colorMode} />
+                            </div>
+                            <div className="hidden lg:block"></div>
+                        </div>
+                    )}
                 </div>
                 <AppClientModal
                     open={editViewOpen}
@@ -265,17 +321,16 @@ export default function AppClient() {
 
             <DeleteConfirmModal
                 open={showDeleteAlert}
-                message="Delete this app client?"
+                message={`Delete ${deleteTarget?.name || 'this app client'}?`}
                 theme="glass"
                 colorMode={colorMode}
                 onCancel={() => {
                     setShowDeleteAlert(false);
-                    setDeleteTarget(null);
                 }}
                 onConfirm={confirmDelete}
             />
 
-            <SuccessAlert message={successMessage} onClose={closeSuccessAlert} />
+
         </>
     );
 }

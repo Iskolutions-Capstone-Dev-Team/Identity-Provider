@@ -1,10 +1,25 @@
+import { useState, useEffect } from "react";
 import Pagination from "../../../components/Pagination";
 import ConnectedAppClientTable from "./ConnectedAppClientTable";
+import ConnectedAppClientCards from "./ConnectedAppClientCards";
 import ResultsCount from "../../../components/ResultsCount";
+import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
+import { SearchIcon } from "./appClientIcons";
+import { Table, WalletCards, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { SearchIcon } from "./appClientIcons";
 
 export default function ConnectedAppClientCard({ loading = false, clients, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onRotateSecret, showEditAction = true, showDeleteAction = true, showRotateSecretAction = true, colorMode = "light" }) {
+    const [viewType, setViewType] = useState(() => {
+        return localStorage.getItem("appClientsViewType") || "table";
+    });
+
+    useEffect(() => {
+        localStorage.setItem("appClientsViewType", viewType);
+    }, [viewType]);
+
     const isDarkMode = colorMode === "dark";
     const containerClassName = `flex flex-col gap-5 ${
         isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
@@ -37,22 +52,56 @@ export default function ConnectedAppClientCard({ loading = false, clients, total
     return (
         <div className="relative space-y-5 sm:space-y-6 lg:space-y-8">
             <div className={containerClassName}>
-                <div className="min-w-0 w-full">
-                    <SpeechInputToolbar
-                        activeFieldLabel="Client Search"
-                        onTranscript={handleSearchVoiceInput}
-                        colorMode={colorMode}
-                    />
-                    <label className={labelClassName}>
-                        What are you looking for?
-                    </label>
-                    <label className={searchFieldClassName}>
-                        <SearchIcon className={searchIconClassName} />
-                        <input type="search"  value={search}  placeholder="Search by name..."  className={searchInputClassName} onChange={handleSearchChange}/>
-                    </label>
+                <div className="flex flex-col lg:flex-row lg:items-end gap-4 lg:gap-6 w-full">
+                    <div className="min-w-0 flex-1 w-full flex flex-col gap-2 relative">
+                        <SpeechInputToolbar
+                            activeFieldLabel="Client Search"
+                            onTranscript={handleSearchVoiceInput}
+                            colorMode={colorMode}
+                        />
+                        <label className={labelClassName}>
+                            What are you looking for?
+                        </label>
+                        <label className={searchFieldClassName}>
+                            <SearchIcon className={searchIconClassName} />
+                            <input type="search"  value={search}  placeholder="Search by name..."  className={searchInputClassName} onChange={handleSearchChange}/>
+                        </label>
+                    </div>
+
+                    <div className="w-full lg:w-[150px] shrink-0 flex flex-col gap-2">
+                        <label className={labelClassName}>View</label>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="h-14 px-4 flex items-center gap-2 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,243,0.9))] dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(30,20,28,0.88))] border border-[#7b0d15]/10 dark:border-white/10 shadow-[0_18px_45px_-36px_rgba(43,3,7,0.45)] dark:shadow-[0_18px_45px_-36px_rgba(2,6,23,0.72)] rounded-[1.35rem] w-full justify-between">
+                                    <div className="flex items-center gap-2 text-foreground font-normal">
+                                        {viewType === "card" ? <WalletCards className="w-5 h-5 opacity-70" /> : <Table className="w-5 h-5 opacity-70" />}
+                                        <span className="text-base">{viewType === "card" ? "Card" : "Table"}</span>
+                                    </div>
+                                    <ChevronDown className="w-4 h-4 opacity-50 ml-1" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[150px] rounded-xl">
+                                <DropdownMenuRadioGroup value={viewType} onValueChange={setViewType}>
+                                    <DropdownMenuRadioItem value="table" className="cursor-pointer gap-2 py-2">
+                                        <Table className="w-4 h-4 opacity-70" />
+                                        Table
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="card" className="cursor-pointer gap-2 py-2">
+                                        <WalletCards className="w-4 h-4 opacity-70" />
+                                        Card
+                                    </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </div>
             </div>
-            <ConnectedAppClientTable loading={loading} clients={clients} onView={onView} onEdit={onEdit} onDelete={onDelete} onRotateSecret={onRotateSecret} showEditAction={showEditAction} showDeleteAction={showDeleteAction} showRotateSecretAction={showRotateSecretAction} colorMode={colorMode} />
+            
+            {viewType === "table" ? (
+                <ConnectedAppClientTable loading={loading} clients={clients} onView={onView} onEdit={onEdit} onDelete={onDelete} onRotateSecret={onRotateSecret} showEditAction={showEditAction} showDeleteAction={showDeleteAction} showRotateSecretAction={showRotateSecretAction} colorMode={colorMode} />
+            ) : (
+                <ConnectedAppClientCards loading={loading} clients={clients} onView={onView} onEdit={onEdit} onDelete={onDelete} onRotateSecret={onRotateSecret} showEditAction={showEditAction} showDeleteAction={showDeleteAction} showRotateSecretAction={showRotateSecretAction} colorMode={colorMode} />
+            )}
             {!loading && (
                 <div className={footerClassName}>
                     <div className="flex w-full justify-center lg:justify-start">

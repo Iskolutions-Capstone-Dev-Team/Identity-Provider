@@ -1,28 +1,14 @@
 import MfaCodeInput from "./MfaCodeInput";
-import { EmailIcon, AuthenticatorIcon, PasskeyIcon, ChevronIcon } from "./mfaIcons";
+import { Mail, Smartphone, KeySquare } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import { Separator } from "../../../components/ui/separator";
 
 function MfaMethodButton({ label, icon, isActive, isLoading = false, loadingText = "Checking...", disabled = false, onClick }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled}
-      className={`flex w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left transition disabled:cursor-wait disabled:opacity-70 ${
-        isActive
-          ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-white"
-          : "border-white/12 bg-white/6 text-white/80 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white"
-      }`}
-    >
-      <span className="flex items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#ffd700]/12 text-[#ffd700]">
-          {icon}
-        </span>
-        <span className="font-semibold">{label}</span>
-      </span>
-
-      {isLoading ? (
-        <span className="text-sm text-[#ffd700]">{loadingText}</span>
-      ) : (
-        <ChevronIcon />
-      )}
-    </button>
+    <Button variant="outline" type="button" className={`h-12 w-full flex items-center justify-center gap-2 rounded-xl transition duration-300 ${isActive ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-[#ffd700] hover:bg-[#ffd700]/20 hover:text-[#ffd700]" : "border-white/12 bg-white/6 text-white/70 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-[#ffd700]"}`} onClick={onClick} disabled={disabled || isLoading}>
+      {icon}
+      <span className="text-sm">{isLoading ? loadingText : label}</span>
+    </Button>
   );
 }
 
@@ -52,15 +38,15 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
       <form onSubmit={onVerify} className="space-y-4">
         <MfaMethodButton
           label="Email"
-          icon={<EmailIcon />}
+          icon={<Mail className="size-4" />}
           isActive={isEmailMode}
           onClick={onSelectEmail}
         />
 
         {isEmailMode && !hasSentOtp ? (
-          <button type="button" onClick={onSendOtp} disabled={isSendingOtp || !email} className="btn h-11 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
+          <Button type="button" onClick={onSendOtp} disabled={isSendingOtp || !email} className="h-11 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300">
             {isSendingOtp ? "Sending..." : "Send OTP"}
-          </button>
+          </Button>
         ) : null}
 
         {shouldShowCodeInput ? (
@@ -71,43 +57,35 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
               disabled={isVerifying}
             />
 
-            <button type="submit" disabled={isVerifying} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
+            <Button type="submit" disabled={isVerifying} className="h-12 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300 mt-2">
               {isVerifying ? "Verifying..." : verifyLabel}
-            </button>
+            </Button>
           </>
         ) : null}
       </form>
 
-      <div className="flex items-center gap-4 text-sm font-semibold text-white/55">
-        <div className="h-px flex-1 bg-white/18" />
-        <span>other verification methods</span>
-        <div className="h-px flex-1 bg-white/18" />
+      <div className="flex items-center gap-4">
+        <Separator className="flex-1 bg-white/20" />
+        <span className="text-sm font-medium text-white/70">Or continue with</span>
+        <Separator className="flex-1 bg-white/20" />
       </div>
 
-      <div className="space-y-3">
-        <MfaMethodButton
-          label="Authenticator app"
-          icon={<AuthenticatorIcon />}
-          isActive={isAuthenticatorMode}
-          isLoading={isCheckingAuthenticators}
-          disabled={isCheckingAuthenticators}
-          onClick={onSelectAuthenticator}
-        />
+      <div className="flex gap-4">
+        <Button type="button" variant="outline" className={`h-12 flex-1 flex items-center justify-center gap-2 rounded-xl transition duration-300 ${isAuthenticatorMode ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-[#ffd700] hover:bg-[#ffd700]/20 hover:text-[#ffd700]" : "border-white/12 bg-white/6 text-white/70 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-[#ffd700]"}`} onClick={onSelectAuthenticator} disabled={isCheckingAuthenticators}>
+          <Smartphone className="size-4" />
+          <span className="text-sm">Authenticator</span>
+        </Button>
 
-        <MfaMethodButton
-          label="Passkey"
-          icon={<PasskeyIcon />}
-          isActive={isPasskeyMode}
-          isLoading={isCheckingPasskey}
-          disabled={isCheckingPasskey}
-          onClick={onSelectPasskey}
-        />
+        <Button type="button" variant="outline" className={`h-12 flex-1 flex items-center justify-center gap-2 rounded-xl transition duration-300 ${isPasskeyMode ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-[#ffd700] hover:bg-[#ffd700]/20 hover:text-[#ffd700]" : "border-white/12 bg-white/6 text-white/70 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-[#ffd700]"}`} onClick={onSelectPasskey} disabled={isCheckingPasskey}>
+          <KeySquare className="size-4" />
+          <span className="text-sm">Passkey</span>
+        </Button>
       </div>
 
       {onCancel ? (
-        <button type="button" onClick={onCancel} disabled={isCancelling} className="h-11 w-full rounded-lg border border-white/18 bg-white/8 text-sm font-semibold text-white/80 transition hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-white disabled:cursor-not-allowed disabled:opacity-70">
+        <Button variant="outline" type="button" onClick={onCancel} disabled={isCancelling} className="h-11 w-full bg-transparent text-white border-white/20 hover:bg-white/10 hover:text-white transition">
           {isCancelling ? "Signing out..." : "Back to login"}
-        </button>
+        </Button>
       ) : null}
     </div>
   );

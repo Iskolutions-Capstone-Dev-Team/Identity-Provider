@@ -97,6 +97,8 @@ function normalizeAccountTypeConfig(
     clients: (Array.isArray(config?.clients) ? config.clients : [])
       .map(normalizeClient)
       .filter((client) => client.id && client.name),
+    created_at: config?.created_at || null,
+    updated_at: config?.updated_at || null,
   };
 }
 

@@ -1,9 +1,20 @@
-import TableRowFade from "../../../components/TableRowFade";
-import EmptySearchState from "../../../components/EmptySearchState";
-import { ViewIcon, EditIcon, DeleteIcon } from "./registrationIcons";
+import { Eye, Pencil, Trash, FileText } from "lucide-react";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { IconStack } from "@/components/reui/icon-stack";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Frame, FramePanel } from "@/components/reui/frame";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const headerCellClassName =
-  "border-b border-white/10 px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90";
+function getInitials(text) {
+  if (!text) return "A";
+  const parts = text.trim().split(/\s+/);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  return parts[0][0].toUpperCase();
+}
+
 const MAX_VISIBLE_CLIENT_SLOTS = 5;
 
 function getPreviewClientItems(clientNames = []) {
@@ -15,136 +26,152 @@ function getRemainingClientCount(totalClientCount = 0) {
   return Math.max(0, totalClientCount - MAX_VISIBLE_CLIENT_SLOTS);
 }
 
-function getRowClassName(index, isDarkMode) {
-  if (isDarkMode) {
-    return `transition-colors duration-500 ease-out ${
-      index % 2 === 0
-        ? "bg-white/[0.03] hover:bg-[#f8d24e]/[0.08]"
-        : "bg-[#7b0d15]/[0.08] hover:bg-[#7b0d15]/[0.16]"
-    }`;
+export default function RegistrationTable({ loading = false, rows = [], onView, onEdit, onDelete, showEditAction = true, showDeleteAction = true, colorMode = "light" }) {
+  if (loading) {
+    return (
+      <div className="mx-auto flex w-full flex-col">
+        <Frame spacing="xs">
+          <FramePanel className="p-0!">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-center w-1/3">Account Type</TableHead>
+                  <TableHead className="w-1/3 text-center">Client List</TableHead>
+                  <TableHead className="w-1/3 text-center">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="pl-6 p-5">
+                      <div className="flex items-center justify-start gap-3">
+                        <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    </TableCell>
+                  <TableCell className="text-center p-5">
+                    <div className="flex justify-center gap-2">
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full hidden sm:block" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center p-5">
+                    <div className="flex justify-center gap-2">
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              </TableBody>
+            </Table>
+          </FramePanel>
+        </Frame>
+      </div>
+    );
   }
 
-  return `transition-colors duration-300 ${
-    index % 2 === 0
-      ? "bg-white/70 hover:bg-[#fff4dc]/70"
-      : "bg-[#fff8f3]/80 hover:bg-[#fff4dc]/80"
-  }`;
-}
-
-export default function RegistrationTable({ rows = [], onView, onEdit, onDelete, showEditAction = true, showDeleteAction = true, colorMode = "light" }) {
-  const isDarkMode = colorMode === "dark";
-  const wrapperClassName = isDarkMode
-    ? "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(28,18,29,0.92))] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.82)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
-    : "overflow-hidden rounded-[1.75rem] border border-[#7b0d15]/10 bg-white/65 shadow-[0_22px_55px_-38px_rgba(43,3,7,0.55)] transition-[background-color,border-color,box-shadow] duration-500 ease-out";
-  const tableHeaderRowClassName = isDarkMode
-    ? "bg-[linear-gradient(135deg,#7b0d15_0%,#253247_55%,#421117_100%)]"
-    : "bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)]";
-  const bodyCellClassName = isDarkMode
-    ? "border-b border-white/10 px-6 py-5 text-center align-middle text-sm text-[#f1e5e7]"
-    : "border-b border-[#7b0d15]/10 px-6 py-5 text-center align-middle text-sm text-[#5d3a41]";
-  const accountTypeCellClassName = isDarkMode
-    ? `${bodyCellClassName} whitespace-nowrap font-semibold text-[#f6eaec]`
-    : `${bodyCellClassName} whitespace-nowrap font-semibold text-[#4a1921]`;
-  const clientBadgeClassName = isDarkMode
-    ? "inline-flex items-center whitespace-nowrap rounded-full border border-[#f8d24e]/25 bg-[#f8d24e]/12 px-3 py-1 text-xs font-semibold text-[#ffe28a]"
-    : "inline-flex items-center whitespace-nowrap rounded-full border border-[#f8d24e]/45 bg-[#fff4dc] px-3 py-1 text-xs font-semibold text-[#7b0d15]";
-  const emptyClientListClassName = isDarkMode
-    ? "italic text-[#a58d95]"
-    : "italic text-[#8f6f76]";
-  const moreClientsClassName = isDarkMode
-    ? "mt-3 text-center text-xs font-semibold tracking-[0.08em] text-[#c7adb4]"
-    : "mt-3 text-center text-xs font-semibold tracking-[0.08em] text-[#8f6f76]";
-  const emptyStateClassName = isDarkMode
-    ? "px-6 py-16 text-center text-sm text-[#bda8af]"
-    : "px-6 py-16 text-center text-sm text-[#8f6f76]";
-  const actionButtonClassName = isDarkMode
-    ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] text-[#f1e5e7] shadow-[0_14px_30px_-24px_rgba(2,6,23,0.72)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
-    : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
-
   return (
-    <div className={wrapperClassName}>
-      <div className="overflow-x-auto">
-        <table className="table w-full min-w-[60rem] lg:min-w-0">
-          <thead>
-            <tr className={tableHeaderRowClassName}>
-              <th className={headerCellClassName}>Account Type</th>
-              <th className={headerCellClassName}>Client List</th>
-              <th className={headerCellClassName}>Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
+    <div className="mx-auto flex w-full flex-col">
+      <Frame spacing="xs">
+        <FramePanel className="p-0!">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-center w-1/3">Account Type</TableHead>
+              <TableHead className="w-1/3 text-center">Client List</TableHead>
+              <TableHead className="w-1/3 text-center">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.length === 0 && (
-              <tr>
-                <td colSpan={3} className={emptyStateClassName}>
-                  <EmptySearchState message="No account type found" colorMode={colorMode} />
-                </td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={3} className="h-32 text-center">
+                  <div className="flex items-center justify-center w-full py-10">
+                    <Empty className="max-w-md">
+                      <EmptyHeader>
+                        <EmptyMedia>
+                          <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
+                            <FileText className="text-[#7b0d15] dark:text-primary size-5" />
+                          </IconStack>
+                        </EmptyMedia>
+                        <EmptyTitle>No account type found</EmptyTitle>
+                        <EmptyDescription>
+                          We couldn't find any account types matching your criteria.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  </div>
+                </TableCell>
+              </TableRow>
             )}
 
-            {rows.map((row, index) => {
+            {rows.map((row) => {
               const previewClientItems = getPreviewClientItems(row.clientNames);
-              const remainingClientCount = getRemainingClientCount(
-                row.totalClientCount,
-              );
+              const remainingClientCount = getRemainingClientCount(row.totalClientCount);
 
               return (
-                <TableRowFade
-                  key={row.accountType}
-                  keyId={row.accountType}
-                  className={getRowClassName(index, isDarkMode)}
-                >
-                  <td className={accountTypeCellClassName}>{row.label}</td>
-                  <td className={bodyCellClassName}>
+                <TableRow key={row.accountType} className="hover:bg-muted/50 transition-colors">
+                  <TableCell className="pl-6 font-medium">
+                    <div className="flex items-center justify-start gap-3">
+                      <Avatar className="h-9 w-9 dark:border dark:border-gray-300">
+                        <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] font-medium">
+                          {getInitials(row.label)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate">{row.label}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
                     {row.clientNames.length > 0 ? (
                       <div className="mx-auto max-w-[24rem]">
-                        <div className="grid grid-cols-1 gap-2">
+                        <div className="flex flex-wrap justify-center gap-2">
                           {previewClientItems.map((clientName, previewIndex) => (
-                            <div key={`${row.accountType}-${clientName}-${previewIndex}`} className="flex justify-center">
-                              <span className={clientBadgeClassName}>
-                                {clientName}
-                              </span>
-                            </div>
+                            <Badge key={`${row.accountType}-${clientName}-${previewIndex}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
+                              {clientName}
+                            </Badge>
                           ))}
                         </div>
                         {remainingClientCount > 0 && (
-                          <p className={moreClientsClassName}>
-                            +{remainingClientCount} more{" "}
-                            {remainingClientCount === 1 ? "client" : "clients"}
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            +{remainingClientCount} more {remainingClientCount === 1 ? "client" : "clients"}
                           </p>
                         )}
                       </div>
                     ) : (
-                      <span className={emptyClientListClassName}>
+                      <span className="text-sm text-muted-foreground italic">
                         No pre-approved clients
                       </span>
                     )}
-                  </td>
-                  <td className={bodyCellClassName}>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center justify-center gap-2">
-                      <button type="button" aria-label={`View ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onView(row)}>
-                        <ViewIcon />
-                      </button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(row)} title={`View ${row.label} registration settings`}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
 
                       {showEditAction && (
-                        <button type="button" aria-label={`Edit ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onEdit(row)}>
-                          <EditIcon />
-                        </button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(row)} title={`Edit ${row.label} registration settings`}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                       )}
 
                       {showDeleteAction && row.canDelete !== false && (
-                        <button type="button" aria-label={`Delete ${row.label} registration settings`} className={actionButtonClassName} onClick={() => onDelete(row)}>
-                          <DeleteIcon />
-                        </button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onDelete(row)} title={`Delete ${row.label} registration settings`}>
+                          <Trash className="h-4 w-4" />
+                        </Button>
                       )}
                     </div>
-                  </td>
-                </TableRowFade>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+        </FramePanel>
+      </Frame>
     </div>
   );
 }
