@@ -4,22 +4,42 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/jmoiron/sqlx"
 )
 
+func getSafeRoleSort(sortBy, order string) (string, string) {
+	allowed := map[string]bool{
+		"role_name":   true,
+		"description": true,
+		"created_at":  true,
+		"updated_at":  true,
+	}
+	col := "created_at"
+	if sortBy != "" && allowed[sortBy] {
+		col = sortBy
+	}
+	ord := "DESC"
+	if strings.ToLower(order) == "asc" {
+		ord = "ASC"
+	}
+	return col, ord
+}
+
 type RoleRepository interface {
 	CreateRole(ctx context.Context, role models.Role) (sql.Result, error)
 	GetByID(ctx context.Context, id int) (*models.Role, error)
 	SearchRoles(ctx context.Context, keyword string) ([]models.Role, error)
 	ListRoles(ctx context.Context, limit, offset int,
-		keyword string) ([]models.Role, error)
+		keyword string, sortBy, order string) ([]models.Role, error)
 	ListAllExceptIdP(ctx context.Context, limit, offset int,
-		keyword string) ([]models.Role, error)
+		keyword string, sortBy, order string) ([]models.Role, error)
 	ListDistinctBoundRoles(ctx context.Context, limit, offset int,
-		userID []byte, keyword string) ([]models.RoleWithMetaData, error)
+		userID []byte, keyword string,
+		sortBy, order string) ([]models.RoleWithMetaData, error)
 	UpdateRole(ctx context.Context, role models.Role) error
 	Delete(ctx context.Context, id int) error
 	CountRoles(ctx context.Context, keyword string) (int, error)
@@ -117,15 +137,16 @@ func (r *roleRepository) SearchRoles(ctx context.Context,
 
 // ListRoles returns a paginated list of active roles.
 func (r *roleRepository) ListRoles(ctx context.Context, limit, offset int,
-	keyword string,
+	keyword string, sortBy, order string,
 ) ([]models.Role, error) {
 	var roles []models.Role
 	searchKeyword := "%" + keyword + "%"
-	query := `
+	sortCol, sortOrd := getSafeRoleSort(sortBy, order)
+	query := fmt.Sprintf(`
         SELECT id, role_name, description, created_at, updated_at FROM roles 
         WHERE deleted_at IS NULL AND role_name LIKE ?
-        ORDER BY id DESC 
-        LIMIT ? OFFSET ?`
+        ORDER BY %s %s 
+        LIMIT ? OFFSET ?`, sortCol, sortOrd)
 	if err := r.db.SelectContext(ctx, &roles, query, searchKeyword, limit,
 		offset); err != nil {
 		return nil, err
@@ -136,20 +157,21 @@ func (r *roleRepository) ListRoles(ctx context.Context, limit, offset int,
 
 // ListAllExceptIdP returns a paginated list of active roles excluding IdP.
 func (r *roleRepository) ListAllExceptIdP(ctx context.Context, limit, offset int,
-	keyword string,
+	keyword string, sortBy, order string,
 ) ([]models.Role, error) {
 	var roles []models.Role
 	searchKeyword := "%" + keyword + "%"
 	notLike := "IDP:%"
-	query := `
+	sortCol, sortOrd := getSafeRoleSort(sortBy, order)
+	query := fmt.Sprintf(`
         SELECT id, role_name, description, created_at, updated_at 
 		FROM roles 
 		WHERE deleted_at IS NULL 
 		AND role_name LIKE ? 
 		AND role_name NOT LIKE ?
-		ORDER BY id DESC 
+		ORDER BY %s %s 
 		LIMIT ? OFFSET ?
-	`
+	`, sortCol, sortOrd)
 	if err := r.db.SelectContext(ctx, &roles, query, searchKeyword, notLike,
 		limit, offset); err != nil {
 		return nil, err
@@ -160,10 +182,12 @@ func (r *roleRepository) ListAllExceptIdP(ctx context.Context, limit, offset int
 
 func (r *roleRepository) ListDistinctBoundRoles(ctx context.Context,
 	limit int, offset int, userID []byte, keyword string,
+	sortBy, order string,
 ) ([]models.RoleWithMetaData, error) {
 	var roles []models.RoleWithMetaData
 	searchKeyword := "%" + keyword + "%"
-	query := `
+	sortCol, sortOrd := getSafeRoleSort(sortBy, order)
+	query := fmt.Sprintf(`
 		SELECT DISTINCT 
             r.id, r.role_name, r.description, r.created_at, r.updated_at,
             (SUBSTRING_INDEX(r.role_name, ':', 1) IN (
@@ -184,9 +208,9 @@ func (r *roleRepository) ListDistinctBoundRoles(ctx context.Context,
         WHERE aac.user_id = ? 
             AND r.deleted_at IS NULL 
             AND r.role_name LIKE ?
-        ORDER BY r.id DESC
+        ORDER BY r.%s %s
         LIMIT ? OFFSET ?
-	`
+	`, sortCol, sortOrd)
 
 	err := r.db.SelectContext(ctx, &roles, query, userID, userID, userID,
 		searchKeyword, limit, offset)
