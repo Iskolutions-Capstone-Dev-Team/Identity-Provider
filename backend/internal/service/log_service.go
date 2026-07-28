@@ -24,7 +24,8 @@ type LogService interface {
 	GetUserEmail(ctx context.Context, userID []byte) (string, error)
 	GetLogByID(ctx context.Context, id int64) (*dto.PostAuditLogRequest, error)
 	GetLogListWithFilters(ctx context.Context, filters map[string]interface{},
-		limit, page int) ([]dto.PostAuditLogRequest, int64, int, error)
+		limit, page int,
+		sortBy, order string) ([]dto.PostAuditLogRequest, int64, int, error)
 
 	PostSecurityLog(ctx context.Context, actorID []byte,
 		req *dto.PostAuditLogRequest) error
@@ -36,7 +37,7 @@ type LogService interface {
 		id int64) (*dto.PostAuditLogRequest, error)
 	GetSecurityLogListWithFilters(ctx context.Context,
 		filters map[string]interface{}, limit, page int,
-	) ([]dto.PostAuditLogRequest, int64, int, error)
+		sortBy, order string) ([]dto.PostAuditLogRequest, int64, int, error)
 }
 
 type logService struct {
@@ -270,6 +271,7 @@ func (s *logService) GetSecurityLogByID(ctx context.Context,
 // GetLogListWithFilters retrieves logs matching filters.
 func (s *logService) GetLogListWithFilters(ctx context.Context,
 	filters map[string]interface{}, limit, page int,
+	sortBy, order string,
 ) ([]dto.PostAuditLogRequest, int64, int, error) {
 	if limit <= 0 {
 		limit = 10
@@ -280,7 +282,7 @@ func (s *logService) GetLogListWithFilters(ctx context.Context,
 	offset := (page - 1) * limit
 
 	logs, total, err := s.Repo.GetLogListWithFilters(
-		ctx, filters, limit, offset,
+		ctx, filters, limit, offset, sortBy, order,
 	)
 	if err != nil {
 		return nil, 0, 0, fmt.Errorf(
@@ -307,6 +309,7 @@ func (s *logService) GetLogListWithFilters(ctx context.Context,
 // GetSecurityLogListWithFilters retrieves security logs matching filters.
 func (s *logService) GetSecurityLogListWithFilters(ctx context.Context,
 	filters map[string]interface{}, limit, page int,
+	sortBy, order string,
 ) ([]dto.PostAuditLogRequest, int64, int, error) {
 	if limit <= 0 {
 		limit = 10
@@ -317,7 +320,7 @@ func (s *logService) GetSecurityLogListWithFilters(ctx context.Context,
 	offset := (page - 1) * limit
 
 	logs, total, err := s.Repo.GetSecurityLogListWithFilters(
-		ctx, filters, limit, offset,
+		ctx, filters, limit, offset, sortBy, order,
 	)
 	if err != nil {
 		return nil, 0, 0, fmt.Errorf(

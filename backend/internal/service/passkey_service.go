@@ -84,7 +84,7 @@ func NewPasskeyService(
 
 	// Fetch One Portal client to support its origins and fallback
 	clients, err := cr.ListClients(
-		context.Background(), 10, 0, "One Portal",
+		context.Background(), 10, 0, "One Portal", "", "",
 	)
 	if err == nil {
 		for _, c := range clients {
