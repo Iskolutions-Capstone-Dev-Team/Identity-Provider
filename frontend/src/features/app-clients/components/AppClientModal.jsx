@@ -338,7 +338,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                     <div className="flex items-center gap-4">
                       <Avatar className="size-16">
                         <AvatarImage src={imagePreview} alt={name || "App Client Logo"} />
-                        <AvatarFallback>{name ? name.substring(0, 2).toUpperCase() : "AC"}</AvatarFallback>
+                        <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] font-medium">{name ? name.substring(0, 2).toUpperCase() : "AC"}</AvatarFallback>
                       </Avatar>
                       <div>
                         <h2 className="text-2xl font-bold tracking-tight">
