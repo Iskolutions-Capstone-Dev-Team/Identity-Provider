@@ -64,7 +64,7 @@ function SecurityMeaningPopover() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="h-8 w-8 text-muted-foreground transition hover:bg-muted" aria-label="Open security analysis explanation">
+        <Button variant="outline" size="icon" className="h-8 w-8 transition border-0 bg-[#7b0d15] text-[#f8d24e] hover:bg-[#7b0d15]/90 hover:text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#f8d24e]/90 dark:hover:text-[#7b0d15]" aria-label="Open security analysis explanation">
           <MessageCircleQuestionMark className="h-4 w-4" />
         </Button>
       </PopoverTrigger>

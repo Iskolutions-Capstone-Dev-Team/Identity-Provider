@@ -214,7 +214,7 @@ export default function Dashboard() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-primary/10 dark:text-primary rounded-xl">
+          <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] rounded-xl">
             <LayoutDashboard className="w-8 h-8" />
           </div>
           <div>
@@ -223,7 +223,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <Button className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200" onClick={() => setIsReportConfirmOpen(true)}>
+        <Button className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200" onClick={() => setIsReportConfirmOpen(true)}>
           <Download className="w-4 h-4 mr-2" />
           Generate Report
         </Button>

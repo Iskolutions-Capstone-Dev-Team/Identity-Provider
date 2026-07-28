@@ -39,7 +39,7 @@ export function PeriodTabs({ periods, selectedPeriodKey, onSelectPeriod }) {
           <button key={period.key} type="button" onClick={() => onSelectPeriod(period.key)}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
               isSelected
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-[#7b0d15] text-[#f8d24e] shadow-sm dark:bg-[#f8d24e] dark:text-[#7b0d15]"
                 : "hover:bg-background/50 hover:text-foreground"
             }`}
           >
@@ -195,8 +195,8 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
                   <Empty className="py-10 max-w-md">
                     <EmptyHeader>
                       <EmptyMedia>
-                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
-                          <Activity className="text-[#7b0d15] dark:text-primary size-5" />
+                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e] h-24 w-22">
+                          <Activity className="text-[#7b0d15] dark:text-[#f8d24e] size-5" />
                         </IconStack>
                       </EmptyMedia>
                       <EmptyTitle>No login activity</EmptyTitle>
