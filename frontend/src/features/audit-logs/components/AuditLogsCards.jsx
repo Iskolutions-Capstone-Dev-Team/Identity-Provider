@@ -86,10 +86,10 @@ export default function AuditLogsCards({ loading = false, logs, onView, colorMod
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full mt-4">
       {logs.map((log, index) => (
-        <Card key={log.rowKey ?? log.id ?? `${log.timestamp}-${index}`} className="overflow-hidden border shadow-sm flex flex-col hover:border-[#7b0d15]/40 transition-colors">
+        <Card key={log.rowKey ?? log.id ?? `${log.timestamp}-${index}`} className="overflow-hidden border shadow-sm flex flex-col hover:border-[#7b0d15]/40 dark:hover:border-[#f8d24e]/40 transition-colors">
           <CardHeader className="p-4 flex flex-row items-center gap-3 space-y-0 border-b bg-transparent">
             <Avatar className="h-12 w-12 dark:border dark:border-gray-300 shrink-0">
-              <AvatarFallback className="bg-[#7b0d15] text-[#ffd21a] dark:bg-white dark:text-black font-medium text-lg">
+              <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] font-medium text-lg">
                 {getInitials(log.actor)}
               </AvatarFallback>
             </Avatar>
