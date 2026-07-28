@@ -211,7 +211,7 @@ export default function UserPoolTable({
                 <TableCell className="pl-6 w-[30%]">
                   <div className="flex items-center justify-start gap-3">
                     <Avatar className="h-9 w-9 dark:border dark:border-gray-300 shrink-0">
-                      <AvatarFallback className="bg-[#7b0d15] text-[#ffd21a] dark:bg-white dark:text-black font-medium">
+                      <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] font-medium">
                         {getInitials(user)}
                       </AvatarFallback>
                     </Avatar>
