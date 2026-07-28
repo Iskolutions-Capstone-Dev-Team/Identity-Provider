@@ -17,7 +17,7 @@ export default function Navbar({ activeColorMode = "light", setColorMode, onTogg
   const email = currentUser?.email || "user@example.com";
   
   const initials = `${firstName ? firstName.charAt(0) : ""}${lastName ? lastName.charAt(0) : ""}`.toUpperCase() || "U";
-  const avatarBgClass = isDarkMode ? "bg-white text-black" : "bg-[#7b0d15] text-[#f8d24e]";
+  const avatarBgClass = isDarkMode ? "bg-[#f8d24e] text-[#7b0d15]" : "bg-[#7b0d15] text-[#f8d24e]";
 
   return (
     <nav className="relative z-20 flex w-full items-center justify-between gap-4 py-3 bg-background text-foreground">
