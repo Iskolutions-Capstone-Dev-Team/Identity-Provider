@@ -123,13 +123,13 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     return (
       <Card key={authenticator.id} className="mx-auto w-full max-w-xs overflow-hidden p-0 relative h-full">
         <CardContent className="flex flex-col items-center p-0 h-full">
-          <div className="flex w-full flex-col items-center justify-center bg-gradient-to-b from-[#7b0d15]/10 to-transparent dark:from-white/10 py-12">
+          <div className="flex w-full flex-col items-center justify-center bg-gradient-to-b from-[#7b0d15]/10 to-transparent dark:from-[#f8d24e]/10 py-12">
             <div className="relative mb-6">
-              <div className="absolute inset-0 scale-150 rounded-full bg-[#7b0d15]/20 dark:bg-white/20 blur-2xl" />
+              <div className="absolute inset-0 scale-150 rounded-full bg-[#7b0d15]/20 dark:bg-[#f8d24e]/20 blur-2xl" />
               {isPasskey ? (
-                <KeySquare aria-hidden="true" className="relative size-16 text-[#7b0d15] dark:text-white" strokeWidth="1.5" />
+                <KeySquare aria-hidden="true" className="relative size-16 text-[#7b0d15] dark:text-[#f8d24e]" strokeWidth="1.5" />
               ) : (
-                <Smartphone aria-hidden="true" className="relative size-16 text-[#7b0d15] dark:text-white" strokeWidth="1.5" />
+                <Smartphone aria-hidden="true" className="relative size-16 text-[#7b0d15] dark:text-[#f8d24e]" strokeWidth="1.5" />
               )}
             </div>
             <h3 className="text-foreground text-lg font-semibold px-4 text-center">
@@ -157,7 +157,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
             </div>
           </div>
         </CardContent>
-        <Button variant="ghost" size="icon" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} className="absolute right-2 top-2 text-[#7b0d15] hover:bg-[#7b0d15]/10 hover:text-[#7b0d15] dark:text-white dark:hover:bg-white/10 dark:hover:text-white">
+        <Button variant="ghost" size="icon" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} className="absolute right-2 top-2 text-[#7b0d15] hover:bg-[#7b0d15]/10 hover:text-[#7b0d15] dark:text-[#f8d24e] dark:hover:bg-[#f8d24e]/10 dark:hover:text-[#f8d24e]">
           <Trash className="w-5 h-5" />
         </Button>
       </Card>
@@ -172,7 +172,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
             <CardTitle className="text-xl font-bold uppercase tracking-wide">Authenticator Apps</CardTitle>
             <CardDescription className="mt-1">Manage the authenticator apps connected to your account.</CardDescription>
           </div>
-          <Button onClick={() => setIsNewConnectionOpen(true)} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#7b0d15]/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
+          <Button onClick={() => setIsNewConnectionOpen(true)} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors duration-200">
             + New Connection
           </Button>
         </CardHeader>
@@ -209,8 +209,8 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                <CarouselPrevious className="hidden sm:inline-flex bg-[#7b0d15] text-white hover:bg-[#7b0d15]/90 border-0 hover:text-white dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black" />
-                <CarouselNext className="hidden sm:inline-flex bg-[#7b0d15] text-white hover:bg-[#7b0d15]/90 border-0 hover:text-white dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black" />
+                <CarouselPrevious className="hidden sm:inline-flex bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] border-0 transition-colors duration-200" />
+                <CarouselNext className="hidden sm:inline-flex bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] border-0 transition-colors duration-200" />
               </Carousel>
             </div>
           )}

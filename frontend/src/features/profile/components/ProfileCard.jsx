@@ -62,7 +62,7 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
         <div className="px-2 py-2 sm:px-8 sm:py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b">
           <div className="flex items-center gap-4 sm:gap-5">
             <Avatar className="size-16 sm:size-20 border-none ring-0 after:hidden">
-              <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-white dark:text-black text-xl sm:text-2xl font-bold tracking-wider border-none ring-0 outline-none">
+              <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] text-xl sm:text-2xl font-bold tracking-wider border-none ring-0 outline-none">
                 {profileInitials}
               </AvatarFallback>
             </Avatar>

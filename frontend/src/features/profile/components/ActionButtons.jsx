@@ -9,7 +9,7 @@ export default function ActionButtons({ openEdit, openPassword }) {
         Edit Profile
       </Button>
 
-      <Button type="button" onClick={openPassword} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#7b0d15]/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
+      <Button type="button" onClick={openPassword} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors duration-200">
         <Lock className="size-4 mr-2" />
         Change Password
       </Button>
