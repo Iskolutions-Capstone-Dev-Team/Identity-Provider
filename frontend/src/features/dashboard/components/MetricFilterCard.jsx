@@ -4,9 +4,9 @@ import { Skeleton } from "../../../components/ui/skeleton";
 
 export default function MetricFilterCard({ stat, colorMode = "light", isLoading = false }) {
   return (
-    <Card className="shadow-sm border-border bg-card transition-transform duration-200 ease-out hover:-translate-y-1">
+    <Card className="shadow-sm border-[#7b0d15]/30 dark:border-[#f8d24e]/30 bg-card transition-transform duration-200 ease-out hover:-translate-y-1 border">
       <CardContent className="flex items-center gap-4 px-4 py-3">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#7b0d15] rounded-2xl text-[#f8d24e] dark:rounded-2xl dark:bg-primary/10 dark:text-primary">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#7b0d15] rounded-xl text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15]">
           {stat.type === "failed" ? <TriangleAlert className="h-6 w-6" /> : <CalendarDays className="h-6 w-6" />}
         </span>
 
