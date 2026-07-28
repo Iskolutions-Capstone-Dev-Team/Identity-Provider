@@ -1,129 +1,176 @@
-import TableRowFade from "../../../components/TableRowFade";
-import EmptySearchState from "../../../components/EmptySearchState";
+import { FileSearchCorner } from "lucide-react";
 import { ViewLogIcon } from "./auditLogIcons";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { IconStack } from "@/components/reui/icon-stack";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Frame, FramePanel } from "@/components/reui/frame";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+function getInitials(text) {
+  if (!text) return "A";
+  const parts = text.trim().split(/\s+/);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  return parts[0][0].toUpperCase();
+}
 
-const headerCellClassName =
-  "border-b border-white/10 px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90";
-
-function getStatusClasses(status, isDarkMode) {
-  const normalizedStatus =
-    typeof status === "string" ? status.trim().toLowerCase() : "";
+function getStatusClasses(status) {
+  const normalizedStatus = typeof status === "string" ? status.trim().toLowerCase() : "";
 
   if (normalizedStatus === "success") {
-    return isDarkMode
-      ? "border border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
-      : "border border-emerald-200/80 bg-emerald-50 text-emerald-700";
+    return "bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-400/10 dark:text-emerald-200 dark:hover:bg-emerald-400/10";
   }
 
   if (normalizedStatus === "fail" || normalizedStatus === "failed") {
-    return isDarkMode
-      ? "border border-red-400/30 bg-red-400/10 text-red-200"
-      : "border border-red-200/80 bg-red-50 text-red-700";
+    return "bg-red-50 text-red-700 hover:bg-red-50 dark:bg-red-400/10 dark:text-red-200 dark:hover:bg-red-400/10";
   }
 
-  return isDarkMode
-    ? "border border-[#f8d24e]/20 bg-[#f8d24e]/10 text-[#ffe28a]"
-    : "border border-[#7b0d15]/10 bg-[#fff7ef] text-[#7b0d15]";
+  return "bg-amber-50 text-amber-700 hover:bg-amber-50 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/10";
 }
 
-function getRowClassName(index, isDarkMode) {
-  if (isDarkMode) {
-    return `transition-colors duration-500 ease-out ${
-      index % 2 === 0
-        ? "bg-white/[0.03] hover:bg-[#f8d24e]/[0.08]"
-        : "bg-[#7b0d15]/[0.08] hover:bg-[#7b0d15]/[0.16]"
-    }`;
+export default function LogsTable({ loading = false, logs, onView, colorMode = "light", emptyMessage = "No logs found", logTypeLabel = "log" }) {
+  if (loading) {
+    return (
+      <div className="mx-auto flex w-full flex-col">
+        <Frame spacing="xs">
+          <FramePanel className="p-0!">
+            <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center w-[200px]">Actor</TableHead>
+              <TableHead className="w-[180px] text-center">Timestamp</TableHead>
+              <TableHead className="w-[250px] text-center">Target</TableHead>
+              <TableHead className="w-[120px] text-center">Status</TableHead>
+              <TableHead className="w-[150px] text-center">Action</TableHead>
+              <TableHead className="w-[100px] text-center">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell className="pl-6">
+                  <div className="flex items-center justify-start gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </TableCell>
+                <TableCell className="text-center"><Skeleton className="h-4 w-28 mx-auto" /></TableCell>
+                <TableCell className="text-center"><Skeleton className="h-4 w-32 mx-auto" /></TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </div>
+                </TableCell>
+                <TableCell className="text-center"><Skeleton className="h-4 w-24 mx-auto" /></TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        </FramePanel>
+      </Frame>
+      </div>
+    );
   }
-
-  return `transition-colors duration-300 ${
-    index % 2 === 0
-      ? "bg-white/70 hover:bg-[#fff4dc]/70"
-      : "bg-[#fff8f3]/80 hover:bg-[#fff4dc]/80"
-  }`;
-}
-
-export default function LogsTable({ logs, onView, colorMode = "light", emptyMessage = "No logs found", logTypeLabel = "log" }) {
-  const isDarkMode = colorMode === "dark";
-  const wrapperClassName = isDarkMode
-    ? "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(28,18,29,0.92))] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.82)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
-    : "overflow-hidden rounded-[1.75rem] border border-[#7b0d15]/10 bg-white/65 shadow-[0_22px_55px_-38px_rgba(43,3,7,0.55)] transition-[background-color,border-color,box-shadow] duration-500 ease-out";
-  const tableHeaderRowClassName = isDarkMode
-    ? "bg-[linear-gradient(135deg,#7b0d15_0%,#253247_55%,#421117_100%)]"
-    : "bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)]";
-  const bodyCellClassName = isDarkMode
-    ? "border-b border-white/10 px-6 py-5 text-center align-middle text-sm text-[#f1e5e7]"
-    : "border-b border-[#7b0d15]/10 px-6 py-5 text-center align-middle text-sm text-[#5d3a41]";
-  const timestampCellClassName = isDarkMode
-    ? `${bodyCellClassName} text-[0.82rem] text-[#f8d996]`
-    : `${bodyCellClassName} text-[0.82rem] text-[#7b0d15]`;
-  const actorCellClassName = isDarkMode
-    ? `${bodyCellClassName} whitespace-nowrap font-semibold text-[#f6eaec]`
-    : `${bodyCellClassName} whitespace-nowrap font-semibold text-[#4a1921]`;
-  const actionCellClassName = isDarkMode
-    ? `${bodyCellClassName} max-w-44 break-words text-[#f7dadd]`
-    : `${bodyCellClassName} max-w-44 break-words text-[#7b0d15]`;
-  const emptyStateClassName = isDarkMode
-    ? "px-6 py-16 text-center text-sm text-[#bda8af]"
-    : "px-6 py-16 text-center text-sm text-[#8f6f76]";
-  const actionButtonClassName = isDarkMode
-    ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] text-[#f1e5e7] shadow-[0_14px_30px_-24px_rgba(2,6,23,0.72)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
-    : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
 
   return (
-    <div className={wrapperClassName}>
-      <div className="overflow-x-auto">
-        <table className="table w-full min-w-[72rem] lg:min-w-0">
-          <thead>
-            <tr className={tableHeaderRowClassName}>
-              <th className={headerCellClassName}>Timestamp</th>
-              <th className={headerCellClassName}>Actor</th>
-              <th className={headerCellClassName}>Target</th>
-              <th className={headerCellClassName}>Status</th>
-              <th className={headerCellClassName}>Action</th>
-              <th className={headerCellClassName}>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {logs.length === 0 && (
-              <tr>
-                <td colSpan={6} className={emptyStateClassName}>
-                  <EmptySearchState message={emptyMessage} colorMode={colorMode} />
-                </td>
-              </tr>
-            )}
-
-            {logs.map((log, index) => (
-              <TableRowFade
-                key={log.rowKey ?? log.id ?? `${log.timestamp}-${index}`}
-                keyId={log.rowKey ?? log.id ?? `${log.timestamp}-${index}`}
-                className={getRowClassName(index, isDarkMode)}
-              >
-                <td className={timestampCellClassName}>{log.timestamp}</td>
-                <td className={actorCellClassName} title={log.actor}>
-                  {log.actor}
-                </td>
-                <td className={`${bodyCellClassName} max-w-56 break-words`}>
-                  {log.target}
-                </td>
-                <td className={bodyCellClassName}>
-                  <span className={`inline-flex min-w-[6rem] items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold tracking-[0.06em] ${getStatusClasses(log.status, isDarkMode)}`}>
-                    {log.status}
-                  </span>
-                </td>
-                <td className={actionCellClassName}>{log.action}</td>
-                <td className={bodyCellClassName}>
-                  <div className="flex items-center justify-center">
-                    <button type="button" aria-label={`View ${log.actor} ${logTypeLabel} details`} className={actionButtonClassName} onClick={() => onView(log)}>
-                      <ViewLogIcon />
-                    </button>
+    <div className="mx-auto flex w-full flex-col mt-4">
+      <Frame spacing="xs">
+        <FramePanel className="p-0!">
+          <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-center w-[200px]">Actor</TableHead>
+            <TableHead className="w-[180px] text-center">Timestamp</TableHead>
+            <TableHead className="w-[250px] text-center">Target</TableHead>
+            <TableHead className="w-[120px] text-center">Status</TableHead>
+            <TableHead className="w-[150px] text-center">Action</TableHead>
+            <TableHead className="w-[100px] text-center">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {logs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="h-48 text-center">
+                <div className="flex items-center justify-center w-full py-10 mt-4">
+                  <Empty className="max-w-md">
+                    <EmptyHeader>
+                      <EmptyMedia>
+                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
+                          <FileSearchCorner className="text-[#7b0d15] dark:text-primary size-5" />
+                        </IconStack>
+                      </EmptyMedia>
+                      <EmptyTitle>{emptyMessage}</EmptyTitle>
+                      <EmptyDescription>
+                        We couldn't find any {logTypeLabel}s matching your criteria.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : (
+            logs.map((log, index) => (
+              <TableRow key={log.rowKey ?? log.id ?? `${log.timestamp}-${index}`}>
+                <TableCell className="w-[200px] pl-6" title={log.actor}>
+                  <div className="flex items-center justify-start gap-3">
+                    <Avatar className="h-9 w-9 dark:border dark:border-gray-300 shrink-0">
+                      <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] font-medium">
+                        {getInitials(log.actor)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {log.actor && log.actor.length > 20 ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-pointer">
+                              {log.actor.substring(0, 20)}...
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-none">
+                            <p className="break-all">{log.actor}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span>{log.actor}</span>
+                    )}
                   </div>
-                </td>
-              </TableRowFade>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </TableCell>
+                <TableCell className="font-medium text-center">{log.timestamp}</TableCell>
+                <TableCell className="w-[250px] break-words text-center" title={log.target}>
+                  {log.target}
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    <Badge variant="outline" className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(log.status)}`}>
+                      {log.status}
+                    </Badge>
+                  </div>
+                </TableCell>
+                <TableCell className="w-[150px] break-words text-center">
+                  {log.action}
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(log)} aria-label={`View ${log.actor} ${logTypeLabel} details`}>
+                      <ViewLogIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+          </TableBody>
+        </Table>
+        </FramePanel>
+      </Frame>
     </div>
   );
 }

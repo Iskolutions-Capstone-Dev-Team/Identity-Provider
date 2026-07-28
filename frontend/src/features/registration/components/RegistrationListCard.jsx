@@ -1,8 +1,14 @@
 import Pagination from "../../../components/Pagination";
 import RegistrationTable from "./RegistrationTable";
+import RegistrationCards from "./RegistrationCards";
 import ResultsCount from "../../../components/ResultsCount";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { SearchIcon } from "./registrationIcons";
+import { Input } from "@/components/ui/input";
+import { Search, Table, WalletCards, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 
 export default function RegistrationListCard({
   children,
@@ -18,12 +24,25 @@ export default function RegistrationListCard({
   onView,
   onEdit,
   onDelete,
+  colorMode = "light",
+  globalViewType,
   tableContent = null,
   showFooter = true,
   showEditAction = true,
   showDeleteAction = true,
-  colorMode = "light",
 }) {
+  const [viewType, setViewType] = useState(() => {
+    return localStorage.getItem("registrationViewType") || globalViewType || "table";
+  });
+
+  useEffect(() => {
+    if (globalViewType) setViewType(globalViewType);
+  }, [globalViewType]);
+
+  useEffect(() => {
+    localStorage.setItem("registrationViewType", viewType);
+  }, [viewType]);
+
   const isDarkMode = colorMode === "dark";
   const filtersClassName = `flex flex-col gap-5 ${
     isDarkMode ? "border-white/10" : "border-[#7b0d15]/10"
@@ -53,66 +72,99 @@ export default function RegistrationListCard({
   };
 
   return (
-    <div className="relative space-y-5 sm:space-y-6 lg:space-y-8">
-      <div className={filtersClassName}>
-        <div className="min-w-0 w-full">
-          <SpeechInputToolbar
-            activeFieldLabel="Registration Search"
-            onTranscript={handleSearchVoiceInput}
-            colorMode={colorMode}
-          />
-          <label className={labelClassName}>
-            What registration setting are you looking for?
-          </label>
-          <label className={searchFieldClassName}>
-            <SearchIcon className={searchIconClassName} />
-            <input
-              type="search"
-              value={search}
-              placeholder="Search by account type or client..."
-              className={searchInputClassName}
-              onChange={handleSearchChange}
+    <div className="flex flex-col gap-6">
+      <div className="bg-card border rounded-xl p-4 sm:p-5 shadow-sm w-full">
+        <div className="flex flex-col lg:flex-row lg:items-end gap-4 lg:gap-6 w-full">
+          <div className="flex-1 w-full flex flex-col gap-2 relative">
+            <SpeechInputToolbar
+              activeFieldLabel="Registration Search"
+              onTranscript={handleSearchVoiceInput}
+              colorMode={colorMode}
             />
-          </label>
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">What registration setting are you looking for?</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input type="search" value={search} placeholder="Search by account type or client..." className="pl-9 h-10 w-full" onChange={handleSearchChange}/>
+            </div>
+          </div>
+          
+          <div className="w-full lg:w-[130px] shrink-0 flex flex-col gap-2">
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">View</label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-10 px-3 flex items-center gap-2 bg-background border shadow-sm w-full justify-between">
+                  <div className="flex items-center gap-2 text-foreground font-normal">
+                    {viewType === "card" ? <WalletCards className="w-4 h-4 opacity-70" /> : <Table className="w-4 h-4 opacity-70" />}
+                    <span>{viewType === "card" ? "Card" : "Table"}</span>
+                  </div>
+                  <ChevronDown className="w-4 h-4 opacity-50 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[130px]">
+                <DropdownMenuRadioGroup value={viewType} onValueChange={setViewType}>
+                  <DropdownMenuRadioItem value="table" className="cursor-pointer gap-2">
+                    <Table className="w-4 h-4 opacity-70" />
+                    Table
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="card" className="cursor-pointer gap-2">
+                    <WalletCards className="w-4 h-4 opacity-70" />
+                    Card
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
       {children}
 
       {tableContent || (
-        <RegistrationTable
-          rows={rows}
-          onView={onView}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          showEditAction={showEditAction}
-          showDeleteAction={showDeleteAction}
-          colorMode={colorMode}
-        />
+        viewType === "table" ? (
+          <RegistrationTable
+            loading={loading}
+            rows={rows}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            showEditAction={showEditAction}
+            showDeleteAction={showDeleteAction}
+            colorMode={colorMode}
+          />
+        ) : (
+          <RegistrationCards
+            loading={loading}
+            rows={rows}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            showEditAction={showEditAction}
+            showDeleteAction={showDeleteAction}
+            colorMode={colorMode}
+          />
+        )
       )}
 
       {showFooter && !loading && (
-        <div className={footerClassName}>
-          <div className="flex w-full justify-center lg:justify-start">
+        <div className="flex flex-col sm:grid sm:grid-cols-3 items-center gap-4">
+          <div className="flex justify-start w-full order-2 sm:order-1">
             <ResultsCount
               page={page}
               itemsPerPage={itemsPerPage}
               totalResults={totalResults}
               currentResultsCount={rows.length}
-              variant="glass"
               colorMode={colorMode}
             />
           </div>
-          <div className="flex w-full justify-center">
+          <div className="flex justify-center w-full order-1 sm:order-2">
             <Pagination
               currentPage={page}
               totalPages={totalPages}
               onPageChange={onPageChange}
-              variant="glass"
               colorMode={colorMode}
             />
           </div>
-          <div className="hidden lg:block"></div>
+          <div className="hidden sm:block order-3"></div>
         </div>
       )}
     </div>

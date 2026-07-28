@@ -1,349 +1,331 @@
-import TableRowFade from "../../../components/TableRowFade";
+import { useState } from "react";
+import { toast } from "sonner";
 import { shortenId } from "../../../utils/shortenId";
-import DataTableSkeleton from "../../../components/DataTableSkeleton";
-import EmptySearchState from "../../../components/EmptySearchState";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
-import { getAccountTypeLabel } from "../../../utils/accountTypes";
-import { ViewIcon, EditIcon, DeleteIcon } from "./userpoolIcons";
+import { Eye, Pencil, Trash, Copy, CopyCheck, Ellipsis, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Frame, FramePanel } from "@/components/reui/frame";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { IconStack } from "@/components/reui/icon-stack";
 
-const headerCellClassName = "border-b  border-white/10 px-4 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/90 xl:px-6";
-const bodyCellClassName = "border-b border-[#7b0d15]/10 px-4 py-4 align-top text-center text-sm text-[#4a1921] xl:px-6";
-const emailHeaderCellClassName = `${headerCellClassName} lg:pl-10 xl:pl-12`;
-const emailBodyCellClassName = `${bodyCellClassName} font-medium text-[#5a0b12] lg:pl-10 xl:pl-12`;
-const statusHeaderCellClassName = `${headerCellClassName} text-center lg:pr-8 xl:pr-10`;
-const statusBodyCellClassName = `${bodyCellClassName} text-center lg:pr-8 xl:pr-10`;
-const actionsHeaderCellClassName = `${headerCellClassName} text-center lg:pl-4 lg:pr-9 xl:pl-5 xl:pr-11`;
-const actionsBodyCellClassName = `${bodyCellClassName} text-center lg:pl-4 lg:pr-9 xl:pl-5 xl:pr-11`;
-
-function getStatusClassName(status, isDarkMode) {
-  if (status === "active") {
-    return isDarkMode
-      ? "border border-emerald-400/25 bg-emerald-400/12 text-emerald-200"
-      : "border border-emerald-200 bg-emerald-50 text-emerald-700";
-  }
-
-  if (status === "inactive") {
-    return isDarkMode
-      ? "border border-amber-400/25 bg-amber-400/12 text-amber-200"
-      : "border border-amber-200 bg-amber-50 text-amber-700";
-  }
-
-  return isDarkMode
-    ? "border border-rose-400/25 bg-rose-400/12 text-rose-200"
-    : "border border-rose-200 bg-rose-50 text-rose-700";
+function getStatusBadgeVariant(status) {
+  if (status === "active") return "success-outline";
+  if (status === "inactive" || status === "suspended") return "destructive-outline";
+  return "default";
 }
 
 function getFullName(user) {
   const fullName = [user.givenName, user.middleName, user.surname, user.suffix]
     .filter(Boolean)
     .join(" ");
-
   return fullName || user.displayName || user.email || "User";
 }
 
 function getUserLabel(user) {
-  return user.displayName || user.email || "User";
+  return getFullName(user);
 }
 
-function getAccessListClassName() {
-  return "flex flex-wrap items-center justify-center gap-2";
+function CopyUserIdButton({ id }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    if (!id) return;
+    navigator.clipboard.writeText(id);
+    setCopied(true);
+    toast.success("User ID copied to clipboard");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex items-center justify-center p-0.5 text-muted-foreground hover:text-foreground transition-colors rounded ml-1"
+      title="Copy User ID"
+    >
+      {copied ? (
+        <CopyCheck className="h-3.5 w-3.5 text-[#00d053]" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" />
+      )}
+    </button>
+  );
+}
+
+function getInitials(user) {
+  const firstName = user.givenName?.trim() || "";
+  const lastName = user.surname?.trim() || "";
+  
+  if (firstName && lastName) {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  } else if (firstName) {
+    return firstName[0].toUpperCase();
+  } else if (lastName) {
+    return lastName[0].toUpperCase();
+  } else if (user.displayName) {
+    const parts = user.displayName.split(" ").filter(Boolean);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    return parts[0][0].toUpperCase();
+  }
+  return "U";
 }
 
 function normalizeClientNameList(clientNames = []) {
   return Array.from(
     new Set(
       (Array.isArray(clientNames) ? clientNames : [])
-        .map((clientName) =>
-          typeof clientName === "string" ? clientName.trim() : "",
-        )
+        .map((clientName) => (typeof clientName === "string" ? clientName.trim() : ""))
         .filter(Boolean),
     ),
   );
 }
 
 function getRegularAccessItems(user, appClients) {
-  const responseClientNames = normalizeClientNameList(
-    user?.accessibleClientNames,
-  );
-
-  if (responseClientNames.length > 0) {
-    return responseClientNames;
-  }
-
+  const responseClientNames = normalizeClientNameList(user?.accessibleClientNames);
+  if (responseClientNames.length > 0) return responseClientNames;
   return getAppClientNamesByIds(user?.accessibleClientIds, appClients);
 }
 
-function getColumnWidths(isAdminView, showActionsColumn) {
-  if (isAdminView) {
-    if (!showActionsColumn) {
-      return [
-        "w-[8rem] lg:w-[12%]",
-        "w-[15rem] lg:w-[26%]",
-        "w-[13rem] lg:w-[26%]",
-        "w-[9rem] lg:w-[18%]",
-        "w-[8.5rem] lg:w-[18%]",
-      ];
-    }
-
-    return [
-      "w-[8rem] lg:w-[10%]",
-      "w-[14rem] lg:w-[25%]",
-      "w-[12rem] lg:w-[25%]",
-      "w-[9rem] lg:w-[15%]",
-      "w-[8.5rem] lg:w-[10%]",
-      "w-[9rem] lg:w-[15%]",
-    ];
-  }
-
-  if (!showActionsColumn) {
-    return [
-      "w-[8rem] lg:w-[9%]",
-      "w-[15rem] lg:w-[21%]",
-      "w-[12rem] lg:w-[18%]",
-      "w-[10rem] lg:w-[14%]",
-      "w-[13rem] lg:w-[23%]",
-      "w-[9rem] lg:w-[15%]",
-    ];
-  }
-
-  return [
-    "w-[8rem] lg:w-[8%]",
-    "w-[14rem] lg:w-[18%]",
-    "w-[11rem] lg:w-[16%]",
-    "w-[10rem] lg:w-[12%]",
-    "w-[13rem] lg:w-[22%]",
-    "w-[9rem] lg:w-[12%]",
-    "w-[9.5rem] lg:w-[12%]",
-  ];
-}
-
-function renderActionButton({ label, onClick, children, className }) {
-  return (
-    <button type="button" className={className} onClick={onClick} aria-label={label}>
-      {children}
-    </button>
-  );
-}
-
-export default function UserPoolTable({ loading = false, users = [], userType = "regular", appClients = [], onView, onEdit, onDelete, showViewAction = true, showEditAction = true, showDeleteAction = false, colorMode = "light" }) {
-  const isDarkMode = colorMode === "dark";
+export default function UserPoolTable({
+  loading = false,
+  users = [],
+  userType = "regular",
+  appClients = [],
+  onView,
+  onEdit,
+  onDelete,
+  showViewAction = true,
+  showEditAction = true,
+  showDeleteAction = false,
+}) {
   const isAdminView = userType === ADMIN_USER_TYPE;
   const accessColumnLabel = isAdminView ? "Role" : "Accessible Clients";
-  const emptyStateLabel = "No users found";
-  const tableTheme = isDarkMode ? "userpoolDark" : "userpool";
-  const wrapperClassName = isDarkMode
-    ? "overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(17,24,39,0.9),rgba(28,18,29,0.92))] shadow-[0_22px_55px_-38px_rgba(2,6,23,0.82)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
-    : "overflow-hidden rounded-[1.75rem] border border-[#7b0d15]/10 bg-white/65 shadow-[0_22px_55px_-38px_rgba(43,3,7,0.55)] transition-[background-color,border-color,box-shadow] duration-500 ease-out";
-  const tableHeaderRowClassName = isDarkMode
-    ? "bg-[linear-gradient(135deg,#7b0d15_0%,#253247_55%,#421117_100%)]"
-    : "bg-[linear-gradient(135deg,#7b0d15_0%,#2b0307_100%)]";
-  const sharedBodyCellClassName = isDarkMode
-    ? "border-b border-white/10 px-4 py-4 align-top text-center text-sm text-[#f1e5e7] xl:px-6"
-    : bodyCellClassName;
-  const sharedEmailBodyCellClassName = isDarkMode
-    ? `${sharedBodyCellClassName} font-medium text-[#f8d996] lg:pl-10 xl:pl-12`
-    : emailBodyCellClassName;
-  const sharedStatusBodyCellClassName = isDarkMode
-    ? `${sharedBodyCellClassName} text-center lg:pr-8 xl:pr-10`
-    : statusBodyCellClassName;
-  const sharedActionsBodyCellClassName = isDarkMode
-    ? `${sharedBodyCellClassName} text-center lg:pl-4 lg:pr-9 xl:pl-5 xl:pr-11`
-    : actionsBodyCellClassName;
-  const emptyStateClassName = isDarkMode
-    ? "px-6 py-12 text-center text-sm font-medium text-[#bda8af]"
-    : "px-6 py-12 text-center text-sm font-medium text-[#8f6f76]";
-  const roleBadgeClassName = isDarkMode
-    ? "inline-flex w-max items-center rounded-full border border-[#f8d24e]/20 bg-[#f8d24e]/10 px-3 py-1 text-xs font-semibold whitespace-nowrap text-[#ffe28a]"
-    : "inline-flex w-max items-center rounded-full border border-[#7b0d15]/10 bg-[#7b0d15]/5 px-3 py-1 text-xs font-semibold whitespace-nowrap text-[#7b0d15]";
-  const idBadgeClassName = isDarkMode
-    ? "inline-flex max-w-full cursor-pointer rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-semibold tracking-[0.08em] text-[#f3d8dc]"
-    : "inline-flex max-w-full cursor-pointer rounded-full border border-[#7b0d15]/10 bg-[#7b0d15]/5 px-3 py-1 text-xs font-semibold tracking-[0.08em] text-[#7b0d15]";
-  const actionButtonClassName = isDarkMode
-    ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] text-[#f1e5e7] shadow-[0_14px_30px_-24px_rgba(2,6,23,0.72)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
-    : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.84))] text-[#7b0d15] shadow-[0_14px_30px_-24px_rgba(43,3,7,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
-  const showActionsColumn =
-    showViewAction || showEditAction || showDeleteAction;
-  const columnWidths = getColumnWidths(isAdminView, showActionsColumn);
-  const getAccessItems = (user) =>
-    isAdminView ? user.roles : getRegularAccessItems(user, appClients);
   const emptyAccessLabel = isAdminView ? "No role assigned" : "No clients";
-  const loadingColumns = [
-    { header: "ID", type: "text", width: "w-16", colClassName: columnWidths[0] },
-    { header: "Email", type: "text", width: "w-32", colClassName: columnWidths[1] },
-    { header: "Name", type: "stackedText", colClassName: columnWidths[2] },
-    ...(!isAdminView ? [{ header: "Account Type", type: "text", colClassName: columnWidths[3] }] : []),
-    { header: accessColumnLabel, type: "badges", colClassName: columnWidths[isAdminView ? 3 : 4] },
-    { header: "Status", type: "badge", width: "w-20", colClassName: columnWidths[isAdminView ? 4 : 5] },
-  ];
+  const showActionsColumn = showViewAction || showEditAction || showDeleteAction;
 
-  if (showActionsColumn) {
-    loadingColumns.push({
-      header: "Actions",
-      type: "actions",
-      colClassName: columnWidths[isAdminView ? 5 : 6],
-    });
-  }
+  const getAccessItems = (user) => (isAdminView ? user.roles : getRegularAccessItems(user, appClients));
 
   if (loading) {
     return (
-      <DataTableSkeleton
-        theme={tableTheme}
-        columns={loadingColumns}
-      />
+      <div className="mx-auto flex w-full flex-col">
+        <Frame spacing="xs">
+          <FramePanel className="p-0!">
+            <Table>
+              <TableHeader>
+                <TableRow>
+              <TableHead className="text-center w-[30%]">Name</TableHead>
+              <TableHead className="text-center">Email</TableHead>
+              <TableHead className="text-center">{accessColumnLabel}</TableHead>
+              <TableHead className="text-center">Status</TableHead>
+              {showActionsColumn && <TableHead className="text-center">Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell className="pl-6 w-[30%]">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center"><Skeleton className="h-4 w-40 mx-auto" /></TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center gap-2">
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                </TableCell>
+                <TableCell className="text-center"><Skeleton className="h-6 w-16 mx-auto rounded-full" /></TableCell>
+                {showActionsColumn && (
+                  <TableCell className="text-center">
+                    <div className="flex justify-center gap-2">
+                      {showViewAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                      {showEditAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                      {showDeleteAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                    </div>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        </FramePanel>
+      </Frame>
+      </div>
     );
   }
 
   return (
-    <div className={wrapperClassName}>
-      <div className="overflow-x-auto lg:overflow-x-hidden">
-        <table className="table w-full min-w-[62rem] lg:min-w-0 lg:table-fixed">
-          <colgroup>
-            {columnWidths.map((className, index) => (
-              <col key={index} className={className} />
-            ))}
-          </colgroup>
+    <div className="mx-auto flex w-full flex-col">
+      <Frame spacing="xs">
+        <FramePanel className="p-0!">
+          <Table>
+            <TableHeader>
+              <TableRow>
+            <TableHead className="text-center w-[30%]">Name</TableHead>
+            <TableHead className="text-center">Email</TableHead>
+            <TableHead className="text-center">{accessColumnLabel}</TableHead>
+            <TableHead className="text-center">Status</TableHead>
+            {showActionsColumn && <TableHead className="text-center">Actions</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={showActionsColumn ? 5 : 4} className="h-24 text-center">
+                <div className="flex items-center justify-center w-full py-10">
+                  <Empty className="max-w-md">
+                    <EmptyHeader>
+                      <EmptyMedia>
+                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
+                          <User className="text-[#7b0d15] dark:text-primary size-5" />
+                        </IconStack>
+                      </EmptyMedia>
+                      <EmptyTitle>No users found</EmptyTitle>
+                      <EmptyDescription>
+                        We couldn't find any users matching your criteria.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </div>
+              </TableCell>
+            </TableRow>
+          )}
 
-          <thead>
-            <tr className={tableHeaderRowClassName}>
-              <th className={headerCellClassName}>ID</th>
-              <th className={emailHeaderCellClassName}>Email</th>
-              <th className={headerCellClassName}>Name</th>
-              {!isAdminView && (
-                <th className={headerCellClassName}>Account Type</th>
-              )}
-              <th className={headerCellClassName}>{accessColumnLabel}</th>
-              <th className={statusHeaderCellClassName}>Status</th>
-              {showActionsColumn && (
-                <th className={actionsHeaderCellClassName}>Actions</th>
-              )}
-            </tr>
-          </thead>
+          {users.map((user) => {
+            const accessItems = getAccessItems(user);
 
-          <tbody>
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={columnWidths.length} className={emptyStateClassName}>
-                  <EmptySearchState message={emptyStateLabel} colorMode={colorMode} />
-                </td>
-              </tr>
-            )}
-
-            {users.map((user, index) => {
-              const accessItems = getAccessItems(user);
-
-              return (
-                <TableRowFade
-                  key={user.id}
-                  keyId={user.id}
-                  className={`transition-colors duration-500 ease-out ${
-                    isDarkMode
-                      ? index % 2 === 0
-                        ? "bg-white/[0.03] hover:bg-[#f8d24e]/[0.08]"
-                        : "bg-[#7b0d15]/[0.08] hover:bg-[#7b0d15]/[0.16]"
-                      : index % 2 === 0
-                        ? "bg-white/70 hover:bg-[#fff4dc]/70"
-                        : "bg-[#fff8f3]/80 hover:bg-[#fff4dc]/80"
-                  }`}
-                >
-                <td className={sharedBodyCellClassName}>
-                  <div className="tooltip tooltip-right" data-tip={user.id}>
-                    <span className={idBadgeClassName}>
-                      {shortenId(user.id)}
-                    </span>
-                  </div>
-                </td>
-
-                <td className={sharedEmailBodyCellClassName}>
-                  <div className="break-all lg:break-words">{user.email}</div>
-                </td>
-
-                <td className={sharedBodyCellClassName}>
-                  <div className="break-words whitespace-normal leading-6">
-                    {getFullName(user)}
-                  </div>
-                </td>
-
-                {!isAdminView && (
-                  <td className={sharedBodyCellClassName}>
-                    <div className="break-words whitespace-normal font-medium leading-6">
-                      {getAccountTypeLabel(user.accountType || user.account_type)}
+            return (
+              <TableRow key={user.id}>
+                <TableCell className="pl-6 w-[30%]">
+                  <div className="flex items-center justify-start gap-3">
+                    <Avatar className="h-9 w-9 dark:border dark:border-gray-300 shrink-0">
+                      <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] font-medium">
+                        {getInitials(user)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col text-left min-w-0">
+                      <span className="text-sm font-medium whitespace-nowrap">
+                        {getFullName(user)}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground text-xs break-all">
+                          {user.id}
+                        </span>
+                        <CopyUserIdButton id={user.id} />
+                      </div>
                     </div>
-                  </td>
-                )}
-
-                <td className={sharedBodyCellClassName}>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">{user.email}</TableCell>
+                <TableCell className="text-center">
                   {accessItems.length > 0 ? (
-                    isAdminView ? (
-                      <div className="flex justify-center">
-                        <span className={roleBadgeClassName}>{accessItems[0]}</span>
-                      </div>
-                    ) : (
-                      <div className={getAccessListClassName()}>
-                        {accessItems.map((item, itemIndex) => (
-                          <div key={`${item}-${itemIndex}`} className="flex justify-center">
-                            <span className={roleBadgeClassName}>
+                    <div className="flex flex-wrap justify-center gap-1">
+                      {accessItems.length > 5 ? (
+                        <>
+                          {accessItems.slice(0, 5).map((item, idx) => (
+                            <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
                               {item}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  ) : (
-                    <span className={isDarkMode ? "text-[#a58d95]" : "text-[#8f6f76]"}>
-                      {emptyAccessLabel}
-                    </span>
-                  )}
-                </td>
-
-                <td className={sharedStatusBodyCellClassName}>
-                  <div className="flex justify-center">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ${getStatusClassName(user.status, isDarkMode)}`}>
-                      {user.status}
-                    </span>
-                  </div>
-                </td>
-
-                {showActionsColumn && (
-                  <td className={sharedActionsBodyCellClassName}>
-                    <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-                      {showViewAction &&
-                        renderActionButton({
-                          label: `View ${getUserLabel(user)}`,
-                          onClick: () => onView(user),
-                          className: actionButtonClassName,
-                          children: (
-                            <ViewIcon />
-                          ),
-                        })}
-
-                      {showEditAction &&
-                        renderActionButton({
-                          label: `Edit ${getUserLabel(user)}`,
-                          onClick: () => onEdit(user),
-                          className: actionButtonClassName,
-                          children: (
-                            <EditIcon />
-                          ),
-                        })}
-
-                      {showDeleteAction &&
-                        renderActionButton({
-                          label: `Delete ${getUserLabel(user)}`,
-                          onClick: () => onDelete(user),
-                          className: actionButtonClassName,
-                          children: (
-                            <DeleteIcon />
-                          ),
-                        })}
+                            </Badge>
+                          ))}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Badge asChild className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2.5 py-1 inline-flex items-center justify-center transition-colors cursor-pointer">
+                                <button type="button" aria-label="View all accessible clients">
+                                  <Ellipsis className="w-3.5 h-3.5" />
+                                </button>
+                              </Badge>
+                            </PopoverTrigger>
+                            <PopoverContent align="center" className="w-72 p-3 bg-popover text-popover-foreground border shadow-md rounded-lg">
+                              <div className="space-y-2">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-left">
+                                  All Accessible Clients ({accessItems.length})
+                                </h4>
+                                <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pt-1 pr-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/25 hover:[&::-webkit-scrollbar-thumb]:bg-foreground/40 [&::-webkit-scrollbar-track]:bg-transparent">
+                                  {accessItems.map((item, idx) => (
+                                    <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2.5 py-1 text-xs">
+                                      {item}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </>
+                      ) : (
+                        accessItems.map((item, idx) => (
+                          <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
+                            {item}
+                          </Badge>
+                        ))
+                      )}
                     </div>
-                  </td>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">{emptyAccessLabel}</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center">
+                  <Badge variant={getStatusBadgeVariant(user.status)} className="capitalize font-semibold rounded-full px-3">
+                    {user.status}
+                  </Badge>
+                </TableCell>
+                {showActionsColumn && (
+                  <TableCell className="text-center">
+                    <div className="flex justify-center gap-2">
+                      {showViewAction && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors"
+                          onClick={() => onView(user)}
+                          title={`View ${getUserLabel(user)}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {showEditAction && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors"
+                          onClick={() => onEdit(user)}
+                          title={`Edit ${getUserLabel(user)}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {showDeleteAction && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors"
+                          onClick={() => onDelete(user)}
+                          title={`Delete ${getUserLabel(user)}`}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
                 )}
-                </TableRowFade>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+      </FramePanel>
+      </Frame>
     </div>
   );
 }

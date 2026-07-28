@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { LockIcon, EyeIcon, EyeOffIcon, Minus, Check } from "lucide-react";
 import ErrorAlert from "../../../components/ErrorAlert";
-import { getModalTheme } from "../../../components/modalTheme";
-import { PasswordVisibilityIcon } from "./profileIcons";
+import { Field, FieldLabel } from "../../../components/ui/field";
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton } from "../../../components/ui/input-group";
 
 const PASSWORD_REQUIREMENTS = [
   { key: "length", label: "At least 8 characters" },
@@ -13,28 +14,26 @@ const PASSWORD_REQUIREMENTS = [
 function PasswordRuleList({ validation, colorMode = "light" }) {
   const isDarkMode = colorMode === "dark";
   const listClassName = isDarkMode
-    ? "mt-3 grid gap-1.5 text-[0.84rem] font-medium text-[#aeb9c8]"
-    : "mt-3 grid gap-1.5 text-[0.84rem] font-medium text-[#64748b]";
+    ? "mt-3 grid gap-1.5 text-xs font-medium text-[#aeb9c8]"
+    : "mt-3 grid gap-1.5 text-xs font-medium text-[#64748b]";
   const validItemClassName = isDarkMode ? "text-[#4ade80]" : "text-emerald-700";
-  const pendingBadgeClassName = isDarkMode
-    ? "bg-[#f8d24e]/12 text-[#ffe28a]"
-    : "bg-[#fff4dc] text-[#7b0d15]";
-  const validBadgeClassName = isDarkMode
-    ? "bg-emerald-400/12 text-emerald-200"
-    : "bg-emerald-100 text-emerald-700";
+  const pendingIconClassName = isDarkMode ? "text-[#aeb9c8]" : "text-[#64748b]";
+  const validIconClassName = isDarkMode ? "text-[#4ade80]" : "text-emerald-700";
 
   return (
     <div className={listClassName}>
       {PASSWORD_REQUIREMENTS.map((requirement) => {
         const isMet = validation.checks[requirement.key];
         const itemClassName = isMet ? validItemClassName : "";
-        const badgeClassName = isMet ? validBadgeClassName : pendingBadgeClassName;
+        const iconClassName = isMet ? validIconClassName : pendingIconClassName;
 
         return (
           <p key={requirement.key} className={`flex items-center gap-2 ${itemClassName}`}>
-            <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.62rem] font-bold ${badgeClassName}`}>
-              {isMet ? "OK" : "-"}
-            </span>
+            {isMet ? (
+              <Check className={`size-3.5 shrink-0 ${iconClassName}`} />
+            ) : (
+              <Minus className={`size-3.5 shrink-0 ${iconClassName}`} />
+            )}
             {requirement.label}
           </p>
         );
@@ -68,15 +67,6 @@ export default function ChangePasswordStep({ form, setForm, showCurrentPassword 
     newPassword: false,
     confirmPassword: false,
   });
-  const {
-    modalInputClassName,
-    modalLabelClassName,
-    modalSectionClassName,
-  } = getModalTheme(colorMode);
-  const isDarkMode = colorMode === "dark";
-  const visibilityButtonClassName = isDarkMode
-    ? "absolute right-4 top-1/2 -translate-y-1/2 text-[#c7adb4] transition duration-300 hover:text-[#ffe28a]"
-    : "absolute right-4 top-1/2 -translate-y-1/2 text-[#8f6f76] transition duration-300 hover:text-[#5a0b12]";
 
   const validation = getPasswordValidationState(form);
   const fields = showCurrentPassword
@@ -103,45 +93,58 @@ export default function ChangePasswordStep({ form, setForm, showCurrentPassword 
     <div className="space-y-5">
       <ErrorAlert message={errorMessage} onClose={onClearError} />
 
-      <section className={modalSectionClassName}>
-        <div className="space-y-4">
-          {fields.map((field) => (
-            <div className="space-y-2" key={field}>
-              <label className={modalLabelClassName}>
-                {field === "currentPassword"
-                  ? "Current Password"
-                  : field === "newPassword"
-                    ? "New Password"
-                    : "Confirm New Password"}{" "}
-                <span className="text-red-500">*</span>
-              </label>
+      <div className="space-y-4">
+        {fields.map((field) => (
+          <Field key={field}>
+            <FieldLabel htmlFor={`val-${field}`}>
+              {field === "currentPassword"
+                ? "Current Password"
+                : field === "newPassword"
+                  ? "New Password"
+                  : "Confirm New Password"}{" "}
+              <span className="text-destructive">*</span>
+            </FieldLabel>
 
-              <div className="relative">
-                <input value={form[field]} type={showPassword[field] ? "text" : "password"} name={field}
-                  placeholder={
-                    field === "currentPassword"
-                      ? "Enter current password"
-                      : field === "newPassword"
-                        ? "Enter new password"
-                        : "Confirm new password"
-                  }
-                  className={`${modalInputClassName} pr-12`}
-                  onChange={handleChange}
-                  required
-                />
+            <InputGroup className="h-10 rounded-md">
+              <InputGroupAddon className="text-muted-foreground">
+                <LockIcon className="size-4" aria-hidden="true" />
+              </InputGroupAddon>
+              <InputGroupInput
+                id={`val-${field}`}
+                value={form[field]}
+                type={showPassword[field] ? "text" : "password"}
+                name={field}
+                placeholder={
+                  field === "currentPassword"
+                    ? "Enter current password"
+                    : field === "newPassword"
+                      ? "Enter new password"
+                      : "Confirm new password"
+                }
+                onChange={handleChange}
+                required
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  variant="ghost"
+                  onClick={() => toggleShowPassword(field)}
+                  aria-label={showPassword[field] ? "Hide password" : "Show password"}
+                >
+                  {showPassword[field] ? (
+                    <EyeOffIcon className="text-muted-foreground size-4" />
+                  ) : (
+                    <EyeIcon className="text-muted-foreground size-4" />
+                  )}
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
 
-                <button type="button" className={visibilityButtonClassName} onClick={() => toggleShowPassword(field)}>
-                  <PasswordVisibilityIcon isVisible={showPassword[field]} />
-                </button>
-              </div>
-
-              {field === "newPassword" && (
-                <PasswordRuleList validation={validation} colorMode={colorMode} />
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
+            {field === "newPassword" && (
+              <PasswordRuleList validation={validation} colorMode={colorMode} />
+            )}
+          </Field>
+        ))}
+      </div>
     </div>
   );
 }

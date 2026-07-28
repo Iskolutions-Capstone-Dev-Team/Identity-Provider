@@ -3,11 +3,12 @@ import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
 import { useUsers } from "../hooks/useUsers";
+import { Card } from "../../../components/ui/card";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
 import AddUserForm from "../components/AddUserForm";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../../../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS } from "../../../utils/permissionAccess";
+import { toast } from "sonner";
 import { CreateUserIcon } from "../components/userpoolIcons";
 
 function getRequestedUserType(location) {
@@ -73,19 +74,16 @@ export default function AddUserPage() {
   const handleSubmit = async (newUser) => {
     await createUser(newUser);
     wasSubmittedRef.current = true;
-    successMessageRef.current =
-      newUser.accountSetupType === "invitation"
+    const msg = newUser.accountSetupType === "invitation"
         ? "User created and invitation sent!"
         : "User successfully created!";
+    toast.success(msg);
   };
 
   const handleClose = () => {
     navigate("/user-pool", {
       state: {
         userType: allowedUserType,
-        successMessage: wasSubmittedRef.current
-          ? successMessageRef.current
-          : "",
       },
     });
   };
@@ -109,24 +107,31 @@ export default function AddUserPage() {
         ]}
       />
 
-      <PageHeader
-        title="New User"
-        description="Add a new user and fill in the details and set the appropriate access."
-        icon={<CreateUserIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-        colorMode={colorMode}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-primary/10 dark:text-primary rounded-xl flex items-center justify-center">
+            <CreateUserIcon className="w-8 h-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">New User</h1>
+            <p className="text-muted-foreground mt-1">Add a new user and fill in the details and set the appropriate access.</p>
+          </div>
+        </div>
+      </div>
 
-      <AddUserForm
-        onClose={handleClose}
-        onSubmit={handleSubmit}
-        userType={allowedUserType}
-        canAssignRoles={canAssignRoles}
-        canManageUserAccess={canManageUserAccess}
-        appClientOptions={appClientOptions}
-        isLoadingAppClients={isLoadingAppClients}
-        includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
-        colorMode={colorMode}
-      />
+      <div className="w-full">
+        <AddUserForm
+          onClose={handleClose}
+          onSubmit={handleSubmit}
+          userType={allowedUserType}
+          canAssignRoles={canAssignRoles}
+          canManageUserAccess={canManageUserAccess}
+          appClientOptions={appClientOptions}
+          isLoadingAppClients={isLoadingAppClients}
+          includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
+          colorMode={colorMode}
+        />
+      </div>
     </div>
   );
 }

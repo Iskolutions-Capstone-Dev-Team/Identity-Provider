@@ -188,30 +188,30 @@ export function useRoles() {
   const createRole = async (data) => {
     try {
       await roleService.createRole(data);
-      setSuccessMessage("Role successfully created!");
       await fetchRoles(page, { showLoading: false });
     } catch (error) {
       console.error("Create failed:", error);
+      throw error;
     }
   };
 
   const updateRole = async (data) => {
     try {
       await roleService.updateRole(data.id, data);
-      setSuccessMessage("Role successfully updated!");
       await fetchRoles(page, { showLoading: false });
     } catch (error) {
       console.error("Update failed:", error);
+      throw error;
     }
   };
 
   const deleteRole = async (id) => {
     try {
       await roleService.deleteRole(id);
-      setSuccessMessage("Role successfully deleted!");
       await fetchRoles(page, { showLoading: false });
     } catch (error) {
       console.error("Delete failed:", error);
+      throw error;
     }
   };
 
