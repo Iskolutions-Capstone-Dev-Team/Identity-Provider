@@ -39,7 +39,7 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 		mockCR := mocks.NewMockClientRepository(ctrl)
 
 		mockCR.EXPECT().
-			ListClients(gomock.Any(), 10, 0, "One Portal").
+			ListClients(gomock.Any(), 10, 0, "One Portal", gomock.Any(), gomock.Any()).
 			Return(nil, nil).
 			Times(1)
 
@@ -78,7 +78,7 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 		}
 
 		mockCR.EXPECT().
-			ListClients(gomock.Any(), 10, 0, "One Portal").
+			ListClients(gomock.Any(), 10, 0, "One Portal", gomock.Any(), gomock.Any()).
 			Return(clients, nil).
 			Times(1)
 
@@ -108,7 +108,7 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 		mockCR := mocks.NewMockClientRepository(ctrl)
 
 		mockCR.EXPECT().
-			ListClients(gomock.Any(), 10, 0, "One Portal").
+			ListClients(gomock.Any(), 10, 0, "One Portal", gomock.Any(), gomock.Any()).
 			Return(nil, nil).
 			Times(1)
 
@@ -137,7 +137,7 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 		mockCR := mocks.NewMockClientRepository(ctrl)
 
 		mockCR.EXPECT().
-			ListClients(gomock.Any(), 10, 0, "One Portal").
+			ListClients(gomock.Any(), 10, 0, "One Portal", gomock.Any(), gomock.Any()).
 			Return(nil, nil).
 			Times(1)
 

@@ -114,7 +114,9 @@ func TestListAllowedClients(t *testing.T) {
 		WithArgs(userID[:], "%Test%", 10, 0).
 		WillReturnRows(rows)
 
-	clients, err := repo.ListAllowedClients(context.Background(), 10, 0, "Test", userID[:])
+	clients, err := repo.ListAllowedClients(
+		context.Background(), 10, 0, "Test", userID[:], "", "",
+	)
 
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

@@ -130,9 +130,9 @@ func (mr *MockLogRepositoryMockRecorder) GetLogList(ctx, limit, offset any) *gom
 }
 
 // GetLogListWithFilters mocks base method.
-func (m *MockLogRepository) GetLogListWithFilters(ctx context.Context, filters map[string]any, limit, offset int) ([]models.AuditLog, int64, error) {
+func (m *MockLogRepository) GetLogListWithFilters(ctx context.Context, filters map[string]any, limit, offset int, sortBy, order string) ([]models.AuditLog, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLogListWithFilters", ctx, filters, limit, offset)
+	ret := m.ctrl.Call(m, "GetLogListWithFilters", ctx, filters, limit, offset, sortBy, order)
 	ret0, _ := ret[0].([]models.AuditLog)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -140,9 +140,9 @@ func (m *MockLogRepository) GetLogListWithFilters(ctx context.Context, filters m
 }
 
 // GetLogListWithFilters indicates an expected call of GetLogListWithFilters.
-func (mr *MockLogRepositoryMockRecorder) GetLogListWithFilters(ctx, filters, limit, offset any) *gomock.Call {
+func (mr *MockLogRepositoryMockRecorder) GetLogListWithFilters(ctx, filters, limit, offset, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogListWithFilters", reflect.TypeOf((*MockLogRepository)(nil).GetLogListWithFilters), ctx, filters, limit, offset)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogListWithFilters", reflect.TypeOf((*MockLogRepository)(nil).GetLogListWithFilters), ctx, filters, limit, offset, sortBy, order)
 }
 
 // GetSecurityLog mocks base method.
@@ -191,9 +191,9 @@ func (mr *MockLogRepositoryMockRecorder) GetSecurityLogList(ctx, limit, offset a
 }
 
 // GetSecurityLogListWithFilters mocks base method.
-func (m *MockLogRepository) GetSecurityLogListWithFilters(ctx context.Context, filters map[string]any, limit, offset int) ([]models.AuditLog, int64, error) {
+func (m *MockLogRepository) GetSecurityLogListWithFilters(ctx context.Context, filters map[string]any, limit, offset int, sortBy, order string) ([]models.AuditLog, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSecurityLogListWithFilters", ctx, filters, limit, offset)
+	ret := m.ctrl.Call(m, "GetSecurityLogListWithFilters", ctx, filters, limit, offset, sortBy, order)
 	ret0, _ := ret[0].([]models.AuditLog)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -201,9 +201,9 @@ func (m *MockLogRepository) GetSecurityLogListWithFilters(ctx context.Context, f
 }
 
 // GetSecurityLogListWithFilters indicates an expected call of GetSecurityLogListWithFilters.
-func (mr *MockLogRepositoryMockRecorder) GetSecurityLogListWithFilters(ctx, filters, limit, offset any) *gomock.Call {
+func (mr *MockLogRepositoryMockRecorder) GetSecurityLogListWithFilters(ctx, filters, limit, offset, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecurityLogListWithFilters", reflect.TypeOf((*MockLogRepository)(nil).GetSecurityLogListWithFilters), ctx, filters, limit, offset)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecurityLogListWithFilters", reflect.TypeOf((*MockLogRepository)(nil).GetSecurityLogListWithFilters), ctx, filters, limit, offset, sortBy, order)
 }
 
 // GetUserEmailbyID mocks base method.

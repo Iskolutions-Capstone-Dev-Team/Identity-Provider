@@ -237,3 +237,80 @@ func TestPatchUserDetailsHandler(t *testing.T) {
 		)
 	}
 }
+
+func TestGetUserList_Sorting(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("sort by ID is forbidden", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockService := mocks.NewMockUserService(ctrl)
+		handler := &v1.UserHandler{Service: mockService}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest(
+			"GET",
+			"/users?sort_by=id",
+			nil,
+		)
+		c.Set("user_id", uuid.New().String())
+		c.Set("permissions", []string{"View all users"})
+
+		handler.GetUserList(c)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("sort by invalid column is forbidden", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockService := mocks.NewMockUserService(ctrl)
+		handler := &v1.UserHandler{Service: mockService}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest(
+			"GET",
+			"/users?sort_by=invalid_col",
+			nil,
+		)
+		c.Set("user_id", uuid.New().String())
+		c.Set("permissions", []string{"View all users"})
+
+		handler.GetUserList(c)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("invalid order parameter is forbidden", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockService := mocks.NewMockUserService(ctrl)
+		handler := &v1.UserHandler{Service: mockService}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest(
+			"GET",
+			"/users?sort_by=email&order=invalid_order",
+			nil,
+		)
+		c.Set("user_id", uuid.New().String())
+		c.Set("permissions", []string{"View all users"})
+
+		handler.GetUserList(c)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+}
+
