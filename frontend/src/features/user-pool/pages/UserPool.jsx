@@ -10,7 +10,6 @@ import Pagination from "../../../components/Pagination";
 import UserPoolModal from "../components/UserPoolModal";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import InvitationConfirmModal from "../components/InvitationConfirmModal";
-import ResultsCount from "../../../components/ResultsCount";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
@@ -69,6 +68,10 @@ export default function UserPool() {
     setUserType,
     status,
     setStatus,
+    sortBy,
+    setSortBy,
+    sort,
+    setSort,
     page,
     setPage,
     paginatedUsers,
@@ -273,6 +276,10 @@ export default function UserPool() {
           setUserType={setUserType}
           status={status}
           setStatus={setStatus}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sort={sort}
+          setSort={setSort}
           viewType={viewType}
           setViewType={setViewType}
           showAdminUserType={canViewAdminUsers}
@@ -306,29 +313,21 @@ export default function UserPool() {
             showEditAction={canEditCurrentUserType}
             showDeleteAction={canDeleteCurrentUserType}
             colorMode={colorMode}
+            search={search}
+            setSearch={setSearch}
           />
         )}
 
         {!showLoading && (
-          <div className="flex flex-col sm:grid sm:grid-cols-3 items-center gap-4">
-            <div className="flex justify-start w-full order-2 sm:order-1">
-              <ResultsCount
-                page={page}
-                itemsPerPage={ITEMS_PER_PAGE}
-                totalResults={totalResults}
-                currentResultsCount={paginatedUsers.length}
-                colorMode={colorMode}
-              />
-            </div>
-            <div className="flex justify-center w-full order-1 sm:order-2">
-              <Pagination
-                totalPages={totalPages}
-                currentPage={page}
-                onPageChange={setPage}
-                colorMode={colorMode}
-              />
-            </div>
-            <div className="hidden sm:block order-3"></div>
+          <div className="w-full">
+            <Pagination
+              totalPages={totalPages}
+              currentPage={page}
+              onPageChange={setPage}
+              itemsPerPage={ITEMS_PER_PAGE}
+              totalResults={totalResults}
+              currentResultsCount={paginatedUsers.length}
+            />
           </div>
         )}
 
