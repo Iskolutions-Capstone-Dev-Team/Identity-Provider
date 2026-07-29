@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
+import Pagination from "../../../components/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Frame, FramePanel } from "@/components/reui/frame";
@@ -9,6 +10,7 @@ import Breadcrumbs from "../../../components/Breadcrumbs";
 import RegistrationConfigModal from "../components/RegistrationConfigModal";
 import RegistrationSyncConfirmModal from "../components/RegistrationSyncConfirmModal";
 import RegistrationListCard from "../components/RegistrationListCard";
+import RegistrationFilters from "../components/RegistrationFilters";
 import { RegistrationIcon } from "../components/registrationIcons";
 import { Plus, FileText, FileCheckCorner } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -97,6 +99,22 @@ export default function Registration() {
   const [registrationError, setRegistrationError] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [sortBy, setSortBy] = useState("account_type_name");
+  const [sort, setSort] = useState("desc");
+  const [viewType, setViewType] = useState(() => {
+      return localStorage.getItem("registrationViewType") || globalViewType || "card";
+  });
+
+  useEffect(() => {
+      if (globalViewType) {
+          setViewType(globalViewType);
+      }
+  }, [globalViewType]);
+
+  useEffect(() => {
+      localStorage.setItem("registrationViewType", viewType);
+  }, [viewType]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [selectedConfig, setSelectedConfig] = useState(null);
@@ -157,9 +175,11 @@ export default function Registration() {
       setRegistrationError("");
 
       const pageData = await registrationService.getRegistrationConfigPage({
-        limit: ITEMS_PER_PAGE,
+        limit,
         page,
         keyword: searchKeyword,
+        sortBy,
+        order: sort,
       });
       const nextConfigs = Array.isArray(pageData?.configs)
         ? pageData.configs
@@ -173,16 +193,16 @@ export default function Registration() {
           ? pageData.total
           : nextConfigs.length;
 
-      if (page > nextTotalPages) {
-        setPage(nextTotalPages);
+      if (page > 1 && nextConfigs.length === 0) {
+        setPage(1);
         return;
       }
 
       setRegistrationConfigs(nextConfigs);
-      setTotalPages(nextTotalPages);
-      setTotalResults(nextTotalResults);
+      setTotalPages(pageData?.lastPage ?? 1);
+      setTotalResults(pageData?.total ?? 0);
     } catch (error) {
-      console.error("Failed to load registration config:", error);
+      console.error("Failed to load registration configuration:", error);
       setRegistrationConfigs([]);
       setTotalPages(1);
       setTotalResults(0);
@@ -197,7 +217,7 @@ export default function Registration() {
         setIsLoadingRegistration(false);
       }
     }
-  }, [page, searchKeyword]);
+  }, [page, searchKeyword, limit, sortBy, sort]);
 
   useEffect(() => {
     loadRegistrationConfig();
@@ -469,18 +489,21 @@ export default function Registration() {
           }))}
         />
 
-        <div className="relative">
-          <RegistrationListCard
-            globalViewType={globalViewType}
-            loading={showLoading}
-            rows={rows}
-            totalResults={totalResults}
-            itemsPerPage={ITEMS_PER_PAGE}
+        <div className="flex flex-col gap-5">
+          <RegistrationFilters
             search={search}
             setSearch={setSearchKeyword}
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sort={sort}
+            setSort={setSort}
+            viewType={viewType}
+            setViewType={setViewType}
+          />
+          <RegistrationListCard
+            loading={showLoading}
+            rows={rows}
+            viewType={viewType}
             onView={handleOpenView}
             onEdit={handleOpenEdit}
             onDelete={handleDeleteClick}
@@ -507,6 +530,21 @@ export default function Registration() {
                 </div>
               )}
           </RegistrationListCard>
+          
+          {showTableFooter && !showLoading && (
+            <div className="w-full">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                itemsPerPage={limit}
+                totalResults={totalResults}
+                currentResultsCount={rows.length}
+                variant="glass"
+                colorMode={colorMode}
+              />
+            </div>
+          )}
         </div>
       </div>
 
