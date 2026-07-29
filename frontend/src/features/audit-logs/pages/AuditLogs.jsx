@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import AuditLogsListCard from "../components/AuditLogsListCard";
+import AuditLogFilters from "../components/AuditLogFilters";
 import LogMetadataModal from "../components/LogMetadataModal";
+import Pagination from "../../../components/Pagination";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { logService } from "../../../services/logService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
@@ -155,6 +157,23 @@ export default function AuditLogs() {
   const [logType, setLogType] = useState(TRANSACTION_LOG_TYPE);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sort, setSort] = useState("desc");
+  const [viewType, setViewType] = useState(() => {
+    return localStorage.getItem("auditLogsViewType") || globalViewType || "table";
+  });
+
+  useEffect(() => {
+    if (globalViewType) {
+      setViewType(globalViewType);
+    }
+  }, [globalViewType]);
+
+  useEffect(() => {
+    localStorage.setItem("auditLogsViewType", viewType);
+  }, [viewType]);
+
   const [logs, setLogs] = useState([]);
   const [totalResults, setTotalResults] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -205,7 +224,9 @@ export default function AuditLogs() {
 
         const payload = await getLogsByType(logType, {
           page,
-          limit: ITEMS_PER_PAGE,
+          limit,
+          sortBy,
+          order: sort,
           actor: search,
           signal: controller.signal,
         });
@@ -252,6 +273,9 @@ export default function AuditLogs() {
     isSecurityLogType,
     logType,
     page,
+    limit,
+    sortBy,
+    sort,
     search,
     selectedLogTypeLabel,
   ]);
@@ -359,25 +383,47 @@ export default function AuditLogs() {
           }))}
         />
 
-        <div className="relative">
-          <AuditLogsListCard
-            globalViewType={globalViewType}
-            logs={logs}
-            totalResults={totalResults}
-            itemsPerPage={ITEMS_PER_PAGE}
+        <div className="flex flex-col gap-5">
+          <AuditLogFilters
             search={search}
-            setSearch={setSearch}
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            loading={showLoading}
-            error={error}
-            onView={handleViewLog}
+            setSearch={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sort={sort}
+            setSort={setSort}
+            viewType={viewType}
+            setViewType={setViewType}
             logType={logType}
             onLogTypeChange={handleLogTypeChange}
             canViewSecurityLogs={canViewSecurityLogs}
+          />
+          <AuditLogsListCard
+            logs={logs}
+            loading={showLoading}
+            viewType={viewType}
+            logType={logType}
+            error={error}
+            onView={handleViewLog}
             colorMode={colorMode}
           />
+
+          {!showLoading && (
+            <div className="w-full">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                itemsPerPage={limit}
+                totalResults={totalResults}
+                currentResultsCount={logs.length}
+                variant="glass"
+                colorMode={colorMode}
+              />
+            </div>
+          )}
         </div>
       </div>
 
