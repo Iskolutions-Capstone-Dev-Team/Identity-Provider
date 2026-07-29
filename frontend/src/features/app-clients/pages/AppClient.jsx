@@ -48,21 +48,10 @@ export default function AppClient() {
         metricsService.getClientMetrics().then(setClientMetrics).catch(() => { });
     }, []);
     
-    const [viewType, setViewType] = useState(() => {
-        return localStorage.getItem("appClientsViewType") || globalViewType || "table";
-    });
-
-    useEffect(() => {
-        if (globalViewType) {
-            setViewType(globalViewType);
-        }
-    }, [globalViewType]);
-
-    useEffect(() => {
-        localStorage.setItem("appClientsViewType", viewType);
-    }, [viewType]);
     const {
         search, setSearch, page, setPage,
+        limit, setLimit, sortBy, setSortBy, sort, setSort,
+        viewType, setViewType,
         paginatedClients, totalPages, totalResults,
         loading,
         successMessage, setSuccessMessage,
@@ -238,6 +227,10 @@ export default function AppClient() {
                     <AppClientFilters
                         search={search}
                         setSearch={setSearch}
+                        sortBy={sortBy}
+                        setSortBy={setSortBy}
+                        sort={sort}
+                        setSort={setSort}
                         viewType={viewType}
                         setViewType={setViewType}
                     />
@@ -271,21 +264,17 @@ export default function AppClient() {
                     )}
 
                     {!showLoading && (
-                        <div className="flex flex-col items-center gap-4 pt-2 lg:grid lg:grid-cols-3">
-                            <div className="flex w-full justify-center lg:justify-start">
-                                <ResultsCount
-                                    page={page}
-                                    itemsPerPage={ITEMS_PER_PAGE}
-                                    totalResults={totalResults}
-                                    currentResultsCount={paginatedClients.length}
-                                    variant="glass"
-                                    colorMode={colorMode}
-                                />
-                            </div>
-                            <div className="flex w-full justify-center">
-                                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} variant="glass" colorMode={colorMode} />
-                            </div>
-                            <div className="hidden lg:block"></div>
+                        <div className="w-full">
+                            <Pagination
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={setPage}
+                                itemsPerPage={limit}
+                                totalResults={totalResults}
+                                currentResultsCount={paginatedClients.length}
+                                variant="glass"
+                                colorMode={colorMode}
+                            />
                         </div>
                     )}
                 </div>
