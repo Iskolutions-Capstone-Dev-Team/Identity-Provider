@@ -8,6 +8,7 @@ import { ROUTE_PATHS } from "../routes/routePaths";
 import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "../routes/routePermissions";
 import { buildAccessDeniedPath, ACCESS_DENIED_PATH, LEGACY_UNAUTHORIZED_PATH } from "../auth/utils/loginRoute";
 import { authPageBackground, authPagePatternStyle } from "../auth/utils/authBackground";
+import { hasStoredAuthTokens } from "../auth/utils/authRecovery";
 
 const Login = lazy(() => import("../auth/pages/Login"));
 const Register = lazy(() => import("../auth/pages/Register"));
@@ -31,6 +32,13 @@ const CreateRegistrationConfigPage = lazy(() => import("../features/registration
 const Profile = lazy(() => import("../features/profile/pages/Profile"));
 const Placeholder = lazy(() => import("../pages/Placeholder"));
 const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
+const NotFound = lazy(() => import("../pages/NotFound"));
+const PublicNotFound = lazy(() => import("../pages/PublicNotFound"));
+
+function CatchAllRoute() {
+  const isAuth = hasStoredAuthTokens();
+  return isAuth ? <NotFound /> : <PublicNotFound />;
+}
 
 export default function App() {
   return (
@@ -141,6 +149,7 @@ export default function App() {
             <Route path={ROUTE_PATHS.INTERNAL_PRIVACY_POLICY} element={<PrivacyPolicy isPublic={false} />} />
             <Route path={ROUTE_PATHS.PROFILE} element={<Profile />} />
           </Route>
+          <Route path="*" element={<CatchAllRoute />} />
         </Routes>
       </Suspense>
     </Router>
