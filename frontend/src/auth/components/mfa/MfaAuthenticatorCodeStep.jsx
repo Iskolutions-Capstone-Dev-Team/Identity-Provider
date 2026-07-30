@@ -1,5 +1,5 @@
 import MfaCodeInput from "./MfaCodeInput";
-
+import { Button } from "../../../components/ui/button";
 export default function MfaAuthenticatorCodeStep({ code, isVerifying, onCodeChange, onVerify, onUseBackupCode }) {
   return (
     <div className="space-y-6">
@@ -16,9 +16,9 @@ export default function MfaAuthenticatorCodeStep({ code, isVerifying, onCodeChan
           disabled={isVerifying}
         />
 
-        <button type="submit" disabled={isVerifying} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-[#ffd700] text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:opacity-60">
+        <Button type="submit" disabled={isVerifying} className="h-12 w-full rounded-lg border border-[#ffd700] bg-[#ffd700] text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:opacity-60">
           {isVerifying ? "Verifying..." : "Verify Code"}
-        </button>
+        </Button>
       </form>
 
       {onUseBackupCode ? (
