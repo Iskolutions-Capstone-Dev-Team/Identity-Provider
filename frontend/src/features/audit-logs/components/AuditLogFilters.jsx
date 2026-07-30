@@ -54,12 +54,12 @@ export default function AuditLogFilters({
         </div>
 
         {showLogTypePicker && (
-          <div className="w-full lg:w-auto shrink-0 flex flex-col gap-2 mt-auto">
+          <div className="w-full lg:w-auto shrink-0 flex flex-col gap-2 mt-auto lg:ml-auto">
             <Label>Log Type</Label>
             <Tabs value={logType} onValueChange={onLogTypeChange} className="h-10!">
               <TabsList className="h-full group-data-horizontal/tabs:h-10!">
                 {visibleLogTypeOptions.map((option) => (
-                  <TabsTrigger key={option.value} value={option.value} className="h-full px-4 flex items-center gap-2 transition-colors data-[state=active]:bg-[#7b0d15] data-[state=active]:text-[#f8d24e] dark:data-[state=active]:bg-[#f8d24e] dark:data-[state=active]:text-[#7b0d15]">
+                  <TabsTrigger key={option.value} value={option.value} className="h-full px-4 flex items-center gap-2 transition-colors data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-[active]:!bg-[#7b0d15] data-[active]:!text-[#f8d24e] dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15] dark:data-[active]:!bg-[#f8d24e] dark:data-[active]:!text-[#7b0d15]">
                     {option.icon} <span className="hidden sm:inline">{option.label}</span>
                   </TabsTrigger>
                 ))}
@@ -68,8 +68,9 @@ export default function AuditLogFilters({
           </div>
         )}
 
-        <div className="w-full lg:w-auto shrink-0 flex flex-col gap-2 lg:ml-auto mt-auto">
-          <DropdownMenu>
+        <div className={`flex flex-row gap-4 w-full lg:w-auto mt-auto ${!showLogTypePicker ? "lg:ml-auto" : ""}`}>
+          <div className="w-1/2 lg:w-auto flex flex-col gap-2">
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-10! px-3 flex items-center gap-2 bg-background border shadow-sm w-full justify-between">
                 <div className="flex items-center gap-2 text-foreground font-normal">
@@ -78,7 +79,7 @@ export default function AuditLogFilters({
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] lg:w-48">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Sort By</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
@@ -118,8 +119,8 @@ export default function AuditLogFilters({
           </DropdownMenu>
         </div>
 
-        <div className="w-full lg:w-auto shrink-0 flex flex-col gap-2 mt-auto">
-          <DropdownMenu>
+          <div className="w-1/2 lg:w-auto flex flex-col gap-2">
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-10! px-3 flex items-center gap-2 bg-background border shadow-sm w-full justify-between capitalize">
                 <div className="flex items-center gap-2 text-foreground font-normal">
@@ -128,7 +129,7 @@ export default function AuditLogFilters({
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-32">
+            <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] lg:w-32">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>View</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={viewType} onValueChange={setViewType}>
@@ -146,6 +147,7 @@ export default function AuditLogFilters({
           </DropdownMenu>
         </div>
       </div>
+    </div>
     </div>
   );
 }

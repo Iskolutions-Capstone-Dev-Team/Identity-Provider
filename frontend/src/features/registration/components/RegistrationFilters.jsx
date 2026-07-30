@@ -21,8 +21,9 @@ export default function RegistrationFilters({ search, setSearch, sortBy = "accou
           </div>
         </div>
 
-        <div className="w-full lg:w-auto shrink-0 flex flex-col gap-2 lg:ml-auto mt-auto">
-          <DropdownMenu>
+        <div className="flex flex-row gap-4 w-full lg:w-auto lg:ml-auto mt-auto">
+          <div className="w-1/2 lg:w-auto flex flex-col gap-2">
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-10! px-3 flex items-center gap-2 bg-background border shadow-sm w-full justify-between">
                 <div className="flex items-center gap-2 text-foreground font-normal">
@@ -31,7 +32,7 @@ export default function RegistrationFilters({ search, setSearch, sortBy = "accou
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] lg:w-48">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Sort By</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
@@ -63,8 +64,8 @@ export default function RegistrationFilters({ search, setSearch, sortBy = "accou
           </DropdownMenu>
         </div>
 
-        <div className="w-full lg:w-auto shrink-0 flex flex-col gap-2 mt-auto">
-          <DropdownMenu>
+          <div className="w-1/2 lg:w-auto flex flex-col gap-2">
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-10! px-3 flex items-center gap-2 bg-background border shadow-sm w-full justify-between capitalize">
                 <div className="flex items-center gap-2 text-foreground font-normal">
@@ -73,7 +74,7 @@ export default function RegistrationFilters({ search, setSearch, sortBy = "accou
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-32">
+            <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] lg:w-32">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>View</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={viewType} onValueChange={setViewType}>
@@ -91,6 +92,7 @@ export default function RegistrationFilters({ search, setSearch, sortBy = "accou
           </DropdownMenu>
         </div>
       </div>
+    </div>
     </div>
   );
 }
