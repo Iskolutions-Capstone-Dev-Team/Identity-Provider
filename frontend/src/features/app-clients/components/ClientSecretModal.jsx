@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import AppClientIconBox from "./AppClientIconBox";
-import { CloseIcon, EyeIcon, EyeSlashIcon, NoteInfoIcon } from "./appClientIcons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/reui/alert";
-import { CircleAlertIcon, Copy, CopyCheck } from "lucide-react";
+import { CircleAlertIcon, Copy, CopyCheck, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -71,7 +69,7 @@ export default function ClientSecretModal({ open, clientName, clientId, secret, 
                   <Input type={showSecret ? "text" : "password"} readOnly value={secret || ""} className="w-full pr-20 font-mono bg-muted h-10 rounded-xl"/>
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setShowSecret((current) => !current)} disabled={!secret} aria-label={showSecret ? "Hide secret" : "Show secret"} title={showSecret ? "Hide secret" : "Show secret"}>
-                      {showSecret ? <EyeSlashIcon /> : <EyeIcon />}
+                      {showSecret ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                     </Button>
                     <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={handleCopy} disabled={!secret} title="Copy secret">
                       <span className="relative inline-flex h-5 w-5 items-center justify-center">
