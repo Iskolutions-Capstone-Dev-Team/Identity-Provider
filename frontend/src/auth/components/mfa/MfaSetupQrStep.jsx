@@ -1,4 +1,3 @@
-import { InfoCircleIcon } from "./mfaIcons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
