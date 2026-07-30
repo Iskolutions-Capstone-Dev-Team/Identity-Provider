@@ -39,10 +39,6 @@ function getVisiblePages(totalPages, currentPage) {
     visiblePages.push(page);
   });
 
-  if (endPage < totalPages) {
-    visiblePages.push("...");
-  }
-
   return visiblePages;
 }
 
@@ -50,46 +46,54 @@ export default function Pagination({
   totalPages,
   currentPage,
   onPageChange,
+  itemsPerPage = 10,
+  totalResults = 0,
+  currentResultsCount = 0,
 }) {
   if (totalPages <= 0) {
     return null;
   }
 
   const visiblePages = getVisiblePages(totalPages, currentPage);
-  const showNavigationButtons = totalPages > 5;
   const canGoToPreviousPage = currentPage > 1;
   const canGoToNextPage = currentPage < totalPages;
 
+  const hasResults = totalResults > 0 && currentResultsCount > 0;
+  const start = hasResults ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const end = hasResults ? start + currentResultsCount - 1 : 0;
+
   return (
-    <ShadcnPagination className="justify-center">
-      <PaginationContent>
-        {showNavigationButtons && (
-          <PaginationItem>
-            <PaginationPrevious
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                if (canGoToPreviousPage) onPageChange(currentPage - 1);
-              }}
-              className={!canGoToPreviousPage ? "pointer-events-none opacity-50" : ""}
-            />
-          </PaginationItem>
-        )}
+    <ShadcnPagination>
+      <PaginationContent className="w-full flex flex-col-reverse sm:grid sm:grid-cols-3 items-center mt-4 gap-4 sm:gap-0">
+        <PaginationItem className="flex justify-center sm:justify-start">
+          <span className="text-muted-foreground text-sm">
+            Showing <span className="text-foreground font-medium">{start}</span> to{" "}
+            <span className="text-foreground font-medium">{end}</span> of{" "}
+            <span className="text-foreground font-medium">{totalResults}</span> results
+          </span>
+        </PaginationItem>
+        <PaginationItem className="flex items-center justify-center gap-1">
+          <PaginationPrevious
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              if (canGoToPreviousPage) onPageChange(currentPage - 1);
+            }}
+            className={!canGoToPreviousPage ? "pointer-events-none opacity-50" : ""}
+          />
+          
+          {visiblePages.map((page, index) => {
+            if (page === "...") {
+              return (
+                <PaginationEllipsis key={`pagination-ellipsis-${index}`} />
+              );
+            }
 
-        {visiblePages.map((page, index) => {
-          if (page === "...") {
+            const isActive = currentPage === page;
+
             return (
-              <PaginationItem key={`pagination-ellipsis-${index}`}>
-                <PaginationEllipsis />
-              </PaginationItem>
-            );
-          }
-
-          const isActive = currentPage === page;
-
-          return (
-            <PaginationItem key={page}>
               <PaginationLink
+                key={page}
                 href="#"
                 isActive={isActive}
                 onClick={(e) => {
@@ -99,22 +103,19 @@ export default function Pagination({
               >
                 {page}
               </PaginationLink>
-            </PaginationItem>
-          );
-        })}
+            );
+          })}
 
-        {showNavigationButtons && (
-          <PaginationItem>
-            <PaginationNext
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                if (canGoToNextPage) onPageChange(currentPage + 1);
-              }}
-              className={!canGoToNextPage ? "pointer-events-none opacity-50" : ""}
-            />
-          </PaginationItem>
-        )}
+          <PaginationNext
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              if (canGoToNextPage) onPageChange(currentPage + 1);
+            }}
+            className={!canGoToNextPage ? "pointer-events-none opacity-50" : ""}
+          />
+        </PaginationItem>
+        <div className="hidden sm:block"></div>
       </PaginationContent>
     </ShadcnPagination>
   );

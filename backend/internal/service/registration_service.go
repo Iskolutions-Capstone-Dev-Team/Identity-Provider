@@ -16,8 +16,8 @@ import (
 
 type RegistrationService interface {
 	GetRegistrationConfig(ctx context.Context, permissions []string,
-		userID uuid.UUID, limit,
-		page int) (*dto.RegistrationConfigResponse, error)
+		userID uuid.UUID, limit, page int,
+		sortBy, order string) (*dto.RegistrationConfigResponse, error)
 	GetClientsByAccountTypeID(ctx context.Context,
 		id int) (*dto.AccountTypeConfigResponse, error)
 	CreateAccountType(ctx context.Context,
@@ -55,7 +55,7 @@ func NewRegistrationService(
 
 func (s *regService) GetRegistrationConfig(ctx context.Context,
 	permissions []string, userID uuid.UUID, limit,
-	page int) (*dto.RegistrationConfigResponse, error) {
+	page int, sortBy, order string) (*dto.RegistrationConfigResponse, error) {
 	var total int
 	var rows []repository.AccountTypeClientRow
 	var err error
@@ -67,7 +67,9 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 		}
 
 		offset := (page - 1) * limit
-		rows, err = s.repo.GetRegistrationConfig(ctx, limit, offset)
+		rows, err = s.repo.GetRegistrationConfig(
+			ctx, limit, offset, sortBy, order,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -78,8 +80,9 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 		}
 
 		offset := (page - 1) * limit
-		rows, err = s.repo.GetScopedRegistrationConfig(ctx, userID[:],
-			limit, offset)
+		rows, err = s.repo.GetScopedRegistrationConfig(
+			ctx, userID[:], limit, offset, sortBy, order,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -87,11 +90,11 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 
 	configMap := make(map[string][]dto.PreapprovedClientResponse)
 	idMap := make(map[string]int)
-	var order []string
+	var accountTypeOrder []string
 
 	for _, row := range rows {
 		if _, ok := configMap[row.AccountTypeName]; !ok {
-			order = append(order, row.AccountTypeName)
+			accountTypeOrder = append(accountTypeOrder, row.AccountTypeName)
 			configMap[row.AccountTypeName] =
 				[]dto.PreapprovedClientResponse{}
 			idMap[row.AccountTypeName] = row.AccountTypeID
@@ -108,7 +111,7 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 	}
 
 	var resp dto.RegistrationConfigResponse
-	for _, name := range order {
+	for _, name := range accountTypeOrder {
 		cfg := dto.AccountTypeConfigResponse{
 			ID:          idMap[name],
 			AccountType: name,

@@ -130,11 +130,21 @@ export function useRoles() {
   const [roles, setRoles] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sort, setSort] = useState("desc");
+  const [viewType, setViewType] = useState(() => {
+    return localStorage.getItem("rolesViewType") || "table";
+  });
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const searchKeyword = search.trim();
+
+  useEffect(() => {
+    localStorage.setItem("rolesViewType", viewType);
+  }, [viewType]);
 
   const fetchRoles = async (pageNumber = page, { showLoading = true } = {}) => {
     try {
@@ -142,8 +152,12 @@ export function useRoles() {
         setLoading(true);
       }
 
-      const data = await roleService.getRoles(pageNumber, {
+      const data = await roleService.getRoles({
+        page: pageNumber,
+        limit,
         keyword: searchKeyword,
+        sortBy,
+        order: sort
       });
       const nextRoles = normalizeRoles(data?.roles);
       const nextTotalPages =
@@ -177,7 +191,7 @@ export function useRoles() {
 
   useEffect(() => {
     fetchRoles(page);
-  }, [page, searchKeyword]);
+  }, [page, searchKeyword, limit, sortBy, sort]);
 
   const setSearchKeyword = (value) => {
     const nextValue = typeof value === "string" ? value : "";
@@ -226,6 +240,14 @@ export function useRoles() {
     setSearch: setSearchKeyword,
     page,
     setPage,
+    limit,
+    setLimit,
+    sortBy,
+    setSortBy,
+    sort,
+    setSort,
+    viewType,
+    setViewType,
     totalPages,
     totalResults,
     paginatedRoles: roles,

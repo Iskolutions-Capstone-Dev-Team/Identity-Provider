@@ -217,33 +217,33 @@ func (mr *MockClientRepositoryMockRecorder) IsClientAllowed(ctx, userID, clientI
 }
 
 // ListAllowedClients mocks base method.
-func (m *MockClientRepository) ListAllowedClients(ctx context.Context, limit, offset int, keyword string, userID []byte) ([]models.Client, error) {
+func (m *MockClientRepository) ListAllowedClients(ctx context.Context, limit, offset int, keyword string, userID []byte, sortBy, order string) ([]models.Client, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListAllowedClients", ctx, limit, offset, keyword, userID)
+	ret := m.ctrl.Call(m, "ListAllowedClients", ctx, limit, offset, keyword, userID, sortBy, order)
 	ret0, _ := ret[0].([]models.Client)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListAllowedClients indicates an expected call of ListAllowedClients.
-func (mr *MockClientRepositoryMockRecorder) ListAllowedClients(ctx, limit, offset, keyword, userID any) *gomock.Call {
+func (mr *MockClientRepositoryMockRecorder) ListAllowedClients(ctx, limit, offset, keyword, userID, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllowedClients", reflect.TypeOf((*MockClientRepository)(nil).ListAllowedClients), ctx, limit, offset, keyword, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllowedClients", reflect.TypeOf((*MockClientRepository)(nil).ListAllowedClients), ctx, limit, offset, keyword, userID, sortBy, order)
 }
 
 // ListBoundClients mocks base method.
-func (m *MockClientRepository) ListBoundClients(ctx context.Context, limit, offset int, keyword string, userID []byte) ([]models.Client, error) {
+func (m *MockClientRepository) ListBoundClients(ctx context.Context, limit, offset int, keyword string, userID []byte, sortBy, order string) ([]models.Client, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListBoundClients", ctx, limit, offset, keyword, userID)
+	ret := m.ctrl.Call(m, "ListBoundClients", ctx, limit, offset, keyword, userID, sortBy, order)
 	ret0, _ := ret[0].([]models.Client)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListBoundClients indicates an expected call of ListBoundClients.
-func (mr *MockClientRepositoryMockRecorder) ListBoundClients(ctx, limit, offset, keyword, userID any) *gomock.Call {
+func (mr *MockClientRepositoryMockRecorder) ListBoundClients(ctx, limit, offset, keyword, userID, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBoundClients", reflect.TypeOf((*MockClientRepository)(nil).ListBoundClients), ctx, limit, offset, keyword, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBoundClients", reflect.TypeOf((*MockClientRepository)(nil).ListBoundClients), ctx, limit, offset, keyword, userID, sortBy, order)
 }
 
 // ListClientBaseURLS mocks base method.
@@ -262,18 +262,18 @@ func (mr *MockClientRepositoryMockRecorder) ListClientBaseURLS(ctx any) *gomock.
 }
 
 // ListClients mocks base method.
-func (m *MockClientRepository) ListClients(ctx context.Context, limit, offset int, keyword string) ([]models.Client, error) {
+func (m *MockClientRepository) ListClients(ctx context.Context, limit, offset int, keyword, sortBy, order string) ([]models.Client, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListClients", ctx, limit, offset, keyword)
+	ret := m.ctrl.Call(m, "ListClients", ctx, limit, offset, keyword, sortBy, order)
 	ret0, _ := ret[0].([]models.Client)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListClients indicates an expected call of ListClients.
-func (mr *MockClientRepositoryMockRecorder) ListClients(ctx, limit, offset, keyword any) *gomock.Call {
+func (mr *MockClientRepositoryMockRecorder) ListClients(ctx, limit, offset, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListClients", reflect.TypeOf((*MockClientRepository)(nil).ListClients), ctx, limit, offset, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListClients", reflect.TypeOf((*MockClientRepository)(nil).ListClients), ctx, limit, offset, keyword, sortBy, order)
 }
 
 // RemoveAdminClientBind mocks base method.

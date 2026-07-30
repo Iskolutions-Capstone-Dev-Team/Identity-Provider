@@ -1,78 +1,74 @@
-import { ADMIN_USER_TYPE, REGULAR_USER_TYPE } from "../../../utils/userPoolAccess";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Search, Users, Shield, Table, WalletCards, Settings, ListFilter, View, User, Mail, Activity, Calendar, ListSortAscending, ListSortDescending } from "lucide-react";
+import { Search, Table, WalletCards, ListFilter, View, User, ShieldAlert, Activity, Calendar, ListSortAscending, ListSortDescending } from "lucide-react";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SecurityLogIcon, TransactionLogIcon } from "./auditLogIcons";
 
-const statusOptions = [
-  { value: "", label: "All Status" },
-  { value: "active", label: "Active" },
-  { value: "suspended", label: "Suspended" },
+const LOG_TYPE_OPTIONS = [
+  {
+    value: "transaction",
+    label: "Transaction Logs",
+    icon: <TransactionLogIcon className="size-5" />,
+  },
+  {
+    value: "security",
+    label: "Security Logs",
+    icon: <SecurityLogIcon className="size-5" />,
+  },
 ];
 
-export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, sortBy = "created_at", setSortBy, sort = "desc", setSort, viewType = "table", setViewType, showAdminUserType = true }) {
-  const visibleUserTypeOptions = showAdminUserType
-    ? [
-        { value: REGULAR_USER_TYPE, label: "Users", Icon: Users },
-        { value: ADMIN_USER_TYPE, label: "Admin", Icon: Shield },
-      ]
-    : [{ value: REGULAR_USER_TYPE, label: "Users", Icon: Users }];
+export default function AuditLogFilters({ 
+  search, 
+  setSearch, 
+  sortBy = "created_at", 
+  setSortBy, 
+  sort = "desc", 
+  setSort, 
+  viewType = "table", 
+  setViewType,
+  logType = "transaction",
+  onLogTypeChange,
+  canViewSecurityLogs = false
+}) {
+  const visibleLogTypeOptions = canViewSecurityLogs 
+    ? LOG_TYPE_OPTIONS 
+    : LOG_TYPE_OPTIONS.filter((option) => option.value !== "security");
+  const showLogTypePicker = visibleLogTypeOptions.length > 1;
 
   return (
     <div className="bg-card border rounded-xl p-4 sm:p-5 shadow-sm w-full">
       <div className="flex flex-col lg:flex-row lg:items-end gap-4 lg:gap-6 w-full">
         <div className="w-full lg:w-[400px] flex flex-col gap-2 relative">
           <SpeechInputToolbar
-            activeFieldLabel="User Search"
+            activeFieldLabel="Log Search"
             onTranscript={setSearch}
           />
-          <Label>Who are you looking for?</Label>
+          <Label>Which log are you looking for?</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search by email, or name..." 
-              value={search} 
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-10"
-            />
+            <Input placeholder="Search by actor..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-10 w-full"/>
           </div>
         </div>
 
-        <div className="w-full lg:w-auto shrink-0 flex flex-col gap-2 lg:ml-auto">
-          <Label>User Type</Label>
-          <Tabs value={userType} onValueChange={setUserType} className="h-10!">
-            <TabsList className="h-full group-data-horizontal/tabs:h-10!">
-              {visibleUserTypeOptions.map((opt) => (
-                <TabsTrigger key={opt.value} value={opt.value} className="h-full px-4 flex items-center gap-2 transition-colors data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-[active]:!bg-[#7b0d15] data-[active]:!text-[#f8d24e] dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15] dark:data-[active]:!bg-[#f8d24e] dark:data-[active]:!text-[#7b0d15]">
-                  <opt.Icon className="h-4 w-4" />
-                  {opt.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
+        {showLogTypePicker && (
+          <div className="w-full lg:w-auto shrink-0 flex flex-col gap-2 mt-auto lg:ml-auto">
+            <Label>Log Type</Label>
+            <Tabs value={logType} onValueChange={onLogTypeChange} className="h-10!">
+              <TabsList className="h-full group-data-horizontal/tabs:h-10!">
+                {visibleLogTypeOptions.map((option) => (
+                  <TabsTrigger key={option.value} value={option.value} className="h-full px-4 flex items-center gap-2 transition-colors data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-[active]:!bg-[#7b0d15] data-[active]:!text-[#f8d24e] dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15] dark:data-[active]:!bg-[#f8d24e] dark:data-[active]:!text-[#7b0d15]">
+                    {option.icon} <span className="hidden sm:inline">{option.label}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
 
-        <div className="w-full lg:w-[150px] shrink-0 flex flex-col gap-2">
-          <Label>Status</Label>
-          <Select value={status || ""} onValueChange={(v) => setStatus(v)}>
-            <SelectTrigger className="h-10! w-full">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((opt) => (
-                <SelectItem key={opt.value || "all"} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-row gap-4 w-full lg:w-auto mt-auto">
+        <div className={`flex flex-row gap-4 w-full lg:w-auto mt-auto ${!showLogTypePicker ? "lg:ml-auto" : ""}`}>
           <div className="w-1/2 lg:w-auto flex flex-col gap-2">
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -87,29 +83,21 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Sort By</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
-                  <DropdownMenuRadioItem value="first_name" className="cursor-pointer gap-2">
+                  <DropdownMenuRadioItem value="actor" className="cursor-pointer gap-2">
                     <User className="w-4 h-4 opacity-70" />
-                    First Name
+                    Actor
                   </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="last_name" className="cursor-pointer gap-2">
-                    <User className="w-4 h-4 opacity-70" />
-                    Last Name
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="email" className="cursor-pointer gap-2">
-                    <Mail className="w-4 h-4 opacity-70" />
-                    Email
+                  <DropdownMenuRadioItem value="action" className="cursor-pointer gap-2">
+                    <Activity className="w-4 h-4 opacity-70" />
+                    Action
                   </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="status" className="cursor-pointer gap-2">
-                    <Activity className="w-4 h-4 opacity-70" />
+                    <ShieldAlert className="w-4 h-4 opacity-70" />
                     Status
                   </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="created_at" className="cursor-pointer gap-2">
                     <Calendar className="w-4 h-4 opacity-70" />
                     Date Created
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="updated_at" className="cursor-pointer gap-2">
-                    <Calendar className="w-4 h-4 opacity-70" />
-                    Date Updated
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuGroup>

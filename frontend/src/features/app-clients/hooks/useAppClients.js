@@ -88,6 +88,12 @@ export function useAppClients({ enabled = true } = {}) {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sort, setSort] = useState("desc");
+  const [viewType, setViewType] = useState(() => {
+    return localStorage.getItem("appClientsViewType") || "table";
+  });
   const [totalClientCount, setTotalClientCount] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(enabled);
@@ -102,6 +108,10 @@ export function useAppClients({ enabled = true } = {}) {
   });
 
   const searchKeyword = search.trim();
+
+  useEffect(() => {
+    localStorage.setItem("appClientsViewType", viewType);
+  }, [viewType]);
 
   const resetClients = useCallback(() => {
     setClients([]);
@@ -121,9 +131,11 @@ export function useAppClients({ enabled = true } = {}) {
       }
 
       const { items, total, lastPage } = await clientService.getClients({
-        limit: ITEMS_PER_PAGE,
+        limit,
         page,
         keyword: searchKeyword,
+        sortBy,
+        order: sort,
       });
       const nextClients = Array.isArray(items)
         ? items.map(mapClientSummary)
@@ -134,7 +146,7 @@ export function useAppClients({ enabled = true } = {}) {
       );
       const nextTotalPages = toPositiveInteger(
         lastPage,
-        Math.max(1, Math.ceil(nextTotalResults / ITEMS_PER_PAGE)),
+        Math.max(1, Math.ceil(nextTotalResults / limit)),
       );
 
       if (page > nextTotalPages) {
@@ -153,7 +165,7 @@ export function useAppClients({ enabled = true } = {}) {
         setLoading(false);
       }
     }
-  }, [enabled, page, resetClients, searchKeyword]);
+  }, [enabled, page, resetClients, searchKeyword, limit, sortBy, sort]);
 
   useEffect(() => {
     fetchClients();
@@ -166,7 +178,7 @@ export function useAppClients({ enabled = true } = {}) {
     setSearch(nextValue);
   }, []);
 
-  const totalPages = Math.max(1, Math.ceil(totalClientCount / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(totalClientCount / limit));
   const currentPage = Math.min(page, totalPages);
 
   useEffect(() => {
@@ -268,6 +280,14 @@ export function useAppClients({ enabled = true } = {}) {
     setSearch: setSearchKeyword,
     page: currentPage,
     setPage,
+    limit,
+    setLimit,
+    sortBy,
+    setSortBy,
+    sort,
+    setSort,
+    viewType,
+    setViewType,
     paginatedClients: clients,
     totalPages,
     totalResults: totalClientCount,

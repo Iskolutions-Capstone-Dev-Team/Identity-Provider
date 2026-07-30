@@ -5,6 +5,7 @@ import { useRoles } from "../hooks/useRoles";
 import { usePermissions } from "../hooks/usePermissions";
 import RolesListCard from "../components/RolesListCard";
 import RoleModal from "../components/RoleModal";
+import RoleFilters from "../components/RoleFilters";
 import { toast } from "sonner";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
@@ -40,6 +41,14 @@ export default function Roles() {
     setSearch,
     page,
     setPage,
+    limit,
+    setLimit,
+    sortBy,
+    setSortBy,
+    sort,
+    setSort,
+    viewType,
+    setViewType,
     paginatedRoles,
     totalPages,
     totalResults,
@@ -198,15 +207,24 @@ export default function Roles() {
           ]}
         />
 
+        <RoleFilters
+          search={search}
+          setSearch={setSearch}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sort={sort}
+          setSort={setSort}
+          viewType={viewType}
+          setViewType={setViewType}
+        />
+
         <div className="relative">
           <RolesListCard
-            globalViewType={globalViewType}
+            viewType={viewType}
             loading={showLoading}
             roles={visibleRoles}
             totalResults={totalResults}
-            itemsPerPage={ITEMS_PER_PAGE}
-            search={search}
-            setSearch={setSearch}
+            itemsPerPage={limit}
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}

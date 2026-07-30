@@ -224,6 +224,21 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		page = 1
 	}
 
+	allowedColumns := map[string]bool{
+		"first_name":  true,
+		"middle_name": true,
+		"last_name":   true,
+		"name_suffix": true,
+		"email":       true,
+		"status":      true,
+		"created_at":  true,
+		"updated_at":  true,
+	}
+	sortBy, order, ok := ValidateSortParams(c, allowedColumns)
+	if !ok {
+		return
+	}
+
 	uIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
@@ -246,6 +261,8 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		userID,
 		limit,
 		page,
+		sortBy,
+		order,
 	)
 	if err != nil {
 		log.Printf("[GetUserList] Service Execution: %v", err)
@@ -294,12 +311,27 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 		page = 1
 	}
 
+	allowedColumns := map[string]bool{
+		"first_name":  true,
+		"middle_name": true,
+		"last_name":   true,
+		"name_suffix": true,
+		"email":       true,
+		"status":      true,
+		"created_at":  true,
+		"updated_at":  true,
+	}
+	sortBy, order, ok := ValidateSortParams(c, allowedColumns)
+	if !ok {
+		return
+	}
+
 	adminIDStr := c.GetString("user_id")
 	adminID, _ := uuid.Parse(adminIDStr)
 	permissions := c.GetStringSlice("permissions")
 	ctx := c.Request.Context()
 	resp, err := h.Service.GetAdminUserList(
-		ctx, limit, page, adminID, permissions,
+		ctx, limit, page, adminID, permissions, sortBy, order,
 	)
 	if err != nil {
 		log.Printf("[GetAdminUserList] Service Execution: %v", err)
@@ -1263,9 +1295,11 @@ func (h *UserHandler) GetUserAccess(c *gin.Context) {
 
 	// 1000 limit is used for selection list population
 	if strings.Contains(strings.Join(permissions, ","), "View all appclients") {
-		resp, err = h.ClientService.GetClientList(ctx, 1000, 1, "")
+		resp, err = h.ClientService.GetClientList(ctx, 1000, 1, "", "", "")
 	} else {
-		resp, err = h.ClientService.GetBoundClients(ctx, userID, 1000, 1, "")
+		resp, err = h.ClientService.GetBoundClients(
+			ctx, userID, 1000, 1, "", "", "",
+		)
 	}
 
 	if err != nil {
@@ -1503,7 +1537,9 @@ func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Fetch allowed clients (limit 1000 for list population)
-	resp, err := h.ClientService.GetAllowedClients(ctx, userID, 1000, 1, "")
+	resp, err := h.ClientService.GetAllowedClients(
+		ctx, userID, 1000, 1, "", "", "",
+	)
 	if err != nil {
 		log.Printf("[GetUserDetailedAccess] fetch: %v", err)
 		errors.Send(

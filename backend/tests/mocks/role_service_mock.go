@@ -71,48 +71,48 @@ func (mr *MockRoleServiceMockRecorder) DeleteRole(ctx, id any) *gomock.Call {
 }
 
 // GetAllExceptIDP mocks base method.
-func (m *MockRoleService) GetAllExceptIDP(ctx context.Context, limit, page int, keyword string) (*dto.RoleListResponse, error) {
+func (m *MockRoleService) GetAllExceptIDP(ctx context.Context, limit, page int, keyword, sortBy, order string) (*dto.RoleListResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllExceptIDP", ctx, limit, page, keyword)
+	ret := m.ctrl.Call(m, "GetAllExceptIDP", ctx, limit, page, keyword, sortBy, order)
 	ret0, _ := ret[0].(*dto.RoleListResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllExceptIDP indicates an expected call of GetAllExceptIDP.
-func (mr *MockRoleServiceMockRecorder) GetAllExceptIDP(ctx, limit, page, keyword any) *gomock.Call {
+func (mr *MockRoleServiceMockRecorder) GetAllExceptIDP(ctx, limit, page, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllExceptIDP", reflect.TypeOf((*MockRoleService)(nil).GetAllExceptIDP), ctx, limit, page, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllExceptIDP", reflect.TypeOf((*MockRoleService)(nil).GetAllExceptIDP), ctx, limit, page, keyword, sortBy, order)
 }
 
 // GetAuthorizedRoles mocks base method.
-func (m *MockRoleService) GetAuthorizedRoles(ctx context.Context, userID uuid.UUID, limit, page int, keyword string) (*dto.RoleListResponse, error) {
+func (m *MockRoleService) GetAuthorizedRoles(ctx context.Context, userID uuid.UUID, limit, page int, keyword, sortBy, order string) (*dto.RoleListResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAuthorizedRoles", ctx, userID, limit, page, keyword)
+	ret := m.ctrl.Call(m, "GetAuthorizedRoles", ctx, userID, limit, page, keyword, sortBy, order)
 	ret0, _ := ret[0].(*dto.RoleListResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAuthorizedRoles indicates an expected call of GetAuthorizedRoles.
-func (mr *MockRoleServiceMockRecorder) GetAuthorizedRoles(ctx, userID, limit, page, keyword any) *gomock.Call {
+func (mr *MockRoleServiceMockRecorder) GetAuthorizedRoles(ctx, userID, limit, page, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthorizedRoles", reflect.TypeOf((*MockRoleService)(nil).GetAuthorizedRoles), ctx, userID, limit, page, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthorizedRoles", reflect.TypeOf((*MockRoleService)(nil).GetAuthorizedRoles), ctx, userID, limit, page, keyword, sortBy, order)
 }
 
 // GetFilteredRoleList mocks base method.
-func (m *MockRoleService) GetFilteredRoleList(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int, keyword string) (*dto.RoleListResponse, error) {
+func (m *MockRoleService) GetFilteredRoleList(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int, keyword, sortBy, order string) (*dto.RoleListResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFilteredRoleList", ctx, permissions, userID, limit, page, keyword)
+	ret := m.ctrl.Call(m, "GetFilteredRoleList", ctx, permissions, userID, limit, page, keyword, sortBy, order)
 	ret0, _ := ret[0].(*dto.RoleListResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFilteredRoleList indicates an expected call of GetFilteredRoleList.
-func (mr *MockRoleServiceMockRecorder) GetFilteredRoleList(ctx, permissions, userID, limit, page, keyword any) *gomock.Call {
+func (mr *MockRoleServiceMockRecorder) GetFilteredRoleList(ctx, permissions, userID, limit, page, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilteredRoleList", reflect.TypeOf((*MockRoleService)(nil).GetFilteredRoleList), ctx, permissions, userID, limit, page, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilteredRoleList", reflect.TypeOf((*MockRoleService)(nil).GetFilteredRoleList), ctx, permissions, userID, limit, page, keyword, sortBy, order)
 }
 
 // GetRoleByID mocks base method.
@@ -131,18 +131,18 @@ func (mr *MockRoleServiceMockRecorder) GetRoleByID(ctx, id any) *gomock.Call {
 }
 
 // GetRoleList mocks base method.
-func (m *MockRoleService) GetRoleList(ctx context.Context, limit, page int, keyword string) (*dto.RoleListResponse, error) {
+func (m *MockRoleService) GetRoleList(ctx context.Context, limit, page int, keyword, sortBy, order string) (*dto.RoleListResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRoleList", ctx, limit, page, keyword)
+	ret := m.ctrl.Call(m, "GetRoleList", ctx, limit, page, keyword, sortBy, order)
 	ret0, _ := ret[0].(*dto.RoleListResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRoleList indicates an expected call of GetRoleList.
-func (mr *MockRoleServiceMockRecorder) GetRoleList(ctx, limit, page, keyword any) *gomock.Call {
+func (mr *MockRoleServiceMockRecorder) GetRoleList(ctx, limit, page, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoleList", reflect.TypeOf((*MockRoleService)(nil).GetRoleList), ctx, limit, page, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoleList", reflect.TypeOf((*MockRoleService)(nil).GetRoleList), ctx, limit, page, keyword, sortBy, order)
 }
 
 // SearchRoles mocks base method.

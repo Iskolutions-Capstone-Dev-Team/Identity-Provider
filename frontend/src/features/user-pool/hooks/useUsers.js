@@ -64,38 +64,39 @@ async function getAllUsersFromEndpoint(fetchPage) {
   return collectedUsers;
 }
 
-async function getRegularUsers() {
+async function getRegularUsers(sortBy, order) {
   const allUsers = await getAllUsersFromEndpoint((page) =>
-    userService.getUsers({ page, limit: FETCH_LIMIT }),
+    userService.getUsers({ page, limit: FETCH_LIMIT, sortBy, order }),
   );
 
   return allUsers.map((user) => mapUserResponse(user, { isAdmin: false }));
 }
 
-async function getAdminUsers() {
+async function getAdminUsers(sortBy, order) {
   const adminUsers = await getAllUsersFromEndpoint((page) =>
-    userService.getAdminUsers({ page, limit: FETCH_LIMIT }),
+    userService.getAdminUsers({ page, limit: FETCH_LIMIT, sortBy, order }),
   );
 
   return adminUsers.map((user) => mapUserResponse(user, { isAdmin: true }));
 }
 
-async function getUsersByType(userType) {
+async function getUsersByType(userType, sortBy, order) {
   const normalizedUserType =
     userType === ADMIN_USER_TYPE ? ADMIN_USER_TYPE : REGULAR_USER_TYPE;
-  const currentRequest = userListRequests.get(normalizedUserType);
+  const requestKey = `${normalizedUserType}:${sortBy}:${order}`;
+  const currentRequest = userListRequests.get(requestKey);
 
   if (currentRequest) {
     return currentRequest;
   }
 
   const nextRequest = (
-    normalizedUserType === ADMIN_USER_TYPE ? getAdminUsers() : getRegularUsers()
+    normalizedUserType === ADMIN_USER_TYPE ? getAdminUsers(sortBy, order) : getRegularUsers(sortBy, order)
   ).finally(() => {
-    userListRequests.delete(normalizedUserType);
+    userListRequests.delete(requestKey);
   });
 
-  userListRequests.set(normalizedUserType, nextRequest);
+  userListRequests.set(requestKey, nextRequest);
   return nextRequest;
 }
 
@@ -106,7 +107,7 @@ async function findRegularUserByEmail(email) {
     return null;
   }
 
-  const regularUsers = await getRegularUsers();
+  const regularUsers = await getRegularUsers("created_at", "desc");
 
   return (
     regularUsers.find(
@@ -120,6 +121,8 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   const [search, setSearch] = useState("");
   const [userType, setUserType] = useState(REGULAR_USER_TYPE);
   const [status, setStatus] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sort, setSort] = useState("desc");
   const [page, setPage] = useState(1);
   const [successMessage, setSuccessMessage] = useState("");
   const [fetchError, setFetchError] = useState("");
@@ -184,6 +187,8 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
   const fetchUsers = async (
     selectedUserType = userType,
+    selectedSortBy = sortBy,
+    selectedSort = sort,
     { showLoading = true } = {},
   ) => {
     const fetchId = latestFetchRef.current + 1;
@@ -194,7 +199,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         setLoading(true);
       }
 
-      const nextUsers = await getUsersByType(selectedUserType);
+      const nextUsers = await getUsersByType(selectedUserType, selectedSortBy, selectedSort);
       const usersWithLocalSelections = applyUserClientSelections(
         nextUsers,
         userAccessSelectionsRef.current,
@@ -226,8 +231,8 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   };
 
   useEffect(() => {
-    fetchUsers(userType);
-  }, [userType]);
+    fetchUsers(userType, sortBy, sort);
+  }, [userType, sortBy, sort]);
 
   const setSearchKeyword = (value) => {
     const nextValue = typeof value === "string" ? value : "";
@@ -589,6 +594,10 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     setUserType: setUserTypeFilter,
     status,
     setStatus: setStatusFilter,
+    sortBy,
+    setSortBy,
+    sort,
+    setSort,
     page: currentPage,
     setPage,
     paginatedUsers,
