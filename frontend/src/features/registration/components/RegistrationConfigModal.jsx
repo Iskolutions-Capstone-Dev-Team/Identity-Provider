@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, Fragment } from "react";
-import MultiSelect from "../../../components/MultiSelect";
 import { ACCOUNT_TYPE_OPTIONS, getAccountTypeOption } from "../../../utils/accountTypes";
 import { RegistrationIcon } from "./registrationIcons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";

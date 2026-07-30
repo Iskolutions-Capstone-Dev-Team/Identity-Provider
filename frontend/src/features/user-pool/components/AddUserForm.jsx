@@ -5,7 +5,6 @@ import { Label } from "../../../components/ui/label";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Separator } from "../../../components/ui/separator";
-import MultiSelect from "../../../components/MultiSelect";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { useAllRoles } from "../../roles/hooks/useAllRoles";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
