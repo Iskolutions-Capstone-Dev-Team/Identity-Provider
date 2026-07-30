@@ -10,7 +10,9 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/go-webauthn/webauthn/protocol"
@@ -54,11 +56,17 @@ type PasskeyService interface {
 	HasPasskey(ctx context.Context, email string) (bool, error)
 }
 
+type memorySession struct {
+	data      *webauthn.SessionData
+	createdAt time.Time
+}
+
 type passkeyService struct {
 	wa          *webauthn.WebAuthn
 	passkeyRepo repository.PasskeyRepository
 	userService UserService
-	// sessions maps email → *webauthn.SessionData for challenge storage.
+	cache       cache.Cache
+	// sessions maps email → *memorySession for challenge storage fallback.
 	sessions sync.Map
 }
 
@@ -71,13 +79,11 @@ func rpidFromURL(rawURL string) string {
 	return parsed.Hostname()
 }
 
-// NewPasskeyService constructs a PasskeyService using CLIENT_BASE_URL
-// as both the WebAuthn origin and the source of the RPID, along with
-// allowed client origins from the database.
 func NewPasskeyService(
 	pr repository.PasskeyRepository,
 	us UserService,
 	cr repository.ClientRepository,
+	c cache.Cache,
 ) (PasskeyService, error) {
 	origin := os.Getenv("CLIENT_BASE_URL")
 	originsMap := make(map[string]bool)
@@ -176,11 +182,30 @@ func NewPasskeyService(
 		)
 	}
 
-	return &passkeyService{
+	ps := &passkeyService{
 		wa:          wa,
 		passkeyRepo: pr,
 		userService: us,
-	}, nil
+		cache:       c,
+	}
+
+	// Clean up expired memory-fallback challenges every 5 minutes
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			<-ticker.C
+			ps.sessions.Range(func(key, value interface{}) bool {
+				ms, ok := value.(*memorySession)
+				if ok && time.Since(ms.createdAt) > 5*time.Minute {
+					ps.sessions.Delete(key)
+				}
+				return true
+			})
+		}
+	}()
+
+	return ps, nil
 }
 
 // buildPasskeyUser loads a user and their existing passkeys, then
@@ -275,7 +300,7 @@ func (s *passkeyService) BeginRegistration(
 		)
 	}
 
-	s.sessions.Store(email+"_reg", session)
+	_ = s.setSessionData(email+"_reg", session)
 
 	raw, err := json.Marshal(creation)
 	if err != nil {
@@ -295,13 +320,12 @@ func (s *passkeyService) FinishRegistration(
 		return err
 	}
 
-	val, ok := s.sessions.LoadAndDelete(email + "_reg")
-	if !ok {
+	session, err := s.popSessionData(email + "_reg")
+	if err != nil {
 		return fmt.Errorf(
-			"[PasskeyService] Finish Registration: no session found",
+			"[PasskeyService] Finish Registration: %w", err,
 		)
 	}
-	session := val.(*webauthn.SessionData)
 
 	rpid := rpidFromRequest(r)
 	wa, err := s.getWebAuthn(rpid)
@@ -370,7 +394,7 @@ func (s *passkeyService) BeginVerification(
 		)
 	}
 
-	s.sessions.Store(email+"_auth", session)
+	_ = s.setSessionData(email+"_auth", session)
 
 	raw, err := json.Marshal(assertion)
 	if err != nil {
@@ -390,13 +414,12 @@ func (s *passkeyService) FinishVerification(
 		return err
 	}
 
-	val, ok := s.sessions.LoadAndDelete(email + "_auth")
-	if !ok {
+	session, err := s.popSessionData(email + "_auth")
+	if err != nil {
 		return fmt.Errorf(
-			"[PasskeyService] Finish Verification: no session found",
+			"[PasskeyService] Finish Verification: %w", err,
 		)
 	}
-	session := val.(*webauthn.SessionData)
 
 	rpid := rpidFromRequest(r)
 	wa, err := s.getWebAuthn(rpid)
@@ -522,4 +545,58 @@ func rpidFromRequest(r *http.Request) string {
 		host,
 	)
 	return host
+}
+
+func (s *passkeyService) setSessionData(
+	key string,
+	session *webauthn.SessionData,
+) error {
+	raw, err := json.Marshal(session)
+	if err != nil {
+		return err
+	}
+	cacheKey := "passkey_session:" + key
+	_ = s.cache.Set(context.Background(), cacheKey, string(raw), 5*time.Minute)
+	s.sessions.Store(key, &memorySession{
+		data:      session,
+		createdAt: time.Now(),
+	})
+	return nil
+}
+
+func (s *passkeyService) getSessionData(
+	key string,
+) (*webauthn.SessionData, error) {
+	cacheKey := "passkey_session:" + key
+	val, hit, err := s.cache.Get(context.Background(), cacheKey)
+	if err == nil && hit {
+		var session webauthn.SessionData
+		if err := json.Unmarshal([]byte(val), &session); err == nil {
+			return &session, nil
+		}
+	}
+	if mVal, ok := s.sessions.Load(key); ok {
+		ms, ok := mVal.(*memorySession)
+		if ok && time.Since(ms.createdAt) <= 5*time.Minute {
+			return ms.data, nil
+		}
+	}
+	return nil, fmt.Errorf("session not found")
+}
+
+func (s *passkeyService) deleteSessionData(key string) {
+	cacheKey := "passkey_session:" + key
+	_ = s.cache.Delete(context.Background(), cacheKey)
+	s.sessions.Delete(key)
+}
+
+func (s *passkeyService) popSessionData(
+	key string,
+) (*webauthn.SessionData, error) {
+	session, err := s.getSessionData(key)
+	if err != nil {
+		return nil, err
+	}
+	s.deleteSessionData(key)
+	return session, nil
 }

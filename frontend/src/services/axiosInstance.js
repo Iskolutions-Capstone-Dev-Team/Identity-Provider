@@ -16,9 +16,6 @@ const axiosInstance = axios.create({
   timeout: REQUEST_TIMEOUT_MS,
 });
 
-function getBackendApiKey() {
-  return import.meta.env.VITE_BACKEND_API_KEY || "";
-}
 
 function getBearerToken() {
   const token = getAccessToken() || getPendingMfaAccessToken();
@@ -81,11 +78,6 @@ axiosInstance.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  const apiKey = getBackendApiKey();
-  if (apiKey) {
-    config.headers = config.headers ?? {};
-    config.headers["X-API-Key"] = apiKey;
-  }
 
   return config;
 });
