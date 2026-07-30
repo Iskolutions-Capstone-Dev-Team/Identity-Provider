@@ -5,7 +5,6 @@ export const ROUTE_PATHS = Object.freeze({
   REGISTER_SET_PASSWORD: "/register/set-password",
   CALLBACK: "/callback",
   LOGOUT: "/logout",
-  ERROR: "/error",
   ONE_PORTAL: "/one-portal",
   DASHBOARD: "/dashboard",
   USER_POOL: "/user-pool",
