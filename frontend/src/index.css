@@ -3,7 +3,6 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
-@plugin "daisyui";
 
 html,
 body,
@@ -35,72 +34,7 @@ html[data-theme="dark"] input:-webkit-autofill {
   -webkit-text-fill-color: white !important;
 }
 
-.steps .step-primary {
-  color: #991b1b !important;
-}
 
-.steps .step-primary:before {
-  background-color: #991b1b !important;
-  border-color: #991b1b !important;
-}
-
-.steps .step-primary:after {
-  background-color: #991b1b !important;
-}
-
-.steps .step-primary .step-icon {
-  background-color: #991b1b !important;
-  color: white !important;
-  border-color: #991b1b !important;
-}
-
-.steps .step-primary .step-icon svg {
-  color: white !important;
-  fill: white !important;
-}
-
-.steps .step-primary + .step-primary:before {
-  background-color: #991b1b !important;
-  border-color: #991b1b !important;
-}
-
-.steps.userpool-steps-dark .step {
-  color: #cbb8bd !important;
-}
-
-.steps.userpool-steps-dark .step:before {
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-}
-
-.steps.userpool-steps-dark .step-primary {
-  color: #ffe28a !important;
-}
-
-.steps.userpool-steps-dark .step-primary:before {
-  background-color: #f8d24e !important;
-  border-color: #f8d24e !important;
-}
-
-.steps.userpool-steps-dark .step-primary:after {
-  background-color: #f8d24e !important;
-}
-
-.steps.userpool-steps-dark .step-primary .step-icon {
-  background-color: #7b0d15 !important;
-  color: white !important;
-  border-color: #f8d24e !important;
-}
-
-.steps.userpool-steps-dark .step-primary .step-icon svg {
-  color: white !important;
-  fill: white !important;
-}
-
-.steps.userpool-steps-dark .step-primary + .step-primary:before {
-  background-color: #f8d24e !important;
-  border-color: #f8d24e !important;
-}
 
 @keyframes floatLogo {
   0%, 100% {
@@ -132,68 +66,7 @@ html[data-theme="dark"] input:-webkit-autofill {
   animation-delay: -7s;
 }
 
-@keyframes idpModalEnter {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
 
-@keyframes idpModalFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes idpModalExit {
-  from {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: translate3d(0, 12px, 0) scale(0.98);
-  }
-}
-
-@keyframes idpModalFadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-.modal.modal-open .modal-box {
-  animation: idpModalEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  transform-origin: center;
-}
-
-.modal.idp-modal-closing {
-  pointer-events: none;
-}
-
-.modal.modal-open.idp-modal-closing .modal-box {
-  animation: idpModalExit 180ms ease-in both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .modal.modal-open .modal-box {
-    animation: idpModalFadeIn 160ms ease-out both;
-  }
-
-  .modal.modal-open.idp-modal-closing .modal-box {
-    animation: idpModalFadeOut 140ms ease-out both;
-  }
-}
 
 .idp-sidebar-scroll {
   scrollbar-width: thin;
