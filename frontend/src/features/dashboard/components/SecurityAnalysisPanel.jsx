@@ -8,7 +8,6 @@ import { Button } from "../../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
 import { Frame, FrameHeader, FramePanel, FrameTitle } from "../../../components/reui/frame";
 import { ArrowLeftIcon, ArrowRightIcon, MessageCircleQuestionMark, ShieldCheck, Fingerprint, Clock, CircleCheckIcon, ChevronRightIcon } from "lucide-react";
-import { CheckIcon } from "./DashboardIcons";
 
 function SecurityMetric({ icon, label, value, isLoading = false }) {
   return (
