@@ -11,7 +11,6 @@ import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import { AuditLogsIcon } from "../components/auditLogIcons";
 import MetricsCard from "../../../components/MetricsCard";
-import { LogIcon } from "../../../components/Icons";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { createPortal } from "react-dom";
 import { FileCheck, FileSearchCorner } from "lucide-react";
