@@ -37,7 +37,13 @@ const PublicNotFound = lazy(() => import("../pages/PublicNotFound"));
 
 function CatchAllRoute() {
   const isAuth = hasStoredAuthTokens();
-  return isAuth ? <NotFound /> : <PublicNotFound />;
+  return isAuth ? (
+    <PermissionProvider>
+      <NotFound />
+    </PermissionProvider>
+  ) : (
+    <PublicNotFound />
+  );
 }
 
 export default function App() {

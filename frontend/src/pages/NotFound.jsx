@@ -5,6 +5,8 @@ import DotField from "@/components/ui/DotField";
 import { Button } from "@/components/ui/button";
 import { SearchIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePermissionAccess } from "../providers/PermissionProvider";
+import { canAccessPath } from "../utils/permissionAccess";
 
 const items = [
   { id: "dashboard", value: "dashboard" },
@@ -19,6 +21,9 @@ const items = [
 
 export default function NotFound() {
   const navigate = useNavigate();
+  const { permissionLookup } = usePermissionAccess();
+
+  const filteredItems = items.filter(item => canAccessPath(`/${item.value}`, permissionLookup));
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -59,7 +64,7 @@ export default function NotFound() {
           </EmptyHeader>
           <EmptyContent className="max-w-full w-full mx-auto mt-4">
             <div className="w-full sm:w-3/4 mx-auto">
-              <Autocomplete items={items} autoHighlight>
+              <Autocomplete items={filteredItems} autoHighlight>
                 <form onSubmit={handleSubmit} className="flex flex-row items-center gap-2 w-full">
                   <AutocompleteInput name="search" placeholder="Try searching for pages…" showClear className="h-12 w-full rounded-xl bg-background pl-4 pr-10 text-base shadow-sm border border-input focus-visible:ring-[#ffd700] text-black" />
                   <Button type="submit" size="icon" className="shrink-0 h-12 w-12 rounded-xl bg-[#ffd700] text-[#6f0f15] hover:bg-[#991b1b] hover:text-white transition duration-300 border-0">
