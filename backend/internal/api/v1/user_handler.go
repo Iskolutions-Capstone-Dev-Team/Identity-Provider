@@ -1093,6 +1093,20 @@ func (h *UserHandler) PatchUserName(c *gin.Context) {
 	}
 
 	actorIDStr := c.GetString("user_id")
+	if actorIDStr != "" {
+		actorID, _ := uuid.Parse(actorIDStr)
+		if userID != actorID {
+			errors.SendString(
+				c,
+				http.StatusUnauthorized,
+				errors.CodeUnauthorized,
+				"You can only update your own name.",
+				"User ID mismatch",
+			)
+			return
+		}
+	}
+
 	actorID, _ := uuid.Parse(actorIDStr)
 	ctx := c.Request.Context()
 	actorName, _ := h.LogService.GetUserEmail(ctx, actorID[:])
