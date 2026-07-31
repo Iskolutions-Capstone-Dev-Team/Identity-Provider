@@ -1,4 +1,4 @@
-import { FileSearchCorner, Eye } from "lucide-react";
+﻿import { FileSearchCorner, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,8 +68,8 @@ export default function AuditLogsCards({ loading = false, logs, onView, colorMod
         <Empty className="max-w-md">
           <EmptyHeader>
             <EmptyMedia>
-              <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
-                <FileSearchCorner className="text-[#7b0d15] dark:text-primary size-5" />
+              <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e] h-24 w-22">
+                <FileSearchCorner className="text-[#7b0d15] dark:text-[#f8d24e] size-5" />
               </IconStack>
             </EmptyMedia>
             <EmptyTitle>{emptyMessage}</EmptyTitle>

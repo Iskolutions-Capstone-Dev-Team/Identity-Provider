@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { toast } from "sonner";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
 import { Eye, Pencil, Trash, Copy, CopyCheck, Ellipsis, User } from "lucide-react";
@@ -153,8 +153,8 @@ export default function UserPoolCards({
         <Empty className="max-w-md">
           <EmptyHeader>
             <EmptyMedia>
-              <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
-                <User className="text-[#7b0d15] dark:text-primary size-5" />
+              <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e] h-24 w-22">
+                <User className="text-[#7b0d15] dark:text-[#f8d24e] size-5" />
               </IconStack>
             </EmptyMedia>
             <EmptyTitle>No users found</EmptyTitle>

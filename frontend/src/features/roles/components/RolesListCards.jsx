@@ -1,4 +1,4 @@
-import { Eye, Pencil, Trash, ShieldUser, Ellipsis } from "lucide-react";
+﻿import { Eye, Pencil, Trash, ShieldUser, Ellipsis } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,8 +59,8 @@ export default function RolesListCards({ loading = false, roles, onView, onEdit,
         <Empty className="max-w-md">
           <EmptyHeader>
             <EmptyMedia>
-              <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
-                <ShieldUser className="text-[#7b0d15] dark:text-primary size-5" />
+              <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e] h-24 w-22">
+                <ShieldUser className="text-[#7b0d15] dark:text-[#f8d24e] size-5" />
               </IconStack>
             </EmptyMedia>
             <EmptyTitle>No roles found</EmptyTitle>
