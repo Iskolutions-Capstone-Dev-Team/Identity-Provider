@@ -2,9 +2,8 @@ name: MySQL Backup to S3
 
 on:
   schedule:
-    - cron: "0 0 * * *"        # Daily at midnight (00:00)
-    - cron: "15,45 * * * *"    # Every 15 minutes for binary logs (RPO 15 mins)
-  workflow_dispatch:           # Manual trigger
+    - cron: "0 0 * * *"        # Daily at midnight
+  workflow_dispatch:
 
 jobs:
   backup:
@@ -25,22 +24,21 @@ jobs:
       - name: Determine Backup Type and Retention
         id: backup_type
         run: |
-          DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
+          DAY_OF_WEEK=$(date +%u)
           DAY_OF_MONTH=$(date +%d)
           
-          # Determine backup type based on date
           if [ "$DAY_OF_MONTH" = "01" ]; then
             echo "BACKUP_TYPE=monthly" >> $GITHUB_OUTPUT
             echo "RETENTION_DAYS=365" >> $GITHUB_OUTPUT
           elif [ "$DAY_OF_WEEK" = "7" ]; then
             echo "BACKUP_TYPE=weekly" >> $GITHUB_OUTPUT
-            echo "RETENTION_DAYS=84" >> $GITHUB_OUTPUT  # 12 weeks
+            echo "RETENTION_DAYS=84" >> $GITHUB_OUTPUT
           else
             echo "BACKUP_TYPE=daily" >> $GITHUB_OUTPUT
             echo "RETENTION_DAYS=30" >> $GITHUB_OUTPUT
           fi
 
-      - name: Stream MySQL Dump from Docker to Runner
+      - name: Create MySQL Dump on Server
         env:
           SSH_HOST: ${{ secrets.BACKUP_SSH_HOST }}
           SSH_USER: ${{ secrets.BACKUP_SSH_USER }}
@@ -48,27 +46,55 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
         run: |
-          echo "📦 Creating database backup..."
+          echo "📦 Creating database backup using your manual method..."
           
+          # Create backup file on the server
           ssh -i "$HOME/.ssh/backup_key" \
             -o StrictHostKeyChecking=no \
-            -o ConnectTimeout=30 \
             "$SSH_USER@$SSH_HOST" \
-            "docker exec $CONTAINER_NAME \
-              mysqldump \
-              --single-transaction \
-              --quick \
-              --lock-tables=false \
-              -u root -p'$DB_PASS' $DB_NAME | gzip -9" \
+            "docker exec $CONTAINER_NAME mysqldump -u root -p\"$DB_PASS\" $DB_NAME > /tmp/prod-backup.sql"
+          
+          # Check the backup was created
+          echo "Checking backup file on server..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no \
+            "$SSH_USER@$SSH_HOST" \
+            "ls -lh /tmp/prod-backup.sql"
+          
+          # Compress it on the server
+          echo "Compressing backup on server..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no \
+            "$SSH_USER@$SSH_HOST" \
+            "gzip -f /tmp/prod-backup.sql"
+          
+          # Download the compressed file
+          echo "Downloading compressed backup..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no \
+            "$SSH_USER@$SSH_HOST" \
+            "cat /tmp/prod-backup.sql.gz" \
             > backup.sql.gz
           
-          # Verify backup was created
-          if [ ! -f backup.sql.gz ] || [ ! -s backup.sql.gz ]; then
-            echo "❌ Backup failed - file is empty or missing"
-            exit 1
-          fi
+          # Clean up on server
+          echo "Cleaning up temporary files on server..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no \
+            "$SSH_USER@$SSH_HOST" \
+            "rm -f /tmp/prod-backup.sql.gz"
           
-          echo "✅ Backup created successfully - $(du -h backup.sql.gz | cut -f1)"
+          # Verify the backup
+          FILE_SIZE=$(stat -f%z "backup.sql.gz" 2>/dev/null || stat -c%s "backup.sql.gz" 2>/dev/null)
+          echo "Backup file size: $FILE_SIZE bytes"
+          
+          if [ "$FILE_SIZE" -lt 1000 ]; then
+            echo "❌ Backup file is too small ($FILE_SIZE bytes)!"
+            echo "Contents of the backup file:"
+            gunzip -c backup.sql.gz 2>/dev/null | head -20 || echo "Cannot decompress - file may be corrupted"
+            exit 1
+          else
+            echo "✅ Backup created successfully - $(du -h backup.sql.gz | cut -f1)"
+          fi
 
       - name: Generate Checksum
         run: |
@@ -82,7 +108,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Upload to S3 with Proper Folder Structure
+      - name: Upload to S3
         env:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           BACKUP_TYPE: ${{ steps.backup_type.outputs.BACKUP_TYPE }}
@@ -92,30 +118,26 @@ jobs:
           TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
           DATE_PATH=$(date +"%Y/%m/%d")
           
-          # Create filename with backup type
           FILE="backup-${BACKUP_TYPE}-${TIMESTAMP}.sql.gz"
           CHECKSUM_FILE="${FILE}.sha256"
           
-          # Destination path based on backup type
           DEST="s3://${S3_BUCKET_NAME}/mysql-backups/${BACKUP_TYPE}s/${DATE_PATH}/${FILE}"
           DEST_CHECKSUM="s3://${S3_BUCKET_NAME}/mysql-backups/${BACKUP_TYPE}s/${DATE_PATH}/${CHECKSUM_FILE}"
           
           echo "📤 Uploading ${BACKUP_TYPE} backup to S3..."
           echo "   Destination: ${DEST}"
           
-          # Upload backup file with correct encryption parameter
           aws s3 cp "./backup.sql.gz" "$DEST" \
             --storage-class STANDARD \
             --sse AES256 \
             --metadata "backup-type=${BACKUP_TYPE},created=$(date -Iseconds),retention-days=${{ steps.backup_type.outputs.RETENTION_DAYS }}"
           
-          # Upload checksum with correct encryption parameter
           aws s3 cp "./backup.sql.gz.sha256" "$DEST_CHECKSUM" \
             --storage-class STANDARD \
             --sse AES256
           
           echo "✅ Backup uploaded successfully: ${FILE}"
-      
+
       - name: Apply Retention Policy (GFS)
         env:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
@@ -124,7 +146,7 @@ jobs:
           
           # Clean Daily backups - keep 30
           echo "   Cleaning daily backups (keeping 30)..."
-          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/dailys/" --recursive \
+          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/dailys/" --recursive 2>/dev/null \
             | sort -r \
             | awk 'NR>30 {print $4}' \
             | while read -r file; do
@@ -134,7 +156,7 @@ jobs:
           
           # Clean Weekly backups - keep 12
           echo "   Cleaning weekly backups (keeping 12)..."
-          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/weeklys/" --recursive \
+          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/weeklys/" --recursive 2>/dev/null \
             | sort -r \
             | awk 'NR>12 {print $4}' \
             | while read -r file; do
@@ -144,7 +166,7 @@ jobs:
           
           # Clean Monthly backups - keep 12
           echo "   Cleaning monthly backups (keeping 12)..."
-          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/monthlys/" --recursive \
+          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/monthlys/" --recursive 2>/dev/null \
             | sort -r \
             | awk 'NR>12 {print $4}' \
             | while read -r file; do
@@ -165,9 +187,8 @@ jobs:
           echo "S3 Bucket: ${{ secrets.S3_BUCKET_NAME }}" >> backup-report.txt
           echo "Status: ${{ job.status }}" >> backup-report.txt
           
-          # Upload report to S3 with correct encryption parameter
           aws s3 cp backup-report.txt "s3://${{ secrets.S3_BUCKET_NAME }}/reports/backup-$(date +%Y-%m-%d).txt" \
-            --sse AES256
+            --sse AES256 || true
 
       - name: Notify on Failure
         if: failure()
@@ -175,10 +196,9 @@ jobs:
           echo "🚨 BACKUP FAILED!"
           echo "Please check the GitHub Actions logs for details."
           echo "Escalate to Project Leader if not resolved within 4 hours."
-          # Optional: Add email/slack notification here
 
       - name: Cleanup Local Files
         if: always()
         run: |
-          rm -f backup.sql.gz backup.sql.gz.sha256
+          rm -f backup.sql.gz backup.sql.gz.sha256 backup-report.txt
           echo "🧹 Local cleanup completed"
