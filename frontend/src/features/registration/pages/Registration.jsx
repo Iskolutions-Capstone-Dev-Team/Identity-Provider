@@ -3,7 +3,8 @@ import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import Pagination from "../../../components/Pagination";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
-import Breadcrumbs from "../../../components/Breadcrumbs";
+import { createPortal } from "react-dom";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import RegistrationConfigModal from "../components/RegistrationConfigModal";
 import RegistrationSyncConfirmModal from "../components/RegistrationSyncConfirmModal";
 import RegistrationListCard from "../components/RegistrationListCard";
@@ -67,6 +68,12 @@ function getRegistrationActionError(error, fallbackMessage) {
 }
 
 export default function Registration() {
+  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+
+  useEffect(() => {
+    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+  }, []);
+
   const location = useLocation();
   const navigate = useNavigate();
   const { colorMode = "light", globalViewType } = useOutletContext() || {};
@@ -442,14 +449,16 @@ export default function Registration() {
   return (
     <>
       <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-5 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-        <Breadcrumbs
-          colorMode={colorMode}
-          items={[
-            {
-              label: "Registration",
-            },
-          ]}
-        />
+        {breadcrumbsContainer && createPortal(
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Registration</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>,
+          breadcrumbsContainer
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
