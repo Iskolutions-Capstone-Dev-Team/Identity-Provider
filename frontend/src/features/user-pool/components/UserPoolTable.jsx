@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { shortenId } from "../../../utils/shortenId";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
 import { Eye, Pencil, Trash, Copy, CopyCheck, Ellipsis, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

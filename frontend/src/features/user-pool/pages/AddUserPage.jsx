@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
 import { useUsers } from "../hooks/useUsers";
-import { Card } from "../../../components/ui/card";
-import Breadcrumbs from "../../../components/Breadcrumbs";
 import AddUserForm from "../components/AddUserForm";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../../../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS } from "../../../utils/permissionAccess";
@@ -23,6 +23,12 @@ function getRequestedUserType(location) {
 }
 
 export default function AddUserPage() {
+  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+
+  useEffect(() => {
+    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+  }, []);
+
   const location = useLocation();
   const navigate = useNavigate();
   const outletContext = useOutletContext() || {};
@@ -94,18 +100,22 @@ export default function AddUserPage() {
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-      <Breadcrumbs
-        colorMode={colorMode}
-        items={[
-          {
-            label: "User",
-            to: "/user-pool",
-          },
-          {
-            label: "New User",
-          },
-        ]}
-      />
+      {breadcrumbsContainer && createPortal(
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/user-pool">User</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>New User</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>,
+        breadcrumbsContainer
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
