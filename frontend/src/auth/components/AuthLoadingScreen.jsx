@@ -1,8 +1,13 @@
+import { useEffect } from "react";
 import { authPageBackground } from "../utils/authBackground";
 import DotField from "@/components/ui/DotField";
 import RippleSpinner from "@/components/ui/RippleSpinner";
 
 export default function AuthLoadingScreen({ message }) {
+  useEffect(() => {
+    document.documentElement.classList.remove("dark");
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-hidden font-[Poppins] text-white" style={{ background: authPageBackground }}>
       <div className="absolute inset-0 overflow-hidden">

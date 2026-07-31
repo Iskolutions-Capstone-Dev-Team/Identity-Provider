@@ -9,6 +9,7 @@ import DotField from "@/components/ui/DotField";
 export default function AuthLayout({ children, allowPageScroll = false }) {
   useEffect(() => {
     clearAccessibilityWidget();
+    document.documentElement.classList.remove("dark");
   }, []);
 
   return (
