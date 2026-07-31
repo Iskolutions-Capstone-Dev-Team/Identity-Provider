@@ -4,7 +4,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import RoleCreateForm from "../components/RoleCreateForm";
 import { usePermissions } from "../hooks/usePermissions";
 import { useRoles } from "../hooks/useRoles";
-import { CreateRoleIcon } from "../components/roleIcons";
+import { SquarePlus } from "lucide-react";
 
 export default function CreateRolePage() {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ export default function CreateRolePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-primary/10 dark:text-primary rounded-xl flex items-center justify-center">
-            <CreateRoleIcon className="w-8 h-8" />
+            <SquarePlus className="w-8 h-8" />
           </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight uppercase">New Role</h1>
