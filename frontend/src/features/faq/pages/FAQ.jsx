@@ -69,7 +69,7 @@ export default function FAQ() {
             <p className="text-muted-foreground">Frequently asked questions</p>
           </div>
         </div>
-        <Button onClick={() => window.location.href = "mailto:iskolutions.team@gmail.com"} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-white dark:text-black dark:hover:bg-white/90 dark:hover:text-black h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200">
+        <Button onClick={() => window.location.href = "mailto:iskolutions.team@gmail.com"} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200">
           <MailQuestion className="w-4 h-4 mr-2" />
           Get Help
         </Button>
