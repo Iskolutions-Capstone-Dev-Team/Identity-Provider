@@ -103,55 +103,55 @@ jobs:
           echo "📤 Uploading ${BACKUP_TYPE} backup to S3..."
           echo "   Destination: ${DEST}"
           
-          # Upload backup file
+          # Upload backup file with correct encryption parameter
           aws s3 cp "./backup.sql.gz" "$DEST" \
             --storage-class STANDARD \
-            --server-side-encryption AES256 \
+            --sse AES256 \
             --metadata "backup-type=${BACKUP_TYPE},created=$(date -Iseconds),retention-days=${{ steps.backup_type.outputs.RETENTION_DAYS }}"
           
-          # Upload checksum
+          # Upload checksum with correct encryption parameter
           aws s3 cp "./backup.sql.gz.sha256" "$DEST_CHECKSUM" \
             --storage-class STANDARD \
-            --server-side-encryption AES256
+            --sse AES256
           
           echo "✅ Backup uploaded successfully: ${FILE}"
-
-      - name: Apply Retention Policy (GFS)
-        env:
-          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-        run: |
-          echo "🧹 Cleaning up old backups based on GFS retention policy..."
-          
-          # Function to delete old backups
-          delete_old_backups() {
-            local BACKUP_TYPE=$1
-            local KEEP_COUNT=$2
-            local FOLDER="mysql-backups/${BACKUP_TYPE}s/"
-            
-            echo "   Cleaning ${BACKUP_TYPE} backups (keeping ${KEEP_COUNT})..."
-            
-            # List, sort by date, skip recent, delete old
-            aws s3 ls "s3://${S3_BUCKET_NAME}/${FOLDER}" \
-              --recursive \
-              | sort -r \
-              | awk -v keep="$KEEP_COUNT" 'NR>keep {print $4}' \
-              | while read -r file; do
-                  echo "      Deleting: $file"
-                  aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
-                done
-          }
-          
-          # Apply retention based on backup type
-          # Daily: Keep 30
-          delete_old_backups "daily" 30
-          
-          # Weekly: Keep 12
-          delete_old_backups "weekly" 12
-          
-          # Monthly: Keep 12
-          delete_old_backups "monthly" 12
-          
-          echo "✅ Retention policy applied successfully"
+      
+            - name: Apply Retention Policy (GFS)
+              env:
+                S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+              run: |
+                echo "🧹 Cleaning up old backups based on GFS retention policy..."
+                
+                # Function to delete old backups
+                delete_old_backups() {
+                  local BACKUP_TYPE=$1
+                  local KEEP_COUNT=$2
+                  local FOLDER="mysql-backups/${BACKUP_TYPE}s/"
+                  
+                  echo "   Cleaning ${BACKUP_TYPE} backups (keeping ${KEEP_COUNT})..."
+                  
+                  # List, sort by date, skip recent, delete old
+                  aws s3 ls "s3://${S3_BUCKET_NAME}/${FOLDER}" \
+                    --recursive \
+                    | sort -r \
+                    | awk -v keep="$KEEP_COUNT" 'NR>keep {print $4}' \
+                    | while read -r file; do
+                        echo "      Deleting: $file"
+                        aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
+                      done
+                }
+                
+                # Apply retention based on backup type
+                # Daily: Keep 30
+                delete_old_backups "daily" 30
+                
+                # Weekly: Keep 12
+                delete_old_backups "weekly" 12
+                
+                # Monthly: Keep 12
+                delete_old_backups "monthly" 12
+                
+                echo "✅ Retention policy applied successfully"
 
       - name: Generate Backup Report
         if: always()
