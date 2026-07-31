@@ -1,5 +1,4 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { ViewIcon, EditIcon, DeleteIcon } from "./roleIcons";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"

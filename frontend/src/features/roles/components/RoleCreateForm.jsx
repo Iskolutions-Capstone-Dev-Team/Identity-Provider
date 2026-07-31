@@ -1,9 +1,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import ErrorAlert from "../../../components/ErrorAlert";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import { RoleShieldIcon, RoleDetailsIcon } from "./roleIcons";
-import { User, Settings, Monitor, FileText } from "lucide-react";
+import { User, Settings, Monitor, FileText, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +10,7 @@ import { Field, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field
 import { Frame, FrameHeader, FramePanel, FrameTitle } from "@/components/reui/frame";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Stepper, StepperContent, StepperIndicator, StepperItem, StepperNav, StepperPanel, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";
+import { Stepper, StepperIndicator, StepperItem, StepperNav, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";
 
 const PERMISSION_GROUPS = [
   {
@@ -28,7 +26,7 @@ const PERMISSION_GROUPS = [
   {
     value: "role",
     trigger: "Role",
-    icon: <RoleShieldIcon className="text-muted-foreground size-4" />,
+    icon: <Shield className="text-muted-foreground size-4" />,
     permissions: [
       "Add roles", "Delete Roles", "Edit Roles", "View roles"
     ]
