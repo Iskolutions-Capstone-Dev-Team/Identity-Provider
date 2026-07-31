@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import ErrorAlert from "../../../components/ErrorAlert";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";

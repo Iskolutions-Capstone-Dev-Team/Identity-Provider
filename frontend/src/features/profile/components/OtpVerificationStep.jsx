@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { Mail, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";

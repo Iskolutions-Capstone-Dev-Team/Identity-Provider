@@ -9,7 +9,6 @@ import MfaSetupQrStep from "../../../auth/components/mfa/MfaSetupQrStep";
 import { getDigits } from "../../../auth/components/mfa/mfaInputUtils";
 import { createPasskeyCredential } from "../../../auth/utils/webAuthn";
 import { mfaService } from "../../../services/mfaService";
-import { PhoneIcon, ConnectionSetupIcon, PasskeyIcon } from "./profileIcons";
 import { Smartphone, KeySquare } from "lucide-react";
 
 function getRequestErrorMessage(error, fallbackMessage) {
@@ -23,12 +22,7 @@ function getRequestErrorMessage(error, fallbackMessage) {
 
 function ConnectionOptionButton({ title, description, icon, onClick, disabled }) {
   return (
-    <Button
-      variant="outline"
-      className="group/button h-auto justify-start gap-3 px-4 py-3 text-left w-full"
-      onClick={onClick}
-      disabled={disabled}
-    >
+    <Button variant="outline" className="group/button h-auto justify-start gap-3 px-4 py-3 text-left w-full" onClick={onClick} disabled={disabled}>
       <div className="bg-muted text-accent-foreground group-hover/button:bg-background rounded-md flex size-10 shrink-0 items-center justify-center">
         {icon}
       </div>

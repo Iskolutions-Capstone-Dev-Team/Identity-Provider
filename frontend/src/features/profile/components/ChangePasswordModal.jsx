@@ -5,7 +5,6 @@ import ChangePasswordStep, { getPasswordValidationState } from "./ChangePassword
 import OtpVerificationStep from "./OtpVerificationStep";
 import SuccessStep from "./SuccessStep";
 import { passwordResetService } from "../../../services/passwordResetService";
-import { PasswordLockIcon, CloseIcon } from "./profileIcons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../components/ui/dialog";
 import { Button } from "../../../components/ui/button";
 
