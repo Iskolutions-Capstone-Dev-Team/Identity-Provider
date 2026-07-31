@@ -164,9 +164,9 @@ jobs:
           echo "S3 Bucket: ${{ secrets.S3_BUCKET_NAME }}" >> backup-report.txt
           echo "Status: ${{ job.status }}" >> backup-report.txt
           
-          # Upload report to S3
+          # Upload report to S3 with correct encryption parameter
           aws s3 cp backup-report.txt "s3://${{ secrets.S3_BUCKET_NAME }}/reports/backup-$(date +%Y-%m-%d).txt" \
-            --server-side-encryption AES256
+            --sse AES256
 
       - name: Notify on Failure
         if: failure()
