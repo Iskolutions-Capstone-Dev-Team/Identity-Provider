@@ -1,5 +1,4 @@
-import { FileSearchCorner } from "lucide-react";
-import { ViewLogIcon } from "./auditLogIcons";
+import { FileSearchCorner, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -136,7 +135,7 @@ export default function AuditLogsCards({ loading = false, logs, onView, colorMod
             </Badge>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(log)} aria-label={`View ${log.actor} ${logTypeLabel} details`}>
-                <ViewLogIcon className="h-4 w-4" />
+                <Eye className="h-4 w-4" />
               </Button>
             </div>
           </CardFooter>

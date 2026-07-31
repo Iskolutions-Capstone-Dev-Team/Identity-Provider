@@ -9,7 +9,6 @@ import { logService } from "../../../services/logService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
-import { AuditLogsIcon } from "../components/auditLogIcons";
 import MetricsCard from "../../../components/MetricsCard";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { createPortal } from "react-dom";
