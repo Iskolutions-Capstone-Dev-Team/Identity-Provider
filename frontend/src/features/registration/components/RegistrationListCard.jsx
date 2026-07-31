@@ -2,12 +2,7 @@ import Pagination from "../../../components/Pagination";
 import RegistrationTable from "./RegistrationTable";
 import RegistrationCards from "./RegistrationCards";
 import ResultsCount from "../../../components/ResultsCount";
-import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import { SearchIcon } from "./registrationIcons";
-import { Input } from "@/components/ui/input";
-import { Search, Table, WalletCards, ChevronDown } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+
 export default function RegistrationListCard({
   children,
   loading = false,
