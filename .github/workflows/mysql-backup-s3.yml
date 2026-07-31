@@ -2,8 +2,8 @@ name: MySQL Backup to S3
 
 on:
   schedule:
-    - cron: "0 0 * * *"        # Daily at midnight
-  workflow_dispatch:
+    - cron: "0 0 * * *"        # Daily at midnight (00:00)
+  workflow_dispatch:           # Manual trigger
 
 jobs:
   backup:
@@ -24,7 +24,7 @@ jobs:
       - name: Determine Backup Type and Retention
         id: backup_type
         run: |
-          DAY_OF_WEEK=$(date +%u)
+          DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
           DAY_OF_MONTH=$(date +%d)
           
           if [ "$DAY_OF_MONTH" = "01" ]; then
@@ -38,6 +38,27 @@ jobs:
             echo "RETENTION_DAYS=30" >> $GITHUB_OUTPUT
           fi
 
+      - name: Test Docker and Database Connection
+        env:
+          SSH_HOST: ${{ secrets.BACKUP_SSH_HOST }}
+          SSH_USER: ${{ secrets.BACKUP_SSH_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+        run: |
+          echo "🔍 Testing SSH connection..."
+          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" "echo 'SSH OK'"
+          
+          echo "🔍 Testing Docker connection..."
+          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "docker ps | grep ${CONTAINER_NAME}"
+          
+          echo "🔍 Testing database connection..."
+          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "docker exec ${CONTAINER_NAME} mysql -u root -p'${DB_PASS}' -e 'SELECT 1'"
+          
+          echo "✅ All tests passed!"
+
       - name: Create MySQL Dump on Server
         env:
           SSH_HOST: ${{ secrets.BACKUP_SSH_HOST }}
@@ -48,52 +69,41 @@ jobs:
         run: |
           echo "📦 Creating database backup using your manual method..."
           
-          # Create backup file on the server
-          ssh -i "$HOME/.ssh/backup_key" \
-            -o StrictHostKeyChecking=no \
-            "$SSH_USER@$SSH_HOST" \
-            "docker exec $CONTAINER_NAME mysqldump -u root -p\"$DB_PASS\" $DB_NAME > /tmp/prod-backup.sql"
+          # Step 1: Dump the database
+          echo "Step 1: Dumping database..."
+          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "docker exec ${CONTAINER_NAME} mysqldump -u root -p'${DB_PASS}' ${DB_NAME} > /tmp/prod-backup.sql"
           
-          # Check the backup was created
-          echo "Checking backup file on server..."
-          ssh -i "$HOME/.ssh/backup_key" \
-            -o StrictHostKeyChecking=no \
-            "$SSH_USER@$SSH_HOST" \
+          # Step 2: Check file exists and size
+          echo "Step 2: Checking backup file..."
+          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
             "ls -lh /tmp/prod-backup.sql"
           
-          # Compress it on the server
-          echo "Compressing backup on server..."
-          ssh -i "$HOME/.ssh/backup_key" \
-            -o StrictHostKeyChecking=no \
-            "$SSH_USER@$SSH_HOST" \
+          # Step 3: Compress it
+          echo "Step 3: Compressing..."
+          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
             "gzip -f /tmp/prod-backup.sql"
           
-          # Download the compressed file
-          echo "Downloading compressed backup..."
-          ssh -i "$HOME/.ssh/backup_key" \
-            -o StrictHostKeyChecking=no \
-            "$SSH_USER@$SSH_HOST" \
-            "cat /tmp/prod-backup.sql.gz" \
-            > backup.sql.gz
+          # Step 4: Download it
+          echo "Step 4: Downloading..."
+          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "cat /tmp/prod-backup.sql.gz" > backup.sql.gz
           
-          # Clean up on server
-          echo "Cleaning up temporary files on server..."
-          ssh -i "$HOME/.ssh/backup_key" \
-            -o StrictHostKeyChecking=no \
-            "$SSH_USER@$SSH_HOST" \
+          # Step 5: Clean up on server
+          echo "Step 5: Cleaning up..."
+          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
             "rm -f /tmp/prod-backup.sql.gz"
           
-          # Verify the backup
+          # Step 6: Verify the backup
           FILE_SIZE=$(stat -f%z "backup.sql.gz" 2>/dev/null || stat -c%s "backup.sql.gz" 2>/dev/null)
           echo "Backup file size: $FILE_SIZE bytes"
           
           if [ "$FILE_SIZE" -lt 1000 ]; then
             echo "❌ Backup file is too small ($FILE_SIZE bytes)!"
-            echo "Contents of the backup file:"
-            gunzip -c backup.sql.gz 2>/dev/null | head -20 || echo "Cannot decompress - file may be corrupted"
             exit 1
           else
-            echo "✅ Backup created successfully - $(du -h backup.sql.gz | cut -f1)"
+            HUMAN_SIZE=$(du -h backup.sql.gz | cut -f1)
+            echo "✅ Backup created successfully - $HUMAN_SIZE"
           fi
 
       - name: Generate Checksum
