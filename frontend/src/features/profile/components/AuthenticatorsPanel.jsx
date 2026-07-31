@@ -21,14 +21,28 @@ function getRequestErrorMessage(error, fallbackMessage) {
   );
 }
 
-function formatDate(value) {
+function FormattedDateDisplay({ value }) {
   if (!value) {
-    return "Never";
+    return <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">Never</span>;
   }
 
   const timestamp = formatTimestamp(value);
 
-  return timestamp === "NaN-NaN-NaN NaN:NaN:NaN" ? "Unavailable" : timestamp;
+  if (timestamp === "NaN-NaN-NaN NaN:NaN:NaN") {
+    return <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">Unavailable</span>;
+  }
+
+  const parts = timestamp.split(" ");
+  if (parts.length === 2) {
+    return (
+      <div className="flex flex-col items-end text-muted-foreground text-[10px] xl:text-xs leading-tight min-w-0">
+        <span>{parts[0]}</span>
+        <span>{parts[1]}</span>
+      </div>
+    );
+  }
+
+  return <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">{timestamp}</span>;
 }
 
 function getAuthenticatorTypeLabel(type) {
@@ -122,21 +136,17 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
           </div>
 
           <div className="w-full space-y-1 px-3 pb-6 mt-auto">
-            <div className="rounded-lg flex items-center justify-between px-2 sm:px-3 py-2.5 bg-muted/40 gap-2">
+            <div className="rounded-lg flex items-center justify-between px-2 sm:px-3 py-2.5 bg-muted/40 gap-2 min-h-[52px]">
               <span className="text-foreground text-xs sm:text-sm font-medium flex items-center gap-1.5 shrink-0">
                 <CalendarDays className="h-4 w-4 shrink-0" /> Added
               </span>
-              <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">
-                {formatDate(authenticator.created_at)}
-              </span>
+              <FormattedDateDisplay value={authenticator.created_at} />
             </div>
-            <div className="rounded-lg flex items-center justify-between px-2 sm:px-3 py-2.5 gap-2">
+            <div className="rounded-lg flex items-center justify-between px-2 sm:px-3 py-2.5 gap-2 min-h-[52px]">
               <span className="text-foreground text-xs sm:text-sm font-medium flex items-center gap-1.5 shrink-0">
                 <Clock className="h-4 w-4 shrink-0" /> Last used
               </span>
-              <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">
-                {formatDate(authenticator.last_used_at)}
-              </span>
+              <FormattedDateDisplay value={authenticator.last_used_at} />
             </div>
           </div>
         </CardContent>
