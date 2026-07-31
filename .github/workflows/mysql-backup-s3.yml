@@ -116,42 +116,43 @@ jobs:
           
           echo "✅ Backup uploaded successfully: ${FILE}"
       
-            - name: Apply Retention Policy (GFS)
-              env:
-                S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-              run: |
-                echo "🧹 Cleaning up old backups based on GFS retention policy..."
-                
-                # Function to delete old backups
-                delete_old_backups() {
-                  local BACKUP_TYPE=$1
-                  local KEEP_COUNT=$2
-                  local FOLDER="mysql-backups/${BACKUP_TYPE}s/"
-                  
-                  echo "   Cleaning ${BACKUP_TYPE} backups (keeping ${KEEP_COUNT})..."
-                  
-                  # List, sort by date, skip recent, delete old
-                  aws s3 ls "s3://${S3_BUCKET_NAME}/${FOLDER}" \
-                    --recursive \
-                    | sort -r \
-                    | awk -v keep="$KEEP_COUNT" 'NR>keep {print $4}' \
-                    | while read -r file; do
-                        echo "      Deleting: $file"
-                        aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
-                      done
-                }
-                
-                # Apply retention based on backup type
-                # Daily: Keep 30
-                delete_old_backups "daily" 30
-                
-                # Weekly: Keep 12
-                delete_old_backups "weekly" 12
-                
-                # Monthly: Keep 12
-                delete_old_backups "monthly" 12
-                
-                echo "✅ Retention policy applied successfully"
+      - name: Apply Retention Policy (GFS)
+        env:
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+        run: |
+          echo "🧹 Cleaning up old backups based on GFS retention policy..."
+          
+          # Clean Daily backups - keep 30
+          echo "   Cleaning daily backups (keeping 30)..."
+          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/dailys/" --recursive \
+            | sort -r \
+            | awk 'NR>30 {print $4}' \
+            | while read -r file; do
+                echo "      Deleting: $file"
+                aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
+              done || true
+          
+          # Clean Weekly backups - keep 12
+          echo "   Cleaning weekly backups (keeping 12)..."
+          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/weeklys/" --recursive \
+            | sort -r \
+            | awk 'NR>12 {print $4}' \
+            | while read -r file; do
+                echo "      Deleting: $file"
+                aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
+              done || true
+          
+          # Clean Monthly backups - keep 12
+          echo "   Cleaning monthly backups (keeping 12)..."
+          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/monthlys/" --recursive \
+            | sort -r \
+            | awk 'NR>12 {print $4}' \
+            | while read -r file; do
+                echo "      Deleting: $file"
+                aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
+              done || true
+          
+          echo "✅ Retention policy applied successfully"
 
       - name: Generate Backup Report
         if: always()
