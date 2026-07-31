@@ -87,7 +87,7 @@ const menuSections = [
     items: [
       {
         name: "Documentation",
-        path: "http://localhost:8080/swagger/external/index.html",
+        path: import.meta.env.VITE_API_DOCS_URL,
         isExternal: true,
         requiredPermissions: [],
         icon: FileText,
@@ -151,7 +151,7 @@ export function AppSidebar({ currentUser }) {
                             <Link to={item.path} />
                           )
                         }
-                        className="gap-3 max-md:h-7 max-md:text-xs"
+                        className="gap-3 cursor-pointer max-md:h-7 max-md:text-xs"
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
                         <span className="truncate transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">{item.name}</span>

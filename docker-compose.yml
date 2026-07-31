@@ -39,6 +39,7 @@ services:
         - VITE_BACKEND_URL=${VITE_BACKEND_URL}
         - VITE_ONE_PORTAL_CLIENT_ID=${VITE_ONE_PORTAL_CLIENT_ID}
         - VITE_ONE_PORTAL_URL=${VITE_ONE_PORTAL_URL}
+        - VITE_API_DOCS_URL=${VITE_API_DOCS_URL}
         - BACKEND_PROXY_TARGET=http://backend:8080
     container_name: idp_frontend
     restart: always
@@ -50,6 +51,7 @@ services:
       VITE_BACKEND_URL: ${VITE_BACKEND_URL}
       VITE_ONE_PORTAL_CLIENT_ID: ${VITE_ONE_PORTAL_CLIENT_ID}
       VITE_ONE_PORTAL_URL: ${VITE_ONE_PORTAL_URL}
+      VITE_API_DOCS_URL: ${VITE_API_DOCS_URL}
       BACKEND_PROXY_TARGET: http://backend:8080
     ports:
       - "5173:5173"

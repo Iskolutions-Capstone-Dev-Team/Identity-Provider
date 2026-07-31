@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+﻿import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -88,8 +88,8 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
                   <Empty className="max-w-md">
                     <EmptyHeader>
                       <EmptyMedia>
-                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-primary h-24 w-22">
-                          <ShieldUser className="text-[#7b0d15] dark:text-primary size-5" />
+                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e] h-24 w-22">
+                          <ShieldUser className="text-[#7b0d15] dark:text-[#f8d24e] size-5" />
                         </IconStack>
                       </EmptyMedia>
                       <EmptyTitle>No roles found</EmptyTitle>
