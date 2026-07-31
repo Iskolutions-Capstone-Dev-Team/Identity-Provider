@@ -1,20 +1,17 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import ErrorAlert from "../../../components/ErrorAlert";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import { AppClientIcon } from "./AppClientIconBox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { AppClientLogoUpload } from "./AppClientLogoUpload";
 import { Separator } from "@/components/ui/separator";
-import { Stepper, StepperContent, StepperIndicator, StepperItem, StepperNav, StepperPanel, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";
+import { Stepper, StepperIndicator, StepperItem, StepperNav, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";
 import { CheckIcon, LoaderCircleIcon } from "lucide-react";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;

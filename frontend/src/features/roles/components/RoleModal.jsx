@@ -1,7 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import ErrorAlert from "../../../components/ErrorAlert";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import { RoleShieldIcon, RoleDetailsIcon } from "./roleIcons";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { User, Settings, HelpCircle, Lock, Monitor, FileText } from "lucide-react";
+import { User, Settings, HelpCircle, Monitor, FileText, Shield } from "lucide-react";
 
 const toPositiveInt = (value) => {
   const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
@@ -94,7 +92,7 @@ const PERMISSION_GROUPS = [
   {
     value: "role",
     trigger: "Role",
-    icon: <RoleShieldIcon className="text-muted-foreground size-4" />,
+    icon: <Shield className="text-muted-foreground size-4" />,
     permissions: [
       "Add roles", "Delete Roles", "Edit Roles", "View roles"
     ]
@@ -137,12 +135,12 @@ function RoleStepIndicator({ currentStep, colorMode = "light" }) {
     {
       label: "Role Details",
       shortLabel: "Details",
-      icon: <RoleDetailsIcon className="h-4 w-4" />,
+      icon: <FileText className="h-4 w-4" />,
     },
     {
       label: "Permissions",
       shortLabel: "Permissions",
-      icon: <RoleShieldIcon className="h-4 w-4" />,
+      icon: <Shield className="h-4 w-4" />,
     },
   ];
 

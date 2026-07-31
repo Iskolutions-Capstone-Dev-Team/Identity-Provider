@@ -30,7 +30,7 @@ const chartConfig = {
   }
 };
 
-export function PeriodTabs({ periods, selectedPeriodKey, onSelectPeriod }) {
+function PeriodTabs({ periods, selectedPeriodKey, onSelectPeriod }) {
   return (
     <div className="grid grid-cols-2 overflow-hidden rounded-lg bg-muted p-1 text-sm text-muted-foreground">
       {periods.map((period) => {

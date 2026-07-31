@@ -5,7 +5,7 @@ import ErrorAlert from "../components/ErrorAlert";
 import Navbar from "../components/Navbar";
 import PageTransition from "../components/PageTransition";
 import { AppSidebar } from "../components/app-sidebar";
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import TermsAgreementModal from "../components/TermAgreementModal";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { DEFAULT_FORBIDDEN_ALERT_MESSAGE, IDP_FORBIDDEN_ALERT_EVENT } from "../utils/forbiddenAlert";

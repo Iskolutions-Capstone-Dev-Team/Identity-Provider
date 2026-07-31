@@ -1,5 +1,4 @@
 import { forwardRef } from "react";
-import { ChevronDownIcon, RoleIcon } from "./registerIcons";
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";

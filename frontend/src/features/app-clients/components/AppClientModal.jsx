@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import ErrorAlert from "../../../components/ErrorAlert";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import AppClientIconBox from "./AppClientIconBox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

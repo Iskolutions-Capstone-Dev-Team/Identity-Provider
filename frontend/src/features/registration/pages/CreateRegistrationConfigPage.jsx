@@ -1,13 +1,21 @@
-import { useNavigate, useOutletContext } from "react-router-dom";
-import Breadcrumbs from "../../../components/Breadcrumbs";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import RegistrationCreateForm from "../components/RegistrationCreateForm";
-import { CreateRegistrationIcon } from "../components/registrationIcons";
+import { SquarePlus } from "lucide-react";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
 import { registrationService } from "../../../services/registrationService";
 import { getAllAppClientSelectOptions } from "../../../utils/userPoolAccess";
 import { toast } from "sonner";
 
 export default function CreateRegistrationConfigPage() {
+  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+
+  useEffect(() => {
+    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+  }, []);
+
   const navigate = useNavigate();
   const { colorMode = "light" } = useOutletContext() || {};
   const { appClients, appClientsError, isLoadingAppClients } = useAllAppClients({
@@ -47,23 +55,27 @@ export default function CreateRegistrationConfigPage() {
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-      <Breadcrumbs
-        colorMode={colorMode}
-        items={[
-          {
-            label: "Registration",
-            to: "/registration",
-          },
-          {
-            label: "New Registration",
-          },
-        ]}
-      />
+      {breadcrumbsContainer && createPortal(
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/registration">Registration</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>New Registration</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>,
+        breadcrumbsContainer
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-primary/10 dark:text-primary rounded-xl flex items-center justify-center">
-            <CreateRegistrationIcon className="w-8 h-8" />
+          <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] rounded-xl flex items-center justify-center">
+            <SquarePlus className="w-8 h-8" />
           </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">New Registration</h1>

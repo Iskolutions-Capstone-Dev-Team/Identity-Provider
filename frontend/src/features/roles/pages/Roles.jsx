@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useRoles } from "../hooks/useRoles";
@@ -14,7 +14,7 @@ import MetricsCard from "../../../components/MetricsCard";
 import { metricsService } from "../../../services/metricsService";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Shield, Plus, ShieldCheck, Lock, ShieldUser } from "lucide-react";
+import { Plus, ShieldCheck, Lock, ShieldUser } from "lucide-react";
 import { createPortal } from "react-dom";
 
 const ITEMS_PER_PAGE = 10;

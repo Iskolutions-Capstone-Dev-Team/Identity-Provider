@@ -5,11 +5,10 @@ import { toast } from "sonner";
 import NewAuthenticatorModal from "./NewAuthenticatorModal";
 import { mfaService } from "../../../services/mfaService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
-import { PhoneIcon, PasskeyIcon, AddedIcon, LastUsedIcon, DeleteIcon } from "./profileIcons";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../components/ui/carousel";
-import { Smartphone, KeySquare, Trash } from 'lucide-react';
+import { Smartphone, KeySquare, Trash, CalendarDays, Clock } from 'lucide-react';
 
 const AUTHENTICATORS_PER_SLIDE = 3;
 
@@ -22,14 +21,28 @@ function getRequestErrorMessage(error, fallbackMessage) {
   );
 }
 
-function formatDate(value) {
+function FormattedDateDisplay({ value }) {
   if (!value) {
-    return "Never";
+    return <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">Never</span>;
   }
 
   const timestamp = formatTimestamp(value);
 
-  return timestamp === "NaN-NaN-NaN NaN:NaN:NaN" ? "Unavailable" : timestamp;
+  if (timestamp === "NaN-NaN-NaN NaN:NaN:NaN") {
+    return <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">Unavailable</span>;
+  }
+
+  const parts = timestamp.split(" ");
+  if (parts.length === 2) {
+    return (
+      <div className="flex flex-col items-end text-muted-foreground text-[10px] xl:text-xs leading-tight min-w-0">
+        <span>{parts[0]}</span>
+        <span>{parts[1]}</span>
+      </div>
+    );
+  }
+
+  return <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">{timestamp}</span>;
 }
 
 function getAuthenticatorTypeLabel(type) {
@@ -40,22 +53,6 @@ function getAuthenticatorTypeLabel(type) {
   }
 
   return normalizedType || "authenticator app";
-}
-
-function AuthenticatorIcon({ colorMode, type }) {
-  const isDarkMode = colorMode === "dark";
-  const isPasskey = String(type || "").toLowerCase() === "passkey";
-
-  return (
-    <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[1rem] sm:h-16 sm:w-16 ${
-        isDarkMode
-          ? "border border-[#f8d24e]/35 bg-[#f8d24e]/10 text-[#ffe28a] shadow-[0_18px_44px_-34px_rgba(248,210,78,0.8)]"
-          : "border border-[#f8d24e]/45 bg-[#fff4dc] text-[#7b0d15] shadow-[0_18px_44px_-34px_rgba(123,13,21,0.45)]"
-      }`}
-    >
-      {isPasskey ? <PasskeyIcon /> : <PhoneIcon />}
-    </div>
-  );
 }
 
 export default function AuthenticatorsPanel({ email = "", colorMode = "light" }) {
@@ -139,21 +136,17 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
           </div>
 
           <div className="w-full space-y-1 px-3 pb-6 mt-auto">
-            <div className="rounded-lg flex items-center justify-between px-2 sm:px-3 py-2.5 bg-muted/40 gap-2">
+            <div className="rounded-lg flex items-center justify-between px-2 sm:px-3 py-2.5 bg-muted/40 gap-2 min-h-[52px]">
               <span className="text-foreground text-xs sm:text-sm font-medium flex items-center gap-1.5 shrink-0">
-                <AddedIcon /> Added
+                <CalendarDays className="h-4 w-4 shrink-0" /> Added
               </span>
-              <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">
-                {formatDate(authenticator.created_at)}
-              </span>
+              <FormattedDateDisplay value={authenticator.created_at} />
             </div>
-            <div className="rounded-lg flex items-center justify-between px-2 sm:px-3 py-2.5 gap-2">
+            <div className="rounded-lg flex items-center justify-between px-2 sm:px-3 py-2.5 gap-2 min-h-[52px]">
               <span className="text-foreground text-xs sm:text-sm font-medium flex items-center gap-1.5 shrink-0">
-                <LastUsedIcon /> Last used
+                <Clock className="h-4 w-4 shrink-0" /> Last used
               </span>
-              <span className="text-muted-foreground text-[10px] xl:text-xs text-right leading-tight min-w-0">
-                {formatDate(authenticator.last_used_at)}
-              </span>
+              <FormattedDateDisplay value={authenticator.last_used_at} />
             </div>
           </div>
         </CardContent>

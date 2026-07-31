@@ -1,22 +1,21 @@
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Search, Table, WalletCards, ListFilter, View, User, ShieldAlert, Activity, Calendar, ListSortAscending, ListSortDescending } from "lucide-react";
+import { Search, Table, WalletCards, ListFilter, View, User, ShieldAlert, Activity, Calendar, ListSortAscending, ListSortDescending, Clock4 } from "lucide-react";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SecurityLogIcon, TransactionLogIcon } from "./auditLogIcons";
 
 const LOG_TYPE_OPTIONS = [
   {
     value: "transaction",
     label: "Transaction Logs",
-    icon: <TransactionLogIcon className="size-5" />,
+    icon: <Clock4 className="size-5" />,
   },
   {
     value: "security",
     label: "Security Logs",
-    icon: <SecurityLogIcon className="size-5" />,
+    icon: <ShieldAlert className="size-5" />,
   },
 ];
 

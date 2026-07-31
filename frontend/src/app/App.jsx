@@ -16,7 +16,6 @@ const RegisterPasswordSetup = lazy(() => import("../auth/pages/RegisterPasswordS
 const Logout = lazy(() => import("../auth/pages/Logout"));
 const Callback = lazy(() => import("../auth/pages/Callback"));
 const AuthorizeRedirect = lazy(() => import("../auth/pages/AuthorizeRedirect"));
-const ErrorPage = lazy(() => import("../auth/pages/ErrorPage"));
 const AccessDenied = lazy(() => import("../auth/pages/AccessDenied"));
 const Dashboard = lazy(() => import("../features/dashboard/pages/Dashboard"));
 const UserPool = lazy(() => import("../features/user-pool/pages/UserPool"));
@@ -30,7 +29,6 @@ const FAQ = lazy(() => import("../features/faq/pages/FAQ"));
 const Registration = lazy(() => import("../features/registration/pages/Registration"));
 const CreateRegistrationConfigPage = lazy(() => import("../features/registration/pages/CreateRegistrationConfigPage"));
 const Profile = lazy(() => import("../features/profile/pages/Profile"));
-const Placeholder = lazy(() => import("../pages/Placeholder"));
 const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const PublicNotFound = lazy(() => import("../pages/PublicNotFound"));
@@ -65,17 +63,9 @@ export default function App() {
           <Route path={ROUTE_PATHS.REGISTER_SET_PASSWORD} element={<RegisterPasswordSetup />} />
           <Route path={ROUTE_PATHS.CALLBACK} element={<Callback />} />
           <Route path={ROUTE_PATHS.LOGOUT} element={<Logout />} />
-          <Route path={ROUTE_PATHS.ERROR} element={<ErrorPage />} />
           <Route path={ACCESS_DENIED_PATH} element={<AccessDenied />} />
           <Route path={LEGACY_UNAUTHORIZED_PATH} element={<Navigate to={buildAccessDeniedPath()} replace />} />
           <Route path={ROUTE_PATHS.PRIVACY_POLICY} element={<PrivacyPolicy isPublic={true} />} />
-          <Route path={ROUTE_PATHS.ONE_PORTAL}
-            element={
-              <ProtectedRoute>
-                <Placeholder />
-              </ProtectedRoute>
-            }
-          />
 
           {/* Protected Route */}
           <Route

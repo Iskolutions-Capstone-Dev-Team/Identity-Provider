@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, Fragment } from "react";
 import { toast } from "sonner";
-import ErrorAlert from "../../../components/ErrorAlert";
 import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
 import { Field } from "@/components/ui/field";
 import { useAllRoles } from "../../roles/hooks/useAllRoles";
@@ -11,14 +10,11 @@ import UserPoolAuthAppMfaModal from "./UserPoolAuthAppMfaModal";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Mail, CheckIcon, User, Copy, CopyCheck } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 

@@ -8,13 +8,12 @@ import { Button } from "../../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
 import { Frame, FrameHeader, FramePanel, FrameTitle } from "../../../components/reui/frame";
 import { ArrowLeftIcon, ArrowRightIcon, MessageCircleQuestionMark, ShieldCheck, Fingerprint, Clock, CircleCheckIcon, ChevronRightIcon } from "lucide-react";
-import { CheckIcon } from "./DashboardIcons";
 
 function SecurityMetric({ icon, label, value, isLoading = false }) {
   return (
     <Card className="w-full shadow-none bg-muted/30">
       <CardContent className="flex flex-col gap-3 px-4 py-2.5">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center [&_svg]:size-6 bg-[#7b0d15] rounded-2xl text-[#f8d24e] dark:bg-primary/10 dark:text-primary">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center [&_svg]:size-6 bg-[#7b0d15] rounded-2xl text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15]">
           {icon}
         </div>
         <span className="text-foreground block text-sm leading-tight font-medium">

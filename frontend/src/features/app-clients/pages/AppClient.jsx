@@ -2,16 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useAppClients } from "../hooks/useAppClients";
-import Breadcrumbs from "../../../components/Breadcrumbs";
 import AppClientFilters from "../components/AppClientFilters";
 import ConnectedAppClientTable from "../components/ConnectedAppClientTable";
 import ConnectedAppClientCards from "../components/ConnectedAppClientCards";
-import ResultsCount from "../../../components/ResultsCount";
 import Pagination from "../../../components/Pagination";
 import AppClientModal from "../components/AppClientModal";
 import ClientSecretModal from "../components/ClientSecretModal";
 import SecretConfirmModal from "../components/SecretConfirmModal";
-import SuccessAlert from "../../../components/SuccessAlert";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -21,8 +18,6 @@ import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import MetricsCard from "../../../components/MetricsCard";
 import { metricsService } from "../../../services/metricsService";
-
-const ITEMS_PER_PAGE = 10;
 
 export default function AppClient() {
     const location = useLocation();

@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState, Fragment } from "react";
 import { motion } from "framer-motion";
-import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Separator } from "../../../components/ui/separator";
-import MultiSelect from "../../../components/MultiSelect";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { useAllRoles } from "../../roles/hooks/useAllRoles";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
-import UserPoolModalSelect from "./UserPoolModalSelect";
 import InvitationConfirmModal from "./InvitationConfirmModal";
 import { getModalTheme } from "../../../components/modalTheme";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
@@ -18,8 +15,6 @@ import { getAccountTypeBackendId, getAccountTypeOption, isAdminAccountType } fro
 import { generateTemporaryPassword, getTemporaryPasswordValidationMessage } from "../../../utils/passwordRules";
 import { useRegistrationAccountTypes } from "../../registration/hooks/useRegistrationAccountTypes";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
-import { PasswordVisibilityIcon, StepOneIcon, StepTwoIcon } from "./userpoolIcons";
-
 const TEMP_PASSWORD_SETUP_VALUE = "temporary_password";
 const INVITATION_SETUP_VALUE = "invitation";
 import { Stepper, StepperContent, StepperIndicator, StepperItem, StepperNav, StepperPanel, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";

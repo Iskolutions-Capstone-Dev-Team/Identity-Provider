@@ -1,9 +1,8 @@
 import axios from "axios";
 import { clearAuthState, getAccessToken, getPendingMfaAccessToken } from "../auth/utils/authCookies";
 import { getCurrentReturnPath, redirectToAuthorize } from "../auth/utils/authorizeFlow";
-import { IDP_ERROR_PAGE_PATH, isIdpProtectedPath } from "../auth/utils/idpErrorPage";
+import { showForbiddenAlert, isIdpProtectedPath } from "../utils/forbiddenAlert";
 import { buildLoginPath } from "../auth/utils/loginRoute";
-import { showForbiddenAlert } from "../utils/forbiddenAlert";
 import { storeTokenResponse } from "../auth/utils/authCookies";
 import { authService } from "../auth/services/authService";
 
@@ -39,7 +38,6 @@ function redirectAfterUnauthorized() {
     "/register/set-password",
     "/callback",
     "/logout",
-    IDP_ERROR_PAGE_PATH,
   ]);
 
   if (publicPaths.has(window.location.pathname)) {
