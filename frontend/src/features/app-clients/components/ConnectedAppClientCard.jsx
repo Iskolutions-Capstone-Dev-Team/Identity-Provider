@@ -4,12 +4,11 @@ import ConnectedAppClientTable from "./ConnectedAppClientTable";
 import ConnectedAppClientCards from "./ConnectedAppClientCards";
 import ResultsCount from "../../../components/ResultsCount";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import { SearchIcon } from "./appClientIcons";
-import { Table, WalletCards, ChevronDown } from "lucide-react";
+import { Table, WalletCards, ChevronDown, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import { SearchIcon } from "./appClientIcons";
+
 
 export default function ConnectedAppClientCard({ loading = false, clients, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onRotateSecret, showEditAction = true, showDeleteAction = true, showRotateSecretAction = true, colorMode = "light" }) {
     const [viewType, setViewType] = useState(() => {
@@ -63,7 +62,7 @@ export default function ConnectedAppClientCard({ loading = false, clients, total
                             What are you looking for?
                         </label>
                         <label className={searchFieldClassName}>
-                            <SearchIcon className={searchIconClassName} />
+                            <Search className={searchIconClassName} />
                             <input type="search"  value={search}  placeholder="Search by name..."  className={searchInputClassName} onChange={handleSearchChange}/>
                         </label>
                     </div>
