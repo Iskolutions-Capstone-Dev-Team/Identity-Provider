@@ -47,8 +47,7 @@ export default function Roles() {
     setSortBy,
     sort,
     setSort,
-    viewType,
-    setViewType,
+
     paginatedRoles,
     totalPages,
     totalResults,
@@ -63,6 +62,20 @@ export default function Roles() {
     permissions: permissionOptions,
     loading: isPermissionOptionsLoading,
   } = usePermissions();
+
+  const [viewType, setViewType] = useState(() => {
+    return localStorage.getItem("rolesViewType") || globalViewType || "table";
+  });
+  
+  useEffect(() => {
+    if (globalViewType) {
+      setViewType(globalViewType);
+    }
+  }, [globalViewType]);
+
+  useEffect(() => {
+    localStorage.setItem("rolesViewType", viewType);
+  }, [viewType]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState("create");

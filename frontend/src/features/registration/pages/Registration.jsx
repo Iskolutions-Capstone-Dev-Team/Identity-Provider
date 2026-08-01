@@ -118,6 +118,7 @@ export default function Registration() {
   useEffect(() => {
       localStorage.setItem("registrationViewType", viewType);
   }, [viewType]);
+  
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [selectedConfig, setSelectedConfig] = useState(null);
