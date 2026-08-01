@@ -273,7 +273,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
               <Button 
                 type="submit" 
                 form="registration-modal-form" 
-                className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200"
+                className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] font-bold transition-colors duration-200"
               >
                 {isCreateMode ? "Create" : "Save"}
               </Button>

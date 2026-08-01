@@ -419,9 +419,9 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
       )}
 
       {step < 3 ? (
-        <Button type="button" onClick={nextStep} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white dark:bg-[#ffd21a] dark:text-black hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-white transition-colors">Next</Button>
+        <Button type="button" onClick={nextStep} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors">Next</Button>
       ) : (
-        <Button type="button" onClick={handleSubmit} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white dark:bg-[#ffd21a] dark:text-black hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-white transition-colors">Create Client</Button>
+        <Button type="button" onClick={handleSubmit} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors">Create Client</Button>
       )}
     </div>
   );

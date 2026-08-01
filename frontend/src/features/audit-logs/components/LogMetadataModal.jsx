@@ -122,7 +122,7 @@ export default function LogMetadataModal({ open, log, logType = "transaction", l
         </div>
 
         <DialogFooter className="-mx-4 -mb-4 mt-2 px-4 py-4 border-t border-border/40">
-          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+          <Button onClick={onClose} className="w-full sm:w-auto bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] font-bold transition-colors duration-200">
             Close
           </Button>
         </DialogFooter>
