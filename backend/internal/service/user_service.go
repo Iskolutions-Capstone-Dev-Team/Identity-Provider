@@ -26,8 +26,8 @@ type UserService interface {
 	GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error)
 	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
 	GetFilteredUserList(ctx context.Context, permissions []string,
-		userID uuid.UUID, limit,
-		page int) (*dto.UserSimplifiedResponseList, error)
+		userID uuid.UUID, limit, page int,
+		status string) (*dto.UserSimplifiedResponseList, error)
 	GetUserList(ctx context.Context, limit,
 		page int) (*dto.UserSimplifiedResponseList, error)
 	GetBoundUserList(ctx context.Context, limit, page int,
@@ -52,6 +52,10 @@ type UserService interface {
 	SyncAdminClientAccess(ctx context.Context, id uuid.UUID,
 		clientIDs []string) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
+	GetDeletedUserList(ctx context.Context, limit,
+		page int) (*dto.UserSimplifiedResponseList, error)
+	UnarchiveUser(ctx context.Context, id uuid.UUID) error
+	HardDeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
 type userService struct {
@@ -524,16 +528,28 @@ func (s *userService) GetFilteredUserList(
 	userID uuid.UUID,
 	limit,
 	page int,
+	status string,
 ) (*dto.UserSimplifiedResponseList, error) {
 	var resp *dto.UserSimplifiedResponseList
 	var err error
 
-	if slices.Contains(permissions, "View all users") {
-		resp, err = s.GetUserList(ctx, limit, page)
-	} else if slices.Contains(permissions, "View users based on appclient") {
-		resp, err = s.GetBoundUserList(ctx, limit, page, userID)
+	if status == "deleted" {
+		if !slices.Contains(permissions, "View all users") {
+			return nil, fmt.Errorf(
+				"privilege validation: unauthorized to view deleted users",
+			)
+		}
+		resp, err = s.GetDeletedUserList(ctx, limit, page)
 	} else {
-		return nil, fmt.Errorf("privilege validation: unauthorized level")
+		if slices.Contains(permissions, "View all users") {
+			resp, err = s.GetUserList(ctx, limit, page)
+		} else if slices.Contains(
+			permissions, "View users based on appclient",
+		) {
+			resp, err = s.GetBoundUserList(ctx, limit, page, userID)
+		} else {
+			return nil, fmt.Errorf("privilege validation: unauthorized level")
+		}
 	}
 
 	if err != nil {
@@ -1095,4 +1111,78 @@ func (s *userService) GetAdminUserList(
 	}
 
 	return resp, nil
+}
+
+/**
+ * GetDeletedUserList retrieves a paginated list of deleted users.
+ */
+func (s *userService) GetDeletedUserList(
+	ctx context.Context,
+	limit,
+	page int,
+) (*dto.UserSimplifiedResponseList, error) {
+	offset := (page - 1) * limit
+
+	users, err := s.Repo.GetDeletedUserList(ctx, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"database query (GetDeletedUserList): %w",
+			err,
+		)
+	}
+
+	total, err := s.Repo.CountDeletedUsers(ctx)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"database query (CountDeletedUsers): %w",
+			err,
+		)
+	}
+
+	var userResponses []dto.UserSimplifiedResponse
+	for _, user := range users {
+		userUUID, _ := uuid.FromBytes(user.ID)
+		userResponses = append(userResponses,
+			*s.mapToSimplifiedUserResponse(user, userUUID))
+	}
+
+	lastPage := (total + limit - 1) / limit
+	if lastPage == 0 {
+		lastPage = 1
+	}
+
+	resp := &dto.UserSimplifiedResponseList{
+		Users:       userResponses,
+		TotalCount:  total,
+		CurrentPage: page,
+		LastPage:    lastPage,
+	}
+
+	return resp, nil
+}
+
+func (s *userService) UnarchiveUser(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+	if err := s.Repo.RestoreUser(ctx, id[:]); err != nil {
+		return fmt.Errorf("database query (RestoreUser): %w", err)
+	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
+	return nil
+}
+
+func (s *userService) HardDeleteUser(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+	if err := s.Repo.HardDeleteUser(ctx, id[:]); err != nil {
+		return fmt.Errorf("database query (HardDeleteUser): %w", err)
+	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
+	return nil
 }
