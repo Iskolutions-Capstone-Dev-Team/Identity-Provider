@@ -630,7 +630,7 @@ export default function UserPoolModal({
               {isViewMode ? "Close" : "Cancel"}
             </Button>
             {!isViewMode && canEditThisUser && (
-              <Button type="submit" form="user-pool-form" disabled={isSubmitting} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200">
+              <Button type="submit" form="user-pool-form" disabled={isSubmitting} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] font-bold transition-colors duration-200">
                 {isSubmitting ? "Saving..." : "Save"}
               </Button>
             )}

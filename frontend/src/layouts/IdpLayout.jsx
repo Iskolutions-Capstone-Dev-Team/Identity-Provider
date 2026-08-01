@@ -91,6 +91,7 @@ export default function IdpLayout() {
     userPoolColorMode: colorMode,
     appClientColorMode: colorMode,
     globalViewType,
+    setGlobalViewType,
   });
 
   return (

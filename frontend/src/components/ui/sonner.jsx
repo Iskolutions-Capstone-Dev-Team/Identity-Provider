@@ -47,8 +47,8 @@ const Toaster = ({
       toastOptions={{
         classNames: {
           toast: "cn-toast",
-          error: "!bg-background !text-foreground !border-border",
-          success: "!bg-background !text-foreground !border-border",
+          error: "!bg-red-50 !text-red-900 !border-red-200",
+          success: "!bg-emerald-50 !text-emerald-900 !border-emerald-200",
         },
       }}
       {...props} />

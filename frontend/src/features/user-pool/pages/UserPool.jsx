@@ -96,6 +96,7 @@ export default function UserPool() {
   const [openReinvite, setOpenReinvite] = useState(false);
   const [userToReinvite, setUserToReinvite] = useState(null);
   const [isSendingReinvite, setIsSendingReinvite] = useState(false);
+
   const [viewType, setViewType] = useState(() => {
     return localStorage.getItem("userPoolViewType") || globalViewType || "table";
   });

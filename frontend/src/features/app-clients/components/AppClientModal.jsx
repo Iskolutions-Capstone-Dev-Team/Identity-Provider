@@ -632,7 +632,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                 {isView ? "Close" : "Cancel"}
               </Button>
               {!isView && (
-                <Button type="submit" form="app-client-form" disabled={isDetailsLoading} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200">
+                <Button type="submit" form="app-client-form" disabled={isDetailsLoading} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] font-bold transition-colors duration-200">
                   {mode === "create" ? "Create" : "Save"}
                 </Button>
               )}

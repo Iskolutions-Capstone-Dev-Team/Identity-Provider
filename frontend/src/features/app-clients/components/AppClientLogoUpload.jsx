@@ -193,7 +193,7 @@ export function AppClientLogoUpload({
             </p>
           </div>
 
-          <Button type="button" onClick={openFileDialog}>
+          <Button type="button" onClick={openFileDialog} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors duration-200">
             <UploadIcon className="h-4 w-4 mr-2" />
             Select file
           </Button>

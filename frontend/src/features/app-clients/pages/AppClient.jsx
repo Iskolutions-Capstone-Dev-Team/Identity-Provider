@@ -46,7 +46,6 @@ export default function AppClient() {
     const {
         search, setSearch, page, setPage,
         limit, setLimit, sortBy, setSortBy, sort, setSort,
-        viewType, setViewType,
         paginatedClients, totalPages, totalResults,
         loading,
         successMessage, setSuccessMessage,
@@ -62,6 +61,21 @@ export default function AppClient() {
     const [showSecretConfirm, setShowSecretConfirm] = useState(false);
     const [secretTarget, setSecretTarget] = useState(null);
     const [pendingSuccessMessage, setPendingSuccessMessage] = useState("");
+
+    const [viewType, setViewType] = useState(() => {
+        return localStorage.getItem("appClientViewType") || globalViewType || "table";
+    });
+    
+    useEffect(() => {
+        if (globalViewType) {
+            setViewType(globalViewType);
+        }
+    }, [globalViewType]);
+
+    useEffect(() => {
+        localStorage.setItem("appClientViewType", viewType);
+    }, [viewType]);
+
     const showLoading = useDelayedLoading(loading);
     const canRotateClientSecret = canEditClient;
     const closeSuccessAlert = useCallback(() => {

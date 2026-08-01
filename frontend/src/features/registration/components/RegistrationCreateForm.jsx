@@ -167,7 +167,7 @@ export default function RegistrationCreateForm({
         <Button type="button" variant="outline" onClick={onClose} className="h-10 px-6 rounded-lg font-semibold hover:bg-muted">
           Cancel
         </Button>
-        <Button type="submit" form="registration-config-form" className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] h-10 px-6 rounded-lg font-semibold transition-colors duration-200">
+        <Button type="submit" form="registration-config-form" className="bg-[#7b0d15] text-white dark:bg-[#ffd21a] dark:text-black hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-white h-10 px-6 rounded-lg font-semibold transition-colors duration-200">
           Create Account Type
         </Button>
       </div>

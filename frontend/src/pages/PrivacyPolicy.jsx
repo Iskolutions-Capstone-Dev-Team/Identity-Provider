@@ -76,8 +76,8 @@ export default function PrivacyPolicy({ isPublic = false }) {
               cursorRadius={500}
               cursorForce={0.1}
               bulgeOnly
-              gradientFrom="rgba(255, 255, 255, 0.15)"
-              gradientTo="rgba(255, 255, 255, 0.05)"
+              gradientFrom="rgba(255, 255, 255, 0.22)"
+              gradientTo="rgba(255, 255, 255, 0.08)"
               glowColor="rgba(0, 0, 0, 0.2)"
             />
           </div>
