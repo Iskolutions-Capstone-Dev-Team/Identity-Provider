@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, AlertDescription, AlertTitle, AlertAction } from "@/components/reui/alert";
+import { Alert, AlertDescription, AlertAction } from "@/components/reui/alert";
 import { CircleAlertIcon, XIcon } from "lucide-react";
 
 export default function ErrorAlert({ message, onClose, autoHideDuration = 4000 }) {
@@ -21,13 +21,13 @@ export default function ErrorAlert({ message, onClose, autoHideDuration = 4000 }
         setIsVisible(false);
         removeTimeout = window.setTimeout(() => {
           onClose?.();
-        }, 280);
+        }, 150);
       }, autoHideDuration);
     } else {
       setIsVisible(false);
       removeTimeout = window.setTimeout(() => {
         setShouldRender(false);
-      }, 280);
+      }, 150);
     }
 
     return () => {
@@ -37,30 +37,27 @@ export default function ErrorAlert({ message, onClose, autoHideDuration = 4000 }
     };
   }, [message, autoHideDuration, onClose]);
 
-  if (!shouldRender) {
-    return null;
-  }
+  if (!shouldRender) return null;
 
-  const motionClassName = isVisible
-    ? "translate-y-0 scale-100 opacity-100"
-    : "-translate-y-2 scale-[0.98] opacity-0";
+  const animationClass = isVisible
+    ? "opacity-100 translate-y-0"
+    : "opacity-0 -translate-y-2";
 
   return (
-    <div className={`transition-all duration-300 ease-out ${motionClassName}`}>
-      <Alert variant="destructive">
+    <div className={`transition-all duration-150 ease-out ${animationClass}`}>
+      <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-900 [&>svg]:text-red-600 shadow-sm">
         <CircleAlertIcon />
-        <AlertTitle>Error! Something went wrong</AlertTitle>
-        <AlertDescription>{message}</AlertDescription>
+        <AlertDescription className="text-red-800">{message}</AlertDescription>
         {onClose && (
           <AlertAction>
             <button
               type="button"
               onClick={() => {
                 setIsVisible(false);
-                setTimeout(() => onClose(), 280);
+                setTimeout(() => onClose(), 150);
               }}
               aria-label="Close alert"
-              className="flex items-center justify-center rounded-md p-1 text-destructive hover:bg-destructive/10 transition-colors"
+              className="flex items-center justify-center rounded-md p-1 text-red-600 hover:bg-red-100 transition-colors"
             >
               <XIcon className="h-4 w-4" />
             </button>
