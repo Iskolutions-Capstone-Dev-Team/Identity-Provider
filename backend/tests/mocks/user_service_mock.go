@@ -130,19 +130,34 @@ func (mr *MockUserServiceMockRecorder) GetBoundUserList(ctx, limit, page, userID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundUserList", reflect.TypeOf((*MockUserService)(nil).GetBoundUserList), ctx, limit, page, userID)
 }
 
-// GetFilteredUserList mocks base method.
-func (m *MockUserService) GetFilteredUserList(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int) (*dto.UserSimplifiedResponseList, error) {
+// GetDeletedUserList mocks base method.
+func (m *MockUserService) GetDeletedUserList(ctx context.Context, limit, page int) (*dto.UserSimplifiedResponseList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFilteredUserList", ctx, permissions, userID, limit, page)
+	ret := m.ctrl.Call(m, "GetDeletedUserList", ctx, limit, page)
+	ret0, _ := ret[0].(*dto.UserSimplifiedResponseList)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDeletedUserList indicates an expected call of GetDeletedUserList.
+func (mr *MockUserServiceMockRecorder) GetDeletedUserList(ctx, limit, page any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeletedUserList", reflect.TypeOf((*MockUserService)(nil).GetDeletedUserList), ctx, limit, page)
+}
+
+// GetFilteredUserList mocks base method.
+func (m *MockUserService) GetFilteredUserList(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int, status string) (*dto.UserSimplifiedResponseList, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFilteredUserList", ctx, permissions, userID, limit, page, status)
 	ret0, _ := ret[0].(*dto.UserSimplifiedResponseList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFilteredUserList indicates an expected call of GetFilteredUserList.
-func (mr *MockUserServiceMockRecorder) GetFilteredUserList(ctx, permissions, userID, limit, page any) *gomock.Call {
+func (mr *MockUserServiceMockRecorder) GetFilteredUserList(ctx, permissions, userID, limit, page, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilteredUserList", reflect.TypeOf((*MockUserService)(nil).GetFilteredUserList), ctx, permissions, userID, limit, page)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilteredUserList", reflect.TypeOf((*MockUserService)(nil).GetFilteredUserList), ctx, permissions, userID, limit, page, status)
 }
 
 // GetMe mocks base method.
@@ -205,6 +220,20 @@ func (mr *MockUserServiceMockRecorder) GetUserList(ctx, limit, page any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserList", reflect.TypeOf((*MockUserService)(nil).GetUserList), ctx, limit, page)
 }
 
+// HardDeleteUser mocks base method.
+func (m *MockUserService) HardDeleteUser(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HardDeleteUser", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HardDeleteUser indicates an expected call of HardDeleteUser.
+func (mr *MockUserServiceMockRecorder) HardDeleteUser(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HardDeleteUser", reflect.TypeOf((*MockUserService)(nil).HardDeleteUser), ctx, id)
+}
+
 // SyncAdminClientAccess mocks base method.
 func (m *MockUserService) SyncAdminClientAccess(ctx context.Context, id uuid.UUID, clientIDs []string) error {
 	m.ctrl.T.Helper()
@@ -217,6 +246,20 @@ func (m *MockUserService) SyncAdminClientAccess(ctx context.Context, id uuid.UUI
 func (mr *MockUserServiceMockRecorder) SyncAdminClientAccess(ctx, id, clientIDs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncAdminClientAccess", reflect.TypeOf((*MockUserService)(nil).SyncAdminClientAccess), ctx, id, clientIDs)
+}
+
+// UnarchiveUser mocks base method.
+func (m *MockUserService) UnarchiveUser(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnarchiveUser", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnarchiveUser indicates an expected call of UnarchiveUser.
+func (mr *MockUserServiceMockRecorder) UnarchiveUser(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnarchiveUser", reflect.TypeOf((*MockUserService)(nil).UnarchiveUser), ctx, id)
 }
 
 // UpdateUserAccountAndRole mocks base method.
