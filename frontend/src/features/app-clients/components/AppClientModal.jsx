@@ -1,11 +1,27 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import ErrorAlert from "../../../components/ErrorAlert";
+import { toast } from "sonner";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import AppClientIconBox from "./AppClientIconBox";
-import { getModalTheme } from "../../../components/modalTheme";
-import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AppClientLogoUpload } from "./AppClientLogoUpload";
+import { Separator } from "@/components/ui/separator";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Frame, FrameHeader, FramePanel, FrameTitle } from "@/components/reui/frame";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Copy, CopyCheck, ChevronRightIcon, Link as LinkIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Field, FieldLabel, FieldGroup, FieldTitle } from "@/components/ui/field";
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
 const GRANT_OPTIONS = [
@@ -14,28 +30,14 @@ const GRANT_OPTIONS = [
   "client_credentials",
 ];
 const TOKEN_TTL_LIMITS = {
-  accessToken: {
-    min: 1,
-    max: 1440,
-    defaultValue: "60",
-  },
-  refreshToken: {
-    min: 1,
-    max: 8760,
-    defaultValue: "168",
-  },
+  accessToken: { min: 1, max: 1440, defaultValue: "60" },
+  refreshToken: { min: 1, max: 8760, defaultValue: "168" },
 };
 const initialFieldErrors = {
-  imageFile: "",
-  name: "",
-  baseURL: "",
-  redirectURL: "",
-  logoutURL: "",
-  onePortalRedirectLink: "",
-  accessTokenTTL: "",
-  refreshTokenTTL: "",
+  imageFile: "", name: "", baseURL: "", redirectURL: "",
+  logoutURL: "", onePortalRedirectLink: "", accessTokenTTL: "", refreshTokenTTL: "",
 };
-const inlineErrorClassName = "mt-2 text-xs text-red-500";
+const inlineErrorClassName = "!mt-0 text-xs text-destructive";
 
 const isValidHttpUrl = (value) => {
   try {
@@ -51,10 +53,7 @@ const getOnePortalRedirectLink = (client = {}) =>
 
 const getTokenTTLValue = (value, fallbackValue) => {
   const parsedValue = Number.parseInt(value, 10);
-
-  return Number.isInteger(parsedValue) && parsedValue > 0
-    ? String(parsedValue)
-    : fallbackValue;
+  return Number.isInteger(parsedValue) && parsedValue > 0 ? String(parsedValue) : fallbackValue;
 };
 
 const parseTokenTTL = (value) => Number.parseInt(value, 10);
@@ -62,109 +61,16 @@ const parseTokenTTL = (value) => Number.parseInt(value, 10);
 const isValidTokenTTL = (value, { min, max }) =>
   Number.isInteger(value) && value >= min && value <= max;
 
-const getDropzoneBaseClassName = (isDarkMode) =>
-  isDarkMode
-    ? "relative flex min-h-56 w-full flex-col items-center justify-center overflow-hidden rounded-[1.5rem] border border-dashed bg-[linear-gradient(180deg,rgba(9,14,25,0.72),rgba(22,28,40,0.88))] px-6 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-[background-color,border-color,box-shadow] duration-500 ease-out"
-    : "relative flex min-h-56 w-full flex-col items-center justify-center overflow-hidden rounded-[1.5rem] border border-dashed bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-6 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] transition-[background-color,border-color,box-shadow] duration-500 ease-out";
-
-const getImagePreviewCloseButtonClassName = (isDarkMode) =>
-  isDarkMode
-    ? "btn btn-circle btn-sm absolute -right-3 -top-3 border border-white/12 bg-[#111827] text-[#f4eaea] shadow-[0_18px_40px_-24px_rgba(2,6,23,0.82)] transition hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
-    : "btn btn-circle btn-sm absolute -right-3 -top-3 border border-[#7b0d15]/10 bg-white text-[#7b0d15] shadow-[0_18px_40px_-24px_rgba(43,3,7,0.55)] transition hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
-
-const getDropzoneClassName = ({ hasError, isDragging, isView, isDarkMode }) =>
-  `${getDropzoneBaseClassName(isDarkMode)} ${
-    hasError && !isView
-      ? isDarkMode
-        ? "border-red-400 bg-[linear-gradient(180deg,rgba(60,15,20,0.72),rgba(35,18,26,0.9))]"
-        : "border-red-400 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,244,244,0.94))]"
-      : isDragging && !isView
-        ? isDarkMode
-          ? "border-[#f8d24e] bg-[linear-gradient(180deg,rgba(123,13,21,0.2),rgba(32,22,30,0.92))]"
-          : "border-[#f8d24e] bg-[linear-gradient(180deg,rgba(255,247,220,0.92),rgba(255,244,220,0.84))]"
-        : isView
-          ? isDarkMode
-            ? "border-white/10"
-            : "border-[#7b0d15]/10"
-          : isDarkMode
-            ? "border-white/10 hover:border-[#f8d24e]/45 hover:bg-[linear-gradient(180deg,rgba(14,20,33,0.82),rgba(30,20,30,0.92))]"
-            : "border-[#7b0d15]/12 hover:border-[#f8d24e]/65 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,249,238,0.94))]"
-  }`;
-
-const getGrantClassName = ({ isSelected, isView, isDarkMode }) =>
-  `flex items-center gap-3 rounded-[1rem] border px-4 py-3 text-sm font-medium transition duration-300 ${
-    isSelected
-      ? isDarkMode
-        ? "border-[#f8d24e]/35 bg-[#f8d24e]/12 text-[#ffe28a]"
-        : "border-[#f8d24e]/70 bg-[#fff4dc] text-[#7b0d15]"
-      : isDarkMode
-        ? "border-white/10 bg-white/[0.04] text-[#d6c3c7]"
-        : "border-[#7b0d15]/10 bg-white/78 text-[#5d3a41]"
-  } ${
-    isView
-      ? "cursor-default"
-      : isDarkMode
-        ? "hover:border-[#f8d24e]/35 hover:bg-[#f8d24e]/10"
-        : "hover:border-[#f8d24e]/45 hover:bg-[#fffaf2]"
-  }`;
-
-const getTokenInputWrapClassName = ({ hasError, isView, isDarkMode }) =>
-  `flex h-12 overflow-hidden rounded-[1rem] border shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-[background-color,border-color,box-shadow] duration-500 ease-out focus-within:outline-none ${
-    hasError && !isView
-      ? "border-red-400 focus-within:border-red-500"
-      : isView
-        ? isDarkMode
-          ? "border-white/10 bg-[rgba(10,15,24,0.76)]"
-          : "border-[#7b0d15]/10 bg-[#fff7ef]/90"
-        : isDarkMode
-          ? "border-white/10 bg-[linear-gradient(180deg,rgba(9,14,25,0.72),rgba(22,28,40,0.88))] focus-within:border-[#f8d24e]/55"
-          : "border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] focus-within:border-[#d4a017]"
-  }`;
-
-const getTokenInputClassName = ({ isView, isDarkMode }) =>
-  `min-w-0 flex-1 bg-transparent px-4 text-sm outline-none ${
-    isView
-      ? isDarkMode
-        ? "text-[#d6c3c7]"
-        : "text-[#5d3a41]"
-      : isDarkMode
-        ? "text-[#f4eaea]"
-        : "text-[#4a1921]"
-  }`;
-
-const getTokenUnitClassName = ({ isView, isDarkMode }) =>
-  `flex min-w-14 items-center justify-center border-l px-4 text-sm font-medium ${
-    isView
-      ? isDarkMode
-        ? "border-white/10 bg-white/[0.03] text-[#a58d95]"
-        : "border-[#7b0d15]/10 bg-[#fff3e8] text-[#8f6f76]"
-      : isDarkMode
-        ? "border-white/10 bg-white/[0.03] text-[#c7adb4]"
-        : "border-[#7b0d15]/10 bg-[#fff7ef]/80 text-[#8f6f76]"
-  }`;
+const resolveImageSrc = (image) => {
+  if (!image) return null;
+  if (image.startsWith("data:")) return image;
+  if (image.startsWith("http://") || image.startsWith("https://")) return image;
+  return `${image}`;
+};
 
 export default function AppClientModal({ open, mode, client, getClientDetails, onClose, onSubmit, colorMode = "light" }) {
-  const { shouldRender, isClosing } = useModalTransition(open);
   const isView = mode === "view";
-  const isDarkMode = colorMode === "dark";
-  const {
-    modalBodyClassName,
-    modalBodyStackClassName,
-    modalBoxClassName,
-    modalCloseButtonClassName,
-    modalFooterActionsClassName,
-    modalFooterClassName,
-    modalHeaderClassName,
-    modalHeaderTitleClassName,
-    modalHelperTextClassName,
-    modalInputClassName,
-    modalLabelClassName,
-    modalOverlayClassName,
-    modalPrimaryButtonClassName,
-    modalReadOnlyInputClassName,
-    modalSecondaryButtonClassName,
-    modalSectionClassName,
-  } = getModalTheme(colorMode);
+  
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [baseURL, setBaseURL] = useState("");
@@ -172,75 +78,37 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   const [logoutURL, setLogoutURL] = useState("");
   const [onePortalRedirectLink, setOnePortalRedirectLink] = useState("");
   const [selectedGrants, setSelectedGrants] = useState(["authorization_code"]);
-  const [accessTokenTTL, setAccessTokenTTL] = useState(
-    TOKEN_TTL_LIMITS.accessToken.defaultValue,
-  );
-  const [refreshTokenTTL, setRefreshTokenTTL] = useState(
-    TOKEN_TTL_LIMITS.refreshToken.defaultValue,
-  );
+  const [accessTokenTTL, setAccessTokenTTL] = useState(TOKEN_TTL_LIMITS.accessToken.defaultValue);
+  const [refreshTokenTTL, setRefreshTokenTTL] = useState(TOKEN_TTL_LIMITS.refreshToken.defaultValue);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageLocation, setImageLocation] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [activeVoiceField, setActiveVoiceField] = useState("name");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
-  const [showFullImage, setShowFullImage] = useState(false);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const detailsRequestRef = useRef({ clientId: "", inFlight: false });
-  const detailsBannerClassName = isDarkMode
-    ? "rounded-[1rem] border border-[#f8d24e]/30 bg-[#f8d24e]/10 px-4 py-3 text-sm text-[#ffe28a]"
-    : "rounded-[1rem] border border-[#f8d24e]/45 bg-[#fff4dc] px-4 py-3 text-sm text-[#7b0d15]";
-  const uploadIconWrapClassName = isDarkMode
-    ? "mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#f8d24e]/12 text-[#ffe28a]"
-    : "mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#fff4dc] text-[#7b0d15]";
-  const uploadTitleClassName = isDarkMode
-    ? "text-sm font-semibold text-[#f4eaea]"
-    : "text-sm font-semibold text-[#7b0d15]";
-  const uploadSubtitleClassName = isDarkMode
-    ? "mt-1 text-sm text-[#a58d95]"
-    : "mt-1 text-sm text-[#8f6f76]";
-  const uploadHintClassName = isDarkMode
-    ? "mt-2 text-xs uppercase tracking-[0.16em] text-[#9f8790]"
-    : "mt-2 text-xs uppercase tracking-[0.16em] text-[#9b7d84]";
-  const previewRemoveButtonClassName = isDarkMode
-    ? "absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-[#111827]/95 text-[#f4eaea] shadow-[0_18px_40px_-24px_rgba(2,6,23,0.82)] transition hover:border-[#f8d24e]/60 hover:bg-[#f8d24e]/12 hover:text-[#ffe28a]"
-    : "absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#7b0d15]/10 bg-white/95 text-[#7b0d15] shadow-[0_18px_40px_-24px_rgba(43,3,7,0.55)] transition hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]";
-  const viewContentBoxClassName = isDarkMode
-    ? "min-h-24 w-full rounded-[1rem] border border-white/10 bg-[rgba(10,15,24,0.76)] px-4 py-3 text-sm text-[#d6c3c7] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-    : "min-h-24 w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[#fff7ef]/90 px-4 py-3 text-sm text-[#5d3a41] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
-  const textareaClassName = isDarkMode
-    ? "w-full rounded-[1rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,25,0.72),rgba(22,28,40,0.88))] px-4 py-3 text-sm text-[#f4eaea] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out focus:border-[#f8d24e]/55 resize-none placeholder:text-[#9f8790]"
-    : "w-full rounded-[1rem] border border-[#7b0d15]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,243,0.88))] px-4 py-3 text-sm text-[#4a1921] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition-[background-color,border-color,color,box-shadow] duration-500 ease-out focus:border-[#d4a017] resize-none";
-  const grantCheckboxClassName = isDarkMode
-    ? "checkbox h-5 w-5 rounded border-white/20 bg-transparent checked:border-[#f8d24e] checked:bg-[#7b0d15] checked:text-white"
-    : "checkbox h-5 w-5 rounded border-[#7b0d15]/20 bg-transparent checked:border-[#7b0d15] checked:bg-[#7b0d15] checked:text-white";
-  const fullImageBackdropClassName = isDarkMode
-    ? "absolute inset-0 bg-[rgba(9,13,20,0.82)] backdrop-blur-sm"
-    : "absolute inset-0 bg-[rgba(43,3,7,0.72)] backdrop-blur-sm";
-  const fullImageClassName = isDarkMode
-    ? "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-[#111827] object-contain shadow-[0_36px_90px_-40px_rgba(2,6,23,0.9)]"
-    : "pointer-events-auto max-h-[88vh] max-w-full rounded-[1.5rem] border border-white/10 bg-white/90 object-contain shadow-[0_36px_90px_-40px_rgba(43,3,7,0.72)]";
-  const modalHeaderSpacingClassName =
-    `${modalHeaderClassName} h-[7rem] shrink-0 !px-7 !py-0 sm:!px-8`;
-  const modalHeaderContentClassName =
-    "flex min-w-0 flex-1 items-center gap-4 pr-3 sm:pr-16";
-  const sectionHeaderClassName = isDarkMode
-    ? "mb-5 border-b border-white/10 pb-4"
-    : "mb-5 border-b border-[#7b0d15]/10 pb-4";
-  const sectionDescriptionClassName = `${modalHelperTextClassName} !mb-0`;
 
-  const resolveImageSrc = (image) => {
-    if (!image) return null;
-    if (image.startsWith("data:")) return image;
-    if (image.startsWith("http://") || image.startsWith("https://")) {
-      return image;
+  const handleCopyId = () => {
+    const idToCopy = client?.id || client?.clientId;
+    if (idToCopy) {
+      navigator.clipboard.writeText(idToCopy);
+      setIsCopied(true);
+      toast.success("Client ID copied to clipboard");
+      setTimeout(() => setIsCopied(false), 2000);
     }
-    return `${image}`;
   };
 
   useEffect(() => {
-    if (!open || !client) return;
+    if (!open) {
+      detailsRequestRef.current = { clientId: "", inFlight: false };
+      setActiveVoiceField("name");
+      setFieldErrors(initialFieldErrors);
+      return;
+    }
+
+    if (!client) return;
 
     setName(client.name || "");
     setDescription(client.description || "");
@@ -249,20 +117,9 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     setLogoutURL(client.logout_uri || "");
     setOnePortalRedirectLink(getOnePortalRedirectLink(client));
     setSelectedGrants(client.grants || ["authorization_code"]);
-    setAccessTokenTTL(
-      getTokenTTLValue(
-        client.access_token_ttl,
-        TOKEN_TTL_LIMITS.accessToken.defaultValue,
-      ),
-    );
-    setRefreshTokenTTL(
-      getTokenTTLValue(
-        client.refresh_token_ttl,
-        TOKEN_TTL_LIMITS.refreshToken.defaultValue,
-      ),
-    );
+    setAccessTokenTTL(getTokenTTLValue(client.access_token_ttl, TOKEN_TTL_LIMITS.accessToken.defaultValue));
+    setRefreshTokenTTL(getTokenTTLValue(client.refresh_token_ttl, TOKEN_TTL_LIMITS.refreshToken.defaultValue));
     setImageFile(null);
-    setIsDragging(false);
     setActiveVoiceField("name");
     setError("");
     setFieldErrors(initialFieldErrors);
@@ -273,22 +130,11 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   }, [client, open]);
 
   useEffect(() => {
-    if (!shouldRender) {
-      detailsRequestRef.current = { clientId: "", inFlight: false };
-      setActiveVoiceField("name");
-      setFieldErrors(initialFieldErrors);
-    }
-  }, [shouldRender]);
-
-  useEffect(() => {
     if (!open || !client || typeof getClientDetails !== "function") return;
 
     const clientId = client.id || client.clientId;
     if (!clientId) return;
-    if (
-      detailsRequestRef.current.inFlight &&
-      detailsRequestRef.current.clientId === clientId
-    ) {
+    if (detailsRequestRef.current.inFlight && detailsRequestRef.current.clientId === clientId) {
       return;
     }
 
@@ -308,18 +154,8 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
         setLogoutURL(details.logout_uri || "");
         setOnePortalRedirectLink(getOnePortalRedirectLink(details));
         setSelectedGrants(details.grants || ["authorization_code"]);
-        setAccessTokenTTL(
-          getTokenTTLValue(
-            details.access_token_ttl,
-            TOKEN_TTL_LIMITS.accessToken.defaultValue,
-          ),
-        );
-        setRefreshTokenTTL(
-          getTokenTTLValue(
-            details.refresh_token_ttl,
-            TOKEN_TTL_LIMITS.refreshToken.defaultValue,
-          ),
-        );
+        setAccessTokenTTL(getTokenTTLValue(details.access_token_ttl, TOKEN_TTL_LIMITS.accessToken.defaultValue));
+        setRefreshTokenTTL(getTokenTTLValue(details.refresh_token_ttl, TOKEN_TTL_LIMITS.refreshToken.defaultValue));
         setFieldErrors(initialFieldErrors);
 
         const image = details.image || details.image_location || null;
@@ -344,74 +180,25 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
   }, [client, getClientDetails, open]);
 
   const clearFieldError = (fieldName) => {
-    setFieldErrors((current) =>
-      current[fieldName]
-        ? {
-            ...current,
-            [fieldName]: "",
-          }
-        : current,
-    );
+    setFieldErrors((current) => current[fieldName] ? { ...current, [fieldName]: "" } : current);
   };
 
   const updateFieldValue = (fieldName, value, setter) => {
     setter(value);
     clearFieldError(fieldName);
-
-    if (error) {
-      setError("");
-    }
+    if (error) setError("");
   };
-
-  const getEditableInputClassName = (fieldName) =>
-    `${modalInputClassName} ${
-      fieldErrors[fieldName] ? "border-red-400 focus:border-red-500" : ""
-    }`;
-
-  const voiceFieldLabels = {
-    description: "Description",
-    baseURL: "Base URL",
-    redirectURL: "Redirect URL",
-    logoutURL: "Logout URL",
-    onePortalRedirectLink: "One Portal Redirect Link",
-  };
-  const activeVoiceFieldLabel = voiceFieldLabels[activeVoiceField] || "Name";
 
   const handleVoiceInput = (transcript) => {
     if (activeVoiceField === "description") {
       setError("");
-      setDescription((currentDescription) =>
-        currentDescription.trim()
-          ? `${currentDescription.trimEnd()} ${transcript}`
-          : transcript,
-      );
+      setDescription((curr) => curr.trim() ? `${curr.trimEnd()} ${transcript}` : transcript);
       return;
     }
-
-    if (activeVoiceField === "baseURL") {
-      updateFieldValue("baseURL", transcript, setBaseURL);
-      return;
-    }
-
-    if (activeVoiceField === "redirectURL") {
-      updateFieldValue("redirectURL", transcript, setRedirectURL);
-      return;
-    }
-
-    if (activeVoiceField === "logoutURL") {
-      updateFieldValue("logoutURL", transcript, setLogoutURL);
-      return;
-    }
-
-    if (activeVoiceField === "onePortalRedirectLink") {
-      updateFieldValue(
-        "onePortalRedirectLink",
-        transcript,
-        setOnePortalRedirectLink,
-      );
-      return;
-    }
-
+    if (activeVoiceField === "baseURL") return updateFieldValue("baseURL", transcript, setBaseURL);
+    if (activeVoiceField === "redirectURL") return updateFieldValue("redirectURL", transcript, setRedirectURL);
+    if (activeVoiceField === "logoutURL") return updateFieldValue("logoutURL", transcript, setLogoutURL);
+    if (activeVoiceField === "onePortalRedirectLink") return updateFieldValue("onePortalRedirectLink", transcript, setOnePortalRedirectLink);
     updateFieldValue("name", transcript, setName);
   };
 
@@ -424,79 +211,41 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     const nextFieldErrors = { ...initialFieldErrors };
     const hasLogo = Boolean(imageFile) || Boolean(imageLocation);
 
-    if (!hasLogo) {
-      nextFieldErrors.imageFile = "System logo is required.";
+    if (!hasLogo) nextFieldErrors.imageFile = "System logo is required.";
+    if (!trimmedName) nextFieldErrors.name = "Client name is required.";
+    else if (trimmedName.length < 5 || trimmedName.length > 100) nextFieldErrors.name = "Client name must be between 5 and 100 characters.";
+    
+    if (!trimmedBaseURL) nextFieldErrors.baseURL = "Base URL is required.";
+    else if (!isValidHttpUrl(trimmedBaseURL)) nextFieldErrors.baseURL = "Base URL must be a valid URL.";
+
+    if (!trimmedRedirectURL) nextFieldErrors.redirectURL = "Redirect URL is required.";
+    else if (!isValidHttpUrl(trimmedRedirectURL)) nextFieldErrors.redirectURL = "Redirect URL must be a valid URL.";
+
+    if (!trimmedLogoutURL) nextFieldErrors.logoutURL = "Logout URL is required.";
+    else if (!isValidHttpUrl(trimmedLogoutURL)) nextFieldErrors.logoutURL = "Logout URL must be a valid URL.";
+
+    if (trimmedOnePortalRedirectLink && !isValidHttpUrl(trimmedOnePortalRedirectLink)) {
+      nextFieldErrors.onePortalRedirectLink = "One Portal Redirect Link must be a valid URL.";
     }
 
-    if (!trimmedName) {
-      nextFieldErrors.name = "Client name is required.";
-    } else if (trimmedName.length < 5 || trimmedName.length > 100) {
-      nextFieldErrors.name = "Client name must be between 5 and 100 characters.";
+    if (!accessTokenTTL) {
+      nextFieldErrors.accessTokenTTL = "Access Token expiration is required.";
+    } else if (!isValidTokenTTL(parseTokenTTL(accessTokenTTL), TOKEN_TTL_LIMITS.accessToken)) {
+      nextFieldErrors.accessTokenTTL = "Expiration must be between 1 and 1,440 minutes.";
     }
 
-    if (!trimmedBaseURL) {
-      nextFieldErrors.baseURL = "Base URL is required.";
-    } else if (!isValidHttpUrl(trimmedBaseURL)) {
-      nextFieldErrors.baseURL = "Base URL must be a valid URL.";
-    }
-
-    if (!trimmedRedirectURL) {
-      nextFieldErrors.redirectURL = "Redirect URL is required.";
-    } else if (!isValidHttpUrl(trimmedRedirectURL)) {
-      nextFieldErrors.redirectURL = "Redirect URL must be a valid URL.";
-    }
-
-    if (!trimmedLogoutURL) {
-      nextFieldErrors.logoutURL = "Logout URL is required.";
-    } else if (!isValidHttpUrl(trimmedLogoutURL)) {
-      nextFieldErrors.logoutURL = "Logout URL must be a valid URL.";
-    }
-
-    if (
-      trimmedOnePortalRedirectLink &&
-      !isValidHttpUrl(trimmedOnePortalRedirectLink)
-    ) {
-      nextFieldErrors.onePortalRedirectLink =
-        "One Portal Redirect Link must be a valid URL.";
-    }
-
-    if (
-      !isValidTokenTTL(
-        parseTokenTTL(accessTokenTTL),
-        TOKEN_TTL_LIMITS.accessToken,
-      )
-    ) {
-      nextFieldErrors.accessTokenTTL =
-        "Expiration must be between 1 and 1,440 minutes.";
-    }
-
-    if (
-      !isValidTokenTTL(
-        parseTokenTTL(refreshTokenTTL),
-        TOKEN_TTL_LIMITS.refreshToken,
-      )
-    ) {
-      nextFieldErrors.refreshTokenTTL =
-        "Expiration must be between 1 and 8,760 hours.";
+    if (!refreshTokenTTL) {
+      nextFieldErrors.refreshTokenTTL = "Refresh Token expiration is required.";
+    } else if (!isValidTokenTTL(parseTokenTTL(refreshTokenTTL), TOKEN_TTL_LIMITS.refreshToken)) {
+      nextFieldErrors.refreshTokenTTL = "Expiration must be between 1 and 8,760 hours.";
     }
 
     setFieldErrors(nextFieldErrors);
 
-    const firstError =
-      nextFieldErrors.imageFile ||
-      nextFieldErrors.name ||
-      nextFieldErrors.baseURL ||
-      nextFieldErrors.redirectURL ||
-      nextFieldErrors.logoutURL ||
-      nextFieldErrors.onePortalRedirectLink ||
-      nextFieldErrors.accessTokenTTL ||
-      nextFieldErrors.refreshTokenTTL;
-
+    const firstError = Object.values(nextFieldErrors).find(err => err);
     if (firstError) {
-      setError(firstError);
       return false;
     }
-
     return true;
   };
 
@@ -506,84 +255,25 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
     } else {
       setSelectedGrants([...selectedGrants, grant]);
     }
-
-    if (error) {
-      setError("");
-    }
+    if (error) setError("");
   };
 
-  const validateAndProcessFile = (file) => {
-    if (!file) return;
-
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      const message = "System logo must be a PNG or JPG file.";
-      setFieldErrors((current) => ({
-        ...current,
-        imageFile: message,
-      }));
-      setError(message);
-      return;
-    }
-
-    if (file.size > MAX_LOGO_BYTES) {
-      const message = "System logo must be 5MB max.";
-      setFieldErrors((current) => ({
-        ...current,
-        imageFile: message,
-      }));
-      setError(message);
-      return;
-    }
-
-    clearFieldError("imageFile");
-    setError("");
+  const handleLogoChange = (file) => {
     setImageFile(file);
-
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
-    reader.readAsDataURL(file);
-  };
-
-  const handleImageChange = (event) => {
-    validateAndProcessFile(event.target.files?.[0]);
-  };
-
-  const handleDragOver = (event) => {
-    event.preventDefault();
-    if (!isView) {
-      setIsDragging(true);
+    if (file) {
+      clearFieldError("imageFile");
+      setError("");
+    } else {
+      // User removed the image
+      setImageLocation("");
     }
-  };
-
-  const handleDragLeave = () => setIsDragging(false);
-
-  const handleDrop = (event) => {
-    event.preventDefault();
-    setIsDragging(false);
-
-    if (!isView) {
-      validateAndProcessFile(event.dataTransfer.files?.[0]);
-    }
-  };
-
-  const removeImage = (event) => {
-    event.stopPropagation();
-    setImagePreview(null);
-    setImageFile(null);
-    setImageLocation("");
-    clearFieldError("imageFile");
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (isView) {
-      onClose();
-      return;
-    }
+    if (isView) return onClose();
 
-    if (!validateEditableFields()) {
-      return;
-    }
+    if (!validateEditableFields()) return;
 
     if (!selectedGrants || selectedGrants.length === 0) {
       setError("At least one grant must be selected.");
@@ -610,484 +300,346 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
       onClose();
     } catch (submitError) {
       console.error("Submit app client error:", submitError);
-      setError(
-        submitError?.message ||
-          "Unable to save app client. Please review the details and try again.",
-      );
+      setError(submitError?.message || "Unable to save app client. Please review the details and try again.");
     }
   };
 
-  if (!shouldRender) return null;
+  const voiceFieldLabels = {
+    description: "Description", baseURL: "Base URL", redirectURL: "Redirect URL",
+    logoutURL: "Logout URL", onePortalRedirectLink: "One Portal Redirect Link",
+  };
+  const activeVoiceFieldLabel = voiceFieldLabels[activeVoiceField] || "Name";
 
-  const renderSectionHeader = (title, description, isRequired = false) => (
-    <div className={sectionHeaderClassName}>
-      <label className={modalLabelClassName}>
-        {title} {isRequired && <span className="text-red-500">*</span>}
-      </label>
-      <p className={sectionDescriptionClassName}>
-        {description}
-      </p>
-    </div>
-  );
-
-  return createPortal(
+  return (
     <>
-      <dialog open
-        className={getModalTransitionClassName(
-          modalOverlayClassName,
-          isClosing,
-        )}
-      >
-        <div className={modalBoxClassName}>
-          <div className={modalHeaderSpacingClassName}>
-            <div className="flex h-full items-center justify-between gap-4 sm:gap-6">
-              <div className={modalHeaderContentClassName}>
-                <AppClientIconBox colorMode={colorMode} variant="plain" />
-                <h3 className={modalHeaderTitleClassName}>
-                  {isView ? "View App Client" : "Edit App Client"}
-                </h3>
+      <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
+        <DialogContent className="sm:max-w-3xl" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
+          <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
+            <DialogTitle>
+              {isView ? "View App Client" : "Edit App Client"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form id="app-client-form" noValidate className="-mx-4 no-scrollbar max-h-[70vh] px-4 overflow-y-auto pt-3" onSubmit={handleSubmit}>
+
+
+            {isDetailsLoading && (
+              <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-200">
+                Loading latest app client details...
               </div>
+            )}
 
-              <button type="button" className={`${modalCloseButtonClassName} shrink-0`} onClick={onClose}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <form id="app-client-form" noValidate className={modalBodyClassName} onSubmit={handleSubmit}>
-            <div className={modalBodyStackClassName}>
-              <ErrorAlert message={error} onClose={() => setError("")} />
-
-              {isDetailsLoading && (
-                <div className={detailsBannerClassName}>
-                  Loading latest app client details...
-                </div>
-              )}
-
-              <section className={modalSectionClassName}>
-                {renderSectionHeader(
-                  "System Logo",
-                  isView
-                    ? "View the app client's system logo."
-                    : "Update the app client's system logo.",
-                  !isView,
-                )}
-                <div
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  className={getDropzoneClassName({
-                    hasError: Boolean(fieldErrors.imageFile),
-                    isDragging,
-                    isView,
-                    isDarkMode,
-                  })}
-                >
-                  {!imagePreview ? (
-                    <label htmlFor="dropzone-file" className={`flex h-full w-full flex-col items-center justify-center ${
-                        isView ? "cursor-default" : "cursor-pointer"
-                      }`}>
-                      <div className="space-y-3">
-                        <div className={uploadIconWrapClassName}>
-                          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 0 1 2.828 0L16 16m-2-2l1.586-1.586a2 2 0 0 1 2.828 0L20 14m-6-6h.01M6 20h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"/>
-                          </svg>
-                        </div>
-                        <div>
-                          <p className={uploadTitleClassName}>
-                            Click to upload
+            {isView ? (
+              <div className="space-y-6 pt-3 pb-4 px-2">
+                <Card className="bg-muted/30 border-border/40 shadow-sm">
+                  <CardContent className="px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="size-16">
+                        <AvatarImage src={imagePreview} alt={name || "App Client Logo"} />
+                        <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] font-medium">{name ? name.substring(0, 2).toUpperCase() : "AC"}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h2 className="text-2xl font-bold tracking-tight">
+                          {name || "Unnamed Client"}
+                        </h2>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <p className="text-sm text-muted-foreground font-mono">
+                            ID: {client?.id || client?.clientId || ""}
                           </p>
-                          <p className={uploadSubtitleClassName}>
-                            or drag and drop
-                          </p>
-                          <p className={uploadHintClassName}>
-                            PNG or JPG | Max 5MB
-                          </p>
+                          <Button size="icon-sm" variant="ghost" aria-label="Copy ID" onClick={handleCopyId}>
+                            {isCopied ? <CopyCheck aria-hidden="true" className="text-[#00d053]" /> : <Copy aria-hidden="true" />}
+                          </Button>
                         </div>
                       </div>
-                      <input id="dropzone-file" type="file" className="hidden" accept="image/png, image/jpeg" onChange={handleImageChange} disabled={isView}/>
-                    </label>
-                  ) : (
-                    <div className="relative flex h-full w-full items-center justify-center">
-                      <img src={imagePreview} loading="lazy" alt="Preview" className="max-h-52 max-w-full rounded-[1.25rem] object-contain shadow-[0_24px_45px_-30px_rgba(43,3,7,0.45)] transition hover:opacity-90" onClick={() => setShowFullImage(true)}/>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {description && (
+                  <Card className="bg-muted/30 border-border/40 shadow-sm">
+                    <CardContent className="px-5 py-4">
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{description}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="w-full">
+                  <Frame stacked dense spacing="sm" className="w-full">
+                    <Collapsible defaultOpen>
+                      <CollapsibleTrigger className="flex w-full group">
+                        <FrameHeader className="flex grow flex-row items-center justify-between gap-2">
+                          <FrameTitle className="text-sm font-medium">
+                            Links
+                          </FrameTitle>
+                          <ChevronRightIcon aria-hidden="true" className="text-muted-foreground size-4 transition-transform group-data-[state=open]:rotate-90 group-data-[panel-open]:rotate-90 group-data-[open]:rotate-90" />
+                        </FrameHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <FramePanel className="space-y-3 p-4">
+                          <div className="flex items-center gap-2">
+                            <LinkIcon className="size-4 text-muted-foreground shrink-0" />
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap min-w-[120px]">Base URL</span>
+                            {baseURL ? (
+                              <a href={baseURL} target="_blank" rel="noreferrer" className="text-sm hover:underline break-all">{baseURL}</a>
+                            ) : (
+                              <span className="text-sm text-muted-foreground"></span>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <LinkIcon className="size-4 text-muted-foreground shrink-0" />
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap min-w-[120px]">Redirect URL</span>
+                            {redirectURL ? (
+                              <span className="text-sm break-all">{redirectURL}</span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground"></span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <LinkIcon className="size-4 text-muted-foreground shrink-0" />
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap min-w-[120px]">Logout URL</span>
+                            {logoutURL ? (
+                              <span className="text-sm break-all">{logoutURL}</span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground"></span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <LinkIcon className="size-4 text-muted-foreground shrink-0" />
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap min-w-[120px]">One Portal Link</span>
+                            {onePortalRedirectLink ? (
+                              <span className="text-sm break-all">{onePortalRedirectLink}</span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground"></span>
+                            )}
+                          </div>
+                        </FramePanel>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Frame>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="bg-muted/30 border-border/40 shadow-sm">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Grants</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedGrants.map(g => <Badge key={g} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">{g}</Badge>)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/30 border-border/40 shadow-sm">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Token Expiration</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Access Token:</span>
+                        <span>{accessTokenTTL} mins</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Refresh Token:</span>
+                        <span>{refreshTokenTTL} hours</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6 pt-3 pb-4 px-2">
+                {/* 1st Card: System Logo */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-0 space-y-5">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase">System Logo {!isView && <span className="text-red-500">*</span>}</h4>
+                      <p className="text-sm text-muted-foreground">Update the client's system logo.</p>
+                    </div>
+                    <Separator />
+                    <Field className="space-y-2">
+                      <AppClientLogoUpload 
+                        onFilesChange={handleLogoChange}
+                        maxFiles={1}
+                        maxSize={MAX_LOGO_BYTES}
+                        accept="image/png, image/jpeg"
+                        simulateUpload={true}
+                        initialPreview={imagePreview}
+                      />
+                      {fieldErrors.imageFile && <p className={inlineErrorClassName}>{fieldErrors.imageFile}</p>}
+                    </Field>
+                  </CardContent>
+                </Card>
+
+                {/* 2nd Card: Client Details */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-0 space-y-5">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase">Client Details</h4>
+                      <p className="text-sm text-muted-foreground">Update the client's name and description.</p>
+                    </div>
+                    <Separator />
                       {!isView && (
-                        <button type="button" onClick={removeImage} className={previewRemoveButtonClassName}>
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-                          </svg>
-                        </button>
+                        <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
                       )}
-                    </div>
-                  )}
-                </div>
-                {!isView && fieldErrors.imageFile && (
-                  <p className={inlineErrorClassName}>
-                    {fieldErrors.imageFile}
-                  </p>
-                )}
-              </section>
 
-              <section className={modalSectionClassName}>
-                {renderSectionHeader(
-                  "Client Details",
-                  isView
-                    ? "View the app client's basic details."
-                    : "Update the app client's name and description.",
-                )}
-                <div className="space-y-5">
-                  <div>
-                    <label className={modalLabelClassName}>Client Id</label>
-                    <input type="text" value={client?.id || client?.clientId || ""} readOnly className={modalReadOnlyInputClassName}/>
-                  </div>
-
-                  {!isView && (
-                    <SpeechInputToolbar
-                      activeFieldLabel={activeVoiceFieldLabel}
-                      onError={setError}
-                      onTranscript={handleVoiceInput}
-                      colorMode={colorMode}
-                    />
-                  )}
-
-                  <div>
-                    <label className={modalLabelClassName}>
-                      Name {!isView && <span className="text-red-500">*</span>}
-                    </label>
-                    {isView ? (
-                      <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} placeholder="(e.g., Identity Provider System)"
-                        className={modalReadOnlyInputClassName}
-                        disabled={isView}
-                      />
-                    ) : (
-                      <input type="text" required minLength={5} maxLength={100} value={name} onChange={(event) => updateFieldValue("name", event.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)"
-                        className={getEditableInputClassName("name")}
-                        disabled={isView}
-                      />
-                    )}
-                    {!isView && fieldErrors.name && (
-                      <p className={inlineErrorClassName}>
-                        {fieldErrors.name}
-                      </p>
-                    )}
-                    {!isView && (
-                      <p className={`${modalHelperTextClassName} mt-2`}>
-                        Must be 5-100 characters
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className={modalLabelClassName}>Description</label>
-                    {isView ? (
-                      <div className={viewContentBoxClassName}>
-                        {description?.trim() || ""}
+                      <div className="space-y-2">
+                        <Label>Name {!isView && <span className="text-destructive">*</span>}</Label>
+                        <Input required minLength={5} maxLength={100} value={name} onChange={(e) => updateFieldValue("name", e.target.value, setName)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., Identity Provider System)" disabled={isView} spellCheck={false} className="h-10 rounded-lg" />
+                        {!isView && fieldErrors.name && <p className={inlineErrorClassName.replace('mt-2', 'mt-1')}>{fieldErrors.name}</p>}
+                        {!isView && !fieldErrors.name && <p className="text-xs text-muted-foreground">Must be 5-100 characters</p>}
                       </div>
-                    ) : (
-                      <textarea value={description} onChange={(event) => setDescription(event.target.value)} onFocus={() => setActiveVoiceField("description")} rows="3" placeholder="Application description" className={textareaClassName}/>
-                    )}
-                  </div>
-                </div>
-              </section>
 
-              <section className={modalSectionClassName}>
-                {renderSectionHeader(
-                  "Application URLs",
-                  isView
-                    ? "View the configured application URLs."
-                    : "Update the base, redirect, logout, and One Portal redirect URLs.",
-                )}
-                <div className="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <label className={modalLabelClassName}>
-                      Base URLs {!isView && <span className="text-red-500">*</span>}
-                    </label>
-                    <input type="url" required value={baseURL} onChange={(event) => updateFieldValue("baseURL", event.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com"
-                      className={
-                        isView
-                          ? modalReadOnlyInputClassName
-                          : getEditableInputClassName("baseURL")
-                      }
-                      pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}
-                    />
-                    {!isView && fieldErrors.baseURL && (
-                      <p className={inlineErrorClassName}>
-                        {fieldErrors.baseURL}
-                      </p>
-                    )}
-                    {!isView && (
-                      <p className={`${modalHelperTextClassName} mt-2`}>
-                        Must be valid URL
-                      </p>
-                    )}
-                  </div>
+                      <div className="space-y-2">
+                        <Label className="flex items-center justify-between">
+                          Description
+                          <span className="text-[10px] border px-1.5 py-0.5 rounded-md font-medium border-[#7b0d15]/40 text-[#7b0d15] dark:border-[#f8d24e]/40 dark:text-[#f8d24e]">Optional</span>
+                        </Label>
+                        <Textarea
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          onFocus={() => setActiveVoiceField("description")}
+                          rows="4"
+                          placeholder={isView ? "" : "Short description of the application"}
+                          className="rounded-lg disabled:cursor-not-allowed disabled:opacity-70 disabled:bg-muted/50 disabled:text-muted-foreground disabled:border-input"
+                          disabled={isView}
+                        />
+                      </div>
+                  </CardContent>
+                </Card>
 
-                  <div>
-                    <label className={modalLabelClassName}>
-                      Redirect URLs {!isView && <span className="text-red-500">*</span>}
-                    </label>
-                    <input type="url" required value={redirectURL} onChange={(event) => updateFieldValue("redirectURL", event.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback"
-                      className={
-                        isView
-                          ? modalReadOnlyInputClassName
-                          : getEditableInputClassName("redirectURL")
-                      }
-                      pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}
-                    />
-                    {!isView && fieldErrors.redirectURL && (
-                      <p className={inlineErrorClassName}>
-                        {fieldErrors.redirectURL}
-                      </p>
-                    )}
-                    {!isView && (
-                      <p className={`${modalHelperTextClassName} mt-2`}>
-                        Must be valid URL
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className={modalLabelClassName}>
-                      Logout URLs {!isView && <span className="text-red-500">*</span>}
-                    </label>
-                    <input type="url" required value={logoutURL} onChange={(event) => updateFieldValue("logoutURL", event.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout"
-                      className={
-                        isView
-                          ? modalReadOnlyInputClassName
-                          : getEditableInputClassName("logoutURL")
-                      }
-                      pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$" title="Must be valid URL" disabled={isView}
-                    />
-                    {!isView && fieldErrors.logoutURL && (
-                      <p className={inlineErrorClassName}>
-                        {fieldErrors.logoutURL}
-                      </p>
-                    )}
-                    {!isView && (
-                      <p className={`${modalHelperTextClassName} mt-2`}>
-                        Must be valid URL
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className={modalLabelClassName}>
-                      One Portal Redirect Link
-                    </label>
-                    <input
-                      type="url"
-                      value={onePortalRedirectLink}
-                      onChange={(event) =>
-                        updateFieldValue(
-                          "onePortalRedirectLink",
-                          event.target.value,
-                          setOnePortalRedirectLink,
-                        )
-                      }
-                      onFocus={() =>
-                        setActiveVoiceField("onePortalRedirectLink")
-                      }
-                      placeholder={
-                        isView ? "" : "https://one-portal.example.com"
-                      }
-                      className={
-                        isView
-                          ? modalReadOnlyInputClassName
-                          : getEditableInputClassName("onePortalRedirectLink")
-                      }
-                      pattern="^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9-].*[a-zA-Z0-9])?.)+[a-zA-Z].*$"
-                      title="Must be valid URL"
-                      disabled={isView}
-                    />
-                    {!isView && fieldErrors.onePortalRedirectLink && (
-                      <p className={inlineErrorClassName}>
-                        {fieldErrors.onePortalRedirectLink}
-                      </p>
-                    )}
-                    {!isView && (
-                      <p className={`${modalHelperTextClassName} mt-2`}>
-                        Must be valid URL
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </section>
-
-              <section className={modalSectionClassName}>
-                <div className="space-y-5">
-                  <div>
-                    {renderSectionHeader(
-                      "Grants",
-                      isView
-                        ? "View the grant types enabled for this client."
-                        : "Select the grant types required for this client.",
-                      !isView,
-                    )}
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {GRANT_OPTIONS.map((grant) => {
-                        const isSelected = selectedGrants.includes(grant);
-
-                        return (
-                          <label key={grant}
-                            className={getGrantClassName({
-                              isSelected,
-                              isView,
-                              isDarkMode,
-                            })}
-                          >
-                            <input type="checkbox" name="grants" value={grant} className={grantCheckboxClassName} checked={isSelected} onChange={() => toggleGrant(grant)} disabled={isView} required={!isView && selectedGrants.length === 0} title="Required"/>
-                            <span className="break-all">{grant}</span>
-                          </label>
-                        );
-                      })}
+                {/* 3rd Card: Application URLs */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-0 space-y-6">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase">Application URLs</h4>
+                      <p className="text-sm text-muted-foreground">Update the base, redirect, logout, and One Portal redirect URLs.</p>
                     </div>
-                    {!isView && selectedGrants.length === 0 && (
-                      <p className="mt-3 text-xs text-red-500">
-                        At least one grant is required.
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    {renderSectionHeader(
-                      "Token Expiration",
-                      isView
-                        ? "View the configured token expiration values."
-                        : "Update the token expiration values for this client.",
-                      !isView,
-                    )}
+                    <Separator />
                     <div className="grid gap-5 md:grid-cols-2">
-                      <div>
-                        <label className={modalLabelClassName}>
-                          Access Token expiration{" "}
-                          {!isView && <span className="text-red-500">*</span>}
-                        </label>
-                        <div
-                          className={getTokenInputWrapClassName({
-                            hasError: Boolean(fieldErrors.accessTokenTTL),
-                            isView,
-                            isDarkMode,
-                          })}
-                        >
-                          <input type="number" required={!isView} min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL}
-                            onChange={(event) =>
-                              updateFieldValue(
-                                "accessTokenTTL",
-                                event.target.value,
-                                setAccessTokenTTL,
-                              )
-                            }
-                            className={getTokenInputClassName({
-                              isView,
-                              isDarkMode,
-                            })}
-                            disabled={isView}
-                          />
-                          <span
-                            className={getTokenUnitClassName({
-                              isView,
-                              isDarkMode,
-                            })}
-                          >
-                            min
-                          </span>
-                        </div>
-                        {!isView && fieldErrors.accessTokenTTL && (
-                          <p className={inlineErrorClassName}>
-                            {fieldErrors.accessTokenTTL}
-                          </p>
-                        )}
-                        {!isView && (
-                          <p className={`${modalHelperTextClassName} mt-2`}>
-                            Valid range: 1-1,440 minutes (24 hours)
-                          </p>
-                        )}
+                      <div className="space-y-2">
+                        <Label>Base URLs {!isView && <span className="text-destructive">*</span>}</Label>
+                        <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" disabled={isView} className="h-10 rounded-lg" />
+                        {!isView && fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
+                        {!isView && !fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
                       </div>
 
-                      <div>
-                        <label className={modalLabelClassName}>
-                          Refresh Token expiration{" "}
-                          {!isView && <span className="text-red-500">*</span>}
-                        </label>
-                        <div
-                          className={getTokenInputWrapClassName({
-                            hasError: Boolean(fieldErrors.refreshTokenTTL),
-                            isView,
-                            isDarkMode,
-                          })}
-                        >
-                          <input type="number" required={!isView} min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL}
-                            onChange={(event) =>
-                              updateFieldValue(
-                                "refreshTokenTTL",
-                                event.target.value,
-                                setRefreshTokenTTL,
-                              )
-                            }
-                            className={getTokenInputClassName({
-                              isView,
-                              isDarkMode,
-                            })}
-                            disabled={isView}
-                          />
-                          <span
-                            className={getTokenUnitClassName({
-                              isView,
-                              isDarkMode,
-                            })}
-                          >
-                            hr
-                          </span>
-                        </div>
-                        {!isView && fieldErrors.refreshTokenTTL && (
-                          <p className={inlineErrorClassName}>
-                            {fieldErrors.refreshTokenTTL}
-                          </p>
-                        )}
-                        {!isView && (
-                          <p className={`${modalHelperTextClassName} mt-2`}>
-                            Valid range: 1 - 8,760 hours (1 year)
-                          </p>
-                        )}
+                      <div className="space-y-2">
+                        <Label>Redirect URLs {!isView && <span className="text-destructive">*</span>}</Label>
+                        <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" disabled={isView} className="h-10 rounded-lg" />
+                        {!isView && fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
+                        {!isView && !fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Logout URLs {!isView && <span className="text-destructive">*</span>}</Label>
+                        <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" disabled={isView} className="h-10 rounded-lg" />
+                        {!isView && fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
+                        {!isView && !fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="flex items-center justify-between">
+                          One Portal Redirect Link
+                          <span className="text-[10px] border px-1.5 py-0.5 rounded-md font-medium border-[#7b0d15]/40 text-[#7b0d15] dark:border-[#f8d24e]/40 dark:text-[#f8d24e]">Optional</span>
+                        </Label>
+                        <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder={isView ? "" : "https://one-portal.example.com"} disabled={isView} className="h-10 rounded-lg" />
+                        {!isView && fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
+                        {!isView && !fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
                       </div>
                     </div>
-                  </div>
-                </div>
-              </section>
-            </div>
+
+                  </CardContent>
+                </Card>
+
+                {/* 4th Card: Grants & Token Expiration */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-0 space-y-8">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-sm uppercase">Grants {!isView && <span className="text-red-500">*</span>}</h4>
+                        <p className="text-sm text-muted-foreground">Select the grant types required for this client.</p>
+                      </div>
+                      <Separator />
+                      <Field className="space-y-2">
+                        <FieldGroup className="flex w-full flex-row flex-wrap gap-4">
+                          {GRANT_OPTIONS.map((grant) => {
+                            const isSelected = selectedGrants.includes(grant);
+                            const formatGrantName = (name) => name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                            
+                            return (
+                              <FieldLabel key={grant} className="relative p-0 !w-auto flex-1 min-w-fit" style={{ pointerEvents: isView ? "none" : "auto" }}>
+                                <Field orientation="horizontal" className="justify-center">
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => !isView && toggleGrant(grant)}
+                                    disabled={isView}
+                                    className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10 data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-[#f8d24e] dark:data-checked:!border-[#f8d24e] dark:data-checked:!text-black"
+                                  />
+                                  <FieldTitle className="justify-center text-center">{formatGrantName(grant)}</FieldTitle>
+                                </Field>
+                              </FieldLabel>
+                            );
+                          })}
+                        </FieldGroup>
+                        {!isView && selectedGrants.length === 0 && <p className="!mt-0 text-xs text-destructive">At least one grant is required.</p>}
+                      </Field>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-sm uppercase">Token Expiration {!isView && <span className="text-red-500">*</span>}</h4>
+                        <p className="text-sm text-muted-foreground">Update the token expiration values for this client.</p>
+                      </div>
+                      <Separator />
+                      <div className="grid gap-5 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Access Token expiration {!isView && <span className="text-destructive">*</span>}</Label>
+                          <InputGroup className="h-10 rounded-lg">
+                            <InputGroupInput type="number" required={!isView} min={TOKEN_TTL_LIMITS.accessToken.min} max={TOKEN_TTL_LIMITS.accessToken.max} value={accessTokenTTL} onChange={(e) => updateFieldValue("accessTokenTTL", e.target.value, setAccessTokenTTL)} disabled={isView} />
+                            <InputGroupAddon align="inline-end">
+                              <InputGroupText>min</InputGroupText>
+                            </InputGroupAddon>
+                          </InputGroup>
+                          {!isView && fieldErrors.accessTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.accessTokenTTL}</p>}
+                          {!isView && !fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1-1,440 minutes (24 hours)</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Refresh Token expiration {!isView && <span className="text-destructive">*</span>}</Label>
+                          <InputGroup className="h-10 rounded-lg">
+                            <InputGroupInput type="number" required={!isView} min={TOKEN_TTL_LIMITS.refreshToken.min} max={TOKEN_TTL_LIMITS.refreshToken.max} value={refreshTokenTTL} onChange={(e) => updateFieldValue("refreshTokenTTL", e.target.value, setRefreshTokenTTL)} disabled={isView} />
+                            <InputGroupAddon align="inline-end">
+                              <InputGroupText>hr</InputGroupText>
+                            </InputGroupAddon>
+                          </InputGroup>
+                          {!isView && fieldErrors.refreshTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.refreshTokenTTL}</p>}
+                          {!isView && !fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1 - 8,760 hours (1 year)</p>}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </form>
 
-          <div className={modalFooterClassName}>
-            <div className={modalFooterActionsClassName}>
-              <button type="button" className={modalSecondaryButtonClassName} onClick={onClose}>
-                Cancel
-              </button>
-
+          <DialogFooter className="flex-row items-center justify-between gap-2 mt-2">
+            <div className="flex gap-2 ml-auto justify-end">
+              <Button type="button" variant="outline" onClick={onClose}>
+                {isView ? "Close" : "Cancel"}
+              </Button>
               {!isView && (
-                <button form="app-client-form" type="submit" disabled={isDetailsLoading} className={modalPrimaryButtonClassName}>
+                <Button type="submit" form="app-client-form" disabled={isDetailsLoading} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200">
                   {mode === "create" ? "Create" : "Save"}
-                </button>
+                </Button>
               )}
             </div>
-          </div>
-        </div>
-      </dialog>
-
-      {showFullImage && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center px-4 py-6" onClick={() => setShowFullImage(false)}>
-          <div className={fullImageBackdropClassName} />
-          <div className="relative pointer-events-none flex max-w-4xl items-center justify-center">
-            <button type="button" className={`${getImagePreviewCloseButtonClassName(isDarkMode)} pointer-events-auto`} onClick={() => setShowFullImage(false)}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-            <img src={imagePreview} className={fullImageClassName} alt="Full Preview"/>
-          </div>
-        </div>
-      )}
-    </>,
-    document.body,
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

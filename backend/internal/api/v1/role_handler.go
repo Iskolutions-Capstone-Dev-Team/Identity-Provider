@@ -148,6 +148,17 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		page = 1
 	}
 
+	allowedColumns := map[string]bool{
+		"role_name":   true,
+		"description": true,
+		"created_at":  true,
+		"updated_at":  true,
+	}
+	sortBy, order, ok := ValidateSortParams(c, allowedColumns)
+	if !ok {
+		return
+	}
+
 	uIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
@@ -172,6 +183,8 @@ func (h *RoleHandler) GetRoleList(c *gin.Context) {
 		limit,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 	if err != nil {
 		log.Printf("[GetRoleList] %v", err)
@@ -205,11 +218,24 @@ func (h *RoleHandler) GetAllRoles(c *gin.Context) {
 		page = 1
 	}
 
+	allowedColumns := map[string]bool{
+		"role_name":   true,
+		"description": true,
+		"created_at":  true,
+		"updated_at":  true,
+	}
+	sortBy, order, ok := ValidateSortParams(c, allowedColumns)
+	if !ok {
+		return
+	}
+
 	resp, err := h.Service.GetAllExceptIDP(
 		c.Request.Context(),
 		service.PAGE_LIMIT,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 	if err != nil {
 		log.Printf("[GetRoleList] %v", err)

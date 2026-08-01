@@ -4,17 +4,41 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/jmoiron/sqlx"
 )
 
+func getSafeUserSort(sortBy, order string) (string, string) {
+	sortCol := "created_at"
+	switch strings.ToLower(sortBy) {
+	case "email":
+		sortCol = "email"
+	case "first_name":
+		sortCol = "first_name"
+	case "last_name":
+		sortCol = "last_name"
+	case "status":
+		sortCol = "status"
+	}
+
+	sortOrd := "DESC"
+	if strings.ToLower(order) == "asc" {
+		sortOrd = "ASC"
+	}
+
+	return sortCol, sortOrd
+}
+
 type UserRepository interface {
-	GetUserList(ctx context.Context, limit, offset int) ([]models.User, error)
+	GetUserList(ctx context.Context, limit, offset int,
+		sortBy, order string) ([]models.User, error)
 	GetBoundUserList(ctx context.Context, limit, offset int,
-		adminID []byte) ([]models.User, error)
+		adminID []byte, sortBy, order string) ([]models.User, error)
 	GetAdminUserList(ctx context.Context, limit, offset int,
-		adminID []byte, hasViewAll bool) ([]models.User, error)
+		adminID []byte, hasViewAll bool,
+		sortBy, order string) ([]models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetUserByEmailIncludeDeleted(ctx context.Context,
 		email string) (*models.User, error)
@@ -53,10 +77,17 @@ type userRow struct {
 
 // GetUserList retrieves a paginated list of non-deleted users.
 func (r *userRepository) GetUserList(ctx context.Context,
-	limit, offset int,
+	limit, offset int, sortBy, order string,
 ) ([]models.User, error) {
 	var ids [][]byte
-	idQuery := `SELECT id FROM users WHERE deleted_at IS NULL LIMIT ? OFFSET ?`
+	sortCol, sortOrd := getSafeUserSort(sortBy, order)
+
+	idQuery := fmt.Sprintf(
+		"SELECT id FROM users WHERE deleted_at IS NULL "+
+			"ORDER BY %s %s LIMIT ? OFFSET ?",
+		sortCol,
+		sortOrd,
+	)
 
 	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
 	if err != nil {
@@ -67,7 +98,7 @@ func (r *userRepository) GetUserList(ctx context.Context,
 		return []models.User{}, nil
 	}
 
-	sql := `
+	sql := fmt.Sprintf(`
         SELECT u.id, u.first_name, u.middle_name, u.last_name, 
                u.name_suffix, u.email, u.status, u.created_at, 
                u.updated_at, u.account_type_id, r.id AS role_id,
@@ -77,7 +108,7 @@ func (r *userRepository) GetUserList(ctx context.Context,
         LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN account_types at ON u.account_type_id = at.id
         WHERE u.id IN (?) AND u.deleted_at IS NULL
-        ORDER BY u.created_at DESC`
+        ORDER BY u.%s %s`, sortCol, sortOrd)
 
 	fullQuery, args, err := sqlx.In(sql, ids)
 	if err != nil {
@@ -120,12 +151,16 @@ func (r *userRepository) GetUserList(ctx context.Context,
 // When hasViewAll is false, client data is scoped to the admin's
 // admin_allowed_clients entries.
 func (r *userRepository) GetAdminUserList(ctx context.Context,
-	limit, offset int, adminID []byte, hasViewAll bool,
+	limit, offset int, adminID []byte, hasViewAll bool, sortBy, order string,
 ) ([]models.User, error) {
 	var ids [][]byte
-	idQuery := `SELECT id FROM users
-	            WHERE deleted_at IS NULL AND role_id IS NOT NULL
-	            LIMIT ? OFFSET ?`
+	sortCol, sortOrd := getSafeUserSort(sortBy, order)
+
+	idQuery := fmt.Sprintf(`
+		SELECT id FROM users
+		WHERE deleted_at IS NULL AND role_id IS NOT NULL
+		ORDER BY %s %s
+		LIMIT ? OFFSET ?`, sortCol, sortOrd)
 
 	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
 	if err != nil {
@@ -136,7 +171,7 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 		return []models.User{}, nil
 	}
 
-	const sql = `
+	sql := fmt.Sprintf(`
 		SELECT u.id, u.first_name, u.middle_name, u.last_name,
 		       u.name_suffix, u.email, u.status, u.created_at,
 		       u.updated_at, u.account_type_id,
@@ -146,7 +181,7 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 		LEFT JOIN roles r ON u.role_id = r.id
 		LEFT JOIN account_types at ON u.account_type_id = at.id
 		WHERE u.id IN (?) AND u.deleted_at IS NULL
-		ORDER BY u.created_at DESC`
+		ORDER BY u.%s %s`, sortCol, sortOrd)
 
 	fullQuery, args, err := sqlx.In(sql, ids)
 	if err != nil {
@@ -197,24 +232,31 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 
 // GetBoundUserList retrieves a paginated list of users for an admin.
 func (r *userRepository) GetBoundUserList(ctx context.Context,
-	limit int, offset int, adminID []byte,
+	limit int, offset int, adminID []byte, sortBy, order string,
 ) ([]models.User, error) {
 	var ids [][]byte
 
-	const idQuery = `
-		SELECT id FROM (
-			SELECT u.id 
+	sortCol, sortOrd := getSafeUserSort(sortBy, order)
+
+	idQuery := fmt.Sprintf(`
+		SELECT bu.id FROM (
+			SELECT u.id, u.first_name, u.middle_name, u.last_name,
+			       u.name_suffix, u.email, u.status, u.created_at,
+			       u.updated_at
 			FROM users u
 			JOIN client_allowed_users cau ON u.id = cau.user_id
 			JOIN admin_allowed_clients aac 
 				ON cau.client_id = aac.client_id
 			WHERE aac.user_id = ? AND u.deleted_at IS NULL
 			UNION
-			SELECT id FROM users 
+			SELECT id, first_name, middle_name, last_name,
+			       name_suffix, email, status, created_at,
+			       updated_at FROM users 
 			WHERE id = ? AND deleted_at IS NULL
-		) AS bound_users
+		) AS bu
+		ORDER BY bu.%s %s
 		LIMIT ? OFFSET ?
-	`
+	`, sortCol, sortOrd)
 
 	err := r.db.SelectContext(ctx, &ids, idQuery, adminID, adminID,
 		limit, offset)
@@ -226,7 +268,7 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 		return []models.User{}, nil
 	}
 
-	const baseQuery = `
+	baseQuery := fmt.Sprintf(`
 		SELECT u.id, u.first_name, u.middle_name, 
 		       u.last_name, u.name_suffix, u.email, u.status, u.created_at, 
 		       u.updated_at, u.account_type_id, r.id AS role_id, 
@@ -236,8 +278,8 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 		LEFT JOIN roles r ON u.role_id = r.id
 		LEFT JOIN account_types at ON u.account_type_id = at.id
 		WHERE u.id IN (?) AND u.deleted_at IS NULL
-		ORDER BY u.created_at DESC
-	`
+		ORDER BY u.%s %s
+	`, sortCol, sortOrd)
 
 	fullQuery, args, err := sqlx.In(baseQuery, ids)
 	if err != nil {

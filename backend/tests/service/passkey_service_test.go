@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
@@ -39,7 +40,7 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 		mockCR := mocks.NewMockClientRepository(ctrl)
 
 		mockCR.EXPECT().
-			ListClients(gomock.Any(), 10, 0, "One Portal").
+			ListClients(gomock.Any(), 10, 0, "One Portal", gomock.Any(), gomock.Any()).
 			Return(nil, nil).
 			Times(1)
 
@@ -48,7 +49,9 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 			Return(nil, nil).
 			Times(1)
 
-		svc, err := service.NewPasskeyService(mockPR, mockUS, mockCR)
+		svc, err := service.NewPasskeyService(
+			mockPR, mockUS, mockCR, cache.NewNoopCache(),
+		)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -78,7 +81,7 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 		}
 
 		mockCR.EXPECT().
-			ListClients(gomock.Any(), 10, 0, "One Portal").
+			ListClients(gomock.Any(), 10, 0, "One Portal", gomock.Any(), gomock.Any()).
 			Return(clients, nil).
 			Times(1)
 
@@ -87,7 +90,9 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 			Return(nil, nil).
 			Times(1)
 
-		svc, err := service.NewPasskeyService(mockPR, mockUS, mockCR)
+		svc, err := service.NewPasskeyService(
+			mockPR, mockUS, mockCR, cache.NewNoopCache(),
+		)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -108,7 +113,7 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 		mockCR := mocks.NewMockClientRepository(ctrl)
 
 		mockCR.EXPECT().
-			ListClients(gomock.Any(), 10, 0, "One Portal").
+			ListClients(gomock.Any(), 10, 0, "One Portal", gomock.Any(), gomock.Any()).
 			Return(nil, nil).
 			Times(1)
 
@@ -117,7 +122,9 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 			Return(nil, nil).
 			Times(1)
 
-		svc, err := service.NewPasskeyService(mockPR, mockUS, mockCR)
+		svc, err := service.NewPasskeyService(
+			mockPR, mockUS, mockCR, cache.NewNoopCache(),
+		)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -137,7 +144,7 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 		mockCR := mocks.NewMockClientRepository(ctrl)
 
 		mockCR.EXPECT().
-			ListClients(gomock.Any(), 10, 0, "One Portal").
+			ListClients(gomock.Any(), 10, 0, "One Portal", gomock.Any(), gomock.Any()).
 			Return(nil, nil).
 			Times(1)
 
@@ -146,7 +153,9 @@ func TestNewPasskeyService_OriginFallback(t *testing.T) {
 			Return(nil, nil).
 			Times(1)
 
-		svc, err := service.NewPasskeyService(mockPR, mockUS, mockCR)
+		svc, err := service.NewPasskeyService(
+			mockPR, mockUS, mockCR, cache.NewNoopCache(),
+		)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}

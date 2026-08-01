@@ -16,6 +16,7 @@ import MfaSetupConfirmStep from "./mfa/MfaSetupConfirmStep";
 import MfaSetupQrStep from "./mfa/MfaSetupQrStep";
 import MfaVerifyStep from "./mfa/MfaVerifyStep";
 import { getDigits } from "./mfa/mfaInputUtils";
+import { Card, CardContent } from "../../components/ui/card";
 
 const MFA_STEPS = {
   CHOOSE: "choose",
@@ -468,8 +469,8 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
 
   return (
     <div className="w-full max-w-[34.5rem] px-1 sm:px-0">
-      <div className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
-        <div className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-5 py-6 sm:px-8 sm:py-8">
+      <Card className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
+        <CardContent className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-5 py-6 sm:px-8 sm:py-8">
           <div className="mb-6 flex justify-center">
             <img src="/assets/images/IDP_Logo.png" alt="Identity Provider" className="h-20 w-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)]" />
           </div>
@@ -480,8 +481,8 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
           </div>
 
           {renderStep()}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

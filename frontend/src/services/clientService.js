@@ -208,7 +208,7 @@ const normalizeRotateSecretPayload = (payload, fallbackClientId) => {
 };
 
 export const clientService = {
-  async getClients({ limit = DEFAULT_LIMIT, page = DEFAULT_PAGE, keyword = "" } = {}) {
+  async getClients({ limit = DEFAULT_LIMIT, page = DEFAULT_PAGE, sortBy = "client_name", order = "asc", keyword = "" } = {}) {
     const normalizedKeyword =
       typeof keyword === "string" ? keyword.trim() : "";
     const paginationParams = buildSafePaginationParams(
@@ -221,12 +221,14 @@ export const clientService = {
     );
 
     return getCachedRequest(
-      `${CLIENT_CACHE_PREFIX}list:${paginationParams.limit}:${paginationParams.page}:${normalizedKeyword}`,
+      `${CLIENT_CACHE_PREFIX}list:${paginationParams.limit}:${paginationParams.page}:${sortBy}:${order}:${normalizedKeyword}`,
       async () => {
         const response = await axiosInstance.get("/admin/clients", {
           params: {
             limit: paginationParams.limit,
             page: paginationParams.page,
+            sortBy,
+            order,
             ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
           },
         });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { CloseIcon, SuccessIcon } from "./componentIcons";
+import { CircleCheck, X } from "lucide-react";
 
 export default function SuccessAlert({ message, onClose }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -53,7 +53,7 @@ export default function SuccessAlert({ message, onClose }) {
 
           <div className="relative flex items-center gap-3 px-4 py-4">
             <div className="shrink-0 text-emerald-200">
-              <SuccessIcon />
+              <CircleCheck className="h-5 w-5" />
             </div>
 
             <p className="min-w-0 flex-1 break-words text-sm font-medium leading-6 text-emerald-50/90">
@@ -62,7 +62,7 @@ export default function SuccessAlert({ message, onClose }) {
 
             {onClose ? (
               <button type="button" onClick={onClose} aria-label="Close alert" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-emerald-50/70 transition-colors duration-200 hover:bg-white/8 hover:text-white">
-                <CloseIcon />
+                <X className="h-4 w-4" />
               </button>
             ) : null}
           </div>
