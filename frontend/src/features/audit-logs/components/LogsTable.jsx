@@ -1,4 +1,4 @@
-﻿import { FileSearchCorner, Eye } from "lucide-react";
+import { FileSearchCorner, Eye } from "lucide-react";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { IconStack } from "@/components/reui/icon-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -144,7 +144,22 @@ export default function LogsTable({ loading = false, logs, onView, colorMode = "
                 </TableCell>
                 <TableCell className="font-medium text-center">{log.timestamp}</TableCell>
                 <TableCell className="w-[250px] break-words text-center" title={log.target}>
-                  {log.target}
+                  {log.target && log.target.length > 36 ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-pointer">
+                            {log.target.substring(0, 36)}...
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-none">
+                          <p className="break-all">{log.target}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <span>{log.target}</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center">
