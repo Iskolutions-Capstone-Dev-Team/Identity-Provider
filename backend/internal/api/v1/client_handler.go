@@ -237,6 +237,22 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 	}
 	keyword := c.Query("keyword")
 
+	allowedColumns := map[string]bool{
+		"client_name":       true,
+		"description":       true,
+		"image_location":    true,
+		"base_url":          true,
+		"redirect_uri":      true,
+		"logout_uri":        true,
+		"created_at":        true,
+		"access_token_ttl":  true,
+		"refresh_token_ttl": true,
+	}
+	sortBy, order, ok := ValidateSortParams(c, allowedColumns)
+	if !ok {
+		return
+	}
+
 	uIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(uIDStr)
 	if err != nil {
@@ -260,6 +276,8 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 		limit,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 	if err != nil {
 		log.Printf("[GetClientList] %v", err)

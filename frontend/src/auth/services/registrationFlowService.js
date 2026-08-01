@@ -41,22 +41,8 @@ function getJsonRequestConfig(extraHeaders = {}) {
   };
 }
 
-function getRegistrationApiKey() {
-  return normalizeTextValue(import.meta.env.VITE_BACKEND_API_KEY);
-}
-
 function getRegistrationRequestConfig() {
-  const registrationApiKey = getRegistrationApiKey();
-
-  if (!registrationApiKey) {
-    throw new Error(
-      "Registration API key is not available.",
-    );
-  }
-
-  return getJsonRequestConfig({
-    "X-API-Key": registrationApiKey,
-  });
+  return getJsonRequestConfig();
 }
 
 function extractCreatedUserId(payload = {}) {

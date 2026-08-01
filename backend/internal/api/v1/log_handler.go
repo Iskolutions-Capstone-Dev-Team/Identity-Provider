@@ -59,6 +59,18 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 		page = 1
 	}
 
+	allowedColumns := map[string]bool{
+		"actor":      true,
+		"action":     true,
+		"target":     true,
+		"status":     true,
+		"created_at": true,
+	}
+	sortBy, order, ok := ValidateSortParams(c, allowedColumns)
+	if !ok {
+		return
+	}
+
 	filters := make(map[string]interface{})
 	if actor := c.Query("actor"); actor != "" {
 		filters["actor"] = actor
@@ -81,7 +93,7 @@ func (h *LogHandler) GetLogList(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	logs, total, lastPage, err := h.LogService.GetLogListWithFilters(
-		ctx, filters, limit, page)
+		ctx, filters, limit, page, sortBy, order)
 	if err != nil {
 		log.Printf("[GetLogList] Service Execution: %v", err)
 		errors.Send(
@@ -225,6 +237,18 @@ func (h *LogHandler) GetSecurityLogList(c *gin.Context) {
 		page = 1
 	}
 
+	allowedColumns := map[string]bool{
+		"actor":      true,
+		"action":     true,
+		"target":     true,
+		"status":     true,
+		"created_at": true,
+	}
+	sortBy, order, ok := ValidateSortParams(c, allowedColumns)
+	if !ok {
+		return
+	}
+
 	filters := make(map[string]interface{})
 	if actor := c.Query("actor"); actor != "" {
 		filters["actor"] = actor
@@ -247,7 +271,7 @@ func (h *LogHandler) GetSecurityLogList(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	logs, total, lastPage, err := h.LogService.GetSecurityLogListWithFilters(
-		ctx, filters, limit, page)
+		ctx, filters, limit, page, sortBy, order)
 	if err != nil {
 		log.Printf("[GetSecurityLogList] Service Execution: %v", err)
 		errors.Send(

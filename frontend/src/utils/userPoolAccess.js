@@ -119,7 +119,7 @@ function getSelectableClientRoleNames(client = {}, options = {}) {
   return getFilteredRoleNames(getClientRoleNames(client), options);
 }
 
-export function getAccessibleAppClientsForRoles(roleNames = [], appClients = []) {
+function getAccessibleAppClientsForRoles(roleNames = [], appClients = []) {
   const normalizedRoleLookup = new Set(
     normalizeRoleNames(roleNames).map((roleName) => normalizeLowerText(roleName)),
   );
@@ -141,7 +141,7 @@ export function getAccessibleAppClientNames(roleNames = [], appClients = []) {
     .filter(Boolean);
 }
 
-export function getAccessibleAppClientIds(roleNames = [], appClients = []) {
+function getAccessibleAppClientIds(roleNames = [], appClients = []) {
   return getAccessibleAppClientsForRoles(roleNames, appClients)
     .map((client) => client?.id)
     .filter(Boolean);
@@ -215,7 +215,7 @@ export function getAdminRoleOptions(
   );
 }
 
-export function getAppClientSelectOptions(appClients = [], options = {}) {
+function getAppClientSelectOptions(appClients = [], options = {}) {
   return (Array.isArray(appClients) ? appClients : [])
     .filter((client) => getSelectableClientRoleNames(client, options).length > 0)
     .map((client) => ({

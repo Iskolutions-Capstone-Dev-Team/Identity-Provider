@@ -66,7 +66,7 @@ export const userService = {
     });
   },
 
-  async getUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = {}) {
+  async getUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc" } = {}) {
     const paginationParams = buildSafePaginationParams(
       { page, limit },
       {
@@ -77,17 +77,17 @@ export const userService = {
     );
 
     return getCachedRequest(
-      `${USER_CACHE_PREFIX}list:${paginationParams.page}:${paginationParams.limit}`,
+      `${USER_CACHE_PREFIX}list:${paginationParams.page}:${paginationParams.limit}:${sortBy}:${order}`,
       async () => {
         const res = await axiosInstance.get("/admin/users", {
-          params: paginationParams,
+          params: { ...paginationParams, sort_by: sortBy, order },
         });
         return res.data;
       },
     );
   },
 
-  async getAdminUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = {}) {
+  async getAdminUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc" } = {}) {
     const paginationParams = buildSafePaginationParams(
       { page, limit },
       {
@@ -98,10 +98,10 @@ export const userService = {
     );
 
     return getCachedRequest(
-      `${USER_CACHE_PREFIX}admins:${paginationParams.page}:${paginationParams.limit}`,
+      `${USER_CACHE_PREFIX}admins:${paginationParams.page}:${paginationParams.limit}:${sortBy}:${order}`,
       async () => {
         const res = await axiosInstance.get("/admin/users/admins", {
-          params: paginationParams,
+          params: { ...paginationParams, sort_by: sortBy, order },
         });
         return res.data;
       },

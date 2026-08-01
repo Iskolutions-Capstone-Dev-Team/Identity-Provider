@@ -3,19 +3,45 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/jmoiron/sqlx"
 )
 
+func getSafeClientSort(sortBy, order string) (string, string) {
+	allowed := map[string]bool{
+		"client_name":       true,
+		"description":       true,
+		"image_location":    true,
+		"base_url":          true,
+		"redirect_uri":      true,
+		"logout_uri":        true,
+		"created_at":        true,
+		"access_token_ttl":  true,
+		"refresh_token_ttl": true,
+	}
+	col := "created_at"
+	if sortBy != "" && allowed[sortBy] {
+		col = sortBy
+	}
+	ord := "DESC"
+	if strings.ToLower(order) == "asc" {
+		ord = "ASC"
+	}
+	return col, ord
+}
+
 type ClientRepository interface {
 	GetByID(ctx context.Context, id []byte) (*models.Client, error)
-	ListClients(ctx context.Context, limit,
-		offset int, keyword string) ([]models.Client, error)
+	ListClients(ctx context.Context, limit, offset int,
+		keyword string, sortBy, order string) ([]models.Client, error)
 	ListBoundClients(ctx context.Context, limit, offset int,
-		keyword string, userID []byte) ([]models.Client, error)
+		keyword string, userID []byte,
+		sortBy, order string) ([]models.Client, error)
 	ListAllowedClients(ctx context.Context, limit, offset int,
-		keyword string, userID []byte) ([]models.Client, error)
+		keyword string, userID []byte,
+		sortBy, order string) ([]models.Client, error)
 	CreateClient(ctx context.Context, client *models.Client,
 		grants []string, userID []byte) error
 	UpdateClient(ctx context.Context, c *models.Client,
@@ -94,11 +120,12 @@ func (r *clientRepository) GetByID(ctx context.Context,
 
 // ListClients returns a paginated list of non-deleted service providers.
 func (r *clientRepository) ListClients(ctx context.Context, limit,
-	offset int, keyword string,
+	offset int, keyword string, sortBy, order string,
 ) ([]models.Client, error) {
 	var clients []models.Client
 	searchKeyword := "%" + keyword + "%"
-	query := `
+	sortCol, sortOrd := getSafeClientSort(sortBy, order)
+	query := fmt.Sprintf(`
 		SELECT
 			id, client_name,
 			description, image_location,
@@ -107,8 +134,9 @@ func (r *clientRepository) ListClients(ctx context.Context, limit,
 			refresh_token_ttl
 		FROM clients
 		WHERE deleted_at IS NULL AND client_name LIKE ?
+		ORDER BY %s %s
 		LIMIT ? OFFSET ?
-	`
+	`, sortCol, sortOrd)
 
 	err := r.db.SelectContext(ctx, &clients, query, searchKeyword, limit, offset)
 	return clients, err
@@ -116,11 +144,13 @@ func (r *clientRepository) ListClients(ctx context.Context, limit,
 
 func (r *clientRepository) ListBoundClients(ctx context.Context,
 	limit int, offset int, keyword string, userID []byte,
+	sortBy, order string,
 ) ([]models.Client, error) {
 	var clients []models.Client
 	searchKeyword := "%" + keyword + "%"
+	sortCol, sortOrd := getSafeClientSort(sortBy, order)
 
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
 			c.id, c.client_name,
 			c.description, c.image_location,
@@ -132,8 +162,9 @@ func (r *clientRepository) ListBoundClients(ctx context.Context,
 		WHERE a.user_id = ?
 			AND c.deleted_at IS NULL
 			AND c.client_name LIKE ?
+		ORDER BY c.%s %s
 		LIMIT ? OFFSET ?
-	`
+	`, sortCol, sortOrd)
 
 	err := r.db.SelectContext(ctx, &clients, query, userID, searchKeyword,
 		limit, offset)
@@ -142,11 +173,13 @@ func (r *clientRepository) ListBoundClients(ctx context.Context,
 
 func (r *clientRepository) ListAllowedClients(ctx context.Context,
 	limit int, offset int, keyword string, userID []byte,
+	sortBy, order string,
 ) ([]models.Client, error) {
 	var clients []models.Client
 	searchKeyword := "%" + keyword + "%"
+	sortCol, sortOrd := getSafeClientSort(sortBy, order)
 
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
 			c.id, c.client_name,
 			c.description, c.image_location,
@@ -158,8 +191,9 @@ func (r *clientRepository) ListAllowedClients(ctx context.Context,
 		WHERE a.user_id = ?
 			AND c.deleted_at IS NULL
 			AND c.client_name LIKE ?
+		ORDER BY c.%s %s
 		LIMIT ? OFFSET ?
-	`
+	`, sortCol, sortOrd)
 
 	err := r.db.SelectContext(ctx, &clients, query, userID, searchKeyword,
 		limit, offset)

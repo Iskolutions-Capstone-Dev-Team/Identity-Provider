@@ -54,7 +54,7 @@ func TestGetSecurityLogListHandler_Authorized(t *testing.T) {
 	}
 
 	mockLogService.EXPECT().
-		GetSecurityLogListWithFilters(gomock.Any(), gomock.Any(), 10, 1).
+		GetSecurityLogListWithFilters(gomock.Any(), gomock.Any(), 10, 1, gomock.Any(), gomock.Any()).
 		Return(logs, int64(1), 1, nil)
 
 	w := httptest.NewRecorder()

@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  getModalTheme,
-} from "../../../components/modalTheme";
-import { ChevronIcon } from "./userpoolIcons";
+import { getModalTheme } from "../../../components/modalTheme";
+import { ChevronDown } from "lucide-react";
 
 function getSelectedOption(options, value) {
   return options.find((option) => option.value === value) || options[0];
@@ -88,7 +86,7 @@ export default function UserPoolModalSelect({ value, onChange, options, selected
         </span>
 
         <span className={chevronClassName}>
-          <ChevronIcon
+          <ChevronDown
             className={`h-5 w-5 transition duration-300 ${
               isOpen ? "rotate-180" : ""
             }`}

@@ -1,4 +1,5 @@
-import { EmailIcon } from "./registerIcons";
+import { Mail } from "lucide-react";
+import { Badge } from "../../../components/ui/badge";
 
 function maskEmail(email) {
   const [localPart, domainPart] = email.split("@");
@@ -34,10 +35,10 @@ export default function RegisterStepHeader({ step, email }) {
 
       {step === "details" ? (
         <div className="space-y-2">
-          <h2 className="text-[1.85rem] font-bold leading-none text-white">
+          <h2 className="scroll-m-20 text-3xl font-semibold tracking-tight text-white">
             Join <span className="text-[#f8d24e]">PUPTian!</span>
           </h2>
-          <p className="mx-auto max-w-sm text-base font-light leading-6 text-white/75">
+          <p className="text-sm text-muted-foreground text-white/80">
             Create an account to access PUPT systems.
           </p>
         </div>
@@ -45,10 +46,10 @@ export default function RegisterStepHeader({ step, email }) {
 
       {step === "verifyEmail" ? (
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold leading-tight text-white">
+          <h2 className="scroll-m-20 text-3xl font-semibold tracking-tight text-white">
             Verify <span className="text-[#f8d24e]">Your Email</span>
           </h2>
-          <p className="mx-auto max-w-sm text-sm font-light leading-6 text-white/80">
+          <p className="text-sm text-muted-foreground text-white/80">
             We sent a code to the email you provided ({maskedEmail}). If you
             can&apos;t find it, check your spam folder.
           </p>
@@ -58,18 +59,20 @@ export default function RegisterStepHeader({ step, email }) {
       {step === "setPassword" ? (
         <div className="space-y-3">
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold leading-tight text-white">
+            <h2 className="scroll-m-20 text-3xl font-semibold tracking-tight text-white">
               Set Your <span className="text-[#f8d24e]">Password</span>
             </h2>
-            <p className="mx-auto max-w-sm text-sm font-light leading-6 text-white/80">
+            <p className="text-sm text-muted-foreground text-white/80">
               Create your password to finish your registration.
             </p>
           </div>
 
           {maskedEmail ? (
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/85">
-              <EmailIcon />
-              {maskedEmail}
+            <div className="flex justify-center">
+              <Badge variant="secondary" className="gap-2 bg-white/10 border-white/15 text-white/85 hover:bg-white/20 px-4 py-1.5 rounded-full font-semibold uppercase tracking-[0.08em] text-xs">
+                <Mail className="size-3.5" strokeWidth={2} />
+                {maskedEmail}
+              </Badge>
             </div>
           ) : null}
         </div>

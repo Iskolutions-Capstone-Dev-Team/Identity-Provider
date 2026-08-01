@@ -57,6 +57,21 @@ func (mr *MockRegistrationRepositoryMockRecorder) CountAccountTypes(ctx any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAccountTypes", reflect.TypeOf((*MockRegistrationRepository)(nil).CountAccountTypes), ctx)
 }
 
+// CountScopedAccountTypes mocks base method.
+func (m *MockRegistrationRepository) CountScopedAccountTypes(ctx context.Context, userID []byte) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountScopedAccountTypes", ctx, userID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountScopedAccountTypes indicates an expected call of CountScopedAccountTypes.
+func (mr *MockRegistrationRepositoryMockRecorder) CountScopedAccountTypes(ctx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountScopedAccountTypes", reflect.TypeOf((*MockRegistrationRepository)(nil).CountScopedAccountTypes), ctx, userID)
+}
+
 // CreateAccountType mocks base method.
 func (m *MockRegistrationRepository) CreateAccountType(ctx context.Context, name string) (int, error) {
 	m.ctrl.T.Helper()
@@ -117,18 +132,33 @@ func (mr *MockRegistrationRepositoryMockRecorder) GetClientsByAccountTypeID(ctx,
 }
 
 // GetRegistrationConfig mocks base method.
-func (m *MockRegistrationRepository) GetRegistrationConfig(ctx context.Context, limit, offset int) ([]repository.AccountTypeClientRow, error) {
+func (m *MockRegistrationRepository) GetRegistrationConfig(ctx context.Context, limit, offset int, sortBy, order string) ([]repository.AccountTypeClientRow, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistrationConfig", ctx, limit, offset)
+	ret := m.ctrl.Call(m, "GetRegistrationConfig", ctx, limit, offset, sortBy, order)
 	ret0, _ := ret[0].([]repository.AccountTypeClientRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRegistrationConfig indicates an expected call of GetRegistrationConfig.
-func (mr *MockRegistrationRepositoryMockRecorder) GetRegistrationConfig(ctx, limit, offset any) *gomock.Call {
+func (mr *MockRegistrationRepositoryMockRecorder) GetRegistrationConfig(ctx, limit, offset, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationConfig", reflect.TypeOf((*MockRegistrationRepository)(nil).GetRegistrationConfig), ctx, limit, offset)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationConfig", reflect.TypeOf((*MockRegistrationRepository)(nil).GetRegistrationConfig), ctx, limit, offset, sortBy, order)
+}
+
+// GetScopedRegistrationConfig mocks base method.
+func (m *MockRegistrationRepository) GetScopedRegistrationConfig(ctx context.Context, userID []byte, limit, offset int, sortBy, order string) ([]repository.AccountTypeClientRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScopedRegistrationConfig", ctx, userID, limit, offset, sortBy, order)
+	ret0, _ := ret[0].([]repository.AccountTypeClientRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetScopedRegistrationConfig indicates an expected call of GetScopedRegistrationConfig.
+func (mr *MockRegistrationRepositoryMockRecorder) GetScopedRegistrationConfig(ctx, userID, limit, offset, sortBy, order any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScopedRegistrationConfig", reflect.TypeOf((*MockRegistrationRepository)(nil).GetScopedRegistrationConfig), ctx, userID, limit, offset, sortBy, order)
 }
 
 // SyncPreapprovedClients mocks base method.
@@ -157,61 +187,4 @@ func (m *MockRegistrationRepository) UpdateAccountType(ctx context.Context, id i
 func (mr *MockRegistrationRepositoryMockRecorder) UpdateAccountType(ctx, id, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAccountType", reflect.TypeOf((*MockRegistrationRepository)(nil).UpdateAccountType), ctx, id, name)
-}
-
-// CountScopedAccountTypes mocks base method.
-func (m *MockRegistrationRepository) CountScopedAccountTypes(
-	ctx context.Context, userID []byte,
-) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountScopedAccountTypes", ctx, userID)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountScopedAccountTypes indicates an expected call of
-// CountScopedAccountTypes.
-func (mr *MockRegistrationRepositoryMockRecorder) CountScopedAccountTypes(
-	ctx, userID any,
-) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(
-		mr.mock,
-		"CountScopedAccountTypes",
-		reflect.TypeOf((*MockRegistrationRepository)(nil).
-			CountScopedAccountTypes),
-		ctx,
-		userID,
-	)
-}
-
-// GetScopedRegistrationConfig mocks base method.
-func (m *MockRegistrationRepository) GetScopedRegistrationConfig(
-	ctx context.Context, userID []byte, limit, offset int,
-) ([]repository.AccountTypeClientRow, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetScopedRegistrationConfig", ctx, userID,
-		limit, offset)
-	ret0, _ := ret[0].([]repository.AccountTypeClientRow)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetScopedRegistrationConfig indicates an expected call of
-// GetScopedRegistrationConfig.
-func (mr *MockRegistrationRepositoryMockRecorder) GetScopedRegistrationConfig(
-	ctx, userID, limit, offset any,
-) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(
-		mr.mock,
-		"GetScopedRegistrationConfig",
-		reflect.TypeOf((*MockRegistrationRepository)(nil).
-			GetScopedRegistrationConfig),
-		ctx,
-		userID,
-		limit,
-		offset,
-	)
 }

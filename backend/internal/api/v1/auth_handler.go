@@ -3,6 +3,7 @@ package v1
 import (
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"slices"
 	"strings"
@@ -49,9 +50,15 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 	clientID := c.Query("client_id")
 	redirectURI := c.Query("redirect_uri")
 	loginLink := loginUI + "/login?client_id=" + clientID
+	if redirectURI != "" {
+		loginLink += "&redirect_uri=" + url.QueryEscape(redirectURI)
+	}
 
 	// Resolve client name for audit logging
-	clientName := h.LogService.ResolveClientName(c.Request.Context(), clientID)
+	clientName := h.LogService.ResolveClientName(
+		c.Request.Context(),
+		clientID,
+	)
 
 	// Prepare metadata with IP and User-Agent
 	metadata := buildMetadata(map[string]interface{}{
@@ -65,13 +72,16 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 	if clientID == "" {
 		log.Print("[Authorize] Parameter Extraction: no client_id")
 		// Log failure with no actor
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), "",
+		_ = h.LogService.PostAuditLogWithActorString(
+			c.Request.Context(),
+			"",
 			&dto.PostAuditLogRequest{
 				Action:   actionAuthorize,
 				Target:   loginUI,
 				Status:   models.StatusFail,
 				Metadata: metadata,
-			})
+			},
+		)
 		errors.SendString(
 			c,
 			http.StatusBadRequest,
@@ -87,13 +97,16 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 	if err != nil {
 		log.Print("[Authorize] Cookie Extraction: no session found")
 		// Log redirect to login
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(), "",
+		_ = h.LogService.PostAuditLogWithActorString(
+			c.Request.Context(),
+			"",
 			&dto.PostAuditLogRequest{
 				Action:   actionAuthorize,
 				Target:   loginLink,
 				Status:   models.StatusFail,
 				Metadata: metadata,
-			})
+			},
+		)
 		c.Redirect(http.StatusFound, loginLink)
 		return
 	}
@@ -115,28 +128,33 @@ func (h *AuthHandler) Authorize(c *gin.Context) {
 			"user_agent":   c.Request.UserAgent(),
 			"error":        err.Error(),
 		})
-		_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(),
+		_ = h.LogService.PostAuditLogWithActorString(
+			c.Request.Context(),
 			sessionToken,
 			&dto.PostAuditLogRequest{
 				Action:   actionAuthorize,
-				Target:   loginUI,
+				Target:   loginLink,
 				Status:   models.StatusFail,
 				Metadata: metadataWithErr,
-			})
+			},
+		)
 
-		c.Redirect(http.StatusFound, loginUI)
+		h.AuthService.RevokeCookies(c)
+		c.Redirect(http.StatusFound, loginLink)
 		return
 	}
 
 	// Log success
-	_ = h.LogService.PostAuditLogWithActorString(c.Request.Context(),
+	_ = h.LogService.PostAuditLogWithActorString(
+		c.Request.Context(),
 		sessionToken,
 		&dto.PostAuditLogRequest{
 			Action:   actionAuthorize,
 			Target:   loginUI,
 			Status:   models.StatusSuccess,
 			Metadata: metadata,
-		})
+		},
+	)
 
 	c.Redirect(http.StatusFound, redirectURL)
 }

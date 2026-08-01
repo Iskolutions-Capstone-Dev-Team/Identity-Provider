@@ -3,10 +3,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { userService } from "../../services/userService";
 import { authService } from "../services/authService";
 import { clearAuthState } from "../utils/authCookies";
-import { authPageBackground, authPagePatternStyle } from "../utils/authBackground";
+import { authPageBackground } from "../utils/authBackground";
+import DotField from "@/components/ui/DotField";
 import { buildClientAuthorizeUrl, clearAuthorizeAttempt } from "../utils/authorizeFlow";
 import { buildLoginPath, getLoginClientId, getLoginRedirectUri } from "../utils/loginRoute";
-
+import { Button } from "../../components/ui/button";
 const ONE_PORTAL_CLIENT_ID = import.meta.env.VITE_ONE_PORTAL_CLIENT_ID ?? "";
 const ONE_PORTAL_URL = import.meta.env.VITE_ONE_PORTAL_URL ?? "";
 
@@ -74,8 +75,22 @@ export default function AccessDenied() {
 
   return (
     <main className="relative min-h-screen overflow-hidden font-[Poppins] text-white" style={{ background: authPageBackground }}>
-      <div className="absolute inset-0" aria-hidden="true">
-        <div className="absolute inset-0 opacity-45 [mask-image:linear-gradient(90deg,#000_0%,transparent_24%,transparent_76%,#000_100%)]" style={authPagePatternStyle}/>
+      <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+        <DotField
+          dotRadius={1.5}
+          dotSpacing={14}
+          bulgeStrength={67}
+          glowRadius={160}
+          sparkle={false}
+          waveAmplitude={0}
+          cursorRadius={500}
+          cursorForce={0.1}
+          bulgeOnly
+          gradientFrom="rgba(255, 255, 255, 0.22)"
+          gradientTo="rgba(255, 255, 255, 0.08)"
+          glowColor="rgba(0, 0, 0, 0.2)"
+        />
+        <div className="pointer-events-none absolute inset-0 opacity-45 [mask-image:linear-gradient(90deg,#000_0%,transparent_24%,transparent_76%,#000_100%)]" />
       </div>
 
       <section className="relative flex min-h-screen flex-col items-center justify-center px-4 text-center">
@@ -84,18 +99,18 @@ export default function AccessDenied() {
         </div>
 
         <div className="mt-7 max-w-2xl">
-          <p className="text-xs font-medium uppercase leading-7 tracking-[0.28em] text-white/85 sm:text-sm">
+          <p className="text-sm font-medium uppercase leading-7 tracking-widest text-white/85">
             You do not have access to this service. You can proceed to One Portal instead.
           </p>
         </div>
 
         <div className="mt-8 flex w-full max-w-lg flex-col gap-3 sm:flex-row sm:justify-center">
-          <button type="button" onClick={handleReturnToLogin} disabled={isClearingSession} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-white/10 px-6 text-[#ffd700] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.9)] transition duration-300 hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:min-w-40">
+          <Button type="button" onClick={handleReturnToLogin} disabled={isClearingSession} className="h-12 w-full rounded-lg border border-[#ffd700] bg-white/10 px-6 text-[#ffd700] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.9)] transition duration-300 hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white sm:w-auto sm:min-w-40">
             {isClearingSession ? "Returning..." : "Return to login"}
-          </button>
-          <button type="button" onClick={handleGoToOnePortal} className="btn h-12 w-full rounded-lg border-[#ffd700] bg-[#ffd700] px-6 text-[#7b0d15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.65)] transition duration-300 hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white sm:w-auto sm:min-w-44">
+          </Button>
+          <Button type="button" onClick={handleGoToOnePortal} className="h-12 w-full rounded-lg border border-[#ffd700] bg-[#ffd700] px-6 text-[#7b0d15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.65)] transition duration-300 hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white sm:w-auto sm:min-w-44">
             Go to One Portal
-          </button>
+          </Button>
         </div>
       </section>
     </main>

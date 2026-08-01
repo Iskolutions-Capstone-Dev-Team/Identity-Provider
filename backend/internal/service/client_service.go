@@ -24,13 +24,17 @@ type ClientService interface {
 		userID uuid.UUID) (*dto.ClientSecretResponse, error)
 	GetFilteredClientList(ctx context.Context, permissions []string,
 		userID uuid.UUID, limit, page int,
-		keyword string) (*dto.ClientListResponse, error)
+		keyword string,
+		sortBy, order string) (*dto.ClientListResponse, error)
 	GetClientList(ctx context.Context, limit, page int,
-		keyword string) (*dto.ClientListResponse, error)
+		keyword string,
+		sortBy, order string) (*dto.ClientListResponse, error)
 	GetBoundClients(ctx context.Context, userID uuid.UUID, limit, page int,
-		keyword string) (*dto.ClientListResponse, error)
+		keyword string,
+		sortBy, order string) (*dto.ClientListResponse, error)
 	GetAllowedClients(ctx context.Context, userID uuid.UUID, limit, page int,
-		keyword string) (*dto.ClientListResponse, error)
+		keyword string,
+		sortBy, order string) (*dto.ClientListResponse, error)
 	GetClientByID(ctx context.Context, id uuid.UUID,
 		userID uuid.UUID, permissions []string) (*dto.ClientResponse, error)
 	UpdateClient(ctx context.Context, id uuid.UUID, req dto.CreateClientRequest,
@@ -133,13 +137,17 @@ func (s *clientService) GetFilteredClientList(
 	limit,
 	page int,
 	keyword string,
+	sortBy,
+	order string,
 ) (*dto.ClientListResponse, error) {
 	if slices.Contains(permissions, "View all appclients") {
-		return s.GetClientList(ctx, limit, page, keyword)
+		return s.GetClientList(ctx, limit, page, keyword, sortBy, order)
 	}
 
 	if slices.Contains(permissions, "View connected appclients") {
-		return s.GetBoundClients(ctx, userID, limit, page, keyword)
+		return s.GetBoundClients(
+			ctx, userID, limit, page, keyword, sortBy, order,
+		)
 	}
 
 	return nil, fmt.Errorf("privilege validation: restricted level")
@@ -178,19 +186,22 @@ func (s *clientService) getClientListCacheKey(
 	userID string,
 	limit, page int,
 	keyword string,
+	sortBy, order string,
 ) string {
 	version, _, _ := s.Cache.Get(ctx, "cache:version:clients")
 	if version == "" {
 		version = "0"
 	}
 	return fmt.Sprintf(
-		"clients:v%s:%s:uid:%s:lim:%d:pg:%d:kw:%s",
+		"clients:v%s:%s:uid:%s:lim:%d:pg:%d:kw:%s:sb:%s:or:%s",
 		version,
 		prefix,
 		userID,
 		limit,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 }
 
@@ -203,6 +214,8 @@ func (s *clientService) GetClientList(
 	limit,
 	page int,
 	keyword string,
+	sortBy,
+	order string,
 ) (*dto.ClientListResponse, error) {
 	cacheKey := s.getClientListCacheKey(
 		ctx,
@@ -211,6 +224,8 @@ func (s *clientService) GetClientList(
 		limit,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.ClientListResponse
@@ -226,7 +241,9 @@ func (s *clientService) GetClientList(
 		return nil, fmt.Errorf("database query (Count): %w", err)
 	}
 
-	clients, err := s.Repo.ListClients(ctx, limit, offset, keyword)
+	clients, err := s.Repo.ListClients(
+		ctx, limit, offset, keyword, sortBy, order,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("database query (List): %w", err)
 	}
@@ -289,6 +306,8 @@ func (s *clientService) GetBoundClients(
 	limit,
 	page int,
 	keyword string,
+	sortBy,
+	order string,
 ) (*dto.ClientListResponse, error) {
 	cacheKey := s.getClientListCacheKey(
 		ctx,
@@ -297,6 +316,8 @@ func (s *clientService) GetBoundClients(
 		limit,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.ClientListResponse
@@ -313,6 +334,8 @@ func (s *clientService) GetBoundClients(
 		offset,
 		keyword,
 		userID[:],
+		sortBy,
+		order,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database query (ListBound): %w", err)
@@ -372,6 +395,8 @@ func (s *clientService) GetAllowedClients(
 	limit,
 	page int,
 	keyword string,
+	sortBy,
+	order string,
 ) (*dto.ClientListResponse, error) {
 	cacheKey := s.getClientListCacheKey(
 		ctx,
@@ -380,6 +405,8 @@ func (s *clientService) GetAllowedClients(
 		limit,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.ClientListResponse
@@ -396,6 +423,8 @@ func (s *clientService) GetAllowedClients(
 		offset,
 		keyword,
 		userID[:],
+		sortBy,
+		order,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database query (ListAllowed): %w", err)

@@ -78,12 +78,11 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		otp.POST("/verify", h.OTPHandler.VerifyOTP)
 	}
 
-	// mfaVerify — API-key-only: called mid-login, no JWT yet.
+	// mfaVerify — Rate Limit + CORS only (mid-login, no JWT yet)
 	mfaVerify := v1Group.Group("/mfa")
 	mfaVerify.Use(
 		h.ClientCORS,
 		middleware.RateLimitMiddleware(),
-		middleware.APIKeyMiddleware(),
 	)
 	{
 		// TOTP verification (mid-login, no JWT available)
@@ -163,10 +162,12 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 
 	}
 
+	// Public user registration
+	v1Group.POST("/user", h.UserHandler.PostUser)
+
 	user := v1Group.Group("/user")
 	user.Use(middleware.APIKeyMiddleware())
 	{
-		user.POST("", h.UserHandler.PostUser)
 		user.PATCH("/:id/name", h.UserHandler.PatchUserName)
 		user.PATCH("/password/forgot", h.UserHandler.PatchUserPasswordByEmail)
 		user.PATCH("/password/change",
@@ -178,7 +179,9 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	internalUser.Use(h.ClientCORS)
 	{
 		internalUser.POST("", h.UserHandler.PostUser)
-		internalUser.PATCH("/:id/name", h.UserHandler.PatchUserName)
+		internalUser.PATCH("/:id/name",
+			middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+			h.UserHandler.PatchUserName)
 		internalUser.PATCH("/:id/password", h.UserHandler.PatchUserPassword)
 		internalUser.PATCH(
 			"/password/forgot",

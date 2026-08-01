@@ -101,48 +101,48 @@ func (mr *MockUserServiceMockRecorder) DeleteUser(ctx, id any) *gomock.Call {
 }
 
 // GetAdminUserList mocks base method.
-func (m *MockUserService) GetAdminUserList(ctx context.Context, limit, page int, adminID uuid.UUID, permissions []string) (*dto.UserResponseList, error) {
+func (m *MockUserService) GetAdminUserList(ctx context.Context, limit, page int, adminID uuid.UUID, permissions []string, sortBy, order string) (*dto.UserResponseList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdminUserList", ctx, limit, page, adminID, permissions)
+	ret := m.ctrl.Call(m, "GetAdminUserList", ctx, limit, page, adminID, permissions, sortBy, order)
 	ret0, _ := ret[0].(*dto.UserResponseList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAdminUserList indicates an expected call of GetAdminUserList.
-func (mr *MockUserServiceMockRecorder) GetAdminUserList(ctx, limit, page, adminID, permissions any) *gomock.Call {
+func (mr *MockUserServiceMockRecorder) GetAdminUserList(ctx, limit, page, adminID, permissions, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminUserList", reflect.TypeOf((*MockUserService)(nil).GetAdminUserList), ctx, limit, page, adminID, permissions)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminUserList", reflect.TypeOf((*MockUserService)(nil).GetAdminUserList), ctx, limit, page, adminID, permissions, sortBy, order)
 }
 
 // GetBoundUserList mocks base method.
-func (m *MockUserService) GetBoundUserList(ctx context.Context, limit, page int, userID uuid.UUID) (*dto.UserSimplifiedResponseList, error) {
+func (m *MockUserService) GetBoundUserList(ctx context.Context, limit, page int, userID uuid.UUID, sortBy, order string) (*dto.UserSimplifiedResponseList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBoundUserList", ctx, limit, page, userID)
+	ret := m.ctrl.Call(m, "GetBoundUserList", ctx, limit, page, userID, sortBy, order)
 	ret0, _ := ret[0].(*dto.UserSimplifiedResponseList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBoundUserList indicates an expected call of GetBoundUserList.
-func (mr *MockUserServiceMockRecorder) GetBoundUserList(ctx, limit, page, userID any) *gomock.Call {
+func (mr *MockUserServiceMockRecorder) GetBoundUserList(ctx, limit, page, userID, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundUserList", reflect.TypeOf((*MockUserService)(nil).GetBoundUserList), ctx, limit, page, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundUserList", reflect.TypeOf((*MockUserService)(nil).GetBoundUserList), ctx, limit, page, userID, sortBy, order)
 }
 
 // GetFilteredUserList mocks base method.
-func (m *MockUserService) GetFilteredUserList(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int) (*dto.UserSimplifiedResponseList, error) {
+func (m *MockUserService) GetFilteredUserList(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int, sortBy, order string) (*dto.UserSimplifiedResponseList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFilteredUserList", ctx, permissions, userID, limit, page)
+	ret := m.ctrl.Call(m, "GetFilteredUserList", ctx, permissions, userID, limit, page, sortBy, order)
 	ret0, _ := ret[0].(*dto.UserSimplifiedResponseList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFilteredUserList indicates an expected call of GetFilteredUserList.
-func (mr *MockUserServiceMockRecorder) GetFilteredUserList(ctx, permissions, userID, limit, page any) *gomock.Call {
+func (mr *MockUserServiceMockRecorder) GetFilteredUserList(ctx, permissions, userID, limit, page, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilteredUserList", reflect.TypeOf((*MockUserService)(nil).GetFilteredUserList), ctx, permissions, userID, limit, page)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilteredUserList", reflect.TypeOf((*MockUserService)(nil).GetFilteredUserList), ctx, permissions, userID, limit, page, sortBy, order)
 }
 
 // GetMe mocks base method.
@@ -191,18 +191,18 @@ func (mr *MockUserServiceMockRecorder) GetUserByID(ctx, id, adminID, permissions
 }
 
 // GetUserList mocks base method.
-func (m *MockUserService) GetUserList(ctx context.Context, limit, page int) (*dto.UserSimplifiedResponseList, error) {
+func (m *MockUserService) GetUserList(ctx context.Context, limit, page int, sortBy, order string) (*dto.UserSimplifiedResponseList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserList", ctx, limit, page)
+	ret := m.ctrl.Call(m, "GetUserList", ctx, limit, page, sortBy, order)
 	ret0, _ := ret[0].(*dto.UserSimplifiedResponseList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserList indicates an expected call of GetUserList.
-func (mr *MockUserServiceMockRecorder) GetUserList(ctx, limit, page any) *gomock.Call {
+func (mr *MockUserServiceMockRecorder) GetUserList(ctx, limit, page, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserList", reflect.TypeOf((*MockUserService)(nil).GetUserList), ctx, limit, page)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserList", reflect.TypeOf((*MockUserService)(nil).GetUserList), ctx, limit, page, sortBy, order)
 }
 
 // SyncAdminClientAccess mocks base method.
