@@ -235,10 +235,10 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
             {stepperSteps.map((s, index) => (
               <StepperItem key={index} step={index + 1} className="relative flex-1 items-start">
                 <StepperTrigger className="relative z-10 flex flex-col gap-2.5 items-center w-full" onClick={() => { if(index + 1 < step) setStep(index + 1) }}>
-                  <StepperIndicator className="size-8 text-sm data-[state=inactive]:bg-secondary data-[state=completed]:bg-[#7b0d15] data-[state=completed]:text-white dark:data-[state=completed]:bg-white dark:data-[state=completed]:text-black data-[state=active]:bg-[#7b0d15] data-[state=active]:border-[#7b0d15] data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:border-white dark:data-[state=active]:text-black">{index + 1}</StepperIndicator>
+                  <StepperIndicator className="size-8 text-sm data-[state=inactive]:bg-secondary data-[state=completed]:bg-[#7b0d15] data-[state=completed]:text-white dark:data-[state=completed]:bg-[#ffd21a] dark:data-[state=completed]:text-black data-[state=active]:bg-[#7b0d15] data-[state=active]:border-[#7b0d15] data-[state=active]:text-white dark:data-[state=active]:bg-[#ffd21a] dark:data-[state=active]:border-[#ffd21a] dark:data-[state=active]:text-black">{index + 1}</StepperIndicator>
                   <StepperTitle className="text-sm font-semibold whitespace-nowrap">{s.title}</StepperTitle>
                 </StepperTrigger>
-                {index < stepperSteps.length - 1 && <StepperSeparator className="absolute top-4 left-[50%] w-full z-0 h-1 data-[state=completed]:bg-[#7b0d15] dark:data-[state=completed]:bg-white" />}
+                {index < stepperSteps.length - 1 && <StepperSeparator className="absolute top-4 left-[50%] w-full z-0 h-1 data-[state=completed]:bg-[#7b0d15] dark:data-[state=completed]:bg-[#ffd21a]" />}
               </StepperItem>
             ))}
           </StepperNav>
@@ -419,9 +419,9 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
       )}
 
       {step < 3 ? (
-        <Button type="button" onClick={nextStep} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] transition-colors">Next</Button>
+        <Button type="button" onClick={nextStep} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white dark:bg-[#ffd21a] dark:text-black hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-white transition-colors">Next</Button>
       ) : (
-        <Button type="button" onClick={handleSubmit} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] transition-colors">Create Client</Button>
+        <Button type="button" onClick={handleSubmit} className="h-10 rounded-lg px-6 bg-[#7b0d15] text-white dark:bg-[#ffd21a] dark:text-black hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-white transition-colors">Create Client</Button>
       )}
     </div>
   );
