@@ -73,33 +73,33 @@ func (mr *MockClientServiceMockRecorder) DeleteClient(ctx, id, userID, permissio
 }
 
 // GetAllowedClients mocks base method.
-func (m *MockClientService) GetAllowedClients(ctx context.Context, userID uuid.UUID, limit, page int, keyword string) (*dto.ClientListResponse, error) {
+func (m *MockClientService) GetAllowedClients(ctx context.Context, userID uuid.UUID, limit, page int, keyword, sortBy, order string) (*dto.ClientListResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllowedClients", ctx, userID, limit, page, keyword)
+	ret := m.ctrl.Call(m, "GetAllowedClients", ctx, userID, limit, page, keyword, sortBy, order)
 	ret0, _ := ret[0].(*dto.ClientListResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllowedClients indicates an expected call of GetAllowedClients.
-func (mr *MockClientServiceMockRecorder) GetAllowedClients(ctx, userID, limit, page, keyword any) *gomock.Call {
+func (mr *MockClientServiceMockRecorder) GetAllowedClients(ctx, userID, limit, page, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllowedClients", reflect.TypeOf((*MockClientService)(nil).GetAllowedClients), ctx, userID, limit, page, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllowedClients", reflect.TypeOf((*MockClientService)(nil).GetAllowedClients), ctx, userID, limit, page, keyword, sortBy, order)
 }
 
 // GetBoundClients mocks base method.
-func (m *MockClientService) GetBoundClients(ctx context.Context, userID uuid.UUID, limit, page int, keyword string) (*dto.ClientListResponse, error) {
+func (m *MockClientService) GetBoundClients(ctx context.Context, userID uuid.UUID, limit, page int, keyword, sortBy, order string) (*dto.ClientListResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBoundClients", ctx, userID, limit, page, keyword)
+	ret := m.ctrl.Call(m, "GetBoundClients", ctx, userID, limit, page, keyword, sortBy, order)
 	ret0, _ := ret[0].(*dto.ClientListResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBoundClients indicates an expected call of GetBoundClients.
-func (mr *MockClientServiceMockRecorder) GetBoundClients(ctx, userID, limit, page, keyword any) *gomock.Call {
+func (mr *MockClientServiceMockRecorder) GetBoundClients(ctx, userID, limit, page, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundClients", reflect.TypeOf((*MockClientService)(nil).GetBoundClients), ctx, userID, limit, page, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundClients", reflect.TypeOf((*MockClientService)(nil).GetBoundClients), ctx, userID, limit, page, keyword, sortBy, order)
 }
 
 // GetClientByID mocks base method.
@@ -118,33 +118,33 @@ func (mr *MockClientServiceMockRecorder) GetClientByID(ctx, id, userID, permissi
 }
 
 // GetClientList mocks base method.
-func (m *MockClientService) GetClientList(ctx context.Context, limit, page int, keyword string) (*dto.ClientListResponse, error) {
+func (m *MockClientService) GetClientList(ctx context.Context, limit, page int, keyword, sortBy, order string) (*dto.ClientListResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetClientList", ctx, limit, page, keyword)
+	ret := m.ctrl.Call(m, "GetClientList", ctx, limit, page, keyword, sortBy, order)
 	ret0, _ := ret[0].(*dto.ClientListResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetClientList indicates an expected call of GetClientList.
-func (mr *MockClientServiceMockRecorder) GetClientList(ctx, limit, page, keyword any) *gomock.Call {
+func (mr *MockClientServiceMockRecorder) GetClientList(ctx, limit, page, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClientList", reflect.TypeOf((*MockClientService)(nil).GetClientList), ctx, limit, page, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClientList", reflect.TypeOf((*MockClientService)(nil).GetClientList), ctx, limit, page, keyword, sortBy, order)
 }
 
 // GetFilteredClientList mocks base method.
-func (m *MockClientService) GetFilteredClientList(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int, keyword string) (*dto.ClientListResponse, error) {
+func (m *MockClientService) GetFilteredClientList(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int, keyword, sortBy, order string) (*dto.ClientListResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFilteredClientList", ctx, permissions, userID, limit, page, keyword)
+	ret := m.ctrl.Call(m, "GetFilteredClientList", ctx, permissions, userID, limit, page, keyword, sortBy, order)
 	ret0, _ := ret[0].(*dto.ClientListResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFilteredClientList indicates an expected call of GetFilteredClientList.
-func (mr *MockClientServiceMockRecorder) GetFilteredClientList(ctx, permissions, userID, limit, page, keyword any) *gomock.Call {
+func (mr *MockClientServiceMockRecorder) GetFilteredClientList(ctx, permissions, userID, limit, page, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilteredClientList", reflect.TypeOf((*MockClientService)(nil).GetFilteredClientList), ctx, permissions, userID, limit, page, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilteredClientList", reflect.TypeOf((*MockClientService)(nil).GetFilteredClientList), ctx, permissions, userID, limit, page, keyword, sortBy, order)
 }
 
 // RotateClientSecret mocks base method.

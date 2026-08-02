@@ -87,9 +87,9 @@ func (mr *MockLogServiceMockRecorder) GetLogList(ctx, limit, offset any) *gomock
 }
 
 // GetLogListWithFilters mocks base method.
-func (m *MockLogService) GetLogListWithFilters(ctx context.Context, filters map[string]any, limit, page int) ([]dto.PostAuditLogRequest, int64, int, error) {
+func (m *MockLogService) GetLogListWithFilters(ctx context.Context, filters map[string]any, limit, page int, sortBy, order string) ([]dto.PostAuditLogRequest, int64, int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLogListWithFilters", ctx, filters, limit, page)
+	ret := m.ctrl.Call(m, "GetLogListWithFilters", ctx, filters, limit, page, sortBy, order)
 	ret0, _ := ret[0].([]dto.PostAuditLogRequest)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(int)
@@ -98,9 +98,9 @@ func (m *MockLogService) GetLogListWithFilters(ctx context.Context, filters map[
 }
 
 // GetLogListWithFilters indicates an expected call of GetLogListWithFilters.
-func (mr *MockLogServiceMockRecorder) GetLogListWithFilters(ctx, filters, limit, page any) *gomock.Call {
+func (mr *MockLogServiceMockRecorder) GetLogListWithFilters(ctx, filters, limit, page, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogListWithFilters", reflect.TypeOf((*MockLogService)(nil).GetLogListWithFilters), ctx, filters, limit, page)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogListWithFilters", reflect.TypeOf((*MockLogService)(nil).GetLogListWithFilters), ctx, filters, limit, page, sortBy, order)
 }
 
 // GetSecurityLog mocks base method.
@@ -134,9 +134,9 @@ func (mr *MockLogServiceMockRecorder) GetSecurityLogByID(ctx, id any) *gomock.Ca
 }
 
 // GetSecurityLogListWithFilters mocks base method.
-func (m *MockLogService) GetSecurityLogListWithFilters(ctx context.Context, filters map[string]any, limit, page int) ([]dto.PostAuditLogRequest, int64, int, error) {
+func (m *MockLogService) GetSecurityLogListWithFilters(ctx context.Context, filters map[string]any, limit, page int, sortBy, order string) ([]dto.PostAuditLogRequest, int64, int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSecurityLogListWithFilters", ctx, filters, limit, page)
+	ret := m.ctrl.Call(m, "GetSecurityLogListWithFilters", ctx, filters, limit, page, sortBy, order)
 	ret0, _ := ret[0].([]dto.PostAuditLogRequest)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(int)
@@ -145,9 +145,9 @@ func (m *MockLogService) GetSecurityLogListWithFilters(ctx context.Context, filt
 }
 
 // GetSecurityLogListWithFilters indicates an expected call of GetSecurityLogListWithFilters.
-func (mr *MockLogServiceMockRecorder) GetSecurityLogListWithFilters(ctx, filters, limit, page any) *gomock.Call {
+func (mr *MockLogServiceMockRecorder) GetSecurityLogListWithFilters(ctx, filters, limit, page, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecurityLogListWithFilters", reflect.TypeOf((*MockLogService)(nil).GetSecurityLogListWithFilters), ctx, filters, limit, page)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecurityLogListWithFilters", reflect.TypeOf((*MockLogService)(nil).GetSecurityLogListWithFilters), ctx, filters, limit, page, sortBy, order)
 }
 
 // GetUserEmail mocks base method.

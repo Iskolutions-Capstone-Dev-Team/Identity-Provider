@@ -27,14 +27,16 @@ type UserService interface {
 	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
 	GetFilteredUserList(ctx context.Context, permissions []string,
 		userID uuid.UUID, limit, page int,
-		status string) (*dto.UserSimplifiedResponseList, error)
-	GetUserList(ctx context.Context, limit,
-		page int) (*dto.UserSimplifiedResponseList, error)
+		sortBy, order string, status string,
+	) (*dto.UserSimplifiedResponseList, error)
+	GetUserList(ctx context.Context, limit, page int,
+		sortBy, order string) (*dto.UserSimplifiedResponseList, error)
 	GetBoundUserList(ctx context.Context, limit, page int,
-		userID uuid.UUID) (*dto.UserSimplifiedResponseList, error)
+		userID uuid.UUID,
+		sortBy, order string) (*dto.UserSimplifiedResponseList, error)
 	GetAdminUserList(ctx context.Context, limit, page int,
 		adminID uuid.UUID, permissions []string,
-	) (*dto.UserResponseList, error)
+		sortBy, order string) (*dto.UserResponseList, error)
 	UpdateUserPassword(ctx context.Context, id uuid.UUID,
 		newPassword string) error
 	UpdateUserPasswordByEmail(ctx context.Context, email string,
@@ -528,6 +530,8 @@ func (s *userService) GetFilteredUserList(
 	userID uuid.UUID,
 	limit,
 	page int,
+	sortBy,
+	order string,
 	status string,
 ) (*dto.UserSimplifiedResponseList, error) {
 	var resp *dto.UserSimplifiedResponseList
@@ -542,11 +546,13 @@ func (s *userService) GetFilteredUserList(
 		resp, err = s.GetDeletedUserList(ctx, limit, page)
 	} else {
 		if slices.Contains(permissions, "View all users") {
-			resp, err = s.GetUserList(ctx, limit, page)
+			resp, err = s.GetUserList(ctx, limit, page, sortBy, order)
 		} else if slices.Contains(
 			permissions, "View users based on appclient",
 		) {
-			resp, err = s.GetBoundUserList(ctx, limit, page, userID)
+			resp, err = s.GetBoundUserList(
+			ctx, limit, page, userID, sortBy, order,
+		)
 		} else {
 			return nil, fmt.Errorf("privilege validation: unauthorized level")
 		}
@@ -564,18 +570,21 @@ func (s *userService) getUserListCacheKey(
 	prefix string,
 	userID string,
 	limit, page int,
+	sortBy, order string,
 ) string {
 	version, _, _ := s.Cache.Get(ctx, "cache:version:users")
 	if version == "" {
 		version = "0"
 	}
 	return fmt.Sprintf(
-		"users:v%s:%s:uid:%s:lim:%d:pg:%d",
+		"users:v%s:%s:uid:%s:lim:%d:pg:%d:sb:%s:or:%s",
 		version,
 		prefix,
 		userID,
 		limit,
 		page,
+		sortBy,
+		order,
 	)
 }
 
@@ -586,8 +595,12 @@ func (s *userService) GetUserList(
 	ctx context.Context,
 	limit,
 	page int,
+	sortBy,
+	order string,
 ) (*dto.UserSimplifiedResponseList, error) {
-	cacheKey := s.getUserListCacheKey(ctx, "list", "", limit, page)
+	cacheKey := s.getUserListCacheKey(
+		ctx, "list", "", limit, page, sortBy, order,
+	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserSimplifiedResponseList
 		if json.Unmarshal([]byte(val), &cached) == nil {
@@ -597,7 +610,7 @@ func (s *userService) GetUserList(
 
 	offset := (page - 1) * limit
 
-	users, err := s.Repo.GetUserList(ctx, limit, offset)
+	users, err := s.Repo.GetUserList(ctx, limit, offset, sortBy, order)
 	if err != nil {
 		return nil, fmt.Errorf("database query (GetUserList): %w", err)
 	}
@@ -641,6 +654,8 @@ func (s *userService) GetBoundUserList(
 	limit,
 	page int,
 	userID uuid.UUID,
+	sortBy,
+	order string,
 ) (*dto.UserSimplifiedResponseList, error) {
 	cacheKey := s.getUserListCacheKey(
 		ctx,
@@ -648,6 +663,8 @@ func (s *userService) GetBoundUserList(
 		userID.String(),
 		limit,
 		page,
+		sortBy,
+		order,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserSimplifiedResponseList
@@ -658,7 +675,9 @@ func (s *userService) GetBoundUserList(
 
 	offset := (page - 1) * limit
 
-	users, err := s.Repo.GetBoundUserList(ctx, limit, offset, userID[:])
+	users, err := s.Repo.GetBoundUserList(
+		ctx, limit, offset, userID[:], sortBy, order,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("database query (GetBound): %w", err)
 	}
@@ -1053,6 +1072,7 @@ func (s *userService) GetAdminUserList(
 	limit, page int,
 	adminID uuid.UUID,
 	permissions []string,
+	sortBy, order string,
 ) (*dto.UserResponseList, error) {
 	cacheKey := s.getUserListCacheKey(
 		ctx,
@@ -1060,6 +1080,8 @@ func (s *userService) GetAdminUserList(
 		adminID.String(),
 		limit,
 		page,
+		sortBy,
+		order,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserResponseList
@@ -1072,7 +1094,7 @@ func (s *userService) GetAdminUserList(
 	hasViewAll := slices.Contains(permissions, "View all appclients")
 
 	users, err := s.Repo.GetAdminUserList(
-		ctx, limit, offset, adminID[:], hasViewAll,
+		ctx, limit, offset, adminID[:], hasViewAll, sortBy, order,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(

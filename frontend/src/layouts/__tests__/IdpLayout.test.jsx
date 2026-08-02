@@ -16,10 +16,6 @@ vi.mock('../../components/Navbar', () => ({
   default: () => <div data-testid="navbar" />
 }));
 
-vi.mock('../../components/AssistiveFab', () => ({
-  default: () => <div data-testid="fab" />
-}));
-
 vi.mock('../../components/AccessibilityWidget', () => ({
   default: () => <div data-testid="a11y" />
 }));
@@ -62,7 +58,7 @@ describe('IdpLayout', () => {
     
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
     expect(screen.getByTestId('navbar')).toBeInTheDocument();
-    expect(screen.getByTestId('fab')).toBeInTheDocument();
+
     expect(screen.getByTestId('a11y')).toBeInTheDocument();
     expect(screen.getByTestId('terms-modal')).toBeInTheDocument();
     expect(screen.getByTestId('outlet')).toBeInTheDocument();

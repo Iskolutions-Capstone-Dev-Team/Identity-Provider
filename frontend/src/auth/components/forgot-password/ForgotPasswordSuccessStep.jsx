@@ -1,17 +1,20 @@
-import { CheckIcon } from "./ForgotPasswordIcons";
+import { Check } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 
 export default function ForgotPasswordSuccessStep() {
   return (
-    <div className="space-y-5">
-      <section className="rounded-2xl border border-[#7b0d15]/10 bg-white p-6 text-center shadow-[0_22px_45px_-36px_rgba(43,3,7,0.55)]">
-        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600">
-          <CheckIcon />
-        </div>
-        <h4 className="mb-2 text-xl font-bold text-[#351018]">Password Updated</h4>
-        <p className="text-sm text-[#6f4f56]">
-          Your password has been changed successfully. You can now sign in with your new password.
-        </p>
-      </section>
+    <div className="space-y-4">
+      <Card className="shadow-none border-border">
+        <CardHeader className="text-center pb-2">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
+            <Check className="size-8" />
+          </div>
+          <CardTitle className="text-xl">Password Updated</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center text-sm text-muted-foreground pb-6">
+          <p>Your password has been changed successfully. You can now sign in with your new password.</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

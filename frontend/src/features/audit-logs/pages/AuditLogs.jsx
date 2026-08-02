@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
 import AuditLogsListCard from "../components/AuditLogsListCard";
+import AuditLogFilters from "../components/AuditLogFilters";
 import LogMetadataModal from "../components/LogMetadataModal";
+import Pagination from "../../../components/Pagination";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { logService } from "../../../services/logService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
-import { AuditLogsIcon } from "../components/auditLogIcons";
 import MetricsCard from "../../../components/MetricsCard";
-import { LogIcon } from "../../../components/Icons";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { createPortal } from "react-dom";
+import { FileCheck, FileSearchCorner } from "lucide-react";
 import { metricsService } from "../../../services/metricsService";
 
 const ITEMS_PER_PAGE = 10;
@@ -148,12 +149,29 @@ function getTotalPages(payload) {
 }
 
 export default function AuditLogs() {
-  const { colorMode = "light" } = useOutletContext() || {};
+  const { colorMode = "light", globalViewType } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
   const canViewSecurityLogs = hasPermission(PERMISSIONS.VIEW_SECURITY_LOGS);
   const [logType, setLogType] = useState(TRANSACTION_LOG_TYPE);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sort, setSort] = useState("desc");
+  const [viewType, setViewType] = useState(() => {
+    return localStorage.getItem("auditLogsViewType") || globalViewType || "table";
+  });
+
+  useEffect(() => {
+    if (globalViewType) {
+      setViewType(globalViewType);
+    }
+  }, [globalViewType]);
+
+  useEffect(() => {
+    localStorage.setItem("auditLogsViewType", viewType);
+  }, [viewType]);
+
   const [logs, setLogs] = useState([]);
   const [totalResults, setTotalResults] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -167,6 +185,11 @@ export default function AuditLogs() {
   const showLoading = useDelayedLoading(loading);
   const selectedLogTypeLabel = getLogTypeLabel(logType);
   const isSecurityLogType = logType === SECURITY_LOG_TYPE;
+  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+
+  useEffect(() => {
+    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+  }, []);
 
   useEffect(() => {
     metricsService.getLogMetrics().then(setLogMetrics).catch(() => {});
@@ -199,7 +222,9 @@ export default function AuditLogs() {
 
         const payload = await getLogsByType(logType, {
           page,
-          limit: ITEMS_PER_PAGE,
+          limit,
+          sortBy,
+          order: sort,
           actor: search,
           signal: controller.signal,
         });
@@ -246,6 +271,9 @@ export default function AuditLogs() {
     isSecurityLogType,
     logType,
     page,
+    limit,
+    sortBy,
+    sort,
     search,
     selectedLogTypeLabel,
   ]);
@@ -320,21 +348,28 @@ export default function AuditLogs() {
   return (
     <>
       <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-5 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-        <Breadcrumbs
-          colorMode={colorMode}
-          items={[
-            {
-              label: "Audit Log",
-            },
-          ]}
-        />
+        {breadcrumbsContainer && createPortal(
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Audit Log</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>,
+          breadcrumbsContainer
+        )}
 
-        <PageHeader
-          title="Audit Log"
-          description="Track transaction and security activity"
-          icon={<AuditLogsIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-          colorMode={colorMode}
-        />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] rounded-xl">
+              <FileSearchCorner className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Audit Log</h1>
+              <p className="text-muted-foreground">Track transaction and security activity</p>
+            </div>
+          </div>
+        </div>
 
         <MetricsCard
           colorMode={colorMode}
@@ -342,28 +377,51 @@ export default function AuditLogs() {
           metrics={(Array.isArray(logMetrics) ? logMetrics : []).map((m) => ({
             title: m.title === "Audit Logs" ? "Transaction Logs" : m.title,
             value: m.value,
-            Icon: LogIcon,
+            Icon: FileCheck,
           }))}
         />
 
-        <div className="relative">
-          <AuditLogsListCard
-            logs={logs}
-            totalResults={totalResults}
-            itemsPerPage={ITEMS_PER_PAGE}
+        <div className="flex flex-col gap-5">
+          <AuditLogFilters
             search={search}
-            setSearch={setSearch}
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            loading={showLoading}
-            error={error}
-            onView={handleViewLog}
+            setSearch={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sort={sort}
+            setSort={setSort}
+            viewType={viewType}
+            setViewType={setViewType}
             logType={logType}
             onLogTypeChange={handleLogTypeChange}
             canViewSecurityLogs={canViewSecurityLogs}
+          />
+          <AuditLogsListCard
+            logs={logs}
+            loading={showLoading}
+            viewType={viewType}
+            logType={logType}
+            error={error}
+            onView={handleViewLog}
             colorMode={colorMode}
           />
+
+          {!showLoading && (
+            <div className="w-full">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                itemsPerPage={limit}
+                totalResults={totalResults}
+                currentResultsCount={logs.length}
+                variant="glass"
+                colorMode={colorMode}
+              />
+            </div>
+          )}
         </div>
       </div>
 

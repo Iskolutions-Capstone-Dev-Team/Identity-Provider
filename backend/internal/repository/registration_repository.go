@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -17,7 +18,7 @@ type AccountTypeClientRow struct {
 
 type RegistrationRepository interface {
 	GetRegistrationConfig(ctx context.Context,
-		limit, offset int) ([]AccountTypeClientRow, error)
+		limit, offset int, sortBy, order string) ([]AccountTypeClientRow, error)
 	CountAccountTypes(ctx context.Context) (int, error)
 	GetClientsByAccountTypeID(ctx context.Context,
 		id int) ([]AccountTypeClientRow, error)
@@ -28,7 +29,7 @@ type RegistrationRepository interface {
 	UpdateAccountType(ctx context.Context, id int, name string) error
 	DeleteAccountType(ctx context.Context, id int) error
 	GetScopedRegistrationConfig(ctx context.Context, userID []byte,
-		limit, offset int) ([]AccountTypeClientRow, error)
+		limit, offset int, sortBy, order string) ([]AccountTypeClientRow, error)
 	CountScopedAccountTypes(ctx context.Context, userID []byte) (int, error)
 }
 
@@ -40,9 +41,34 @@ func NewRegistrationRepository(db *sqlx.DB) RegistrationRepository {
 	return &regRepo{db: db}
 }
 
+func getSafeRegSubquery(sortBy, order string) (string, string, string) {
+	ord := "DESC"
+	if strings.ToLower(order) == "asc" {
+		ord = "ASC"
+	}
+	var selectCol, orderCol string
+	switch sortBy {
+	case "account_type_name":
+		selectCol = "at.name"
+		orderCol = "at.name " + ord
+	case "client_id":
+		selectCol = "COALESCE(MIN(cl.id), 0)"
+		orderCol = "MIN(cl.id) " + ord
+	case "client_name":
+		selectCol = "COALESCE(MIN(cl.client_name), '')"
+		orderCol = "MIN(cl.client_name) " + ord
+	default:
+		selectCol = "at.id"
+		orderCol = "at.id " + ord
+	}
+	return selectCol, orderCol, ord
+}
+
 func (r *regRepo) GetRegistrationConfig(ctx context.Context,
-	limit, offset int) ([]AccountTypeClientRow, error) {
-	query := `
+	limit, offset int, sortBy, order string,
+) ([]AccountTypeClientRow, error) {
+	selectCol, orderCol, ordVal := getSafeRegSubquery(sortBy, order)
+	query := fmt.Sprintf(`
 		SELECT account_type_id, account_type_name, client_id, client_name
 		FROM (
 			SELECT 
@@ -50,19 +76,24 @@ func (r *regRepo) GetRegistrationConfig(ctx context.Context,
 				at.name AS account_type_name,
 				cl.id AS client_id,
 				COALESCE(cl.client_name, '') AS client_name,
+				at.sort_val,
 				ROW_NUMBER() OVER (PARTITION BY at.id 
 					ORDER BY cl.client_name) as row_num
 			FROM (
-				SELECT * FROM account_types 
-				ORDER BY id 
+				SELECT at.id, at.name, %s AS sort_val
+				FROM account_types at
+				LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
+				LEFT JOIN clients cl ON pc.client_id = cl.id
+				GROUP BY at.id, at.name
+				ORDER BY %s
 				LIMIT ? OFFSET ?
 			) at
 			LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
 			LEFT JOIN clients cl ON pc.client_id = cl.id
 		) t
 		WHERE row_num <= 5
-		ORDER BY account_type_id;
-	`
+		ORDER BY sort_val %s, account_type_id, client_name;
+	`, selectCol, orderCol, ordVal)
 	var rows []AccountTypeClientRow
 	err := r.db.SelectContext(ctx, &rows, query, limit, offset)
 	return rows, err
@@ -175,8 +206,15 @@ func (r *regRepo) DeleteAccountType(ctx context.Context, id int) error {
 }
 
 func (r *regRepo) GetScopedRegistrationConfig(ctx context.Context,
-	userID []byte, limit, offset int) ([]AccountTypeClientRow, error) {
-	query := `
+	userID []byte, limit, offset int, sortBy, order string,
+) ([]AccountTypeClientRow, error) {
+	selectCol, orderCol, ordVal := getSafeRegSubquery(sortBy, order)
+	selectCol = strings.ReplaceAll(selectCol, "at.", "at2.")
+	selectCol = strings.ReplaceAll(selectCol, "cl.", "cl2.")
+	orderCol = strings.ReplaceAll(orderCol, "at.", "at2.")
+	orderCol = strings.ReplaceAll(orderCol, "cl.", "cl2.")
+
+	query := fmt.Sprintf(`
 		SELECT account_type_id, account_type_name, client_id, client_name
 		FROM (
 			SELECT 
@@ -184,14 +222,18 @@ func (r *regRepo) GetScopedRegistrationConfig(ctx context.Context,
 				at.name AS account_type_name,
 				cl.id AS client_id,
 				COALESCE(cl.client_name, '') AS client_name,
+				at.sort_val,
 				ROW_NUMBER() OVER (PARTITION BY at.id 
 					ORDER BY cl.client_name) as row_num
 			FROM (
-				SELECT DISTINCT at2.* FROM account_types at2
+				SELECT at2.id, at2.name, %s AS sort_val
+				FROM account_types at2
 				JOIN preapproved_clients pc2 ON at2.id = pc2.account_type_id
 				JOIN admin_allowed_clients aac2 ON pc2.client_id = aac2.client_id
+				LEFT JOIN clients cl2 ON pc2.client_id = cl2.id
 				WHERE aac2.user_id = ?
-				ORDER BY at2.id
+				GROUP BY at2.id, at2.name
+				ORDER BY %s
 				LIMIT ? OFFSET ?
 			) at
 			LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
@@ -200,8 +242,8 @@ func (r *regRepo) GetScopedRegistrationConfig(ctx context.Context,
 			WHERE aac.user_id = ? AND cl.deleted_at IS NULL
 		) t
 		WHERE row_num <= 5
-		ORDER BY account_type_id;
-	`
+		ORDER BY sort_val %s, account_type_id, client_name;
+	`, selectCol, orderCol, ordVal)
 	var rows []AccountTypeClientRow
 	err := r.db.SelectContext(ctx, &rows, query, userID, limit, offset, userID)
 	return rows, err

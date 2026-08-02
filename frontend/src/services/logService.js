@@ -7,7 +7,7 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
-function buildLogParams({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, actor = "" } = {}) {
+function buildLogParams({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc", actor = "" } = {}) {
   const params = buildSafePaginationParams(
     { page, limit },
     {
@@ -18,6 +18,9 @@ function buildLogParams({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, actor = ""
   );
   const normalizedActor = typeof actor === "string" ? actor.trim() : "";
 
+  params.sortBy = sortBy;
+  params.order = order;
+
   if (normalizedActor) {
     params.actor = normalizedActor;
   }
@@ -26,9 +29,9 @@ function buildLogParams({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, actor = ""
 }
 
 export const logService = {
-  async getLogs({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, actor = "", signal } = {}) {
+  async getLogs({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc", actor = "", signal } = {}) {
     const response = await axiosInstance.get(LOGS_BASE_PATH, {
-      params: buildLogParams({ page, limit, actor }),
+      params: buildLogParams({ page, limit, sortBy, order, actor }),
       signal,
     });
     return response.data;
@@ -39,9 +42,9 @@ export const logService = {
     return response.data;
   },
 
-  async getSecurityLogs({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, actor = "", signal } = {}) {
+  async getSecurityLogs({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc", actor = "", signal } = {}) {
     const response = await axiosInstance.get(SECURITY_LOGS_BASE_PATH, {
-      params: buildLogParams({ page, limit, actor }),
+      params: buildLogParams({ page, limit, sortBy, order, actor }),
       signal,
     });
     return response.data;

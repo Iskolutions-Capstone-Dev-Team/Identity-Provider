@@ -35,7 +35,7 @@ func TestGetLogListHandler(t *testing.T) {
 
 	// 1. Setup mock expectations
 	mockLogService.EXPECT().
-		GetLogListWithFilters(gomock.Any(), gomock.Any(), 10, 1).
+		GetLogListWithFilters(gomock.Any(), gomock.Any(), 10, 1, gomock.Any(), gomock.Any()).
 		Return(logs, int64(1), 1, nil)
 
 	// 2. Create context and request

@@ -103,7 +103,7 @@ func TestGetAllowedClients(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().
-		ListAllowedClients(gomock.Any(), 10, 0, "", userID[:]).
+		ListAllowedClients(gomock.Any(), 10, 0, "", userID[:], gomock.Any(), gomock.Any()).
 		Return([]models.Client{client}, nil)
 
 	mockRepo.EXPECT().
@@ -115,6 +115,8 @@ func TestGetAllowedClients(t *testing.T) {
 		userID,
 		10,
 		1,
+		"",
+		"",
 		"",
 	)
 

@@ -1,52 +1,37 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 export default function Breadcrumbs({ items = [], colorMode = "light" }) {
-  const isDarkMode = colorMode === "dark";
-  const linkClassName = isDarkMode
-    ? "inline-flex items-center gap-1.5 text-[#cbb8bd] transition hover:text-[#ffe28a]"
-    : "inline-flex items-center gap-1.5 text-white/70 transition hover:text-white";
-  const currentClassName = isDarkMode
-    ? "inline-flex items-center gap-1.5 font-semibold text-[#ffe28a]"
-    : "inline-flex items-center gap-1.5 font-semibold text-white";
-
   const [portalTarget, setPortalTarget] = useState(null);
 
   useEffect(() => {
     setPortalTarget(document.getElementById("navbar-breadcrumbs"));
   }, []);
 
-  const navClassName = isDarkMode
-    ? "breadcrumbs text-xs lg:text-sm text-[#cbb8bd]"
-    : "breadcrumbs text-xs lg:text-sm text-white/70";
-
   const content = (
-    <nav className={navClassName} aria-label="Breadcrumbs">
-      <ul>
-        {items.map((item) => {
-          const innerContent = (
-            <>
-              <span>{item.label}</span>
-            </>
-          );
-
+    <Breadcrumb>
+      <BreadcrumbList>
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
           return (
-            <li key={`${item.label}-${item.to || "current"}`}>
-              {item.to ? (
-                <Link to={item.to} className={linkClassName}>
-                  {innerContent}
-                </Link>
-              ) : (
-                <span className={currentClassName}>
-                  {innerContent}
-                </span>
-              )}
-            </li>
+            <React.Fragment key={`${item.label}-${item.to || "current"}`}>
+              <BreadcrumbItem>
+                {!isLast ? (
+                  <BreadcrumbLink render={<Link to={item.to} />}>
+                    {item.label}
+                  </BreadcrumbLink>
+                ) : (
+                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                )}
+              </BreadcrumbItem>
+              {!isLast && <BreadcrumbSeparator />}
+            </React.Fragment>
           );
         })}
-      </ul>
-    </nav>
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 
   if (portalTarget) {

@@ -236,7 +236,7 @@ func TestGetUserList_NullAccountType(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().
-		GetUserList(gomock.Any(), 10, 0).
+		GetUserList(gomock.Any(), 10, 0, gomock.Any(), gomock.Any()).
 		Return(users, nil).
 		Times(1)
 
@@ -246,7 +246,7 @@ func TestGetUserList_NullAccountType(t *testing.T) {
 		Times(1)
 
 	resp, err := userService.GetUserList(
-		context.Background(), 10, 1,
+		context.Background(), 10, 1, "", "",
 	)
 
 	if err != nil {

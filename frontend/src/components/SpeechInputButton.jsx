@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MicrophoneIcon, StopIcon } from "./componentIcons";
+import { Mic, Square } from "lucide-react";
 
 const defaultSpeechToolbarState = {
   activeFieldLabel: "",
@@ -219,7 +219,7 @@ export default function SpeechInputButton({ ariaLabel = "Use voice input", class
                 : "scale-100 rotate-0 opacity-100"
             }`}
           >
-            <MicrophoneIcon className={iconSizeClassName} />
+            <Mic className={iconSizeClassName} />
           </span>
           <span aria-hidden="true"
             className={`absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-300 ease-out ${
@@ -228,7 +228,7 @@ export default function SpeechInputButton({ ariaLabel = "Use voice input", class
                 : "scale-75 rotate-90 opacity-0"
             }`}
           >
-            <StopIcon className={iconSizeClassName} />
+            <Square className={iconSizeClassName} />
           </span>
         </span>
       </button>

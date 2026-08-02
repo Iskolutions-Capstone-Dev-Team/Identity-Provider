@@ -8,6 +8,7 @@ import { ROUTE_PATHS } from "../routes/routePaths";
 import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "../routes/routePermissions";
 import { buildAccessDeniedPath, ACCESS_DENIED_PATH, LEGACY_UNAUTHORIZED_PATH } from "../auth/utils/loginRoute";
 import { authPageBackground, authPagePatternStyle } from "../auth/utils/authBackground";
+import { hasStoredAuthTokens } from "../auth/utils/authRecovery";
 
 const Login = lazy(() => import("../auth/pages/Login"));
 const Register = lazy(() => import("../auth/pages/Register"));
@@ -15,7 +16,6 @@ const RegisterPasswordSetup = lazy(() => import("../auth/pages/RegisterPasswordS
 const Logout = lazy(() => import("../auth/pages/Logout"));
 const Callback = lazy(() => import("../auth/pages/Callback"));
 const AuthorizeRedirect = lazy(() => import("../auth/pages/AuthorizeRedirect"));
-const ErrorPage = lazy(() => import("../auth/pages/ErrorPage"));
 const AccessDenied = lazy(() => import("../auth/pages/AccessDenied"));
 const Dashboard = lazy(() => import("../features/dashboard/pages/Dashboard"));
 const UserPool = lazy(() => import("../features/user-pool/pages/UserPool"));
@@ -29,7 +29,20 @@ const FAQ = lazy(() => import("../features/faq/pages/FAQ"));
 const Registration = lazy(() => import("../features/registration/pages/Registration"));
 const CreateRegistrationConfigPage = lazy(() => import("../features/registration/pages/CreateRegistrationConfigPage"));
 const Profile = lazy(() => import("../features/profile/pages/Profile"));
-const Placeholder = lazy(() => import("../pages/Placeholder"));
+const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
+const NotFound = lazy(() => import("../pages/NotFound"));
+const PublicNotFound = lazy(() => import("../pages/PublicNotFound"));
+
+function CatchAllRoute() {
+  const isAuth = hasStoredAuthTokens();
+  return isAuth ? (
+    <PermissionProvider>
+      <NotFound />
+    </PermissionProvider>
+  ) : (
+    <PublicNotFound />
+  );
+}
 
 export default function App() {
   return (
@@ -50,16 +63,9 @@ export default function App() {
           <Route path={ROUTE_PATHS.REGISTER_SET_PASSWORD} element={<RegisterPasswordSetup />} />
           <Route path={ROUTE_PATHS.CALLBACK} element={<Callback />} />
           <Route path={ROUTE_PATHS.LOGOUT} element={<Logout />} />
-          <Route path={ROUTE_PATHS.ERROR} element={<ErrorPage />} />
           <Route path={ACCESS_DENIED_PATH} element={<AccessDenied />} />
           <Route path={LEGACY_UNAUTHORIZED_PATH} element={<Navigate to={buildAccessDeniedPath()} replace />} />
-          <Route path={ROUTE_PATHS.ONE_PORTAL}
-            element={
-              <ProtectedRoute>
-                <Placeholder />
-              </ProtectedRoute>
-            }
-          />
+          <Route path={ROUTE_PATHS.PRIVACY_POLICY} element={<PrivacyPolicy isPublic={true} />} />
 
           {/* Protected Route */}
           <Route
@@ -136,8 +142,10 @@ export default function App() {
                 </PermissionRoute>
               }
             />
+            <Route path={ROUTE_PATHS.INTERNAL_PRIVACY_POLICY} element={<PrivacyPolicy isPublic={false} />} />
             <Route path={ROUTE_PATHS.PROFILE} element={<Profile />} />
           </Route>
+          <Route path="*" element={<CatchAllRoute />} />
         </Routes>
       </Suspense>
     </Router>
