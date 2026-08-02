@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Trash2Icon } from 'lucide-react'
 
-export default function DeleteConfirmModal({ open, message = "Delete this app client?", onCancel, onConfirm, theme, colorMode }) {
+export default function DeleteConfirmModal({ open, message = "Delete this app client?", onCancel, onConfirm, confirmText = "Delete", theme, colorMode }) {
   const [displayMessage, setDisplayMessage] = useState(message);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function DeleteConfirmModal({ open, message = "Delete this app cl
         <AlertDialogFooter>
           <AlertDialogCancel variant="ghost" onClick={onCancel}>Cancel</AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={onConfirm} className="dark:bg-[#f8d24e]/20 dark:text-[#f8d24e] dark:hover:bg-[#f8d24e]/30">
-            Delete
+            {confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
