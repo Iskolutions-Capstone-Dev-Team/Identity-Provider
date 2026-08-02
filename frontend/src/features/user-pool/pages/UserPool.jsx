@@ -194,9 +194,9 @@ export default function UserPool() {
     if (!userToDelete) return;
     try {
       await deleteUser(userToDelete.id, getUserLabel(userToDelete));
-      toast.success(`${userToDelete?.email} deleted successfully`);
+      toast.success(`${userToDelete?.email} removed successfully`);
     } catch (e) {
-      toast.error(`Failed to delete user`, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+      toast.error(`Failed to remove user`, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
     } finally {
       setOpenDelete(false);
       setUserToDelete(null);
