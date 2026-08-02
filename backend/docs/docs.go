@@ -150,6 +150,141 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/backup/latest": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Returns status and timestamp of the last backup.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Backup"
+                ],
+                "summary": "Retrieve latest backup details",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.BackupInfo"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/backup/restore": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Restores the MySQL database using the provided file.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Backup"
+                ],
+                "summary": "Restore database from backup file",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Backup file (.sql.gz)",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/backup/run": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Triggers the core MySQL S3 backup script.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Backup"
+                ],
+                "summary": "Run manual backup",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/clients": {
             "get": {
                 "description": "Fetch active clients with pagination",
@@ -418,7 +553,7 @@ const docTemplate = `{
         },
         "/admin/registration/config": {
             "get": {
-                "description": "Fetch account types and their top 5 preapproved clients.",
+                "description": "Fetch paginated account types and their top 5 preapproved clients.",
                 "produces": [
                     "application/json"
                 ],
@@ -426,6 +561,22 @@ const docTemplate = `{
                     "Registration"
                 ],
                 "summary": "Get Registration Config",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -597,6 +748,50 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/registration/sync/{id}": {
+            "post": {
+                "description": "Sync clients for all users belonging to a specific account type.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Registration"
+                ],
+                "summary": "Sync Account Type Users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Account Type ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -924,6 +1119,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/users/{id}": {
+            "patch": {
+                "description": "Updates user account type and role, requiring MFA.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Edit user details (Account Type \u0026 Role)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateUserDetailsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/users/{id}/access": {
             "put": {
                 "description": "Updates user client access mapping within the admin's scope.",
@@ -937,6 +1191,59 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Sync User Client Access",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Access data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateUserAccessRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}/managed-clients": {
+            "put": {
+                "description": "Updates the list of app-clients that an administrator\ncan manage.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Sync Admin Managed Clients",
                 "parameters": [
                     {
                         "type": "string",
@@ -2373,12 +2680,18 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "one_portal_link": {
+                    "type": "string"
                 }
             }
         },
         "dto.ClientResponse": {
             "type": "object",
             "properties": {
+                "access_token_ttl": {
+                    "type": "integer"
+                },
                 "allowed_roles": {
                     "type": "array",
                     "items": {
@@ -2412,8 +2725,14 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "one_portal_link": {
+                    "type": "string"
+                },
                 "redirect_uri": {
                     "type": "string"
+                },
+                "refresh_token_ttl": {
+                    "type": "integer"
                 }
             }
         },
@@ -2434,9 +2753,17 @@ const docTemplate = `{
         "dto.ErrorResponse": {
             "type": "object",
             "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 1001
+                },
                 "error": {
                     "type": "string",
-                    "example": "Error description"
+                    "example": "Internal technical details"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "User-friendly message"
                 }
             }
         },
@@ -2527,6 +2854,12 @@ const docTemplate = `{
                 "status"
             ],
             "properties": {
+                "accessible_clients": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "account_type_id": {
                     "type": "integer"
                 },
@@ -2557,6 +2890,9 @@ const docTemplate = `{
                 },
                 "role_id": {
                     "type": "integer"
+                },
+                "skip_auto_client_assignment": {
+                    "type": "boolean"
                 },
                 "status": {
                     "type": "string"
@@ -2624,6 +2960,15 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.AccountTypeConfigResponse"
                     }
+                },
+                "current_page": {
+                    "type": "integer"
+                },
+                "last_page": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
                 }
             }
         },
@@ -2794,6 +3139,23 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateUserDetailsRequest": {
+            "type": "object",
+            "required": [
+                "mfa_code"
+            ],
+            "properties": {
+                "account_type_id": {
+                    "type": "integer"
+                },
+                "mfa_code": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.UpdateUserNameRequest": {
             "type": "object",
             "required": [
@@ -2920,6 +3282,12 @@ const docTemplate = `{
         "dto.UserResponse": {
             "type": "object",
             "properties": {
+                "account_type": {
+                    "type": "string"
+                },
+                "account_type_id": {
+                    "type": "integer"
+                },
                 "clients": {
                     "type": "array",
                     "items": {
@@ -2940,6 +3308,12 @@ const docTemplate = `{
                 },
                 "last_name": {
                     "type": "string"
+                },
+                "managed_clients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ClientAccessResponse"
+                    }
                 },
                 "middle_name": {
                     "type": "string"
@@ -2995,6 +3369,12 @@ const docTemplate = `{
         "dto.UserSimplifiedResponse": {
             "type": "object",
             "properties": {
+                "account_type": {
+                    "type": "string"
+                },
+                "account_type_id": {
+                    "type": "integer"
+                },
                 "clients": {
                     "type": "array",
                     "items": {
@@ -3107,6 +3487,31 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/service.JWK"
                     }
+                }
+            }
+        },
+        "v1.BackupInfo": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "no backup saved"
+                },
+                "size": {
+                    "type": "string",
+                    "example": "1.2MB"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-08-02T19:15:15Z"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "daily"
                 }
             }
         }
