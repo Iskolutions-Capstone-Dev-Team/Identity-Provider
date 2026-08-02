@@ -16,6 +16,8 @@ services:
     volumes:
       - .env:/app/.env
       - ./certs:/app/certs:ro
+      - ./scripts:/app/scripts:ro
+      - ./logs:/app/logs:rw
     working_dir: /app
     networks:
       - identity_network
