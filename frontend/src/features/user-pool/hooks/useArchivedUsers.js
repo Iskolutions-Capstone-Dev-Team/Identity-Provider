@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { userService } from "../../../services/userService";
+import { mapUserResponse } from "../utils/userPoolMappers";
 
 const ITEMS_PER_PAGE = 10;
 const FETCH_LIMIT = 100;
@@ -23,6 +24,8 @@ function matchesUserSearch(user, search) {
 export function useArchivedUsers() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sort, setSort] = useState("desc");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
@@ -35,7 +38,7 @@ export function useArchivedUsers() {
       
       const res = await userService.getArchivedUsers({ page: 1, limit: FETCH_LIMIT, sortBy: "created_at", order: "desc" });
       const fetchedUsers = Array.isArray(res?.users) ? res.users : [];
-      setUsers(fetchedUsers);
+      setUsers(fetchedUsers.map(u => mapUserResponse(u, { isAdmin: false })));
     } catch (error) {
       console.error("Fetch archived users error:", error);
       setFetchError("Failed to load archived users. Please try again.");
