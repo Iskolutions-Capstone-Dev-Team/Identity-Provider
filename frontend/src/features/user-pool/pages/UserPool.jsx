@@ -22,7 +22,7 @@ import MetricsCard from "../../../components/MetricsCard";
 import { metricsService } from "../../../services/metricsService";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Users, Plus, User } from "lucide-react";
+import { Users, Plus, User, Archive } from "lucide-react";
 import { createPortal } from "react-dom";
 
 const ITEMS_PER_PAGE = 10;
@@ -101,9 +101,14 @@ export default function UserPool() {
     return localStorage.getItem("userPoolViewType") || globalViewType || "table";
   });
   
+  const isMounted = useRef(false);
   useEffect(() => {
-    if (globalViewType) {
-      setViewType(globalViewType);
+    if (isMounted.current) {
+      if (globalViewType) {
+        setViewType(globalViewType);
+      }
+    } else {
+      isMounted.current = true;
     }
   }, [globalViewType]);
 
@@ -249,12 +254,21 @@ export default function UserPool() {
           </div>
         </div>
 
-        {canAddUsers && (
-          <Button className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200" onClick={() => navigate(`/user-pool/create?type=${userType}`, { state: { userType } })}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add User
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {isCurrentUserSuperAdmin && (
+            <Button variant="outline" className="h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200" onClick={() => navigate("/user-pool/archived")}>
+              <Archive className="w-4 h-4 mr-2" />
+              Archived Users
+            </Button>
+          )}
+
+          {canAddUsers && (
+            <Button className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200" onClick={() => navigate(`/user-pool/create?type=${userType}`, { state: { userType } })}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add User
+            </Button>
+          )}
+        </div>
       </div>
 
       <MetricsCard
@@ -358,7 +372,8 @@ export default function UserPool() {
 
       <DeleteConfirmModal
         open={openDelete}
-        message={`Delete ${userToDelete?.email}?`}
+        message={`Remove ${userToDelete?.email}?`}
+        confirmText="Remove"
         colorMode={colorMode}
         onCancel={() => {
           setOpenDelete(false);
