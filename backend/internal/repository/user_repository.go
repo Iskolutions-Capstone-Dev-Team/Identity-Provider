@@ -1062,10 +1062,23 @@ func (r *userRepository) HardDeleteUser(
 	}
 	defer tx.Rollback()
 
+	// Get user email to delete associated OTPs
+	var email string
+	emailQuery := `SELECT email FROM users WHERE id = ?`
+	err = tx.GetContext(ctx, &email, emailQuery, id)
+	if err != nil {
+		return fmt.Errorf("getting user email for purge: %w", err)
+	}
+
+	// Delete from otps table by email (user_id column was migrated out)
+	queryOtps := `DELETE FROM otps WHERE email = ?`
+	if _, err := tx.ExecContext(ctx, queryOtps, email); err != nil {
+		return fmt.Errorf("clearing otps: %w", err)
+	}
+
 	tables := []string{
 		"client_allowed_users",
 		"admin_allowed_clients",
-		"otps",
 		"refresh_tokens",
 		"authorization_codes",
 		"idp_sessions",
