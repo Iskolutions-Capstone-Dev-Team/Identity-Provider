@@ -108,9 +108,9 @@ export default function ArchivedUsers() {
   const handleConfirmUnarchive = async () => {
     if (!userToUnarchive) return;
     try {
-      await unarchiveUser(userToUnarchive.id, getUserLabel(userToUnarchive));
+      await unarchiveUser(userToUnarchive.id, userToUnarchive.email);
     } catch (e) {
-      toast.error(`Failed to restore ${getUserLabel(userToUnarchive)}.`, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+      toast.error(`Failed to restore ${userToUnarchive.email}.`, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
     } finally {
       setOpenUnarchive(false);
       setUserToUnarchive(null);
@@ -120,9 +120,9 @@ export default function ArchivedUsers() {
   const handleConfirmHardDelete = async () => {
     if (!userToHardDelete) return;
     try {
-      await hardDeleteUser(userToHardDelete.id, getUserLabel(userToHardDelete));
+      await hardDeleteUser(userToHardDelete.id, userToHardDelete.email);
     } catch (e) {
-      toast.error(`Failed to permanently delete ${getUserLabel(userToHardDelete)}.`, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+      toast.error(`Failed to permanently delete ${userToHardDelete.email}.`, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
     } finally {
       setOpenHardDelete(false);
       setUserToHardDelete(null);
