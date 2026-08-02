@@ -47,22 +47,36 @@ if [ -n "${AWS_REGION:-}" ]; then
   export AWS_DEFAULT_REGION="${AWS_REGION}"
 fi
 
-# Step 1: Test Docker connection
-echo "🔍 Testing Docker connection..."
-if ! docker ps | grep -q "${BACKUP_CONTAINER_NAME}"; then
-  echo "❌ Docker container ${BACKUP_CONTAINER_NAME} is not running!"
-  exit 1
+# Check if docker is available and BACKUP_CONTAINER_NAME is running
+USE_DOCKER=false
+if command -v docker &> /dev/null && \
+   docker ps | grep -q "${BACKUP_CONTAINER_NAME}"; then
+  USE_DOCKER=true
 fi
 
-# Step 2: Test Database connection
-echo "🔍 Testing database connection..."
-if ! docker exec "${BACKUP_CONTAINER_NAME}" \
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" \
-  -e "SELECT 1" >/dev/null 2>&1; then
-  echo "❌ Database connection failed!"
-  exit 1
+# Step 1: Test database connection
+if [ "$USE_DOCKER" = "true" ]; then
+  echo "🔍 Testing database connection via Docker exec..."
+  if ! docker exec "${BACKUP_CONTAINER_NAME}" \
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" \
+    -e "SELECT 1" >/dev/null 2>&1; then
+    echo "❌ Database connection failed!"
+    exit 1
+  fi
+else
+  echo "🔍 Testing database connection via TCP..."
+  # Parse host and port
+  MYSQL_HOST=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f1)
+  MYSQL_PORT=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f2)
+  MYSQL_PORT="${MYSQL_PORT:-3306}"
+  if ! mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" \
+    -u root -p"${MYSQL_ROOT_PASSWORD}" \
+    -e "SELECT 1" >/dev/null 2>&1; then
+    echo "❌ Database connection failed!"
+    exit 1
+  fi
 fi
-echo "✅ All tests passed!"
+echo "✅ Connection test passed!"
 
 # Step 3: Create MySQL Dump
 echo "📦 Creating database backup..."
@@ -72,9 +86,15 @@ TEMP_BACKUP_GZ="${TEMP_BACKUP_SQL}.gz"
 # Ensure clean state
 rm -f "${TEMP_BACKUP_SQL}" "${TEMP_BACKUP_GZ}"
 
-docker exec "${BACKUP_CONTAINER_NAME}" \
-  mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" \
-  "${MYSQL_DB_NAME}" > "${TEMP_BACKUP_SQL}"
+if [ "$USE_DOCKER" = "true" ]; then
+  docker exec "${BACKUP_CONTAINER_NAME}" \
+    mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" \
+    "${MYSQL_DB_NAME}" > "${TEMP_BACKUP_SQL}"
+else
+  mysqldump -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" \
+    -u root -p"${MYSQL_ROOT_PASSWORD}" \
+    "${MYSQL_DB_NAME}" > "${TEMP_BACKUP_SQL}"
+fi
 
 if [ ! -f "${TEMP_BACKUP_SQL}" ]; then
   echo "❌ Backup file creation failed!"
@@ -188,3 +208,15 @@ aws s3 cp "${REPORT_FILE}" \
 # Cleanup local temporary files
 rm -f "${TEMP_BACKUP_GZ}" "${TEMP_BACKUP_GZ}.sha256" "${REPORT_FILE}"
 echo "🧹 Local cleanup completed"
+
+# Step 6: Write latest backup status to local file
+LOGS_DIR="${SCRIPT_DIR}/../logs"
+mkdir -p "${LOGS_DIR}"
+cat <<EOF > "${LOGS_DIR}/latest-backup.json"
+{
+  "timestamp": "$(date -Iseconds)",
+  "status": "success",
+  "type": "${BACKUP_TYPE}",
+  "size": "${HUMAN_SIZE}"
+}
+EOF
