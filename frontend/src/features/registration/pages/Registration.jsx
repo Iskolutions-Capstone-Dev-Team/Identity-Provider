@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import Pagination from "../../../components/Pagination";
@@ -109,9 +109,14 @@ export default function Registration() {
       return localStorage.getItem("registrationViewType") || globalViewType || "card";
   });
 
+  const isMounted = useRef(false);
   useEffect(() => {
-      if (globalViewType) {
-          setViewType(globalViewType);
+      if (isMounted.current) {
+          if (globalViewType) {
+              setViewType(globalViewType);
+          }
+      } else {
+          isMounted.current = true;
       }
   }, [globalViewType]);
 

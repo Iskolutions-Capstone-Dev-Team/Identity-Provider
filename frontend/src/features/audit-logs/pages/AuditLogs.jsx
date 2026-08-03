@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import AuditLogsListCard from "../components/AuditLogsListCard";
 import AuditLogFilters from "../components/AuditLogFilters";
@@ -162,9 +162,14 @@ export default function AuditLogs() {
     return localStorage.getItem("auditLogsViewType") || globalViewType || "table";
   });
 
+  const isMounted = useRef(false);
   useEffect(() => {
-    if (globalViewType) {
-      setViewType(globalViewType);
+    if (isMounted.current) {
+      if (globalViewType) {
+        setViewType(globalViewType);
+      }
+    } else {
+      isMounted.current = true;
     }
   }, [globalViewType]);
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { Trash2Icon } from 'lucide-react'
+import { ArchiveRestore } from 'lucide-react'
 
-export default function DeleteConfirmModal({ open, message = "Delete this app client?", onCancel, onConfirm, confirmText = "Delete", theme, colorMode }) {
+export default function UnarchiveConfirmModal({ open, message = "Restore this user?", onCancel, onConfirm, colorMode }) {
   const [displayMessage, setDisplayMessage] = useState(message);
 
   useEffect(() => {
@@ -15,18 +15,20 @@ export default function DeleteConfirmModal({ open, message = "Delete this app cl
     <AlertDialog open={open} onOpenChange={(isOpen) => { if (!isOpen && onCancel) onCancel(); }}>
       <AlertDialogContent size="sm">
         <AlertDialogHeader>
-          <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-[#f8d24e]/20 dark:text-[#f8d24e]">
-            <Trash2Icon />
+          <AlertDialogMedia className="bg-[#7b0d15]/10 text-[#7b0d15] dark:bg-[#f8d24e]/10 dark:text-[#f8d24e]">
+            <ArchiveRestore className="w-8 h-8" />
           </AlertDialogMedia>
           <AlertDialogTitle>{displayMessage}</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone.
+            This user will be moved back to the user pool.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel variant="ghost" onClick={onCancel}>Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={onConfirm} className="dark:bg-[#f8d24e]/20 dark:text-[#f8d24e] dark:hover:bg-[#f8d24e]/30">
-            {confirmText}
+        <AlertDialogFooter className="flex-col sm:flex-row sm:justify-center mt-4">
+          <AlertDialogCancel variant="ghost" onClick={onCancel}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} className="bg-[#7b0d15] text-white hover:bg-[#7b0d15]/90 dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#f8d24e]/90 transition-colors duration-200">
+            Restore
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

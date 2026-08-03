@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useRoles } from "../hooks/useRoles";
@@ -67,9 +67,14 @@ export default function Roles() {
     return localStorage.getItem("rolesViewType") || globalViewType || "table";
   });
   
+  const isMounted = useRef(false);
   useEffect(() => {
-    if (globalViewType) {
-      setViewType(globalViewType);
+    if (isMounted.current) {
+      if (globalViewType) {
+        setViewType(globalViewType);
+      }
+    } else {
+      isMounted.current = true;
     }
   }, [globalViewType]);
 
