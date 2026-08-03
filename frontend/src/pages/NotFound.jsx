@@ -84,7 +84,12 @@ export default function NotFound() {
               </Autocomplete>
             </div>
             <EmptyDescription className="text-[15px] text-white/70 mt-6 text-center">
-              Need help? <a href="mailto:iskolutions.team@gmail.com" className="font-semibold text-[#ffd700] underline decoration-transparent transition duration-300 hover:decoration-[#ffd700]">Contact support</a>
+              Need help?{" "}
+              <a href="mailto:iskolutions.team@gmail.com" className="!no-underline inline-block">
+                <span className="font-semibold text-[#ffd700] underline decoration-transparent transition duration-300 hover:decoration-[#ffd700]">
+                  Contact support
+                </span>
+              </a>
             </EmptyDescription>
           </EmptyContent>
           </div>
