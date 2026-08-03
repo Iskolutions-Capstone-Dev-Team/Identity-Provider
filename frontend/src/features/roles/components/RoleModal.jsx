@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { User, Settings, HelpCircle, Monitor, FileText, Shield } from "lucide-react";
+import { User, Settings, HelpCircle, Monitor, FileText, Shield, Database } from "lucide-react";
 
 const toPositiveInt = (value) => {
   const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
@@ -119,6 +119,14 @@ const PERMISSION_GROUPS = [
     icon: <Settings className="text-muted-foreground size-4" />,
     permissions: [
       "Create Registration Config", "Edit Registration Config", "View Registration Config", "Delete Registration Config"
+    ]
+  },
+  {
+    value: "backuprestore",
+    trigger: "Backup & Restore",
+    icon: <Database className="text-muted-foreground size-4" />,
+    permissions: [
+      "Manage Backup and Restore"
     ]
   }
 ];

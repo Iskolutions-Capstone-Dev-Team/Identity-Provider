@@ -25,6 +25,7 @@ export const PERMISSIONS = Object.freeze({
   ACTIVATE_USER: "Activate user",
   VIEW_AUDIT_LOGS: "View audit logs",
   VIEW_SECURITY_LOGS: "View security logs",
+  MANAGE_BACKUP_AND_RESTORE: "Manage Backup and Restore",
 });
 
 export const USER_POOL_PAGE_PERMISSIONS = Object.freeze([
