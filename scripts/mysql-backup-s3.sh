@@ -3,6 +3,9 @@
 
 set -euo pipefail
 
+# Get directory where this script resides
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Determine backup type and retention days based on current date
 # if not passed as environment variables.
 DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
