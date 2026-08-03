@@ -49,16 +49,25 @@ const normalizeClientTagOption = (client = {}) => {
 };
 
 export const roleService = {
-  async getRoles(page = DEFAULT_PAGE, { keyword = "" } = {}) {
+  async getRoles({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc", keyword = "" } = {}) {
     const normalizedKeyword = normalizeTextValue(keyword);
-    const normalizedPage = sanitizePositiveIntegerParam(page, DEFAULT_PAGE);
+    const paginationParams = buildSafePaginationParams(
+      { page, limit },
+      {
+        defaultPage: DEFAULT_PAGE,
+        defaultLimit: DEFAULT_LIMIT,
+        maxLimit: MAX_LIMIT,
+      },
+    );
 
     return getCachedRequest(
-      `${ROLE_CACHE_PREFIX}list:${normalizedPage}:${normalizedKeyword}`,
+      `${ROLE_CACHE_PREFIX}list:${paginationParams.page}:${paginationParams.limit}:${sortBy}:${order}:${normalizedKeyword}`,
       async () => {
         const response = await axiosInstance.get("/admin/roles", {
           params: {
-            page: normalizedPage,
+            ...paginationParams,
+            sortBy,
+            order,
             ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
           },
         });

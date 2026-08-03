@@ -46,3 +46,6 @@ dist
 
 # --- Logs ---
 /logs/
+
+# --- Others ---
+*.sql.gz

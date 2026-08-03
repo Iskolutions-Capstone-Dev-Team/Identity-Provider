@@ -1,32 +1,24 @@
-import { getModalTheme } from "../../../components/modalTheme";
-import { SuccessIcon } from "./profileIcons";
+import { Check } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 
-export default function SuccessStep({ colorMode = "light", showCurrentPassword = true }) {
-  const { modalSectionClassName } = getModalTheme(colorMode);
-  const isDarkMode = colorMode === "dark";
-  const successIconClassName = isDarkMode
-    ? "mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-200 transition-[background-color,color] duration-500 ease-out"
-    : "mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 transition-[background-color,color] duration-500 ease-out";
-  const headingClassName = isDarkMode
-    ? "mb-2 text-xl font-bold text-[#f6eaec] transition-colors duration-500 ease-out"
-    : "mb-2 text-xl font-bold text-[#351018] transition-colors duration-500 ease-out";
-  const descriptionClassName = isDarkMode
-    ? "text-[#d6c3c7] transition-colors duration-500 ease-out"
-    : "text-[#6f4f56] transition-colors duration-500 ease-out";
+export default function SuccessStep({ showCurrentPassword = true }) {
   const description = showCurrentPassword
-    ? "Your password has been changed successfully. You will be logged out automatically for security reasons."
+    ? "Your password has been changed successfully."
     : "Your password has been changed successfully. You can now sign in with your new password.";
 
   return (
-    <div className="space-y-5">
-      <section className={`${modalSectionClassName} text-center`}>
-        <div className={successIconClassName}>
-          <SuccessIcon />
-        </div>
-
-        <h4 className={headingClassName}>Password Updated</h4>
-        <p className={descriptionClassName}>{description}</p>
-      </section>
+    <div className="space-y-4">
+      <Card className="shadow-none border-border">
+        <CardHeader className="text-center pb-2">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
+            <Check className="size-8" />
+          </div>
+          <CardTitle className="text-xl">Password Updated</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center text-sm text-muted-foreground pb-6">
+          <p>{description}</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

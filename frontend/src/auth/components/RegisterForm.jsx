@@ -8,6 +8,7 @@ import RegisterPasswordStep from "./register/RegisterPasswordStep";
 import RegisterStepHeader from "./register/RegisterStepHeader";
 import RegisterSuccessStep from "./register/RegisterSuccessStep";
 import RegisterVerificationStep from "./register/RegisterVerificationStep";
+import { Card, CardContent } from "../../components/ui/card";
 
 const verificationLength = 6;
 const resendDurationSeconds = 180;
@@ -211,13 +212,6 @@ export default function RegisterForm({ clientId }) {
     }));
   };
 
-  const handleDetailBlur = (field) => {
-    setDetailErrors((currentErrors) => ({
-      ...currentErrors,
-      [field]: getDetailFieldError(field, details),
-    }));
-  };
-
   const handleRoleSelect = (role) => {
     setDetails((currentDetails) => ({
       ...currentDetails,
@@ -279,20 +273,12 @@ export default function RegisterForm({ clientId }) {
     }
   };
 
-  const handleVerificationChange = (index, value) => {
-    if (!/^\d?$/.test(value)) {
-      return;
-    }
-
-    const nextCode = [...verificationCode];
-    nextCode[index] = value;
+  const handleVerificationChange = (value) => {
+    const nextCode = value.split("");
+    while (nextCode.length < verificationLength) nextCode.push("");
     setVerificationCode(nextCode);
     setVerificationError("");
     setError("");
-
-    if (value && index < verificationLength - 1) {
-      verificationInputsRef.current[index + 1]?.focus();
-    }
   };
 
   const handleVerificationKeyDown = (index, event) => {
@@ -487,8 +473,8 @@ export default function RegisterForm({ clientId }) {
 
   return (
     <div className="relative z-20 w-full max-w-[38rem] px-1 sm:px-0">
-      <div className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
-        <div className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 lg:px-10">
+      <Card className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
+        <CardContent className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 lg:px-10">
           <div className="space-y-5">
             <RegisterStepHeader step={step} email={details.email} />
 
@@ -502,7 +488,6 @@ export default function RegisterForm({ clientId }) {
                 isSubmitting={isSendingOtp}
                 loginPath={loginPath}
                 roleDropdownRef={roleDropdownRef}
-                onBlur={handleDetailBlur}
                 onChange={handleDetailChange}
                 onRoleMenuToggle={() =>
                   setIsRoleMenuOpen((currentValue) => !currentValue)
@@ -551,8 +536,8 @@ export default function RegisterForm({ clientId }) {
               <RegisterSuccessStep loginPath={loginPath} />
             ) : null}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

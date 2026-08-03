@@ -97,6 +97,8 @@ function normalizeAccountTypeConfig(
     clients: (Array.isArray(config?.clients) ? config.clients : [])
       .map(normalizeClient)
       .filter((client) => client.id && client.name),
+    created_at: config?.created_at || null,
+    updated_at: config?.updated_at || null,
   };
 }
 
@@ -164,6 +166,8 @@ export const registrationService = {
   async getRegistrationConfigPage({
     limit = DEFAULT_ITEMS_PER_PAGE,
     page = 1,
+    sortBy = "account_type_name",
+    order = "asc",
     keyword = "",
     requestConfig = {},
   } = {}) {
@@ -181,6 +185,8 @@ export const registrationService = {
       `${REGISTRATION_CACHE_PREFIX}config`,
       normalizedLimit,
       normalizedPage,
+      sortBy,
+      order,
       normalizedKeyword,
     ].join(":");
 
@@ -193,6 +199,8 @@ export const registrationService = {
             ...(requestConfig.params ?? {}),
             limit: normalizedLimit,
             page: normalizedPage,
+            sortBy,
+            order,
             ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
           },
         },

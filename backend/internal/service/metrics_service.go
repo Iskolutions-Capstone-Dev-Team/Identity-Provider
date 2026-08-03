@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -176,8 +177,11 @@ func (s *metricsService) performAnalysis(ctx context.Context) {
 		failCount += a.FailCount
 	}
 
+	// Anonymize PII from failed attempts before sending to Gemini API
+	anonAttempts, revMap := s.anonymizeAttempts(failedAttempts)
+
 	topClientsJSON, _ := json.Marshal(topClients)
-	attemptsJSON, _ := json.Marshal(failedAttempts)
+	attemptsJSON, _ := json.Marshal(anonAttempts)
 
 	result, err := s.callGeminiAPI(
 		ctx, successCount, failCount,
@@ -187,6 +191,9 @@ func (s *metricsService) performAnalysis(ctx context.Context) {
 		log.Printf("[MetricsService] callGeminiAPI error: %v", err)
 		return
 	}
+
+	// Deanonymize final analysis results with original PII values
+	s.deanonymizeResult(&result, revMap)
 
 	result.AnalyzedAt = time.Now()
 
@@ -923,4 +930,71 @@ func (s *metricsService) GetPaginatedLogins(
 		CurrentPage: page,
 		LastPage:    lastPage,
 	}, nil
+}
+
+// anonymizeAttempts replaces PII fields (Actor, IP) with safe placeholders
+// and returns the anonymized slice along with a reverse mapping.
+func (s *metricsService) anonymizeAttempts(
+	attempts []models.FailedAuthAttempt,
+) ([]models.FailedAuthAttempt, map[string]string) {
+	anonAttempts := make([]models.FailedAuthAttempt, len(attempts))
+	revMap := make(map[string]string)
+
+	actorCounter := 1
+	ipCounter := 1
+
+	actorMap := make(map[string]string)
+	ipMap := make(map[string]string)
+
+	for i, a := range attempts {
+		anonA := a
+
+		if a.Actor != "" {
+			anonActor, exists := actorMap[a.Actor]
+			if !exists {
+				anonActor = fmt.Sprintf("anon_user_%d", actorCounter)
+				actorCounter++
+				actorMap[a.Actor] = anonActor
+				revMap[anonActor] = a.Actor
+			}
+			anonA.Actor = anonActor
+		}
+
+		if a.IP != "" {
+			anonIP, exists := ipMap[a.IP]
+			if !exists {
+				anonIP = fmt.Sprintf("anon_ip_%d", ipCounter)
+				ipCounter++
+				ipMap[a.IP] = anonIP
+				revMap[anonIP] = a.IP
+			}
+			anonA.IP = anonIP
+		}
+
+		anonAttempts[i] = anonA
+	}
+
+	return anonAttempts, revMap
+}
+
+// deanonymizeResult replaces anonymized placeholders in the security analysis
+// result with their original PII values.
+func (s *metricsService) deanonymizeResult(
+	result *models.SecurityAnalysisResult,
+	revMap map[string]string,
+) {
+	for anon, orig := range revMap {
+		for i, anomaly := range result.Anomalies {
+			result.Anomalies[i] = strings.ReplaceAll(
+				anomaly,
+				anon,
+				orig,
+			)
+		}
+		result.Advisory = strings.ReplaceAll(
+			result.Advisory,
+			anon,
+			orig,
+		)
+	}
 }

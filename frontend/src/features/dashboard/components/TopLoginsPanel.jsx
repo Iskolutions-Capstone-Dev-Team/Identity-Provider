@@ -1,69 +1,46 @@
-import { useEffect, useState } from "react";
-import DashboardPanel from "./DashboardPanel";
-import { EmptyActivityIcon } from "./DashboardIcons";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
+import { Skeleton } from "../../../components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
+import { Bar, BarChart } from "recharts";
+import { ChartContainer } from "../../../components/ui/chart";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "../../../components/ui/tooltip";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../../../components/ui/empty";
+import { ScrollArea, ScrollBar } from "../../../components/ui/scroll-area";
+import { Activity } from "lucide-react";
+import { IconStack } from "../../../components/reui/icon-stack";
 
-const DEFAULT_CLIENT_IMAGE = "/assets/images/PUP_Logo.png";
-
-function SkeletonBlock({ className = "", colorMode = "light" }) {
-  const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";
-
-  return (
-    <span className={`block animate-pulse rounded-lg ${toneClassName} ${className}`} />
-  );
+function getInitials(name) {
+  if (!name) return "CL";
+  const parts = name.split(" ");
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
 }
 
-function getDashboardAccent(colorMode) {
-  return colorMode === "dark"
-    ? {
-        bg: "bg-[#f8d24e]",
-        text: "text-[#f8d24e]",
-        iconBg: "bg-[#f8d24e]/18",
-        iconText: "text-[#f8d24e]",
-        selectedText: "text-[#2a1518]",
-      }
-    : {
-        bg: "bg-[#7b0d15]",
-        text: "text-[#7b0d15]",
-        iconBg: "bg-[#7b0d15]/10",
-        iconText: "text-[#7b0d15]",
-        selectedText: "text-white",
-      };
-}
+const sparklineData = [
+  { val: 20 }, { val: 40 }, { val: 30 }, { val: 60 }, { val: 50 },
+  { val: 70 }, { val: 80 }, { val: 60 }, { val: 90 }, { val: 100 }
+];
 
-function ClientLogo({ client }) {
-  const [imageSrc, setImageSrc] = useState(client.image_url || DEFAULT_CLIENT_IMAGE);
+const chartConfig = {
+  val: {
+    label: "Logins",
+    color: "#34d399",
+  }
+};
 
-  useEffect(() => {
-    setImageSrc(client.image_url || DEFAULT_CLIENT_IMAGE);
-  }, [client.image_url]);
-
+function PeriodTabs({ periods, selectedPeriodKey, onSelectPeriod }) {
   return (
-    <img src={imageSrc} alt="" className="h-8 w-8 rounded-lg object-cover" onError={() => setImageSrc(DEFAULT_CLIENT_IMAGE)}/>
-  );
-}
-
-export function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeriod }) {
-  const isDarkMode = colorMode === "dark";
-  const shellClassName = isDarkMode
-    ? "border-white/10 bg-[#061224]"
-    : "border-[#7b0d15]/10 bg-[#fff8f3]";
-
-  return (
-    <div className={`grid ${periods.length === 2 ? "grid-cols-2" : "grid-cols-3"} overflow-hidden rounded-lg border p-1 text-sm ${shellClassName}`}>
+    <div className="grid grid-cols-2 overflow-hidden rounded-lg bg-muted p-1 text-sm text-muted-foreground">
       {periods.map((period) => {
         const isSelected = selectedPeriodKey === period.key;
-        const idleClassName = isDarkMode
-          ? "text-slate-300 hover:bg-white/[0.04] hover:text-white"
-          : "text-slate-600 hover:bg-[#7b0d15]/5 hover:text-[#7b0d15]";
-
         return (
           <button key={period.key} type="button" onClick={() => onSelectPeriod(period.key)}
-            className={`rounded-md px-3 py-2 font-semibold transition ${
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
               isSelected
-                ? isDarkMode
-                  ? "bg-[linear-gradient(135deg,#7b0d15_0%,#4a121b_100%)] text-white"
-                  : "bg-[#7b0d15] text-white"
-                : idleClassName
+                ? "bg-[#7b0d15] text-[#f8d24e] shadow-sm dark:bg-[#f8d24e] dark:text-[#7b0d15]"
+                : "hover:bg-background/50 hover:text-foreground"
             }`}
           >
             {period.shortLabel}
@@ -74,78 +51,84 @@ export function PeriodTabs({ periods, selectedPeriodKey, colorMode, onSelectPeri
   );
 }
 
-function TopLoginRow({ client, maxLoginCount, totalLoginCount, colorMode }) {
-  const isDarkMode = colorMode === "dark";
-  const accent = getDashboardAccent(colorMode);
+function TopLoginRow({ client, maxLoginCount, totalLoginCount }) {
   const loginCount = Number(client.login_count) || 0;
-  const barWidth = maxLoginCount > 0
-    ? `${Math.max((loginCount / maxLoginCount) * 100, 4)}%`
-    : "0%";
   const percentage = totalLoginCount > 0
     ? (loginCount / totalLoginCount) * 100
     : 0;
+  
+  // Scale sparkline based on login count
+  const scale = maxLoginCount > 0 ? (loginCount / maxLoginCount) : 1;
+  const rowChartData = sparklineData.map(d => ({ val: Math.max(d.val * scale, 5) }));
 
   return (
-    <div>
-      <div className="flex min-w-0 items-center gap-3">
-        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border p-1 ${
-          isDarkMode ? "border-white/10 bg-white/[0.04]" : "border-[#7b0d15]/10 bg-white"
-        }`}>
-          <ClientLogo client={client} />
-        </span>
+    <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-3 shadow-sm transition-colors hover:bg-muted/50">
+      <div className="flex min-w-0 flex-[2] items-center gap-3">
+        <Avatar className="h-10 w-10 shrink-0 rounded-lg">
+          <AvatarImage src={client.image_url || "/assets/images/PUP_Logo.png"} alt={client.client_name || "Client"} className="rounded-lg object-cover" />
+          <AvatarFallback className="rounded-lg bg-transparent">
+            <img src="/assets/images/PUP_Logo.png" alt="PUP Logo" className="h-full w-full rounded-lg object-cover" />
+          </AvatarFallback>
+        </Avatar>
         <div className="min-w-0">
-          <p className={`truncate text-sm font-semibold ${
-            isDarkMode ? "text-white" : "text-[#2a1518]"
-          }`}>
+          <p className="truncate text-sm font-semibold text-foreground">
             {client.client_name || "Unnamed Client"}
           </p>
-          <p className={`truncate text-xs ${
-            isDarkMode ? "text-slate-400" : "text-slate-500"
-          }`}>
-            {client.client_id || "No client ID"}
-          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <p className="cursor-default truncate text-xs text-muted-foreground hover:text-foreground">
+                    {client.client_id || "No client ID"}
+                  </p>
+                }
+              />
+              <TooltipContent side="bottom">
+                <p>{client.client_id || "No client ID"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto] items-center gap-4">
-        <div className={`h-2 rounded-full ${
-          isDarkMode ? "bg-white/10" : "bg-[#7b0d15]/10"
-        }`}>
-          <div className={`h-full rounded-full ${accent.bg}`} style={{ width: barWidth }}/>
-        </div>
+      <div className="flex h-8 w-[100px] shrink-0 items-center justify-center">
+        <ChartContainer config={chartConfig} className="h-full w-full">
+          <BarChart data={rowChartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+            <Bar dataKey="val" fill="var(--color-val)" radius={2} isAnimationActive={false} />
+          </BarChart>
+        </ChartContainer>
+      </div>
 
-        <div className="w-20 text-right">
-          <p className={`text-lg font-black ${accent.text}`}>
-            {loginCount.toLocaleString()}
-          </p>
-          <p className={`text-xs ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
-            {percentage.toFixed(1)}%
-          </p>
-        </div>
+      <div className="flex w-32 shrink-0 items-center justify-end gap-4 text-right">
+        <p className="text-sm font-bold text-foreground">
+          {loginCount.toLocaleString()}
+        </p>
+        <p className="w-10 text-sm font-medium text-muted-foreground">
+          {percentage.toFixed(0)}%
+        </p>
       </div>
     </div>
   );
 }
 
-function TopLoginRowsSkeleton({ colorMode }) {
+function TopLoginRowsSkeleton() {
   return (
     <>
       {[0, 1, 2].map((item) => (
-        <div key={item}>
-          <div className="flex min-w-0 items-center gap-3">
-            <SkeletonBlock className="h-10 w-10 rounded-xl" colorMode={colorMode} />
+        <div key={item} className="flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-3 shadow-sm">
+          <div className="flex min-w-0 flex-[2] items-center gap-3">
+            <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
             <div className="min-w-0 flex-1">
-              <SkeletonBlock className="h-4 w-44" colorMode={colorMode} />
-              <SkeletonBlock className="mt-2 h-3 w-52" colorMode={colorMode} />
+              <Skeleton className="h-4 w-44" />
+              <Skeleton className="mt-2 h-3 w-52" />
             </div>
           </div>
-
-          <div className="grid grid-cols-[1fr_auto] items-center gap-4">
-            <SkeletonBlock className="h-2 w-full rounded-full" colorMode={colorMode} />
-            <div className="w-20">
-              <SkeletonBlock className="ml-auto h-5 w-10" colorMode={colorMode} />
-              <SkeletonBlock className="ml-auto mt-2 h-3 w-14" colorMode={colorMode} />
-            </div>
+          <div className="h-8 w-[100px] shrink-0">
+            <Skeleton className="h-full w-full rounded-md" />
+          </div>
+          <div className="flex w-32 shrink-0 items-center justify-end gap-4">
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="h-4 w-10" />
           </div>
         </div>
       ))}
@@ -153,70 +136,82 @@ function TopLoginRowsSkeleton({ colorMode }) {
   );
 }
 
-export default function TopLoginsPanel({ clients, periods, selectedPeriod, selectedPeriodKey, isRestrictedView = false, colorMode = "light", isLoading = false, onSelectPeriod }) {
-  const isDarkMode = colorMode === "dark";
+export default function TopLoginsPanel({ clients, periods, selectedPeriod, selectedPeriodKey, isRestrictedView = false, isLoading = false, onSelectPeriod }) {
   const totalLoginCount = Number(selectedPeriod?.count) || 0;
   const subtitle = isRestrictedView
     ? "Highest login volume by accessible applications"
     : "Highest login volume by application";
   const emptyMessage = isRestrictedView
     ? "No login activity is available."
-    : "No login activity is available for this application.";
+    : "No login activity is available for today.";
   const maxLoginCount = clients.reduce((maxCount, client) => {
     const loginCount = Number(client.login_count) || 0;
     return Math.max(maxCount, loginCount);
   }, 0);
-  const scrollClassName = isDarkMode
-    ? "[scrollbar-width:thin] [scrollbar-color:rgba(248,210,78,0.58)_rgba(255,255,255,0.06)] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/[0.06] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#f8d24e]/55 hover:[&::-webkit-scrollbar-thumb]:bg-[#f8d24e]/75"
-    : "[scrollbar-width:thin] [scrollbar-color:rgba(123,13,21,0.5)_rgba(123,13,21,0.08)] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#7b0d15]/[0.08] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#7b0d15]/50 hover:[&::-webkit-scrollbar-thumb]:bg-[#7b0d15]/70";
+  
+  const scrollClassName = "[scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50";
 
   return (
-    <DashboardPanel colorMode={colorMode} className="p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <Card className="flex flex-col border-border bg-card shadow-sm">
+      <CardHeader className="flex flex-col gap-4 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className={`text-xl font-black uppercase tracking-[0.03em] ${
-            isDarkMode ? "text-white" : "text-[#7b0d15]"
-          }`}>
-            Top Logins
-          </h2>
-          <p className={`mt-1 text-sm ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-            {subtitle}
-          </p>
+          <CardTitle className="text-xl font-bold uppercase tracking-wide">Top Logins</CardTitle>
+          <CardDescription className="mt-1">{subtitle}</CardDescription>
         </div>
 
         <PeriodTabs
           periods={periods}
           selectedPeriodKey={selectedPeriodKey}
-          colorMode={colorMode}
           onSelectPeriod={onSelectPeriod}
         />
-      </div>
+      </CardHeader>
 
-      <div className={`mt-8 space-y-5 ${
-        clients.length > 4 ? `max-h-[30rem] overflow-y-auto pr-3 ${scrollClassName}` : ""
-      }`}>
-        {isLoading ? (
-          <TopLoginRowsSkeleton colorMode={colorMode} />
-        ) : clients.length > 0 ? (
-          clients.map((client) => (
-            <TopLoginRow
-              key={client.client_id || client.client_name}
-              client={client}
-              maxLoginCount={maxLoginCount}
-              totalLoginCount={totalLoginCount}
-              colorMode={colorMode}
-            />
-          ))
-        ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <EmptyActivityIcon className="mb-2 h-6 w-6 text-slate-400" />
-            <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-              {emptyMessage}
-            </p>
+      <CardContent>
+        <ScrollArea className="w-full">
+          <div className="min-w-[500px] pb-4">
+            {clients.length > 0 && !isLoading && (
+              <div className="mb-3 flex items-center justify-between px-3 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                <div className="flex-[2]">CLIENT</div>
+                <div className="w-[100px] shrink-0 text-center">LOGINS</div>
+                <div className="w-32 shrink-0 text-right">SHARE %</div>
+              </div>
+            )}
+            <div className={`space-y-3 ${
+              clients.length > 4 ? `max-h-[30rem] overflow-y-auto pr-2 ${scrollClassName}` : ""
+            }`}>
+              {isLoading ? (
+                <TopLoginRowsSkeleton />
+              ) : clients.length > 0 ? (
+                clients.map((client) => (
+                  <TopLoginRow
+                    key={client.client_id || client.client_name}
+                    client={client}
+                    maxLoginCount={maxLoginCount}
+                    totalLoginCount={totalLoginCount}
+                  />
+                ))
+              ) : (
+                <div className="flex items-center justify-center p-4">
+                  <Empty className="py-10 max-w-md">
+                    <EmptyHeader>
+                      <EmptyMedia>
+                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e] h-24 w-22">
+                          <Activity className="text-[#7b0d15] dark:text-[#f8d24e] size-5" />
+                        </IconStack>
+                      </EmptyMedia>
+                      <EmptyTitle>No login activity</EmptyTitle>
+                      <EmptyDescription>
+                        {emptyMessage}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
-
-    </DashboardPanel>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 }

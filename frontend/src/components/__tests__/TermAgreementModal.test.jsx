@@ -47,7 +47,7 @@ describe('TermAgreementModal Component', () => {
       </MemoryRouter>
     );
     
-    const continueBtn = screen.getByRole('button', { name: /Continue/i });
+    const continueBtn = screen.getByRole('button', { name: /Accept|Continue/i });
     expect(continueBtn).toBeDisabled();
     
     const checkbox = screen.getByRole('checkbox');
@@ -70,7 +70,7 @@ describe('TermAgreementModal Component', () => {
       </MemoryRouter>
     );
     
-    const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
+    const cancelBtn = screen.getByRole('button', { name: /Decline|Cancel/i });
     await userEvent.click(cancelBtn);
     
     expect(handleClose).toHaveBeenCalled();

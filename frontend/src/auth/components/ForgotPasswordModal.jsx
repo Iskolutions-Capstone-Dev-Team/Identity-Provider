@@ -1,13 +1,12 @@
-import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
-import { getModalTransitionClassName, useModalTransition } from "../../components/modalTransition";
 import { passwordResetService } from "../../services/passwordResetService";
 import ForgotPasswordEmailStep from "./forgot-password/ForgotPasswordEmailStep";
-import { CloseButton, LockIcon } from "./forgot-password/ForgotPasswordIcons";
 import ForgotPasswordOtpStep from "./forgot-password/ForgotPasswordOtpStep";
 import ForgotPasswordPasswordStep from "./forgot-password/ForgotPasswordPasswordStep";
 import ForgotPasswordSuccessStep from "./forgot-password/ForgotPasswordSuccessStep";
 import { EMAIL_REGEX, EMPTY_OTP, EMPTY_PASSWORD_FORM, OTP_TIMER_SECONDS, getPasswordValidationState, getRequestErrorMessage, normalizeTextValue } from "./forgot-password/forgotPasswordUtils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
+import { Button } from "../../components/ui/button";
 
 function getStepTitle(step) {
   switch (step) {
@@ -38,7 +37,6 @@ function getStepDescription(step) {
 }
 
 export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = "" }) {
-  const { shouldRender, isClosing } = useModalTransition(isOpen);
   const [step, setStep] = useState("email");
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -62,7 +60,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = ""
   const isRecoveryEmailValid = EMAIL_REGEX.test(trimmedRecoveryEmail);
 
   useEffect(() => {
-    if (!shouldRender) {
+    if (!isOpen) {
       setStep("email");
       setRecoveryEmail("");
       setEmailError("");
@@ -77,7 +75,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = ""
       setIsVerifyingOtp(false);
       setIsUpdatingPassword(false);
     }
-  }, [shouldRender]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || !normalizedEmailAddress) {
@@ -221,9 +219,6 @@ export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = ""
     }
   };
 
-  if (!shouldRender) {
-    return null;
-  }
 
   const isFormStep = step === "email" || step === "password";
   const isPrimaryDisabled =
@@ -250,28 +245,15 @@ export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = ""
       : "border-[#ffd700] bg-[#ffd700] text-[#6f0f15] hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white"
   }`;
 
-  return createPortal(
-    <dialog open className={getModalTransitionClassName("modal modal-open fixed inset-0 z-[120] px-3 py-6 backdrop:bg-[rgba(43,3,7,0.74)] backdrop:backdrop-blur-sm", isClosing)}>
-      <div className="modal-box relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-white p-0 font-[Poppins] text-slate-800 shadow-[0_36px_90px_-40px_rgba(0,0,0,0.95)] backdrop-blur-md">
-        <div className="relative shrink-0 border-b border-white/10 bg-[linear-gradient(180deg,rgba(122,13,21,0.95),rgba(55,6,11,0.96))] px-6 py-6 sm:px-8">
-          <div className="flex items-center justify-between gap-5">
-            <div className="flex min-w-0 items-center gap-4">
-              <LockIcon className="h-10 w-10 shrink-0 text-[#fff0a8]" />
-              <div className="min-w-0">
-                <h3 className="text-2xl font-bold leading-tight text-white sm:text-[2rem]">
-                  {getStepTitle(step)}
-                </h3>
-                <p className="mt-1 text-sm text-white/65">
-                  {getStepDescription(step)}
-                </p>
-              </div>
-            </div>
+  return (
+    <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()} dismissible={false}>
+      <DialogContent className="sm:max-w-2xl" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
+        <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
+          <DialogTitle>{getStepTitle(step)}</DialogTitle>
+        </DialogHeader>
 
-            {step !== "success" ? <CloseButton onClose={onClose} /> : null}
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto bg-white px-6 py-6 sm:px-8">
+        <div className="-mx-4 no-scrollbar max-h-[60vh] overflow-y-auto px-4">
+          <div className="space-y-6 mt-4 pb-6 px-2">
           {step === "email" ? (
             <ForgotPasswordEmailStep
               email={recoveryEmail}
@@ -314,40 +296,39 @@ export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = ""
             />
           ) : null}
 
-          {step === "success" ? <ForgotPasswordSuccessStep /> : null}
+          {step === "success" ? (
+            <ForgotPasswordSuccessStep />
+          ) : null}
+
+          </div>
         </div>
 
-        <div className="shrink-0 border-t border-[#7b0d15]/10 bg-white px-6 py-5 sm:px-8">
+        <DialogFooter className="gap-2 sm:justify-end">
           {isFormStep ? (
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm text-[#8f6f76]">
-                <span className="text-red-500">*</span> Required fields
-              </div>
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button type="button" className="btn h-12 rounded-xl border border-[#7b0d15]/15 bg-white px-6 text-[#7b0d15] shadow-none transition hover:border-[#f8d24e]/70 hover:bg-[#fff4dc] hover:text-[#5a0b12]" onClick={onClose}>
-                  Cancel
-                </button>
-                <button type="button" disabled={isPrimaryDisabled} className={primaryButtonClassName} onClick={step === "email" ? handleEmailContinue : handlePasswordContinue}>
-                  {primaryButtonLabel}
-                </button>
-              </div>
+            <div className="flex w-full items-center justify-end gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="button" disabled={isPrimaryDisabled} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200" onClick={step === "email" ? handleEmailContinue : handlePasswordContinue}>
+                {primaryButtonLabel}
+              </Button>
             </div>
           ) : (
-            <div className="flex justify-end">
-              {step === "otp" ? (
-                <button type="button" disabled={isPrimaryDisabled} className={primaryButtonClassName} onClick={verifyOtp}>
+            <div className="flex w-full justify-end gap-2">
+              {step === "otp" && (
+                <Button type="button" disabled={isPrimaryDisabled} className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200" onClick={verifyOtp}>
                   {primaryButtonLabel}
-                </button>
-              ) : (
-                <button type="button" className={primaryButtonClassName} onClick={onClose}>
+                </Button>
+              )}
+              {step === "success" && (
+                <Button type="button" className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 font-bold transition-colors duration-200" onClick={onClose}>
                   Close
-                </button>
+                </Button>
               )}
             </div>
           )}
-        </div>
-      </div>
-    </dialog>,
-    document.body,
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
