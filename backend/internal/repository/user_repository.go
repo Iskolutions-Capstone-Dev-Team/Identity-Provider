@@ -61,6 +61,10 @@ type UserRepository interface {
 	CountAdminUsers(ctx context.Context) (int, error)
 	CountBoundUsers(ctx context.Context, adminID []byte) (int, error)
 	RemoveClientAdminBind(ctx context.Context, userID []byte) error
+	GetDeletedUserList(ctx context.Context, limit,
+		offset int) ([]models.User, error)
+	CountDeletedUsers(ctx context.Context) (int, error)
+	HardDeleteUser(ctx context.Context, id []byte) error
 }
 
 type userRepository struct {
@@ -962,4 +966,139 @@ func (r *userRepository) populateSingleUserClientsScopedToAdmin(
 	user.ManagedClients = managedClients
 
 	return nil
+}
+
+// GetDeletedUserList retrieves a paginated list of deleted users.
+func (r *userRepository) GetDeletedUserList(ctx context.Context,
+	limit, offset int,
+) ([]models.User, error) {
+	var ids [][]byte
+	idQuery := `SELECT id FROM users
+	            WHERE deleted_at IS NOT NULL
+	            LIMIT ? OFFSET ?`
+
+	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("[GetDeletedUserList] ID Fetch: %w", err)
+	}
+
+	if len(ids) == 0 {
+		return []models.User{}, nil
+	}
+
+	sql := `
+        SELECT u.id, u.first_name, u.middle_name, u.last_name, 
+               u.name_suffix, u.email, u.status, u.created_at, 
+               u.updated_at, u.account_type_id, r.id AS role_id,
+               r.role_name AS role_name, r.description AS role_description,
+               at.name AS account_type
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN account_types at ON u.account_type_id = at.id
+        WHERE u.id IN (?) AND u.deleted_at IS NOT NULL
+        ORDER BY u.created_at DESC`
+
+	fullQuery, args, err := sqlx.In(sql, ids)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"[GetDeletedUserList] In-Query expansion: %w",
+			err,
+		)
+	}
+
+	fullQuery = r.db.Rebind(fullQuery)
+
+	var rows []userRow
+	err = r.db.SelectContext(ctx, &rows, fullQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"[GetDeletedUserList] Database Query: %w",
+			err,
+		)
+	}
+
+	result := make([]models.User, 0, len(rows))
+	for _, row := range rows {
+		user := row.User
+		if row.RID.Valid {
+			user.RoleID = row.RID
+			user.Role = models.Role{
+				ID:          int(row.RID.Int64),
+				RoleName:    row.RName.String,
+				Description: row.RDesc.String,
+			}
+		}
+		if row.AccountType.Valid {
+			user.AccountType = row.AccountType.String
+		}
+		result = append(result, user)
+	}
+
+	if err := r.populateClients(ctx, result); err != nil {
+		return nil, fmt.Errorf("[GetDeletedUserList] Prep: %w", err)
+	}
+
+	return result, nil
+}
+
+// CountDeletedUsers returns the total count of soft-deleted users.
+func (r *userRepository) CountDeletedUsers(
+	ctx context.Context,
+) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM users WHERE deleted_at IS NOT NULL`
+	err := r.db.GetContext(ctx, &count, query)
+	return count, err
+}
+
+// HardDeleteUser permanently removes a user record from the database.
+func (r *userRepository) HardDeleteUser(
+	ctx context.Context,
+	id []byte,
+) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Get user email to delete associated OTPs
+	var email string
+	emailQuery := `SELECT email FROM users WHERE id = ?`
+	err = tx.GetContext(ctx, &email, emailQuery, id)
+	if err != nil {
+		return fmt.Errorf("getting user email for purge: %w", err)
+	}
+
+	// Delete from otps table by email (user_id column was migrated out)
+	queryOtps := `DELETE FROM otps WHERE email = ?`
+	if _, err := tx.ExecContext(ctx, queryOtps, email); err != nil {
+		return fmt.Errorf("clearing otps: %w", err)
+	}
+
+	tables := []string{
+		"client_allowed_users",
+		"admin_allowed_clients",
+		"refresh_tokens",
+		"authorization_codes",
+		"idp_sessions",
+		"user_authenticators",
+	}
+
+	for _, table := range tables {
+		query := fmt.Sprintf(
+			"DELETE FROM %s WHERE user_id = ?",
+			table,
+		)
+		if _, err := tx.ExecContext(ctx, query, id); err != nil {
+			return fmt.Errorf("clearing %s: %w", table, err)
+		}
+	}
+
+	query := `DELETE FROM users WHERE id = ?`
+	if _, err := tx.ExecContext(ctx, query, id); err != nil {
+		return fmt.Errorf("deleting user: %w", err)
+	}
+
+	return tx.Commit()
 }

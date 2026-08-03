@@ -249,6 +249,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.PUT("/:id/access", h.UserHandler.PutUserAccess)
 			users.PUT("/:id/managed-clients", h.UserHandler.PutAdminAccess)
 			users.DELETE("/:id", h.UserHandler.DeleteUser)
+			users.POST("/:id/restore", h.UserHandler.PostRestoreUser)
 			users.GET("/metrics", h.MetricsHandler.GetUserMetrics)
 		}
 

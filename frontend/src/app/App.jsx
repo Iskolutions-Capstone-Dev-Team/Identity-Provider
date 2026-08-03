@@ -19,6 +19,7 @@ const AuthorizeRedirect = lazy(() => import("../auth/pages/AuthorizeRedirect"));
 const AccessDenied = lazy(() => import("../auth/pages/AccessDenied"));
 const Dashboard = lazy(() => import("../features/dashboard/pages/Dashboard"));
 const UserPool = lazy(() => import("../features/user-pool/pages/UserPool"));
+const ArchivedUsers = lazy(() => import("../features/user-pool/pages/ArchivedUsers"));
 const AddUserPage = lazy(() => import("../features/user-pool/pages/AddUserPage"));
 const Roles = lazy(() => import("../features/roles/pages/Roles"));
 const CreateRolePage = lazy(() => import("../features/roles/pages/CreateRolePage"));
@@ -82,6 +83,13 @@ export default function App() {
               element={
                 <PermissionRoute requiredPermissions={USER_POOL_PAGE_PERMISSIONS}>
                   <UserPool />
+                </PermissionRoute>
+              }
+            />
+            <Route path={ROUTE_PATHS.ARCHIVED_USERS}
+              element={
+                <PermissionRoute requiredPermissions={USER_POOL_PAGE_PERMISSIONS}>
+                  <ArchivedUsers />
                 </PermissionRoute>
               }
             />
