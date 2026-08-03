@@ -82,7 +82,7 @@ export function RestoreBackupCard({
             onDragOver={handleDragOver}
             onDrop={handleDrop}
           >
-            <Input ref={inputRef} type="file" accept=".sql.gz,application/gzip" onChange={onFileChange} className="sr-only"/>
+            <Input ref={inputRef} type="file" accept=".sql,.sql.gz,.gz,application/gzip,application/x-gzip" onChange={onFileChange} className="sr-only"/>
 
             {!selectedFile ? (
               <>
@@ -96,7 +96,7 @@ export function RestoreBackupCard({
                 </Button>
                 <div className="flex flex-1 items-center gap-2">
                   <p className="text-muted-foreground text-sm">
-                    Drop files here or click to browse (max 1 file, .sql.gz only)
+                    Drop files here or click to browse (max 1 file, .sql or .sql.gz only)
                   </p>
                 </div>
               </>
