@@ -276,4 +276,37 @@ export const userService = {
     clearUserCache();
     return res.data;
   },
+
+  async unarchiveUser(id) {
+    const res = await axiosInstance.post(`/admin/users/${id}/restore`);
+    clearUserCache();
+    return res.data;
+  },
+
+  async hardDeleteUser(id) {
+    const res = await axiosInstance.delete(`/admin/users/${id}?purge=true`);
+    clearUserCache();
+    return res.data;
+  },
+
+  async getArchivedUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc" } = {}) {
+    const paginationParams = buildSafePaginationParams(
+      { page, limit },
+      {
+        defaultPage: DEFAULT_PAGE,
+        defaultLimit: DEFAULT_LIMIT,
+        maxLimit: MAX_LIMIT,
+      },
+    );
+
+    return getCachedRequest(
+      `${USER_CACHE_PREFIX}archived:${paginationParams.page}:${paginationParams.limit}:${sortBy}:${order}`,
+      async () => {
+        const res = await axiosInstance.get("/admin/users", {
+          params: { ...paginationParams, sort_by: sortBy, order, status: "deleted" },
+        });
+        return res.data;
+      },
+    );
+  },
 };

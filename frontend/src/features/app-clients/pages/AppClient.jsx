@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useAppClients } from "../hooks/useAppClients";
@@ -66,9 +66,14 @@ export default function AppClient() {
         return localStorage.getItem("appClientViewType") || globalViewType || "table";
     });
     
+    const isMounted = useRef(false);
     useEffect(() => {
-        if (globalViewType) {
-            setViewType(globalViewType);
+        if (isMounted.current) {
+            if (globalViewType) {
+                setViewType(globalViewType);
+            }
+        } else {
+            isMounted.current = true;
         }
     }, [globalViewType]);
 

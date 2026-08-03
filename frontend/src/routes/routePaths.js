@@ -8,6 +8,7 @@ export const ROUTE_PATHS = Object.freeze({
   ONE_PORTAL: "/one-portal",
   DASHBOARD: "/dashboard",
   USER_POOL: "/user-pool",
+  ARCHIVED_USERS: "/user-pool/archived",
   USER_POOL_CREATE: "/user-pool/create",
   ROLES: "/roles",
   ROLES_CREATE: "/roles/create",
