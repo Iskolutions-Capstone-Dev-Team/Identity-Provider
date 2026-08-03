@@ -21,14 +21,15 @@ import {
   FileSearchCorner,
   CircleHelp,
   LogOut,
-  FileText
+  FileText,
+  DatabaseBackup
 } from "lucide-react"
 
 import { useLocation, useNavigate, Link } from "react-router-dom"
 import { usePermissionAccess } from "../providers/PermissionProvider"
 import { buildLogoutPath } from "../auth/utils/logoutRoute"
 import { handleOnePortalClick } from "./OnePortalButton"
-import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "../routes/routePermissions"
+import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS, BACKUP_RESTORE_PAGE_PERMISSIONS } from "../routes/routePermissions"
 
 const menuSections = [
   {
@@ -79,6 +80,12 @@ const menuSections = [
         path: "/audit-logs",
         requiredPermissions: [PERMISSIONS.VIEW_AUDIT_LOGS],
         icon: FileSearchCorner,
+      },
+      {
+        name: "Backup & Restore",
+        path: "/backup-restore",
+        requiredPermissions: BACKUP_RESTORE_PAGE_PERMISSIONS,
+        icon: DatabaseBackup,
       },
     ],
   },
