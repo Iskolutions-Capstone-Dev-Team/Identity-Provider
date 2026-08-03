@@ -24,8 +24,8 @@ export function CreateBackupCard({
         </p>
       </div>
       <CardContent className="flex flex-col justify-between flex-grow gap-6 p-6">
-        <div className="space-y-4">
-          <div className="bg-muted/60 rounded-lg p-4 space-y-4">
+        <div className="flex flex-col flex-grow">
+          <div className="bg-muted/60 rounded-lg p-4 space-y-4 flex flex-col justify-center flex-grow">
             <div className="text-muted-foreground text-xs font-medium uppercase">
               Latest Backup Details
             </div>

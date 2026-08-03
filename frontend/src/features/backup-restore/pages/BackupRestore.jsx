@@ -61,10 +61,12 @@ export default function BackupRestore() {
       if (!file.name.endsWith(".sql.gz")) {
         toast.error("Please upload a .sql.gz file", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
         setSelectedFile(null);
-        e.target.value = "";
+        if (e.target) e.target.value = "";
         return;
       }
       setSelectedFile(file);
+    } else {
+      setSelectedFile(null);
     }
   };
 
