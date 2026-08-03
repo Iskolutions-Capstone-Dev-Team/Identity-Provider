@@ -58,8 +58,8 @@ export default function BackupRestore() {
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      if (!file.name.endsWith(".sql.gz") && !file.name.endsWith(".sql")) {
-        toast.error("Please upload a .sql or .sql.gz file", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+      if (!file.name.endsWith(".sql.gz")) {
+        toast.error("Please upload a .sql.gz file", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
         setSelectedFile(null);
         if (e.target) e.target.value = "";
         return;

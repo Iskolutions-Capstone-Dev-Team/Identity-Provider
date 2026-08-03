@@ -20,11 +20,8 @@ export const backupRestoreService = {
     formData.append("file", file);
     
     const response = await axiosInstance.post(`${BACKUP_BASE_PATH}/restore`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      // Optional: We can specify timeout if restoration takes a long time
-      timeout: 30000, 
+      // Axios automatically sets Content-Type to multipart/form-data with the correct boundary
+      timeout: 300000, 
     });
     return response.data;
   },
