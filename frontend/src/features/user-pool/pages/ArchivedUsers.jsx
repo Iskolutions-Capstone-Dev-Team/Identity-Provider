@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
-import { useOutletContext, Link } from "react-router-dom";
+import { useOutletContext, Link, Navigate } from "react-router-dom";
 import { useArchivedUsers } from "../hooks/useArchivedUsers";
 import ArchivedUserPoolFilters from "../components/ArchivedUserPoolFilters";
 import ArchivedUserPoolTable from "../components/ArchivedUserPoolTable";
@@ -14,6 +14,7 @@ import { getUserLabel } from "../utils/userLabels";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { Archive } from "lucide-react";
 import { createPortal } from "react-dom";
+import { hasSuperAdminRole } from "../../../utils/userPoolAccess";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -27,6 +28,8 @@ export default function ArchivedUsers() {
   useEffect(() => {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
   }, []);
+
+  const isSuperAdmin = hasSuperAdminRole(currentUser?.roles);
 
   const { appClients: appClientOptions, isLoadingAppClients } = useAllAppClients({
     enabled: !isLoadingCurrentUser,
@@ -128,6 +131,10 @@ export default function ArchivedUsers() {
       setUserToHardDelete(null);
     }
   };
+
+  if (!isLoadingCurrentUser && !isSuperAdmin) {
+    return <Navigate to="/not-found" replace />;
+  }
 
   return (
     <div className="flex flex-col gap-6 w-full">
