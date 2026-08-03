@@ -62,11 +62,16 @@ export const APP_CLIENT_PAGE_PERMISSIONS = Object.freeze([
   PERMISSIONS.DELETE_APPCLIENT,
 ]);
 
+export const BACKUP_RESTORE_PAGE_PERMISSIONS = Object.freeze([
+  PERMISSIONS.MANAGE_BACKUP_AND_RESTORE,
+]);
+
 export const ROUTE_PERMISSIONS = Object.freeze({
   "/user-pool": USER_POOL_PAGE_PERMISSIONS,
   "/roles": [PERMISSIONS.VIEW_ROLES],
   "/app-client": APP_CLIENT_PAGE_PERMISSIONS,
   "/audit-logs": [PERMISSIONS.VIEW_AUDIT_LOGS],
+  "/backup-restore": BACKUP_RESTORE_PAGE_PERMISSIONS,
   "/faq": [],
   "/registration": REGISTRATION_PAGE_PERMISSIONS,
   "/registration/create": [PERMISSIONS.CREATE_REGISTRATION_CONFIG],

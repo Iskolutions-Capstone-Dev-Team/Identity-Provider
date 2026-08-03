@@ -18,6 +18,7 @@ export const ROUTE_PATHS = Object.freeze({
   APP_CLIENT_CREATE: "/app-client/create",
   REGISTRATION: "/registration",
   REGISTRATION_CREATE: "/registration/create",
+  BACKUP_RESTORE: "/backup-restore",
   PROFILE: "/profile",
   PRIVACY_POLICY: "/privacy-policy",
   INTERNAL_PRIVACY_POLICY: "/internal/privacy-policy",
