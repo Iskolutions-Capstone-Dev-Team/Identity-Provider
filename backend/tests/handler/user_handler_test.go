@@ -509,5 +509,3 @@ func TestPostRestoreUserHandler(t *testing.T) {
 		)
 	}
 }
-
-
