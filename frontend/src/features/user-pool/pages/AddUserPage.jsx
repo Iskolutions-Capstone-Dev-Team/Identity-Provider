@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
 import { useUsers } from "../hooks/useUsers";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
 import AddUserForm from "../components/AddUserForm";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../../../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS } from "../../../utils/permissionAccess";
-import { CreateUserIcon } from "../components/userpoolIcons";
+import { toast } from "sonner";
+import { SquarePlus } from "lucide-react";
 
 function getRequestedUserType(location) {
   const searchParams = new URLSearchParams(location.search);
@@ -22,6 +23,12 @@ function getRequestedUserType(location) {
 }
 
 export default function AddUserPage() {
+  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+
+  useEffect(() => {
+    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+  }, []);
+
   const location = useLocation();
   const navigate = useNavigate();
   const outletContext = useOutletContext() || {};
@@ -73,19 +80,16 @@ export default function AddUserPage() {
   const handleSubmit = async (newUser) => {
     await createUser(newUser);
     wasSubmittedRef.current = true;
-    successMessageRef.current =
-      newUser.accountSetupType === "invitation"
+    const msg = newUser.accountSetupType === "invitation"
         ? "User created and invitation sent!"
         : "User successfully created!";
+    toast.success(msg);
   };
 
   const handleClose = () => {
     navigate("/user-pool", {
       state: {
         userType: allowedUserType,
-        successMessage: wasSubmittedRef.current
-          ? successMessageRef.current
-          : "",
       },
     });
   };
@@ -96,37 +100,48 @@ export default function AddUserPage() {
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-      <Breadcrumbs
-        colorMode={colorMode}
-        items={[
-          {
-            label: "User",
-            to: "/user-pool",
-          },
-          {
-            label: "New User",
-          },
-        ]}
-      />
+      {breadcrumbsContainer && createPortal(
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/user-pool">User</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>New User</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>,
+        breadcrumbsContainer
+      )}
 
-      <PageHeader
-        title="New User"
-        description="Add a new user and fill in the details and set the appropriate access."
-        icon={<CreateUserIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-        colorMode={colorMode}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] rounded-xl flex items-center justify-center">
+            <SquarePlus className="w-8 h-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">New User</h1>
+            <p className="text-muted-foreground mt-1">Add a new user and fill in the details and set the appropriate access.</p>
+          </div>
+        </div>
+      </div>
 
-      <AddUserForm
-        onClose={handleClose}
-        onSubmit={handleSubmit}
-        userType={allowedUserType}
-        canAssignRoles={canAssignRoles}
-        canManageUserAccess={canManageUserAccess}
-        appClientOptions={appClientOptions}
-        isLoadingAppClients={isLoadingAppClients}
-        includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
-        colorMode={colorMode}
-      />
+      <div className="w-full">
+        <AddUserForm
+          onClose={handleClose}
+          onSubmit={handleSubmit}
+          userType={allowedUserType}
+          canAssignRoles={canAssignRoles}
+          canManageUserAccess={canManageUserAccess}
+          appClientOptions={appClientOptions}
+          isLoadingAppClients={isLoadingAppClients}
+          includeSuperAdminRoleOptions={isCurrentUserSuperAdmin}
+          colorMode={colorMode}
+        />
+      </div>
     </div>
   );
 }

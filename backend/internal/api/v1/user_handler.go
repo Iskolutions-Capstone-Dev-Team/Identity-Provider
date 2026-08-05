@@ -28,6 +28,8 @@ const (
 	actionDeleteUser      = "delete_user"
 	actionUpdateAccess    = "update_user_access"
 	actionUpdateName      = "update_user_name"
+	actionRestoreUser     = "restore_user"
+	actionHardDeleteUser  = "hard_delete_user"
 )
 
 // UserHandler handles user management HTTP requests.
@@ -193,13 +195,15 @@ func (h *UserHandler) PostAdminUser(c *gin.Context) {
 
 // GetUserList retrieves a paginated list of users
 // @Summary List Users
-// @Description Get a paginated list of all users
+// @Description Get a paginated list of all users, filtered by status.
 // @Tags Users
 // @Produce json
 // @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Param status query string false "User status filter (e.g., deleted)"
 // @Success 200 {object} dto.UserSimplifiedResponseList
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /users [get]
+// @Router /admin/users [get]
 func (h *UserHandler) GetUserList(c *gin.Context) {
 	const defaultLimit = "10"
 	const defaultPage = "1"
@@ -219,9 +223,25 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", defaultLimit))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", defaultPage))
+	status := c.Query("status")
 
 	if page < 1 {
 		page = 1
+	}
+
+	allowedColumns := map[string]bool{
+		"first_name":  true,
+		"middle_name": true,
+		"last_name":   true,
+		"name_suffix": true,
+		"email":       true,
+		"status":      true,
+		"created_at":  true,
+		"updated_at":  true,
+	}
+	sortBy, order, ok := ValidateSortParams(c, allowedColumns)
+	if !ok {
+		return
 	}
 
 	uIDStr := c.GetString("user_id")
@@ -246,6 +266,9 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		userID,
 		limit,
 		page,
+		sortBy,
+		order,
+		status,
 	)
 	if err != nil {
 		log.Printf("[GetUserList] Service Execution: %v", err)
@@ -294,12 +317,27 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 		page = 1
 	}
 
+	allowedColumns := map[string]bool{
+		"first_name":  true,
+		"middle_name": true,
+		"last_name":   true,
+		"name_suffix": true,
+		"email":       true,
+		"status":      true,
+		"created_at":  true,
+		"updated_at":  true,
+	}
+	sortBy, order, ok := ValidateSortParams(c, allowedColumns)
+	if !ok {
+		return
+	}
+
 	adminIDStr := c.GetString("user_id")
 	adminID, _ := uuid.Parse(adminIDStr)
 	permissions := c.GetStringSlice("permissions")
 	ctx := c.Request.Context()
 	resp, err := h.Service.GetAdminUserList(
-		ctx, limit, page, adminID, permissions,
+		ctx, limit, page, adminID, permissions, sortBy, order,
 	)
 	if err != nil {
 		log.Printf("[GetAdminUserList] Service Execution: %v", err)
@@ -1093,6 +1131,20 @@ func (h *UserHandler) PatchUserName(c *gin.Context) {
 	}
 
 	actorIDStr := c.GetString("user_id")
+	if actorIDStr != "" {
+		actorID, _ := uuid.Parse(actorIDStr)
+		if userID != actorID {
+			errors.SendString(
+				c,
+				http.StatusUnauthorized,
+				errors.CodeUnauthorized,
+				"You can only update your own name.",
+				"User ID mismatch",
+			)
+			return
+		}
+	}
+
 	actorID, _ := uuid.Parse(actorIDStr)
 	ctx := c.Request.Context()
 	actorName, _ := h.LogService.GetUserEmail(ctx, actorID[:])
@@ -1142,15 +1194,16 @@ func (h *UserHandler) PatchUserName(c *gin.Context) {
 	})
 }
 
-// DeleteUser performs a soft delete on a user record
+// DeleteUser performs a soft or hard delete on a user record
 // @Summary Delete User
-// @Description Mark a user as deleted by ID
+// @Description Soft-delete a user, or permanently purge if purge=true
 // @Tags Users
 // @Param id path string true "User ID (UUID)"
+// @Param purge query bool false "Purge permanently from the database"
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /users/{id} [delete]
+// @Router /admin/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	if !middleware.HasPermission(c, "Delete user") {
 		errors.SendString(
@@ -1177,6 +1230,14 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
+	purge := c.Query("purge") == "true"
+	action := actionDeleteUser
+	successMsg := "User deleted successfully"
+	if purge {
+		action = actionHardDeleteUser
+		successMsg = "User permanently deleted"
+	}
+
 	actorIDStr := c.GetString("user_id")
 	actorID, _ := uuid.Parse(actorIDStr)
 	ctx := c.Request.Context()
@@ -1189,14 +1250,22 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		"target_id":  id,
 		"ip":         c.ClientIP(),
 		"user_agent": c.Request.UserAgent(),
+		"purge":      purge,
 	})
 
-	err = h.Service.DeleteUser(ctx, userID)
+	if purge {
+		err = h.Service.HardDeleteUser(ctx, userID)
+	} else {
+		err = h.Service.DeleteUser(ctx, userID)
+	}
+
 	if err != nil {
 		log.Printf("[DeleteUser] %v", err)
-		_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
+		_ = h.LogService.PostAuditLogWithActorString(
+			ctx,
+			actorName,
 			&dto.PostAuditLogRequest{
-				Action: actionDeleteUser,
+				Action: action,
 				Target: id,
 				Status: models.StatusFail,
 				Metadata: buildMetadata(map[string]interface{}{
@@ -1204,28 +1273,33 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 					"ip":         c.ClientIP(),
 					"user_agent": c.Request.UserAgent(),
 					"error":      err.Error(),
+					"purge":      purge,
 				}),
-			})
+			},
+		)
 		errors.Send(
 			c,
 			http.StatusInternalServerError,
 			errors.CodeInternalError,
-			"Failed to delete user. Check if the user exists.",
+			"Failed to delete user.",
 			err,
 		)
 		return
 	}
 
-	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
+	_ = h.LogService.PostAuditLogWithActorString(
+		ctx,
+		actorName,
 		&dto.PostAuditLogRequest{
-			Action:   actionDeleteUser,
+			Action:   action,
 			Target:   id,
 			Status:   models.StatusSuccess,
 			Metadata: metadata,
-		})
+		},
+	)
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "User deleted successfully",
+		Message: successMsg,
 	})
 }
 
@@ -1249,9 +1323,11 @@ func (h *UserHandler) GetUserAccess(c *gin.Context) {
 
 	// 1000 limit is used for selection list population
 	if strings.Contains(strings.Join(permissions, ","), "View all appclients") {
-		resp, err = h.ClientService.GetClientList(ctx, 1000, 1, "")
+		resp, err = h.ClientService.GetClientList(ctx, 1000, 1, "", "", "")
 	} else {
-		resp, err = h.ClientService.GetBoundClients(ctx, userID, 1000, 1, "")
+		resp, err = h.ClientService.GetBoundClients(
+			ctx, userID, 1000, 1, "", "", "",
+		)
 	}
 
 	if err != nil {
@@ -1489,7 +1565,9 @@ func (h *UserHandler) GetUserDetailedAccess(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Fetch allowed clients (limit 1000 for list population)
-	resp, err := h.ClientService.GetAllowedClients(ctx, userID, 1000, 1, "")
+	resp, err := h.ClientService.GetAllowedClients(
+		ctx, userID, 1000, 1, "", "", "",
+	)
 	if err != nil {
 		log.Printf("[GetUserDetailedAccess] fetch: %v", err)
 		errors.Send(
@@ -1655,5 +1733,98 @@ func (h *UserHandler) PatchUserDetails(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "User details updated successfully",
+	})
+}
+
+// PostRestoreUser restores a soft-deleted user record
+// @Summary Restore User
+// @Description Restore a soft-deleted user by removing deleted_at
+// @Tags Users
+// @Param id path string true "User ID (UUID)"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /admin/users/{id}/restore [post]
+func (h *UserHandler) PostRestoreUser(c *gin.Context) {
+	if !middleware.HasPermission(c, "Delete user") {
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
+		return
+	}
+
+	id := c.Param("id")
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		log.Printf("[PostRestoreUser] UUID Parse: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
+		)
+		return
+	}
+
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	metadata := buildMetadata(map[string]interface{}{
+		"target_id":  id,
+		"ip":         c.ClientIP(),
+		"user_agent": c.Request.UserAgent(),
+	})
+
+	err = h.Service.UnarchiveUser(ctx, userID)
+	if err != nil {
+		log.Printf("[PostRestoreUser] %v", err)
+		_ = h.LogService.PostAuditLogWithActorString(
+			ctx,
+			actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionRestoreUser,
+				Target: id,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_id":  id,
+					"ip":         c.ClientIP(),
+					"user_agent": c.Request.UserAgent(),
+					"error":      err.Error(),
+				}),
+			},
+		)
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to restore user.",
+			err,
+		)
+		return
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(
+		ctx,
+		actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionRestoreUser,
+			Target:   id,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		},
+	)
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "User restored successfully",
 	})
 }

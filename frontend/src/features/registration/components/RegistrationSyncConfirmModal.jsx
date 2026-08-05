@@ -1,62 +1,28 @@
-import { createPortal } from "react-dom";
-import { getModalTheme } from "../../../components/modalTheme";
-import { getModalTransitionClassName, useModalTransition } from "../../../components/modalTransition";
-import { SyncConfirmIcon } from "./registrationIcons";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { RefreshCcw } from 'lucide-react';
 
 export default function RegistrationSyncConfirmModal({ open, accountTypeLabel = "this", isSubmitting = false, onCancel, onConfirm, colorMode = "light" }) {
-  const { shouldRender, isClosing } = useModalTransition(open);
-  const isDarkMode = colorMode === "dark";
-  const {
-    modalBoxClassName,
-    modalFooterClassName,
-    modalOverlayClassName,
-    modalPrimaryButtonClassName,
-    modalSecondaryButtonClassName,
-  } = getModalTheme(colorMode);
-  const iconWrapClassName = isDarkMode
-    ? "flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-[#f8d24e]/25 bg-[radial-gradient(circle_at_top,rgba(248,210,78,0.16),transparent_45%),linear-gradient(135deg,#7b0d15_0%,#263345_60%,#1a121c_100%)] shadow-[0_24px_50px_-28px_rgba(2,6,23,0.8)]"
-    : "flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-[#f8d24e]/30 bg-[radial-gradient(circle_at_top,rgba(248,210,78,0.22),transparent_45%),linear-gradient(135deg,#7b0d15_0%,#3d0910_58%,#1f0205_100%)] shadow-[0_24px_50px_-28px_rgba(43,3,7,0.72)]";
-  const titleClassName = isDarkMode
-    ? "text-2xl font-semibold tracking-tight text-[#f7dadd]"
-    : "text-2xl font-semibold tracking-tight text-[#7b0d15]";
-  const descriptionClassName = isDarkMode
-    ? "mt-2 text-sm text-[#c7adb4]"
-    : "mt-2 text-sm text-[#7d5c62]";
-
-  if (!shouldRender) {
-    return null;
-  }
-
-  return createPortal(
-    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)}>
-      <form method="dialog" className={`${modalBoxClassName} max-w-lg text-center`}>
-        <div className="px-6 py-8 sm:px-8">
-          <div className="mb-6 flex justify-center">
-            <div className={iconWrapClassName}>
-              <SyncConfirmIcon />
-            </div>
-          </div>
-
-          <h3 className={titleClassName}>
-            Apply changes to all {accountTypeLabel} users?
-          </h3>
-          <p className={descriptionClassName}>
-            Do you want to update all users with the {accountTypeLabel} account type with these changes?
-          </p>
-        </div>
-
-        <div className={modalFooterClassName}>
-          <div className="flex flex-col-reverse justify-center gap-3 sm:flex-row sm:justify-center">
-            <button type="button" className={modalSecondaryButtonClassName} onClick={onCancel} disabled={isSubmitting}>
-              No
-            </button>
-            <button type="button" className={modalPrimaryButtonClassName} onClick={onConfirm} disabled={isSubmitting}>
-              {isSubmitting ? "Syncing..." : "Yes"}
-            </button>
-          </div>
-        </div>
-      </form>
-    </dialog>,
-    document.body,
+  return (
+    <AlertDialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !isSubmitting && onCancel) onCancel(); }}>
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogMedia className="bg-[#7b0d15]/10 text-[#7b0d15] dark:bg-[#f8d24e]/10 dark:text-[#f8d24e]">
+            <RefreshCcw className="w-8 h-8" />
+          </AlertDialogMedia>
+          <AlertDialogTitle>Apply these changes?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Do you want to update all {accountTypeLabel} users with these changes?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col sm:flex-row sm:justify-center mt-4">
+          <AlertDialogCancel variant="ghost" onClick={onCancel} disabled={isSubmitting}>
+            No
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} disabled={isSubmitting} className="bg-[#7b0d15] text-white hover:bg-[#7b0d15]/90 dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#f8d24e]/90 transition-colors duration-200">
+            {isSubmitting ? "Syncing..." : "Yes"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

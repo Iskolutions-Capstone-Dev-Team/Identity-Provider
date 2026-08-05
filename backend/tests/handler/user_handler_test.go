@@ -237,3 +237,275 @@ func TestPatchUserDetailsHandler(t *testing.T) {
 		)
 	}
 }
+
+func TestGetUserList_Sorting(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("sort by ID is forbidden", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockService := mocks.NewMockUserService(ctrl)
+		handler := &v1.UserHandler{Service: mockService}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest(
+			"GET",
+			"/users?sort_by=id",
+			nil,
+		)
+		c.Set("user_id", uuid.New().String())
+		c.Set("permissions", []string{"View all users"})
+
+		handler.GetUserList(c)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("sort by invalid column is forbidden", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockService := mocks.NewMockUserService(ctrl)
+		handler := &v1.UserHandler{Service: mockService}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest(
+			"GET",
+			"/users?sort_by=invalid_col",
+			nil,
+		)
+		c.Set("user_id", uuid.New().String())
+		c.Set("permissions", []string{"View all users"})
+
+		handler.GetUserList(c)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("invalid order parameter is forbidden", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockService := mocks.NewMockUserService(ctrl)
+		handler := &v1.UserHandler{Service: mockService}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest(
+			"GET",
+			"/users?sort_by=email&order=invalid_order",
+			nil,
+		)
+		c.Set("user_id", uuid.New().String())
+		c.Set("permissions", []string{"View all users"})
+
+		handler.GetUserList(c)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+}
+
+func TestDeleteUserHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("soft delete user successfully", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockService := mocks.NewMockUserService(ctrl)
+		mockLogService := mocks.NewMockLogService(ctrl)
+		handler := &v1.UserHandler{
+			Service:    mockService,
+			LogService: mockLogService,
+		}
+
+		userID := uuid.New()
+		actorID := uuid.New()
+
+		mockLogService.EXPECT().
+			GetUserEmail(gomock.Any(), actorID[:]).
+			Return("admin@example.com", nil).
+			Times(1)
+
+		mockService.EXPECT().
+			DeleteUser(gomock.Any(), userID).
+			Return(nil).
+			Times(1)
+
+		mockLogService.EXPECT().
+			PostAuditLogWithActorString(
+				gomock.Any(),
+				"admin@example.com",
+				gomock.Any(),
+			).
+			Return(nil).
+			Times(1)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		c.Params = []gin.Param{{Key: "id", Value: userID.String()}}
+		c.Set("user_id", actorID.String())
+		c.Set("permissions", []string{"Delete user"})
+
+		c.Request, _ = http.NewRequest(
+			"DELETE",
+			"/admin/users/"+userID.String(),
+			nil,
+		)
+
+		handler.DeleteUser(c)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected 200, got %d", w.Code)
+		}
+
+		var resp dto.SuccessResponse
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Errorf("failed to unmarshal: %v", err)
+		}
+		if resp.Message != "User deleted successfully" {
+			t.Errorf("expected msg 'User deleted successfully', got %s",
+				resp.Message)
+		}
+	})
+
+	t.Run("hard delete user successfully", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockService := mocks.NewMockUserService(ctrl)
+		mockLogService := mocks.NewMockLogService(ctrl)
+		handler := &v1.UserHandler{
+			Service:    mockService,
+			LogService: mockLogService,
+		}
+
+		userID := uuid.New()
+		actorID := uuid.New()
+
+		mockLogService.EXPECT().
+			GetUserEmail(gomock.Any(), actorID[:]).
+			Return("admin@example.com", nil).
+			Times(1)
+
+		mockService.EXPECT().
+			HardDeleteUser(gomock.Any(), userID).
+			Return(nil).
+			Times(1)
+
+		mockLogService.EXPECT().
+			PostAuditLogWithActorString(
+				gomock.Any(),
+				"admin@example.com",
+				gomock.Any(),
+			).
+			Return(nil).
+			Times(1)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		c.Params = []gin.Param{{Key: "id", Value: userID.String()}}
+		c.Set("user_id", actorID.String())
+		c.Set("permissions", []string{"Delete user"})
+
+		c.Request, _ = http.NewRequest(
+			"DELETE",
+			"/admin/users/"+userID.String()+"?purge=true",
+			nil,
+		)
+
+		handler.DeleteUser(c)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected 200, got %d", w.Code)
+		}
+
+		var resp dto.SuccessResponse
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Errorf("failed to unmarshal: %v", err)
+		}
+		if resp.Message != "User permanently deleted" {
+			t.Errorf(
+				"expected msg 'User permanently deleted', got %s",
+				resp.Message,
+			)
+		}
+	})
+}
+
+func TestPostRestoreUserHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockUserService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+	handler := &v1.UserHandler{
+		Service:    mockService,
+		LogService: mockLogService,
+	}
+
+	userID := uuid.New()
+	actorID := uuid.New()
+
+	mockLogService.EXPECT().
+		GetUserEmail(gomock.Any(), actorID[:]).
+		Return("admin@example.com", nil).
+		Times(1)
+
+	mockService.EXPECT().
+		UnarchiveUser(gomock.Any(), userID).
+		Return(nil).
+		Times(1)
+
+	mockLogService.EXPECT().
+		PostAuditLogWithActorString(
+			gomock.Any(),
+			"admin@example.com",
+			gomock.Any(),
+		).
+		Return(nil).
+		Times(1)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	c.Params = []gin.Param{{Key: "id", Value: userID.String()}}
+	c.Set("user_id", actorID.String())
+	c.Set("permissions", []string{"Delete user"})
+
+	c.Request, _ = http.NewRequest(
+		"POST",
+		"/admin/users/"+userID.String()+"/restore",
+		nil,
+	)
+
+	handler.PostRestoreUser(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+
+	var resp dto.SuccessResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Errorf("failed to unmarshal: %v", err)
+	}
+	if resp.Message != "User restored successfully" {
+		t.Errorf(
+			"expected msg 'User restored successfully', got %s",
+			resp.Message,
+		)
+	}
+}

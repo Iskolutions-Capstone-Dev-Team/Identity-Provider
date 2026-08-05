@@ -4,17 +4,41 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/jmoiron/sqlx"
 )
 
+func getSafeUserSort(sortBy, order string) (string, string) {
+	sortCol := "created_at"
+	switch strings.ToLower(sortBy) {
+	case "email":
+		sortCol = "email"
+	case "first_name":
+		sortCol = "first_name"
+	case "last_name":
+		sortCol = "last_name"
+	case "status":
+		sortCol = "status"
+	}
+
+	sortOrd := "DESC"
+	if strings.ToLower(order) == "asc" {
+		sortOrd = "ASC"
+	}
+
+	return sortCol, sortOrd
+}
+
 type UserRepository interface {
-	GetUserList(ctx context.Context, limit, offset int) ([]models.User, error)
+	GetUserList(ctx context.Context, limit, offset int,
+		sortBy, order string) ([]models.User, error)
 	GetBoundUserList(ctx context.Context, limit, offset int,
-		adminID []byte) ([]models.User, error)
+		adminID []byte, sortBy, order string) ([]models.User, error)
 	GetAdminUserList(ctx context.Context, limit, offset int,
-		adminID []byte, hasViewAll bool) ([]models.User, error)
+		adminID []byte, hasViewAll bool,
+		sortBy, order string) ([]models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetUserByEmailIncludeDeleted(ctx context.Context,
 		email string) (*models.User, error)
@@ -37,6 +61,10 @@ type UserRepository interface {
 	CountAdminUsers(ctx context.Context) (int, error)
 	CountBoundUsers(ctx context.Context, adminID []byte) (int, error)
 	RemoveClientAdminBind(ctx context.Context, userID []byte) error
+	GetDeletedUserList(ctx context.Context, limit,
+		offset int) ([]models.User, error)
+	CountDeletedUsers(ctx context.Context) (int, error)
+	HardDeleteUser(ctx context.Context, id []byte) error
 }
 
 type userRepository struct {
@@ -53,10 +81,17 @@ type userRow struct {
 
 // GetUserList retrieves a paginated list of non-deleted users.
 func (r *userRepository) GetUserList(ctx context.Context,
-	limit, offset int,
+	limit, offset int, sortBy, order string,
 ) ([]models.User, error) {
 	var ids [][]byte
-	idQuery := `SELECT id FROM users WHERE deleted_at IS NULL LIMIT ? OFFSET ?`
+	sortCol, sortOrd := getSafeUserSort(sortBy, order)
+
+	idQuery := fmt.Sprintf(
+		"SELECT id FROM users WHERE deleted_at IS NULL "+
+			"ORDER BY %s %s LIMIT ? OFFSET ?",
+		sortCol,
+		sortOrd,
+	)
 
 	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
 	if err != nil {
@@ -67,7 +102,7 @@ func (r *userRepository) GetUserList(ctx context.Context,
 		return []models.User{}, nil
 	}
 
-	sql := `
+	sql := fmt.Sprintf(`
         SELECT u.id, u.first_name, u.middle_name, u.last_name, 
                u.name_suffix, u.email, u.status, u.created_at, 
                u.updated_at, u.account_type_id, r.id AS role_id,
@@ -77,7 +112,7 @@ func (r *userRepository) GetUserList(ctx context.Context,
         LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN account_types at ON u.account_type_id = at.id
         WHERE u.id IN (?) AND u.deleted_at IS NULL
-        ORDER BY u.created_at DESC`
+        ORDER BY u.%s %s`, sortCol, sortOrd)
 
 	fullQuery, args, err := sqlx.In(sql, ids)
 	if err != nil {
@@ -120,12 +155,16 @@ func (r *userRepository) GetUserList(ctx context.Context,
 // When hasViewAll is false, client data is scoped to the admin's
 // admin_allowed_clients entries.
 func (r *userRepository) GetAdminUserList(ctx context.Context,
-	limit, offset int, adminID []byte, hasViewAll bool,
+	limit, offset int, adminID []byte, hasViewAll bool, sortBy, order string,
 ) ([]models.User, error) {
 	var ids [][]byte
-	idQuery := `SELECT id FROM users
-	            WHERE deleted_at IS NULL AND role_id IS NOT NULL
-	            LIMIT ? OFFSET ?`
+	sortCol, sortOrd := getSafeUserSort(sortBy, order)
+
+	idQuery := fmt.Sprintf(`
+		SELECT id FROM users
+		WHERE deleted_at IS NULL AND role_id IS NOT NULL
+		ORDER BY %s %s
+		LIMIT ? OFFSET ?`, sortCol, sortOrd)
 
 	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
 	if err != nil {
@@ -136,7 +175,7 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 		return []models.User{}, nil
 	}
 
-	const sql = `
+	sql := fmt.Sprintf(`
 		SELECT u.id, u.first_name, u.middle_name, u.last_name,
 		       u.name_suffix, u.email, u.status, u.created_at,
 		       u.updated_at, u.account_type_id,
@@ -146,7 +185,7 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 		LEFT JOIN roles r ON u.role_id = r.id
 		LEFT JOIN account_types at ON u.account_type_id = at.id
 		WHERE u.id IN (?) AND u.deleted_at IS NULL
-		ORDER BY u.created_at DESC`
+		ORDER BY u.%s %s`, sortCol, sortOrd)
 
 	fullQuery, args, err := sqlx.In(sql, ids)
 	if err != nil {
@@ -197,24 +236,31 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 
 // GetBoundUserList retrieves a paginated list of users for an admin.
 func (r *userRepository) GetBoundUserList(ctx context.Context,
-	limit int, offset int, adminID []byte,
+	limit int, offset int, adminID []byte, sortBy, order string,
 ) ([]models.User, error) {
 	var ids [][]byte
 
-	const idQuery = `
-		SELECT id FROM (
-			SELECT u.id 
+	sortCol, sortOrd := getSafeUserSort(sortBy, order)
+
+	idQuery := fmt.Sprintf(`
+		SELECT bu.id FROM (
+			SELECT u.id, u.first_name, u.middle_name, u.last_name,
+			       u.name_suffix, u.email, u.status, u.created_at,
+			       u.updated_at
 			FROM users u
 			JOIN client_allowed_users cau ON u.id = cau.user_id
 			JOIN admin_allowed_clients aac 
 				ON cau.client_id = aac.client_id
 			WHERE aac.user_id = ? AND u.deleted_at IS NULL
 			UNION
-			SELECT id FROM users 
+			SELECT id, first_name, middle_name, last_name,
+			       name_suffix, email, status, created_at,
+			       updated_at FROM users 
 			WHERE id = ? AND deleted_at IS NULL
-		) AS bound_users
+		) AS bu
+		ORDER BY bu.%s %s
 		LIMIT ? OFFSET ?
-	`
+	`, sortCol, sortOrd)
 
 	err := r.db.SelectContext(ctx, &ids, idQuery, adminID, adminID,
 		limit, offset)
@@ -226,7 +272,7 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 		return []models.User{}, nil
 	}
 
-	const baseQuery = `
+	baseQuery := fmt.Sprintf(`
 		SELECT u.id, u.first_name, u.middle_name, 
 		       u.last_name, u.name_suffix, u.email, u.status, u.created_at, 
 		       u.updated_at, u.account_type_id, r.id AS role_id, 
@@ -236,8 +282,8 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 		LEFT JOIN roles r ON u.role_id = r.id
 		LEFT JOIN account_types at ON u.account_type_id = at.id
 		WHERE u.id IN (?) AND u.deleted_at IS NULL
-		ORDER BY u.created_at DESC
-	`
+		ORDER BY u.%s %s
+	`, sortCol, sortOrd)
 
 	fullQuery, args, err := sqlx.In(baseQuery, ids)
 	if err != nil {
@@ -920,4 +966,139 @@ func (r *userRepository) populateSingleUserClientsScopedToAdmin(
 	user.ManagedClients = managedClients
 
 	return nil
+}
+
+// GetDeletedUserList retrieves a paginated list of deleted users.
+func (r *userRepository) GetDeletedUserList(ctx context.Context,
+	limit, offset int,
+) ([]models.User, error) {
+	var ids [][]byte
+	idQuery := `SELECT id FROM users
+	            WHERE deleted_at IS NOT NULL
+	            LIMIT ? OFFSET ?`
+
+	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("[GetDeletedUserList] ID Fetch: %w", err)
+	}
+
+	if len(ids) == 0 {
+		return []models.User{}, nil
+	}
+
+	sql := `
+        SELECT u.id, u.first_name, u.middle_name, u.last_name, 
+               u.name_suffix, u.email, u.status, u.created_at, 
+               u.updated_at, u.account_type_id, r.id AS role_id,
+               r.role_name AS role_name, r.description AS role_description,
+               at.name AS account_type
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN account_types at ON u.account_type_id = at.id
+        WHERE u.id IN (?) AND u.deleted_at IS NOT NULL
+        ORDER BY u.created_at DESC`
+
+	fullQuery, args, err := sqlx.In(sql, ids)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"[GetDeletedUserList] In-Query expansion: %w",
+			err,
+		)
+	}
+
+	fullQuery = r.db.Rebind(fullQuery)
+
+	var rows []userRow
+	err = r.db.SelectContext(ctx, &rows, fullQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"[GetDeletedUserList] Database Query: %w",
+			err,
+		)
+	}
+
+	result := make([]models.User, 0, len(rows))
+	for _, row := range rows {
+		user := row.User
+		if row.RID.Valid {
+			user.RoleID = row.RID
+			user.Role = models.Role{
+				ID:          int(row.RID.Int64),
+				RoleName:    row.RName.String,
+				Description: row.RDesc.String,
+			}
+		}
+		if row.AccountType.Valid {
+			user.AccountType = row.AccountType.String
+		}
+		result = append(result, user)
+	}
+
+	if err := r.populateClients(ctx, result); err != nil {
+		return nil, fmt.Errorf("[GetDeletedUserList] Prep: %w", err)
+	}
+
+	return result, nil
+}
+
+// CountDeletedUsers returns the total count of soft-deleted users.
+func (r *userRepository) CountDeletedUsers(
+	ctx context.Context,
+) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM users WHERE deleted_at IS NOT NULL`
+	err := r.db.GetContext(ctx, &count, query)
+	return count, err
+}
+
+// HardDeleteUser permanently removes a user record from the database.
+func (r *userRepository) HardDeleteUser(
+	ctx context.Context,
+	id []byte,
+) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Get user email to delete associated OTPs
+	var email string
+	emailQuery := `SELECT email FROM users WHERE id = ?`
+	err = tx.GetContext(ctx, &email, emailQuery, id)
+	if err != nil {
+		return fmt.Errorf("getting user email for purge: %w", err)
+	}
+
+	// Delete from otps table by email (user_id column was migrated out)
+	queryOtps := `DELETE FROM otps WHERE email = ?`
+	if _, err := tx.ExecContext(ctx, queryOtps, email); err != nil {
+		return fmt.Errorf("clearing otps: %w", err)
+	}
+
+	tables := []string{
+		"client_allowed_users",
+		"admin_allowed_clients",
+		"refresh_tokens",
+		"authorization_codes",
+		"idp_sessions",
+		"user_authenticators",
+	}
+
+	for _, table := range tables {
+		query := fmt.Sprintf(
+			"DELETE FROM %s WHERE user_id = ?",
+			table,
+		)
+		if _, err := tx.ExecContext(ctx, query, id); err != nil {
+			return fmt.Errorf("clearing %s: %w", table, err)
+		}
+	}
+
+	query := `DELETE FROM users WHERE id = ?`
+	if _, err := tx.ExecContext(ctx, query, id); err != nil {
+		return fmt.Errorf("deleting user: %w", err)
+	}
+
+	return tx.Commit()
 }

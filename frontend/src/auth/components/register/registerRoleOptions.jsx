@@ -1,24 +1,24 @@
-import { AlumniRoleIcon, ApplicantRoleIcon, GuestRoleIcon, StudentRoleIcon } from "./registerIcons";
+import { Book, Users, Contact, GraduationCap } from "lucide-react";
 
 export const roleOptions = [
   {
     id: "student",
     label: "Student",
-    Icon: StudentRoleIcon,
+    Icon: Book,
   },
   {
     id: "guest",
     label: "Guest",
-    Icon: GuestRoleIcon,
+    Icon: Users,
   },
   {
     id: "applicant",
     label: "Applicant",
-    Icon: ApplicantRoleIcon,
+    Icon: Contact,
   },
   {
     id: "alumni",
     label: "Alumni",
-    Icon: AlumniRoleIcon,
+    Icon: GraduationCap,
   },
 ];

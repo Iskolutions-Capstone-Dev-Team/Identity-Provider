@@ -1,5 +1,7 @@
 import { forwardRef } from "react";
-import { ChevronDownIcon, RoleIcon } from "./registerIcons";
+import { Input } from "../../../components/ui/input";
+import { Button } from "../../../components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
 
 export function FieldError({ message }) {
   if (!message) {
@@ -22,37 +24,37 @@ export function RegisterSubmitButton({ children, compactTracking = false, disabl
   const trackingClass = compactTracking ? "tracking-[0.04em]" : "tracking-[0.08em]";
 
   return (
-    <button type="submit" disabled={disabled} className={`h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold ${trackingClass} text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:border-[#f8d24e]/40 disabled:bg-[#f8d24e]/60 disabled:text-[#7b0d15]/70 disabled:shadow-none`}>
+    <Button type="submit" disabled={disabled} className={`h-12 w-full rounded-xl border border-[#ffd700] bg-[#ffd700] text-sm font-semibold ${trackingClass} text-[#991b1b] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:cursor-not-allowed disabled:border-[#f8d24e]/40 disabled:bg-[#f8d24e]/60 disabled:text-[#7b0d15]/70 disabled:shadow-none`}>
       {children}
-    </button>
+    </Button>
   );
 }
 
-export function RegisterTextField({ autoComplete, error = "", icon, label, placeholder, required = false, type, value, onBlur, onChange }) {
+export function RegisterTextField({ autoComplete, error = "", icon, label, placeholder, required = false, type, value, onChange }) {
   return (
     <div>
       <FormLabel required={required}>{label}</FormLabel>
       <div className="relative">
-        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
           {icon}
         </span>
-        <input type={type} value={value} onChange={onChange} onBlur={onBlur} autoComplete={autoComplete} placeholder={placeholder} className={getInputClassName(error)}/>
+        <Input type={type} value={value} onChange={onChange} autoComplete={autoComplete} placeholder={placeholder} className={getInputClassName(error)}/>
       </div>
       <FieldError message={error} />
     </div>
   );
 }
 
-export function RegisterPasswordField({ error, icon, isVisible, label, placeholder, toggleLabel, value, visibleIcon, onBlur, onChange, onToggle }) {
+export function RegisterPasswordField({ error, icon, isVisible, label, placeholder, toggleLabel, value, visibleIcon, onChange, onToggle }) {
   return (
     <div>
       <FormLabel required>{label}</FormLabel>
       <div className="relative">
-        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
           {icon}
         </span>
-        <input type={isVisible ? "text" : "password"} value={value} onChange={onChange} onBlur={onBlur} autoComplete="new-password" placeholder={placeholder} className={getInputClassName(error, true)}/>
-        <button type="button" onClick={onToggle} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]" aria-label={toggleLabel}>
+        <Input type={isVisible ? "text" : "password"} value={value} onChange={onChange} autoComplete="new-password" placeholder={placeholder} className={getInputClassName(error, true)}/>
+        <button type="button" onClick={onToggle} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15] z-10" aria-label={toggleLabel}>
           {visibleIcon}
         </button>
       </div>
@@ -65,13 +67,10 @@ export const RoleSelectField = forwardRef(function RoleSelectField(
   {
     error,
     isDisabled,
-    isOpen,
     options,
     placeholderIcon,
     value,
-    onBlur,
     onSelect,
-    onToggle,
   },
   ref,
 ) {
@@ -79,61 +78,33 @@ export const RoleSelectField = forwardRef(function RoleSelectField(
   const SelectedIcon = selectedOption?.Icon;
 
   return (
-    <div ref={ref} className={`relative ${isOpen ? "z-[80]" : ""}`}>
-      <div className={getSelectContainerClassName(error)}>
-        <button type="button" onClick={onToggle} onBlur={() => {
-            window.setTimeout(() => {
-              if (!ref.current?.contains(document.activeElement)) {
-                onBlur();
-              }
-            }, 0);
-          }}
-          className="flex h-12 w-full items-center justify-between gap-3 bg-transparent pl-4 pr-2 text-left outline-none"
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-          disabled={isDisabled}
-        >
-          <span className="flex min-w-0 items-center gap-3">
-            <span className="shrink-0 text-[#7b0d15]/60">
-              {SelectedIcon ? <SelectedIcon /> : placeholderIcon}
-            </span>
-            <span className={`truncate text-sm ${
-                value ? "text-slate-800" : "text-slate-400"
-              }`}
-            >
-              {selectedOption?.label || "Select your role"}
-            </span>
+    <div className="relative">
+      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
+        {SelectedIcon ? <SelectedIcon className="size-5" strokeWidth={1.5} /> : placeholderIcon}
+      </span>
+      <Select value={value} onValueChange={(val) => onSelect(val === "none" ? "" : val)} disabled={isDisabled}>
+        <SelectTrigger ref={ref} className={getInputClassName(error)}>
+          <span className={`truncate text-sm ${value ? "text-slate-800" : "text-slate-400"}`}>
+            <SelectValue placeholder="Select your role" />
           </span>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#991b1b]">
-            <ChevronDownIcon
-              className={`h-5 w-5 transition duration-200 ${
-                isOpen ? "rotate-180" : ""
-              }`}
-            />
-          </span>
-        </button>
-      </div>
-
-      {isOpen ? (
-        <div className="absolute left-0 right-0 top-[calc(100%+0.25rem)] z-[90] max-h-40 overflow-y-auto rounded-xl border border-white/20 bg-white shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl" role="listbox" aria-label="Select your role">
-          <RoleOptionButton
-            icon={<RoleIcon />}
-            isSelected={!value}
-            label="Select your role"
-            onClick={() => onSelect("")}
-          />
-
+        </SelectTrigger>
+        <SelectContent alignItemWithTrigger={false} sideOffset={4} className="z-[90] bg-white shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl">
+          <SelectItem value="none" className="py-2.5">
+            <span className="flex items-center gap-3">
+              {placeholderIcon}
+              Select your role
+            </span>
+          </SelectItem>
           {options.map((option) => (
-            <RoleOptionButton
-              key={option.id}
-              icon={<option.Icon />}
-              isSelected={value === option.id}
-              label={option.label}
-              onClick={() => onSelect(option.id)}
-            />
+            <SelectItem key={option.id} value={option.id} className="py-2.5">
+              <span className="flex items-center gap-3">
+                <option.Icon className="size-5" strokeWidth={1.5} />
+                {option.label}
+              </span>
+            </SelectItem>
           ))}
-        </div>
-      ) : null}
+        </SelectContent>
+      </Select>
     </div>
   );
 });
@@ -154,7 +125,7 @@ function RoleOptionButton({ icon, isSelected, label, onClick }) {
 }
 
 function getInputClassName(hasError, hasActionButton = false) {
-  return `h-12 w-full rounded-xl border bg-white/95 pl-12 pr-4 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
+  return `!h-12 w-full rounded-xl border bg-white/95 pl-12 pr-4 text-sm text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
     hasError
       ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
       : "border-white/20 focus:border-[#ffd700] focus:ring-[#ffd700]/20"

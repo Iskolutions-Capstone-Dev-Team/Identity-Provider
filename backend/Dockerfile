@@ -25,8 +25,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # Stage 2: Final lightweight runtime image
 FROM alpine:3.20
 
-# Install CA certs and tzdata for correct time handling in your IdP
-RUN apk --no-cache add ca-certificates tzdata
+# Install packages needed for backups, restores, and runtime
+RUN apk --no-cache add ca-certificates tzdata mysql-client bash aws-cli
 
 WORKDIR /app
 

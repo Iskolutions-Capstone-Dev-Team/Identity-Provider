@@ -28,11 +28,13 @@ func TestGetLogListWithFilters(t *testing.T) {
 
 	// 1. Setup mock expectations
 	mockRepo.EXPECT().
-		GetLogListWithFilters(gomock.Any(), filters, 10, 0).
+		GetLogListWithFilters(gomock.Any(), filters, 10, 0, gomock.Any(), gomock.Any()).
 		Return(logs, int64(1), nil)
 
 	// 2. Execute
-	resp, total, lastPage, err := logService.GetLogListWithFilters(context.Background(), filters, 10, 1)
+	resp, total, lastPage, err := logService.GetLogListWithFilters(
+		context.Background(), filters, 10, 1, "", "",
+	)
 
 	// 3. Verify
 	if err != nil {

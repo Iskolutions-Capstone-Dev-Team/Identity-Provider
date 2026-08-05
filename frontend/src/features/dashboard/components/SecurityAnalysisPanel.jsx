@@ -1,238 +1,198 @@
-import DashboardPanel from "./DashboardPanel";
-import { CheckIcon, ClockIcon, FingerprintIcon, InfoIcon, QuestionIcon, ShieldIcon } from "./DashboardIcons";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "../../../components/reui/alert";
+import { Badge } from "../../../components/ui/badge";
+import { Skeleton } from "../../../components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "../../../components/ui/popover";
+import { Button } from "../../../components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
+import { Frame, FrameHeader, FramePanel, FrameTitle } from "../../../components/reui/frame";
+import { ArrowLeftIcon, ArrowRightIcon, MessageCircleQuestionMark, ShieldCheck, Fingerprint, Clock, CircleCheckIcon, ChevronRightIcon } from "lucide-react";
 
-function SkeletonBlock({ className = "", colorMode = "light" }) {
-  const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";
-
+function SecurityMetric({ icon, label, value, isLoading = false }) {
   return (
-    <span className={`block animate-pulse rounded-lg ${toneClassName} ${className}`} />
-  );
-}
-
-function getDashboardAccent(colorMode) {
-  return colorMode === "dark"
-    ? {
-        iconBg: "bg-[#f8d24e]/18",
-        iconText: "text-[#f8d24e]",
-        chipBg: "bg-[#f8d24e]",
-        chipText: "text-[#2a1518]",
-      }
-    : {
-        iconBg: "bg-[#7b0d15]/10",
-        iconText: "text-[#7b0d15]",
-        chipBg: "bg-[#7b0d15]",
-        chipText: "text-white",
-      };
-}
-
-function SecurityMetric({ icon, label, value, colorMode, isLoading = false }) {
-  const isDarkMode = colorMode === "dark";
-  const accent = getDashboardAccent(colorMode);
-
-  return (
-    <div className={`rounded-xl border p-4 ${
-      isDarkMode
-        ? "border-white/10 bg-white/[0.04]"
-        : "border-[#7b0d15]/10 bg-[#fff8f3]"
-    }`}>
-      <div className="flex min-h-32 flex-col items-start justify-start gap-3">
-        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${accent.iconBg} ${accent.iconText}`}>
+    <Card className="w-full shadow-none bg-muted/30">
+      <CardContent className="flex flex-col gap-3 px-4 py-2.5">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center [&_svg]:size-6 bg-[#7b0d15] rounded-2xl text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15]">
           {icon}
-        </span>
-        <div className="min-w-0">
-          <p className={`text-[0.68rem] font-black uppercase tracking-[0.14em] ${
-            isDarkMode ? "text-slate-300" : "text-slate-500"
-          }`}>
-            {label}
-          </p>
-          {isLoading ? (
-            <SkeletonBlock className="mt-2 h-6 w-24" colorMode={colorMode} />
-          ) : (
-            <p className={`mt-1 text-lg font-black ${
-              isDarkMode ? "text-white" : "text-[#2a1518]"
-            }`}>
-              {value}
-            </p>
-          )}
         </div>
-      </div>
-    </div>
+        <span className="text-foreground block text-sm leading-tight font-medium">
+          {label}
+        </span>
+        {isLoading ? (
+          <Skeleton className="h-4 w-24" />
+        ) : (
+          <p className="text-foreground text-base leading-relaxed font-bold">
+            {value}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-function SecurityNote({ icon, title, children, tone = "blue", colorMode }) {
-  const isDarkMode = colorMode === "dark";
-  const toneClassName =
-    tone === "blue"
-      ? isDarkMode
-        ? "border-[#3b82f6]/30 bg-[#08284c]/42 text-[#93c5fd]"
-        : "border-[#2563eb]/20 bg-[#eff6ff] text-[#1d4ed8]"
-      : isDarkMode
-        ? "border-[#f8c21a]/30 bg-[#2c2108]/42 text-[#f8d24e]"
-        : "border-[#f8c21a]/35 bg-[#fff8d8] text-[#9a5b00]";
-  const iconClassName =
-    tone === "blue"
-      ? isDarkMode
-        ? "text-[#93c5fd]"
-        : "text-[#1d4ed8]"
-      : isDarkMode
-        ? "text-[#f8d24e]"
-        : "text-[#9a5b00]";
+function SecurityMeaningPopover() {
+  const [currentStep, setCurrentStep] = useState(0)
+
+  const steps = [
+    {
+      title: "What does this mean?",
+      description: "The system analyzed authentication activity and user behavior. An anomaly count of zero indicates that no suspicious or unusual activity was detected.",
+    },
+    {
+      title: "AI Analysis",
+      description: "Updates every 2 hours.",
+    },
+  ]
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1)
+    }
+  }
+
+  const handlePrev = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
+
+  const isFirst = currentStep === 0
+  const isLast = currentStep === steps.length - 1
 
   return (
-    <div className={`flex gap-3 rounded-xl border p-3.5 ${toneClassName}`}>
-      <span className={`mt-0.5 flex shrink-0 items-center justify-center ${iconClassName}`}>
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <p className="font-black">{title}</p>
-        <p className="mt-2 text-sm leading-6">{children}</p>
-      </div>
-    </div>
-  );
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="icon" className="h-8 w-8 transition border-0 bg-[#7b0d15] text-[#f8d24e] hover:bg-[#7b0d15]/90 hover:text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#f8d24e]/90 dark:hover:text-[#7b0d15]" aria-label="Open security analysis explanation">
+          <MessageCircleQuestionMark className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-72 gap-2 px-3 pt-3 pb-2"
+        side="bottom"
+        align="end"
+        sideOffset={8}
+      >
+        <div className="space-y-2">
+          <p className="leading-tight font-medium text-foreground">
+            {steps[currentStep].title}
+          </p>
+          <p className="text-muted-foreground text-sm">
+            {steps[currentStep].description}
+          </p>
+        </div>
+        <div className="flex items-center justify-between mt-4">
+          <span className="text-muted-foreground text-xs font-medium">
+            {currentStep + 1} of {steps.length}
+          </span>
+          <div className="flex gap-0.5">
+            <Button aria-label="Previous step" className="h-6 w-6" disabled={isFirst} onClick={handlePrev} size="icon" variant="ghost">
+              <ArrowLeftIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            </Button>
+            <Button aria-label="Next step" className="h-6 w-6" disabled={isLast} onClick={handleNext} size="icon" variant="ghost">
+              <ArrowRightIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
-function SecurityMeaningDropdown({ colorMode }) {
-  const isDarkMode = colorMode === "dark";
-  const triggerClassName = isDarkMode
-    ? "border-[#f8c21a]/35 bg-[#f8c21a]/10 text-[#f8d24e] hover:bg-[#f8d24e]/18"
-    : "border-[#7b0d15]/15 bg-[#7b0d15]/8 text-[#7b0d15] hover:bg-[#7b0d15]/12";
-  const menuClassName = isDarkMode
-    ? "border-[#f8c21a]/30 bg-[#171914] text-[#f8d24e] shadow-[0_24px_60px_-34px_rgba(0,0,0,0.9)]"
-    : "border-[#f8c21a]/35 bg-[#fff8d8] text-[#9a5b00] shadow-[0_24px_60px_-34px_rgba(123,13,21,0.5)]";
-
-  return (
-    <div className="dropdown dropdown-end">
-      <button type="button" tabIndex={0} aria-label="Open security analysis explanation" className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${triggerClassName}`}>
-        <QuestionIcon className="h-5 w-5" />
-      </button>
-      <div tabIndex={0} className={`dropdown-content z-50 mt-3 w-80 rounded-xl border p-4 ${menuClassName}`}>
-        <p className="font-black">What does this mean?</p>
-        <p className="mt-2 text-sm leading-6">
-          The system analyzed authentication activity and user behavior. An anomaly count of zero indicates that no suspicious or unusual activity was detected.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-export default function SecurityAnalysisPanel({ analysis, analyzedAt, colorMode = "light", isLoading = false }) {
-  const isDarkMode = colorMode === "dark";
-  const accent = getDashboardAccent(colorMode);
+export default function SecurityAnalysisPanel({ analysis, analyzedAt, isLoading = false }) {
   const anomalies = Array.isArray(analysis?.anomalies) ? analysis.anomalies : [];
   const confidencePercent = Math.round((Number(analysis?.confidence) || 0) * 100);
   const threatLevel = analysis?.threat_level || "UNKNOWN";
 
+  // Use a softer color for low threat, destructive for high
+  const threatLevelColor = threatLevel === "LOW" ? "text-emerald-500" : threatLevel === "HIGH" ? "text-destructive" : "text-amber-500";
+
   return (
-    <DashboardPanel colorMode={colorMode} className="p-5">
-      <div className="flex items-start justify-between gap-4">
-        <h2 className={`text-xl font-black uppercase tracking-[0.03em] ${
-          isDarkMode ? "text-white" : "text-[#7b0d15]"
-        }`}>
-          Security Analysis
-        </h2>
-        <SecurityMeaningDropdown colorMode={colorMode} />
-      </div>
-      <p className={`mt-1 text-sm ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-        AI-assisted authentication review
-      </p>
-
-      <div className="mt-5">
-        <SecurityNote
-          icon={<InfoIcon />}
-          title="AI Analysis"
-          tone="blue"
-          colorMode={colorMode}
-        >
-          Updates every 2 hours.
-        </SecurityNote>
-      </div>
-
-      <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
-        <SecurityMetric
-          icon={<ShieldIcon />}
-          label="Threat Level"
-          value={<span className="text-[#20e58d]">{threatLevel}</span>}
-          colorMode={colorMode}
-          isLoading={isLoading}
-        />
-        <SecurityMetric
-          icon={<FingerprintIcon />}
-          label="Confidence"
-          value={`${confidencePercent}%`}
-          colorMode={colorMode}
-          isLoading={isLoading}
-        />
-        <SecurityMetric
-          icon={<ClockIcon />}
-          label="Analyzed At"
-          value={analyzedAt}
-          colorMode={colorMode}
-          isLoading={isLoading}
-        />
-      </div>
-
-      <div className={`mt-5 flex gap-4 rounded-xl border border-[#20e58d]/30 p-4 ${
-        isDarkMode ? "bg-[#0a3b35]/40" : "bg-[#e9fff5]"
-      }`}>
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[#20e58d]/35 text-[#20e58d]">
-          <CheckIcon />
-        </span>
+    <Card className="flex flex-col border-border bg-card shadow-sm h-full">
+      <CardHeader className="pb-4 flex flex-row items-start justify-between">
         <div>
-          <p className={`text-sm font-black uppercase tracking-[0.08em] ${
-            isDarkMode ? "text-white" : "text-[#14523b]"
-          }`}>
-            AI Summary
-          </p>
-          {isLoading ? (
-            <div className="mt-3 space-y-2">
-              <SkeletonBlock className="h-4 w-full" colorMode={colorMode} />
-              <SkeletonBlock className="h-4 w-3/4" colorMode={colorMode} />
-            </div>
-          ) : (
-            <p className={`mt-2 text-sm leading-6 ${
-              isDarkMode ? "text-slate-100" : "text-slate-700"
-            }`}>
-              {analysis?.advisory || "No security advisory is available."}
-            </p>
-          )}
+          <CardTitle className="text-xl font-bold uppercase tracking-wide">Security Analysis</CardTitle>
+          <CardDescription className="mt-1">AI-assisted authentication review</CardDescription>
         </div>
-      </div>
+        <SecurityMeaningPopover />
+      </CardHeader>
 
-      <div className="mt-6">
-        <div className="flex items-center gap-3">
-          <h3 className={`text-lg font-black uppercase tracking-[0.03em] ${
-            isDarkMode ? "text-white" : "text-[#7b0d15]"
-          }`}>
-            Anomalies
-          </h3>
-          {isLoading ? (
-            <SkeletonBlock className="h-8 w-10 rounded-full" colorMode={colorMode} />
-          ) : (
-            <span className={`rounded-full px-3 py-1 text-sm font-black ${accent.chipBg} ${accent.chipText}`}>
-              {anomalies.length}
-            </span>
-          )}
+      <CardContent className="flex flex-col gap-5 pt-2">
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+          <SecurityMetric
+            icon={<ShieldCheck aria-hidden="true" />}
+            label="Threat Level"
+            value={<span className={threatLevelColor}>{threatLevel}</span>}
+            isLoading={isLoading}
+          />
+          <SecurityMetric
+            icon={<Fingerprint aria-hidden="true" />}
+            label="Confidence"
+            value={`${confidencePercent}%`}
+            isLoading={isLoading}
+          />
+          <SecurityMetric
+            icon={<Clock aria-hidden="true" />}
+            label="Analyzed At"
+            value={<span className="text-sm">{analyzedAt}</span>}
+            isLoading={isLoading}
+          />
         </div>
 
-        {isLoading ? (
-          <SkeletonBlock className="mt-3 h-4 w-48" colorMode={colorMode} />
-        ) : anomalies.length > 0 ? (
-          <ul className={`mt-3 list-inside list-disc space-y-2 text-sm ${
-            isDarkMode ? "text-slate-300" : "text-slate-600"
-          }`}>
-            {anomalies.map((anomaly) => (
-              <li key={String(anomaly)}>{String(anomaly)}</li>
-            ))}
-          </ul>
-        ) : (
-          <p className={`mt-3 text-sm ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-            No anomalies detected in the selected period.
-          </p>
-        )}
+        <Alert variant="success">
+          <CircleCheckIcon />
+          <AlertTitle>AI Summary</AlertTitle>
+          <AlertDescription>
+            {isLoading ? (
+              <div className="space-y-2 mt-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ) : (
+              analysis?.advisory || "No security advisory is available."
+            )}
+          </AlertDescription>
+        </Alert>
 
-      </div>
-
-    </DashboardPanel>
+        <div className="pt-2">
+          <Frame className="w-full" stacked>
+            <Collapsible defaultOpen className="group/collapsible">
+              <CollapsibleTrigger className="w-full">
+                <FrameHeader className="flex grow flex-row items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <FrameTitle className="uppercase tracking-wide">ANOMALIES</FrameTitle>
+                    {isLoading ? (
+                      <Skeleton className="h-6 w-8 rounded-full" />
+                    ) : (
+                      <Badge variant="secondary" className="rounded-full font-bold">
+                        {anomalies.length}
+                      </Badge>
+                    )}
+                  </div>
+                  <ChevronRightIcon className="text-muted-foreground size-4 transition-transform duration-200 group-data-open/collapsible:rotate-90" />
+                </FrameHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <FramePanel>
+                  {isLoading ? (
+                    <Skeleton className="mt-1 h-4 w-48" />
+                  ) : anomalies.length > 0 ? (
+                    <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                      {anomalies.map((anomaly) => (
+                        <li key={String(anomaly)}>{String(anomaly)}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">
+                      No anomalies detected in the selected period.
+                    </p>
+                  )}
+                </FramePanel>
+              </CollapsibleContent>
+            </Collapsible>
+          </Frame>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
