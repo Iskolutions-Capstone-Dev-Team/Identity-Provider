@@ -8,7 +8,7 @@ export default function MfaSetupQrStep({ qrCodeUrl, isLoading, colorMode = "dark
   const titleClassName = `scroll-m-20 text-2xl font-semibold tracking-tight text-center ${isDarkMode ? "text-white" : "text-foreground"}`;
 
   const alertClassName = isDarkMode
-    ? "bg-blue-950/20 text-blue-100 border-blue-900/50"
+    ? "bg-[#f8d24e]/10 text-[#f8d24e] border-[#f8d24e]/30"
     : "bg-blue-50 text-blue-900 border-blue-200";
 
   return (
@@ -20,7 +20,7 @@ export default function MfaSetupQrStep({ qrCodeUrl, isLoading, colorMode = "dark
 
         <Alert className={alertClassName}>
           <Info className="h-4 w-4" />
-          <AlertDescription className="ml-2">
+          <AlertDescription className="ml-2 text-inherit">
             Note: Scan this QR code using any authenticator app before clicking Next.
           </AlertDescription>
         </Alert>

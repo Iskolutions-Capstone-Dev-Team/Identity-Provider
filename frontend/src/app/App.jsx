@@ -5,7 +5,7 @@ import PermissionRoute from "../auth/components/PermissionRoute";
 import IdpLayout from "../layouts/IdpLayout";
 import { PermissionProvider } from "../providers/PermissionProvider";
 import { ROUTE_PATHS } from "../routes/routePaths";
-import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS } from "../routes/routePermissions";
+import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS, BACKUP_RESTORE_PAGE_PERMISSIONS } from "../routes/routePermissions";
 import { buildAccessDeniedPath, ACCESS_DENIED_PATH, LEGACY_UNAUTHORIZED_PATH } from "../auth/utils/loginRoute";
 import { authPageBackground, authPagePatternStyle } from "../auth/utils/authBackground";
 import { hasStoredAuthTokens } from "../auth/utils/authRecovery";
@@ -26,6 +26,7 @@ const CreateRolePage = lazy(() => import("../features/roles/pages/CreateRolePage
 const AppClient = lazy(() => import("../features/app-clients/pages/AppClient"));
 const CreateAppClientPage = lazy(() => import("../features/app-clients/pages/CreateAppClientPage"));
 const AuditLogs = lazy(() => import("../features/audit-logs/pages/AuditLogs"));
+const BackupRestore = lazy(() => import("../features/backup-restore/pages/BackupRestore"));
 const FAQ = lazy(() => import("../features/faq/pages/FAQ"));
 const Registration = lazy(() => import("../features/registration/pages/Registration"));
 const CreateRegistrationConfigPage = lazy(() => import("../features/registration/pages/CreateRegistrationConfigPage"));

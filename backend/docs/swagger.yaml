@@ -51,9 +51,13 @@ definitions:
         type: string
       name:
         type: string
+      one_portal_link:
+        type: string
     type: object
   dto.ClientResponse:
     properties:
+      access_token_ttl:
+        type: integer
       allowed_roles:
         items:
           $ref: '#/definitions/dto.RoleResponse'
@@ -76,8 +80,12 @@ definitions:
         type: string
       name:
         type: string
+      one_portal_link:
+        type: string
       redirect_uri:
         type: string
+      refresh_token_ttl:
+        type: integer
     type: object
   dto.ClientSecretResponse:
     properties:
@@ -90,8 +98,14 @@ definitions:
     type: object
   dto.ErrorResponse:
     properties:
+      code:
+        example: 1001
+        type: integer
       error:
-        example: Error description
+        example: Internal technical details
+        type: string
+      message:
+        example: User-friendly message
         type: string
     type: object
   dto.GetAuditLogListResponse:
@@ -147,6 +161,10 @@ definitions:
     type: object
   dto.PostAdminUserRequest:
     properties:
+      accessible_clients:
+        items:
+          type: string
+        type: array
       account_type_id:
         type: integer
       allowed_appclients:
@@ -168,6 +186,8 @@ definitions:
         type: string
       role_id:
         type: integer
+      skip_auto_client_assignment:
+        type: boolean
       status:
         type: string
     required:
@@ -218,6 +238,12 @@ definitions:
         items:
           $ref: '#/definitions/dto.AccountTypeConfigResponse'
         type: array
+      current_page:
+        type: integer
+      last_page:
+        type: integer
+      total_count:
+        type: integer
     type: object
   dto.RoleListResponse:
     properties:
@@ -328,6 +354,17 @@ definitions:
     required:
     - client_ids
     type: object
+  dto.UpdateUserDetailsRequest:
+    properties:
+      account_type_id:
+        type: integer
+      mfa_code:
+        type: string
+      role_id:
+        type: integer
+    required:
+    - mfa_code
+    type: object
   dto.UpdateUserNameRequest:
     properties:
       first_name:
@@ -413,6 +450,10 @@ definitions:
     type: object
   dto.UserResponse:
     properties:
+      account_type:
+        type: string
+      account_type_id:
+        type: integer
       clients:
         items:
           $ref: '#/definitions/dto.ClientAccessResponse'
@@ -427,6 +468,10 @@ definitions:
         type: string
       last_name:
         type: string
+      managed_clients:
+        items:
+          $ref: '#/definitions/dto.ClientAccessResponse'
+        type: array
       middle_name:
         type: string
       name_suffix:
@@ -462,6 +507,10 @@ definitions:
     type: object
   dto.UserSimplifiedResponse:
     properties:
+      account_type:
+        type: string
+      account_type_id:
+        type: integer
       clients:
         items:
           $ref: '#/definitions/dto.ClientAccessResponse'
@@ -536,6 +585,24 @@ definitions:
         items:
           $ref: '#/definitions/service.JWK'
         type: array
+    type: object
+  v1.BackupInfo:
+    properties:
+      message:
+        example: no backup saved
+        type: string
+      size:
+        example: 1.2MB
+        type: string
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2026-08-02T19:15:15Z"
+        type: string
+      type:
+        example: daily
+        type: string
     type: object
 host: identity-provider.isaxbsit2027.com
 info:
@@ -632,6 +699,91 @@ paths:
       summary: Check Invitation
       tags:
       - Registration
+  /admin/backup/latest:
+    get:
+      consumes:
+      - application/json
+      description: Returns status and timestamp of the last backup.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.BackupInfo'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Retrieve latest backup details
+      tags:
+      - Backup
+  /admin/backup/restore:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Restores the MySQL database using the provided file.
+      parameters:
+      - description: Backup file (.sql.gz)
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Restore database from backup file
+      tags:
+      - Backup
+  /admin/backup/run:
+    post:
+      consumes:
+      - application/json
+      description: Triggers the core MySQL S3 backup script.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Run manual backup
+      tags:
+      - Backup
   /admin/clients:
     get:
       description: Fetch active clients with pagination
@@ -813,7 +965,18 @@ paths:
       - Clients
   /admin/registration/config:
     get:
-      description: Fetch account types and their top 5 preapproved clients.
+      description: Fetch paginated account types and their top 5 preapproved clients.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -943,6 +1106,35 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Get Clients By Account Type ID
+      tags:
+      - Registration
+  /admin/registration/sync/{id}:
+    post:
+      description: Sync clients for all users belonging to a specific account type.
+      parameters:
+      - description: Account Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Sync Account Type Users
       tags:
       - Registration
   /admin/roles:
@@ -1104,6 +1296,45 @@ paths:
       summary: Create Admin User
       tags:
       - Users
+  /admin/users/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: Updates user account type and role, requiring MFA.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserDetailsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Edit user details (Account Type & Role)
+      tags:
+      - Users
   /admin/users/{id}/access:
     put:
       consumes:
@@ -1137,6 +1368,43 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Sync User Client Access
+      tags:
+      - Users
+  /admin/users/{id}/managed-clients:
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Updates the list of app-clients that an administrator
+        can manage.
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Access data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserAccessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Sync Admin Managed Clients
       tags:
       - Users
   /admin/users/access:

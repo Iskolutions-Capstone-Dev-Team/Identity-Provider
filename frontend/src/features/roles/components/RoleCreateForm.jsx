@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import { User, Settings, Monitor, FileText, Shield } from "lucide-react";
+import { User, Settings, Monitor, FileText, Shield, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +53,14 @@ const PERMISSION_GROUPS = [
     icon: <Settings className="text-muted-foreground size-4" />,
     permissions: [
       "Create Registration Config", "Edit Registration Config", "View Registration Config", "Delete Registration Config"
+    ]
+  },
+  {
+    value: "backuprestore",
+    trigger: "Backup & Restore",
+    icon: <Database className="text-muted-foreground size-4" />,
+    permissions: [
+      "Manage Backup and Restore"
     ]
   }
 ];

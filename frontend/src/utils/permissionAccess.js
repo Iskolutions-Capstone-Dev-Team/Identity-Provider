@@ -25,6 +25,7 @@ export const PERMISSIONS = Object.freeze({
   ACTIVATE_USER: "Activate user",
   VIEW_AUDIT_LOGS: "View audit logs",
   VIEW_SECURITY_LOGS: "View security logs",
+  MANAGE_BACKUP_AND_RESTORE: "Manage Backup and Restore",
 });
 
 export const USER_POOL_PAGE_PERMISSIONS = Object.freeze([
@@ -61,11 +62,16 @@ export const APP_CLIENT_PAGE_PERMISSIONS = Object.freeze([
   PERMISSIONS.DELETE_APPCLIENT,
 ]);
 
+export const BACKUP_RESTORE_PAGE_PERMISSIONS = Object.freeze([
+  PERMISSIONS.MANAGE_BACKUP_AND_RESTORE,
+]);
+
 export const ROUTE_PERMISSIONS = Object.freeze({
   "/user-pool": USER_POOL_PAGE_PERMISSIONS,
   "/roles": [PERMISSIONS.VIEW_ROLES],
   "/app-client": APP_CLIENT_PAGE_PERMISSIONS,
   "/audit-logs": [PERMISSIONS.VIEW_AUDIT_LOGS],
+  "/backup-restore": BACKUP_RESTORE_PAGE_PERMISSIONS,
   "/faq": [],
   "/registration": REGISTRATION_PAGE_PERMISSIONS,
   "/registration/create": [PERMISSIONS.CREATE_REGISTRATION_CONFIG],

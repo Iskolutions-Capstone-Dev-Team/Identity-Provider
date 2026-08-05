@@ -23,6 +23,7 @@ type Handlers struct {
 	MFAHandler          *v1.MFAHandler
 	PasskeyHandler      *v1.PasskeyHandler
 	MetricsHandler      *v1.MetricsHandler
+	BackupHandler       *v1.BackupHandler
 	UserRepo            repository.UserRepository
 
 	RoleRepo   repository.RoleRepository
@@ -315,6 +316,14 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 				"/metrics",
 				h.MetricsHandler.GetRegistrationMetrics,
 			)
+		}
+
+		// Backup and Restore Management
+		backup := admin.Group("/backup")
+		{
+			backup.GET("/latest", h.BackupHandler.GetLatestBackup)
+			backup.POST("/run", h.BackupHandler.PostRunBackup)
+			backup.POST("/restore", h.BackupHandler.PostRestoreBackup)
 		}
 	}
 }
