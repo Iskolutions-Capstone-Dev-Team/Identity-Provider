@@ -23,8 +23,8 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
     ? "block text-sm font-semibold text-white"
     : "block text-sm font-semibold text-[#351018]";
   const noteClassName = isDarkMode
-    ? "rounded-2xl border border-blue-300/35 bg-blue-950/28 text-left text-blue-50 shadow-[0_18px_45px_-36px_rgba(37,99,235,0.72)]"
-    : "rounded-2xl border border-[#f8d24e]/55 bg-[#fff4dc] text-left text-[#351018] shadow-[0_18px_45px_-36px_rgba(123,13,21,0.22)]";
+    ? "bg-[#f8d24e]/10 text-[#f8d24e] border-[#f8d24e]/30 text-left"
+    : "border border-[#f8d24e]/55 bg-[#fff4dc] text-left text-[#351018] shadow-[0_18px_45px_-36px_rgba(123,13,21,0.22)]";
   const backupCodesContainerClassName = isDarkMode
     ? "rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-white shadow-[0_18px_45px_-36px_rgba(2,6,23,0.72)]"
     : "rounded-2xl border border-[#7b0d15]/10 bg-white p-4 text-[#351018] shadow-[0_18px_45px_-36px_rgba(43,3,7,0.35)]";
@@ -76,7 +76,7 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
         <div className="space-y-4">
           <Alert className={noteClassName}>
             <Info className="h-5 w-5" />
-            <AlertDescription className="ml-2 mt-0.5 text-sm font-medium leading-6">
+            <AlertDescription className="ml-2 mt-0.5 text-sm font-medium leading-6 text-inherit">
               Save these codes! Use them to log in if you lose your authenticator app. Each code works once.
             </AlertDescription>
           </Alert>
