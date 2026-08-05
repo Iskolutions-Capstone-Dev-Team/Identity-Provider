@@ -266,3 +266,122 @@ func TestGetUserList_NullAccountType(t *testing.T) {
 		t.Errorf("expected AccountType Custom, got %s", u.AccountType)
 	}
 }
+
+func TestGetDeletedUserList(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockUserRepository(ctrl)
+	mockClientRepo := mocks.NewMockClientRepository(ctrl)
+	mockRegRepo := mocks.NewMockRegistrationRepository(ctrl)
+	mockCAURepo := mocks.NewMockClientAllowedUserRepository(ctrl)
+
+	userService := service.NewUserService(
+		mockRepo,
+		mockClientRepo,
+		mockRegRepo,
+		mockCAURepo,
+		cache.NewNoopCache(),
+	)
+
+	userID := uuid.New()
+	deletedUsers := []models.User{
+		{
+			ID:    userID[:],
+			Email: "deleted@example.com",
+			AccountTypeID: sql.NullInt64{
+				Int64: 1,
+				Valid: true,
+			},
+			AccountType: "student",
+		},
+	}
+
+	mockRepo.EXPECT().
+		GetDeletedUserList(gomock.Any(), 10, 0).
+		Return(deletedUsers, nil).
+		Times(1)
+
+	mockRepo.EXPECT().
+		CountDeletedUsers(gomock.Any()).
+		Return(1, nil).
+		Times(1)
+
+	resp, err := userService.GetDeletedUserList(
+		context.Background(), 10, 1,
+	)
+
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	if resp == nil || len(resp.Users) == 0 {
+		t.Fatal("expected deleted users in response, got none")
+	}
+
+	u := resp.Users[0]
+	if u.Email != "deleted@example.com" {
+		t.Errorf("expected email deleted@example.com, got %s", u.Email)
+	}
+}
+
+func TestUnarchiveUser(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockUserRepository(ctrl)
+	mockClientRepo := mocks.NewMockClientRepository(ctrl)
+	mockRegRepo := mocks.NewMockRegistrationRepository(ctrl)
+	mockCAURepo := mocks.NewMockClientAllowedUserRepository(ctrl)
+
+	userService := service.NewUserService(
+		mockRepo,
+		mockClientRepo,
+		mockRegRepo,
+		mockCAURepo,
+		cache.NewNoopCache(),
+	)
+
+	userID := uuid.New()
+
+	mockRepo.EXPECT().
+		RestoreUser(gomock.Any(), userID[:]).
+		Return(nil).
+		Times(1)
+
+	err := userService.UnarchiveUser(context.Background(), userID)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}
+
+func TestHardDeleteUser(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockUserRepository(ctrl)
+	mockClientRepo := mocks.NewMockClientRepository(ctrl)
+	mockRegRepo := mocks.NewMockRegistrationRepository(ctrl)
+	mockCAURepo := mocks.NewMockClientAllowedUserRepository(ctrl)
+
+	userService := service.NewUserService(
+		mockRepo,
+		mockClientRepo,
+		mockRegRepo,
+		mockCAURepo,
+		cache.NewNoopCache(),
+	)
+
+	userID := uuid.New()
+
+	mockRepo.EXPECT().
+		HardDeleteUser(gomock.Any(), userID[:]).
+		Return(nil).
+		Times(1)
+
+	err := userService.HardDeleteUser(context.Background(), userID)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}
+
