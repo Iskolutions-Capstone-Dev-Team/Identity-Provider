@@ -7,7 +7,6 @@ import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Table, WalletCards, ChevronDown, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 
 
 export default function ConnectedAppClientCard({ loading = false, clients, totalResults, itemsPerPage, search, setSearch, page, totalPages, onPageChange, onView, onEdit, onDelete, onRotateSecret, showEditAction = true, showDeleteAction = true, showRotateSecretAction = true, colorMode = "light" }) {
