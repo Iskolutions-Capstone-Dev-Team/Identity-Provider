@@ -71,7 +71,7 @@ else
   # Parse host and port
   MYSQL_HOST=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f1)
   MYSQL_PORT=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f2)
-  MYSQL_PORT="${MYSQL_PORT:-3306}"
+  MYSQL_PORT="${DATABASE_PORT:-${MYSQL_PORT:-3306}}"
   if ! mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" \
     -u root -p"${MYSQL_ROOT_PASSWORD}" \
     -e "SELECT 1" >/dev/null 2>&1; then

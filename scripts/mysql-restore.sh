@@ -64,7 +64,7 @@ else
   # Parse host and port
   MYSQL_HOST=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f1)
   MYSQL_PORT=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f2)
-  MYSQL_PORT="${MYSQL_PORT:-3306}"
+  MYSQL_PORT="${DATABASE_PORT:-${MYSQL_PORT:-3306}}"
   
   gunzip -c "${RESTORE_FILE}" | \
     mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" \
