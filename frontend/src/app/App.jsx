@@ -122,13 +122,6 @@ export default function App() {
                 </PermissionRoute>
               }
             />
-            <Route path={ROUTE_PATHS.BACKUP_RESTORE}
-              element={
-                <PermissionRoute requiredPermissions={BACKUP_RESTORE_PAGE_PERMISSIONS}>
-                  <BackupRestore />
-                </PermissionRoute>
-              }
-            />
             <Route path={ROUTE_PATHS.FAQ} element={<FAQ />} />
             <Route path={ROUTE_PATHS.APP_CLIENT}
               element={
