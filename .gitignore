@@ -43,3 +43,9 @@ CompileDaemon
 # --- Frontend ---
 node_modules
 dist
+
+# --- Logs ---
+/logs/
+
+# --- Others ---
+*.sql.gz

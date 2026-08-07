@@ -115,32 +115,18 @@ func (mr *MockRegistrationServiceMockRecorder) GetClientsByAccountTypeID(ctx, id
 }
 
 // GetRegistrationConfig mocks base method.
-func (m *MockRegistrationService) GetRegistrationConfig(
-	ctx context.Context, permissions []string, userID uuid.UUID, limit, page int,
-) (*dto.RegistrationConfigResponse, error) {
+func (m *MockRegistrationService) GetRegistrationConfig(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int, sortBy, order string) (*dto.RegistrationConfigResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistrationConfig", ctx, permissions, userID,
-		limit, page)
+	ret := m.ctrl.Call(m, "GetRegistrationConfig", ctx, permissions, userID, limit, page, sortBy, order)
 	ret0, _ := ret[0].(*dto.RegistrationConfigResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRegistrationConfig indicates an expected call of GetRegistrationConfig.
-func (mr *MockRegistrationServiceMockRecorder) GetRegistrationConfig(
-	ctx, permissions, userID, limit, page any,
-) *gomock.Call {
+func (mr *MockRegistrationServiceMockRecorder) GetRegistrationConfig(ctx, permissions, userID, limit, page, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(
-		mr.mock,
-		"GetRegistrationConfig",
-		reflect.TypeOf((*MockRegistrationService)(nil).GetRegistrationConfig),
-		ctx,
-		permissions,
-		userID,
-		limit,
-		page,
-	)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationConfig", reflect.TypeOf((*MockRegistrationService)(nil).GetRegistrationConfig), ctx, permissions, userID, limit, page, sortBy, order)
 }
 
 // SyncUsersByAccountType mocks base method.

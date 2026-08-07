@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { clientService } from "../../../services/clientService";
+import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -87,6 +88,12 @@ export function useAppClients({ enabled = true } = {}) {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sort, setSort] = useState("desc");
+  const [viewType, setViewType] = useState(() => {
+    return localStorage.getItem("appClientsViewType") || "table";
+  });
   const [totalClientCount, setTotalClientCount] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(enabled);
@@ -101,6 +108,10 @@ export function useAppClients({ enabled = true } = {}) {
   });
 
   const searchKeyword = search.trim();
+
+  useEffect(() => {
+    localStorage.setItem("appClientsViewType", viewType);
+  }, [viewType]);
 
   const resetClients = useCallback(() => {
     setClients([]);
@@ -120,9 +131,11 @@ export function useAppClients({ enabled = true } = {}) {
       }
 
       const { items, total, lastPage } = await clientService.getClients({
-        limit: ITEMS_PER_PAGE,
+        limit,
         page,
         keyword: searchKeyword,
+        sortBy,
+        order: sort,
       });
       const nextClients = Array.isArray(items)
         ? items.map(mapClientSummary)
@@ -133,7 +146,7 @@ export function useAppClients({ enabled = true } = {}) {
       );
       const nextTotalPages = toPositiveInteger(
         lastPage,
-        Math.max(1, Math.ceil(nextTotalResults / ITEMS_PER_PAGE)),
+        Math.max(1, Math.ceil(nextTotalResults / limit)),
       );
 
       if (page > nextTotalPages) {
@@ -152,7 +165,7 @@ export function useAppClients({ enabled = true } = {}) {
         setLoading(false);
       }
     }
-  }, [enabled, page, resetClients, searchKeyword]);
+  }, [enabled, page, resetClients, searchKeyword, limit, sortBy, sort]);
 
   useEffect(() => {
     fetchClients();
@@ -165,7 +178,7 @@ export function useAppClients({ enabled = true } = {}) {
     setSearch(nextValue);
   }, []);
 
-  const totalPages = Math.max(1, Math.ceil(totalClientCount / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(totalClientCount / limit));
   const currentPage = Math.min(page, totalPages);
 
   useEffect(() => {
@@ -181,7 +194,7 @@ export function useAppClients({ enabled = true } = {}) {
   const createClient = async (payload) => {
     const response = await clientService.createClient(payload);
 
-    setSuccessMessage("App client successfully created!");
+    toast.success("App client successfully created!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
     await refreshClients({ showLoading: false });
     return response;
   };
@@ -189,7 +202,7 @@ export function useAppClients({ enabled = true } = {}) {
   const updateClient = async (payload) => {
     try {
       await clientService.updateClient(payload.id, payload);
-      setSuccessMessage("App client successfully updated!");
+      toast.success("App client successfully updated!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
       await refreshClients({ showLoading: false });
     } catch (error) {
       console.error("Update failed:", error);
@@ -199,7 +212,7 @@ export function useAppClients({ enabled = true } = {}) {
 
   const deleteClient = async (id) => {
     await clientService.deleteClient(id);
-    setSuccessMessage("App client successfully deleted!");
+    toast.success("App client successfully deleted!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
     await refreshClients({ showLoading: false });
   };
 
@@ -267,6 +280,14 @@ export function useAppClients({ enabled = true } = {}) {
     setSearch: setSearchKeyword,
     page: currentPage,
     setPage,
+    limit,
+    setLimit,
+    sortBy,
+    setSortBy,
+    sort,
+    setSort,
+    viewType,
+    setViewType,
     paginatedClients: clients,
     totalPages,
     totalResults: totalClientCount,

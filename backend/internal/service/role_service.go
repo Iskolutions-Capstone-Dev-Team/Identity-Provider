@@ -19,13 +19,17 @@ type RoleService interface {
 	CreateRole(ctx context.Context, req dto.RoleRequest) error
 	GetFilteredRoleList(ctx context.Context, permissions []string,
 		userID uuid.UUID, limit, page int,
-		keyword string) (*dto.RoleListResponse, error)
+		keyword string,
+		sortBy, order string) (*dto.RoleListResponse, error)
 	GetRoleList(ctx context.Context, limit, page int,
-		keyword string) (*dto.RoleListResponse, error)
+		keyword string,
+		sortBy, order string) (*dto.RoleListResponse, error)
 	GetAllExceptIDP(ctx context.Context, limit, page int,
-		keyword string) (*dto.RoleListResponse, error)
+		keyword string,
+		sortBy, order string) (*dto.RoleListResponse, error)
 	GetAuthorizedRoles(ctx context.Context, userID uuid.UUID,
-		limit, page int, keyword string) (*dto.RoleListResponse, error)
+		limit, page int, keyword string,
+		sortBy, order string) (*dto.RoleListResponse, error)
 	GetRoleByID(ctx context.Context, id int) (*dto.RoleResponse, error)
 	SearchRoles(ctx context.Context,
 		keyword string) (*dto.RoleListResponse, error)
@@ -83,9 +87,11 @@ func (s *roleService) GetFilteredRoleList(
 	limit int,
 	page int,
 	keyword string,
+	sortBy,
+	order string,
 ) (*dto.RoleListResponse, error) {
 	if slices.Contains(permissions, "View roles") {
-		return s.GetRoleList(ctx, limit, page, keyword)
+		return s.GetRoleList(ctx, limit, page, keyword, sortBy, order)
 	}
 
 	return nil, fmt.Errorf("privilege validation: level unauthorized")
@@ -97,19 +103,22 @@ func (s *roleService) getRoleListCacheKey(
 	userID string,
 	limit, page int,
 	keyword string,
+	sortBy, order string,
 ) string {
 	version, _, _ := s.Cache.Get(ctx, "cache:version:roles")
 	if version == "" {
 		version = "0"
 	}
 	return fmt.Sprintf(
-		"roles:v%s:%s:uid:%s:lim:%d:pg:%d:kw:%s",
+		"roles:v%s:%s:uid:%s:lim:%d:pg:%d:kw:%s:sb:%s:or:%s",
 		version,
 		prefix,
 		userID,
 		limit,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 }
 
@@ -121,6 +130,8 @@ func (s *roleService) GetRoleList(
 	limit,
 	page int,
 	keyword string,
+	sortBy,
+	order string,
 ) (*dto.RoleListResponse, error) {
 	cacheKey := s.getRoleListCacheKey(
 		ctx,
@@ -129,6 +140,8 @@ func (s *roleService) GetRoleList(
 		limit,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.RoleListResponse
@@ -139,7 +152,9 @@ func (s *roleService) GetRoleList(
 
 	offset := (page - 1) * limit
 
-	roles, err := s.RoleRepo.ListRoles(ctx, limit, offset, keyword)
+	roles, err := s.RoleRepo.ListRoles(
+		ctx, limit, offset, keyword, sortBy, order,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("database query (ListRoles): %w", err)
 	}
@@ -166,6 +181,8 @@ func (s *roleService) GetAllExceptIDP(
 	limit,
 	page int,
 	keyword string,
+	sortBy,
+	order string,
 ) (*dto.RoleListResponse, error) {
 	cacheKey := s.getRoleListCacheKey(
 		ctx,
@@ -174,6 +191,8 @@ func (s *roleService) GetAllExceptIDP(
 		limit,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.RoleListResponse
@@ -184,7 +203,9 @@ func (s *roleService) GetAllExceptIDP(
 
 	offset := (page - 1) * limit
 
-	roles, err := s.RoleRepo.ListAllExceptIdP(ctx, limit, offset, keyword)
+	roles, err := s.RoleRepo.ListAllExceptIdP(
+		ctx, limit, offset, keyword, sortBy, order,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("database query (ListRoles): %w", err)
 	}
@@ -212,6 +233,8 @@ func (s *roleService) GetAuthorizedRoles(
 	limit,
 	page int,
 	keyword string,
+	sortBy,
+	order string,
 ) (*dto.RoleListResponse, error) {
 	cacheKey := s.getRoleListCacheKey(
 		ctx,
@@ -220,6 +243,8 @@ func (s *roleService) GetAuthorizedRoles(
 		limit,
 		page,
 		keyword,
+		sortBy,
+		order,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.RoleListResponse
@@ -236,6 +261,8 @@ func (s *roleService) GetAuthorizedRoles(
 		offset,
 		userID[:],
 		keyword,
+		sortBy,
+		order,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database query (ListBoundRoles): %w", err)
@@ -360,6 +387,8 @@ func (s *roleService) SearchRoles(
 		0,
 		0,
 		keyword,
+		"",
+		"",
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.RoleListResponse

@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useState } from "react";
-import { CloseIcon, InfoIcon } from "./componentIcons";
+import { X, Info } from "lucide-react";
 
 export default function InfoAlert({ message, onClose, autoHideDuration = 4000 }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -53,7 +53,7 @@ export default function InfoAlert({ message, onClose, autoHideDuration = 4000 })
 
       <div className="relative flex items-center gap-3 px-4 py-4">
         <div className="shrink-0 text-blue-400">
-          <InfoIcon />
+          <Info className="h-5 w-5" />
         </div>
 
         <p className="min-w-0 flex-1 break-words text-sm font-medium leading-6 text-white/88">
@@ -62,7 +62,7 @@ export default function InfoAlert({ message, onClose, autoHideDuration = 4000 })
 
         {onClose ? (
           <button type="button" onClick={onClose} aria-label="Close alert" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/70 transition-colors duration-200 hover:bg-white/8 hover:text-blue-400">
-            <CloseIcon />
+            <X className="h-5 w-5" />
           </button>
         ) : null}
       </div>

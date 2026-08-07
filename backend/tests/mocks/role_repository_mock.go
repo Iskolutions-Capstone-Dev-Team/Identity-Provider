@@ -132,48 +132,48 @@ func (mr *MockRoleRepositoryMockRecorder) GetByID(ctx, id any) *gomock.Call {
 }
 
 // ListAllExceptIdP mocks base method.
-func (m *MockRoleRepository) ListAllExceptIdP(ctx context.Context, limit, offset int, keyword string) ([]models.Role, error) {
+func (m *MockRoleRepository) ListAllExceptIdP(ctx context.Context, limit, offset int, keyword, sortBy, order string) ([]models.Role, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListAllExceptIdP", ctx, limit, offset, keyword)
+	ret := m.ctrl.Call(m, "ListAllExceptIdP", ctx, limit, offset, keyword, sortBy, order)
 	ret0, _ := ret[0].([]models.Role)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListAllExceptIdP indicates an expected call of ListAllExceptIdP.
-func (mr *MockRoleRepositoryMockRecorder) ListAllExceptIdP(ctx, limit, offset, keyword any) *gomock.Call {
+func (mr *MockRoleRepositoryMockRecorder) ListAllExceptIdP(ctx, limit, offset, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllExceptIdP", reflect.TypeOf((*MockRoleRepository)(nil).ListAllExceptIdP), ctx, limit, offset, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllExceptIdP", reflect.TypeOf((*MockRoleRepository)(nil).ListAllExceptIdP), ctx, limit, offset, keyword, sortBy, order)
 }
 
 // ListDistinctBoundRoles mocks base method.
-func (m *MockRoleRepository) ListDistinctBoundRoles(ctx context.Context, limit, offset int, userID []byte, keyword string) ([]models.RoleWithMetaData, error) {
+func (m *MockRoleRepository) ListDistinctBoundRoles(ctx context.Context, limit, offset int, userID []byte, keyword, sortBy, order string) ([]models.RoleWithMetaData, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListDistinctBoundRoles", ctx, limit, offset, userID, keyword)
+	ret := m.ctrl.Call(m, "ListDistinctBoundRoles", ctx, limit, offset, userID, keyword, sortBy, order)
 	ret0, _ := ret[0].([]models.RoleWithMetaData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListDistinctBoundRoles indicates an expected call of ListDistinctBoundRoles.
-func (mr *MockRoleRepositoryMockRecorder) ListDistinctBoundRoles(ctx, limit, offset, userID, keyword any) *gomock.Call {
+func (mr *MockRoleRepositoryMockRecorder) ListDistinctBoundRoles(ctx, limit, offset, userID, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDistinctBoundRoles", reflect.TypeOf((*MockRoleRepository)(nil).ListDistinctBoundRoles), ctx, limit, offset, userID, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDistinctBoundRoles", reflect.TypeOf((*MockRoleRepository)(nil).ListDistinctBoundRoles), ctx, limit, offset, userID, keyword, sortBy, order)
 }
 
 // ListRoles mocks base method.
-func (m *MockRoleRepository) ListRoles(ctx context.Context, limit, offset int, keyword string) ([]models.Role, error) {
+func (m *MockRoleRepository) ListRoles(ctx context.Context, limit, offset int, keyword, sortBy, order string) ([]models.Role, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListRoles", ctx, limit, offset, keyword)
+	ret := m.ctrl.Call(m, "ListRoles", ctx, limit, offset, keyword, sortBy, order)
 	ret0, _ := ret[0].([]models.Role)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListRoles indicates an expected call of ListRoles.
-func (mr *MockRoleRepositoryMockRecorder) ListRoles(ctx, limit, offset, keyword any) *gomock.Call {
+func (mr *MockRoleRepositoryMockRecorder) ListRoles(ctx, limit, offset, keyword, sortBy, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRoles", reflect.TypeOf((*MockRoleRepository)(nil).ListRoles), ctx, limit, offset, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRoles", reflect.TypeOf((*MockRoleRepository)(nil).ListRoles), ctx, limit, offset, keyword, sortBy, order)
 }
 
 // SearchRoles mocks base method.

@@ -74,5 +74,11 @@ var PermissionsMigration = migrations.TableMigration{
 				('View connected appclients')
 			;`,
 		},
+		{
+			ID: "add-backup-restore-permission",
+			SQL: `INSERT IGNORE INTO permissions (permission) VALUES 
+				('Manage Backup and Restore')
+			;`,
+		},
 	},
 }

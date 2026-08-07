@@ -152,10 +152,16 @@ func TestGetHasTOTPHandler(t *testing.T) {
 		r := gin.New()
 		r.GET("/mfa/totp/exists", handler.GetHasTOTP)
 
+		userIDStr := uuid.New().String()
+		userID, _ := uuid.Parse(userIDStr)
+		mockAuthService.EXPECT().
+			CheckSessionOrPendingMFA(gomock.Any()).
+			Return(userID, true, func() {}, nil)
+
 		mockUserService.EXPECT().
 			GetUserByEmail(gomock.Any(), "test@example.com").
 			Return(&dto.UserResponse{
-				ID:    uuid.New().String(),
+				ID:    userIDStr,
 				Email: "test@example.com",
 			}, nil)
 
@@ -229,6 +235,19 @@ func TestGetHasPasskeyHandler(t *testing.T) {
 		gin.SetMode(gin.TestMode)
 		r := gin.New()
 		r.GET("/mfa/passkey/exists", handler.GetHasPasskey)
+
+		userIDStr := uuid.New().String()
+		userID, _ := uuid.Parse(userIDStr)
+		mockAuthService.EXPECT().
+			CheckSessionOrPendingMFA(gomock.Any()).
+			Return(userID, true, func() {}, nil)
+
+		mockUserService.EXPECT().
+			GetUserByEmail(gomock.Any(), "test@example.com").
+			Return(&dto.UserResponse{
+				ID:    userIDStr,
+				Email: "test@example.com",
+			}, nil)
 
 		mockPasskeyService.EXPECT().
 			HasPasskey(gomock.Any(), "test@example.com").

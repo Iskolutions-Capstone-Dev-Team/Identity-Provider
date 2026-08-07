@@ -9,6 +9,25 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+func getSafeLogSort(sortBy, order string) (string, string) {
+	allowed := map[string]bool{
+		"actor":      true,
+		"action":     true,
+		"target":     true,
+		"status":     true,
+		"created_at": true,
+	}
+	col := "created_at"
+	if sortBy != "" && allowed[sortBy] {
+		col = sortBy
+	}
+	ord := "DESC"
+	if strings.ToLower(order) == "asc" {
+		ord = "ASC"
+	}
+	return col, ord
+}
+
 type LogRepository interface {
 	GetUserEmailbyID(ctx context.Context, userID []byte) (string, error)
 	GetClientNameByID(ctx context.Context, clientID []byte) (string, error)
@@ -19,8 +38,8 @@ type LogRepository interface {
 		error)
 	GetLogByID(ctx context.Context, id int64) (*models.AuditLog, error)
 	GetLogListWithFilters(ctx context.Context,
-		filters map[string]interface{}, limit, offset int) ([]models.AuditLog,
-		int64, error)
+		filters map[string]interface{}, limit, offset int,
+		sortBy, order string) ([]models.AuditLog, int64, error)
 
 	CreateSecurityLog(ctx context.Context, log *models.AuditLog) error
 	GetSecurityLog(ctx context.Context, actor *string, status string) (
@@ -30,8 +49,8 @@ type LogRepository interface {
 		error)
 	GetSecurityLogByID(ctx context.Context, id int64) (*models.AuditLog, error)
 	GetSecurityLogListWithFilters(ctx context.Context,
-		filters map[string]interface{}, limit, offset int) ([]models.AuditLog,
-		int64, error)
+		filters map[string]interface{}, limit, offset int,
+		sortBy, order string) ([]models.AuditLog, int64, error)
 }
 
 type logRepository struct {
@@ -180,6 +199,7 @@ func (r *logRepository) GetSecurityLogByID(ctx context.Context,
 
 func (r *logRepository) getLogListWithFiltersInternal(ctx context.Context,
 	table string, filters map[string]interface{}, limit, offset int,
+	sortBy, order string,
 ) ([]models.AuditLog, int64, error) {
 	where := []string{"1=1"}
 	args := []interface{}{}
@@ -218,10 +238,12 @@ func (r *logRepository) getLogListWithFiltersInternal(ctx context.Context,
 		return nil, 0, fmt.Errorf("[LogRepository] Count Query: %w", err)
 	}
 
+	sortCol, sortOrd := getSafeLogSort(sortBy, order)
+
 	dataQuery := fmt.Sprintf(
 		`SELECT id, actor, action, target, status, metadata, created_at 
-		 FROM %s WHERE %s ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-		table, whereClause)
+		 FROM %s WHERE %s ORDER BY %s %s LIMIT ? OFFSET ?`,
+		table, whereClause, sortCol, sortOrd)
 	args = append(args, limit, offset)
 
 	var logs []models.AuditLog
@@ -236,16 +258,19 @@ func (r *logRepository) getLogListWithFiltersInternal(ctx context.Context,
 // GetLogListWithFilters retrieves a slice of audit logs with filtering.
 func (r *logRepository) GetLogListWithFilters(ctx context.Context,
 	filters map[string]interface{}, limit, offset int,
+	sortBy, order string,
 ) ([]models.AuditLog, int64, error) {
 	return r.getLogListWithFiltersInternal(ctx, "audit_logs", filters,
-		limit, offset)
+		limit, offset, sortBy, order)
 }
 
 // GetSecurityLogListWithFilters retrieves a slice of security logs with filtering.
 func (r *logRepository) GetSecurityLogListWithFilters(ctx context.Context,
 	filters map[string]interface{}, limit, offset int,
+	sortBy, order string,
 ) ([]models.AuditLog, int64, error) {
-	return r.getLogListWithFiltersInternal(ctx, "security_logs", filters, limit, offset)
+	return r.getLogListWithFiltersInternal(ctx, "security_logs", filters,
+		limit, offset, sortBy, order)
 }
 
 func NewLogRepository(db *sqlx.DB) LogRepository {
