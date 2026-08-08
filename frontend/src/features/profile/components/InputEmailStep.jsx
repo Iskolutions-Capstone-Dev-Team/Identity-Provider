@@ -1,6 +1,6 @@
 import ErrorAlert from "../../../components/ErrorAlert";
 import { getModalTheme } from "../../../components/modalTheme";
-import { MailIcon } from "./profileIcons";
+import { Mail } from "lucide-react";
 
 export default function InputEmailStep({ email, setEmail, errorMessage = "", onClearError, colorMode = "light" }) {
   const {
@@ -37,7 +37,7 @@ export default function InputEmailStep({ email, setEmail, errorMessage = "", onC
 
         <div className="relative isolate">
           <span className={iconClassName}>
-            <MailIcon />
+            <Mail className="h-5 w-5" />
           </span>
 
           <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email address" className={`${modalInputClassName} relative z-0 pl-14 ${errorInputClassName}`} autoFocus required/>

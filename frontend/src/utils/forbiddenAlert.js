@@ -4,6 +4,19 @@ export const DEFAULT_FORBIDDEN_ALERT_MESSAGE =
 
 const ALERT_COOLDOWN_MS = 3000;
 
+export const IDP_PROTECTED_PATHS = new Set([
+  "/user-pool",
+  "/roles",
+  "/app-client",
+  "/profile",
+  "/audit-logs",
+  "/registration"
+]);
+
+export function isIdpProtectedPath(pathname = "") {
+  return IDP_PROTECTED_PATHS.has(pathname);
+}
+
 let lastAlertMessage = "";
 let lastAlertAt = 0;
 

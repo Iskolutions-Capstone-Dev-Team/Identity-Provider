@@ -1,32 +1,7 @@
-function SkeletonBlock({ className = "", colorMode = "light" }) {
-  const toneClassName = colorMode === "dark" ? "bg-white/10" : "bg-[#7b0d15]/10";
-  return (
-    <span className={`block animate-pulse rounded-lg ${toneClassName} ${className}`} />
-  );
-}
-
-function getMetricTone(colorMode) {
-  return colorMode === "dark"
-    ? {
-        accent: "text-[#f8d24e]",
-        border: "border-[#f8d24e]/35",
-        icon: "bg-[#f8d24e]/18 text-[#f8d24e]",
-      }
-    : {
-        accent: "text-[#7b0d15]",
-        border: "border-[#7b0d15]/20",
-        icon: "bg-[#7b0d15]/10 text-[#7b0d15]",
-      };
-}
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function MetricsCard({ metrics = [], colorMode = "light", isLoading = false }) {
-  const tone = getMetricTone(colorMode);
-  const isDarkMode = colorMode === "dark";
-  const cardClassName = isDarkMode
-    ? "bg-[#061529]/78"
-    : "bg-white/85 shadow-[0_18px_46px_-38px_rgba(43,3,7,0.55)]";
-  const countClassName = isDarkMode ? "text-white" : "text-[#2a1518]";
-  const captionClassName = isDarkMode ? "text-slate-200" : "text-slate-600";
   const hoverClassName = "transition-transform duration-200 ease-out hover:-translate-y-1";
 
   const displayMetrics = metrics && metrics.length > 0 
@@ -44,44 +19,44 @@ export default function MetricsCard({ metrics = [], colorMode = "light", isLoadi
       {displayMetrics.map((metric, idx) => {
         const Icon = metric.Icon;
         return (
-          <div key={idx} className={`rounded-2xl border p-5 ${hoverClassName} ${tone.border} ${cardClassName}`}>
-            <div className="flex items-center gap-4">
+          <Card key={idx} className={`${hoverClassName} border-[#7b0d15]/30 dark:border-[#f8d24e]/30 bg-card shadow-sm border`}>
+            <CardContent className="flex items-center gap-4 px-4 py-3">
               {Icon ? (
-                <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${tone.icon}`}>
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15]">
                   <Icon className="h-6 w-6" />
                 </span>
               ) : isLoading ? (
-                <SkeletonBlock className="h-14 w-14 shrink-0 rounded-2xl" colorMode={colorMode} />
+                <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
               ) : null}
 
-              <div className="min-w-0">
+              <div className="min-w-0 flex flex-col justify-center">
                 {metric.title ? (
-                  <p className={`text-xs font-black uppercase tracking-[0.16em] ${tone.accent}`}>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     {metric.title}
                   </p>
                 ) : isLoading ? (
-                  <SkeletonBlock className="mb-2 h-4 w-24" colorMode={colorMode} />
+                  <Skeleton className="mb-1 h-3 w-20" />
                 ) : null}
                 
                 {isLoading ? (
-                  <SkeletonBlock className="mt-3 h-10 w-16" colorMode={colorMode} />
+                  <Skeleton className="mt-1 h-8 w-16" />
                 ) : (
-                  <p className={`mt-3 text-4xl font-black ${countClassName}`}>
+                  <p className="text-3xl font-black leading-none mt-1 text-foreground">
                     {typeof metric.value === 'number' ? metric.value.toLocaleString() : metric.value ?? "—"}
                   </p>
                 )}
 
                 {metric.description && !isLoading && (
-                  <p className={`mt-1 text-sm font-medium ${captionClassName}`}>
+                  <p className="mt-1 text-sm font-medium text-muted-foreground">
                     {metric.description}
                   </p>
                 )}
                 {isLoading && !metric.title && (
-                  <SkeletonBlock className="mt-2 h-3 w-32" colorMode={colorMode} />
+                  <Skeleton className="mt-1 h-3 w-32" />
                 )}
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
       })}
     </div>

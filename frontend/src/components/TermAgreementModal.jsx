@@ -1,56 +1,22 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { User, Database, AlertTriangle } from "lucide-react";
 import { buildLogoutPath } from "../auth/utils/logoutRoute";
-import { getModalTheme } from "./modalTheme";
-import { getModalTransitionClassName, useModalTransition } from "./modalTransition";
-import { LockOpenIcon, ShieldCheckIcon } from "./componentIcons";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ROUTE_PATHS } from "../routes/routePaths";
+import PrivacyPolicyModal from "../pages/PrivacyPolicyModal";
 
 export default function TermsAgreementModal({ open, onClose, onContinue, colorMode = "light", currentUser = null }) {
   const navigate = useNavigate();
-  const { shouldRender, isClosing } = useModalTransition(open);
   const [agreed, setAgreed] = useState(false);
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const isDarkMode = colorMode === "dark";
-  const {
-    modalBodyClassName,
-    modalBodyStackClassName,
-    modalBoxClassName,
-    modalFooterActionsClassName,
-    modalFooterClassName,
-    modalHeaderClassName,
-    modalHeaderTitleClassName,
-    modalOverlayClassName,
-    modalPrimaryButtonClassName,
-    modalSecondaryButtonClassName,
-    modalSectionClassName,
-  } = getModalTheme(colorMode);
-  const contentSectionClassName = `${modalSectionClassName} space-y-0`;
-  const continueButtonClassName = `${modalPrimaryButtonClassName} disabled:cursor-not-allowed ${
-    isDarkMode
-      ? "disabled:border-white/10 disabled:bg-white/10 disabled:text-[#d6c3c7] disabled:hover:border-white/10 disabled:hover:bg-white/10"
-      : "disabled:border-[#7b0d15]/40 disabled:bg-[#7b0d15]/40 disabled:text-white/85 disabled:hover:border-[#7b0d15]/40 disabled:hover:bg-[#7b0d15]/40"
-  }`;
-  const descriptionTextClassName = isDarkMode
-    ? "text-sm leading-7 text-[#d6c3c7] sm:text-[0.95rem]"
-    : "text-sm leading-7 text-[#5d3a41] sm:text-[0.95rem]";
-  const emphasisTextClassName = isDarkMode
-    ? "font-semibold text-[#f4eaea]"
-    : "font-semibold text-[#4a1921]";
+
   const linkClassName = isDarkMode
-    ? "font-semibold text-[#ffe28a] underline decoration-[#f8d24e]/50 underline-offset-4 transition hover:text-[#fff1ba]"
-    : "font-semibold text-[#7b0d15] underline decoration-[#d4a017]/65 underline-offset-4 transition hover:text-[#5a0b12]";
-  const iconWrapClassName = isDarkMode
-    ? "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#f8d24e]/15 bg-[#7b0d15]/45 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-    : "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#7b0d15]/10 bg-[#7b0d15]/10 text-[#7b0d15] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
-  const dividerClassName = isDarkMode ? "border-white/10" : "border-[#7b0d15]/10";
-  const agreementSectionClassName = "px-1 sm:px-3";
-  const checkboxClassName = isDarkMode
-    ? "checkbox mt-0.5 h-5 w-5 shrink-0 rounded-md border-white/15 bg-white/[0.04] checked:border-[#f8d24e] checked:bg-[#7b0d15] checked:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#f8d24e]/20"
-    : "checkbox mt-0.5 h-5 w-5 shrink-0 rounded-md border-[#7b0d15]/20 bg-white checked:border-[#7b0d15] checked:bg-[#7b0d15] checked:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#f8d24e]/30";
-  const agreementTextClassName = isDarkMode
-    ? "text-sm leading-7 text-[#f4eaea] sm:text-[0.95rem]"
-    : "text-sm leading-7 text-[#4a1921] sm:text-[0.95rem]";
-  const headerGlowClassName = isDarkMode ? "bg-white/10" : "bg-white/10";
+    ? "font-semibold text-[#ffe28a] transition hover:text-[#fff1ba] outline-none focus:outline-none focus-visible:outline-none hover:underline cursor-pointer"
+    : "font-semibold text-[#7b0d15] transition hover:text-[#5a0b12] outline-none focus:outline-none focus-visible:outline-none hover:underline cursor-pointer";
 
   useEffect(() => {
     if (open) {
@@ -77,83 +43,96 @@ export default function TermsAgreementModal({ open, onClose, onContinue, colorMo
     onClose?.();
   };
 
-  if (!shouldRender) {
-    return null;
-  }
+  return (
+    <Dialog open={open} dismissible={false}>
+      <DialogContent 
+        className="sm:max-w-2xl" 
+        showCloseButton={false}
+      >
+        <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
+          <DialogTitle>
+            Terms and Conditions
+          </DialogTitle>
+          <p className="text-sm font-normal opacity-90 mt-1 dark:text-muted-foreground">
+            Please read the following carefully before continuing.
+          </p>
+        </DialogHeader>
 
-  return createPortal(
-    <dialog open className={getModalTransitionClassName(modalOverlayClassName, isClosing)} aria-labelledby="terms-modal-title">
-      <div className={`${modalBoxClassName} max-w-2xl`}>
-        <div className={`${modalHeaderClassName} !pb-7 sm:!pb-8`}>
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -right-10 top-[-2.5rem] h-32 w-32 rounded-full bg-[#f8d24e]/20 blur-3xl" />
-            <div className={`absolute left-[-3rem] bottom-[-2rem] h-28 w-28 rounded-full blur-3xl ${headerGlowClassName}`} />
-          </div>
-
-          <div className="relative max-w-2xl">
-            <h3 id="terms-modal-title" className={modalHeaderTitleClassName}>
-              Terms and Conditions
-            </h3>
-          </div>
-        </div>
-
-        <div className={modalBodyClassName}>
-          <div className={modalBodyStackClassName}>
-            <section className={contentSectionClassName}>
-              <div className="flex gap-4 pb-5">
-                <div className={iconWrapClassName} aria-hidden="true">
-                  <ShieldCheckIcon />
-                </div>
-
-                <p className={descriptionTextClassName}>
-                  By clicking <span className={emphasisTextClassName}>"I Agree"</span>, you consent to the collection, use, and{" "}
-                  processing of your personal data for legitimate purposes related to this service.
+        <div className="space-y-4 pt-4 pb-4">
+          <section className="space-y-6 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
+            {/* Section 1: Your Account & Compliance */}
+            <div className="flex gap-3.5 items-start">
+              <User className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h4 className="font-bold text-base text-foreground">
+                  Your Account & Compliance
+                </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed text-justify">
+                  You confirm accuracy, completeness, and being up-to-date. You maintain confidentiality for account credentials and are responsible for all activities under your account.
                 </p>
               </div>
+            </div>
 
-              <div className={`flex gap-4 border-t pt-5 ${dividerClassName}`}>
-                <div className={iconWrapClassName} aria-hidden="true">
-                  <LockOpenIcon />
-                </div>
-
-                <p className={descriptionTextClassName}>
-                  Your information will be handled in accordance with our{" "}
-                  <a href="https://www.pup.edu.ph/privacy/" className={linkClassName} target="_blank" rel="noreferrer">
-                    Privacy Policy
-                  </a>{" "}
-                  and in compliance with the <span className={emphasisTextClassName}>Data Privacy Act of 2012</span>.
+            {/* Section 2: Data Privacy & Legitimate Purposes */}
+            <div className="flex gap-3.5 items-start">
+              <Database className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h4 className="font-bold text-base text-foreground">
+                  Data Privacy & Legitimate Purposes
+                </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed text-justify">
+                  Your consent for collection, storage, use, processing, and protection of personal data for legitimate purposes, processed in accordance with our Privacy Policy and the Data Privacy Act of 2012 (Republic Act No. 10173).
                 </p>
               </div>
-            </section>
+            </div>
 
-            <section className={agreementSectionClassName}>
-              <div className="flex items-start gap-3 sm:gap-4">
-                <input type="checkbox" className={checkboxClassName} checked={agreed} onChange={(event) => setAgreed(event.target.checked)} aria-labelledby="terms-agreement-label"/>
-
-                <span id="terms-agreement-label" className={agreementTextClassName}>
-                  I Agree and acknowledge the{" "}
-                  <a href="https://www.pup.edu.ph/terms/" className={linkClassName} target="_blank" rel="noreferrer">
-                    Terms and Conditions
-                  </a>
-                </span>
+            {/* Section 3: Consequences of Non-Compliance */}
+            <div className="flex gap-3.5 items-start">
+              <AlertTriangle className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h4 className="font-bold text-base text-foreground">
+                  Consequences of Non-Compliance
+                </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed text-justify">
+                  Failure to comply may result in suspension or termination of your access, subject to your policies and regulations.
+                </p>
               </div>
-            </section>
-          </div>
+            </div>
+
+            {/* Checkbox agreement */}
+            <div className="flex items-start gap-3 sm:gap-4 mt-6 pt-4 border-t border-border/50 px-1">
+              <Checkbox 
+                id="terms-agreement-checkbox" 
+                checked={agreed} 
+                onCheckedChange={setAgreed}
+                className="mt-1 data-[state=checked]:!bg-[#7b0d15] data-[state=checked]:!border-[#7b0d15] data-[state=checked]:!text-white dark:data-[state=checked]:!bg-white dark:data-[state=checked]:!border-white dark:data-[state=checked]:!text-black data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-white dark:data-checked:!border-white dark:data-checked:!text-black"
+              />
+
+              <label htmlFor="terms-agreement-checkbox" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground cursor-pointer select-none">
+                I have read, understood, and agree to the {" "}
+                <a href="https://www.pup.edu.ph/terms/" className={linkClassName} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+                  Terms and Conditions
+                </a>
+                , and I acknowledge the {" "}
+                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPrivacyPolicy(true); }} className={linkClassName}>
+                  Privacy Policy
+                </button>.
+              </label>
+            </div>
+          </section>
         </div>
 
-        <div className={modalFooterClassName}>
-          <div className={modalFooterActionsClassName}>
-            <button type="button" onClick={handleCancel} className={modalSecondaryButtonClassName}>
-              Cancel
-            </button>
+        <DialogFooter className="flex-row justify-end gap-2 mt-4 border-t border-border pt-4 -mx-4 px-4 bg-muted/30 rounded-b-xl">
+          <Button type="button" variant="outline" onClick={handleCancel} className="rounded-[0.55rem]">
+            Decline
+          </Button>
+          <Button type="button" onClick={handleContinue} disabled={!agreed} className="rounded-[0.55rem] bg-[#7b0d15] text-white hover:bg-[#7b0d15]/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
+            Accept
+          </Button>
+        </DialogFooter>
+      </DialogContent>
 
-            <button type="button" onClick={handleContinue} disabled={!agreed} className={continueButtonClassName}>
-              Continue
-            </button>
-          </div>
-        </div>
-      </div>
-    </dialog>,
-    document.body,
+      <PrivacyPolicyModal open={showPrivacyPolicy} onClose={setShowPrivacyPolicy} />
+    </Dialog>
   );
 }

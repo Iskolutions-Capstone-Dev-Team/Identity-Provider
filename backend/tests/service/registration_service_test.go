@@ -88,14 +88,15 @@ func TestGetRegistrationConfig(t *testing.T) {
 
 	// 1. Setup mock expectations
 	mockRegRepo.EXPECT().CountAccountTypes(ctx).Return(5, nil)
-	mockRegRepo.EXPECT().GetRegistrationConfig(ctx, limit, offset).
+	mockRegRepo.EXPECT().
+		GetRegistrationConfig(ctx, limit, offset, gomock.Any(), gomock.Any()).
 		Return(rows, nil)
 
 	// 2. Execute
 	permissions := []string{"View all appclients"}
 	userID := uuid.New()
 	resp, err := regService.GetRegistrationConfig(
-		ctx, permissions, userID, limit, page,
+		ctx, permissions, userID, limit, page, "", "",
 	)
 
 	// 3. Verify
@@ -153,12 +154,12 @@ func TestGetRegistrationConfig_Scoped(t *testing.T) {
 	mockRegRepo.EXPECT().CountScopedAccountTypes(ctx, userID[:]).
 		Return(1, nil)
 	mockRegRepo.EXPECT().GetScopedRegistrationConfig(ctx, userID[:],
-		limit, offset).Return(rows, nil)
+		limit, offset, gomock.Any(), gomock.Any()).Return(rows, nil)
 
 	// 2. Execute
 	permissions := []string{"View connected appclients"}
 	resp, err := regService.GetRegistrationConfig(
-		ctx, permissions, userID, limit, page,
+		ctx, permissions, userID, limit, page, "", "",
 	)
 
 	// 3. Verify

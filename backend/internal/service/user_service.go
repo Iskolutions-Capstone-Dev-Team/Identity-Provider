@@ -26,15 +26,17 @@ type UserService interface {
 	GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error)
 	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
 	GetFilteredUserList(ctx context.Context, permissions []string,
-		userID uuid.UUID, limit,
-		page int) (*dto.UserSimplifiedResponseList, error)
-	GetUserList(ctx context.Context, limit,
-		page int) (*dto.UserSimplifiedResponseList, error)
+		userID uuid.UUID, limit, page int,
+		sortBy, order string, status string,
+	) (*dto.UserSimplifiedResponseList, error)
+	GetUserList(ctx context.Context, limit, page int,
+		sortBy, order string) (*dto.UserSimplifiedResponseList, error)
 	GetBoundUserList(ctx context.Context, limit, page int,
-		userID uuid.UUID) (*dto.UserSimplifiedResponseList, error)
+		userID uuid.UUID,
+		sortBy, order string) (*dto.UserSimplifiedResponseList, error)
 	GetAdminUserList(ctx context.Context, limit, page int,
 		adminID uuid.UUID, permissions []string,
-	) (*dto.UserResponseList, error)
+		sortBy, order string) (*dto.UserResponseList, error)
 	UpdateUserPassword(ctx context.Context, id uuid.UUID,
 		newPassword string) error
 	UpdateUserPasswordByEmail(ctx context.Context, email string,
@@ -52,6 +54,10 @@ type UserService interface {
 	SyncAdminClientAccess(ctx context.Context, id uuid.UUID,
 		clientIDs []string) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
+	GetDeletedUserList(ctx context.Context, limit,
+		page int) (*dto.UserSimplifiedResponseList, error)
+	UnarchiveUser(ctx context.Context, id uuid.UUID) error
+	HardDeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
 type userService struct {
@@ -524,16 +530,32 @@ func (s *userService) GetFilteredUserList(
 	userID uuid.UUID,
 	limit,
 	page int,
+	sortBy,
+	order string,
+	status string,
 ) (*dto.UserSimplifiedResponseList, error) {
 	var resp *dto.UserSimplifiedResponseList
 	var err error
 
-	if slices.Contains(permissions, "View all users") {
-		resp, err = s.GetUserList(ctx, limit, page)
-	} else if slices.Contains(permissions, "View users based on appclient") {
-		resp, err = s.GetBoundUserList(ctx, limit, page, userID)
+	if status == "deleted" {
+		if !slices.Contains(permissions, "View all users") {
+			return nil, fmt.Errorf(
+				"privilege validation: unauthorized to view deleted users",
+			)
+		}
+		resp, err = s.GetDeletedUserList(ctx, limit, page)
 	} else {
-		return nil, fmt.Errorf("privilege validation: unauthorized level")
+		if slices.Contains(permissions, "View all users") {
+			resp, err = s.GetUserList(ctx, limit, page, sortBy, order)
+		} else if slices.Contains(
+			permissions, "View users based on appclient",
+		) {
+			resp, err = s.GetBoundUserList(
+				ctx, limit, page, userID, sortBy, order,
+			)
+		} else {
+			return nil, fmt.Errorf("privilege validation: unauthorized level")
+		}
 	}
 
 	if err != nil {
@@ -548,18 +570,21 @@ func (s *userService) getUserListCacheKey(
 	prefix string,
 	userID string,
 	limit, page int,
+	sortBy, order string,
 ) string {
 	version, _, _ := s.Cache.Get(ctx, "cache:version:users")
 	if version == "" {
 		version = "0"
 	}
 	return fmt.Sprintf(
-		"users:v%s:%s:uid:%s:lim:%d:pg:%d",
+		"users:v%s:%s:uid:%s:lim:%d:pg:%d:sb:%s:or:%s",
 		version,
 		prefix,
 		userID,
 		limit,
 		page,
+		sortBy,
+		order,
 	)
 }
 
@@ -570,8 +595,12 @@ func (s *userService) GetUserList(
 	ctx context.Context,
 	limit,
 	page int,
+	sortBy,
+	order string,
 ) (*dto.UserSimplifiedResponseList, error) {
-	cacheKey := s.getUserListCacheKey(ctx, "list", "", limit, page)
+	cacheKey := s.getUserListCacheKey(
+		ctx, "list", "", limit, page, sortBy, order,
+	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserSimplifiedResponseList
 		if json.Unmarshal([]byte(val), &cached) == nil {
@@ -581,7 +610,7 @@ func (s *userService) GetUserList(
 
 	offset := (page - 1) * limit
 
-	users, err := s.Repo.GetUserList(ctx, limit, offset)
+	users, err := s.Repo.GetUserList(ctx, limit, offset, sortBy, order)
 	if err != nil {
 		return nil, fmt.Errorf("database query (GetUserList): %w", err)
 	}
@@ -625,6 +654,8 @@ func (s *userService) GetBoundUserList(
 	limit,
 	page int,
 	userID uuid.UUID,
+	sortBy,
+	order string,
 ) (*dto.UserSimplifiedResponseList, error) {
 	cacheKey := s.getUserListCacheKey(
 		ctx,
@@ -632,6 +663,8 @@ func (s *userService) GetBoundUserList(
 		userID.String(),
 		limit,
 		page,
+		sortBy,
+		order,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserSimplifiedResponseList
@@ -642,7 +675,9 @@ func (s *userService) GetBoundUserList(
 
 	offset := (page - 1) * limit
 
-	users, err := s.Repo.GetBoundUserList(ctx, limit, offset, userID[:])
+	users, err := s.Repo.GetBoundUserList(
+		ctx, limit, offset, userID[:], sortBy, order,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("database query (GetBound): %w", err)
 	}
@@ -1037,6 +1072,7 @@ func (s *userService) GetAdminUserList(
 	limit, page int,
 	adminID uuid.UUID,
 	permissions []string,
+	sortBy, order string,
 ) (*dto.UserResponseList, error) {
 	cacheKey := s.getUserListCacheKey(
 		ctx,
@@ -1044,6 +1080,8 @@ func (s *userService) GetAdminUserList(
 		adminID.String(),
 		limit,
 		page,
+		sortBy,
+		order,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserResponseList
@@ -1056,7 +1094,7 @@ func (s *userService) GetAdminUserList(
 	hasViewAll := slices.Contains(permissions, "View all appclients")
 
 	users, err := s.Repo.GetAdminUserList(
-		ctx, limit, offset, adminID[:], hasViewAll,
+		ctx, limit, offset, adminID[:], hasViewAll, sortBy, order,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -1095,4 +1133,78 @@ func (s *userService) GetAdminUserList(
 	}
 
 	return resp, nil
+}
+
+/**
+ * GetDeletedUserList retrieves a paginated list of deleted users.
+ */
+func (s *userService) GetDeletedUserList(
+	ctx context.Context,
+	limit,
+	page int,
+) (*dto.UserSimplifiedResponseList, error) {
+	offset := (page - 1) * limit
+
+	users, err := s.Repo.GetDeletedUserList(ctx, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"database query (GetDeletedUserList): %w",
+			err,
+		)
+	}
+
+	total, err := s.Repo.CountDeletedUsers(ctx)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"database query (CountDeletedUsers): %w",
+			err,
+		)
+	}
+
+	var userResponses []dto.UserSimplifiedResponse
+	for _, user := range users {
+		userUUID, _ := uuid.FromBytes(user.ID)
+		userResponses = append(userResponses,
+			*s.mapToSimplifiedUserResponse(user, userUUID))
+	}
+
+	lastPage := (total + limit - 1) / limit
+	if lastPage == 0 {
+		lastPage = 1
+	}
+
+	resp := &dto.UserSimplifiedResponseList{
+		Users:       userResponses,
+		TotalCount:  total,
+		CurrentPage: page,
+		LastPage:    lastPage,
+	}
+
+	return resp, nil
+}
+
+func (s *userService) UnarchiveUser(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+	if err := s.Repo.RestoreUser(ctx, id[:]); err != nil {
+		return fmt.Errorf("database query (RestoreUser): %w", err)
+	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
+	return nil
+}
+
+func (s *userService) HardDeleteUser(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+	if err := s.Repo.HardDeleteUser(ctx, id[:]); err != nil {
+		return fmt.Errorf("database query (HardDeleteUser): %w", err)
+	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
+	return nil
 }

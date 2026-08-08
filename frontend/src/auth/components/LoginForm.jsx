@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { authService } from "../services/authService";
 import ErrorAlert from "../../components/ErrorAlert";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 import { buildAccessDeniedPath } from "../utils/loginRoute";
 import { beginPendingMfaSession } from "../utils/authCookies";
-import { EmailIcon, PasswordIcon, EyeIcon, EyeSlashIcon } from "./authIcons";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import { Separator } from "../../components/ui/separator";
+import { Card, CardContent } from "../../components/ui/card";
 
 export default function LoginForm({ clientId, redirectUri = "", initialError = "", onLoginSuccess }) {
   const navigate = useNavigate();
@@ -92,17 +96,6 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
     }));
   };
 
-  const handleEmailBlur = () => {
-    const emailError = getEmailError(email);
-
-    setFieldErrors((prev) => ({
-      ...prev,
-      email: emailError,
-    }));
-
-    setError(emailError);
-  };
-
   const handlePasswordChange = (e) => {
     const nextPassword = e.target.value;
     setPassword(nextPassword);
@@ -112,17 +105,6 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
       ...prev,
       password: "",
     }));
-  };
-
-  const handlePasswordBlur = () => {
-    const passwordError = getPasswordError(password);
-
-    setFieldErrors((prev) => ({
-      ...prev,
-      password: passwordError,
-    }));
-
-    setError(passwordError);
   };
 
   const handleSubmit = async (e) => {
@@ -177,16 +159,16 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
   return (
     <>
       <div className="w-full max-w-[34.5rem] px-1 sm:px-0">
-        <div className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
-          <div className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 sm:py-7 lg:px-10">
+        <Card className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
+          <CardContent className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 sm:py-7 lg:px-10">
             <div className="space-y-5">
               <div className="space-y-3 text-center">
-                <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="float-logo mx-auto block h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)] transition duration-300 hover:scale-105"/>
-                <div className="space-y-2">
-                  <h2 className="text-[1.55rem] font-bold leading-none text-white">
+                <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="mx-auto block h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)] transition duration-300 hover:scale-105"/>
+                <div className="space-y-2 text-center">
+                  <h2 className="text-2xl font-semibold tracking-tight text-white">
                     Sign in <span className="text-[#ffd700]">PUPTian!</span>
                   </h2>
-                  <p className="text-base font-light text-white/70">
+                  <p className="text-sm text-muted-foreground text-white/70">
                     Sign in to access PUPT systems
                   </p>
                 </div>
@@ -205,14 +187,14 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                     Email
                   </label>
                   <div className="relative">
-                    <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
-                      <EmailIcon />
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
+                      <Mail className="size-5" />
                     </span>
-                    <input type="email" value={email} onChange={handleEmailChange} onBlur={handleEmailBlur} required placeholder="Enter your email"
-                      className={`h-12 w-full rounded-xl border bg-white/95 pl-16 pr-4 text-base text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
+                    <Input type="email" value={email} onChange={handleEmailChange} required placeholder="Enter your email"
+                      className={`h-12 w-full rounded-xl bg-background pl-10 pr-4 text-base shadow-sm ${
                         fieldErrors.email
-                          ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
-                          : "border-white/20 focus:border-[#ffd700] focus:ring-[#ffd700]/20"
+                          ? "border-destructive focus-visible:ring-destructive"
+                          : "border-input focus-visible:ring-[#ffd700]"
                       }`}
                     />
                   </div>
@@ -239,21 +221,21 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                   </div>
 
                   <div className="relative w-full">
-                    <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[#7b0d15]/60">
-                      <PasswordIcon />
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
+                      <Lock className="size-5" />
                     </span>
-                    <input type={showPassword ? "text" : "password"} value={password} onChange={handlePasswordChange} onBlur={handlePasswordBlur} required placeholder="Enter your password"
-                      className={`h-12 w-full rounded-xl border bg-white/95 pl-16 pr-14 text-base text-slate-800 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] outline-none transition duration-200 placeholder:text-slate-400 focus:ring-4 ${
+                    <Input type={showPassword ? "text" : "password"} value={password} onChange={handlePasswordChange} required placeholder="Enter your password"
+                      className={`h-12 w-full rounded-xl bg-background pl-10 pr-10 text-base shadow-sm ${
                         fieldErrors.password
-                          ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
-                          : "border-white/20 focus:border-[#ffd700] focus:ring-[#ffd700]/20"
+                          ? "border-destructive focus-visible:ring-destructive"
+                          : "border-input focus-visible:ring-[#ffd700]"
                       }`}
                     />
                     <button type="button" onClick={toggleShowPassword} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]" aria-label={showPassword ? "Hide password" : "Show password"}>
                       {showPassword ? (
-                        <EyeSlashIcon />
+                        <EyeOff className="size-5" />
                       ) : (
-                        <EyeIcon />
+                        <Eye className="size-5" />
                       )}
                     </button>
                   </div>
@@ -264,26 +246,26 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                   ) : null}
                 </div>
 
-                <button type="submit" className="btn mt-2 h-12 w-full rounded-xl border-[#ffd700] bg-[#ffd700] text-sm font-bold text-[#6f0f15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] transition duration-300 hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white">
+                <Button type="submit" className="mt-2 h-12 w-full rounded-xl bg-[#ffd700] text-sm font-bold text-[#6f0f15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] hover:bg-[#991b1b] hover:text-white transition duration-300">
                   SIGN IN
-                </button>
+                </Button>
 
                 <div className="flex items-center gap-4 text-xs text-white/55">
-                  <span className="h-px flex-1 bg-white/15" />
+                  <Separator className="flex-1 bg-white/15" />
                   <span>or</span>
-                  <span className="h-px flex-1 bg-white/15" />
+                  <Separator className="flex-1 bg-white/15" />
                 </div>
 
                 <Link to={registerPath} className="block text-center text-sm font-medium text-white/85 transition duration-300 hover:text-white">
-                  Need an account?{" "}
+                  Don't have an account?{" "}
                   <span className="font-semibold text-[#ffd700] underline decoration-transparent transition duration-300 hover:decoration-[#ffd700]">
-                    Register
+                    Sign up
                   </span>
                 </Link>
               </form>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       <ForgotPasswordModal

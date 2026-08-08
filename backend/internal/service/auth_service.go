@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"slices"
 	"time"
@@ -146,15 +147,7 @@ func (s *authService) LoginAndAuthorize(
 		return "", "", fmt.Errorf("database query (ClientLookup): %w", err)
 	}
 
-	// 3. Authorization Code Logic
-	code, _ := utils.GenerateAuthorizationCode()
-	userID, _ := uuid.Parse(claims.UserID)
-	err = s.Repo.StoreCode(ctx, code, userID[:], clientUUID[:], regURI)
-	if err != nil {
-		return "", "", fmt.Errorf("database query (StoreCode): %w", err)
-	}
-
-	// 4. Generate MFA Pending Token
+	// 3. Generate MFA Pending Token
 	mfaPendingToken, err := GenerateMFAPendingToken(
 		s.PrivateKey,
 		claims.UserID,
@@ -166,7 +159,17 @@ func (s *authService) LoginAndAuthorize(
 		return "", "", fmt.Errorf("mfa pending token generation: %w", err)
 	}
 
-	redirectURL := fmt.Sprintf("%s?code=%s", regURI, code)
+	backendURL := os.Getenv("VITE_BACKEND_URL")
+	if backendURL == "" {
+		backendURL = "http://localhost:8080"
+	}
+
+	redirectURL := fmt.Sprintf(
+		"%s/api/v1/auth/authorize?client_id=%s&redirect_uri=%s",
+		backendURL,
+		req.ClientID,
+		url.QueryEscape(regURI),
+	)
 	return redirectURL, mfaPendingToken, nil
 }
 

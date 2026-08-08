@@ -4,7 +4,7 @@ import FAQSkeleton from '../FAQSkeleton';
 
 describe('FAQSkeleton Component', () => {
   it('renders without crashing', () => {
-    const { container } = render(<FAQSkeleton theme={{ divider: '' }} />);
+    const { container } = render(<FAQSkeleton />);
     expect(container).toBeInTheDocument();
   });
 });

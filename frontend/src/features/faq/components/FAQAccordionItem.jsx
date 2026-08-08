@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronIcon } from "./faqIcons";
+import { ChevronDown } from "lucide-react";
 
 export default function FAQAccordionItem({ item, isOpen, onToggle, theme }) {
   const contentId = `faq-answer-${item.id}`;
@@ -11,7 +11,7 @@ export default function FAQAccordionItem({ item, isOpen, onToggle, theme }) {
           {item.question}
         </span>
         <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition duration-300 ${theme.chevronButton}`}>
-          <ChevronIcon isOpen={isOpen} />
+          <ChevronDown className={`h-5 w-5 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
         </span>
       </button>
 

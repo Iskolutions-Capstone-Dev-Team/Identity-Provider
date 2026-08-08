@@ -1,31 +1,36 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useRoles } from "../hooks/useRoles";
 import { usePermissions } from "../hooks/usePermissions";
 import RolesListCard from "../components/RolesListCard";
 import RoleModal from "../components/RoleModal";
-import SuccessAlert from "../../../components/SuccessAlert";
+import RoleFilters from "../components/RoleFilters";
+import { toast } from "sonner";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import PageHeader from "../../../components/PageHeader";
-import PageHeaderActionButton from "../../../components/PageHeaderActionButton";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
-import { RolesIcon } from "../components/roleIcons";
 import MetricsCard from "../../../components/MetricsCard";
-import { RoleIcon, PermissionIcon } from "../../../components/Icons";
 import { metricsService } from "../../../services/metricsService";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { Plus, ShieldCheck, Lock, ShieldUser } from "lucide-react";
+import { createPortal } from "react-dom";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function Roles() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { colorMode = "light" } = useOutletContext() || {};
+  const { colorMode = "light", globalViewType } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
   const [roleMetrics, setRoleMetrics] = useState(null);
   const [permissionMetrics, setPermissionMetrics] = useState(null);
+  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+
+  useEffect(() => {
+    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
+  }, []);
 
   useEffect(() => {
     metricsService.getRoleMetrics().then(setRoleMetrics).catch(() => {});
@@ -36,12 +41,17 @@ export default function Roles() {
     setSearch,
     page,
     setPage,
+    limit,
+    setLimit,
+    sortBy,
+    setSortBy,
+    sort,
+    setSort,
+
     paginatedRoles,
     totalPages,
     totalResults,
     loading,
-    successMessage,
-    setSuccessMessage,
     updateRole,
     deleteRole,
   } = useRoles();
@@ -53,15 +63,31 @@ export default function Roles() {
     loading: isPermissionOptionsLoading,
   } = usePermissions();
 
+  const [viewType, setViewType] = useState(() => {
+    return localStorage.getItem("rolesViewType") || globalViewType || "table";
+  });
+  
+  const isMounted = useRef(false);
+  useEffect(() => {
+    if (isMounted.current) {
+      if (globalViewType) {
+        setViewType(globalViewType);
+      }
+    } else {
+      isMounted.current = true;
+    }
+  }, [globalViewType]);
+
+  useEffect(() => {
+    localStorage.setItem("rolesViewType", viewType);
+  }, [viewType]);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState("create");
   const [activeRole, setActiveRole] = useState(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const showLoading = useDelayedLoading(loading);
-  const closeSuccessAlert = useCallback(() => {
-    setSuccessMessage("");
-  }, [setSuccessMessage]);
   const visibleRoles = paginatedRoles.map((role) => ({
     ...role,
     canEdit: canEditRole && role.canEdit,
@@ -101,62 +127,80 @@ export default function Roles() {
     setShowDeleteAlert(true);
   };
 
-  const confirmDelete = () => {
-    deleteRole(deleteTarget);
-    setShowDeleteAlert(false);
-    setDeleteTarget(null);
+  const confirmDelete = async () => {
+    try {
+      await deleteRole(deleteTarget);
+      toast.success("Role successfully deleted!");
+    } catch (e) {
+      toast.error("Failed to delete role", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+    } finally {
+      setShowDeleteAlert(false);
+      setDeleteTarget(null);
+    }
   };
 
-  const handleSubmit = (data) => {
+  const handleSubmit = async (data) => {
     if (mode === "edit") {
-      updateRole(data);
+      try {
+        await updateRole(data);
+        toast.success("Role successfully updated!");
+        setModalOpen(false);
+      } catch (e) {
+        toast.error("Failed to update role", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+      }
+    } else {
+      setModalOpen(false);
     }
-
-    setModalOpen(false);
   };
 
   useEffect(() => {
     const routeState = location.state || {};
 
     if (routeState.successMessage) {
-      setSuccessMessage(routeState.successMessage);
+      toast.success(routeState.successMessage, { 
+        id: "role-route-success"
+      });
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [
     location.pathname,
     location.state,
     navigate,
-    setSuccessMessage,
   ]);
 
   return (
     <>
-      <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-5 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
-        <Breadcrumbs
-          colorMode={colorMode}
-          items={[
-            {
-              label: "Role",
-            },
-          ]}
-        />
+      <div className="flex flex-col gap-6 w-full">
+        {breadcrumbsContainer && createPortal(
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Role</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>,
+          breadcrumbsContainer
+        )}
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <PageHeader
-              title="Role"
-              description="Manage roles and permissions"
-              icon={<RolesIcon className="h-14 w-14 sm:h-16 sm:w-16" />}
-              colorMode={colorMode}
-            />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] rounded-xl">
+              <ShieldUser className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Role</h1>
+              <p className="text-muted-foreground">Manage roles and permissions</p>
+            </div>
           </div>
 
           {canCreateRole && (
-            <div className="w-full sm:w-auto sm:self-center">
-              <PageHeaderActionButton colorMode={colorMode} onClick={openCreate}>
-                + Add Role
-              </PageHeaderActionButton>
-            </div>
+            <Button 
+              className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200"
+              onClick={openCreate}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Role
+            </Button>
           )}
         </div>
 
@@ -169,26 +213,36 @@ export default function Roles() {
               .map((m) => ({
                 title: m.title,
                 value: m.value,
-                Icon: RoleIcon,
+                Icon: ShieldCheck,
               })),
             ...(Array.isArray(permissionMetrics) ? permissionMetrics : [])
               .filter((m) => m.title !== "Assigned Permissions")
               .map((m) => ({
                 title: m.title,
                 value: m.value,
-                Icon: PermissionIcon,
+                Icon: Lock,
               })),
           ]}
         />
 
+        <RoleFilters
+          search={search}
+          setSearch={setSearch}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sort={sort}
+          setSort={setSort}
+          viewType={viewType}
+          setViewType={setViewType}
+        />
+
         <div className="relative">
           <RolesListCard
+            viewType={viewType}
             loading={showLoading}
             roles={visibleRoles}
             totalResults={totalResults}
-            itemsPerPage={ITEMS_PER_PAGE}
-            search={search}
-            setSearch={setSearch}
+            itemsPerPage={limit}
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
@@ -214,18 +268,12 @@ export default function Roles() {
       <DeleteConfirmModal
         open={showDeleteAlert}
         message="Delete this role?"
-        theme="glass"
         colorMode={colorMode}
         onCancel={() => {
           setShowDeleteAlert(false);
           setDeleteTarget(null);
         }}
         onConfirm={confirmDelete}
-      />
-
-      <SuccessAlert
-        message={successMessage}
-        onClose={closeSuccessAlert}
       />
     </>
   );

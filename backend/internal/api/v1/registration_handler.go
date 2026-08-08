@@ -61,6 +61,17 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 		page = 1
 	}
 
+	allowedColumns := map[string]bool{
+		"account_type_id":   true,
+		"account_type_name": true,
+		"client_id":         true,
+		"client_name":       true,
+	}
+	sortBy, order, ok := ValidateSortParams(c, allowedColumns)
+	if !ok {
+		return
+	}
+
 	permissions := c.GetStringSlice("permissions")
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
@@ -71,6 +82,8 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 		userID,
 		limit,
 		page,
+		sortBy,
+		order,
 	)
 	if err != nil {
 		log.Printf("[GetRegistrationConfig] %v", err)
