@@ -31,7 +31,7 @@ type OTPHandler struct {
 // @Accept json
 // @Produce json
 // @Param request body dto.OTPRequest true "OTP Request"
-// @Success 200 {object} dto.SuccessResponse
+// @Success 200 {object} dto.OTPSendResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /otp/send [post]
@@ -49,7 +49,7 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 	}
 
 	reqCtx := c.Request.Context()
-	err := h.OTPService.SendOTP(reqCtx, req.Email)
+	remaining, reused, err := h.OTPService.SendOTP(reqCtx, req.Email)
 
 	logReq := &dto.PostAuditLogRequest{
 		Action: actionSendOTP,
@@ -88,7 +88,15 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 	_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
 	_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "OTP sent successfully"})
+	msg := "OTP sent successfully"
+	if reused {
+		msg = "The code requested before still works"
+	}
+
+	c.JSON(http.StatusOK, dto.OTPSendResponse{
+		Message:          msg,
+		RemainingSeconds: remaining,
+	})
 }
 
 // VerifyOTP is a handler to verify an OTP code.

@@ -90,8 +90,10 @@ export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = ""
       return;
     }
 
-    setTimer(OTP_TIMER_SECONDS);
-    setCanResend(false);
+    if (timer <= 0) {
+      setCanResend(true);
+      return;
+    }
 
     const interval = setInterval(() => {
       setTimer((currentTimer) => {
@@ -129,7 +131,10 @@ export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = ""
     setIsSendingOtp(true);
 
     try {
-      await passwordResetService.sendOtp({ email: trimmedRecoveryEmail });
+      const res = await passwordResetService.sendOtp({ email: trimmedRecoveryEmail });
+      const seconds = res?.remaining_seconds ?? OTP_TIMER_SECONDS;
+      setTimer(seconds);
+      setCanResend(seconds <= 0);
       setOtp(EMPTY_OTP);
       setStep("otp");
       restartOtpTimer();
@@ -154,7 +159,10 @@ export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = ""
     setIsSendingOtp(true);
 
     try {
-      await passwordResetService.sendOtp({ email: trimmedRecoveryEmail });
+      const res = await passwordResetService.sendOtp({ email: trimmedRecoveryEmail });
+      const seconds = res?.remaining_seconds ?? OTP_TIMER_SECONDS;
+      setTimer(seconds);
+      setCanResend(seconds <= 0);
       restartOtpTimer();
     } catch (error) {
       setOtpError(getRequestErrorMessage(error, "Unable to resend the OTP right now."));
