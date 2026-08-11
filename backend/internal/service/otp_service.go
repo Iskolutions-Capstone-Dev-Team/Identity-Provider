@@ -13,7 +13,7 @@ import (
 )
 
 type OTPService interface {
-	SendOTP(ctx context.Context, email string) error
+	SendOTP(ctx context.Context, email string) (int, bool, error)
 	VerifyOTP(ctx context.Context, email, code string) error
 }
 
@@ -22,30 +22,28 @@ type otpService struct {
 	mailService MailService
 }
 
-/**
- * SendOTP generates and sends an OTP to the user, enforcing a 3-minute
- * cooldown between requests.
- */
+// SendOTP generates and sends an OTP, reusing any unexpired OTP if present.
 func (s *otpService) SendOTP(ctx context.Context,
 	email string,
-) error {
-	// Check for cooldown
+) (int, bool, error) {
 	latest, err := s.otpRepo.GetLatestOTPByEmail(ctx, email)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("[OTPService] Get latest OTP: %w", err)
+		return 0, false, fmt.Errorf("[OTPService] Get latest OTP: %w", err)
 	}
 
-	if latest != nil {
-		cooldown := 3 * time.Minute
-		if time.Since(latest.CreatedAt) < cooldown {
-			return fmt.Errorf("please wait 3 minutes before " +
-				"requesting a new OTP")
+	// If there is an active (unexpired and unused) OTP, reuse it.
+	if latest != nil && latest.UsedAt == nil &&
+		time.Now().Before(latest.ExpiresAt) {
+		remaining := int(time.Until(latest.ExpiresAt).Seconds())
+		if remaining < 0 {
+			remaining = 0
 		}
+		return remaining, true, nil
 	}
 
 	otpCode, err := utils.GenerateOTP()
 	if err != nil {
-		return fmt.Errorf("[OTPService] Generate OTP: %w", err)
+		return 0, false, fmt.Errorf("[OTPService] Generate OTP: %w", err)
 	}
 
 	otp := &models.OTP{
@@ -57,15 +55,15 @@ func (s *otpService) SendOTP(ctx context.Context,
 
 	err = s.otpRepo.CreateOTP(ctx, otp)
 	if err != nil {
-		return fmt.Errorf("[OTPService] Save OTP: %w", err)
+		return 0, false, fmt.Errorf("[OTPService] Save OTP: %w", err)
 	}
 
 	err = utils.SendOTPEmail(email, otpCode)
 	if err != nil {
-		return fmt.Errorf("[OTPService] Send Email: %w", err)
+		return 0, false, fmt.Errorf("[OTPService] Send Email: %w", err)
 	}
 
-	return nil
+	return 300, false, nil
 }
 
 /**
