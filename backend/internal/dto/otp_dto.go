@@ -13,4 +13,3 @@ type OTPSendResponse struct {
 	Message          string `json:"message"`
 	RemainingSeconds int    `json:"remaining_seconds"`
 }
-
