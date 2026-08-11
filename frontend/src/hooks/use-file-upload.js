@@ -202,6 +202,7 @@ export const useFileUpload = (options = {}) => {
     clearFiles,
     onFilesChange,
     onFilesAdded,
+    onError,
   ])
 
   const removeFile = useCallback((id) => {

@@ -9,6 +9,7 @@ import ReportConfirmModal from "../components/ReportConfirmModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/TopLoginsPanel";
 import SystemLoginsModal from "../components/SystemLoginsModal";
+import AdvancedAnalyticsAlert from "../components/AdvancedAnalyticsAlert";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { metricsService } from "../../../services/metricsService";
@@ -200,7 +201,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-6 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
+    <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-4 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
       {breadcrumbsContainer && createPortal(
         <Breadcrumb>
           <BreadcrumbList>
@@ -228,6 +229,8 @@ export default function Dashboard() {
           Generate Report
         </Button>
       </div>
+
+      <AdvancedAnalyticsAlert />
 
       <div className="space-y-6">
         {!showLoading ? (

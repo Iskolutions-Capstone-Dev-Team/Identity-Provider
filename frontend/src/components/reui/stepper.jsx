@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+
 import {
   Children,
   createContext,
@@ -95,6 +95,11 @@ function Stepper({
     orientation,
     registerTrigger,
     triggerNodes,
+    focusNext,
+    focusPrev,
+    focusFirst,
+    focusLast,
+    indicators,
   ])
 
   return (
@@ -176,16 +181,17 @@ function StepperTrigger({
   // Register this trigger for keyboard navigation
   const btnRef = useRef(null)
   useEffect(() => {
-    if (btnRef.current) {
-      registerTrigger(btnRef.current)
+    const node = btnRef.current;
+    if (node) {
+      registerTrigger(node)
     }
-  }, [btnRef.current])
-
-  // Find our index among triggers for navigation
-  const myIdx = useMemo(() =>
-    triggerNodes.findIndex((n) => n === btnRef.current), [triggerNodes, btnRef.current])
+    return () => {
+      // registerTrigger(null) might be needed but let's just stick to the simplest fix
+    }
+  }, [registerTrigger])
 
   const handleKeyDown = (e) => {
+    const myIdx = triggerNodes.findIndex((n) => n === btnRef.current)
     switch (e.key) {
       case "ArrowRight":
       case "ArrowDown":

@@ -551,8 +551,8 @@ func (s *userService) GetFilteredUserList(
 			permissions, "View users based on appclient",
 		) {
 			resp, err = s.GetBoundUserList(
-			ctx, limit, page, userID, sortBy, order,
-		)
+				ctx, limit, page, userID, sortBy, order,
+			)
 		} else {
 			return nil, fmt.Errorf("privilege validation: unauthorized level")
 		}

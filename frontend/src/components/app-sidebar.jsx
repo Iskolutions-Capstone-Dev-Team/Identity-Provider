@@ -9,6 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuBadge,
 } from "@/components/ui/sidebar"
 
 import {
@@ -86,6 +87,8 @@ const menuSections = [
         path: "/backup-restore",
         requiredPermissions: BACKUP_RESTORE_PAGE_PERMISSIONS,
         icon: DatabaseBackup,
+        badge: "SOON",
+        disabled: true,
       },
     ],
   },
@@ -151,18 +154,24 @@ export function AppSidebar({ currentUser }) {
                       <SidebarMenuButton 
                         isActive={isActive} 
                         tooltip={item.name}
+                        disabled={item.disabled}
                         render={
-                          item.isExternal ? (
+                          item.disabled ? (
+                            <button type="button" disabled />
+                          ) : item.isExternal ? (
                             <a href={item.path} target="_blank" rel="noopener noreferrer" />
                           ) : (
                             <Link to={item.path} />
                           )
                         }
-                        className="gap-3 cursor-pointer max-md:h-7 max-md:text-xs"
+                        className={`gap-3 max-md:h-7 max-md:text-xs ${item.badge ? 'pr-24' : ''} ${!item.disabled ? 'cursor-pointer' : ''}`}
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
                         <span className="truncate transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">{item.name}</span>
                       </SidebarMenuButton>
+                      {item.badge && (
+                        <SidebarMenuBadge className="text-[10px] font-semibold bg-white !text-black px-2 py-0.5 rounded-full whitespace-nowrap uppercase right-2">{item.badge}</SidebarMenuBadge>
+                      )}
                     </SidebarMenuItem>
                   )
                 })}
