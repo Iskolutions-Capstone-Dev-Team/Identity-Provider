@@ -26,7 +26,7 @@ type MailHandler struct {
 // @Accept json
 // @Produce json
 // @Param request body dto.OTPRequest true "OTP Request"
-// @Success 200 {object} dto.SuccessResponse
+// @Success 200 {object} dto.OTPSendResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /mail/otp [post]
@@ -44,7 +44,7 @@ func (h *MailHandler) SendOTP(c *gin.Context) {
 	}
 
 	reqCtx := c.Request.Context()
-	err := h.OTPService.SendOTP(reqCtx, req.Email)
+	remaining, reused, err := h.OTPService.SendOTP(reqCtx, req.Email)
 
 	logReq := &dto.PostAuditLogRequest{
 		Action: "send_otp",
@@ -84,7 +84,15 @@ func (h *MailHandler) SendOTP(c *gin.Context) {
 	_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
 	_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Message: "OTP sent successfully"})
+	msg := "OTP sent successfully"
+	if reused {
+		msg = "The code requested before still works"
+	}
+
+	c.JSON(http.StatusOK, dto.OTPSendResponse{
+		Message:          msg,
+		RemainingSeconds: remaining,
+	})
 }
 
 // SendInvitation is a handler to send an invitation code.

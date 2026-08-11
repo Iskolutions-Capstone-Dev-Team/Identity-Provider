@@ -103,8 +103,10 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
       return;
     }
 
-    setTimer(OTP_TIMER_SECONDS);
-    setCanResend(false);
+    if (timer <= 0) {
+      setCanResend(true);
+      return;
+    }
 
     const interval = setInterval(() => {
       setTimer((currentTimer) => {
@@ -212,7 +214,10 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     setIsSendingOtp(true);
 
     try {
-      await passwordResetService.sendOtp({ email: trimmedRecoveryEmail });
+      const res = await passwordResetService.sendOtp({ email: trimmedRecoveryEmail });
+      const seconds = res?.remaining_seconds ?? OTP_TIMER_SECONDS;
+      setTimer(seconds);
+      setCanResend(seconds <= 0);
       setOtp(EMPTY_OTP);
       setStep("otp");
       restartOtpTimer();
@@ -277,7 +282,10 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     setIsSendingOtp(true);
 
     try {
-      await passwordResetService.sendOtp({ email: otpTargetEmail });
+      const res = await passwordResetService.sendOtp({ email: otpTargetEmail });
+      const seconds = res?.remaining_seconds ?? OTP_TIMER_SECONDS;
+      setTimer(seconds);
+      setCanResend(seconds <= 0);
       setOtp(EMPTY_OTP);
       setStep("otp");
       restartOtpTimer();
@@ -326,7 +334,10 @@ export default function ChangePasswordModal({ isOpen, onClose, showCurrentPasswo
     setIsSendingOtp(true);
 
     try {
-      await passwordResetService.sendOtp({ email: otpTargetEmail });
+      const res = await passwordResetService.sendOtp({ email: otpTargetEmail });
+      const seconds = res?.remaining_seconds ?? OTP_TIMER_SECONDS;
+      setTimer(seconds);
+      setCanResend(seconds <= 0);
       restartOtpTimer();
     } catch (error) {
       setOtpError(

@@ -7,3 +7,9 @@ type VerifyOTPRequest struct {
 	Email string `json:"email" binding:"required,email"`
 	OTP   string `json:"otp" binding:"required,len=6"`
 }
+
+// OTPSendResponse is the payload returned after an OTP is requested.
+type OTPSendResponse struct {
+	Message          string `json:"message"`
+	RemainingSeconds int    `json:"remaining_seconds"`
+}

@@ -41,17 +41,30 @@ func (m *MockOTPService) EXPECT() *MockOTPServiceMockRecorder {
 }
 
 // SendOTP mocks base method.
-func (m *MockOTPService) SendOTP(ctx context.Context, email string) error {
+func (m *MockOTPService) SendOTP(
+	ctx context.Context,
+	email string,
+) (int, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendOTP", ctx, email)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // SendOTP indicates an expected call of SendOTP.
-func (mr *MockOTPServiceMockRecorder) SendOTP(ctx, email any) *gomock.Call {
+func (mr *MockOTPServiceMockRecorder) SendOTP(
+	ctx, email any,
+) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendOTP", reflect.TypeOf((*MockOTPService)(nil).SendOTP), ctx, email)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"SendOTP",
+		reflect.TypeOf((*MockOTPService)(nil).SendOTP),
+		ctx,
+		email,
+	)
 }
 
 // VerifyOTP mocks base method.
