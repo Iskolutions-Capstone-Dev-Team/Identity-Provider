@@ -115,4 +115,27 @@ export const metricsService = {
 
     return response.data;
   },
+
+  async downloadSystemReport(filters = {}) {
+    const params = new URLSearchParams();
+    
+    if (filters.includeUsers !== undefined) {
+      params.append("include_users", filters.includeUsers);
+    }
+    if (filters.includeClients !== undefined) {
+      params.append("include_clients", filters.includeClients);
+    }
+    if (filters.includeLogs !== undefined) {
+      params.append("include_logs", filters.includeLogs);
+    }
+
+    const queryString = params.toString();
+    const url = queryString ? `/admin/reports/system?${queryString}` : "/admin/reports/system";
+
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+    });
+
+    return response.data;
+  },
 };
