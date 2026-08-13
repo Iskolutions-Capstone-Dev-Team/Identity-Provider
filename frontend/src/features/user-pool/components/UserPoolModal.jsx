@@ -8,6 +8,7 @@ import { useRegistrationAccountTypes } from "../../registration/hooks/useRegistr
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import UserPoolAuthAppMfaModal from "./UserPoolAuthAppMfaModal";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
+import { isAdminAccountType } from "../../../utils/accountTypes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -191,20 +192,6 @@ export default function UserPoolModal({
   const isEditMode = mode === "edit";
   const isAdminView = userType === ADMIN_USER_TYPE;
   const isDarkMode = colorMode === "dark";
-  const rolesEndpoint = isAdminView && includeSuperAdminRoleOptions ? "all" : userType === ADMIN_USER_TYPE ? "default" : "all";
-  
-  const canEditThisUser = isAdminView ? canEditStatus || canEditRole || canEditAccess : canEditStatus || canEditAccess;
-  const canEditRoleField = isAdminView && canEditRole;
-  const canEditAccessField = canEditAccess;
-  
-  const availableRoles = useAllRoles({
-    endpoint: rolesEndpoint,
-    enabled: open && isAdminView,
-  });
-  const adminRoleOptions = getAdminRoleOptions(availableRoles, {
-    includeSuperAdmin: includeSuperAdminRoleOptions,
-  });
-
   const [formData, setFormData] = useState(initialFormData);
   const [originalUser, setOriginalUser] = useState(initialFormData);
   const [error, setError] = useState("");
@@ -225,6 +212,23 @@ export default function UserPoolModal({
     value: opt.value,
     label: opt.label,
   }));
+
+  const selectedAccountTypeIsAdmin = !isAdminView && isAdminAccountType(formData.accountType, accountTypeOptions);
+  const isAdminAccountSetup = isAdminView || selectedAccountTypeIsAdmin;
+  
+  const rolesEndpoint = isAdminAccountSetup && includeSuperAdminRoleOptions ? "all" : isAdminAccountSetup ? "default" : "all";
+  
+  const canEditThisUser = isAdminView ? canEditStatus || canEditRole || canEditAccess : canEditStatus || canEditAccess;
+  const canEditRoleField = isAdminAccountSetup && canEditRole;
+  const canEditAccessField = canEditAccess;
+  
+  const availableRoles = useAllRoles({
+    endpoint: rolesEndpoint,
+    enabled: open && isAdminAccountSetup,
+  });
+  const adminRoleOptions = getAdminRoleOptions(availableRoles, {
+    includeSuperAdmin: includeSuperAdminRoleOptions,
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -492,7 +496,7 @@ export default function UserPoolModal({
                 {/* 2nd Card: Role, Accessible, & Manageable Clients */}
                 <Card className="bg-muted/30 border-border/40">
                   <CardContent className="px-5 py-0 space-y-5">
-                    {isAdminView && (
+                    {isAdminAccountSetup && (
                       <div className="space-y-3">
                         <div>
                           <h4 className="font-semibold text-sm uppercase">Role</h4>

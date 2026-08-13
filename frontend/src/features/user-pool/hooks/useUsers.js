@@ -3,7 +3,7 @@ import { mailService } from "../../../services/mailService";
 import { userService } from "../../../services/userService";
 import { generateHiddenInvitationPassword } from "../../../utils/passwordRules";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE } from "../../../utils/userPoolAccess";
-import { getAccountTypeBackendId, getAccountTypeValue, normalizeAccountType } from "../../../utils/accountTypes";
+import { getAccountTypeBackendId, getAccountTypeValue, normalizeAccountType, isAdminAccountType } from "../../../utils/accountTypes";
 import { ADMIN_ACCOUNT_CATEGORY, FETCH_LIMIT, FILTER_LOADING_MS, INVITATION_ACCOUNT_SETUP, ITEMS_PER_PAGE, SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE } from "../constants/userPoolConstants";
 import { applyUserClientSelections, areSameArrays, getUserDetailPayload, getUserEmailKey, getUserIdKey, isStatusRequestError, mapUserResponse, normalizeAccountTypeId, normalizeClientIds, normalizeEmailAddress, normalizeRoleId, normalizeStatus } from "../utils/userPoolMappers";
 import { matchesUserSearch, userHasVisibleClient } from "../utils/userPoolFilters";
@@ -432,21 +432,23 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     const previousAccessibleClientIds = normalizeClientIds(originalUser?.accessibleClientIds);
     const nextManageableClientIds = normalizeClientIds(updatedUser?.manageableClientIds);
     const previousManageableClientIds = normalizeClientIds(originalUser?.manageableClientIds);
-    const nextRoleId = isAdminUserUpdate ? normalizeRoleId(updatedUser?.roleId) : null;
-    const previousRoleId = isAdminUserUpdate
-      ? normalizeRoleId(originalUser?.roleId)
-      : null;
     const nextAccountType = normalizeAccountType(updatedUser?.accountType);
     const previousAccountType = normalizeAccountType(originalUser?.accountType);
+    const nextAccountTypeIsAdmin = isAdminAccountType(nextAccountType);
+    const isAdminAccountSetup = isAdminUserUpdate || nextAccountTypeIsAdmin;
+    const nextRoleId = isAdminAccountSetup ? normalizeRoleId(updatedUser?.roleId) : null;
+    const previousRoleId = isAdminAccountSetup
+      ? normalizeRoleId(originalUser?.roleId)
+      : null;
     const shouldUpdateStatus = Boolean(nextStatus) && nextStatus !== previousStatus;
-    const shouldUpdateRole = isAdminUserUpdate && nextRoleId !== previousRoleId;
+    const shouldUpdateRole = isAdminAccountSetup && nextRoleId !== previousRoleId;
     const shouldUpdateAccountType = nextAccountType && nextAccountType !== previousAccountType;
     const shouldUpdateAccessibleClients = !areSameArrays(
       nextAccessibleClientIds,
       previousAccessibleClientIds,
     );
     const shouldUpdateManageableClients =
-      isAdminUserUpdate &&
+      isAdminAccountSetup &&
       !areSameArrays(nextManageableClientIds, previousManageableClientIds);
     let accessWasUpdated = false;
     let manageableClientsWereUpdated = false;
