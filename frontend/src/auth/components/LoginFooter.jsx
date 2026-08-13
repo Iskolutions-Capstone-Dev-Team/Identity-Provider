@@ -23,10 +23,10 @@ export default function LoginFooter() {
 
         <nav className="flex items-center justify-center border-white/25 sm:border-l sm:pl-8">
           <div className="flex items-center gap-3">
-            <a href="https://www.facebook.com/PUPTOFFICIAL" target="_blank" rel="noopener noreferrer" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white transition duration-300 hover:-translate-y-1 hover:border-[#f8d24e]/50 hover:bg-white/15 hover:text-[#ffd700]" aria-label="Visit PUP Taguig on Facebook">
+            <a href="https://www.facebook.com/profile.php?id=61590127270893" target="_blank" rel="noopener noreferrer" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white transition duration-300 hover:-translate-y-1 hover:border-[#f8d24e]/50 hover:bg-white/15 hover:text-[#ffd700]" aria-label="Visit Facebook profile">
               <FacebookIcon />
             </a>
-            <a href="mailto:csc.puptaguig@gmail.com" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white transition duration-300 hover:-translate-y-1 hover:border-[#f8d24e]/50 hover:bg-white/15 hover:text-[#ffd700]" aria-label="Email csc.puptaguig@gmail.com">
+            <a href="mailto:iskolutions.team@gmail.com" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white transition duration-300 hover:-translate-y-1 hover:border-[#f8d24e]/50 hover:bg-white/15 hover:text-[#ffd700]" aria-label="Email iskolutions.team@gmail.com">
               <EmailIcon className="size-5" />
             </a>
           </div>
