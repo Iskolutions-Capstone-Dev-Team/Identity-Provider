@@ -24,6 +24,7 @@ type Handlers struct {
 	PasskeyHandler      *v1.PasskeyHandler
 	MetricsHandler      *v1.MetricsHandler
 	BackupHandler       *v1.BackupHandler
+	ReportHandler       *v1.ReportHandler
 	UserRepo            repository.UserRepository
 
 	RoleRepo   repository.RoleRepository
@@ -211,6 +212,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		admin.GET("/metrics", h.MetricsHandler.GetDashboardMetrics)
 		admin.GET("/metrics/logins", h.MetricsHandler.GetPaginatedLogins)
 		admin.GET("/report", h.MetricsHandler.GetMetricsReportPDF)
+		admin.GET("/reports/system", h.ReportHandler.GetSystemReport)
 
 		// Service Provider (Client) Maintenance
 		clients := admin.Group("/clients")

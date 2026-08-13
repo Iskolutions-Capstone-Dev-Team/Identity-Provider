@@ -49,7 +49,7 @@ export default function AnimatedTags({
                         filter: "blur(0px)",
                       }
                 }
-                className="group flex cursor-pointer flex-row items-center justify-center gap-1.5 rounded-md border border-[#7b0d15] dark:border-white/10 bg-[#7b0d15] dark:bg-transparent px-2 py-0.5 text-xs text-white dark:text-gray-300 hover:bg-[#5a0b12] dark:hover:bg-white/5"
+                className="group flex cursor-pointer flex-row items-center justify-center gap-1.5 rounded-md border border-[#7b0d15] dark:border-[#f8d24e] bg-[#7b0d15] dark:bg-[#f8d24e] px-2 py-0.5 text-xs text-white dark:text-[#7b0d15] hover:bg-[#5a0b12] dark:hover:bg-[#e6c140]"
                 exit={
                   shouldReduceMotion
                     ? { opacity: 0, transition: { duration: 0 } }
@@ -92,7 +92,7 @@ export default function AnimatedTags({
                       filter: "blur(0px)",
                     }
               }
-              className="group flex cursor-pointer flex-row items-center justify-center gap-1.5 rounded-md border border-[#7b0d15]/20 dark:border-white/10 bg-[#7b0d15]/10 dark:bg-transparent px-2 py-0.5 text-xs text-[#7b0d15] dark:text-gray-300 hover:bg-[#7b0d15]/20 dark:hover:bg-white/5 dark:hover:text-gray-200"
+              className="group flex cursor-pointer flex-row items-center justify-center gap-1.5 rounded-md border border-[#7b0d15]/20 dark:border-[#f8d24e]/20 bg-[#7b0d15]/10 dark:bg-[#f8d24e]/10 px-2 py-0.5 text-xs text-[#7b0d15] dark:text-[#f8d24e] hover:bg-[#7b0d15]/20 dark:hover:bg-[#f8d24e]/20"
               exit={
                 shouldReduceMotion
                   ? { opacity: 0, transition: { duration: 0 } }
