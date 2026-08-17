@@ -12,15 +12,11 @@ export function normalizeClientIds(clientIds = []) {
 }
 
 export function normalizeClientNames(clientNames = []) {
-  return Array.from(
-    new Set(
-      (Array.isArray(clientNames) ? clientNames : [])
-        .map((clientName) =>
-          typeof clientName === "string" ? clientName.trim() : "",
-        )
-        .filter(Boolean),
-    ),
-  );
+  return (Array.isArray(clientNames) ? clientNames : [])
+    .map((clientName) =>
+      typeof clientName === "string" ? clientName.trim() : "",
+    )
+    .filter(Boolean);
 }
 
 function getClientIdsFromList(clients = []) {

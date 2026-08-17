@@ -8,7 +8,7 @@ import { useRegistrationAccountTypes } from "../../registration/hooks/useRegistr
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import UserPoolAuthAppMfaModal from "./UserPoolAuthAppMfaModal";
 import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
-import { isAdminAccountType } from "../../../utils/accountTypes";
+import { isAdminAccountType, getAccountTypeValue } from "../../../utils/accountTypes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -47,16 +47,17 @@ const normalizeRoleId = (value) => {
   const normalizedValue = Number.parseInt(value, 10);
   return Number.isInteger(normalizedValue) && normalizedValue > 0 ? normalizedValue : null;
 };
+const normalizeAccountTypeId = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const normalizedValue = Number.parseInt(value, 10);
+  return Number.isInteger(normalizedValue) && normalizedValue > 0 ? normalizedValue : null;
+};
 const normalizeClientIds = (clientIds) =>
   Array.from(new Set((Array.isArray(clientIds) ? clientIds : []).filter(Boolean)));
 const normalizeClientNames = (clientNames) =>
-  Array.from(
-    new Set(
-      (Array.isArray(clientNames) ? clientNames : [])
-        .map((clientName) => (typeof clientName === "string" ? clientName.trim() : ""))
-        .filter(Boolean),
-    ),
-  );
+  (Array.isArray(clientNames) ? clientNames : [])
+    .map((clientName) => (typeof clientName === "string" ? clientName.trim() : ""))
+    .filter(Boolean);
 const normalizeRoleNames = (roles) => {
   const normalizedRoles = Array.isArray(roles) ? roles : roles === null || roles === undefined ? [] : [roles];
   return Array.from(
@@ -150,7 +151,8 @@ const createFormData = (user) => ({
   accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
   manageableClientIds: normalizeClientIds(user?.manageableClientIds),
   manageableClientNames: normalizeClientNames(user?.manageableClientNames),
-  accountType: user?.accountType || user?.account_type || "",
+  accountType: getAccountTypeValue(user?.accountType || user?.account_type || ""),
+  accountTypeId: normalizeAccountTypeId(user?.accountTypeId || user?.account_type_id),
 });
 
 const getSelectedClientOptions = (clientIds = [], clientNames = []) =>
@@ -258,10 +260,25 @@ export default function UserPoolModal({
   };
 
   const handleAccountTypeChange = (value) => {
-    setFormData((current) => ({
-      ...current,
-      accountType: value,
-    }));
+    const selectedAccountType = accountTypeOptions.find(opt => opt.value === value);
+    
+    setFormData((current) => {
+      const nextData = {
+        ...current,
+        accountType: value,
+        accountTypeId: selectedAccountType?.backendId || current.accountTypeId,
+      };
+      
+      if (selectedAccountType?.clients && Array.isArray(selectedAccountType.clients)) {
+        const validClients = selectedAccountType.clients.filter(client =>
+          appClientOptions.some(opt => (opt.id || opt.value) === client.id)
+        );
+        nextData.accessibleClientIds = validClients.map(c => c.id);
+        nextData.accessibleClientNames = validClients.map(c => c.name);
+      }
+      
+      return nextData;
+    });
 
     if (error) {
       setError("");
@@ -477,7 +494,7 @@ export default function UserPoolModal({
                         <Badge variant="outline" className="capitalize">{accountTypeDisplayLabel || formData.accountType || "-"}</Badge>
                       </div>
                     ) : (
-                      <Select value={formData.accountType} onValueChange={handleAccountTypeChange} onOpenChange={setIsSelectOpen}>
+                      <Select key={accountTypeSelectOptions.length} value={formData.accountType} onValueChange={handleAccountTypeChange} onOpenChange={setIsSelectOpen}>
                         <SelectTrigger className="h-10 w-full bg-muted/50 border-border/50">
                           <SelectValue placeholder="Select Account Type" />
                         </SelectTrigger>
@@ -541,7 +558,7 @@ export default function UserPoolModal({
                         </div>
                       ) : (
                         <AppClientComboboxField
-                          options={appClientSelectOptions}
+                          options={getAllAppClientSelectOptions(appClientOptions)}
                           selectedIds={formData.accessibleClientIds}
                           onChange={(vals) => setFormData((curr) => ({ ...curr, accessibleClientIds: vals }))}
                           placeholder="Select accessible app clients"
@@ -567,7 +584,7 @@ export default function UserPoolModal({
                         </div>
                       ) : (
                         <AppClientComboboxField
-                          options={appClientSelectOptions}
+                          options={getAllAppClientSelectOptions(appClientOptions)}
                           selectedIds={formData.manageableClientIds}
                           onChange={(vals) => setFormData((curr) => ({ ...curr, manageableClientIds: vals }))}
                           placeholder="Select manageable app clients"

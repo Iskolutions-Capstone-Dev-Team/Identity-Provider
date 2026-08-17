@@ -165,6 +165,7 @@ export function buildAccountTypeOption(value, overrides = {}) {
         overrides.aliases,
         normalizedValue,
       ),
+      clients: overrides.clients ?? matchedDefaultOption.clients ?? [],
     };
   }
 
@@ -183,6 +184,7 @@ export function buildAccountTypeOption(value, overrides = {}) {
         : null,
     isAdminType: false,
     aliases: mergeAliases(overrides.aliases, normalizedValue),
+    clients: Array.isArray(overrides.clients) ? overrides.clients : [],
   };
 }
 
@@ -222,6 +224,7 @@ export function mergeAccountTypeOptions(...sources) {
       ...nextOption,
       backendId: nextOption.backendId ?? existingOption.backendId ?? null,
       aliases: mergeAliases(existingOption.aliases, nextOption.aliases),
+      clients: nextOption.clients ?? existingOption.clients ?? [],
     });
   };
 
@@ -265,6 +268,7 @@ export function rememberAccountTypeOption(option) {
       value: storedOption.value,
       label: storedOption.label,
       backendId: storedOption.backendId,
+      clients: storedOption.clients,
     }));
 
   writeStoredAccountTypes(nextStoredOptions);
@@ -283,6 +287,7 @@ export function forgetAccountTypeOption(value) {
       value: option.value,
       label: option.label,
       backendId: option.backendId,
+      clients: option.clients,
     }));
 
   writeStoredAccountTypes(nextStoredOptions);
