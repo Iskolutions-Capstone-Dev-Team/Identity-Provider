@@ -863,7 +863,37 @@ func (s *userService) UpdateUserAccountAndRole(
 		}
 		err := s.Repo.UpdateUserAccountType(ctx, id[:], nullAccountTypeID)
 		if err != nil {
-			return fmt.Errorf("failed to update user account type: %w", err)
+			return fmt.Errorf(
+				"failed to update user account type: %w",
+				err,
+			)
+		}
+
+		var clientIDs [][]byte
+		if *accountTypeID > 0 {
+			clients, err := s.RegRepo.GetClientsByAccountTypeID(
+				ctx,
+				*accountTypeID,
+			)
+			if err != nil {
+				return fmt.Errorf(
+					"failed to fetch registration config: %w",
+					err,
+				)
+			}
+			for _, c := range clients {
+				if len(c.ClientID) > 0 {
+					clientIDs = append(clientIDs, c.ClientID)
+				}
+			}
+		}
+
+		err = s.CAURepo.SyncPreapprovedUserAccess(ctx, id[:], clientIDs)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to sync preapproved clients: %w",
+				err,
+			)
 		}
 	}
 
