@@ -558,6 +558,7 @@ export default function UserPoolModal({
                         </div>
                       ) : (
                         <AppClientComboboxField
+                          key={`accessible-${formData.accountType}`}
                           options={getAllAppClientSelectOptions(appClientOptions)}
                           selectedIds={formData.accessibleClientIds}
                           onChange={(vals) => setFormData((curr) => ({ ...curr, accessibleClientIds: vals }))}
@@ -584,6 +585,7 @@ export default function UserPoolModal({
                         </div>
                       ) : (
                         <AppClientComboboxField
+                          key={`manageable-${formData.accountType}`}
                           options={getAllAppClientSelectOptions(appClientOptions)}
                           selectedIds={formData.manageableClientIds}
                           onChange={(vals) => setFormData((curr) => ({ ...curr, manageableClientIds: vals }))}
