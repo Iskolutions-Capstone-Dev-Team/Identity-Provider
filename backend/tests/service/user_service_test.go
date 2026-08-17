@@ -141,6 +141,16 @@ func TestUpdateUserAccountAndRole(t *testing.T) {
 		Return(nil).
 		Times(1)
 
+	mockRegRepo.EXPECT().
+		GetClientsByAccountTypeID(gomock.Any(), accountTypeID).
+		Return(nil, nil).
+		Times(1)
+
+	mockCAURepo.EXPECT().
+		SyncPreapprovedUserAccess(gomock.Any(), userID[:], nil).
+		Return(nil).
+		Times(1)
+
 	err := userService.UpdateUserAccountAndRole(
 		context.Background(),
 		userID,
