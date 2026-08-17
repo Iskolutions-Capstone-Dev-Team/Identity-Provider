@@ -7,6 +7,7 @@ import (
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
 	"github.com/google/uuid"
@@ -132,6 +133,13 @@ func TestUpdateUserAccountAndRole(t *testing.T) {
 	roleID := 1
 
 	mockRepo.EXPECT().
+		GetUserById(gomock.Any(), userID[:], nil, true).
+		Return(&models.User{
+			AccountType: "Student",
+		}, nil).
+		Times(1)
+
+	mockRepo.EXPECT().
 		UpdateUserRole(gomock.Any(), userID[:], gomock.Any()).
 		Return(nil).
 		Times(1)
@@ -148,6 +156,74 @@ func TestUpdateUserAccountAndRole(t *testing.T) {
 
 	mockCAURepo.EXPECT().
 		SyncPreapprovedUserAccess(gomock.Any(), userID[:], nil).
+		Return(nil).
+		Times(1)
+
+	err := userService.UpdateUserAccountAndRole(
+		context.Background(),
+		userID,
+		&accountTypeID,
+		&roleID,
+	)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}
+
+func TestUpdateUserAccountAndRole_RevokeAdmin(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockUserRepository(ctrl)
+	mockClientRepo := mocks.NewMockClientRepository(ctrl)
+	mockRegRepo := mocks.NewMockRegistrationRepository(ctrl)
+	mockCAURepo := mocks.NewMockClientAllowedUserRepository(ctrl)
+
+	userService := service.NewUserService(
+		mockRepo,
+		mockClientRepo,
+		mockRegRepo,
+		mockCAURepo,
+		cache.NewNoopCache(),
+	)
+
+	userID := uuid.New()
+	accountTypeID := 2
+	roleID := 1
+
+	mockRepo.EXPECT().
+		GetUserById(gomock.Any(), userID[:], nil, true).
+		Return(&models.User{
+			AccountType: "System Administrator",
+		}, nil).
+		Times(1)
+
+	mockRepo.EXPECT().
+		UpdateUserRole(gomock.Any(), userID[:], gomock.Any()).
+		Return(nil).
+		Times(1)
+
+	mockRepo.EXPECT().
+		UpdateUserAccountType(gomock.Any(), userID[:], gomock.Any()).
+		Return(nil).
+		Times(1)
+
+	mockRegRepo.EXPECT().
+		GetClientsByAccountTypeID(gomock.Any(), accountTypeID).
+		Return([]repository.AccountTypeClientRow{
+			{
+				AccountTypeName: "Student",
+			},
+		}, nil).
+		Times(1)
+
+	mockCAURepo.EXPECT().
+		SyncPreapprovedUserAccess(gomock.Any(), userID[:], nil).
+		Return(nil).
+		Times(1)
+
+	mockRepo.EXPECT().
+		RemoveClientAdminBind(gomock.Any(), userID[:]).
 		Return(nil).
 		Times(1)
 
