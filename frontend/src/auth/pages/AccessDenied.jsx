@@ -52,7 +52,7 @@ export default function AccessDenied() {
       console.error("Unable to clear session before login return:", error);
     } finally {
       clearAuthState();
-      navigate(buildLoginPath(clientId, { redirectUri }), { replace: true });
+      window.location.replace(buildLoginPath(clientId, { redirectUri, authError: "cleared" }));
     }
   };
 
