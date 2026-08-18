@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
@@ -170,4 +172,44 @@ func TestCheckSessionOrPendingMFA_Fallback(t *testing.T) {
 			t.Errorf("expected userID %v, got %v", userID, uID)
 		}
 	})
+}
+
+/**
+ * TestLoginAndAuthorize_SuspendedUser verifies that a suspended user
+ * cannot log in.
+ */
+func TestLoginAndAuthorize_SuspendedUser(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAuthRepo := mocks.NewMockAuthCodeRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockClientRepo := mocks.NewMockClientRepository(ctrl)
+
+	authService := service.NewAuthService(
+		mockAuthRepo,
+		mockSessionRepo,
+		mockClientRepo,
+		nil, nil,
+	)
+
+	req := dto.LoginRequest{
+		Email: "suspended@example.com",
+	}
+
+	mockAuthRepo.EXPECT().
+		GetUserForAuth(gomock.Any(), req.Email).
+		Return(nil, "", "suspended", nil).
+		Times(1)
+
+	_, _, err := authService.LoginAndAuthorize(
+		context.Background(),
+		req,
+		"127.0.0.1",
+		"Mozilla",
+	)
+
+	if err == nil || !strings.Contains(err.Error(), "suspended") {
+		t.Errorf("expected suspended error, got %v", err)
+	}
 }
