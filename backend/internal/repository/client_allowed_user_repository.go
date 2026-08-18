@@ -166,6 +166,11 @@ func (r *clientAllowedUserRepository) AssignClientAccess(ctx context.Context,
 			client_allowed_users (client_id, user_id, assignment_source) 
 		VALUES 
 			(?, ?, ?)
+		ON DUPLICATE KEY UPDATE
+			assignment_source = CASE 
+				WHEN assignment_source = 'manual' THEN 'manual'
+				ELSE VALUES(assignment_source)
+			END
 	`
 	_, err := r.db.ExecContext(ctx, query, clientID, userID, source)
 	return err
@@ -187,6 +192,11 @@ func (r *clientAllowedUserRepository) BatchAssignClientAccess(
 			client_allowed_users (client_id, user_id, assignment_source) 
 		VALUES 
 			(?, ?, ?)
+		ON DUPLICATE KEY UPDATE
+			assignment_source = CASE 
+				WHEN assignment_source = 'manual' THEN 'manual'
+				ELSE VALUES(assignment_source)
+			END
 	`
 	for _, clientID := range clientIDs {
 		_, err = tx.ExecContext(ctx, query, clientID, userID, source)
@@ -225,6 +235,11 @@ func (r *clientAllowedUserRepository) SyncPreapprovedUserAccess(
 				client_allowed_users (client_id, user_id, assignment_source) 
 			VALUES 
 				(?, ?, ?)
+			ON DUPLICATE KEY UPDATE
+				assignment_source = CASE 
+					WHEN assignment_source = 'manual' THEN 'manual'
+					ELSE VALUES(assignment_source)
+				END
 		`
 		for _, clientID := range clientIDs {
 			_, err = tx.ExecContext(ctx, insertQuery, clientID, userID,

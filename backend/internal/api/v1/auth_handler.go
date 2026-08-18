@@ -272,7 +272,11 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		code := errors.CodeInternalError
 		msg := "An unexpected error occurred. Please try again."
 
-		if strings.Contains(err.Error(), "verification") ||
+		if strings.Contains(err.Error(), "suspended") {
+			status = http.StatusForbidden
+			code = errors.CodeSuspended
+			msg = "Your account has been suspended."
+		} else if strings.Contains(err.Error(), "verification") ||
 			strings.Contains(err.Error(), "UserLookup") {
 			status = http.StatusUnauthorized
 			code = errors.CodeInvalidCredentials

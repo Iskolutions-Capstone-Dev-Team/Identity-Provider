@@ -35,7 +35,7 @@ export default function AppClientFilters({ search, setSearch, sortBy = "created_
             <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] lg:w-48">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
+                <DropdownMenuRadioGroup value={sortBy} onValueChange={(val) => setSortBy(val === sortBy ? "" : val)}>
                   <DropdownMenuRadioItem value="client_name" className="cursor-pointer gap-2">
                     <Monitor className="w-4 h-4 opacity-70" />
                     Client Name
@@ -57,7 +57,7 @@ export default function AppClientFilters({ search, setSearch, sortBy = "created_
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Order By</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sort} onValueChange={setSort}>
+                <DropdownMenuRadioGroup value={sort} onValueChange={(val) => setSort(val === sort ? "" : val)}>
                   <DropdownMenuRadioItem value="asc" className="cursor-pointer gap-2">
                     <ListSortAscending className="w-4 h-4 opacity-70" />
                     Ascending

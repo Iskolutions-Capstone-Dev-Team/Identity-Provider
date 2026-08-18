@@ -199,7 +199,7 @@ export const registrationService = {
             ...(requestConfig.params ?? {}),
             limit: normalizedLimit,
             page: normalizedPage,
-            sortBy,
+            sort_by: sortBy,
             order,
             ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
           },
