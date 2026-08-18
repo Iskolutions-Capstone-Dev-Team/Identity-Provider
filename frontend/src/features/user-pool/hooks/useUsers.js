@@ -392,12 +392,12 @@ export function useUsers({ visibleClientIds = [] } = {}) {
           ? "User created and invitation sent!"
           : "User successfully created!",
       );
-      await fetchUsers(userType, { showLoading: false });
+      await fetchUsers(userType, sortBy, sort, { showLoading: false });
     } catch (error) {
       console.error("Create user error:", error);
 
       if (userWasCreated) {
-        await fetchUsers(userType, { showLoading: false });
+        await fetchUsers(userType, sortBy, sort, { showLoading: false });
         const fallbackMessage =
           followUpStep === "sync_access"
             ? "The user was created, but app-client access could not be completed."
@@ -416,7 +416,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     try {
       setFetchError("");
       await userService.deleteUser(userId);
-      await fetchUsers(userType, { showLoading: false });
+      await fetchUsers(userType, sortBy, sort, { showLoading: false });
     } catch (error) {
       console.error("Delete error:", error);
       setFetchError(`Failed to delete ${label}.`);
@@ -525,12 +525,12 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         shouldUpdateAccessibleClients ||
         shouldUpdateManageableClients
       ) {
-        await fetchUsers(userType, { showLoading: false });
+        await fetchUsers(userType, sortBy, sort, { showLoading: false });
         return;
       }
     } catch (error) {
       if (accessWasUpdated || manageableClientsWereUpdated || roleWasUpdated) {
-        await fetchUsers(userType, { showLoading: false });
+        await fetchUsers(userType, sortBy, sort, { showLoading: false });
       }
 
       if (accessWasUpdated && isStatusRequestError(error)) {

@@ -149,9 +149,15 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
       } else if (status === 401) {
         setError("Invalid email or password.");
       } else if (status === 403) {
-        navigate(buildAccessDeniedPath(clientId, { redirectUri }), {
-          replace: true,
-        });
+        if (err.response?.data?.code === 1030) {
+          navigate(buildAccessDeniedPath(clientId, { redirectUri, reason: "suspended" }), {
+            replace: true,
+          });
+        } else {
+          navigate(buildAccessDeniedPath(clientId, { redirectUri }), {
+            replace: true,
+          });
+        }
       } else if (status === 500) {
         setError("Server error. Please try again later.");
       } else {

@@ -35,6 +35,7 @@ export function useRegistrationAccountTypes({ enabled = true } = {}) {
           value: config.accountTypeValue,
           label: config.label,
           backendId: config.backendId,
+          clients: config.clients,
         }));
 
         if (!cancelled) {

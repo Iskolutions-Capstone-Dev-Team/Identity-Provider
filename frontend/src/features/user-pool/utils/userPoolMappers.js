@@ -12,15 +12,11 @@ export function normalizeClientIds(clientIds = []) {
 }
 
 export function normalizeClientNames(clientNames = []) {
-  return Array.from(
-    new Set(
-      (Array.isArray(clientNames) ? clientNames : [])
-        .map((clientName) =>
-          typeof clientName === "string" ? clientName.trim() : "",
-        )
-        .filter(Boolean),
-    ),
-  );
+  return (Array.isArray(clientNames) ? clientNames : [])
+    .map((clientName) =>
+      typeof clientName === "string" ? clientName.trim() : "",
+    )
+    .filter(Boolean);
 }
 
 function getClientIdsFromList(clients = []) {
@@ -356,10 +352,20 @@ export function applyUserClientSelections(
       user.manageableClientIds ??
       [];
 
+    const hasLocalAccessSelection =
+      accessSelections[userIdKey] !== undefined ||
+      accessSelections[userEmailKey] !== undefined;
+      
+    const hasLocalManageableSelection =
+      manageableSelections[userIdKey] !== undefined ||
+      manageableSelections[userEmailKey] !== undefined;
+
     return {
       ...user,
       accessibleClientIds: normalizeClientIds(accessibleClientIds),
       manageableClientIds: normalizeClientIds(manageableClientIds),
+      ...(hasLocalAccessSelection && { accessibleClientNames: [] }),
+      ...(hasLocalManageableSelection && { manageableClientNames: [] }),
     };
   });
 }

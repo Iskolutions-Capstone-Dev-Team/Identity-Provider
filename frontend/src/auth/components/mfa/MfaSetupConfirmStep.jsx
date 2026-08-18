@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CircleHelp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Copy, CopyCheck, ArrowLeft, Info } from "lucide-react";
+import { toast } from "sonner";
 
-export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving, colorMode = "dark", hideButtons = false, onCodeChange, onNameChange, onSubmit, onBack, onContinue }) {
+export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving, colorMode = "dark", hideButtons = false, isProfileFlow = false, onCodeChange, onNameChange, onCopied, onSubmit, onBack, onContinue }) {
   const isDarkMode = colorMode === "dark";
   const hasBackupCodes = backupCodes.length > 0;
   const [copyStatus, setCopyStatus] = useState("");
@@ -22,14 +24,17 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
   const verificationLabelClassName = isDarkMode
     ? "block text-sm font-semibold text-white"
     : "block text-sm font-semibold text-[#351018]";
-  const noteClassName = isDarkMode
-    ? "bg-[#f8d24e]/10 text-[#f8d24e] border-[#f8d24e]/30 text-left"
-    : "border border-[#f8d24e]/55 bg-[#fff4dc] text-left text-[#351018] shadow-[0_18px_45px_-36px_rgba(123,13,21,0.22)]";
+  const noteClassName = isProfileFlow
+    ? "border-blue-200 bg-blue-50 text-left text-blue-700 shadow-sm dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-400"
+    : isDarkMode
+      ? "bg-[#f8d24e]/10 text-[#f8d24e] border-[#f8d24e]/30 text-left"
+      : "border border-[#f8d24e]/55 bg-[#fff4dc] text-left text-[#351018] shadow-[0_18px_45px_-36px_rgba(123,13,21,0.22)]";
   const backupCodesContainerClassName = isDarkMode
     ? "rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-white shadow-[0_18px_45px_-36px_rgba(2,6,23,0.72)]"
     : "rounded-2xl border border-[#7b0d15]/10 bg-white p-4 text-[#351018] shadow-[0_18px_45px_-36px_rgba(43,3,7,0.35)]";
-  const backupCodesGridClassName =
-    "mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 sm:grid-cols-3";
+  const backupCodesGridClassName = isProfileFlow
+    ? "grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 sm:grid-cols-3"
+    : "mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 sm:grid-cols-3";
   const backupCodesTitleClassName = isDarkMode
     ? "font-semibold text-white"
     : "font-semibold text-[#351018]";
@@ -57,6 +62,10 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
       await navigator.clipboard.writeText(backupCodesText);
       setHasCopiedBackupCodes(true);
       setCopyStatus("Copied");
+      onCopied?.();
+      if (isProfileFlow) {
+        toast.success("Backup codes copied to clipboard");
+      }
       window.setTimeout(() => setCopyStatus(""), 1600);
     } catch (error) {
       console.error("Unable to copy backup codes:", error);
@@ -66,16 +75,18 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h3 className={titleClassName}>
-          {hasBackupCodes ? "Backup Codes" : "Enter the code"}
-        </h3>
-      </div>
+      {hasBackupCodes && isProfileFlow ? null : (
+        <div className="text-center">
+          <h3 className={titleClassName}>
+            {hasBackupCodes ? "Backup Codes" : "Enter the code"}
+          </h3>
+        </div>
+      )}
 
       {hasBackupCodes ? (
         <div className="space-y-4">
           <Alert className={noteClassName}>
-            <Info className="h-5 w-5" />
+            <Info className={isProfileFlow ? "h-5 w-5 text-blue-600 dark:text-blue-400" : "h-5 w-5"} />
             <AlertDescription className="ml-2 mt-0.5 text-sm font-medium leading-6 text-inherit">
               Save these codes! Use them to log in if you lose your authenticator app. Each code works once.
             </AlertDescription>
@@ -84,19 +95,36 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
           <Card className={isDarkMode ? "border-white/10 bg-white/[0.06] shadow-[0_18px_45px_-36px_rgba(2,6,23,0.72)]" : "border-[#7b0d15]/10 bg-white shadow-[0_18px_45px_-36px_rgba(43,3,7,0.35)]"}>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className={backupCodesTitleClassName}>Backup codes</CardTitle>
-              <Button variant="ghost" size="icon" onClick={handleCopyBackupCodes} className={copyButtonClassName}>
-                {copyStatus === "Copied" ? (
-                  <CopyCheck className="h-5 w-5 transition-all duration-300" />
-                ) : (
-                  <Copy className="h-5 w-5 transition-all duration-300" />
-                )}
-              </Button>
+              {isProfileFlow ? (
+                <TooltipProvider>
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" aria-label={hasCopiedBackupCodes ? "Copied" : "Copy"} onClick={handleCopyBackupCodes}>
+                        {copyStatus === "Copied" ? (
+                          <CopyCheck className="h-5 w-5 transition-all duration-300 text-green-600" aria-hidden="true" />
+                        ) : (
+                          <Copy className="h-5 w-5 transition-all duration-300 text-slate-500" aria-hidden="true" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{hasCopiedBackupCodes ? "Copied" : "Copy codes"}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Button variant="ghost" size="icon" onClick={handleCopyBackupCodes} className={copyButtonClassName}>
+                  {copyStatus === "Copied" ? (
+                    <CopyCheck className="h-5 w-5 transition-all duration-300" />
+                  ) : (
+                    <Copy className="h-5 w-5 transition-all duration-300" />
+                  )}
+                </Button>
+              )}
             </CardHeader>
 
             <CardContent>
               <div className={backupCodesGridClassName}>
                 {backupCodes.map((backupCode) => (
-                  <Badge key={backupCode} variant="outline" className={`justify-center rounded-lg px-4 py-2.5 text-xs sm:text-sm font-mono font-semibold tracking-wide ${isDarkMode ? "border-white/10 bg-white/5 text-white/90" : "border-[#7b0d15]/10 bg-[#fffaf2] text-[#351018]"}`}>
+                  <Badge key={backupCode} variant="outline" className={`justify-center rounded-lg px-4 py-2.5 text-xs sm:text-sm font-mono font-semibold tracking-wide ${isProfileFlow ? (isDarkMode ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" : "bg-red-100 text-[#7b0d15] border-red-200") : (isDarkMode ? "border-white/10 bg-white/5 text-white/90" : "border-[#7b0d15]/10 bg-[#fffaf2] text-[#351018]")}`}>
                     {backupCode}
                   </Badge>
                 ))}
@@ -159,11 +187,11 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
         </div>
       )}
 
-      {hasBackupCodes ? (
+      {hasBackupCodes && !isProfileFlow ? (
         <Button onClick={onContinue} disabled={!hasCopiedBackupCodes} className="h-12 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300">
           Continue
         </Button>
-      ) : (
+      ) : hasBackupCodes && isProfileFlow ? null : (
         <div className="mt-6 flex flex-col space-y-4">
           {!hideButtons && (
             <>

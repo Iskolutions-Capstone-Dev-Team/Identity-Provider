@@ -131,9 +131,18 @@ func (s *authService) LoginAndAuthorize(
 	userAgent string,
 ) (string, string, error) {
 	// 1. Authenticate User
-	claims, storedHash, err := s.Repo.GetUserForAuth(ctx, req.Email)
+	claims, storedHash, status, err := s.Repo.GetUserForAuth(
+		ctx,
+		req.Email,
+	)
 	if err != nil {
 		return "", "", fmt.Errorf("database query (UserLookup): %w", err)
+	}
+
+	if status == string(models.StatusSuspended) {
+		return "", "", fmt.Errorf(
+			"user authentication: user is suspended",
+		)
 	}
 
 	if err := utils.CompareSecret(storedHash, req.Password); err != nil {

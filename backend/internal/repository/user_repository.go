@@ -21,6 +21,10 @@ func getSafeUserSort(sortBy, order string) (string, string) {
 		sortCol = "last_name"
 	case "status":
 		sortCol = "status"
+	case "updated_at":
+		sortCol = "updated_at"
+	case "created_at":
+		sortCol = "created_at"
 	}
 
 	sortOrd := "DESC"
