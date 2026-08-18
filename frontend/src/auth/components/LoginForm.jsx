@@ -121,14 +121,18 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
     }
 
     try {
-      const redirectUrl = await authService.login(email, password, clientId);
+      const { redirectUrl, hasMfa } = await authService.login(
+        email,
+        password,
+        clientId,
+      );
 
       if (!redirectUrl) {
         setError("Invalid server response. Please contact support.");
         return;
       }
 
-      if (onLoginSuccess) {
+      if (onLoginSuccess && hasMfa) {
         beginPendingMfaSession(email);
         onLoginSuccess({
           email,
