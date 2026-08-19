@@ -185,7 +185,7 @@ export default function Login() {
     );
   }
 
-  if (isResolvingAccess) {
+  if (isResolvingAccess && !loginErrorCode) {
     return <AuthLoadingScreen message="Preparing Sign-In..." />;
   }
 

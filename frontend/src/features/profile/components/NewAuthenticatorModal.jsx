@@ -44,6 +44,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [backupCodes, setBackupCodes] = useState([]);
+  const [hasCopiedBackupCodes, setHasCopiedBackupCodes] = useState(false);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
@@ -58,6 +59,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
       setCode("");
       setName("");
       setBackupCodes([]);
+      setHasCopiedBackupCodes(false);
       setError("");
       setIsSaving(false);
       setIsRegisteringPasskey(false);
@@ -155,6 +157,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
       });
 
       setBackupCodes(result.backupCodes);
+      setHasCopiedBackupCodes(false);
     } catch (saveError) {
       setError(
         getRequestErrorMessage(saveError, "Unable to save this authenticator."),
@@ -176,7 +179,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose?.()} dismissible={false}>
-      <DialogContent className="sm:max-w-md" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()} className="sm:max-w-md [&>button]:!hidden" closeButtonClassName="text-white hover:text-white hover:bg-white/20 dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
         <DialogHeader className="-mx-4 -mt-4 mb-2 rounded-t-xl border-b p-4 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
           <DialogTitle>
             {connectionType === "authenticator"
@@ -230,8 +233,10 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
                   isSaving={isSaving}
                   colorMode={colorMode}
                   hideButtons={true}
+                  isProfileFlow={true}
                   onCodeChange={(value) => setCode(getDigits(value))}
                   onNameChange={setName}
+                  onCopied={() => setHasCopiedBackupCodes(true)}
                   onSubmit={handleSaveAuthenticator}
                   onBack={() => {
                     setCode("");
@@ -289,15 +294,15 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
               {step === "confirm" && (
                 <Button 
                   type="button" 
-                  disabled={isSaving} 
-                  onClick={handleSaveAuthenticator} 
+                  disabled={isSaving || (backupCodes.length > 0 && !hasCopiedBackupCodes)} 
+                  onClick={backupCodes.length > 0 ? handleFinish : handleSaveAuthenticator} 
                   className={
                     colorMode === "dark"
                       ? "flex-1 sm:flex-none"
                       : "flex-1 sm:flex-none bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] font-bold transition-colors duration-200"
                   }
                 >
-                  {isSaving ? "Saving..." : "Save Authenticator"}
+                  {backupCodes.length > 0 ? "Continue" : isSaving ? "Saving..." : "Save Authenticator"}
                 </Button>
               )}
             </div>
