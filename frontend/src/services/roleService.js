@@ -66,7 +66,7 @@ export const roleService = {
         const response = await axiosInstance.get("/admin/roles", {
           params: {
             ...paginationParams,
-            sortBy,
+            sort_by: sortBy,
             order,
             ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
           },

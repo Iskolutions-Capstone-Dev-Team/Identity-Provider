@@ -18,7 +18,7 @@ function buildLogParams({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "
   );
   const normalizedActor = typeof actor === "string" ? actor.trim() : "";
 
-  params.sortBy = sortBy;
+  params.sort_by = sortBy;
   params.order = order;
 
   if (normalizedActor) {

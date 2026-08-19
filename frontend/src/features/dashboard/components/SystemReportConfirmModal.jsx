@@ -3,18 +3,18 @@ import { ArrowDownToLine } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AnimatedTags from "../../../components/AnimatedTags";
 
-export default function ReportConfirmModal({ open, colorMode = "light", isGenerating = false, onCancel, onConfirm }) {
+export default function SystemReportConfirmModal({ open, colorMode = "light", isGenerating = false, onCancel, onConfirm }) {
   const [selectedTags, setSelectedTags] = useState([
-    "Security Analysis",
-    "Authentication Statistics",
-    "Failed Attempts"
+    "User Data",
+    "App Clients",
+    "Audit Logs"
   ]);
 
   const handleConfirm = () => {
     onConfirm({
-      includeSecurityAnalysis: selectedTags.includes("Security Analysis"),
-      includeAuthStats: selectedTags.includes("Authentication Statistics"),
-      includeFailedAttempts: selectedTags.includes("Failed Attempts"),
+      includeUsers: selectedTags.includes("User Data"),
+      includeClients: selectedTags.includes("App Clients"),
+      includeLogs: selectedTags.includes("Audit Logs"),
     });
   };
 
@@ -25,14 +25,15 @@ export default function ReportConfirmModal({ open, colorMode = "light", isGenera
           <AlertDialogMedia className="bg-[#7b0d15]/10 text-[#7b0d15] dark:bg-[#f8d24e]/20 dark:text-[#f8d24e]">
             <ArrowDownToLine className="h-6 w-6" />
           </AlertDialogMedia>
-          <AlertDialogTitle className="text-center">Generate authentication report?</AlertDialogTitle>
+          <AlertDialogTitle className="text-center">Generate system report?</AlertDialogTitle>
           <AlertDialogDescription className="text-center">
-            Download the latest authentication report. Select the sections to include:
+            Download the latest system report. Select the sections to include:
           </AlertDialogDescription>
         </AlertDialogHeader>
-
+        
         <div className="flex justify-center w-full">
-          <AnimatedTags
+          <AnimatedTags 
+            initialTags={["User Data", "App Clients", "Audit Logs"]}
             selectedTags={selectedTags}
             onChange={setSelectedTags}
           />
@@ -40,8 +41,8 @@ export default function ReportConfirmModal({ open, colorMode = "light", isGenera
 
         <AlertDialogFooter className="justify-center sm:justify-center mt-4">
           <AlertDialogCancel variant="ghost" onClick={onCancel} disabled={isGenerating}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
+          <AlertDialogAction 
+            onClick={handleConfirm} 
             disabled={isGenerating || selectedTags.length === 0}
             className="bg-[#7b0d15] text-white hover:bg-[#5a0b12] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#e6c140]"
           >

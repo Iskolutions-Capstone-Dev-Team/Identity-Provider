@@ -81,7 +81,7 @@ export default function AuditLogFilters({
             <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] lg:w-48">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
+                <DropdownMenuRadioGroup value={sortBy} onValueChange={(val) => setSortBy(val === sortBy ? "" : val)}>
                   <DropdownMenuRadioItem value="actor" className="cursor-pointer gap-2">
                     <User className="w-4 h-4 opacity-70" />
                     Actor
@@ -103,7 +103,7 @@ export default function AuditLogFilters({
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Order By</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sort} onValueChange={setSort}>
+                <DropdownMenuRadioGroup value={sort} onValueChange={(val) => setSort(val === sort ? "" : val)}>
                   <DropdownMenuRadioItem value="asc" className="cursor-pointer gap-2">
                     <ListSortAscending className="w-4 h-4 opacity-70" />
                     Ascending
