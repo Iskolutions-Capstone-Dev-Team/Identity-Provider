@@ -46,7 +46,7 @@ export function buildLoginPath(clientId = defaultClientId, options = {}) {
 }
 
 export function buildAccessDeniedPath(clientId = defaultClientId, options = {}) {
-  const { redirectUri = "" } = options;
+  const { redirectUri = "", reason = "" } = options;
   const params = new URLSearchParams();
 
   if (clientId) {
@@ -55,6 +55,10 @@ export function buildAccessDeniedPath(clientId = defaultClientId, options = {}) 
 
   if (redirectUri) {
     params.set(REDIRECT_URI_QUERY_PARAM, redirectUri);
+  }
+
+  if (reason) {
+    params.set("reason", reason);
   }
 
   const queryString = params.toString();
