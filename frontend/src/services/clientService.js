@@ -227,7 +227,7 @@ export const clientService = {
           params: {
             limit: paginationParams.limit,
             page: paginationParams.page,
-            sortBy,
+            sort_by: sortBy,
             order,
             ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
           },

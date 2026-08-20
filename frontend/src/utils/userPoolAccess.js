@@ -1,7 +1,7 @@
 export const REGULAR_USER_TYPE = "regular";
 export const ADMIN_USER_TYPE = "admin";
 
-const ADMIN_ROLE_NAMES = new Set(["idp:admin", "idp:superadmin"]);
+const ADMIN_ROLE_NAMES = new Set(["idp:admin", "idp:superadmin", "admin", "superadmin"]);
 
 const normalizeText = (value) =>
   typeof value === "string" ? value.trim() : "";

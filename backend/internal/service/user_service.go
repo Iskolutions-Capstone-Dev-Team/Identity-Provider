@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
@@ -825,6 +826,14 @@ func (s *userService) UpdateUserRole(
 	return fmt.Errorf("permission validation: unauthorized to update roles")
 }
 
+func isAdminOrSuperadmin(name string) bool {
+	n := strings.ToLower(name)
+	return n == "admin" ||
+		n == "superadmin" ||
+		n == "system administrator" ||
+		n == "super administrator"
+}
+
 func (s *userService) UpdateUserAccountAndRole(
 	ctx context.Context,
 	id uuid.UUID,
@@ -851,6 +860,19 @@ func (s *userService) UpdateUserAccountAndRole(
 
 	var nullAccountTypeID sql.NullInt64
 	if accountTypeID != nil {
+		existingUser, err := s.Repo.GetUserById(ctx, id[:], nil, true)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to fetch existing user: %w",
+				err,
+			)
+		}
+		if existingUser == nil {
+			return fmt.Errorf("user not found")
+		}
+
+		wasAdmin := isAdminOrSuperadmin(existingUser.AccountType)
+
 		if *accountTypeID > 0 {
 			nullAccountTypeID = sql.NullInt64{
 				Int64: int64(*accountTypeID),
@@ -861,9 +883,61 @@ func (s *userService) UpdateUserAccountAndRole(
 				Valid: false,
 			}
 		}
-		err := s.Repo.UpdateUserAccountType(ctx, id[:], nullAccountTypeID)
+		err = s.Repo.UpdateUserAccountType(
+			ctx,
+			id[:],
+			nullAccountTypeID,
+		)
 		if err != nil {
-			return fmt.Errorf("failed to update user account type: %w", err)
+			return fmt.Errorf(
+				"failed to update user account type: %w",
+				err,
+			)
+		}
+
+		var clientIDs [][]byte
+		var isNewAdmin bool
+		if *accountTypeID > 0 {
+			clients, err := s.RegRepo.GetClientsByAccountTypeID(
+				ctx,
+				*accountTypeID,
+			)
+			if err != nil {
+				return fmt.Errorf(
+					"failed to fetch registration config: %w",
+					err,
+				)
+			}
+			for _, c := range clients {
+				if len(c.ClientID) > 0 {
+					clientIDs = append(clientIDs, c.ClientID)
+				}
+			}
+			var newAccountTypeName string
+			if len(clients) > 0 {
+				newAccountTypeName = clients[0].AccountTypeName
+			}
+			isNewAdmin = isAdminOrSuperadmin(newAccountTypeName)
+		} else {
+			isNewAdmin = false
+		}
+
+		err = s.CAURepo.SyncPreapprovedUserAccess(ctx, id[:], clientIDs)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to sync preapproved clients: %w",
+				err,
+			)
+		}
+
+		if wasAdmin && !isNewAdmin {
+			err = s.Repo.RemoveClientAdminBind(ctx, id[:])
+			if err != nil {
+				return fmt.Errorf(
+					"failed to remove manageable clients: %w",
+					err,
+				)
+			}
 		}
 	}
 

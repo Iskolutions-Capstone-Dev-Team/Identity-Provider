@@ -18,7 +18,7 @@ type AuthCodeRepository interface {
 	ExchangeCode(ctx context.Context,
 		code string) (*models.AuthorizationCode, error)
 	GetUserForAuth(ctx context.Context,
-		email string) (*models.UserClaims, string, error)
+		email string) (*models.UserClaims, string, string, error)
 	VerifyClient(ctx context.Context, clientID []byte,
 		clientSecret string) (bool, error)
 	GetClaimsByID(ctx context.Context,
@@ -103,7 +103,7 @@ func (r *authCodeRepository) ExchangeCode(ctx context.Context,
 
 func (r *authCodeRepository) GetUserForAuth(ctx context.Context,
 	email string,
-) (*models.UserClaims, string, error) {
+) (*models.UserClaims, string, string, error) {
 	var row struct {
 		ID           []byte `db:"id"`
 		FirstName    string `db:"first_name"`
@@ -118,19 +118,19 @@ func (r *authCodeRepository) GetUserForAuth(ctx context.Context,
 	query := `CALL GetUserForAuth(?)`
 	err := r.db.GetContext(ctx, &row, query, email)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
 	userID, err := uuid.FromBytes(row.ID)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
 	claims := &models.UserClaims{
 		UserID: userID.String(),
 	}
 
-	return claims, row.PasswordHash, nil
+	return claims, row.PasswordHash, row.Status, nil
 }
 
 func (r *authCodeRepository) VerifyClient(ctx context.Context,

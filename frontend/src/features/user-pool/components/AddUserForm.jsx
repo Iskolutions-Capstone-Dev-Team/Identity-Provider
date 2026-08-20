@@ -207,7 +207,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
   const isAdminAccountSetup = isAdminView || selectedAccountTypeIsAdmin;
   const showAdminClientFields = isAdminAccountSetup && canManageUserAccess;
   const showAdminRoleField = isAdminAccountSetup && canAssignRoles;
-  const adminRoleIsRequired = selectedAccountTypeIsAdmin && !isAdminView;
+  const adminRoleIsRequired = isAdminAccountSetup;
   const rolesEndpoint =
     isAdminView || selectedAccountTypeIsAdmin ? "all" : "default";
   const shouldLoadRoleOptions = showAdminRoleField;
@@ -515,7 +515,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
     }
 
     const selectedAdminRole = adminRoleOptions.find(
-      (role) => role.id === data.selectedAdminRoleId,
+      (role) => String(role.id) === String(data.selectedAdminRoleId),
     );
     const adminAccessibleClientIds = showAdminClientFields
       ? normalizeSelectedClientIds(data.adminAccessibleClientIds)
