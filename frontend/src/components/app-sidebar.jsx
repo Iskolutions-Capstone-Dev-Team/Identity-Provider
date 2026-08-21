@@ -30,6 +30,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom"
 import { usePermissionAccess } from "../providers/PermissionProvider"
 import { buildLogoutPath } from "../auth/utils/logoutRoute"
 import { handleOnePortalClick } from "./OnePortalButton"
+import InstallPWAButton from "./InstallPWAButton"
 import { APP_CLIENT_PAGE_PERMISSIONS, PERMISSIONS, REGISTRATION_PAGE_PERMISSIONS, USER_POOL_PAGE_PERMISSIONS, BACKUP_RESTORE_PAGE_PERMISSIONS } from "../routes/routePermissions"
 
 const menuSections = [
@@ -188,6 +189,7 @@ export function AppSidebar({ currentUser }) {
               <span className="truncate transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">One Portal</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <InstallPWAButton asSidebarItem={true} />
           <SidebarMenuItem>
             <SidebarMenuButton isActive={location.pathname === "/faq"} tooltip="Get Help" render={<Link to="/faq" />} className="gap-3 cursor-pointer max-md:h-7 max-md:text-xs">
               <CircleHelp className="h-4 w-4 shrink-0" />
