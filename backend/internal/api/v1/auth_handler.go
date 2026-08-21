@@ -291,6 +291,86 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		return
 	}
 
+	clientBaseURL := os.Getenv("CLIENT_BASE_URL")
+	mfaBypass := os.Getenv("MFA_BYPASS") == "true"
+	isBypassAllowed := strings.Contains(clientBaseURL, "localhost") ||
+		strings.Contains(clientBaseURL, "staging")
+
+	if mfaBypass && isBypassAllowed {
+		pendingClaims, err := h.AuthService.ValidateMFAPendingToken(
+			sessionID,
+		)
+		if err != nil {
+			log.Printf(
+				"[LoginAndAuthorize] Bypass token validate failed: %v",
+				err,
+			)
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to establish bypass session.",
+				err,
+			)
+			return
+		}
+
+		uID, err := uuid.Parse(pendingClaims.UserID)
+		if err != nil {
+			log.Printf(
+				"[LoginAndAuthorize] Bypass uuid parse failed: %v",
+				err,
+			)
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to establish bypass session.",
+				err,
+			)
+			return
+		}
+
+		err = h.AuthService.CreateSessionAndSetCookie(c, uID)
+		if err != nil {
+			log.Printf(
+				"[LoginAndAuthorize] Bypass session creation failed: %v",
+				err,
+			)
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to establish bypass session.",
+				err,
+			)
+			return
+		}
+
+		// Log success with the email that just logged in
+		logReq := &dto.PostAuditLogRequest{
+			Action:   actionLogin,
+			Target:   req.ClientID,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		}
+		_ = h.LogService.PostAuditLogWithActorString(
+			c.Request.Context(),
+			req.Email,
+			logReq,
+		)
+		_ = h.LogService.PostSecurityLogWithActorString(
+			c.Request.Context(),
+			req.Email,
+			logReq,
+		)
+
+		c.JSON(http.StatusOK, gin.H{
+			"redirect_url": redirectLink,
+		})
+		return
+	}
+
 	// Log success with the email that just logged in
 	logReq := &dto.PostAuditLogRequest{
 		Action:   actionLogin,
