@@ -11,7 +11,6 @@ import ReportTypeSelectionModal from "../components/ReportTypeSelectionModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/TopLoginsPanel";
 import SystemLoginsModal from "../components/SystemLoginsModal";
-import AdvancedAnalyticsAlert from "../components/AdvancedAnalyticsAlert";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { metricsService } from "../../../services/metricsService";
@@ -279,7 +278,6 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <AdvancedAnalyticsAlert />
 
       <div className="space-y-6">
         {!showLoading ? (
