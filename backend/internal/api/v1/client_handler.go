@@ -245,6 +245,7 @@ func (h *ClientHandler) GetClientList(c *gin.Context) {
 		"redirect_uri":      true,
 		"logout_uri":        true,
 		"created_at":        true,
+		"updated_at":        true,
 		"access_token_ttl":  true,
 		"refresh_token_ttl": true,
 	}
