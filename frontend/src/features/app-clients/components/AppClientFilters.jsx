@@ -52,6 +52,10 @@ export default function AppClientFilters({ search, setSearch, sortBy = "created_
                     <Calendar className="w-4 h-4 opacity-70" />
                     Date Created
                   </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="updated_at" className="cursor-pointer gap-2">
+                    <Calendar className="w-4 h-4 opacity-70" />
+                    Date Updated
+                  </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
