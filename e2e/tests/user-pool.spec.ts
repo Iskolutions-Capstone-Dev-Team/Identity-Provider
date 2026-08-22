@@ -159,10 +159,77 @@ test.describe.serial('User Pool CRUD Flow', () => {
     // Confirm deletion in the alert dialog
     const confirmDialog = page.locator('[role="alertdialog"]');
     await expect(confirmDialog).toBeVisible({ timeout: 5000 });
-    
     await confirmDialog.locator('button:has-text("Remove")').click();
 
-    // Verify user is removed from list (success toast)
-    await expect(page.locator('text=removed successfully')).toBeVisible({ timeout: 10000 });
+    // Verify success toast
+    await expect(page.locator(`text=${userEmail} removed successfully`)).toBeVisible({ timeout: 10000 });
+  });
+
+  test('5. should go to Archived Users and Restore the user', async ({ page }) => {
+    await page.goto('http://localhost:5173/user-pool');
+    await page.waitForLoadState('networkidle');
+
+    // Click Archived Users button
+    await page.locator('button:has-text("Archived Users")').click();
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/.*\/archived/);
+
+    // Search for user in archived list
+    await page.fill('input[placeholder="Search by email, or name..."]', userEmail);
+    await page.waitForTimeout(1000);
+
+    // Click Restore Action
+    const row = page.locator(`tr:has-text("${userEmail}")`);
+    await row.locator('button[title^="Restore"]').click();
+
+    // Confirm restoration
+    const confirmDialog = page.locator('[role="alertdialog"]');
+    await expect(confirmDialog).toBeVisible({ timeout: 5000 });
+    await confirmDialog.locator('button:has-text("Restore")').click();
+
+    // Verify success toast
+    const toastMessage = page.locator('[data-sonner-toast]');
+    await expect(toastMessage).toBeVisible({ timeout: 10000 });
+    await expect(toastMessage).toContainText(/restored/i);
+  });
+
+  test('6. should temporarily delete the user again', async ({ page }) => {
+    // This repeats the temp delete so we can test permanent delete
+    await page.goto('http://localhost:5173/user-pool');
+    await page.waitForLoadState('networkidle');
+
+    await page.fill('input[placeholder="Search by email, or name..."]', userEmail);
+    await page.waitForTimeout(1000);
+
+    const row = page.locator(`tr:has-text("${userEmail}")`);
+    await row.locator('button[title^="Delete"]').click();
+
+    const confirmDialog = page.locator('[role="alertdialog"]');
+    await expect(confirmDialog).toBeVisible({ timeout: 5000 });
+    await confirmDialog.locator('button:has-text("Remove")').click();
+
+    await expect(page.locator(`text=${userEmail} removed successfully`)).toBeVisible({ timeout: 10000 });
+  });
+
+  test('7. should Permanently Delete the user in Archived Users', async ({ page }) => {
+    await page.goto('http://localhost:5173/user-pool/archived');
+    await page.waitForLoadState('networkidle');
+
+    await page.fill('input[placeholder="Search by email, or name..."]', userEmail);
+    await page.waitForTimeout(1000);
+
+    // Click Permanently Delete Action
+    const row = page.locator(`tr:has-text("${userEmail}")`);
+    await row.locator('button[title^="Permanently delete"]').click();
+
+    // Confirm permanent deletion
+    const confirmDialog = page.locator('[role="alertdialog"]');
+    await expect(confirmDialog).toBeVisible({ timeout: 5000 });
+    await confirmDialog.locator('button:has-text("Delete")').click();
+
+    // Verify success toast
+    const toastMessage = page.locator('[data-sonner-toast]');
+    await expect(toastMessage).toBeVisible({ timeout: 10000 });
+    await expect(toastMessage).toContainText(/permanently deleted|removed completely|deleted/i);
   });
 });
