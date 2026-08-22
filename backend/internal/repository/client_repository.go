@@ -18,6 +18,7 @@ func getSafeClientSort(sortBy, order string) (string, string) {
 		"redirect_uri":      true,
 		"logout_uri":        true,
 		"created_at":        true,
+		"updated_at":        true,
 		"access_token_ttl":  true,
 		"refresh_token_ttl": true,
 	}
@@ -129,7 +130,7 @@ func (r *clientRepository) ListClients(ctx context.Context, limit,
 		SELECT
 			id, client_name,
 			description, image_location,
-			base_url, redirect_uri, logout_uri, created_at,
+			base_url, redirect_uri, logout_uri, created_at, updated_at,
 			one_portal_link, access_token_ttl,
 			refresh_token_ttl
 		FROM clients
@@ -154,7 +155,7 @@ func (r *clientRepository) ListBoundClients(ctx context.Context,
 		SELECT
 			c.id, c.client_name,
 			c.description, c.image_location,
-			c.base_url, c.redirect_uri, c.logout_uri, c.created_at,
+			c.base_url, c.redirect_uri, c.logout_uri, c.created_at, c.updated_at,
 			c.one_portal_link, c.access_token_ttl,
 			c.refresh_token_ttl
 		FROM clients c
@@ -183,7 +184,7 @@ func (r *clientRepository) ListAllowedClients(ctx context.Context,
 		SELECT
 			c.id, c.client_name,
 			c.description, c.image_location,
-			c.base_url, c.redirect_uri, c.logout_uri, c.created_at,
+			c.base_url, c.redirect_uri, c.logout_uri, c.created_at, c.updated_at,
 			c.one_portal_link, c.access_token_ttl,
 			c.refresh_token_ttl
 		FROM clients c
@@ -266,7 +267,8 @@ func (r *clientRepository) UpdateClient(ctx context.Context,
 			logout_uri = ?,
 			one_portal_link = ?,
 			access_token_ttl = ?,
-			refresh_token_ttl = ?
+			refresh_token_ttl = ?,
+			updated_at = NOW()
 		WHERE id = ?`
 
 	_, err := r.db.ExecContext(ctx, query, c.ClientName, c.Description,
@@ -398,7 +400,7 @@ func (r *clientRepository) RotateSecret(ctx context.Context,
 ) error {
 	query := `
 		UPDATE clients
-		SET client_secret = ?, old_secret = ?
+		SET client_secret = ?, old_secret = ?, updated_at = NOW()
 		WHERE id = ?
 	`
 
@@ -414,7 +416,7 @@ func (r *clientRepository) ChangeSecret(ctx context.Context,
 ) error {
 	query := `
 		UPDATE clients
-		SET client_secret = ?
+		SET client_secret = ?, updated_at = NOW()
 		WHERE id = ?
 	`
 
