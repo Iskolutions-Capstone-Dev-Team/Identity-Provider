@@ -6,6 +6,100 @@ set -euo pipefail
 # Get directory where this script resides
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Determine project root and load environment variables
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ENV_FILE="${PROJECT_ROOT}/.env"
+trim() {
+  echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
+if [ -f "${ENV_FILE}" ]; then
+  echo "Loading environment variables from ${ENV_FILE}..."
+  while IFS= read -r line || [ -n "$line" ]; do
+    trimmed=$(trim "$line")
+    if [[ -n "$trimmed" && ! "$trimmed" =~ ^# ]]; then
+      if [[ "$trimmed" == *"="* ]]; then
+        var_name=$(trim "${trimmed%%=*}")
+        var_val=$(trim "${trimmed#*=}")
+        if [[ "$var_val" =~ ^\'.*\'$ ]] || \
+           [[ "$var_val" =~ ^\".*\"$ ]]; then
+          var_val="${var_val:1:-1}"
+        fi
+        export "${var_name}"="${var_val}"
+      fi
+    fi
+  done < "${ENV_FILE}"
+fi
+
+# Track backup state and logging actor
+USE_DOCKER=false
+SUCCESS=false
+ACTOR="${BACKUP_ACTOR:-system/manual}"
+
+log_to_db() {
+  local status="$1"
+  local error_msg="${2:-}"
+
+  if [ "${SKIP_DB_LOG:-false}" = "true" ]; then
+    return 0
+  fi
+
+  # Build metadata JSON
+  local meta
+  if [ "$status" = "success" ]; then
+    meta="{\"backup_type\":\"${BACKUP_TYPE:-unknown}\""
+    meta="${meta},\"backup_size\":\"${HUMAN_SIZE:-unknown}\""
+  else
+    local escaped_err
+    escaped_err=$(echo "${error_msg}" | sed 's/"/\\"/g' | tr -d '\n')
+    meta="{\"backup_type\":\"${BACKUP_TYPE:-unknown}\""
+    meta="${meta},\"error\":\"${escaped_err}\""
+  fi
+
+  if [ -n "${CLIENT_IP:-}" ]; then
+    meta="${meta},\"ip\":\"${CLIENT_IP}\""
+  fi
+  if [ -n "${USER_AGENT:-}" ]; then
+    local escaped_ua
+    escaped_ua=$(echo "${USER_AGENT}" | sed 's/"/\\"/g')
+    meta="${meta},\"user_agent\":\"${escaped_ua}\""
+  fi
+  meta="${meta}}"
+
+  local query="INSERT INTO audit_logs (actor, action, target, "
+  query="${query}status, metadata) VALUES ('${ACTOR}', "
+  query="${query}'run_backup', 'database', '${status}', '${meta}');"
+
+  echo "Logging backup status to database..."
+
+  local m_host m_port
+  m_host=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f1)
+  m_port=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f2)
+  m_port="${DATABASE_PORT:-${m_port:-3306}}"
+
+  if [ "${USE_DOCKER:-false}" = "true" ]; then
+    docker exec -e MYSQL_PWD="${MYSQL_PWD}" "${BACKUP_CONTAINER_NAME}" \
+      mysql -u root "${MYSQL_DB_NAME}" -e "${query}" || \
+      echo "Warning: Failed to write audit log to DB"
+  else
+    mysql -h "${m_host}" -P "${m_port}" -u root "${MYSQL_DB_NAME}" \
+      -e "${query}" || echo "Warning: Failed to write audit log to DB"
+  fi
+}
+
+cleanup() {
+  local exit_code=$?
+  if [ "$SUCCESS" = "false" ]; then
+    log_to_db "fail" \
+      "Backup process terminated unexpectedly with exit code ${exit_code}"
+  fi
+  # Clean up temp files
+  if [ -n "${TEMP_BACKUP_GZ:-}" ]; then
+    rm -f "${TEMP_BACKUP_GZ}" "${TEMP_BACKUP_GZ}.sha256" "${REPORT_FILE:-}"
+  fi
+}
+trap cleanup EXIT
+
 # Determine backup type and retention days based on current date
 # if not passed as environment variables.
 DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
@@ -209,10 +303,6 @@ aws s3 cp "${REPORT_FILE}" \
   "s3://${BACKUP_S3_BUCKET}/reports/backup-$(date +%Y-%m-%d).txt" \
   --sse AES256 || true
 
-# Cleanup local temporary files
-rm -f "${TEMP_BACKUP_GZ}" "${TEMP_BACKUP_GZ}.sha256" "${REPORT_FILE}"
-echo "Local cleanup completed"
-
 # Step 6: Write latest backup status to local file
 LOGS_DIR="${SCRIPT_DIR}/../logs"
 mkdir -p "${LOGS_DIR}"
@@ -224,3 +314,7 @@ cat <<EOF > "${LOGS_DIR}/latest-backup.json"
   "size": "${HUMAN_SIZE}"
 }
 EOF
+
+SUCCESS=true
+log_to_db "success"
+echo "Local cleanup completed"
