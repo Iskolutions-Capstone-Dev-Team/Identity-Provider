@@ -6,6 +6,8 @@ import { LayoutDashboard, Download } from "lucide-react";
 import { createPortal } from "react-dom";
 import MetricFilterCard from "../components/MetricFilterCard";
 import ReportConfirmModal from "../components/ReportConfirmModal";
+import SystemReportConfirmModal from "../components/SystemReportConfirmModal";
+import ReportTypeSelectionModal from "../components/ReportTypeSelectionModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/TopLoginsPanel";
 import SystemLoginsModal from "../components/SystemLoginsModal";
@@ -17,6 +19,7 @@ import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 const emptyMetrics = {
   login_stats: {
@@ -126,7 +129,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reportError, setReportError] = useState("");
+  const [isReportTypeSelectionOpen, setIsReportTypeSelectionOpen] = useState(false);
   const [isReportConfirmOpen, setIsReportConfirmOpen] = useState(false);
+  const [isSystemReportConfirmOpen, setIsSystemReportConfirmOpen] = useState(false);
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
   const [isLoginsModalOpen, setIsLoginsModalOpen] = useState(false);
   const [selectedModalPeriod, setSelectedModalPeriod] = useState(null);
@@ -195,9 +200,53 @@ export default function Dashboard() {
       console.error("Metrics report download error:", downloadError);
       setReportError("Unable to generate the metrics report right now.");
     } finally {
-      setIsReportConfirmOpen(false);
       setIsDownloadingReport(false);
     }
+  };
+  const handleDownloadSystemReport = async (filters) => {
+    try {
+      setIsDownloadingReport(true);
+      setReportError("");
+
+      const reportBlob = await metricsService.downloadSystemReport(filters);
+      const datePart = new Date().toISOString().slice(0, 10);
+      downloadBlob(reportBlob, `system_report_${datePart}.pdf`);
+    } catch (downloadError) {
+      console.error("System report download error:", downloadError);
+      setReportError("Unable to generate the system report right now.");
+    } finally {
+      setIsDownloadingReport(false);
+    }
+  };
+
+  const handleSelectReportType = (type) => {
+    if (type === 'authentication') {
+      setIsReportConfirmOpen(true);
+    } else if (type === 'system') {
+      setIsSystemReportConfirmOpen(true);
+    }
+  };
+
+  const handleReportConfirmCancel = () => {
+    setIsReportConfirmOpen(false);
+  };
+
+  const handleReportConfirm = async (filters) => {
+    toast.success("Authentication Report generated");
+    await handleDownloadReport(filters);
+    setIsReportConfirmOpen(false);
+    setIsReportTypeSelectionOpen(false);
+  };
+
+  const handleSystemReportConfirmCancel = () => {
+    setIsSystemReportConfirmOpen(false);
+  };
+
+  const handleSystemReportConfirm = async (filters) => {
+    toast.success("System Report generated");
+    await handleDownloadSystemReport(filters);
+    setIsSystemReportConfirmOpen(false);
+    setIsReportTypeSelectionOpen(false);
   };
 
   return (
@@ -224,7 +273,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <Button className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200" onClick={() => setIsReportConfirmOpen(true)}>
+        <Button className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200" onClick={() => setIsReportTypeSelectionOpen(true)}>
           <Download className="w-4 h-4 mr-2" />
           Generate Report
         </Button>
@@ -284,12 +333,26 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <ReportTypeSelectionModal
+        open={isReportTypeSelectionOpen}
+        onClose={() => setIsReportTypeSelectionOpen(false)}
+        onSelectType={handleSelectReportType}
+      />
+
       <ReportConfirmModal
         open={isReportConfirmOpen}
         colorMode={colorMode}
         isGenerating={isDownloadingReport}
-        onCancel={() => setIsReportConfirmOpen(false)}
-        onConfirm={handleDownloadReport}
+        onCancel={handleReportConfirmCancel}
+        onConfirm={handleReportConfirm}
+      />
+
+      <SystemReportConfirmModal
+        open={isSystemReportConfirmOpen}
+        colorMode={colorMode}
+        isGenerating={isDownloadingReport}
+        onCancel={handleSystemReportConfirmCancel}
+        onConfirm={handleSystemReportConfirm}
       />
 
       <SystemLoginsModal

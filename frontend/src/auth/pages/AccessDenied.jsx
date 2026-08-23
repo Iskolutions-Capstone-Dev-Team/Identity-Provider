@@ -28,6 +28,7 @@ export default function AccessDenied() {
   const [searchParams] = useSearchParams();
   const clientId = getLoginClientId(searchParams);
   const redirectUri = getLoginRedirectUri(searchParams);
+  const reason = searchParams.get("reason");
   const [isClearingSession, setIsClearingSession] = useState(false);
 
   const handleReturnToLogin = async () => {
@@ -51,7 +52,7 @@ export default function AccessDenied() {
       console.error("Unable to clear session before login return:", error);
     } finally {
       clearAuthState();
-      navigate(buildLoginPath(clientId, { redirectUri }), { replace: true });
+      window.location.replace(buildLoginPath(clientId, { redirectUri, authError: "cleared" }));
     }
   };
 
@@ -100,7 +101,9 @@ export default function AccessDenied() {
 
         <div className="mt-7 max-w-2xl">
           <p className="text-sm font-medium uppercase leading-7 tracking-widest text-white/85">
-            You do not have access to this service. You can proceed to One Portal instead.
+            {reason === "suspended"
+              ? "Your account has been suspended."
+              : "You do not have access to this service. You can proceed to One Portal instead."}
           </p>
         </div>
 
@@ -108,9 +111,11 @@ export default function AccessDenied() {
           <Button type="button" onClick={handleReturnToLogin} disabled={isClearingSession} className="h-12 w-full rounded-lg border border-[#ffd700] bg-white/10 px-6 text-[#ffd700] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.9)] transition duration-300 hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white sm:w-auto sm:min-w-40">
             {isClearingSession ? "Returning..." : "Return to login"}
           </Button>
-          <Button type="button" onClick={handleGoToOnePortal} className="h-12 w-full rounded-lg border border-[#ffd700] bg-[#ffd700] px-6 text-[#7b0d15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.65)] transition duration-300 hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white sm:w-auto sm:min-w-44">
-            Go to One Portal
-          </Button>
+          {reason !== "suspended" && (
+            <Button type="button" onClick={handleGoToOnePortal} className="h-12 w-full rounded-lg border border-[#ffd700] bg-[#ffd700] px-6 text-[#7b0d15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.65)] transition duration-300 hover:border-[#7b0d15] hover:bg-[#7b0d15] hover:text-white sm:w-auto sm:min-w-44">
+              Go to One Portal
+            </Button>
+          )}
         </div>
       </section>
     </main>
