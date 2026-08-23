@@ -88,8 +88,6 @@ const menuSections = [
         path: "/backup-restore",
         requiredPermissions: BACKUP_RESTORE_PAGE_PERMISSIONS,
         icon: DatabaseBackup,
-        badge: "SOON",
-        disabled: true,
       },
     ],
   },
