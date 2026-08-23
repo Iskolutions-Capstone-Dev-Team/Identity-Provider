@@ -43,6 +43,73 @@ if [ -f "${ENV_FILE}" ]; then
   done < "${ENV_FILE}"
 fi
 
+# Track restore state and logging actor
+SUCCESS=false
+ACTOR="${BACKUP_ACTOR:-system/manual}"
+
+log_to_db() {
+  local status="$1"
+  local error_msg="${2:-}"
+
+  if [ "${SKIP_DB_LOG:-false}" = "true" ]; then
+    return 0
+  fi
+
+  # Build metadata JSON
+  local meta
+  if [ "$status" = "success" ]; then
+    meta="{\"restore_file\":\"$(basename "${RESTORE_FILE}")\""
+  else
+    local escaped_err
+    escaped_err=$(echo "${error_msg}" | sed 's/"/\\"/g' | tr -d '\n')
+    meta="{\"restore_file\":\"$(basename "${RESTORE_FILE}")\""
+    meta="${meta},\"error\":\"${escaped_err}\""
+  fi
+
+  if [ -n "${CLIENT_IP:-}" ]; then
+    meta="${meta},\"ip\":\"${CLIENT_IP}\""
+  fi
+  if [ -n "${USER_AGENT:-}" ]; then
+    local escaped_ua
+    escaped_ua=$(echo "${USER_AGENT}" | sed 's/"/\\"/g')
+    meta="${meta},\"user_agent\":\"${escaped_ua}\""
+  fi
+  meta="${meta}}"
+
+  local query="INSERT INTO audit_logs (actor, action, target, "
+  query="${query}status, metadata) VALUES ('${ACTOR}', "
+  query="${query}'restore_backup', 'database', '${status}', '${meta}');"
+
+  echo "Logging restore status to database..."
+
+  local m_host m_port
+  m_host=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f1)
+  m_port=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f2)
+  m_port="${DATABASE_PORT:-${m_port:-3306}}"
+
+  if command -v docker &> /dev/null && \
+     docker ps | grep -q "${BACKUP_CONTAINER_NAME:-}"; then
+    docker exec -e MYSQL_PWD="${MYSQL_ROOT_PASSWORD}" \
+      "${BACKUP_CONTAINER_NAME}" \
+      mysql -u root "${MYSQL_DB_NAME}" -e "${query}" || \
+      echo "Warning: Failed to write audit log to DB"
+  else
+    mysql -h "${m_host}" -P "${m_port}" \
+      -u root -p"${MYSQL_ROOT_PASSWORD}" \
+      "${MYSQL_DB_NAME}" -e "${query}" || \
+      echo "Warning: Failed to write audit log to DB"
+  fi
+}
+
+cleanup() {
+  local exit_code=$?
+  if [ "$SUCCESS" = "false" ]; then
+    log_to_db "fail" \
+      "Restore process terminated unexpectedly with exit code ${exit_code}"
+  fi
+}
+trap cleanup EXIT
+
 # Verify required environment variables
 if [ -z "${MYSQL_ROOT_PASSWORD:-}" ] || \
    [ -z "${MYSQL_DB_NAME:-}" ]; then
@@ -71,4 +138,6 @@ else
     -u root -p"${MYSQL_ROOT_PASSWORD}" "${MYSQL_DB_NAME}"
 fi
 
+SUCCESS=true
+log_to_db "success"
 echo "Database restore completed successfully!"
