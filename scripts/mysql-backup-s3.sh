@@ -50,6 +50,9 @@ if [ -n "${AWS_REGION:-}" ]; then
   export AWS_DEFAULT_REGION="${AWS_REGION}"
 fi
 
+# Export MYSQL_PWD for secure database commands without -p option
+export MYSQL_PWD="${MYSQL_ROOT_PASSWORD}"
+
 # Check if docker is available and BACKUP_CONTAINER_NAME is running
 USE_DOCKER=false
 if command -v docker &> /dev/null && \
@@ -60,10 +63,9 @@ fi
 # Step 1: Test database connection
 if [ "$USE_DOCKER" = "true" ]; then
   echo "Testing database connection via Docker exec..."
-  if ! docker exec "${BACKUP_CONTAINER_NAME}" \
-    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" \
-    -e "SELECT 1" >/dev/null 2>&1; then
-    echo "Database connection failed!"
+  if ! docker exec -e MYSQL_PWD="${MYSQL_PWD}" "${BACKUP_CONTAINER_NAME}" \
+    mysql -u root -e "SELECT 1" >/dev/null 2>&1; then
+    echo "Database connection failed through docker exec"
     exit 1
   fi
 else
@@ -73,9 +75,8 @@ else
   MYSQL_PORT=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f2)
   MYSQL_PORT="${DATABASE_PORT:-${MYSQL_PORT:-3306}}"
   if ! mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" \
-    -u root -p"${MYSQL_ROOT_PASSWORD}" \
-    -e "SELECT 1" >/dev/null 2>&1; then
-    echo "Database connection failed!"
+    -u root -e "SELECT 1" >/dev/null 2>&1; then
+    echo "Database connection failed on host ${MYSQL_HOST}:${MYSQL_PORT}"
     exit 1
   fi
 fi
@@ -83,29 +84,23 @@ echo "Connection test passed!"
 
 # Step 3: Create MySQL Dump
 echo "Creating database backup..."
-TEMP_BACKUP_SQL="/tmp/prod-backup.sql"
-TEMP_BACKUP_GZ="${TEMP_BACKUP_SQL}.gz"
+TEMP_BACKUP_GZ="/tmp/prod-backup-$$.sql.gz"
 
 # Ensure clean state
-rm -f "${TEMP_BACKUP_SQL}" "${TEMP_BACKUP_GZ}"
+rm -f "${TEMP_BACKUP_GZ}"
 
 if [ "$USE_DOCKER" = "true" ]; then
-  docker exec "${BACKUP_CONTAINER_NAME}" \
-    mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" \
-    "${MYSQL_DB_NAME}" > "${TEMP_BACKUP_SQL}"
+  docker exec -e MYSQL_PWD="${MYSQL_PWD}" "${BACKUP_CONTAINER_NAME}" \
+    mysqldump -u root "${MYSQL_DB_NAME}" | gzip > "${TEMP_BACKUP_GZ}"
 else
   mysqldump -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" \
-    -u root -p"${MYSQL_ROOT_PASSWORD}" \
-    "${MYSQL_DB_NAME}" > "${TEMP_BACKUP_SQL}"
+    -u root "${MYSQL_DB_NAME}" | gzip > "${TEMP_BACKUP_GZ}"
 fi
 
-if [ ! -f "${TEMP_BACKUP_SQL}" ]; then
+if [ ! -f "${TEMP_BACKUP_GZ}" ]; then
   echo "Backup file creation failed!"
   exit 1
 fi
-
-# Compress backup
-gzip -f "${TEMP_BACKUP_SQL}"
 
 # Verify backup size
 FILE_SIZE=$(stat -f%z "${TEMP_BACKUP_GZ}" 2>/dev/null || \
@@ -161,11 +156,13 @@ echo "   Cleaning daily backups (keeping 30)..."
 aws s3 ls \
   "s3://${BACKUP_S3_BUCKET}/mysql-backups/dailys/" \
   --recursive 2>/dev/null \
+  | grep '\.sql\.gz$' \
   | sort -r \
   | awk 'NR>30 {print $4}' \
   | while read -r file; do
-      echo "      Deleting: $file"
+      echo "      Deleting: $file and its checksum"
       aws s3 rm "s3://${BACKUP_S3_BUCKET}/$file"
+      aws s3 rm "s3://${BACKUP_S3_BUCKET}/${file}.sha256"
     done || true
 
 # Clean Weekly backups - keep 12
@@ -173,11 +170,13 @@ echo "   Cleaning weekly backups (keeping 12)..."
 aws s3 ls \
   "s3://${BACKUP_S3_BUCKET}/mysql-backups/weeklys/" \
   --recursive 2>/dev/null \
+  | grep '\.sql\.gz$' \
   | sort -r \
   | awk 'NR>12 {print $4}' \
   | while read -r file; do
-      echo "      Deleting: $file"
+      echo "      Deleting: $file and its checksum"
       aws s3 rm "s3://${BACKUP_S3_BUCKET}/$file"
+      aws s3 rm "s3://${BACKUP_S3_BUCKET}/${file}.sha256"
     done || true
 
 # Clean Monthly backups - keep 12
@@ -185,11 +184,13 @@ echo "   Cleaning monthly backups (keeping 12)..."
 aws s3 ls \
   "s3://${BACKUP_S3_BUCKET}/mysql-backups/monthlys/" \
   --recursive 2>/dev/null \
+  | grep '\.sql\.gz$' \
   | sort -r \
   | awk 'NR>12 {print $4}' \
   | while read -r file; do
-      echo "      Deleting: $file"
+      echo "      Deleting: $file and its checksum"
       aws s3 rm "s3://${BACKUP_S3_BUCKET}/$file"
+      aws s3 rm "s3://${BACKUP_S3_BUCKET}/${file}.sha256"
     done || true
 
 echo "Retention policy applied successfully"
