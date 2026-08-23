@@ -126,7 +126,7 @@ func (h *BackupHandler) PostRunBackup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "Backup executed successfully:\n" + string(output),
+		Message: "Backup executed successfully.",
 	})
 }
 
@@ -213,6 +213,6 @@ func (h *BackupHandler) PostRestoreBackup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "Database restored successfully:\n" + string(output),
+		Message: "Database restored successfully.",
 	})
 }
