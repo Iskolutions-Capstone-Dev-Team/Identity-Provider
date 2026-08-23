@@ -11,7 +11,7 @@ fi
 RESTORE_FILE="$1"
 
 if [ ! -f "${RESTORE_FILE}" ]; then
-  echo "❌ Error: Backup file not found at ${RESTORE_FILE}"
+  echo "Error: Backup file not found at ${RESTORE_FILE}"
   exit 1
 fi
 
@@ -46,21 +46,21 @@ fi
 # Verify required environment variables
 if [ -z "${MYSQL_ROOT_PASSWORD:-}" ] || \
    [ -z "${MYSQL_DB_NAME:-}" ]; then
-  echo "❌ Error: Required database environment variables are missing."
+  echo "Error: Required database environment variables are missing."
   exit 1
 fi
 
-echo "📦 Restoring database from ${RESTORE_FILE}..."
+echo "Restoring database from ${RESTORE_FILE}..."
 
 # Check if docker is available and BACKUP_CONTAINER_NAME is running
 if command -v docker &> /dev/null && \
    docker ps | grep -q "${BACKUP_CONTAINER_NAME:-}"; then
-  echo "🔍 Restoring via Docker exec..."
+  echo "Restoring via Docker exec..."
   gunzip -c "${RESTORE_FILE}" | \
     docker exec -i "${BACKUP_CONTAINER_NAME}" \
     mysql -u root -p"${MYSQL_ROOT_PASSWORD}" "${MYSQL_DB_NAME}"
 else
-  echo "🔍 Restoring via TCP connection..."
+  echo "Restoring via TCP connection..."
   # Parse host and port
   MYSQL_HOST=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f1)
   MYSQL_PORT=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f2)
@@ -71,4 +71,4 @@ else
     -u root -p"${MYSQL_ROOT_PASSWORD}" "${MYSQL_DB_NAME}"
 fi
 
-echo "✅ Database restore completed successfully!"
+echo "Database restore completed successfully!"

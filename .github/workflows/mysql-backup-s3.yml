@@ -46,18 +46,18 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
         run: |
-          echo "🔍 Testing SSH connection..."
+          echo "Testing SSH connection..."
           ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" "echo 'SSH OK'"
           
-          echo "🔍 Testing Docker connection..."
+          echo "Testing Docker connection..."
           ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
             "docker ps | grep ${CONTAINER_NAME}"
           
-          echo "🔍 Testing database connection..."
+          echo "Testing database connection..."
           ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
             "docker exec ${CONTAINER_NAME} mysql -u root -p'${DB_PASS}' -e 'SELECT 1'"
           
-          echo "✅ All tests passed!"
+          echo "All tests passed!"
 
       - name: Create MySQL Dump on Server
         env:
@@ -67,7 +67,7 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
         run: |
-          echo "📦 Creating database backup using your manual method..."
+          echo "Creating database backup using your manual method..."
           
           # Step 1: Dump the database
           echo "Step 1: Dumping database..."
@@ -99,17 +99,17 @@ jobs:
           echo "Backup file size: $FILE_SIZE bytes"
           
           if [ "$FILE_SIZE" -lt 1000 ]; then
-            echo "❌ Backup file is too small ($FILE_SIZE bytes)!"
+            echo "Backup file is too small ($FILE_SIZE bytes)!"
             exit 1
           else
             HUMAN_SIZE=$(du -h backup.sql.gz | cut -f1)
-            echo "✅ Backup created successfully - $HUMAN_SIZE"
+            echo "Backup created successfully - $HUMAN_SIZE"
           fi
 
       - name: Generate Checksum
         run: |
           sha256sum backup.sql.gz > backup.sql.gz.sha256
-          echo "🔐 Checksum generated"
+          echo "Checksum generated"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -134,7 +134,7 @@ jobs:
           DEST="s3://${S3_BUCKET_NAME}/mysql-backups/${BACKUP_TYPE}s/${DATE_PATH}/${FILE}"
           DEST_CHECKSUM="s3://${S3_BUCKET_NAME}/mysql-backups/${BACKUP_TYPE}s/${DATE_PATH}/${CHECKSUM_FILE}"
           
-          echo "📤 Uploading ${BACKUP_TYPE} backup to S3..."
+          echo "Uploading ${BACKUP_TYPE} backup to S3..."
           echo "   Destination: ${DEST}"
           
           aws s3 cp "./backup.sql.gz" "$DEST" \
@@ -146,13 +146,13 @@ jobs:
             --storage-class STANDARD \
             --sse AES256
           
-          echo "✅ Backup uploaded successfully: ${FILE}"
+          echo "Backup uploaded successfully: ${FILE}"
 
       - name: Apply Retention Policy (GFS)
         env:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
-          echo "🧹 Cleaning up old backups based on GFS retention policy..."
+          echo "Cleaning up old backups based on GFS retention policy..."
           
           # Clean Daily backups - keep 30
           echo "   Cleaning daily backups (keeping 30)..."
@@ -184,12 +184,12 @@ jobs:
                 aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
               done || true
           
-          echo "✅ Retention policy applied successfully"
+          echo "Retention policy applied successfully"
 
       - name: Generate Backup Report
         if: always()
         run: |
-          echo "📊 Backup Report - $(date)" > backup-report.txt
+          echo "Backup Report - $(date)" > backup-report.txt
           echo "========================" >> backup-report.txt
           echo "Backup Type: ${{ steps.backup_type.outputs.BACKUP_TYPE }}" >> backup-report.txt
           echo "Backup Size: $(du -h backup.sql.gz | cut -f1)" >> backup-report.txt
@@ -203,7 +203,7 @@ jobs:
       - name: Notify on Failure
         if: failure()
         run: |
-          echo "🚨 BACKUP FAILED!"
+          echo "BACKUP FAILED!"
           echo "Please check the GitHub Actions logs for details."
           echo "Escalate to Project Leader if not resolved within 4 hours."
 
@@ -211,4 +211,4 @@ jobs:
         if: always()
         run: |
           rm -f backup.sql.gz backup.sql.gz.sha256 backup-report.txt
-          echo "🧹 Local cleanup completed"
+          echo "Local cleanup completed"

@@ -45,7 +45,7 @@ if [ -f "${ENV_FILE}" ]; then
     fi
   done < "${ENV_FILE}"
 else
-  echo "⚠️ Warning: .env file not found at ${ENV_FILE}"
+  echo "Warning: .env file not found at ${ENV_FILE}"
 fi
 
 # Run the backup script
@@ -55,14 +55,14 @@ if [ -f "${BACKUP_SCRIPT}" ]; then
   rc=0
   "${BACKUP_SCRIPT}" || rc=$?
   if [ "$rc" -ne 0 ]; then
-    echo "🚨 BACKUP FAILED!"
+    echo "BACKUP FAILED!"
     echo "Please check the log output for details."
     echo "Escalate to Project Leader if not resolved within 4 hours."
     echo "=== Backup Run Failed (exit code ${rc}): $(date) ==="
     exit 255
   fi
 else
-  echo "❌ Error: Backup script not found at ${BACKUP_SCRIPT}"
+  echo "Error: Backup script not found at ${BACKUP_SCRIPT}"
   exit 1
 fi
 

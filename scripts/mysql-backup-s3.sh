@@ -28,14 +28,14 @@ else
   RETENTION_DAYS="${RETENTION_DAYS:-30}"
 fi
 
-echo "📅 Backup Type: ${BACKUP_TYPE} (Retention: ${RETENTION_DAYS} days)"
+echo "Backup Type: ${BACKUP_TYPE} (Retention: ${RETENTION_DAYS} days)"
 
 # Verify required environment variables
 if [ -z "${MYSQL_ROOT_PASSWORD:-}" ] || \
    [ -z "${MYSQL_DB_NAME:-}" ] || \
    [ -z "${BACKUP_CONTAINER_NAME:-}" ] || \
    [ -z "${BACKUP_S3_BUCKET:-}" ]; then
-  echo "❌ Error: Required environment variables are missing."
+  echo "Error: Required environment variables are missing."
   exit 1
 fi
 
@@ -59,15 +59,15 @@ fi
 
 # Step 1: Test database connection
 if [ "$USE_DOCKER" = "true" ]; then
-  echo "🔍 Testing database connection via Docker exec..."
+  echo "Testing database connection via Docker exec..."
   if ! docker exec "${BACKUP_CONTAINER_NAME}" \
     mysql -u root -p"${MYSQL_ROOT_PASSWORD}" \
     -e "SELECT 1" >/dev/null 2>&1; then
-    echo "❌ Database connection failed!"
+    echo "Database connection failed!"
     exit 1
   fi
 else
-  echo "🔍 Testing database connection via TCP..."
+  echo "Testing database connection via TCP..."
   # Parse host and port
   MYSQL_HOST=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f1)
   MYSQL_PORT=$(echo "${MYSQL_ADDRESS:-db:3306}" | cut -d':' -f2)
@@ -75,14 +75,14 @@ else
   if ! mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" \
     -u root -p"${MYSQL_ROOT_PASSWORD}" \
     -e "SELECT 1" >/dev/null 2>&1; then
-    echo "❌ Database connection failed!"
+    echo "Database connection failed!"
     exit 1
   fi
 fi
-echo "✅ Connection test passed!"
+echo "Connection test passed!"
 
 # Step 3: Create MySQL Dump
-echo "📦 Creating database backup..."
+echo "Creating database backup..."
 TEMP_BACKUP_SQL="/tmp/prod-backup.sql"
 TEMP_BACKUP_GZ="${TEMP_BACKUP_SQL}.gz"
 
@@ -100,7 +100,7 @@ else
 fi
 
 if [ ! -f "${TEMP_BACKUP_SQL}" ]; then
-  echo "❌ Backup file creation failed!"
+  echo "Backup file creation failed!"
   exit 1
 fi
 
@@ -113,15 +113,15 @@ FILE_SIZE=$(stat -f%z "${TEMP_BACKUP_GZ}" 2>/dev/null || \
 echo "Backup file size: ${FILE_SIZE} bytes"
 
 if [ "${FILE_SIZE}" -lt 1000 ]; then
-  echo "❌ Backup file is too small (${FILE_SIZE} bytes)!"
+  echo "Backup file is too small (${FILE_SIZE} bytes)!"
   exit 1
 fi
 
 HUMAN_SIZE=$(du -h "${TEMP_BACKUP_GZ}" | cut -f1)
-echo "✅ Backup created successfully - ${HUMAN_SIZE}"
+echo "Backup created successfully - ${HUMAN_SIZE}"
 
 # Generate checksum
-echo "🔐 Generating checksum..."
+echo "Generating checksum..."
 sha256sum "${TEMP_BACKUP_GZ}" > "${TEMP_BACKUP_GZ}.sha256"
 
 # Define destination paths in S3
@@ -135,7 +135,7 @@ DEST_PREFIX="s3://${BACKUP_S3_BUCKET}/mysql-backups/${BACKUP_TYPE}s"
 DEST="${DEST_PREFIX}/${DATE_PATH}/${FILE}"
 DEST_CHECKSUM="${DEST_PREFIX}/${DATE_PATH}/${CHECKSUM_FILE}"
 
-echo "📤 Uploading ${BACKUP_TYPE} backup to S3..."
+echo "Uploading ${BACKUP_TYPE} backup to S3..."
 echo "   Destination: ${DEST}"
 
 # S3 upload options
@@ -151,10 +151,10 @@ aws s3 cp "${TEMP_BACKUP_GZ}" "${DEST}" ${S3_OPTS} \
 
 aws s3 cp "${TEMP_BACKUP_GZ}.sha256" "${DEST_CHECKSUM}" ${S3_OPTS}
 
-echo "✅ Backup uploaded successfully: ${FILE}"
+echo "Backup uploaded successfully: ${FILE}"
 
 # Step 4: GFS Retention Policy
-echo "🧹 Cleaning up old backups based on GFS retention policy..."
+echo "Cleaning up old backups based on GFS retention policy..."
 
 # Clean Daily backups - keep 30
 echo "   Cleaning daily backups (keeping 30)..."
@@ -192,11 +192,11 @@ aws s3 ls \
       aws s3 rm "s3://${BACKUP_S3_BUCKET}/$file"
     done || true
 
-echo "✅ Retention policy applied successfully"
+echo "Retention policy applied successfully"
 
 # Step 5: Generate Backup Report
 REPORT_FILE="/tmp/backup-report.txt"
-echo "📊 Backup Report - $(date)" > "${REPORT_FILE}"
+echo "Backup Report - $(date)" > "${REPORT_FILE}"
 echo "========================" >> "${REPORT_FILE}"
 echo "Backup Type: ${BACKUP_TYPE}" >> "${REPORT_FILE}"
 echo "Backup Size: ${HUMAN_SIZE}" >> "${REPORT_FILE}"
@@ -210,7 +210,7 @@ aws s3 cp "${REPORT_FILE}" \
 
 # Cleanup local temporary files
 rm -f "${TEMP_BACKUP_GZ}" "${TEMP_BACKUP_GZ}.sha256" "${REPORT_FILE}"
-echo "🧹 Local cleanup completed"
+echo "Local cleanup completed"
 
 # Step 6: Write latest backup status to local file
 LOGS_DIR="${SCRIPT_DIR}/../logs"
