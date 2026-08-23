@@ -11,10 +11,14 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
-type BackupHandler struct{}
+type BackupHandler struct {
+	LogService service.LogService
+}
 
 type BackupInfo struct {
 	Timestamp string `json:"timestamp" example:"2026-08-02T19:15:15Z"`
@@ -91,9 +95,21 @@ func (h *BackupHandler) PostRunBackup(c *gin.Context) {
 		return
 	}
 
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
+	if actorName == "" {
+		actorName = userIDStr
+	}
+
 	scriptPath := filepath.Join("scripts", "mysql-backup-s3.sh")
 	cmd := exec.Command("/bin/bash", scriptPath)
-	cmd.Env = os.Environ()
+	cmd.Env = append(os.Environ(),
+		"BACKUP_ACTOR="+actorName,
+		"CLIENT_IP="+c.ClientIP(),
+		"USER_AGENT="+c.Request.UserAgent(),
+	)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -166,9 +182,21 @@ func (h *BackupHandler) PostRestoreBackup(c *gin.Context) {
 	}
 	defer os.Remove(tempPath)
 
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
+	if actorName == "" {
+		actorName = userIDStr
+	}
+
 	scriptPath := filepath.Join("scripts", "mysql-restore.sh")
 	cmd := exec.Command("/bin/bash", scriptPath, tempPath)
-	cmd.Env = os.Environ()
+	cmd.Env = append(os.Environ(),
+		"BACKUP_ACTOR="+actorName,
+		"CLIENT_IP="+c.ClientIP(),
+		"USER_AGENT="+c.Request.UserAgent(),
+	)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
