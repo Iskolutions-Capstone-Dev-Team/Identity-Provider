@@ -39,14 +39,15 @@ const UserPoolFAQ = {
       id: "existing-email-account-reuse",
       question: "Can an existing email account be created again?",
       answer: [
-        "No, you cannot use an email that already exists in the system to create another account.",
+        "Yes, you can reuse an email if the existing account is archived.",
+        "However, you cannot use an active email that already exists in the system.",
       ],
     },
     {
       id: "deleted-email-account-reuse",
       question: "Can a deleted email account be created again?",
       answer: [
-        "No, you may still be blocked from reusing a deleted email account to preserve account history and prevent duplicate identity records.",
+        "Yes, a deleted email account can be created and used again.",
       ],
     },
   ],
