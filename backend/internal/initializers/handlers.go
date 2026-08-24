@@ -77,11 +77,11 @@ func InitializeHandlers(db *sqlx.DB,
 		BackupHandler: &v1.BackupHandler{
 			LogService: service.LogService,
 		},
-		ReportHandler:  v1.NewReportHandler(service.ReportService),
-		UserRepo:       userRepo,
-		RoleRepo:       roleRepo,
-		PubKey:         PubKey,
-		CORS:           mw.CORSMiddleware(),
-		ClientCORS:     mw.ClientCORSMiddleware(),
+		ReportHandler: v1.NewReportHandler(service.ReportService),
+		UserRepo:      userRepo,
+		RoleRepo:      roleRepo,
+		PubKey:        PubKey,
+		CORS:          mw.CORSMiddleware(),
+		ClientCORS:    mw.ClientCORSMiddleware(),
 	}
 }
