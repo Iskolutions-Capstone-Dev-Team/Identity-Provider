@@ -46,18 +46,22 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
         run: |
-          echo "🔍 Testing SSH connection..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" "echo 'SSH OK'"
+          echo "Testing SSH connection..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" "echo 'SSH OK'"
           
-          echo "🔍 Testing Docker connection..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+          echo "Testing Docker connection..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
             "docker ps | grep ${CONTAINER_NAME}"
           
-          echo "🔍 Testing database connection..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "docker exec ${CONTAINER_NAME} mysql -u root -p'${DB_PASS}' -e 'SELECT 1'"
+          echo "Testing database connection..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "docker exec -e MYSQL_PWD='${DB_PASS}' ${CONTAINER_NAME} \
+            mysql -u root -e 'SELECT 1'"
           
-          echo "✅ All tests passed!"
+          echo "All tests passed!"
 
       - name: Create MySQL Dump on Server
         env:
@@ -67,49 +71,44 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
         run: |
-          echo "📦 Creating database backup using your manual method..."
+          echo "Creating database backup using your manual method..."
           
-          # Step 1: Dump the database
-          echo "Step 1: Dumping database..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "docker exec ${CONTAINER_NAME} mysqldump -u root -p'${DB_PASS}' ${DB_NAME} > /tmp/prod-backup.sql"
+          # Step 1: Dump and compress the database directly
+          echo "Step 1: Dumping and compressing database..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "docker exec -e MYSQL_PWD='${DB_PASS}' \
+            ${CONTAINER_NAME} mysqldump -u root ${DB_NAME} \
+            | gzip > /tmp/prod-backup-${{ github.run_id }}.sql.gz"
           
-          # Step 2: Check file exists and size
-          echo "Step 2: Checking backup file..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "ls -lh /tmp/prod-backup.sql"
+          # Step 2: Download it
+          echo "Step 2: Downloading..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "cat /tmp/prod-backup-${{ github.run_id }}.sql.gz" > backup.sql.gz
           
-          # Step 3: Compress it
-          echo "Step 3: Compressing..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "gzip -f /tmp/prod-backup.sql"
+          # Step 3: Clean up on server
+          echo "Step 3: Cleaning up..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "rm -f /tmp/prod-backup-${{ github.run_id }}.sql.gz"
           
-          # Step 4: Download it
-          echo "Step 4: Downloading..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "cat /tmp/prod-backup.sql.gz" > backup.sql.gz
-          
-          # Step 5: Clean up on server
-          echo "Step 5: Cleaning up..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "rm -f /tmp/prod-backup.sql.gz"
-          
-          # Step 6: Verify the backup
+          # Step 4: Verify the backup
           FILE_SIZE=$(stat -f%z "backup.sql.gz" 2>/dev/null || stat -c%s "backup.sql.gz" 2>/dev/null)
           echo "Backup file size: $FILE_SIZE bytes"
           
           if [ "$FILE_SIZE" -lt 1000 ]; then
-            echo "❌ Backup file is too small ($FILE_SIZE bytes)!"
+            echo "Backup file is too small ($FILE_SIZE bytes)!"
             exit 1
           else
             HUMAN_SIZE=$(du -h backup.sql.gz | cut -f1)
-            echo "✅ Backup created successfully - $HUMAN_SIZE"
+            echo "Backup created successfully - $HUMAN_SIZE"
           fi
 
       - name: Generate Checksum
         run: |
           sha256sum backup.sql.gz > backup.sql.gz.sha256
-          echo "🔐 Checksum generated"
+          echo "Checksum generated"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -134,7 +133,7 @@ jobs:
           DEST="s3://${S3_BUCKET_NAME}/mysql-backups/${BACKUP_TYPE}s/${DATE_PATH}/${FILE}"
           DEST_CHECKSUM="s3://${S3_BUCKET_NAME}/mysql-backups/${BACKUP_TYPE}s/${DATE_PATH}/${CHECKSUM_FILE}"
           
-          echo "📤 Uploading ${BACKUP_TYPE} backup to S3..."
+          echo "Uploading ${BACKUP_TYPE} backup to S3..."
           echo "   Destination: ${DEST}"
           
           aws s3 cp "./backup.sql.gz" "$DEST" \
@@ -146,50 +145,62 @@ jobs:
             --storage-class STANDARD \
             --sse AES256
           
-          echo "✅ Backup uploaded successfully: ${FILE}"
+          echo "Backup uploaded successfully: ${FILE}"
 
       - name: Apply Retention Policy (GFS)
         env:
           S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
-          echo "🧹 Cleaning up old backups based on GFS retention policy..."
+          echo "Cleaning up old backups based on GFS retention policy..."
           
           # Clean Daily backups - keep 30
           echo "   Cleaning daily backups (keeping 30)..."
-          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/dailys/" --recursive 2>/dev/null \
+          aws s3 ls \
+            "s3://${S3_BUCKET_NAME}/mysql-backups/dailys/" \
+            --recursive 2>/dev/null \
+            | grep '\.sql\.gz$' \
             | sort -r \
             | awk 'NR>30 {print $4}' \
             | while read -r file; do
-                echo "      Deleting: $file"
+                echo "      Deleting: $file and its checksum"
                 aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
+                aws s3 rm "s3://${S3_BUCKET_NAME}/${file}.sha256"
               done || true
           
           # Clean Weekly backups - keep 12
           echo "   Cleaning weekly backups (keeping 12)..."
-          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/weeklys/" --recursive 2>/dev/null \
+          aws s3 ls \
+            "s3://${S3_BUCKET_NAME}/mysql-backups/weeklys/" \
+            --recursive 2>/dev/null \
+            | grep '\.sql\.gz$' \
             | sort -r \
             | awk 'NR>12 {print $4}' \
             | while read -r file; do
-                echo "      Deleting: $file"
+                echo "      Deleting: $file and its checksum"
                 aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
+                aws s3 rm "s3://${S3_BUCKET_NAME}/${file}.sha256"
               done || true
           
           # Clean Monthly backups - keep 12
           echo "   Cleaning monthly backups (keeping 12)..."
-          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/monthlys/" --recursive 2>/dev/null \
+          aws s3 ls \
+            "s3://${S3_BUCKET_NAME}/mysql-backups/monthlys/" \
+            --recursive 2>/dev/null \
+            | grep '\.sql\.gz$' \
             | sort -r \
             | awk 'NR>12 {print $4}' \
             | while read -r file; do
-                echo "      Deleting: $file"
+                echo "      Deleting: $file and its checksum"
                 aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
+                aws s3 rm "s3://${S3_BUCKET_NAME}/${file}.sha256"
               done || true
           
-          echo "✅ Retention policy applied successfully"
+          echo "Retention policy applied successfully"
 
       - name: Generate Backup Report
         if: always()
         run: |
-          echo "📊 Backup Report - $(date)" > backup-report.txt
+          echo "Backup Report - $(date)" > backup-report.txt
           echo "========================" >> backup-report.txt
           echo "Backup Type: ${{ steps.backup_type.outputs.BACKUP_TYPE }}" >> backup-report.txt
           echo "Backup Size: $(du -h backup.sql.gz | cut -f1)" >> backup-report.txt
@@ -203,7 +214,7 @@ jobs:
       - name: Notify on Failure
         if: failure()
         run: |
-          echo "🚨 BACKUP FAILED!"
+          echo "BACKUP FAILED!"
           echo "Please check the GitHub Actions logs for details."
           echo "Escalate to Project Leader if not resolved within 4 hours."
 
@@ -211,4 +222,4 @@ jobs:
         if: always()
         run: |
           rm -f backup.sql.gz backup.sql.gz.sha256 backup-report.txt
-          echo "🧹 Local cleanup completed"
+          echo "Local cleanup completed"

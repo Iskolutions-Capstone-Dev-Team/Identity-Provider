@@ -37,15 +37,15 @@ export function CreateBackupCard({
                   <div className="h-4 bg-muted rounded w-1/2"></div>
                 </div>
               </div>
-            ) : latestBackup ? (
+            ) : latestBackup?.timestamp ? (
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between text-sm items-center">
                   <span className="text-foreground font-medium">Date</span>
-                  <span className="text-muted-foreground">{latestBackup.created_at ? formatTimestamp(latestBackup.created_at) : "-"}</span>
+                  <span className="text-muted-foreground">{latestBackup.timestamp ? formatTimestamp(latestBackup.timestamp) : "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm items-center">
-                  <span className="text-foreground font-medium">Filename</span>
-                  <span className="text-muted-foreground font-mono text-xs truncate max-w-[180px]" title={latestBackup.filename || ""}>{latestBackup.filename || "-"}</span>
+                  <span className="text-foreground font-medium">Type</span>
+                  <span className="text-muted-foreground capitalize">{latestBackup.type || "-"}</span>
                 </div>
                 {latestBackup.size && (
                   <div className="flex justify-between text-sm items-center">
