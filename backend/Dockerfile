@@ -23,10 +23,10 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     -o main ./cmd/main.go
 
 # Stage 2: Final lightweight runtime image
-FROM alpine:3.20
+FROM debian:bookworm-slim
 
 # Install packages needed for backups, restores, and runtime
-RUN apk --no-cache add ca-certificates tzdata mysql-client bash aws-cli
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates tzdata default-mysql-client bash awscli && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

@@ -49,7 +49,7 @@ export default function BackupRestore() {
       fetchLatestBackup();
     } catch (error) {
       console.error("Backup failed", error);
-      toast.error(error?.response?.data?.error || "Failed to create backup", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+      toast.error(error?.response?.data?.message || "Failed to create backup", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
     } finally {
       setLoadingBackup(false);
     }
@@ -84,7 +84,7 @@ export default function BackupRestore() {
       // Optional: force reload page to reflect database state changes if necessary
     } catch (error) {
       console.error("Restore failed", error);
-      toast.error(error?.response?.data?.error || "Failed to restore backup", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+      toast.error(error?.response?.data?.message || "Failed to restore backup", { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
     } finally {
       setLoadingRestore(false);
     }
