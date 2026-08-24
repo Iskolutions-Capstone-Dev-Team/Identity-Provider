@@ -53,6 +53,7 @@ BACKUP_SCRIPT="${SCRIPT_DIR}/mysql-backup-s3.sh"
 if [ -f "${BACKUP_SCRIPT}" ]; then
   chmod +x "${BACKUP_SCRIPT}"
   rc=0
+  export BACKUP_ACTOR="system/cron"
   "${BACKUP_SCRIPT}" || rc=$?
   if [ "$rc" -ne 0 ]; then
     echo "BACKUP FAILED!"

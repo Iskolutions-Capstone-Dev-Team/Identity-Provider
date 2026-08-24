@@ -47,15 +47,19 @@ jobs:
           CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
         run: |
           echo "Testing SSH connection..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" "echo 'SSH OK'"
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" "echo 'SSH OK'"
           
           echo "Testing Docker connection..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
             "docker ps | grep ${CONTAINER_NAME}"
           
           echo "Testing database connection..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "docker exec ${CONTAINER_NAME} mysql -u root -p'${DB_PASS}' -e 'SELECT 1'"
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "docker exec -e MYSQL_PWD='${DB_PASS}' ${CONTAINER_NAME} \
+            mysql -u root -e 'SELECT 1'"
           
           echo "All tests passed!"
 
@@ -69,32 +73,27 @@ jobs:
         run: |
           echo "Creating database backup using your manual method..."
           
-          # Step 1: Dump the database
-          echo "Step 1: Dumping database..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "docker exec ${CONTAINER_NAME} mysqldump -u root -p'${DB_PASS}' ${DB_NAME} > /tmp/prod-backup.sql"
+          # Step 1: Dump and compress the database directly
+          echo "Step 1: Dumping and compressing database..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "docker exec -e MYSQL_PWD='${DB_PASS}' \
+            ${CONTAINER_NAME} mysqldump -u root ${DB_NAME} \
+            | gzip > /tmp/prod-backup-${{ github.run_id }}.sql.gz"
           
-          # Step 2: Check file exists and size
-          echo "Step 2: Checking backup file..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "ls -lh /tmp/prod-backup.sql"
+          # Step 2: Download it
+          echo "Step 2: Downloading..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "cat /tmp/prod-backup-${{ github.run_id }}.sql.gz" > backup.sql.gz
           
-          # Step 3: Compress it
-          echo "Step 3: Compressing..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "gzip -f /tmp/prod-backup.sql"
+          # Step 3: Clean up on server
+          echo "Step 3: Cleaning up..."
+          ssh -i "$HOME/.ssh/backup_key" \
+            -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "rm -f /tmp/prod-backup-${{ github.run_id }}.sql.gz"
           
-          # Step 4: Download it
-          echo "Step 4: Downloading..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "cat /tmp/prod-backup.sql.gz" > backup.sql.gz
-          
-          # Step 5: Clean up on server
-          echo "Step 5: Cleaning up..."
-          ssh -i "$HOME/.ssh/backup_key" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
-            "rm -f /tmp/prod-backup.sql.gz"
-          
-          # Step 6: Verify the backup
+          # Step 4: Verify the backup
           FILE_SIZE=$(stat -f%z "backup.sql.gz" 2>/dev/null || stat -c%s "backup.sql.gz" 2>/dev/null)
           echo "Backup file size: $FILE_SIZE bytes"
           
@@ -156,32 +155,44 @@ jobs:
           
           # Clean Daily backups - keep 30
           echo "   Cleaning daily backups (keeping 30)..."
-          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/dailys/" --recursive 2>/dev/null \
+          aws s3 ls \
+            "s3://${S3_BUCKET_NAME}/mysql-backups/dailys/" \
+            --recursive 2>/dev/null \
+            | grep '\.sql\.gz$' \
             | sort -r \
             | awk 'NR>30 {print $4}' \
             | while read -r file; do
-                echo "      Deleting: $file"
+                echo "      Deleting: $file and its checksum"
                 aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
+                aws s3 rm "s3://${S3_BUCKET_NAME}/${file}.sha256"
               done || true
           
           # Clean Weekly backups - keep 12
           echo "   Cleaning weekly backups (keeping 12)..."
-          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/weeklys/" --recursive 2>/dev/null \
+          aws s3 ls \
+            "s3://${S3_BUCKET_NAME}/mysql-backups/weeklys/" \
+            --recursive 2>/dev/null \
+            | grep '\.sql\.gz$' \
             | sort -r \
             | awk 'NR>12 {print $4}' \
             | while read -r file; do
-                echo "      Deleting: $file"
+                echo "      Deleting: $file and its checksum"
                 aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
+                aws s3 rm "s3://${S3_BUCKET_NAME}/${file}.sha256"
               done || true
           
           # Clean Monthly backups - keep 12
           echo "   Cleaning monthly backups (keeping 12)..."
-          aws s3 ls "s3://${S3_BUCKET_NAME}/mysql-backups/monthlys/" --recursive 2>/dev/null \
+          aws s3 ls \
+            "s3://${S3_BUCKET_NAME}/mysql-backups/monthlys/" \
+            --recursive 2>/dev/null \
+            | grep '\.sql\.gz$' \
             | sort -r \
             | awk 'NR>12 {print $4}' \
             | while read -r file; do
-                echo "      Deleting: $file"
+                echo "      Deleting: $file and its checksum"
                 aws s3 rm "s3://${S3_BUCKET_NAME}/$file"
+                aws s3 rm "s3://${S3_BUCKET_NAME}/${file}.sha256"
               done || true
           
           echo "Retention policy applied successfully"
