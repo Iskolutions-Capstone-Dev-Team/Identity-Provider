@@ -34,22 +34,22 @@ function getClientSummary(clients = []) {
 }
 
 function buildRegistrationRows(registrationConfigs = [], accountTypeOptions = []) {
-  const registrationConfigMap = new Map(
-    registrationConfigs.map((config) => [config.accountTypeValue, config]),
+  const accountTypeOptionMap = new Map(
+    accountTypeOptions.map((option) => [option.value, option]),
   );
 
-  return accountTypeOptions.map((option) => {
-    const matchedConfig = registrationConfigMap.get(option.value);
-    const clients = Array.isArray(matchedConfig?.clients)
-      ? matchedConfig.clients
+  return registrationConfigs.map((config) => {
+    const matchedOption = accountTypeOptionMap.get(config.accountTypeValue);
+    const clients = Array.isArray(config?.clients)
+      ? config.clients
       : [];
     const { clientIds, clientNames, totalClientCount } = getClientSummary(clients);
-    const backendId = option.backendId ?? matchedConfig?.backendId ?? null;
+    const backendId = matchedOption?.backendId ?? config?.backendId ?? null;
 
     return {
-      accountType: option.id,
-      accountTypeValue: option.value,
-      label: option.label,
+      accountType: matchedOption?.id ?? config.accountType,
+      accountTypeValue: config.accountTypeValue,
+      label: matchedOption?.label ?? config.label,
       backendId,
       clientIds,
       clientNames,

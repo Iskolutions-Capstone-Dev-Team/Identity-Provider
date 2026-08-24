@@ -23,6 +23,7 @@ type ClientResponse struct {
 	LogoutURI       string         `json:"logout_uri"`
 	OnePortalLink   string         `json:"one_portal_link"`
 	CreatedAt       string         `json:"created_at"`
+	UpdatedAt       string         `json:"updated_at"`
 	Grants          []string       `json:"grants"`
 	AllowedRoles    []RoleResponse `json:"allowed_roles"`
 	AccessTokenTTL  int            `json:"access_token_ttl"`

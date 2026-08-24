@@ -272,6 +272,7 @@ func (s *clientService) GetClientList(
 			LogoutURI:       cl.LogoutUri,
 			OnePortalLink:   derefString(cl.OnePortalLink),
 			CreatedAt:       cl.CreatedAt.Format(TIME_LAYOUT),
+			UpdatedAt:       cl.UpdatedAt.Format(TIME_LAYOUT),
 			AccessTokenTTL:  cl.AccessTokenTTL,
 			RefreshTokenTTL: cl.RefreshTokenTTL,
 		})
@@ -361,6 +362,7 @@ func (s *clientService) GetBoundClients(
 			LogoutURI:       cl.LogoutUri,
 			OnePortalLink:   derefString(cl.OnePortalLink),
 			CreatedAt:       cl.CreatedAt.Format(TIME_LAYOUT),
+			UpdatedAt:       cl.UpdatedAt.Format(TIME_LAYOUT),
 			AccessTokenTTL:  cl.AccessTokenTTL,
 			RefreshTokenTTL: cl.RefreshTokenTTL,
 		})
@@ -450,6 +452,7 @@ func (s *clientService) GetAllowedClients(
 			LogoutURI:       cl.LogoutUri,
 			OnePortalLink:   derefString(cl.OnePortalLink),
 			CreatedAt:       cl.CreatedAt.Format(TIME_LAYOUT),
+			UpdatedAt:       cl.UpdatedAt.Format(TIME_LAYOUT),
 			AccessTokenTTL:  cl.AccessTokenTTL,
 			RefreshTokenTTL: cl.RefreshTokenTTL,
 		})
@@ -528,6 +531,8 @@ func (s *clientService) GetClientByID(
 		RedirectURI:     cl.RedirectUri,
 		LogoutURI:       cl.LogoutUri,
 		OnePortalLink:   derefString(cl.OnePortalLink),
+		CreatedAt:       cl.CreatedAt.Format(TIME_LAYOUT),
+		UpdatedAt:       cl.UpdatedAt.Format(TIME_LAYOUT),
 		Grants:          grants,
 		AllowedRoles:    roleResponses,
 		AccessTokenTTL:  cl.AccessTokenTTL,

@@ -12,11 +12,10 @@ const OtherFAQ = {
       ],
     },
     {
-      id: "voice-input",
-      question: "What does Voice Input do?",
+      id: "mfa-new-connection",
+      question: "How to add a new MFA connection?",
       answer: [
-        "You use Voice Input to speak into supported text fields, such as search inputs.",
-        "You should use earphones or a microphone for better results, then review recognized text before filtering data or saving a form.",
+        "You can add a new MFA connection by navigating to your account settings, selecting Multi-Factor Authentication, and following the on-screen instructions.",
       ],
     },
     {
@@ -24,6 +23,13 @@ const OtherFAQ = {
       question: "What does One Portal do",
       answer: [
         "You use One Portal to open a central system where you can view all app clients accessible to your account.",
+      ],
+    },
+    {
+      id: "api-documentation",
+      question: "Where can I find the API references for connecting clients?",
+      answer: [
+        "You can view the API Reference section to find the documentation and connection details for all clients that want to integrate.",
       ],
     },
   ],
