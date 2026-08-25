@@ -14,6 +14,7 @@ type SessionRepository interface {
 	GetByID(ctx context.Context, sessionID string) (*models.IdPSession, error)
 	Delete(ctx context.Context, sessionID string) error
 	DeleteExpired(ctx context.Context) (int64, error)
+	DeleteByUserID(ctx context.Context, userID []byte) error
 }
 
 type sessionRepository struct {
@@ -58,6 +59,17 @@ func (r *sessionRepository) Delete(ctx context.Context,
 	_, err := r.db.ExecContext(ctx, query, sessionID)
 	if err != nil {
 		return fmt.Errorf("failed to delete session: %w", err)
+	}
+	return nil
+}
+
+func (r *sessionRepository) DeleteByUserID(ctx context.Context,
+	userID []byte,
+) error {
+	query := `DELETE FROM idp_sessions WHERE user_id = ?`
+	_, err := r.db.ExecContext(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete user sessions: %w", err)
 	}
 	return nil
 }
