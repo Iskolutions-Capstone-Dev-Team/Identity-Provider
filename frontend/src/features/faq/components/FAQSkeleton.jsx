@@ -6,7 +6,7 @@ export default function FAQSkeleton() {
     <div className="grid gap-6 xl:grid-cols-[22rem_minmax(0,1fr)] w-full items-start">
       {/* Left Sidebar Skeleton */}
       <div className="w-full shrink-0 flex flex-col gap-1.5 h-auto p-2 bg-muted rounded-xl">
-        {Array.from({ length: 6 }, (_, index) => (
+        {Array.from({ length: 7 }, (_, index) => (
           <div key={index} className="flex items-center gap-3 px-3.5 py-3 rounded-lg w-full">
             <Skeleton className="size-5 shrink-0 rounded-md bg-foreground/10" />
             <Skeleton className="h-4 w-3/4 max-w-[120px] bg-foreground/10" />
