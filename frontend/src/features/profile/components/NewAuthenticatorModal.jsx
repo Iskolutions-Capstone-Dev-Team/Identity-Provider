@@ -1,24 +1,11 @@
-import { useEffect, useState } from "react";
-import QRCode from "qrcode";
-import { toast } from "sonner";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../components/ui/dialog";
 import { Button } from "../../../components/ui/button";
 import MfaSetupConfirmStep from "../../../auth/components/mfa/MfaSetupConfirmStep";
 import MfaSetupQrStep from "../../../auth/components/mfa/MfaSetupQrStep";
 import { getDigits } from "../../../auth/components/mfa/mfaInputUtils";
-import { createPasskeyCredential } from "../../../auth/utils/webAuthn";
-import { mfaService } from "../../../services/mfaService";
 import { Smartphone, KeySquare } from "lucide-react";
-
-function getRequestErrorMessage(error, fallbackMessage) {
-  return (
-    error?.response?.data?.error ||
-    error?.response?.data?.message ||
-    error?.message ||
-    fallbackMessage
-  );
-}
+import { useNewAuthenticatorModal } from "../hooks/useNewAuthenticatorModal";
 
 function ConnectionOptionButton({ title, description, icon, onClick, disabled }) {
   return (
@@ -37,141 +24,34 @@ function ConnectionOptionButton({ title, description, icon, onClick, disabled })
 }
 
 export default function NewAuthenticatorModal({ open, email, onClose, onCreated, colorMode = "light" }) {
-  const [connectionType, setConnectionType] = useState("");
-  const [step, setStep] = useState("choice");
-  const [setup, setSetup] = useState({ secret: "", otpAuthUri: "" });
-  const [qrCodeUrl, setQrCodeUrl] = useState("");
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [backupCodes, setBackupCodes] = useState([]);
-  const [hasCopiedBackupCodes, setHasCopiedBackupCodes] = useState(false);
-  const [error, setError] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
+  const modalState = useNewAuthenticatorModal({
+    open,
+    email,
+    onClose,
+    onCreated,
+  });
 
-
-  useEffect(() => {
-    if (open) {
-      setConnectionType("");
-      setStep("choice");
-      setSetup({ secret: "", otpAuthUri: "" });
-      setQrCodeUrl("");
-      setCode("");
-      setName("");
-      setBackupCodes([]);
-      setHasCopiedBackupCodes(false);
-      setError("");
-      setIsSaving(false);
-      setIsRegisteringPasskey(false);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || connectionType !== "authenticator") {
-      return undefined;
-    }
-
-    let isCancelled = false;
-
-    const loadSetup = async () => {
-      try {
-        const nextSetup = await mfaService.getSetup(email);
-        const nextQrCodeUrl = await QRCode.toDataURL(nextSetup.otpAuthUri, {
-          errorCorrectionLevel: "M",
-          margin: 2,
-          width: 320,
-        });
-
-        if (!isCancelled) {
-          setSetup(nextSetup);
-          setQrCodeUrl(nextQrCodeUrl);
-        }
-      } catch (setupError) {
-        if (!isCancelled) {
-          setError(
-            getRequestErrorMessage(
-              setupError,
-              "Unable to load authenticator setup.",
-            ),
-          );
-        }
-      }
-    };
-
-    loadSetup();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [connectionType, email, open]);
-
-  const handleSelectAuthenticator = () => {
-    setConnectionType("authenticator");
-    setStep("qr");
-    setError("");
-  };
-
-  const handleSelectPasskey = async () => {
-    setConnectionType("passkey");
-    setError("");
-
-    try {
-      setIsRegisteringPasskey(true);
-      const options = await mfaService.beginPasskeyRegistration(email);
-      const credential = await createPasskeyCredential(options);
-
-      await mfaService.finishPasskeyRegistration(email, credential);
-      onCreated?.({ type: "passkey" });
-      toast.success("Passkey added successfully");
-      onClose?.();
-    } catch (passkeyError) {
-      setError(
-        getRequestErrorMessage(passkeyError, "Unable to connect this passkey."),
-      );
-    } finally {
-      setIsRegisteringPasskey(false);
-    }
-  };
-
-  const handleSaveAuthenticator = async (event) => {
-    event?.preventDefault?.();
-    setError("");
-
-    if (code.length !== 6) {
-      setError("Enter the 6-digit code from your authenticator app.");
-      return;
-    }
-
-    if (!name.trim()) {
-      setError("Enter the authenticator app name.");
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      const result = await mfaService.createAuthenticator({
-        email,
-        secret: setup.secret,
-        code,
-        name,
-      });
-
-      setBackupCodes(result.backupCodes);
-      setHasCopiedBackupCodes(false);
-    } catch (saveError) {
-      setError(
-        getRequestErrorMessage(saveError, "Unable to save this authenticator."),
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleFinish = () => {
-    onCreated?.({ type: "authenticator", code });
-    toast.success("Authenticator app added successfully");
-    onClose?.();
-  };
+  const {
+    connectionType,
+    step,
+    setStep,
+    qrCodeUrl,
+    code,
+    setCode,
+    name,
+    setName,
+    backupCodes,
+    hasCopiedBackupCodes,
+    setHasCopiedBackupCodes,
+    error,
+    setError,
+    isSaving,
+    isRegisteringPasskey,
+    handleSelectAuthenticator,
+    handleSelectPasskey,
+    handleSaveAuthenticator,
+    handleFinish,
+  } = modalState;
 
   if (!open) {
     return null;
@@ -214,38 +94,38 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
             ) : (
               <div className="space-y-4">
                 {step === "qr" ? (
-                <MfaSetupQrStep
-                  qrCodeUrl={qrCodeUrl}
-                  isLoading={!qrCodeUrl && !error}
-                  colorMode={colorMode}
-                  hideButtons={true}
-                  onNext={() => {
-                    setCode("");
-                    setError("");
-                    setStep("confirm");
-                  }}
-                />
-              ) : (
-                <MfaSetupConfirmStep
-                  code={code}
-                  name={name}
-                  backupCodes={backupCodes}
-                  isSaving={isSaving}
-                  colorMode={colorMode}
-                  hideButtons={true}
-                  isProfileFlow={true}
-                  onCodeChange={(value) => setCode(getDigits(value))}
-                  onNameChange={setName}
-                  onCopied={() => setHasCopiedBackupCodes(true)}
-                  onSubmit={handleSaveAuthenticator}
-                  onBack={() => {
-                    setCode("");
-                    setError("");
-                    setStep("qr");
-                  }}
-                  onContinue={handleFinish}
-                />
-              )}
+                  <MfaSetupQrStep
+                    qrCodeUrl={qrCodeUrl}
+                    isLoading={!qrCodeUrl && !error}
+                    colorMode={colorMode}
+                    hideButtons={true}
+                    onNext={() => {
+                      setCode("");
+                      setError("");
+                      setStep("confirm");
+                    }}
+                  />
+                ) : (
+                  <MfaSetupConfirmStep
+                    code={code}
+                    name={name}
+                    backupCodes={backupCodes}
+                    isSaving={isSaving}
+                    colorMode={colorMode}
+                    hideButtons={true}
+                    isProfileFlow={true}
+                    onCodeChange={(value) => setCode(getDigits(value))}
+                    onNameChange={setName}
+                    onCopied={() => setHasCopiedBackupCodes(true)}
+                    onSubmit={handleSaveAuthenticator}
+                    onBack={() => {
+                      setCode("");
+                      setError("");
+                      setStep("qr");
+                    }}
+                    onContinue={handleFinish}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -255,15 +135,15 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
           <DialogFooter className="gap-2 sm:justify-end">
             <div className="flex gap-2 w-full sm:w-auto">
               {step === "confirm" ? (
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => {
                     setCode("");
                     setError("");
                     setStep("qr");
-                  }} 
-                  disabled={isSaving} 
+                  }}
+                  disabled={isSaving}
                   className="flex-1 sm:flex-none"
                 >
                   Back
@@ -274,14 +154,14 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
                 </Button>
               )}
               {step === "qr" && (
-                <Button 
-                  type="button" 
-                  disabled={!qrCodeUrl} 
+                <Button
+                  type="button"
+                  disabled={!qrCodeUrl}
                   onClick={() => {
                     setCode("");
                     setError("");
                     setStep("confirm");
-                  }} 
+                  }}
                   className={
                     colorMode === "dark"
                       ? "flex-1 sm:flex-none"
@@ -292,10 +172,10 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
                 </Button>
               )}
               {step === "confirm" && (
-                <Button 
-                  type="button" 
-                  disabled={isSaving || (backupCodes.length > 0 && !hasCopiedBackupCodes)} 
-                  onClick={backupCodes.length > 0 ? handleFinish : handleSaveAuthenticator} 
+                <Button
+                  type="button"
+                  disabled={isSaving || (backupCodes.length > 0 && !hasCopiedBackupCodes)}
+                  onClick={backupCodes.length > 0 ? handleFinish : handleSaveAuthenticator}
                   className={
                     colorMode === "dark"
                       ? "flex-1 sm:flex-none"
