@@ -1,25 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import ErrorAlert from "../../../components/ErrorAlert";
-import { toast } from "sonner";
 import NewAuthenticatorModal from "./NewAuthenticatorModal";
-import { mfaService } from "../../../services/mfaService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../components/ui/carousel";
 import { Smartphone, KeySquare, Trash, CalendarDays, Clock } from 'lucide-react';
-
-const AUTHENTICATORS_PER_SLIDE = 3;
-
-function getRequestErrorMessage(error, fallbackMessage) {
-  return (
-    error?.response?.data?.error ||
-    error?.response?.data?.message ||
-    error?.message ||
-    fallbackMessage
-  );
-}
+import { useAuthenticatorsPanel } from "../hooks/useAuthenticatorsPanel";
 
 function FormattedDateDisplay({ value }) {
   if (!value) {
@@ -56,63 +43,19 @@ function getAuthenticatorTypeLabel(type) {
 }
 
 export default function AuthenticatorsPanel({ email = "", colorMode = "light" }) {
-  const isDarkMode = colorMode === "dark";
-  const [authenticators, setAuthenticators] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [authenticatorToDelete, setAuthenticatorToDelete] = useState(null);
-  const [isNewConnectionOpen, setIsNewConnectionOpen] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  const loadAuthenticators = useCallback(async () => {
-    if (!email) {
-      setAuthenticators([]);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError("");
-      const list = await mfaService.getAuthenticators(email);
-      setAuthenticators(list);
-    } catch (loadError) {
-      setError(
-        getRequestErrorMessage(
-          loadError,
-          "Unable to load authenticator apps.",
-        ),
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [email]);
-
-  useEffect(() => {
-    loadAuthenticators();
-  }, [loadAuthenticators]);
-
-  const handleDeleteAuthenticator = async () => {
-    if (!authenticatorToDelete) return;
-    
-    setError("");
-    try {
-      await mfaService.deleteAuthenticator({
-        email,
-        id: authenticatorToDelete.id,
-      });
-      setAuthenticatorToDelete(null);
-      toast.success("Authenticator removed successfully.");
-      await loadAuthenticators();
-    } catch (deleteError) {
-      setError(
-        getRequestErrorMessage(
-          deleteError,
-          "Unable to remove this authenticator.",
-        ),
-      );
-    }
-  };
+  const panelState = useAuthenticatorsPanel({ email });
+  const {
+    authenticators,
+    isLoading,
+    error,
+    setError,
+    authenticatorToDelete,
+    setAuthenticatorToDelete,
+    isNewConnectionOpen,
+    setIsNewConnectionOpen,
+    loadAuthenticators,
+    handleDeleteAuthenticator,
+  } = panelState;
 
   const renderAuthenticatorCard = (authenticator) => {
     const isPasskey = String(authenticator.type || "").toLowerCase() === "passkey";
