@@ -199,6 +199,7 @@ export default function UserPoolModal({
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isEmailCopied, setIsEmailCopied] = useState(false);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [showMfaModal, setShowMfaModal] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
@@ -240,6 +241,7 @@ export default function UserPoolModal({
     setIsSubmitting(false);
     isSubmittingRef.current = false;
     setIsCopied(false);
+    setIsEmailCopied(false);
     setError("");
     setShowMfaModal(false);
     setMfaCode("");
@@ -252,6 +254,14 @@ export default function UserPoolModal({
     setIsCopied(true);
     toast.success("User ID copied to clipboard");
     setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleCopyEmail = () => {
+    if (!formData.email) return;
+    navigator.clipboard.writeText(formData.email);
+    setIsEmailCopied(true);
+    toast.success("Email address copied to clipboard");
+    setTimeout(() => setIsEmailCopied(false), 2000);
   };
 
   const handleStatusChange = (value) => {
@@ -422,7 +432,14 @@ export default function UserPoolModal({
                   <Card className="bg-muted/30 border-border/40">
                     <CardContent className="px-5 py-3 space-y-4">
                   <div>
-                    <Label className="text-xs text-muted-foreground font-semibold">Email Address</Label>
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-xs text-muted-foreground font-semibold">Email Address</Label>
+                      {formData.email && (
+                        <Button type="button" size="icon-sm" variant="ghost" aria-label="Copy Email" onClick={handleCopyEmail}>
+                          {isEmailCopied ? <CopyCheck aria-hidden="true" className="text-[#00d053]" /> : <Copy aria-hidden="true" />}
+                        </Button>
+                      )}
+                    </div>
                     <p className="font-medium text-sm mt-0.5 break-all">{formData.email || "-"}</p>
                   </div>
                   <div>
