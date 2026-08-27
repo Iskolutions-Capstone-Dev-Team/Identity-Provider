@@ -19,6 +19,8 @@ import { LockIcon, EyeIcon, EyeOffIcon, MailIcon, CheckIcon, LoaderCircleIcon } 
 import AppClientComboboxField from "./AppClientComboboxField";
 import { useAddUserForm, ACCOUNT_SETUP_OPTIONS, SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE } from "../hooks/useAddUserForm";
 
+import { SUFFIX_OPTIONS } from "../../../utils/suffixOptions";
+
 const sectionFadeProps = {
   initial: {
     opacity: 0,
@@ -456,9 +458,22 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                       <span className={`text-[10px] border px-1.5 py-0.5 rounded-md font-medium ${isDarkMode ? "border-[#f8d24e]/40 text-[#f8d24e]" : "border-[#7b0d15]/40 text-[#7b0d15]"}`}>Optional</span>
                     </div>
                     <div className="w-full">
-                      <InputGroup className={getInputClassName("suffix")}>
-                        <InputGroupInput type="text" name="suffix" value={data.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
-                      </InputGroup>
+                      <Select value={data.suffix} onValueChange={(val) => handleFieldValueChange("suffix", val === "N/A" ? "" : val)}>
+                        <SelectTrigger className={`${getInputClassName("suffix")} !h-10 w-full`}>
+                          <span className={`truncate text-sm ${data.suffix ? "text-foreground" : "text-muted-foreground"}`}>
+                            <SelectValue placeholder="Enter suffix" />
+                          </span>
+                        </SelectTrigger>
+                        <SelectContent alignItemWithTrigger={false} className="max-h-[300px]">
+                          <SelectGroup>
+                            {SUFFIX_OPTIONS.map((item) => (
+                              <SelectItem key={item.value} value={item.value}>
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>

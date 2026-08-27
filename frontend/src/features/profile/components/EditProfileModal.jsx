@@ -3,7 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEditProfileModal } from "../hooks/useEditProfileModal";
+
+import { SUFFIX_OPTIONS } from "../../../utils/suffixOptions";
 
 export default function EditProfileModal({ open, onClose, profileData, updateProfile, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
   const modalState = useEditProfileModal({
@@ -96,13 +99,28 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between min-h-[24px]">
-                    <Label>Suffix</Label>
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-[#7b0d15]/30 text-[#7b0d15] dark:border-[#f8d24e]/30 dark:text-[#ffe28a] tracking-wider bg-[#7b0d15]/5 dark:bg-[#f8d24e]/10">Optional</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between min-h-[24px]">
+                      <Label>Suffix</Label>
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-[#7b0d15]/30 text-[#7b0d15] dark:border-[#f8d24e]/30 dark:text-[#ffe28a] tracking-wider bg-[#7b0d15]/5 dark:bg-[#f8d24e]/10">Optional</span>
+                    </div>
+                    <Select value={profile.suffix} onValueChange={(val) => handleChange({ target: { name: "suffix", value: val === "N/A" ? "" : val } })} disabled={isSaving}>
+                      <SelectTrigger className="!h-10 w-full rounded-lg">
+                        <span className={`truncate text-sm ${profile.suffix ? "text-foreground" : "text-muted-foreground"}`}>
+                          <SelectValue placeholder="Enter suffix" />
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger={false} className="max-h-[300px]">
+                        <SelectGroup>
+                          {SUFFIX_OPTIONS.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Input type="text" name="suffix" value={profile.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" maxLength={20} className="h-10 rounded-lg" disabled={isSaving} />
-                </div>
               </div>
             </div>
 
