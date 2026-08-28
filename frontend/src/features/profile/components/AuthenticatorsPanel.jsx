@@ -107,7 +107,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
 
   useEffect(() => {
     if (cooldown === 0) {
-      setError((prev) => prev === "Request limit exceeded. Please wait." ? "" : prev);
+      setError((prev) => prev === "Too many attempts. Please wait." ? "" : prev);
     }
   }, [cooldown]);
 
@@ -126,7 +126,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     } catch (loadError) {
       if (loadError?.response?.status === 429) {
         setCooldown(12);
-        setError("Request limit exceeded. Please wait.");
+        setError("Too many attempts. Please wait.");
       } else {
         setError(
           getRequestErrorMessage(
@@ -159,7 +159,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     } catch (deleteError) {
       if (deleteError?.response?.status === 429) {
         setCooldown(12);
-        setError("Request limit exceeded. Please wait.");
+        setError("Too many attempts. Please wait.");
       } else {
         setError(
           getRequestErrorMessage(
@@ -227,10 +227,14 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
           </Button>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 lg:p-8">
-          <ErrorAlert 
-            message={cooldown > 0 && error === "Request limit exceeded. Please wait." ? `Request limit exceeded. Please wait ${cooldown}s.` : error} 
-            onClose={() => setError("")} 
-          />
+          {error && (
+            <div className="mb-6">
+              <ErrorAlert 
+                message={cooldown > 0 && error === "Too many attempts. Please wait." ? `Too many attempts. Please wait ${cooldown}s.` : error} 
+                onClose={() => setError("")} 
+              />
+            </div>
+          )}
 
           {isLoading ? (
             <div className="grid gap-3">

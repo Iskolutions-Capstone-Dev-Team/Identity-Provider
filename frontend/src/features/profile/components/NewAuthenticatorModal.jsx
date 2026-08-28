@@ -62,7 +62,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
 
   useEffect(() => {
     if (cooldown === 0) {
-      setError((prev) => prev === "Request limit exceeded. Please wait." ? "" : prev);
+      setError((prev) => prev === "Too many attempts. Please wait." ? "" : prev);
     }
   }, [cooldown]);
 
@@ -106,7 +106,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
         if (!isCancelled) {
           if (setupError?.response?.status === 429) {
             setCooldown(12);
-            setError(`Request limit exceeded. Please wait.`);
+            setError(`Too many attempts. Please wait.`);
             setStep("choice");
             setConnectionType("");
           } else {
@@ -150,7 +150,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
     } catch (passkeyError) {
       if (passkeyError?.response?.status === 429) {
         setCooldown(12);
-        setError("Request limit exceeded. Please wait.");
+        setError("Too many attempts. Please wait.");
       } else {
         setError(
           getRequestErrorMessage(passkeyError, "Unable to connect this passkey."),
@@ -221,7 +221,7 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
         <div className="-mx-4 no-scrollbar max-h-[60vh] overflow-y-auto px-4">
           <div className="space-y-5 px-2 mt-4 pb-6">
             <ErrorAlert 
-              message={cooldown > 0 && error === "Request limit exceeded. Please wait." ? `Request limit exceeded. Please wait ${cooldown}s.` : error} 
+              message={cooldown > 0 && error === "Too many attempts. Please wait." ? `Too many attempts. Please wait ${cooldown}s.` : error} 
               onClose={() => setError("")} 
             />
 
