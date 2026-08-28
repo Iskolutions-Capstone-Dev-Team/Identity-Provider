@@ -12,7 +12,7 @@ function MfaMethodButton({ label, icon, isActive, isLoading = false, loadingText
   );
 }
 
-export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSendingOtp, isVerifying, isCheckingAuthenticators, isCheckingPasskey, isCancelling = false, onSelectEmail, onSelectAuthenticator, onSelectPasskey, onCodeChange, onSendOtp, onVerify, onCancel }) {
+export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSendingOtp, cooldown = 0, isVerifying, isCheckingAuthenticators, isCheckingPasskey, isCancelling = false, onSelectEmail, onSelectAuthenticator, onSelectPasskey, onCodeChange, onSendOtp, onVerify, onCancel }) {
   const isEmailMode = mode === "email";
   const isAuthenticatorMode = mode === "authenticator";
   const isPasskeyMode = mode === "passkey";
@@ -41,10 +41,11 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
           icon={<Mail className="size-4" />}
           isActive={isEmailMode}
           onClick={onSelectEmail}
+          disabled={cooldown > 0}
         />
 
         {isEmailMode && !hasSentOtp ? (
-          <Button type="button" onClick={onSendOtp} disabled={isSendingOtp || !email} className="h-11 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300">
+          <Button type="button" onClick={onSendOtp} disabled={isSendingOtp || !email || cooldown > 0} className="h-11 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300">
             {isSendingOtp ? "Sending..." : "Send OTP"}
           </Button>
         ) : null}
@@ -54,14 +55,16 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
             <MfaCodeInput
               value={code}
               onChange={onCodeChange}
-              disabled={isVerifying}
+              disabled={isVerifying || cooldown > 0}
             />
 
-            <Button type="submit" disabled={isVerifying} className="h-12 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300 mt-2">
+            <Button type="submit" disabled={isVerifying || cooldown > 0} className="h-12 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300 mt-2">
               {isVerifying ? "Verifying..." : verifyLabel}
             </Button>
           </>
         ) : null}
+
+        {isEmailMode && hasSentOtp ? null : null /* removed the resend button */}
       </form>
 
       <div className="flex items-center gap-4">
@@ -71,12 +74,12 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
       </div>
 
       <div className="flex gap-4">
-        <Button type="button" variant="outline" className={`h-12 flex-1 flex items-center justify-center gap-2 rounded-xl transition duration-300 ${isAuthenticatorMode ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-[#ffd700] hover:bg-[#ffd700]/20 hover:text-[#ffd700]" : "border-white/12 bg-white/6 text-white/70 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-[#ffd700]"}`} onClick={onSelectAuthenticator} disabled={isCheckingAuthenticators}>
+        <Button type="button" variant="outline" className={`h-12 flex-1 flex items-center justify-center gap-2 rounded-xl transition duration-300 ${isAuthenticatorMode ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-[#ffd700] hover:bg-[#ffd700]/20 hover:text-[#ffd700]" : "border-white/12 bg-white/6 text-white/70 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-[#ffd700]"}`} onClick={onSelectAuthenticator} disabled={isCheckingAuthenticators || cooldown > 0}>
           <Smartphone className="size-4" />
           <span className="text-sm">Authenticator</span>
         </Button>
 
-        <Button type="button" variant="outline" className={`h-12 flex-1 flex items-center justify-center gap-2 rounded-xl transition duration-300 ${isPasskeyMode ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-[#ffd700] hover:bg-[#ffd700]/20 hover:text-[#ffd700]" : "border-white/12 bg-white/6 text-white/70 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-[#ffd700]"}`} onClick={onSelectPasskey} disabled={isCheckingPasskey}>
+        <Button type="button" variant="outline" className={`h-12 flex-1 flex items-center justify-center gap-2 rounded-xl transition duration-300 ${isPasskeyMode ? "border-[#ffd700]/70 bg-[#ffd700]/15 text-[#ffd700] hover:bg-[#ffd700]/20 hover:text-[#ffd700]" : "border-white/12 bg-white/6 text-white/70 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12 hover:text-[#ffd700]"}`} onClick={onSelectPasskey} disabled={isCheckingPasskey || cooldown > 0}>
           <KeySquare className="size-4" />
           <span className="text-sm">Passkey</span>
         </Button>
