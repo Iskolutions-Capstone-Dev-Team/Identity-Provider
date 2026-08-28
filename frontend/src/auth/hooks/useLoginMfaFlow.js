@@ -62,13 +62,13 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
   const finishMfa = () => {
     clearMfaSetup();
     rememberMfaVerified();
+    promotePendingMfaTokenResponse();
 
     if (callbackRedirectUrl) {
       window.location.href = callbackRedirectUrl;
       return;
     }
 
-    promotePendingMfaTokenResponse();
     navigate(consumeMfaReturnPath(), { replace: true });
   };
 
