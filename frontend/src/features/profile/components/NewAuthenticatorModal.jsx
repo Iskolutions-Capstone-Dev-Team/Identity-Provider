@@ -48,7 +48,23 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
+  useEffect(() => {
+    let intervalId;
+    if (cooldown > 0) {
+      intervalId = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (cooldown === 0) {
+      setError((prev) => prev === "Request limit exceeded. Please wait." ? "" : prev);
+    }
+  }, [cooldown]);
 
   useEffect(() => {
     if (open) {
@@ -88,12 +104,19 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
         }
       } catch (setupError) {
         if (!isCancelled) {
-          setError(
-            getRequestErrorMessage(
-              setupError,
-              "Unable to load authenticator setup.",
-            ),
-          );
+          if (setupError?.response?.status === 429) {
+            setCooldown(12);
+            setError(`Request limit exceeded. Please wait.`);
+            setStep("choice");
+            setConnectionType("");
+          } else {
+            setError(
+              getRequestErrorMessage(
+                setupError,
+                "Unable to load authenticator setup.",
+              ),
+            );
+          }
         }
       }
     };
@@ -125,9 +148,14 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
       toast.success("Passkey added successfully");
       onClose?.();
     } catch (passkeyError) {
-      setError(
-        getRequestErrorMessage(passkeyError, "Unable to connect this passkey."),
-      );
+      if (passkeyError?.response?.status === 429) {
+        setCooldown(12);
+        setError("Request limit exceeded. Please wait.");
+      } else {
+        setError(
+          getRequestErrorMessage(passkeyError, "Unable to connect this passkey."),
+        );
+      }
     } finally {
       setIsRegisteringPasskey(false);
     }
@@ -192,23 +220,26 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
 
         <div className="-mx-4 no-scrollbar max-h-[60vh] overflow-y-auto px-4">
           <div className="space-y-5 px-2 mt-4 pb-6">
-            <ErrorAlert message={error} onClose={() => setError("")} />
+            <ErrorAlert 
+              message={cooldown > 0 && error === "Request limit exceeded. Please wait." ? `Request limit exceeded. Please wait ${cooldown}s.` : error} 
+              onClose={() => setError("")} 
+            />
 
             {step === "choice" ? (
               <div className="space-y-4">
                 <ConnectionOptionButton
                   title="Authenticator App"
-                  description="Scan a QR code and verify a 6-digit code."
+                  description={cooldown > 0 ? `Please wait ${cooldown}s` : "Scan a QR code and verify a 6-digit code."}
                   icon={<Smartphone className="size-5" />}
                   onClick={handleSelectAuthenticator}
-                  disabled={isRegisteringPasskey}
+                  disabled={isRegisteringPasskey || cooldown > 0}
                 />
                 <ConnectionOptionButton
                   title="Passkey"
-                  description="Use your device, browser, or security key."
+                  description={cooldown > 0 ? `Please wait ${cooldown}s` : "Use your device, browser, or security key."}
                   icon={<KeySquare className="size-5" />}
                   onClick={handleSelectPasskey}
-                  disabled={isRegisteringPasskey}
+                  disabled={isRegisteringPasskey || cooldown > 0}
                 />
               </div>
             ) : (
