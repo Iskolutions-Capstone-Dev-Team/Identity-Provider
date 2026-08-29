@@ -46,6 +46,7 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 	registrationRepo := repository.NewRegistrationRepository(db)
 	passkeyRepo := repository.NewPasskeyRepository(db)
 	metricsRepo := repository.NewMetricsRepository(db)
+	deviceRepo := repository.NewDeviceRepository(db)
 
 	userSvc := service.NewUserService(
 		userRepo,
@@ -65,6 +66,8 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		panic(err)
 	}
 
+	deviceSvc := service.NewDeviceService(deviceRepo)
+
 	return service.ServiceContainer{
 		ClientService: service.NewClientService(clientRepo, Storage, appCache),
 		RoleService:   service.NewRoleService(roleRepo, appCache),
@@ -75,6 +78,7 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 			clientRepo,
 			PrivKey,
 			PubKey,
+			deviceSvc,
 		),
 		LogService:        service.NewLogService(logRepo),
 		PermissionService: service.NewPermissionService(permissionRepo),
@@ -100,5 +104,6 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		ReportService: service.NewReportService(
 			userRepo, clientRepo, logRepo,
 		),
+		DeviceService: deviceSvc,
 	}
 }
