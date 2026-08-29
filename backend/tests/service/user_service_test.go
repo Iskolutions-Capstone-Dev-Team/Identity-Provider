@@ -384,17 +384,17 @@ func TestGetDeletedUserList(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().
-		GetDeletedUserList(gomock.Any(), 10, 0).
+		GetDeletedUserList(gomock.Any(), 10, 0, "").
 		Return(deletedUsers, nil).
 		Times(1)
 
 	mockRepo.EXPECT().
-		CountDeletedUsers(gomock.Any()).
+		CountDeletedUsers(gomock.Any(), "").
 		Return(1, nil).
 		Times(1)
 
 	resp, err := userService.GetDeletedUserList(
-		context.Background(), 10, 1,
+		context.Background(), 10, 1, "",
 	)
 
 	if err != nil {
