@@ -152,7 +152,9 @@ export default function Login() {
         });
       }
     } catch (logoutError) {
-      console.error("Unable to clear MFA session:", logoutError);
+      if (logoutError?.response?.status !== 401) {
+        console.error("Unable to clear MFA session:", logoutError);
+      }
     } finally {
       clearAuthState();
       setMfaContext(null);
