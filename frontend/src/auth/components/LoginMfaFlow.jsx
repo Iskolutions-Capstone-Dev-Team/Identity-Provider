@@ -473,6 +473,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
             setError("");
             setStep(MFA_STEPS.BACKUP_CODE);
           }}
+          onBack={handleSelectEmail}
         />
       );
     }
@@ -485,6 +486,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
           isVerifying={isVerifying}
           onBackupCodeChange={setBackupCode}
           onVerify={handleVerifyBackupCode}
+          onBack={() => setStep(MFA_STEPS.AUTHENTICATOR)}
         />
       );
     }

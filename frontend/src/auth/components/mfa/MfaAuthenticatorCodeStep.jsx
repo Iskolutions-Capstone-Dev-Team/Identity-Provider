@@ -1,6 +1,8 @@
 import MfaCodeInput from "./MfaCodeInput";
 import { Button } from "../../../components/ui/button";
-export default function MfaAuthenticatorCodeStep({ code, cooldown = 0, isVerifying, onCodeChange, onVerify, onUseBackupCode }) {
+import { ArrowLeft } from "lucide-react";
+
+export default function MfaAuthenticatorCodeStep({ code, cooldown = 0, isVerifying, onCodeChange, onVerify, onUseBackupCode, onBack }) {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
@@ -20,6 +22,14 @@ export default function MfaAuthenticatorCodeStep({ code, cooldown = 0, isVerifyi
           {isVerifying ? "Verifying..." : "Verify Code"}
         </Button>
       </form>
+
+      {onBack && (
+        <div className="pt-1 pb-1">
+          <Button variant="ghost" type="button" onClick={onBack} disabled={isVerifying} className="mx-auto flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition bg-transparent hover:bg-transparent">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
+        </div>
+      )}
 
       {onUseBackupCode ? (
         <p className="text-center text-sm text-white/72">
