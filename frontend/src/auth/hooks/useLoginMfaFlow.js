@@ -58,6 +58,35 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
   const [name, setName] = useState("");
   const [backupCodes, setBackupCodes] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [cooldown, setCooldown] = useState(0);
+  const [verifyAttemptCount, setVerifyAttemptCount] = useState(0);
+
+  useEffect(() => {
+    let intervalId;
+    if (otpCooldown > 0) {
+      intervalId = setInterval(() => {
+        setOtpCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+  }, [otpCooldown]);
+
+  useEffect(() => {
+    let intervalId;
+    if (cooldown > 0) {
+      intervalId = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (cooldown === 0) {
+      setError((prev) => prev === "Too many attempts. Please wait." ? "" : prev);
+    }
+  }, [cooldown]);
 
   const finishMfa = () => {
     clearMfaSetup();
@@ -73,7 +102,21 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
   };
 
   const handleFlowError = (errorObj, defaultMessage) => {
+    if (errorObj?.response?.status === 429) {
+      setCooldown(12);
+      setInfo("");
+      setError("Too many attempts. Please wait.");
+      return;
+    }
+
     const message = getRequestErrorMessage(errorObj, defaultMessage);
+
+    if (message.toLowerCase().includes("maximum retry attempts reached")) {
+      setError("");
+      setInfo("Email OTP locked. Use another MFA method, or login again after 5 minutes to get a new OTP.");
+      return;
+    }
+
     if (message.toLowerCase().includes("pending cookie missing")) {
       setError("");
       setInfo("Session expired. Redirecting to login form, kindly login again.");
@@ -83,6 +126,20 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     } else {
       setInfo("");
       setError(message);
+    }
+  };
+
+  const handleFailedVerification = (errorObj, defaultMessage) => {
+    const newCount = verifyAttemptCount + 1;
+    setVerifyAttemptCount(newCount);
+
+    if (newCount >= 4) {
+      setCooldown(12);
+      setInfo("");
+      setError("Too many attempts. Please wait.");
+      setVerifyAttemptCount(0);
+    } else {
+      handleFlowError(errorObj, defaultMessage);
     }
   };
 
@@ -137,8 +194,13 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
       setIsSendingOtp(true);
       await passwordResetService.sendOtp({ email });
       setHasSentOtp(true);
+      setOtpCooldown(60);
     } catch (otpError) {
-      handleFlowError(otpError, "Unable to send an OTP right now.");
+      if (otpError?.response?.status === 429) {
+        handleFlowError(otpError, "Too many attempts. Please wait.");
+      } else {
+        handleFlowError(otpError, "Unable to send an OTP right now.");
+      }
     } finally {
       setIsSendingOtp(false);
     }
@@ -271,9 +333,10 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     try {
       setIsVerifying(true);
       await passwordResetService.verifyOtp({ email, otp: code });
+      setVerifyAttemptCount(0);
       finishMfa();
     } catch (verifyError) {
-      handleFlowError(verifyError, "Unable to verify this code.");
+      handleFailedVerification(verifyError, "Unable to verify this code.");
     } finally {
       setIsVerifying(false);
     }
@@ -291,9 +354,10 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     try {
       setIsVerifying(true);
       await mfaService.verifyCode({ email, code });
+      setVerifyAttemptCount(0);
       finishMfa();
     } catch (verifyError) {
-      handleFlowError(
+      handleFailedVerification(
         verifyError,
         "Unable to verify this authenticator code.",
       );
@@ -316,9 +380,10 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     try {
       setIsVerifying(true);
       await mfaService.verifyCode({ email, code: normalizedBackupCode });
+      setVerifyAttemptCount(0);
       finishMfa();
     } catch (verifyError) {
-      handleFlowError(
+      handleFailedVerification(
         verifyError,
         "Unable to verify this backup code.",
       );
@@ -402,6 +467,8 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     setName,
     backupCodes,
     isSaving,
+    otpCooldown,
+    cooldown,
     finishMfa,
     handleSendOtp,
     handleSelectEmail,

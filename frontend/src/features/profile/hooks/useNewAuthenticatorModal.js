@@ -25,6 +25,23 @@ export function useNewAuthenticatorModal({ open, email, onClose, onCreated }) {
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    let intervalId;
+    if (cooldown > 0) {
+      intervalId = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (cooldown === 0) {
+      setError((prev) => prev === "Too many attempts. Please wait." ? "" : prev);
+    }
+  }, [cooldown]);
 
   useEffect(() => {
     if (open) {
@@ -64,12 +81,19 @@ export function useNewAuthenticatorModal({ open, email, onClose, onCreated }) {
         }
       } catch (setupError) {
         if (!isCancelled) {
-          setError(
-            getRequestErrorMessage(
-              setupError,
-              "Unable to load authenticator setup.",
-            ),
-          );
+          if (setupError?.response?.status === 429) {
+            setCooldown(12);
+            setError(`Too many attempts. Please wait.`);
+            setStep("choice");
+            setConnectionType("");
+          } else {
+            setError(
+              getRequestErrorMessage(
+                setupError,
+                "Unable to load authenticator setup.",
+              ),
+            );
+          }
         }
       }
     };
@@ -101,9 +125,14 @@ export function useNewAuthenticatorModal({ open, email, onClose, onCreated }) {
       toast.success("Passkey added successfully");
       onClose?.();
     } catch (passkeyError) {
-      setError(
-        getRequestErrorMessage(passkeyError, "Unable to connect this passkey."),
-      );
+      if (passkeyError?.response?.status === 429) {
+        setCooldown(12);
+        setError("Too many attempts. Please wait.");
+      } else {
+        setError(
+          getRequestErrorMessage(passkeyError, "Unable to connect this passkey."),
+        );
+      }
     } finally {
       setIsRegisteringPasskey(false);
     }
@@ -166,6 +195,7 @@ export function useNewAuthenticatorModal({ open, email, onClose, onCreated }) {
     setError,
     isSaving,
     isRegisteringPasskey,
+    cooldown,
     handleSelectAuthenticator,
     handleSelectPasskey,
     handleSaveAuthenticator,

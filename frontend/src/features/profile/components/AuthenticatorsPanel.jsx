@@ -53,6 +53,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     setAuthenticatorToDelete,
     isNewConnectionOpen,
     setIsNewConnectionOpen,
+    cooldown,
     loadAuthenticators,
     handleDeleteAuthenticator,
   } = panelState;
