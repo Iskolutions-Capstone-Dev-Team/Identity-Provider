@@ -47,6 +47,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
     handleOpenSetupConfirm,
     handleBackToSetupQr,
     handleSaveAuthenticator,
+    cooldown,
   } = useLoginMfaFlow({ callbackRedirectUrl, initialEmail, onBackToLogin });
 
   const renderStep = () => {
