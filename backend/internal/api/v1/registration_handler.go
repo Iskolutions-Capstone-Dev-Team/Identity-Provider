@@ -76,6 +76,7 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
 
+	keyword := c.Query("keyword")
 	config, err := h.Service.GetRegistrationConfig(
 		c.Request.Context(),
 		permissions,
@@ -84,6 +85,7 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 		page,
 		sortBy,
 		order,
+		keyword,
 	)
 	if err != nil {
 		log.Printf("[GetRegistrationConfig] %v", err)
