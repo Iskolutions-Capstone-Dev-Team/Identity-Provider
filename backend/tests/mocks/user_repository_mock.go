@@ -57,18 +57,18 @@ func (mr *MockUserRepositoryMockRecorder) ClearUserRelations(ctx, id any) *gomoc
 }
 
 // CountAdminUsers mocks base method.
-func (m *MockUserRepository) CountAdminUsers(ctx context.Context) (int, error) {
+func (m *MockUserRepository) CountAdminUsers(ctx context.Context, adminID []byte, hasViewAll bool) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountAdminUsers", ctx)
+	ret := m.ctrl.Call(m, "CountAdminUsers", ctx, adminID, hasViewAll)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountAdminUsers indicates an expected call of CountAdminUsers.
-func (mr *MockUserRepositoryMockRecorder) CountAdminUsers(ctx any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) CountAdminUsers(ctx, adminID, hasViewAll any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAdminUsers", reflect.TypeOf((*MockUserRepository)(nil).CountAdminUsers), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAdminUsers", reflect.TypeOf((*MockUserRepository)(nil).CountAdminUsers), ctx, adminID, hasViewAll)
 }
 
 // CountBoundUsers mocks base method.
