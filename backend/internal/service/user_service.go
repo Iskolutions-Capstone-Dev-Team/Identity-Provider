@@ -1159,6 +1159,7 @@ func (s *userService) GetAdminUserList(
 		page,
 		sortBy,
 		order,
+		"",
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserResponseList
