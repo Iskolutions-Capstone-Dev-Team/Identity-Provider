@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Button } from "@/components/ui/button";
@@ -13,192 +12,46 @@ import { AppClientLogoUpload } from "./AppClientLogoUpload";
 import { Separator } from "@/components/ui/separator";
 import { Stepper, StepperIndicator, StepperItem, StepperNav, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";
 import { CheckIcon, LoaderCircleIcon } from "lucide-react";
+import { useAppClientCreateForm, TOKEN_TTL_LIMITS, GRANT_OPTIONS } from "../hooks/useAppClientCreateForm";
 
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
-const GRANT_OPTIONS = ["authorization_code", "refresh_token", "client_credentials"];
-const TOKEN_TTL_LIMITS = {
-  accessToken: { min: 1, max: 1440, defaultValue: "60" },
-  refreshToken: { min: 1, max: 8760, defaultValue: "168" },
-};
-const initialFieldErrors = {
-  imageFile: "", name: "", baseURL: "", redirectURL: "",
-  logoutURL: "", onePortalRedirectLink: "", accessTokenTTL: "", refreshTokenTTL: "",
-};
 const inlineErrorClassName = "!mt-0 text-xs text-destructive";
 
-const isValidHttpUrl = (value) => {
-  try {
-    const parsedUrl = new URL(value);
-    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
-  } catch {
-    return false;
-  }
-};
-
-const parseTokenTTL = (value) => Number.parseInt(value, 10);
-const isValidTokenTTL = (value, { min, max }) => Number.isInteger(value) && value >= min && value <= max;
-
 export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "light" }) {
-  const [step, setStep] = useState(1);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [baseURL, setBaseURL] = useState("");
-  const [redirectURL, setRedirectURL] = useState("");
-  const [logoutURL, setLogoutURL] = useState("");
-  const [onePortalRedirectLink, setOnePortalRedirectLink] = useState("");
-  const [grants, setGrants] = useState(["authorization_code"]);
-  const [accessTokenTTL, setAccessTokenTTL] = useState(TOKEN_TTL_LIMITS.accessToken.defaultValue);
-  const [refreshTokenTTL, setRefreshTokenTTL] = useState(TOKEN_TTL_LIMITS.refreshToken.defaultValue);
-  const [imageFile, setImageFile] = useState(null);
-  const [activeVoiceField, setActiveVoiceField] = useState("name");
-  const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
+  const formState = useAppClientCreateForm({ onSubmit });
 
-  useEffect(() => {
-    if (step === 1) {
-      if (!["name", "description"].includes(activeVoiceField)) setActiveVoiceField("name");
-      return;
-    }
-    if (step === 2 && !["baseURL", "redirectURL", "logoutURL", "onePortalRedirectLink"].includes(activeVoiceField)) {
-      setActiveVoiceField("baseURL");
-    }
-  }, [activeVoiceField, step]);
-
-  const clearFieldError = (fieldName) => {
-    setFieldErrors((current) => current[fieldName] ? { ...current, [fieldName]: "" } : current);
-  };
-
-  const updateFieldValue = (fieldName, value, setter) => {
-    setter(value);
-    clearFieldError(fieldName);
-    if (error) setError("");
-  };
-
-  const voiceFieldLabels = {
-    description: "Description", baseURL: "Base URL", redirectURL: "Redirect URL",
-    logoutURL: "Logout URL", onePortalRedirectLink: "One Portal Redirect Link",
-  };
-  const activeVoiceFieldLabel = voiceFieldLabels[activeVoiceField] || "Name";
-
-  const handleVoiceInput = (transcript) => {
-    if (activeVoiceField === "description") {
-      setError("");
-      setDescription((curr) => curr.trim() ? `${curr.trimEnd()} ${transcript}` : transcript);
-      return;
-    }
-    if (activeVoiceField === "baseURL") return updateFieldValue("baseURL", transcript, setBaseURL);
-    if (activeVoiceField === "redirectURL") return updateFieldValue("redirectURL", transcript, setRedirectURL);
-    if (activeVoiceField === "logoutURL") return updateFieldValue("logoutURL", transcript, setLogoutURL);
-    if (activeVoiceField === "onePortalRedirectLink") return updateFieldValue("onePortalRedirectLink", transcript, setOnePortalRedirectLink);
-    updateFieldValue("name", transcript, setName);
-  };
-
-  const validateBasicInfo = () => {
-    const trimmedName = name.trim();
-    const nextFieldErrors = { ...initialFieldErrors, baseURL: fieldErrors.baseURL, redirectURL: fieldErrors.redirectURL, logoutURL: fieldErrors.logoutURL, onePortalRedirectLink: fieldErrors.onePortalRedirectLink };
-
-    if (!imageFile) nextFieldErrors.imageFile = "System logo is required.";
-    if (!trimmedName) nextFieldErrors.name = "Client name is required.";
-    else if (trimmedName.length < 5 || trimmedName.length > 100) nextFieldErrors.name = "Client name must be between 5 and 100 characters.";
-
-    setFieldErrors(nextFieldErrors);
-    const firstError = nextFieldErrors.imageFile || nextFieldErrors.name;
-    if (firstError) {
-      return false;
-    }
-    return true;
-  };
-
-  const validateUrls = () => {
-    const trimmedBaseURL = baseURL.trim();
-    const trimmedRedirectURL = redirectURL.trim();
-    const trimmedLogoutURL = logoutURL.trim();
-    const trimmedOnePortalRedirectLink = onePortalRedirectLink.trim();
-    const nextFieldErrors = { ...initialFieldErrors, imageFile: fieldErrors.imageFile, name: fieldErrors.name };
-
-    if (!trimmedBaseURL) nextFieldErrors.baseURL = "Base URL is required.";
-    else if (!isValidHttpUrl(trimmedBaseURL)) nextFieldErrors.baseURL = "Base URL must be a valid URL.";
-    if (!trimmedRedirectURL) nextFieldErrors.redirectURL = "Redirect URL is required.";
-    else if (!isValidHttpUrl(trimmedRedirectURL)) nextFieldErrors.redirectURL = "Redirect URL must be a valid URL.";
-    if (!trimmedLogoutURL) nextFieldErrors.logoutURL = "Logout URL is required.";
-    else if (!isValidHttpUrl(trimmedLogoutURL)) nextFieldErrors.logoutURL = "Logout URL must be a valid URL.";
-    if (trimmedOnePortalRedirectLink && !isValidHttpUrl(trimmedOnePortalRedirectLink)) nextFieldErrors.onePortalRedirectLink = "One Portal Redirect Link must be a valid URL.";
-
-    setFieldErrors(nextFieldErrors);
-    const firstError = nextFieldErrors.baseURL || nextFieldErrors.redirectURL || nextFieldErrors.logoutURL || nextFieldErrors.onePortalRedirectLink;
-    if (firstError) {
-      return false;
-    }
-    return true;
-  };
-
-  const validateTokenSettings = () => {
-    const parsedAccessTokenTTL = parseTokenTTL(accessTokenTTL);
-    const parsedRefreshTokenTTL = parseTokenTTL(refreshTokenTTL);
-    const nextFieldErrors = { ...initialFieldErrors, imageFile: fieldErrors.imageFile, name: fieldErrors.name, baseURL: fieldErrors.baseURL, redirectURL: fieldErrors.redirectURL, logoutURL: fieldErrors.logoutURL, onePortalRedirectLink: fieldErrors.onePortalRedirectLink };
-
-    if (!accessTokenTTL) nextFieldErrors.accessTokenTTL = "Access Token expiration is required.";
-    else if (!isValidTokenTTL(parsedAccessTokenTTL, TOKEN_TTL_LIMITS.accessToken)) nextFieldErrors.accessTokenTTL = "Expiration must be between 1 and 1,440 minutes.";
-    
-    if (!refreshTokenTTL) nextFieldErrors.refreshTokenTTL = "Refresh Token expiration is required.";
-    else if (!isValidTokenTTL(parsedRefreshTokenTTL, TOKEN_TTL_LIMITS.refreshToken)) nextFieldErrors.refreshTokenTTL = "Expiration must be between 1 and 8,760 hours.";
-
-    setFieldErrors(nextFieldErrors);
-    const firstError = nextFieldErrors.accessTokenTTL || nextFieldErrors.refreshTokenTTL;
-    if (firstError) {
-      return false;
-    }
-    return true;
-  };
-
-  const toggleGrant = (grant) => {
-    if (grants.includes(grant)) setGrants(grants.filter((value) => value !== grant));
-    else setGrants([...grants, grant]);
-    if (error) setError("");
-  };
-
-  const handleLogoChange = (file) => {
-    setImageFile(file);
-    if (file) {
-      clearFieldError("imageFile");
-      setError("");
-    }
-  };
-
-  const nextStep = () => {
-    if (step === 1 && !validateBasicInfo()) return;
-    if (step === 2 && !validateUrls()) return;
-    if (step === 3 && grants.length === 0) {
-      setError("At least one grant must be selected.");
-      return;
-    }
-    if (step === 3 && !validateTokenSettings()) return;
-    setError("");
-    setStep(step + 1);
-  };
-
-  const handleSubmit = async () => {
-    if (!validateBasicInfo()) return setStep(1);
-    if (!validateUrls()) return setStep(2);
-    if (grants.length === 0) {
-      setError("At least one grant must be selected.");
-      return setStep(3);
-    }
-    if (!validateTokenSettings()) return setStep(3);
-
-    setError("");
-    try {
-      await onSubmit({
-        name, description, base_url: baseURL, redirect_uri: redirectURL, logout_uri: logoutURL,
-        one_portal_redirect_link: onePortalRedirectLink, grants,
-        access_token_ttl: parseTokenTTL(accessTokenTTL), refresh_token_ttl: parseTokenTTL(refreshTokenTTL), imageFile,
-      });
-    } catch (submitError) {
-      console.error("Create app client error:", submitError);
-      setError(submitError?.message || "Unable to create app client. Please review the details and try again.");
-    }
-  };
+  const {
+    step,
+    setStep,
+    name,
+    setName,
+    description,
+    setDescription,
+    baseURL,
+    setBaseURL,
+    redirectURL,
+    setRedirectURL,
+    logoutURL,
+    setLogoutURL,
+    onePortalRedirectLink,
+    setOnePortalRedirectLink,
+    grants,
+    accessTokenTTL,
+    setAccessTokenTTL,
+    refreshTokenTTL,
+    setRefreshTokenTTL,
+    setActiveVoiceField,
+    error,
+    setError,
+    fieldErrors,
+    updateFieldValue,
+    activeVoiceFieldLabel,
+    handleVoiceInput,
+    toggleGrant,
+    handleLogoChange,
+    nextStep,
+    handleSubmit,
+  } = formState;
 
   const renderSectionHeader = (title, description, isRequired = false) => (
     <CardHeader className="!flex !flex-col items-start !gap-3 pb-0 w-full">
@@ -234,7 +87,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
           <StepperNav>
             {stepperSteps.map((s, index) => (
               <StepperItem key={index} step={index + 1} className="relative flex-1 items-start">
-                <StepperTrigger className="relative z-10 flex flex-col gap-2.5 items-center w-full" onClick={() => { if(index + 1 < step) setStep(index + 1) }}>
+                <StepperTrigger className="relative z-10 flex flex-col gap-2.5 items-center w-full" onClick={() => { if (index + 1 < step) setStep(index + 1) }}>
                   <StepperIndicator className="size-8 text-sm data-[state=inactive]:bg-secondary data-[state=completed]:bg-[#7b0d15] data-[state=completed]:text-white dark:data-[state=completed]:bg-[#ffd21a] dark:data-[state=completed]:text-black data-[state=active]:bg-[#7b0d15] data-[state=active]:border-[#7b0d15] data-[state=active]:text-white dark:data-[state=active]:bg-[#ffd21a] dark:data-[state=active]:border-[#ffd21a] dark:data-[state=active]:text-black">{index + 1}</StepperIndicator>
                   <StepperTitle className="text-sm font-semibold whitespace-nowrap">{s.title}</StepperTitle>
                 </StepperTrigger>
@@ -244,8 +97,6 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
           </StepperNav>
         </Stepper>
       </div>
-
-
 
       {step === 1 && (
         <motion.div
@@ -261,11 +112,11 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
                 <SpeechInputToolbar activeFieldLabel={activeVoiceFieldLabel} onError={setError} onTranscript={handleVoiceInput} colorMode={colorMode} />
               </div>
             </div>
-            
+
             <CardContent className="space-y-5">
               <div className="space-y-2">
                 <Label>System Logo <span className="text-destructive">*</span></Label>
-                <AppClientLogoUpload 
+                <AppClientLogoUpload
                   onFilesChange={handleLogoChange}
                   maxFiles={1}
                   maxSize={MAX_LOGO_BYTES}
@@ -310,36 +161,36 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
             </div>
 
             <CardContent className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Base URLs <span className="text-destructive">*</span></Label>
-                  <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" className="h-10 rounded-lg" />
-                  {fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
-                  {!fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
-                </div>
+              <div className="space-y-2">
+                <Label>Base URLs <span className="text-destructive">*</span></Label>
+                <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" className="h-10 rounded-lg" />
+                {fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
+                {!fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+              </div>
 
-                <div className="space-y-2">
-                  <Label>Redirect URLs <span className="text-destructive">*</span></Label>
-                  <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" className="h-10 rounded-lg" />
-                  {fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
-                  {!fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
-                </div>
+              <div className="space-y-2">
+                <Label>Redirect URLs <span className="text-destructive">*</span></Label>
+                <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" className="h-10 rounded-lg" />
+                {fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
+                {!fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+              </div>
 
-                <div className="space-y-2">
-                  <Label>Logout URLs <span className="text-destructive">*</span></Label>
-                  <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" className="h-10 rounded-lg" />
-                  {fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
-                  {!fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
-                </div>
+              <div className="space-y-2">
+                <Label>Logout URLs <span className="text-destructive">*</span></Label>
+                <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" className="h-10 rounded-lg" />
+                {fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
+                {!fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+              </div>
 
-                <div className="space-y-2">
-                  <Label className="flex items-center justify-between">
-                    One Portal Redirect Link
-                    <span className="text-[10px] border px-1.5 py-0.5 rounded-md font-medium border-[#7b0d15]/40 text-[#7b0d15] dark:border-[#f8d24e]/40 dark:text-[#f8d24e]">Optional</span>
-                  </Label>
-                  <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder="https://one-portal.example.com" className="h-10 rounded-lg" />
-                  {fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
-                  {!fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
-                </div>
+              <div className="space-y-2">
+                <Label className="flex items-center justify-between">
+                  One Portal Redirect Link
+                  <span className="text-[10px] border px-1.5 py-0.5 rounded-md font-medium border-[#7b0d15]/40 text-[#7b0d15] dark:border-[#f8d24e]/40 dark:text-[#f8d24e]">Optional</span>
+                </Label>
+                <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder="https://one-portal.example.com" className="h-10 rounded-lg" />
+                {fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
+                {!fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -364,10 +215,10 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
                     return (
                       <FieldLabel key={grant} className="relative p-0 !w-auto flex-1 min-w-fit">
                         <Field orientation="horizontal" className="justify-center">
-                          <Checkbox 
-                            checked={isSelected} 
-                            onCheckedChange={() => toggleGrant(grant)} 
-                            className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10 data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-[#f8d24e] dark:data-checked:!border-[#f8d24e] dark:data-checked:!text-black" 
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleGrant(grant)}
+                            className="absolute -top-2 -right-2 size-5 rounded-full border bg-background shadow-sm z-10 data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-[#f8d24e] dark:data-checked:!border-[#f8d24e] dark:data-checked:!text-black"
                           />
                           <FieldTitle className="justify-center text-center">{formatGrantName(grant)}</FieldTitle>
                         </Field>

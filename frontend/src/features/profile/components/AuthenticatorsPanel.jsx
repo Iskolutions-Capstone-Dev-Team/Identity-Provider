@@ -1,55 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import ErrorAlert from "../../../components/ErrorAlert";
-import { toast } from "sonner";
 import NewAuthenticatorModal from "./NewAuthenticatorModal";
-import { mfaService } from "../../../services/mfaService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../components/ui/carousel";
 import { Smartphone, KeySquare, Trash, CalendarDays, Clock } from 'lucide-react';
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../../../components/ui/empty";
-
-function AutomationIllustration() {
-    return (
-        <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            {/* Left connection line with arrow */}
-            <path d="M30 60 L68 60" className="stroke-[#7b0d15]/30 dark:stroke-[#f8d24e]/30" strokeWidth="2" strokeLinecap="round" markerEnd="url(#arrowhead)"/>
-            <polygon points="66,56 74,60 66,64" className="fill-[#7b0d15]/30 dark:fill-[#f8d24e]/30"/>
-
-            {/* Toggle body */}
-            <rect x="76" y="42" width="56" height="36" rx="18" className="stroke-[#7b0d15]/60 fill-[#7b0d15]/5 dark:stroke-[#f8d24e]/60 dark:fill-[#f8d24e]/10" strokeWidth="2"/>
-            {/* Toggle circle */}
-            <circle cx="94" cy="60" r="12" className="fill-[#7b0d15]/40 dark:fill-[#f8d24e]/40" />
-            <circle cx="94" cy="60" r="6" className="fill-[#7b0d15] dark:fill-[#f8d24e]" />
-
-            {/* Right connection line */}
-            <path d="M134 60 Q150 60 158 48" className="stroke-[#7b0d15]/30 dark:stroke-[#f8d24e]/30" strokeWidth="2" fill="none" strokeLinecap="round"/>
-            <circle cx="162" cy="44" r="3" className="fill-[#7b0d15]/20 dark:fill-[#f8d24e]/20" />
-
-            {/* Bottom right connection */}
-            <path d="M134 60 Q150 60 158 72" className="stroke-[#7b0d15]/30 dark:stroke-[#f8d24e]/30" strokeWidth="2" fill="none" strokeLinecap="round"/>
-            <circle cx="162" cy="76" r="3" className="fill-[#7b0d15]/20 dark:fill-[#f8d24e]/20" />
-
-            {/* Decorative dots */}
-            <circle cx="22" cy="60" r="2" className="fill-[#7b0d15]/20 dark:fill-[#f8d24e]/20" />
-            <circle cx="174" cy="44" r="2" className="fill-[#7b0d15]/15 dark:fill-[#f8d24e]/15" />
-            <circle cx="174" cy="76" r="2" className="fill-[#7b0d15]/15 dark:fill-[#f8d24e]/15" />
-        </svg>
-    );
-}
-
-const AUTHENTICATORS_PER_SLIDE = 3;
-
-function getRequestErrorMessage(error, fallbackMessage) {
-  return (
-    error?.response?.data?.error ||
-    error?.response?.data?.message ||
-    error?.message ||
-    fallbackMessage
-  );
-}
+import { useAuthenticatorsPanel } from "../hooks/useAuthenticatorsPanel";
 
 function FormattedDateDisplay({ value }) {
   if (!value) {
@@ -86,90 +43,20 @@ function getAuthenticatorTypeLabel(type) {
 }
 
 export default function AuthenticatorsPanel({ email = "", colorMode = "light" }) {
-  const isDarkMode = colorMode === "dark";
-  const [authenticators, setAuthenticators] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [authenticatorToDelete, setAuthenticatorToDelete] = useState(null);
-  const [isNewConnectionOpen, setIsNewConnectionOpen] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [cooldown, setCooldown] = useState(0);
-
-  useEffect(() => {
-    let intervalId;
-    if (cooldown > 0) {
-      intervalId = setInterval(() => {
-        setCooldown((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(intervalId);
-  }, [cooldown]);
-
-  useEffect(() => {
-    if (cooldown === 0) {
-      setError((prev) => prev === "Too many attempts. Please wait." ? "" : prev);
-    }
-  }, [cooldown]);
-
-  const loadAuthenticators = useCallback(async () => {
-    if (!email) {
-      setAuthenticators([]);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError("");
-      const list = await mfaService.getAuthenticators(email);
-      setAuthenticators(list);
-    } catch (loadError) {
-      if (loadError?.response?.status === 429) {
-        setCooldown(12);
-        setError("Too many attempts. Please wait.");
-      } else {
-        setError(
-          getRequestErrorMessage(
-            loadError,
-            "Unable to load authenticator apps.",
-          ),
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [email]);
-
-  useEffect(() => {
-    loadAuthenticators();
-  }, [loadAuthenticators]);
-
-  const handleDeleteAuthenticator = async () => {
-    if (!authenticatorToDelete) return;
-    
-    setError("");
-    try {
-      await mfaService.deleteAuthenticator({
-        email,
-        id: authenticatorToDelete.id,
-      });
-      setAuthenticatorToDelete(null);
-      toast.success("Authenticator removed successfully.");
-      await loadAuthenticators();
-    } catch (deleteError) {
-      if (deleteError?.response?.status === 429) {
-        setCooldown(12);
-        setError("Too many attempts. Please wait.");
-      } else {
-        setError(
-          getRequestErrorMessage(
-            deleteError,
-            "Unable to remove this authenticator.",
-          ),
-        );
-      }
-    }
-  };
+  const panelState = useAuthenticatorsPanel({ email });
+  const {
+    authenticators,
+    isLoading,
+    error,
+    setError,
+    authenticatorToDelete,
+    setAuthenticatorToDelete,
+    isNewConnectionOpen,
+    setIsNewConnectionOpen,
+    cooldown,
+    loadAuthenticators,
+    handleDeleteAuthenticator,
+  } = panelState;
 
   const renderAuthenticatorCard = (authenticator) => {
     const isPasskey = String(authenticator.type || "").toLowerCase() === "passkey";
