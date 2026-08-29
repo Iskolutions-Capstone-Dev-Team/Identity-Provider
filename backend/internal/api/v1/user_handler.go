@@ -299,7 +299,7 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 	const defaultPage = "1"
 
 	// RBAC Check
-	if !middleware.HasPermission(c, "View all users") {
+	if !middleware.HasPermission(c, "View admins") {
 		errors.SendString(
 			c,
 			http.StatusUnauthorized,
