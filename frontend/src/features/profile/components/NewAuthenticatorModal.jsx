@@ -72,23 +72,26 @@ export default function NewAuthenticatorModal({ open, email, onClose, onCreated,
 
         <div className="-mx-4 no-scrollbar max-h-[60vh] overflow-y-auto px-4">
           <div className="space-y-5 px-2 mt-4 pb-6">
-            <ErrorAlert message={error} onClose={() => setError("")} />
+            <ErrorAlert 
+              message={cooldown > 0 && error === "Too many attempts. Please wait." ? `Too many attempts. Please wait ${cooldown}s.` : error} 
+              onClose={() => setError("")} 
+            />
 
             {step === "choice" ? (
               <div className="space-y-4">
                 <ConnectionOptionButton
                   title="Authenticator App"
-                  description="Scan a QR code and verify a 6-digit code."
+                  description={cooldown > 0 ? `Please wait ${cooldown}s` : "Scan a QR code and verify a 6-digit code."}
                   icon={<Smartphone className="size-5" />}
                   onClick={handleSelectAuthenticator}
-                  disabled={isRegisteringPasskey}
+                  disabled={isRegisteringPasskey || cooldown > 0}
                 />
                 <ConnectionOptionButton
                   title="Passkey"
-                  description="Use your device, browser, or security key."
+                  description={cooldown > 0 ? `Please wait ${cooldown}s` : "Use your device, browser, or security key."}
                   icon={<KeySquare className="size-5" />}
                   onClick={handleSelectPasskey}
-                  disabled={isRegisteringPasskey}
+                  disabled={isRegisteringPasskey || cooldown > 0}
                 />
               </div>
             ) : (

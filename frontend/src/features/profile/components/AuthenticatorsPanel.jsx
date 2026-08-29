@@ -93,7 +93,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
             </div>
           </div>
         </CardContent>
-        <Button variant="ghost" size="icon" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} className="absolute right-2 top-2 text-[#7b0d15] hover:bg-[#7b0d15]/10 hover:text-[#7b0d15] dark:text-[#f8d24e] dark:hover:bg-[#f8d24e]/10 dark:hover:text-[#f8d24e]">
+        <Button variant="ghost" size="icon" onClick={() => setAuthenticatorToDelete(authenticator)} disabled={cooldown > 0} aria-label={`Delete ${authenticator.name || "authenticator app"}`} className="absolute right-2 top-2 text-[#7b0d15] hover:bg-[#7b0d15]/10 hover:text-[#7b0d15] dark:text-[#f8d24e] dark:hover:bg-[#f8d24e]/10 dark:hover:text-[#f8d24e]">
           <Trash className="w-5 h-5" />
         </Button>
       </Card>
@@ -108,12 +108,19 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
             <CardTitle className="text-xl font-bold uppercase tracking-wide">Authenticator Apps</CardTitle>
             <CardDescription className="mt-1">Manage the authenticator apps connected to your account.</CardDescription>
           </div>
-          <Button onClick={() => setIsNewConnectionOpen(true)} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors duration-200">
+          <Button onClick={() => setIsNewConnectionOpen(true)} disabled={cooldown > 0} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors duration-200">
             + New Connection
           </Button>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 lg:p-8">
-          <ErrorAlert message={error} onClose={() => setError("")} />
+          {error && (
+            <div className="mb-6">
+              <ErrorAlert 
+                message={cooldown > 0 && error === "Too many attempts. Please wait." ? `Too many attempts. Please wait ${cooldown}s.` : error} 
+                onClose={() => setError("")} 
+              />
+            </div>
+          )}
 
           {isLoading ? (
             <div className="grid gap-3">
@@ -122,9 +129,26 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
               ))}
             </div>
           ) : authenticators.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">
-              No authenticator apps are connected yet.
-            </div>
+            !error && (
+                <div className="flex items-center justify-center p-4">
+                    <Empty className="py-12">
+                        <EmptyHeader>
+                            <EmptyMedia>
+                                <AutomationIllustration />
+                            </EmptyMedia>
+                            <EmptyTitle>No authenticator yet</EmptyTitle>
+                            <EmptyDescription>
+                                Get started by setting up your authenticator.
+                            </EmptyDescription>
+                        </EmptyHeader>
+                        <EmptyContent>
+                            <Button onClick={() => setIsNewConnectionOpen(true)} disabled={cooldown > 0} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors duration-200">
+                                New connection
+                            </Button>
+                        </EmptyContent>
+                    </Empty>
+                </div>
+            )
           ) : (
             <div className="w-full px-0 sm:px-12">
               <Carousel
