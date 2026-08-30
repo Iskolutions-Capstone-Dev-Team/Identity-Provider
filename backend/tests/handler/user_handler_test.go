@@ -509,3 +509,79 @@ func TestPostRestoreUserHandler(t *testing.T) {
 		)
 	}
 }
+
+func TestPatchUserNameAdminHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockUserService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+	handler := &v1.UserHandler{
+		Service:    mockService,
+		LogService: mockLogService,
+	}
+
+	userID := uuid.New()
+	actorID := uuid.New()
+
+	mockService.EXPECT().
+		UpdateUserName(gomock.Any(), userID, gomock.Any()).
+		Return(nil).
+		Times(1)
+
+	mockLogService.EXPECT().
+		GetUserEmail(gomock.Any(), gomock.Any()).
+		Return("admin@example.com", nil).
+		AnyTimes()
+
+	mockLogService.EXPECT().
+		PostAuditLogWithActorString(
+			gomock.Any(),
+			gomock.Any(),
+			gomock.Any(),
+		).
+		Return(nil).
+		AnyTimes()
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	c.Params = []gin.Param{{Key: "id", Value: userID.String()}}
+	c.Set("user_id", actorID.String())
+	c.Set("permissions", []string{"Edit user"})
+
+	reqBody := dto.UpdateUserNameRequest{
+		FirstName: "Jane",
+		LastName:  "Doe",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+	c.Request, _ = http.NewRequest(
+		"PATCH",
+		"/admin/users/"+userID.String()+"/name",
+		bytes.NewBuffer(bodyBytes),
+	)
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PatchUserNameAdmin(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf(
+			"expected status 200, got %d. Body: %s",
+			w.Code,
+			w.Body.String(),
+		)
+	}
+
+	var resp dto.SuccessResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Errorf("failed to unmarshal: %v", err)
+	}
+	if resp.Message != "User name updated successfully" {
+		t.Errorf(
+			"expected msg 'User name updated successfully', got %s",
+			resp.Message,
+		)
+	}
+}
