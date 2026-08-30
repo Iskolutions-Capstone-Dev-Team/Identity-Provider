@@ -48,6 +48,8 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
     handleBackToSetupQr,
     handleSaveAuthenticator,
     cooldown,
+    rememberDevice,
+    setRememberDevice,
   } = useLoginMfaFlow({ callbackRedirectUrl, initialEmail, onBackToLogin });
 
   const renderStep = () => {
@@ -69,6 +71,8 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
             setStep(MFA_STEPS.BACKUP_CODE);
           }}
           onBack={handleSelectEmail}
+          rememberDevice={rememberDevice}
+          onRememberDeviceChange={setRememberDevice}
         />
       );
     }
@@ -131,6 +135,8 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
         onVerify={handleVerifyEmailOtp}
         isCancelling={isReturningToLogin}
         onCancel={onBackToLogin}
+        rememberDevice={rememberDevice}
+        onRememberDeviceChange={setRememberDevice}
       />
     );
   };

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { toast } from "sonner";
 import { mfaService } from "../../../services/mfaService";
 
@@ -12,8 +13,6 @@ function getRequestErrorMessage(error, fallbackMessage) {
 }
 
 export function useAuthenticatorsPanel({ email }) {
-  const [authenticators, setAuthenticators] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [authenticatorToDelete, setAuthenticatorToDelete] = useState(null);
   const [isNewConnectionOpen, setIsNewConnectionOpen] = useState(false);
@@ -35,19 +34,24 @@ export function useAuthenticatorsPanel({ email }) {
     }
   }, [cooldown]);
 
-  const loadAuthenticators = useCallback(async () => {
-    if (!email) {
-      setAuthenticators([]);
-      setIsLoading(false);
-      return;
-    }
+  const fetcher = async (key) => {
+    const [, userEmail] = key;
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    return mfaService.getAuthenticators(userEmail);
+  };
 
-    try {
-      setIsLoading(true);
-      setError("");
-      const list = await mfaService.getAuthenticators(email);
-      setAuthenticators(list);
-    } catch (loadError) {
+  const { data: authenticators = [], error: loadError, isLoading, mutate } = useSWR(
+    email ? ["authenticators", email] : null,
+    fetcher,
+    {
+        revalidateOnFocus: false,
+        shouldRetryOnError: false,
+        revalidateIfStale: false
+    }
+  );
+
+  useEffect(() => {
+    if (loadError) {
       if (loadError?.response?.status === 429) {
         setCooldown(12);
         setError("Too many attempts. Please wait.");
@@ -59,14 +63,8 @@ export function useAuthenticatorsPanel({ email }) {
           ),
         );
       }
-    } finally {
-      setIsLoading(false);
     }
-  }, [email]);
-
-  useEffect(() => {
-    loadAuthenticators();
-  }, [loadAuthenticators]);
+  }, [loadError]);
 
   const handleDeleteAuthenticator = async () => {
     if (!authenticatorToDelete) return;
@@ -79,7 +77,7 @@ export function useAuthenticatorsPanel({ email }) {
       });
       setAuthenticatorToDelete(null);
       toast.success("Authenticator removed successfully.");
-      await loadAuthenticators();
+      await mutate();
     } catch (deleteError) {
       if (deleteError?.response?.status === 429) {
         setCooldown(12);
@@ -105,7 +103,7 @@ export function useAuthenticatorsPanel({ email }) {
     isNewConnectionOpen,
     setIsNewConnectionOpen,
     cooldown,
-    loadAuthenticators,
+    loadAuthenticators: mutate,
     handleDeleteAuthenticator,
   };
 }

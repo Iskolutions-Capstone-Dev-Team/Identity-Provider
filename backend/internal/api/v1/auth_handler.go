@@ -234,12 +234,16 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		"user_agent":  c.Request.UserAgent(),
 	})
 
-	redirectLink, sessionID, err := h.AuthService.LoginAndAuthorize(
-		c.Request.Context(),
-		req,
-		c.ClientIP(),
-		c.Request.UserAgent(),
-	)
+	deviceToken, _ := c.Cookie("remember_device")
+
+	redirectLink, sessionID, isMfaRequired, err := h.AuthService.
+		LoginAndAuthorize(
+			c.Request.Context(),
+			req,
+			c.ClientIP(),
+			c.Request.UserAgent(),
+			deviceToken,
+		)
 	if err != nil {
 		log.Printf("[LoginAndAuthorize] %v", err)
 
@@ -308,6 +312,25 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		req.Email,
 		logReq,
 	)
+
+	if !isMfaRequired {
+		maxAge := int(time.Hour.Seconds() * 24 * service.SESSION_DAYS)
+		c.SetSameSite(http.SameSiteStrictMode)
+		c.SetCookie(
+			service.SESSION_COOKIE_NAME,
+			sessionID,
+			maxAge,
+			"/",
+			"",
+			true,
+			true,
+		)
+		c.JSON(http.StatusOK, gin.H{
+			"redirect_url":      redirectLink,
+			"mfa_pending_token": "",
+		})
+		return
+	}
 
 	// Set temporary MFA pending cookie
 	c.SetSameSite(http.SameSiteStrictMode)
