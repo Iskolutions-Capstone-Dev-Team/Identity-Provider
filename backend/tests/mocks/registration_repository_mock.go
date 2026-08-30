@@ -73,18 +73,29 @@ func (mr *MockRegistrationRepositoryMockRecorder) CountScopedAccountTypes(ctx, u
 }
 
 // CreateAccountType mocks base method.
-func (m *MockRegistrationRepository) CreateAccountType(ctx context.Context, name string) (int, error) {
+func (m *MockRegistrationRepository) CreateAccountType(
+	ctx context.Context, name string, isSelectable bool,
+) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAccountType", ctx, name)
+	ret := m.ctrl.Call(m, "CreateAccountType", ctx, name, isSelectable)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAccountType indicates an expected call of CreateAccountType.
-func (mr *MockRegistrationRepositoryMockRecorder) CreateAccountType(ctx, name any) *gomock.Call {
+func (mr *MockRegistrationRepositoryMockRecorder) CreateAccountType(
+	ctx, name, isSelectable any,
+) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAccountType", reflect.TypeOf((*MockRegistrationRepository)(nil).CreateAccountType), ctx, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"CreateAccountType",
+		reflect.TypeOf((*MockRegistrationRepository)(nil).CreateAccountType),
+		ctx,
+		name,
+		isSelectable,
+	)
 }
 
 // DeleteAccountType mocks base method.
@@ -176,15 +187,27 @@ func (mr *MockRegistrationRepositoryMockRecorder) SyncPreapprovedClients(ctx, ac
 }
 
 // UpdateAccountType mocks base method.
-func (m *MockRegistrationRepository) UpdateAccountType(ctx context.Context, id int, name string) error {
+func (m *MockRegistrationRepository) UpdateAccountType(
+	ctx context.Context, id int, name string, isSelectable bool,
+) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAccountType", ctx, id, name)
+	ret := m.ctrl.Call(m, "UpdateAccountType", ctx, id, name, isSelectable)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateAccountType indicates an expected call of UpdateAccountType.
-func (mr *MockRegistrationRepositoryMockRecorder) UpdateAccountType(ctx, id, name any) *gomock.Call {
+func (mr *MockRegistrationRepositoryMockRecorder) UpdateAccountType(
+	ctx, id, name, isSelectable any,
+) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAccountType", reflect.TypeOf((*MockRegistrationRepository)(nil).UpdateAccountType), ctx, id, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"UpdateAccountType",
+		reflect.TypeOf((*MockRegistrationRepository)(nil).UpdateAccountType),
+		ctx,
+		id,
+		name,
+		isSelectable,
+	)
 }
