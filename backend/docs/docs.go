@@ -2618,6 +2618,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "is_selectable": {
+                    "type": "boolean"
                 }
             }
         },
@@ -3201,6 +3204,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "is_selectable": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"
