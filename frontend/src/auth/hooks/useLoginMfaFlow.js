@@ -61,6 +61,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [cooldown, setCooldown] = useState(0);
   const [verifyAttemptCount, setVerifyAttemptCount] = useState(0);
+  const [rememberDevice, setRememberDevice] = useState(true);
 
   useEffect(() => {
     let intervalId;
@@ -272,7 +273,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     );
     const credential = await getPasskeyCredential(options);
 
-    await mfaService.finishPasskeyVerification(email, credential);
+    await mfaService.finishPasskeyVerification(email, credential, rememberDevice);
     finishMfa();
   };
 
@@ -332,7 +333,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
 
     try {
       setIsVerifying(true);
-      await passwordResetService.verifyOtp({ email, otp: code });
+      await passwordResetService.verifyOtp({ email, otp: code, rememberDevice });
       setVerifyAttemptCount(0);
       finishMfa();
     } catch (verifyError) {
@@ -353,7 +354,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
 
     try {
       setIsVerifying(true);
-      await mfaService.verifyCode({ email, code });
+      await mfaService.verifyCode({ email, code, rememberDevice });
       setVerifyAttemptCount(0);
       finishMfa();
     } catch (verifyError) {
@@ -379,7 +380,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
 
     try {
       setIsVerifying(true);
-      await mfaService.verifyCode({ email, code: normalizedBackupCode });
+      await mfaService.verifyCode({ email, code: normalizedBackupCode, rememberDevice });
       setVerifyAttemptCount(0);
       finishMfa();
     } catch (verifyError) {
@@ -480,5 +481,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     handleOpenSetupConfirm,
     handleBackToSetupQr,
     handleSaveAuthenticator,
+    rememberDevice,
+    setRememberDevice,
   };
 }
