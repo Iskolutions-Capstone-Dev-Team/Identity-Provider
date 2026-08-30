@@ -260,6 +260,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	permissions := c.GetStringSlice("permissions")
+	keyword := c.Query("keyword")
 	resp, err := h.Service.GetFilteredUserList(
 		ctx,
 		permissions,
@@ -269,6 +270,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		sortBy,
 		order,
 		status,
+		keyword,
 	)
 	if err != nil {
 		log.Printf("[GetUserList] Service Execution: %v", err)

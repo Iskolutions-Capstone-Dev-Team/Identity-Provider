@@ -37,9 +37,9 @@ func getSafeUserSort(sortBy, order string) (string, string) {
 
 type UserRepository interface {
 	GetUserList(ctx context.Context, limit, offset int,
-		sortBy, order string) ([]models.User, error)
+		sortBy, order, keyword string) ([]models.User, error)
 	GetBoundUserList(ctx context.Context, limit, offset int,
-		adminID []byte, sortBy, order string) ([]models.User, error)
+		adminID []byte, sortBy, order, keyword string) ([]models.User, error)
 	GetAdminUserList(ctx context.Context, limit, offset int,
 		adminID []byte, hasViewAll bool,
 		sortBy, order string) ([]models.User, error)
@@ -61,14 +61,15 @@ type UserRepository interface {
 		accountTypeID sql.NullInt64) error
 	UpdateUserName(ctx context.Context, user *models.User) error
 	SoftDelete(ctx context.Context, id []byte) error
-	CountUsers(ctx context.Context) (int, error)
+	CountUsers(ctx context.Context, keyword string) (int, error)
 	CountAdminUsers(ctx context.Context, adminID []byte,
 		hasViewAll bool) (int, error)
-	CountBoundUsers(ctx context.Context, adminID []byte) (int, error)
+	CountBoundUsers(ctx context.Context, adminID []byte,
+		keyword string) (int, error)
 	RemoveClientAdminBind(ctx context.Context, userID []byte) error
-	GetDeletedUserList(ctx context.Context, limit,
-		offset int) ([]models.User, error)
-	CountDeletedUsers(ctx context.Context) (int, error)
+	GetDeletedUserList(ctx context.Context, limit, offset int,
+		keyword string) ([]models.User, error)
+	CountDeletedUsers(ctx context.Context, keyword string) (int, error)
 	HardDeleteUser(ctx context.Context, id []byte) error
 }
 
@@ -86,19 +87,34 @@ type userRow struct {
 
 // GetUserList retrieves a paginated list of non-deleted users.
 func (r *userRepository) GetUserList(ctx context.Context,
-	limit, offset int, sortBy, order string,
+	limit, offset int, sortBy, order, keyword string,
 ) ([]models.User, error) {
 	var ids [][]byte
 	sortCol, sortOrd := getSafeUserSort(sortBy, order)
 
+	var queryParams []interface{}
+	whereClause := "WHERE deleted_at IS NULL"
+	if keyword != "" {
+		whereClause += " AND (" +
+			"LOWER(CONCAT(COALESCE(first_name, ''), ' '," +
+			" COALESCE(middle_name, ''), ' '," +
+			" COALESCE(last_name, ''))) LIKE ? OR " +
+			"LOWER(CONCAT(COALESCE(first_name, ''), ' '," +
+			" COALESCE(last_name, ''))) LIKE ? OR " +
+			"LOWER(email) LIKE ?)"
+		kwPattern := "%" + strings.ToLower(keyword) + "%"
+		queryParams = append(queryParams, kwPattern, kwPattern, kwPattern)
+	}
+	queryParams = append(queryParams, limit, offset)
+
 	idQuery := fmt.Sprintf(
-		"SELECT id FROM users WHERE deleted_at IS NULL "+
-			"ORDER BY %s %s LIMIT ? OFFSET ?",
+		"SELECT id FROM users %s ORDER BY %s %s LIMIT ? OFFSET ?",
+		whereClause,
 		sortCol,
 		sortOrd,
 	)
 
-	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
+	err := r.db.SelectContext(ctx, &ids, idQuery, queryParams...)
 	if err != nil {
 		return nil, fmt.Errorf("[GetUserList] ID Fetch: %w", err)
 	}
@@ -267,11 +283,28 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 
 // GetBoundUserList retrieves a paginated list of users for an admin.
 func (r *userRepository) GetBoundUserList(ctx context.Context,
-	limit int, offset int, adminID []byte, sortBy, order string,
+	limit int, offset int, adminID []byte, sortBy, order, keyword string,
 ) ([]models.User, error) {
 	var ids [][]byte
 
 	sortCol, sortOrd := getSafeUserSort(sortBy, order)
+
+	var queryParams []interface{}
+	queryParams = append(queryParams, adminID, adminID)
+
+	whereClause := ""
+	if keyword != "" {
+		whereClause = " WHERE (" +
+			"LOWER(CONCAT(COALESCE(bu.first_name, ''), ' '," +
+			" COALESCE(bu.middle_name, ''), ' '," +
+			" COALESCE(bu.last_name, ''))) LIKE ? OR " +
+			"LOWER(CONCAT(COALESCE(bu.first_name, ''), ' '," +
+			" COALESCE(bu.last_name, ''))) LIKE ? OR " +
+			"LOWER(bu.email) LIKE ?)"
+		kwPattern := "%" + strings.ToLower(keyword) + "%"
+		queryParams = append(queryParams, kwPattern, kwPattern, kwPattern)
+	}
+	queryParams = append(queryParams, limit, offset)
 
 	idQuery := fmt.Sprintf(`
 		SELECT bu.id FROM (
@@ -289,12 +322,12 @@ func (r *userRepository) GetBoundUserList(ctx context.Context,
 			       updated_at FROM users 
 			WHERE id = ? AND deleted_at IS NULL
 		) AS bu
+		%s
 		ORDER BY bu.%s %s
 		LIMIT ? OFFSET ?
-	`, sortCol, sortOrd)
+	`, whereClause, sortCol, sortOrd)
 
-	err := r.db.SelectContext(ctx, &ids, idQuery, adminID, adminID,
-		limit, offset)
+	err := r.db.SelectContext(ctx, &ids, idQuery, queryParams...)
 	if err != nil {
 		return nil, fmt.Errorf("[GetBoundUserList] {ID Fetch}: %w", err)
 	}
@@ -692,10 +725,25 @@ func (r *userRepository) SoftDelete(ctx context.Context, id []byte) error {
 	return err
 }
 
-func (r *userRepository) CountUsers(ctx context.Context) (int, error) {
+func (r *userRepository) CountUsers(
+	ctx context.Context, keyword string,
+) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`
-	err := r.db.GetContext(ctx, &count, query)
+	var queryParams []interface{}
+	whereClause := "WHERE deleted_at IS NULL"
+	if keyword != "" {
+		whereClause += " AND (" +
+			"LOWER(CONCAT(COALESCE(first_name, ''), ' '," +
+			" COALESCE(middle_name, ''), ' '," +
+			" COALESCE(last_name, ''))) LIKE ? OR " +
+			"LOWER(CONCAT(COALESCE(first_name, ''), ' '," +
+			" COALESCE(last_name, ''))) LIKE ? OR " +
+			"LOWER(email) LIKE ?)"
+		kwPattern := "%" + strings.ToLower(keyword) + "%"
+		queryParams = append(queryParams, kwPattern, kwPattern, kwPattern)
+	}
+	query := fmt.Sprintf("SELECT COUNT(*) FROM users %s", whereClause)
+	err := r.db.GetContext(ctx, &count, query, queryParams...)
 	return count, err
 }
 
@@ -732,25 +780,44 @@ func (r *userRepository) CountAdminUsers(ctx context.Context, adminID []byte,
 
 // CountBoundUsers returns the total number of distinct users for an admin.
 func (r *userRepository) CountBoundUsers(ctx context.Context,
-	adminID []byte,
+	adminID []byte, keyword string,
 ) (int, error) {
 	var total int
 
-	const countQuery = `
-		SELECT COUNT(id) FROM (
-			SELECT u.id 
+	var queryParams []interface{}
+	queryParams = append(queryParams, adminID, adminID)
+
+	whereClause := ""
+	if keyword != "" {
+		whereClause = " WHERE (" +
+			"LOWER(CONCAT(COALESCE(bu.first_name, ''), ' '," +
+			" COALESCE(bu.middle_name, ''), ' '," +
+			" COALESCE(bu.last_name, ''))) LIKE ? OR " +
+			"LOWER(CONCAT(COALESCE(bu.first_name, ''), ' '," +
+			" COALESCE(bu.last_name, ''))) LIKE ? OR " +
+			"LOWER(bu.email) LIKE ?)"
+		kwPattern := "%" + strings.ToLower(keyword) + "%"
+		queryParams = append(queryParams, kwPattern, kwPattern, kwPattern)
+	}
+
+	countQuery := fmt.Sprintf(`
+		SELECT COUNT(bu.id) FROM (
+			SELECT u.id, u.first_name, u.middle_name, u.last_name,
+			       u.email
 			FROM users u
 			JOIN client_allowed_users cau ON u.id = cau.user_id
 			JOIN admin_allowed_clients aac 
 				ON cau.client_id = aac.client_id
 			WHERE aac.user_id = ? AND u.deleted_at IS NULL
 			UNION
-			SELECT id FROM users 
+			SELECT id, first_name, middle_name, last_name,
+			       email FROM users 
 			WHERE id = ? AND deleted_at IS NULL
-		) AS bound_users
-	`
+		) AS bu
+		%s
+	`, whereClause)
 
-	err := r.db.GetContext(ctx, &total, countQuery, adminID, adminID)
+	err := r.db.GetContext(ctx, &total, countQuery, queryParams...)
 	if err != nil {
 		return 0, fmt.Errorf(
 			"[CountBoundUsers] {Database Query}: %w",
@@ -1045,14 +1112,30 @@ func (r *userRepository) populateSingleUserClientsScopedToAdmin(
 
 // GetDeletedUserList retrieves a paginated list of deleted users.
 func (r *userRepository) GetDeletedUserList(ctx context.Context,
-	limit, offset int,
+	limit, offset int, keyword string,
 ) ([]models.User, error) {
 	var ids [][]byte
-	idQuery := `SELECT id FROM users
-	            WHERE deleted_at IS NOT NULL
-	            LIMIT ? OFFSET ?`
+	var queryParams []interface{}
+	whereClause := "WHERE deleted_at IS NOT NULL"
+	if keyword != "" {
+		whereClause += " AND (" +
+			"LOWER(CONCAT(COALESCE(first_name, ''), ' '," +
+			" COALESCE(middle_name, ''), ' '," +
+			" COALESCE(last_name, ''))) LIKE ? OR " +
+			"LOWER(CONCAT(COALESCE(first_name, ''), ' '," +
+			" COALESCE(last_name, ''))) LIKE ? OR " +
+			"LOWER(email) LIKE ?)"
+		kwPattern := "%" + strings.ToLower(keyword) + "%"
+		queryParams = append(queryParams, kwPattern, kwPattern, kwPattern)
+	}
+	queryParams = append(queryParams, limit, offset)
 
-	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
+	idQuery := fmt.Sprintf(`
+		SELECT id FROM users
+		%s
+		LIMIT ? OFFSET ?`, whereClause)
+
+	err := r.db.SelectContext(ctx, &ids, idQuery, queryParams...)
 	if err != nil {
 		return nil, fmt.Errorf("[GetDeletedUserList] ID Fetch: %w", err)
 	}
@@ -1118,11 +1201,27 @@ func (r *userRepository) GetDeletedUserList(ctx context.Context,
 
 // CountDeletedUsers returns the total count of soft-deleted users.
 func (r *userRepository) CountDeletedUsers(
-	ctx context.Context,
+	ctx context.Context, keyword string,
 ) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM users WHERE deleted_at IS NOT NULL`
-	err := r.db.GetContext(ctx, &count, query)
+	var queryParams []interface{}
+	whereClause := "WHERE deleted_at IS NOT NULL"
+	if keyword != "" {
+		whereClause += " AND (" +
+			"LOWER(CONCAT(COALESCE(first_name, ''), ' '," +
+			" COALESCE(middle_name, ''), ' '," +
+			" COALESCE(last_name, ''))) LIKE ? OR " +
+			"LOWER(CONCAT(COALESCE(first_name, ''), ' '," +
+			" COALESCE(last_name, ''))) LIKE ? OR " +
+			"LOWER(email) LIKE ?)"
+		kwPattern := "%" + strings.ToLower(keyword) + "%"
+		queryParams = append(queryParams, kwPattern, kwPattern, kwPattern)
+	}
+	query := fmt.Sprintf(
+		"SELECT COUNT(*) FROM users %s",
+		whereClause,
+	)
+	err := r.db.GetContext(ctx, &count, query, queryParams...)
 	return count, err
 }
 
