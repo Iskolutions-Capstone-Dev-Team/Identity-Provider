@@ -1,146 +1,34 @@
-import { useEffect, useMemo, useState, Fragment } from "react";
-import { ACCOUNT_TYPE_OPTIONS, getAccountTypeOption } from "../../../utils/accountTypes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
-import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
 import { Separator } from "@/components/ui/separator";
-
-function AppClientComboboxField({ options, selectedIds, onChange, placeholder, isDarkMode, lockedSelectedValues = [] }) {
-  const anchor = useComboboxAnchor();
-  const stringifiedSelectedIds = selectedIds.map(id => String(id));
-  
-  const chipClassName = isDarkMode
-    ? "rounded-md border border-[#f8d24e]/25 bg-[#f8d24e]/12 text-[#ffe28a]"
-    : "rounded-md border border-[#7b0d15]/20 bg-[#7b0d15]/10 text-[#7b0d15]";
-  
-  const comboboxContainerClassName = `min-h-[2.625rem] rounded-md transition-[border-color,box-shadow,background-color] duration-200`;
-  
-  const inputPlaceholderClassName = isDarkMode
-    ? "placeholder:text-[#a58d95] text-[#f4eaea] bg-transparent outline-none flex-1 ml-1"
-    : "placeholder:text-[#9b7d84] text-[#4a1921] bg-transparent outline-none flex-1 ml-1";
-  
-  return (
-    <Combobox multiple autoHighlight items={options} itemToString={(item) => (item ? item.label : "")} value={stringifiedSelectedIds} onValueChange={onChange}>
-      <ComboboxChips ref={anchor} className={comboboxContainerClassName}>
-        <ComboboxValue>
-          {(values) => (
-            <Fragment>
-              {values.map((val) => {
-                const opt = options.find(o => String(o.value ?? o.id) === String(val));
-                const isLocked = lockedSelectedValues.includes(val) || lockedSelectedValues.includes(Number(val));
-                return (
-                  <ComboboxChip key={val} className={chipClassName} showRemove={!isLocked}>
-                    {opt ? opt.label : val}
-                  </ComboboxChip>
-                );
-              })}
-              <ComboboxChipsInput placeholder={placeholder} className={inputPlaceholderClassName} />
-            </Fragment>
-          )}
-        </ComboboxValue>
-      </ComboboxChips>
-      <ComboboxContent anchor={anchor}>
-        <ComboboxEmpty>No client found.</ComboboxEmpty>
-        <ComboboxList>
-          {(item) => {
-            const optValue = String(item.value ?? item.id);
-            return (
-              <ComboboxItem key={optValue} value={optValue}>
-                {item.label}
-              </ComboboxItem>
-            );
-          }}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  );
-}
-
-function getClientNames(clientIds = [], appClientOptions = []) {
-  const clientLabelLookup = new Map(
-    (Array.isArray(appClientOptions) ? appClientOptions : []).map((client) => [
-      client.id,
-      client.label,
-    ]),
-  );
-
-  return (Array.isArray(clientIds) ? clientIds : [])
-    .map((clientId) => clientLabelLookup.get(clientId))
-    .filter(Boolean);
-}
+import AppClientComboboxField from "./AppClientComboboxField";
+import { useRegistrationForm } from "../hooks/useRegistrationForm";
 
 export default function RegistrationConfigModal({ open, mode = "view", config = null, appClientOptions = [], isLoadingAppClients = false, appClientsError = "", onClose, onSave, colorMode = "light" }) {
-  const [accountTypeName, setAccountTypeName] = useState("");
-  const [selectedClientIds, setSelectedClientIds] = useState([]);
-  const [accountTypeNameError, setAccountTypeNameError] = useState("");
+  const formState = useRegistrationForm({
+    mode,
+    config,
+    appClientOptions,
+    onSave,
+    onClose
+  });
 
-  const isCreateMode = mode === "create";
-  const isViewMode = mode === "view";
-  
-  const isLockedDefaultAccountType =
-    !isCreateMode &&
-    Boolean(
-      getAccountTypeOption(
-        config?.accountTypeValue ?? config?.accountType ?? config?.label,
-        ACCOUNT_TYPE_OPTIONS,
-      ),
-    );
-
-  useEffect(() => {
-    if (!open) return;
-
-    setAccountTypeName(config?.label ?? "");
-    setSelectedClientIds(Array.isArray(config?.clientIds) ? config.clientIds : []);
-    setAccountTypeNameError("");
-  }, [config, open]);
-
-  const displayedClientNames = useMemo(
-    () => {
-      if (isViewMode) {
-        return Array.isArray(config?.clientNames) && config.clientNames.length > 0
-          ? config.clientNames
-          : getClientNames(config?.clientIds, appClientOptions);
-      }
-      return getClientNames(selectedClientIds, appClientOptions);
-    },
-    [appClientOptions, config, isViewMode, selectedClientIds],
-  );
-
-  const handleSubmit = async (event) => {
-    if (event) event.preventDefault();
-
-    if (isViewMode) {
-      onClose();
-      return;
-    }
-
-    const normalizedAccountTypeName = accountTypeName.trim();
-    const nextAccountTypeName = isLockedDefaultAccountType
-      ? normalizedAccountTypeName || config?.label?.trim() || ""
-      : normalizedAccountTypeName;
-
-    if (!nextAccountTypeName) {
-      setAccountTypeNameError("Account type name is required.");
-      return;
-    }
-
-    try {
-      setAccountTypeNameError("");
-      await onSave({
-        ...config,
-        name: nextAccountTypeName,
-        label: nextAccountTypeName,
-        clientIds: selectedClientIds,
-      });
-      onClose();
-    } catch (saveError) {
-      // Could show toast here
-    }
-  };
+  const {
+    accountTypeName,
+    selectedClientIds,
+    setSelectedClientIds,
+    accountTypeNameError,
+    isCreateMode,
+    isViewMode,
+    isLockedDefaultAccountType,
+    displayedClientNames,
+    handleAccountTypeNameChange,
+    handleSubmit
+  } = formState;
 
   const modalTitle = isCreateMode
     ? "Create Registration"
@@ -195,15 +83,15 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
             </div>
           ) : (
             <div className="space-y-6 pt-3 pb-4 px-2">
-                {/* 1st Card: Account Type */}
-                <Card className="bg-muted/30 border-border/40">
-                  <CardContent className="px-5 py-0 space-y-5">
-                    <div>
-                      <h4 className="font-semibold text-sm uppercase">Account Type {!isLockedDefaultAccountType && <span className="text-red-500">*</span>}</h4>
-                      <p className="text-sm text-muted-foreground">{isLockedDefaultAccountType ? "Default account type names cannot be changed." : "Update the account type name."}</p>
-                    </div>
-                    <Separator />
-                    <Field className="w-full">
+              {/* 1st Card: Account Type */}
+              <Card className="bg-muted/30 border-border/40">
+                <CardContent className="px-5 py-0 space-y-5">
+                  <div>
+                    <h4 className="font-semibold text-sm uppercase">Account Type {!isLockedDefaultAccountType && <span className="text-red-500">*</span>}</h4>
+                    <p className="text-sm text-muted-foreground">{isLockedDefaultAccountType ? "Default account type names cannot be changed." : "Update the account type name."}</p>
+                  </div>
+                  <Separator />
+                  <Field className="w-full">
                     {isLockedDefaultAccountType ? (
                       <Input
                         id="account-type-name"
@@ -217,10 +105,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
                         <Input
                           id="account-type-name"
                           value={accountTypeName}
-                          onChange={(e) => {
-                            setAccountTypeName(e.target.value);
-                            setAccountTypeNameError("");
-                          }}
+                          onChange={(e) => handleAccountTypeNameChange(e.target.value)}
                           placeholder="Enter account type"
                           className={`h-10 rounded-lg ${accountTypeNameError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         />
@@ -270,9 +155,9 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
               {isViewMode ? "Close" : "Cancel"}
             </Button>
             {!isViewMode && (
-              <Button 
-                type="submit" 
-                form="registration-modal-form" 
+              <Button
+                type="submit"
+                form="registration-modal-form"
                 className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] font-bold transition-colors duration-200"
               >
                 {isCreateMode ? "Create" : "Save"}
