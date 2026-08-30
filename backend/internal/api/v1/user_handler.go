@@ -28,6 +28,7 @@ const (
 	actionDeleteUser      = "delete_user"
 	actionUpdateAccess    = "update_user_access"
 	actionUpdateName      = "update_user_name"
+	actionAdminUpdateName = "admin_update_user_name"
 	actionRestoreUser     = "restore_user"
 	actionHardDeleteUser  = "hard_delete_user"
 )
@@ -1826,5 +1827,101 @@ func (h *UserHandler) PostRestoreUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "User restored successfully",
+	})
+}
+
+// PatchUserNameAdmin updates any user's name fields by an administrator.
+func (h *UserHandler) PatchUserNameAdmin(c *gin.Context) {
+	id := c.Param("id")
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		log.Printf("[PatchUserNameAdmin] UUID Parse: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
+		)
+		return
+	}
+
+	if !middleware.HasPermission(c, "Edit user") {
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
+		return
+	}
+
+	var req dto.UpdateUserNameRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PatchUserNameAdmin] Bind JSON: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request body.",
+			err,
+		)
+		return
+	}
+
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	metadata := buildMetadata(map[string]interface{}{
+		"target_id": id,
+		"ip":        c.ClientIP(),
+	})
+
+	err = h.Service.UpdateUserName(ctx, userID, req)
+	if err != nil {
+		log.Printf("[PatchUserNameAdmin] %v", err)
+		_ = h.LogService.PostAuditLogWithActorString(
+			ctx,
+			actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionAdminUpdateName,
+				Target: id,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_id": id,
+					"ip":        c.ClientIP(),
+					"error":     err.Error(),
+				}),
+			},
+		)
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to update user name. Check if the user exists.",
+			err,
+		)
+		return
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(
+		ctx,
+		actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionAdminUpdateName,
+			Target:   id,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		},
+	)
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "User name updated successfully",
 	})
 }
