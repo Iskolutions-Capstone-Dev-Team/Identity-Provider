@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -1279,6 +1282,32 @@ func (s *userService) HardDeleteUser(
 	}
 
 	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
+	// Call One-Portal API to delete user's records there
+	opURL := os.Getenv("ONE_PORTAL_BACKEND_URL")
+	if opURL == "" {
+		opURL = "http://localhost:8000"
+	}
+	deleteURL := fmt.Sprintf("%s/api/v1/user/%s", opURL, id.String())
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodDelete,
+		deleteURL,
+		nil,
+	)
+	if err == nil {
+		req.Header.Set("X-API-Key", os.Getenv("BACKEND_API_KEY"))
+		client := &http.Client{}
+		resp, postErr := client.Do(req)
+		if postErr != nil {
+			log.Printf("[HardDeleteUser] One-Portal call failed: %v", postErr)
+		} else {
+			resp.Body.Close()
+		}
+	} else {
+		log.Printf("[HardDeleteUser] One-Portal build req failed: %v", err)
+	}
 
 	return nil
 }
