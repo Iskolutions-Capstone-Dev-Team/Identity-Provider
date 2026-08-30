@@ -1424,15 +1424,33 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 		actorName = adminIDStr
 	}
 
+	var clientNames []string
+	for _, idStr := range req.ClientIDs {
+		cid, err := uuid.Parse(idStr)
+		if err == nil {
+			cl, err := h.ClientService.GetClientByID(
+				ctx,
+				cid,
+				adminID,
+				c.GetStringSlice("permissions"),
+			)
+			if err == nil {
+				clientNames = append(clientNames, cl.Name)
+			} else {
+				clientNames = append(clientNames, idStr)
+			}
+		}
+	}
+
 	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action: actionUpdateAccess,
 			Target: targetIDStr,
 			Status: models.StatusSuccess,
 			Metadata: buildMetadata(map[string]interface{}{
-				"client_ids": req.ClientIDs,
-				"ip":         c.ClientIP(),
-				"user_agent": c.Request.UserAgent(),
+				"client_names": clientNames,
+				"ip":           c.ClientIP(),
+				"user_agent":   c.Request.UserAgent(),
 			}),
 		})
 
@@ -1500,6 +1518,24 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 		return
 	}
 
+	var clientNames []string
+	for _, idStr := range req.ClientIDs {
+		cid, err := uuid.Parse(idStr)
+		if err == nil {
+			cl, err := h.ClientService.GetClientByID(
+				ctx,
+				cid,
+				adminID,
+				c.GetStringSlice("permissions"),
+			)
+			if err == nil {
+				clientNames = append(clientNames, cl.Name)
+			} else {
+				clientNames = append(clientNames, idStr)
+			}
+		}
+	}
+
 	err = h.Service.SyncAdminClientAccess(ctx, targetID, req.ClientIDs)
 	if err != nil {
 		log.Printf("[PutAdminAccess] %v", err)
@@ -1509,8 +1545,9 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 				Target: targetUser.Email,
 				Status: models.StatusFail,
 				Metadata: buildMetadata(map[string]interface{}{
-					"error": err.Error(),
-					"ip":    c.ClientIP(),
+					"client_names": clientNames,
+					"error":        err.Error(),
+					"ip":           c.ClientIP(),
 				}),
 			})
 		errors.Send(
@@ -1529,7 +1566,8 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 			Target: targetUser.Email,
 			Status: models.StatusSuccess,
 			Metadata: buildMetadata(map[string]interface{}{
-				"ip": c.ClientIP(),
+				"client_names": clientNames,
+				"ip":           c.ClientIP(),
 			}),
 		})
 
