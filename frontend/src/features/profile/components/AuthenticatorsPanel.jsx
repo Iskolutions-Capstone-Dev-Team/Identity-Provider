@@ -6,7 +6,38 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../../components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../components/ui/carousel";
 import { Smartphone, KeySquare, Trash, CalendarDays, Clock } from 'lucide-react';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { useAuthenticatorsPanel } from "../hooks/useAuthenticatorsPanel";
+
+function AutomationIllustration() {
+    return (
+        <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            {/* Left connection line with arrow */}
+            <path d="M30 60 L68 60" className="stroke-[#7b0d15]/30 dark:stroke-[#f8d24e]/30" strokeWidth="2" strokeLinecap="round" markerEnd="url(#arrowhead)" />
+            <polygon points="66,56 74,60 66,64" className="fill-[#7b0d15]/30 dark:fill-[#f8d24e]/30" />
+
+            {/* Toggle body */}
+            <rect x="76" y="42" width="56" height="36" rx="18" className="stroke-[#7b0d15]/60 fill-[#7b0d15]/5 dark:stroke-[#f8d24e]/60 dark:fill-[#f8d24e]/10" strokeWidth="2" />
+            {/* Toggle circle */}
+            <circle cx="94" cy="60" r="12" className="fill-[#7b0d15]/40 dark:fill-[#f8d24e]/40" />
+            <circle cx="94" cy="60" r="6" className="fill-[#7b0d15] dark:fill-[#f8d24e]" />
+
+            {/* Right connection line */}
+            <path d="M134 60 Q150 60 158 48" className="stroke-[#7b0d15]/30 dark:stroke-[#f8d24e]/30" strokeWidth="2" fill="none" strokeLinecap="round" />
+            <circle cx="162" cy="44" r="3" className="fill-[#7b0d15]/20 dark:fill-[#f8d24e]/20" />
+
+            {/* Bottom right connection */}
+            <path d="M134 60 Q150 60 158 72" className="stroke-[#7b0d15]/30 dark:stroke-[#f8d24e]/30" strokeWidth="2" fill="none" strokeLinecap="round" />
+            <circle cx="162" cy="76" r="3" className="fill-[#7b0d15]/20 dark:fill-[#f8d24e]/20" />
+
+            {/* Decorative dots */}
+            <circle cx="22" cy="60" r="2" className="fill-[#7b0d15]/20 dark:fill-[#f8d24e]/20" />
+            <circle cx="174" cy="44" r="2" className="fill-[#7b0d15]/15 dark:fill-[#f8d24e]/15" />
+            <circle cx="174" cy="76" r="2" className="fill-[#7b0d15]/15 dark:fill-[#f8d24e]/15" />
+        </svg>
+    );
+}
 
 function FormattedDateDisplay({ value }) {
   if (!value) {
@@ -124,10 +155,28 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
           )}
 
           {isLoading ? (
-            <div className="grid gap-3">
-              {[0, 1].map((item) => (
-                <div key={item} className="h-24 animate-pulse rounded-2xl bg-muted" />
-              ))}
+            <div className="w-full px-0 sm:px-12">
+              <div className="flex -ml-4 overflow-hidden">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/3 pl-4">
+                    <div className="p-1 h-[372px]">
+                      <Card className="mx-auto w-full max-w-xs overflow-hidden p-0 relative h-full">
+                        <CardContent className="flex flex-col items-center p-0 h-full">
+                          <div className="flex w-full flex-col items-center justify-center py-12">
+                            <Skeleton className="h-16 w-16 rounded-full mb-6" />
+                            <Skeleton className="h-6 w-3/4 rounded-md mb-2" />
+                            <Skeleton className="h-4 w-1/2 rounded-md" />
+                          </div>
+                          <div className="w-full space-y-2 px-3 pb-6 mt-auto">
+                            <Skeleton className="h-[52px] w-full rounded-lg" />
+                            <Skeleton className="h-[52px] w-full rounded-lg" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : authenticators.length === 0 ? (
             !error && (
