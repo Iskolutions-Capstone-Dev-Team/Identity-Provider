@@ -72,6 +72,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	me := v1Group.Group("/me")
 	me.Use(middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService))
 	me.GET("", h.UserHandler.GetMe)
+	me.PATCH("/email", h.UserHandler.PatchUserEmailMe)
 
 	otp := v1Group.Group("/otp")
 	otp.Use(middleware.RateLimitMiddleware())
@@ -248,6 +249,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.PATCH("/:id", h.UserHandler.PatchUserDetails)
 			users.PATCH("/:id/status", h.UserHandler.PatchUserStatus)
 			users.PATCH("/:id/role", h.UserHandler.PatchUserRole)
+			users.PATCH("/:id/email", h.UserHandler.PatchUserEmailAdmin)
 			users.GET("/access", h.UserHandler.GetUserDetailedAccess)
 			users.PUT("/:id/access", h.UserHandler.PutUserAccess)
 			users.PUT("/:id/managed-clients", h.UserHandler.PutAdminAccess)
