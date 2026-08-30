@@ -50,6 +50,8 @@ type UserService interface {
 		accountTypeID *int, roleID *int) error
 	UpdateUserName(ctx context.Context, id uuid.UUID,
 		req dto.UpdateUserNameRequest) error
+	UpdateUserEmail(ctx context.Context, id uuid.UUID,
+		newEmail string) error
 	ChangePassword(ctx context.Context, id uuid.UUID,
 		oldPassword, newPassword string) error
 	SyncAdminClientAccess(ctx context.Context, id uuid.UUID,
@@ -964,6 +966,33 @@ func (s *userService) UpdateUserName(
 	err := s.Repo.UpdateUserName(ctx, &user)
 	if err != nil {
 		return fmt.Errorf("database query (UpdateUserName): %w", err)
+	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
+	return nil
+}
+
+/**
+ * UpdateUserEmail modifies the email address of a specific user.
+ */
+func (s *userService) UpdateUserEmail(
+	ctx context.Context,
+	id uuid.UUID,
+	newEmail string,
+) error {
+	// Check for active conflict
+	existing, err := s.Repo.GetUserByEmail(ctx, newEmail)
+	if err != nil {
+		return fmt.Errorf("lookup user email: %w", err)
+	}
+	if existing != nil {
+		return fmt.Errorf("conflict: email %s already in use", newEmail)
+	}
+
+	err = s.Repo.UpdateUserEmail(ctx, id[:], newEmail)
+	if err != nil {
+		return fmt.Errorf("database query (UpdateUserEmail): %w", err)
 	}
 
 	_, _ = s.Cache.Incr(ctx, "cache:version:users")
