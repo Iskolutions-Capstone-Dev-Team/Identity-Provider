@@ -7,7 +7,7 @@ export const PERMISSION_GROUPS = [
     icon: <User className="text-muted-foreground size-4" />,
     permissions: [
       "Activate user", "Add user", "Assign appclient to user", "Assign Roles",
-      "Delete User", "Edit User", "View All Users", "View Users based on Appclient",
+      "Delete User", "Edit User", "View All Users", "View Admins", "View Users based on Appclient",
       "Remove appclient from user", "Remove Roles", "Suspend user"
     ]
   },

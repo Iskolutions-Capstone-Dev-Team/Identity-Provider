@@ -1168,7 +1168,7 @@ func (s *userService) GetAdminUserList(
 	}
 
 	offset := (page - 1) * limit
-	hasViewAll := slices.Contains(permissions, "View all appclients")
+	hasViewAll := slices.Contains(permissions, "View all users")
 
 	users, err := s.Repo.GetAdminUserList(
 		ctx, limit, offset, adminID[:], hasViewAll, sortBy, order,
@@ -1179,7 +1179,7 @@ func (s *userService) GetAdminUserList(
 		)
 	}
 
-	total, err := s.Repo.CountAdminUsers(ctx)
+	total, err := s.Repo.CountAdminUsers(ctx, adminID[:], hasViewAll)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"database query (CountAdmins): %w", err,
