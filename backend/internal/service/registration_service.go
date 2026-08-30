@@ -90,6 +90,7 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 
 	configMap := make(map[string][]dto.PreapprovedClientResponse)
 	idMap := make(map[string]int)
+	selectableMap := make(map[string]bool)
 	var accountTypeOrder []string
 
 	for _, row := range rows {
@@ -98,6 +99,7 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 			configMap[row.AccountTypeName] =
 				[]dto.PreapprovedClientResponse{}
 			idMap[row.AccountTypeName] = row.AccountTypeID
+			selectableMap[row.AccountTypeName] = row.IsSelectable
 		}
 		if len(row.ClientID) > 0 {
 			id, _ := uuid.FromBytes(row.ClientID)
@@ -113,9 +115,10 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 	var resp dto.RegistrationConfigResponse
 	for _, name := range accountTypeOrder {
 		cfg := dto.AccountTypeConfigResponse{
-			ID:          idMap[name],
-			AccountType: name,
-			Clients:     configMap[name],
+			ID:           idMap[name],
+			AccountType:  name,
+			IsSelectable: selectableMap[name],
+			Clients:      configMap[name],
 		}
 		resp.AccountTypes = append(resp.AccountTypes, cfg)
 	}
@@ -154,15 +157,16 @@ func (s *regService) GetClientsByAccountTypeID(ctx context.Context,
 	}
 
 	return &dto.AccountTypeConfigResponse{
-		ID:          rows[0].AccountTypeID,
-		AccountType: rows[0].AccountTypeName,
-		Clients:     clients,
+		ID:           rows[0].AccountTypeID,
+		AccountType:  rows[0].AccountTypeName,
+		IsSelectable: rows[0].IsSelectable,
+		Clients:      clients,
 	}, nil
 }
 
 func (s *regService) CreateAccountType(ctx context.Context,
 	req dto.UpsertAccountTypeRequest) error {
-	id, err := s.repo.CreateAccountType(ctx, req.Name)
+	id, err := s.repo.CreateAccountType(ctx, req.Name, req.IsSelectable)
 	if err != nil {
 		return err
 	}
@@ -181,7 +185,7 @@ func (s *regService) CreateAccountType(ctx context.Context,
 
 func (s *regService) UpdateAccountType(ctx context.Context,
 	req dto.UpsertAccountTypeRequest) error {
-	err := s.repo.UpdateAccountType(ctx, req.ID, req.Name)
+	err := s.repo.UpdateAccountType(ctx, req.ID, req.Name, req.IsSelectable)
 	if err != nil {
 		return err
 	}
