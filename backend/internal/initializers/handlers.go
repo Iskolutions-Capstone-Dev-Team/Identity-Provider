@@ -24,6 +24,11 @@ func InitializeHandlers(db *sqlx.DB,
 			LogService:    service.LogService,
 			ClientService: service.ClientService,
 		},
+		HealthHandler: v1.NewHealthHandler(
+			db,
+			service.Cache,
+			Storage,
+		),
 		ClientHandler: &v1.ClientHandler{
 			Service:    service.ClientService,
 			LogService: service.LogService,

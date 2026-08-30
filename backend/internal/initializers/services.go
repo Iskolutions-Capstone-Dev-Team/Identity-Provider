@@ -100,5 +100,6 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		ReportService: service.NewReportService(
 			userRepo, clientRepo, logRepo,
 		),
+		Cache: appCache,
 	}
 }
