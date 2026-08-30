@@ -1,4 +1,5 @@
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { useEffect } from "react";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useUsers } from "../hooks/useUsers";
 import { useUserPoolPage } from "../hooks/useUserPoolPage";
@@ -69,7 +70,7 @@ export default function UserPool() {
 
   const canAddUsers = hasPermission(PERMISSIONS.ADD_USER);
   const canDeleteUsers = hasPermission(PERMISSIONS.DELETE_USER);
-  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ALL_USERS);
+  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ADMINS);
   const canEditUserStatus = hasAnyPermission(USER_STATUS_EDIT_PERMISSIONS);
   const canEditUserRole = hasAnyPermission(USER_ROLE_EDIT_PERMISSIONS);
   const canEditUserAccess = hasAnyPermission(USER_ACCESS_EDIT_PERMISSIONS);
@@ -94,6 +95,12 @@ export default function UserPool() {
     canDeleteCurrentUserType,
     canReinviteCurrentUserType,
   });
+
+  useEffect(() => {
+    if (userType === ADMIN_USER_TYPE && !canViewAdminUsers) {
+      setUserType(REGULAR_USER_TYPE);
+    }
+  }, [userType, canViewAdminUsers, setUserType]);
 
   const {
     userMetrics,
