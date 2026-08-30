@@ -224,18 +224,13 @@ func addUsersTable(pdf *gofpdf.Fpdf, users []models.User) {
 			roleName = u.Role.RoleName
 		}
 
-		addReportCell(
-			pdf, widths[0], 12, truncateReportText(fullName, 20), "L", false,
+		addMultiCellReportRow(
+			pdf,
+			widths,
+			12,
+			[]string{fullName, u.Email, string(u.Status), roleName, createdAtStr},
+			[]string{"L", "L", "C", "C", "C"},
 		)
-		addReportCell(
-			pdf, widths[1], 12, truncateReportText(u.Email, 28), "L", false,
-		)
-		addReportCell(pdf, widths[2], 12, string(u.Status), "C", false)
-		addReportCell(
-			pdf, widths[3], 12, truncateReportText(roleName, 15), "C", false,
-		)
-		addReportCell(pdf, widths[4], 12, createdAtStr, "C", false)
-		pdf.Ln(-1)
 	}
 	pdf.Ln(16)
 }
@@ -274,17 +269,13 @@ func addClientsTable(pdf *gofpdf.Fpdf, clients []models.Client) {
 			grantsStr = "-"
 		}
 
-		addReportCell(
-			pdf, widths[0], 12, truncateReportText(c.ClientName, 22), "L", false,
+		addMultiCellReportRow(
+			pdf,
+			widths,
+			12,
+			[]string{c.ClientName, c.BaseUrl, ttlStr, grantsStr},
+			[]string{"L", "L", "C", "L"},
 		)
-		addReportCell(
-			pdf, widths[1], 12, truncateReportText(c.BaseUrl, 28), "L", false,
-		)
-		addReportCell(pdf, widths[2], 12, ttlStr, "C", false)
-		addReportCell(
-			pdf, widths[3], 12, truncateReportText(grantsStr, 25), "L", false,
-		)
-		pdf.Ln(-1)
 	}
 	pdf.Ln(16)
 }
@@ -317,18 +308,13 @@ func addLogsTable(pdf *gofpdf.Fpdf, logs []models.AuditLog) {
 		}
 		timeStr := logEntry.CreatedAt.Format("2006-01-02 15:04:05")
 
-		addReportCell(
-			pdf, widths[0], 12, truncateReportText(actorStr, 26), "L", false,
+		addMultiCellReportRow(
+			pdf,
+			widths,
+			12,
+			[]string{actorStr, logEntry.Action, logEntry.Target, logEntry.Status, timeStr},
+			[]string{"L", "C", "C", "C", "C"},
 		)
-		addReportCell(
-			pdf, widths[1], 12, truncateReportText(logEntry.Action, 18), "C", false,
-		)
-		addReportCell(
-			pdf, widths[2], 12, truncateReportText(logEntry.Target, 20), "C", false,
-		)
-		addReportCell(pdf, widths[3], 12, logEntry.Status, "C", false)
-		addReportCell(pdf, widths[4], 12, timeStr, "C", false)
-		pdf.Ln(-1)
 	}
 	pdf.Ln(16)
 }

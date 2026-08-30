@@ -55,7 +55,7 @@ export default function AddUserPage() {
     visibleClientIds,
   });
   const canAddUsers = hasPermission(PERMISSIONS.ADD_USER);
-  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ALL_USERS);
+  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ADMINS);
   const canAssignRoles = hasAnyPermission(USER_ROLE_EDIT_PERMISSIONS);
   const canManageUserAccess = hasAnyPermission(USER_ACCESS_EDIT_PERMISSIONS);
   const allowedUserType =

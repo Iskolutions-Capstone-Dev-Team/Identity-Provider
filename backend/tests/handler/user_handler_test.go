@@ -122,6 +122,11 @@ func TestPutAdminAccessHandler(t *testing.T) {
 		Return(nil).
 		Times(1)
 
+	mockClientService.EXPECT().
+		GetClientByID(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(&dto.ClientResponse{Name: "Test Client"}, nil).
+		Times(1)
+
 	mockLogService.EXPECT().
 		PostAuditLogWithActorString(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).

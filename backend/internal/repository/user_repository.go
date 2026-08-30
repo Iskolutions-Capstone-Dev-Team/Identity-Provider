@@ -62,7 +62,8 @@ type UserRepository interface {
 	UpdateUserName(ctx context.Context, user *models.User) error
 	SoftDelete(ctx context.Context, id []byte) error
 	CountUsers(ctx context.Context, keyword string) (int, error)
-	CountAdminUsers(ctx context.Context) (int, error)
+	CountAdminUsers(ctx context.Context, adminID []byte,
+		hasViewAll bool) (int, error)
 	CountBoundUsers(ctx context.Context, adminID []byte,
 		keyword string) (int, error)
 	RemoveClientAdminBind(ctx context.Context, userID []byte) error
@@ -179,14 +180,40 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 ) ([]models.User, error) {
 	var ids [][]byte
 	sortCol, sortOrd := getSafeUserSort(sortBy, order)
+	var err error
 
-	idQuery := fmt.Sprintf(`
-		SELECT id FROM users
-		WHERE deleted_at IS NULL AND role_id IS NOT NULL
-		ORDER BY %s %s
-		LIMIT ? OFFSET ?`, sortCol, sortOrd)
+	if hasViewAll {
+		idQuery := fmt.Sprintf(`
+			SELECT id FROM users
+			WHERE deleted_at IS NULL AND role_id IS NOT NULL
+			ORDER BY %s %s
+			LIMIT ? OFFSET ?`, sortCol, sortOrd)
+		err = r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
+	} else {
+		idQuery := fmt.Sprintf(`
+			SELECT id FROM (
+				SELECT u.id, u.first_name, u.middle_name, u.last_name,
+				       u.name_suffix, u.email, u.status, u.created_at,
+				       u.updated_at
+				FROM users u
+				WHERE u.deleted_at IS NULL AND u.role_id IS NOT NULL AND (
+					u.id IN (
+						SELECT cau.user_id FROM client_allowed_users cau
+						JOIN admin_allowed_clients aac ON cau.client_id = aac.client_id
+						WHERE aac.user_id = ?
+					) OR u.id IN (
+						SELECT aac2.user_id FROM admin_allowed_clients aac2
+						JOIN admin_allowed_clients aac ON aac2.client_id = aac.client_id
+						WHERE aac.user_id = ?
+					) OR u.id = ?
+				)
+			) AS list_table
+			ORDER BY list_table.%s %s
+			LIMIT ? OFFSET ?`, sortCol, sortOrd)
+		err = r.db.SelectContext(ctx, &ids, idQuery, adminID, adminID,
+			adminID, limit, offset)
+	}
 
-	err := r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("[GetAdminUserList] ID Fetch: %w", err)
 	}
@@ -720,11 +747,34 @@ func (r *userRepository) CountUsers(
 	return count, err
 }
 
-func (r *userRepository) CountAdminUsers(ctx context.Context) (int, error) {
+func (r *userRepository) CountAdminUsers(ctx context.Context, adminID []byte,
+	hasViewAll bool,
+) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM users 
-              WHERE deleted_at IS NULL AND role_id IS NOT NULL`
-	err := r.db.GetContext(ctx, &count, query)
+	if hasViewAll {
+		query := `SELECT COUNT(*) FROM users 
+                  WHERE deleted_at IS NULL AND role_id IS NOT NULL`
+		err := r.db.GetContext(ctx, &count, query)
+		return count, err
+	}
+
+	query := `
+		SELECT COUNT(id) FROM (
+			SELECT u.id FROM users u
+			WHERE u.deleted_at IS NULL AND u.role_id IS NOT NULL AND (
+				u.id IN (
+					SELECT cau.user_id FROM client_allowed_users cau
+					JOIN admin_allowed_clients aac ON cau.client_id = aac.client_id
+					WHERE aac.user_id = ?
+				) OR u.id IN (
+					SELECT aac2.user_id FROM admin_allowed_clients aac2
+					JOIN admin_allowed_clients aac ON aac2.client_id = aac.client_id
+					WHERE aac.user_id = ?
+				) OR u.id = ?
+			)
+		) AS count_table
+	`
+	err := r.db.GetContext(ctx, &count, query, adminID, adminID, adminID)
 	return count, err
 }
 

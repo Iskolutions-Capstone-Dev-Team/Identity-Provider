@@ -3,6 +3,7 @@ export const PERMISSIONS = Object.freeze({
   EDIT_USER: "Edit user",
   DELETE_USER: "Delete user",
   VIEW_ALL_USERS: "View all users",
+  VIEW_ADMINS: "View admins",
   VIEW_USERS_BY_APPCLIENT: "View users based on appclient",
   VIEW_REGISTRATION_CONFIG: "View Registration Config",
   CREATE_REGISTRATION_CONFIG: "Create Registration Config",
@@ -30,6 +31,7 @@ export const PERMISSIONS = Object.freeze({
 
 export const USER_POOL_PAGE_PERMISSIONS = Object.freeze([
   PERMISSIONS.VIEW_ALL_USERS,
+  PERMISSIONS.VIEW_ADMINS,
   PERMISSIONS.VIEW_USERS_BY_APPCLIENT,
 ]);
 
