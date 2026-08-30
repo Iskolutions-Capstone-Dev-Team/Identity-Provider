@@ -37,7 +37,7 @@ export const authService = {
       storePendingMfaTokenResponse({ access_token: pendingToken });
     }
 
-    return redirectUrl;
+    return { redirectUrl, mfaRequired: !!pendingToken };
   },
 
   async exchangeCode(code) {

@@ -66,7 +66,7 @@ export const userService = {
     });
   },
 
-  async getUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc" } = {}) {
+  async getUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc", keyword = "" } = {}) {
     const paginationParams = buildSafePaginationParams(
       { page, limit },
       {
@@ -76,18 +76,25 @@ export const userService = {
       },
     );
 
+    const normalizedKeyword = typeof keyword === "string" ? keyword.trim() : "";
+
     return getCachedRequest(
-      `${USER_CACHE_PREFIX}list:${paginationParams.page}:${paginationParams.limit}:${sortBy}:${order}`,
+      `${USER_CACHE_PREFIX}list:${paginationParams.page}:${paginationParams.limit}:${sortBy}:${order}:${normalizedKeyword}`,
       async () => {
         const res = await axiosInstance.get("/admin/users", {
-          params: { ...paginationParams, sort_by: sortBy, order },
+          params: {
+            ...paginationParams,
+            sort_by: sortBy,
+            order,
+            ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
+          },
         });
         return res.data;
       },
     );
   },
 
-  async getAdminUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc" } = {}) {
+  async getAdminUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc", keyword = "" } = {}) {
     const paginationParams = buildSafePaginationParams(
       { page, limit },
       {
@@ -97,11 +104,18 @@ export const userService = {
       },
     );
 
+    const normalizedKeyword = typeof keyword === "string" ? keyword.trim() : "";
+
     return getCachedRequest(
-      `${USER_CACHE_PREFIX}admins:${paginationParams.page}:${paginationParams.limit}:${sortBy}:${order}`,
+      `${USER_CACHE_PREFIX}admins:${paginationParams.page}:${paginationParams.limit}:${sortBy}:${order}:${normalizedKeyword}`,
       async () => {
         const res = await axiosInstance.get("/admin/users/admins", {
-          params: { ...paginationParams, sort_by: sortBy, order },
+          params: {
+            ...paginationParams,
+            sort_by: sortBy,
+            order,
+            ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
+          },
         });
         return res.data;
       },
@@ -289,7 +303,7 @@ export const userService = {
     return res.data;
   },
 
-  async getArchivedUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc" } = {}) {
+  async getArchivedUsers({ page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, sortBy = "created_at", order = "desc", keyword = "" } = {}) {
     const paginationParams = buildSafePaginationParams(
       { page, limit },
       {
@@ -299,11 +313,19 @@ export const userService = {
       },
     );
 
+    const normalizedKeyword = typeof keyword === "string" ? keyword.trim() : "";
+
     return getCachedRequest(
-      `${USER_CACHE_PREFIX}archived:${paginationParams.page}:${paginationParams.limit}:${sortBy}:${order}`,
+      `${USER_CACHE_PREFIX}archived:${paginationParams.page}:${paginationParams.limit}:${sortBy}:${order}:${normalizedKeyword}`,
       async () => {
         const res = await axiosInstance.get("/admin/users", {
-          params: { ...paginationParams, sort_by: sortBy, order, status: "deleted" },
+          params: {
+            ...paginationParams,
+            sort_by: sortBy,
+            order,
+            status: "deleted",
+            ...(normalizedKeyword ? { keyword: normalizedKeyword } : {}),
+          },
         });
         return res.data;
       },
