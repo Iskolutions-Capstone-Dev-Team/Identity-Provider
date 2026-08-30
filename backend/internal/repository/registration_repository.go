@@ -12,6 +12,7 @@ import (
 type AccountTypeClientRow struct {
 	AccountTypeID   int    `db:"account_type_id"`
 	AccountTypeName string `db:"account_type_name"`
+	IsSelectable    bool   `db:"is_selectable"`
 	ClientID        []byte `db:"client_id"`
 	ClientName      string `db:"client_name"`
 }
@@ -25,8 +26,10 @@ type RegistrationRepository interface {
 	SyncPreapprovedClients(ctx context.Context, accountTypeID int,
 		clientIDs []uuid.UUID) error
 	GetAccountTypeIDByName(ctx context.Context, name string) (int, error)
-	CreateAccountType(ctx context.Context, name string) (int, error)
-	UpdateAccountType(ctx context.Context, id int, name string) error
+	CreateAccountType(ctx context.Context, name string,
+		isSelectable bool) (int, error)
+	UpdateAccountType(ctx context.Context, id int, name string,
+		isSelectable bool) error
 	DeleteAccountType(ctx context.Context, id int) error
 	GetScopedRegistrationConfig(ctx context.Context, userID []byte,
 		limit, offset int, sortBy, order string) ([]AccountTypeClientRow, error)
@@ -69,22 +72,28 @@ func (r *regRepo) GetRegistrationConfig(ctx context.Context,
 ) ([]AccountTypeClientRow, error) {
 	selectCol, orderCol, ordVal := getSafeRegSubquery(sortBy, order)
 	query := fmt.Sprintf(`
-		SELECT account_type_id, account_type_name, client_id, client_name
+		SELECT 
+			account_type_id, 
+			account_type_name, 
+			is_selectable, 
+			client_id, 
+			client_name
 		FROM (
 			SELECT 
 				at.id AS account_type_id,
 				at.name AS account_type_name,
+				at.is_selectable AS is_selectable,
 				cl.id AS client_id,
 				COALESCE(cl.client_name, '') AS client_name,
 				at.sort_val,
 				ROW_NUMBER() OVER (PARTITION BY at.id 
 					ORDER BY cl.client_name) as row_num
 			FROM (
-				SELECT at.id, at.name, %s AS sort_val
+				SELECT at.id, at.name, at.is_selectable, %s AS sort_val
 				FROM account_types at
 				LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
 				LEFT JOIN clients cl ON pc.client_id = cl.id
-				GROUP BY at.id, at.name
+				GROUP BY at.id, at.name, at.is_selectable
 				ORDER BY %s
 				LIMIT ? OFFSET ?
 			) at
@@ -107,11 +116,13 @@ func (r *regRepo) CountAccountTypes(ctx context.Context) (int, error) {
 }
 
 func (r *regRepo) GetClientsByAccountTypeID(ctx context.Context,
-	id int) ([]AccountTypeClientRow, error) {
+	id int,
+) ([]AccountTypeClientRow, error) {
 	query := `
 		SELECT 
 			at.id AS account_type_id,
 			at.name AS account_type_name,
+			at.is_selectable AS is_selectable,
 			cl.id AS client_id,
 			COALESCE(cl.client_name, '') AS client_name
 		FROM account_types at
@@ -167,9 +178,11 @@ func (r *regRepo) GetAccountTypeIDByName(ctx context.Context,
 	return id, err
 }
 
-func (r *regRepo) CreateAccountType(ctx context.Context, name string) (int, error) {
-	query := "INSERT INTO account_types (name) VALUES (?)"
-	res, err := r.db.ExecContext(ctx, query, name)
+func (r *regRepo) CreateAccountType(ctx context.Context, name string,
+	isSelectable bool,
+) (int, error) {
+	query := "INSERT INTO account_types (name, is_selectable) VALUES (?, ?)"
+	res, err := r.db.ExecContext(ctx, query, name, isSelectable)
 	if err != nil {
 		return 0, err
 	}
@@ -177,9 +190,13 @@ func (r *regRepo) CreateAccountType(ctx context.Context, name string) (int, erro
 	return int(id), err
 }
 
-func (r *regRepo) UpdateAccountType(ctx context.Context, id int, name string) error {
-	query := "UPDATE account_types SET name = ? WHERE id = ?"
-	_, err := r.db.ExecContext(ctx, query, name, id)
+func (r *regRepo) UpdateAccountType(ctx context.Context, id int, name string,
+	isSelectable bool,
+) error {
+	query := `UPDATE account_types 
+		SET name = ?, is_selectable = ? 
+		WHERE id = ?`
+	_, err := r.db.ExecContext(ctx, query, name, isSelectable, id)
 	return err
 }
 
@@ -215,24 +232,34 @@ func (r *regRepo) GetScopedRegistrationConfig(ctx context.Context,
 	orderCol = strings.ReplaceAll(orderCol, "cl.", "cl2.")
 
 	query := fmt.Sprintf(`
-		SELECT account_type_id, account_type_name, client_id, client_name
+		SELECT 
+			account_type_id, 
+			account_type_name, 
+			is_selectable, 
+			client_id, 
+			client_name
 		FROM (
 			SELECT 
 				at.id AS account_type_id,
 				at.name AS account_type_name,
+				at.is_selectable AS is_selectable,
 				cl.id AS client_id,
 				COALESCE(cl.client_name, '') AS client_name,
 				at.sort_val,
 				ROW_NUMBER() OVER (PARTITION BY at.id 
 					ORDER BY cl.client_name) as row_num
 			FROM (
-				SELECT at2.id, at2.name, %s AS sort_val
+				SELECT 
+					at2.id, 
+					at2.name, 
+					at2.is_selectable, 
+					%s AS sort_val
 				FROM account_types at2
 				JOIN preapproved_clients pc2 ON at2.id = pc2.account_type_id
 				JOIN admin_allowed_clients aac2 ON pc2.client_id = aac2.client_id
 				LEFT JOIN clients cl2 ON pc2.client_id = cl2.id
 				WHERE aac2.user_id = ?
-				GROUP BY at2.id, at2.name
+				GROUP BY at2.id, at2.name, at2.is_selectable
 				ORDER BY %s
 				LIMIT ? OFFSET ?
 			) at
