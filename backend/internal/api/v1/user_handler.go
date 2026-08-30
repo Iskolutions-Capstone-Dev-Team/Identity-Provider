@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
@@ -39,6 +41,7 @@ type UserHandler struct {
 	ClientService service.ClientService
 	AccessService service.ClientAllowedUserService
 	MFAService    service.MFAService
+	Cache         cache.Cache
 }
 
 // PostUser creates a new user in the system
@@ -1697,28 +1700,62 @@ func (h *UserHandler) PatchUserDetails(c *gin.Context) {
 	}
 
 	// Verify administrative MFA before allowing role/account changes
-	success, err := h.MFAService.VerifyCode(ctx, actorID[:], req.MFACode)
-	if err != nil {
-		log.Printf("[PatchUserDetails] MFA Verification: %v", err)
-		errors.Send(
-			c,
-			http.StatusInternalServerError,
-			errors.CodeInternalError,
-			"Failed to verify MFA code.",
-			err,
-		)
-		return
+	mfaSkipped := false
+	var cacheKey string
+	var remainingTime time.Duration
+
+	tokenID := c.GetString("token_id")
+	expiresAtVal, exists := c.Get("token_expires_at")
+	if h.Cache != nil && tokenID != "" && exists {
+		if expiresAt, ok := expiresAtVal.(time.Time); ok {
+			cacheKey = fmt.Sprintf("sudo_mfa:verified:%s", tokenID)
+			verified, _, _ := h.Cache.Get(ctx, cacheKey)
+			if verified == "true" {
+				mfaSkipped = true
+			}
+			remainingTime = time.Until(expiresAt)
+		}
 	}
-	if !success {
-		log.Printf("[PatchUserDetails] MFA Verification: invalid mfa code")
-		errors.SendString(
-			c,
-			http.StatusUnauthorized,
-			errors.CodeUnauthorized,
-			"Invalid MFA code provided.",
-			"Invalid MFA code",
-		)
-		return
+
+	if !mfaSkipped {
+		if req.MFACode == "" {
+			errors.SendString(
+				c,
+				http.StatusBadRequest,
+				errors.CodeInvalidInput,
+				"MFA code is required.",
+				"MFA Required",
+			)
+			return
+		}
+
+		success, err := h.MFAService.VerifyCode(ctx, actorID[:], req.MFACode)
+		if err != nil {
+			log.Printf("[PatchUserDetails] MFA Verification: %v", err)
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to verify MFA code.",
+				err,
+			)
+			return
+		}
+		if !success {
+			log.Printf("[PatchUserDetails] MFA Verification: invalid mfa code")
+			errors.SendString(
+				c,
+				http.StatusUnauthorized,
+				errors.CodeUnauthorized,
+				"Invalid MFA code provided.",
+				"Invalid MFA code",
+			)
+			return
+		}
+
+		if h.Cache != nil && cacheKey != "" && remainingTime > 0 {
+			_ = h.Cache.Set(ctx, cacheKey, "true", remainingTime)
+		}
 	}
 
 	metadata := buildMetadata(map[string]interface{}{
