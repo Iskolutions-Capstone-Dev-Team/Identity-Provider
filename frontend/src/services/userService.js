@@ -272,9 +272,6 @@ export const userService = {
     if (!payload.account_type_id) {
       throw new Error("Account type is required.");
     }
-    if (!payload.mfa_code) {
-      throw new Error("MFA code is required.");
-    }
 
     const res = await axiosInstance.patch(`/admin/users/${id}`, payload, {
       headers: { "Content-Type": "application/json" },

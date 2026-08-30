@@ -490,9 +490,6 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       }
 
       if (shouldUpdateRole || shouldUpdateAccountType) {
-        if (!updatedUser.mfaCode) {
-           throw new Error("MFA Code is required to update Account Type or Role.");
-        }
         
         const nextAccountTypeId = normalizeAccountTypeId(updatedUser?.accountTypeId) || getAccountTypeBackendId(nextAccountType);
         const finalRoleId = nextRoleId !== previousRoleId ? nextRoleId : previousRoleId;
