@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
@@ -39,6 +40,7 @@ type UserHandler struct {
 	ClientService service.ClientService
 	AccessService service.ClientAllowedUserService
 	MFAService    service.MFAService
+	Cache         cache.Cache
 }
 
 // PostUser creates a new user in the system
