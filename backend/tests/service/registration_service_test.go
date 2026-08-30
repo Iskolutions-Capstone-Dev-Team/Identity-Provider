@@ -75,12 +75,14 @@ func TestGetRegistrationConfig(t *testing.T) {
 		{
 			AccountTypeID:   1,
 			AccountTypeName: "Type A",
+			IsSelectable:    true,
 			ClientID:        []byte{1},
 			ClientName:      "Client 1",
 		},
 		{
 			AccountTypeID:   2,
 			AccountTypeName: "Type B",
+			IsSelectable:    true,
 			ClientID:        []byte{2},
 			ClientName:      "Client 2",
 		},
@@ -145,6 +147,7 @@ func TestGetRegistrationConfig_Scoped(t *testing.T) {
 		{
 			AccountTypeID:   1,
 			AccountTypeName: "Type A",
+			IsSelectable:    true,
 			ClientID:        []byte{1},
 			ClientName:      "Client 1",
 		},
