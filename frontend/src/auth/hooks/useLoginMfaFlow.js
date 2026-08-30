@@ -61,7 +61,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [cooldown, setCooldown] = useState(0);
   const [verifyAttemptCount, setVerifyAttemptCount] = useState(0);
-  const [rememberDevice, setRememberDevice] = useState(true);
+  const [rememberDevice, setRememberDevice] = useState(false);
 
   useEffect(() => {
     let intervalId;
