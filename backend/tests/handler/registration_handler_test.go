@@ -132,6 +132,7 @@ func TestGetRegistrationConfigHandler(t *testing.T) {
 			1,
 			gomock.Any(),
 			gomock.Any(),
+			gomock.Any(),
 		).Return(&dto.RegistrationConfigResponse{}, nil)
 
 		handler.GetRegistrationConfig(c)

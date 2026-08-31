@@ -1,61 +1,10 @@
-import { useState, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
-
-function AppClientComboboxField({ options, selectedIds, onChange, placeholder, isDarkMode, lockedSelectedValues = [] }) {
-  const anchor = useComboboxAnchor();
-  const stringifiedSelectedIds = selectedIds.map(id => String(id));
-  
-  const chipClassName = isDarkMode
-    ? "rounded-md border border-[#f8d24e]/25 bg-[#f8d24e]/12 text-[#ffe28a]"
-    : "rounded-md border border-[#7b0d15]/20 bg-[#7b0d15]/10 text-[#7b0d15]";
-  
-  const comboboxContainerClassName = `min-h-[2.625rem] rounded-md transition-[border-color,box-shadow,background-color] duration-200`;
-  
-  const inputPlaceholderClassName = isDarkMode
-    ? "placeholder:text-[#a58d95] text-[#f4eaea] bg-transparent outline-none flex-1 ml-1"
-    : "placeholder:text-[#9b7d84] text-[#4a1921] bg-transparent outline-none flex-1 ml-1";
-  
-  return (
-    <Combobox multiple autoHighlight items={options} itemToString={(item) => (item ? item.label : "")} value={stringifiedSelectedIds} onValueChange={onChange}>
-      <ComboboxChips ref={anchor} className={comboboxContainerClassName}>
-        <ComboboxValue>
-          {(values) => (
-            <Fragment>
-              {values.map((val) => {
-                const opt = options.find(o => String(o.value ?? o.id) === String(val));
-                const isLocked = lockedSelectedValues.includes(val) || lockedSelectedValues.includes(Number(val));
-                return (
-                  <ComboboxChip key={val} className={chipClassName} showRemove={!isLocked}>
-                    {opt ? opt.label : val}
-                  </ComboboxChip>
-                );
-              })}
-              <ComboboxChipsInput placeholder={placeholder} className={inputPlaceholderClassName} />
-            </Fragment>
-          )}
-        </ComboboxValue>
-      </ComboboxChips>
-      <ComboboxContent anchor={anchor}>
-        <ComboboxEmpty>No client found.</ComboboxEmpty>
-        <ComboboxList>
-          {(item) => {
-            const optValue = String(item.value ?? item.id);
-            return (
-              <ComboboxItem key={optValue} value={optValue}>
-                {item.label}
-              </ComboboxItem>
-            );
-          }}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  );
-}
+import AppClientComboboxField from "./AppClientComboboxField";
+import { useRegistrationForm } from "../hooks/useRegistrationForm";
 
 export default function RegistrationCreateForm({
   appClientOptions = [],
@@ -65,35 +14,21 @@ export default function RegistrationCreateForm({
   onSave,
   colorMode = "light",
 }) {
-  const [accountTypeName, setAccountTypeName] = useState("");
-  const [selectedClientIds, setSelectedClientIds] = useState([]);
-  const [accountTypeNameError, setAccountTypeNameError] = useState("");
+  const formState = useRegistrationForm({
+    mode: "create",
+    appClientOptions,
+    onSave,
+    onClose,
+  });
 
-  const clearErrors = () => {
-    setAccountTypeNameError("");
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    const normalizedAccountTypeName = accountTypeName.trim();
-
-    if (!normalizedAccountTypeName) {
-      setAccountTypeNameError("Account type name is required.");
-      return;
-    }
-
-    try {
-      clearErrors();
-      await onSave({
-        name: normalizedAccountTypeName,
-        label: normalizedAccountTypeName,
-        clientIds: selectedClientIds,
-      });
-    } catch (saveError) {
-      // Assuming parent handles or we could show a toast here if we had sonner
-    }
-  };
+  const {
+    accountTypeName,
+    selectedClientIds,
+    setSelectedClientIds,
+    accountTypeNameError,
+    handleAccountTypeNameChange,
+    handleSubmit
+  } = formState;
 
   return (
     <div className="space-y-6">
@@ -121,10 +56,7 @@ export default function RegistrationCreateForm({
                     id="account-type-name"
                     type="text"
                     value={accountTypeName}
-                    onChange={(event) => {
-                      setAccountTypeName(event.target.value);
-                      clearErrors();
-                    }}
+                    onChange={(event) => handleAccountTypeNameChange(event.target.value)}
                     placeholder="Enter account type"
                     className="h-10 rounded-lg"
                   />

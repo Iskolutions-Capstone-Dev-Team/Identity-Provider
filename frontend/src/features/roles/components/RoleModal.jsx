@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment } from "react";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,406 +11,49 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { User, Settings, HelpCircle, Monitor, FileText, Shield, Database } from "lucide-react";
-
-const toPositiveInt = (value) => {
-  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-};
-
-const normalizeTextValue = (value) =>
-  typeof value === "string" ? value : "";
-
-const normalizePermissionLabel = (permission) => {
-  if (typeof permission === "string") {
-    return permission.trim();
-  }
-  if (!permission || typeof permission !== "object") {
-    return "";
-  }
-  const label =
-    permission.permission ??
-    permission.permission_name ??
-    permission.name ??
-    permission.PermissionName;
-  return typeof label === "string" ? label.trim() : "";
-};
-
-const normalizePermissionId = (permission) => {
-  if (permission && typeof permission === "object") {
-    return toPositiveInt(
-      permission.id ??
-      permission.permission_id ??
-      permission.permissionId ??
-      permission.ID,
-    );
-  }
-  return toPositiveInt(permission);
-};
-
-const normalizePermissionOption = (permission = {}) => {
-  const id = normalizePermissionId(permission);
-  const label = normalizePermissionLabel(permission);
-  if (id === null || !label) {
-    return null;
-  }
-  return { id, permission: label };
-};
-
-const mapPermissionNamesToIds = (permissionNames = [], permissionOptions = []) => {
-  if (!Array.isArray(permissionNames) || permissionNames.length === 0) {
-    return [];
-  }
-  const permissionMap = new Map(
-    permissionOptions.map((permission) => [
-      permission.permission.toLowerCase(),
-      permission.id,
-    ]),
-  );
-  return Array.from(
-    new Set(
-      permissionNames
-        .map((permissionName) =>
-          permissionMap.get(permissionName.toLowerCase()),
-        )
-        .filter((permissionId) => permissionId !== undefined),
-    ),
-  );
-};
-
-const PERMISSION_GROUPS = [
-  {
-    value: "userpool",
-    trigger: "Userpool",
-    icon: <User className="text-muted-foreground size-4" />,
-    permissions: [
-      "Activate user", "Add user", "Assign appclient to user", "Assign Roles", 
-      "Delete User", "Edit User", "View All Users", "View Users based on Appclient", 
-      "Remove appclient from user", "Remove Roles", "Suspend user"
-    ]
-  },
-  {
-    value: "role",
-    trigger: "Role",
-    icon: <Shield className="text-muted-foreground size-4" />,
-    permissions: [
-      "Add roles", "Delete Roles", "Edit Roles", "View roles"
-    ]
-  },
-  {
-    value: "appclient",
-    trigger: "AppClient",
-    icon: <Monitor className="text-muted-foreground size-4" />,
-    permissions: [
-      "Add appclient", "Delete appclient", "Edit appclient", "View all appclients", "View Connected Appclients"
-    ]
-  },
-  {
-    value: "auditlogs",
-    trigger: "Audit Logs",
-    icon: <FileText className="text-muted-foreground size-4" />,
-    permissions: [
-      "View Audit Logs", "View Security Logs"
-    ]
-  },
-  {
-    value: "registrationconfig",
-    trigger: "Registration Config",
-    icon: <Settings className="text-muted-foreground size-4" />,
-    permissions: [
-      "Create Registration Config", "Edit Registration Config", "View Registration Config", "Delete Registration Config"
-    ]
-  },
-  {
-    value: "backuprestore",
-    trigger: "Backup & Restore",
-    icon: <Database className="text-muted-foreground size-4" />,
-    permissions: [
-      "Manage Backup and Restore"
-    ]
-  }
-];
-
-function RoleStepIndicator({ currentStep, colorMode = "light" }) {
-  const isDarkMode = colorMode === "dark";
-  const activeStepClassName = "border-primary bg-primary/10 text-primary";
-  const inactiveStepClassName = "border-border bg-muted/50 text-muted-foreground";
-  const activeLabelClassName = "text-primary";
-  const inactiveLabelClassName = "text-muted-foreground";
-  const lineClassName = currentStep >= 2 ? "border-primary/50" : "border-border";
-
-  const steps = [
-    {
-      label: "Role Details",
-      shortLabel: "Details",
-      icon: <FileText className="h-4 w-4" />,
-    },
-    {
-      label: "Permissions",
-      shortLabel: "Permissions",
-      icon: <Shield className="h-4 w-4" />,
-    },
-  ];
-
-  const getStepIconClassName = (isActive) =>
-    `inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] border transition-colors duration-300 ${
-      isActive ? activeStepClassName : inactiveStepClassName
-    }`;
-  const getStepLabelClassName = (isActive) =>
-    `text-center text-xs font-semibold leading-tight transition-colors duration-300 sm:text-sm ${
-      isActive ? activeLabelClassName : inactiveLabelClassName
-    }`;
-
-  return (
-    <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(5.75rem,auto)_1fr_minmax(5.75rem,auto)] items-start gap-2 px-3 py-4 sm:gap-3 sm:px-4">
-      {steps.map((stepItem, index) => {
-        const isActive = currentStep >= index + 1;
-        return (
-          <Fragment key={stepItem.label}>
-            <div className="flex min-w-0 flex-col items-center gap-2">
-              <span className={getStepIconClassName(isActive)}>
-                {stepItem.icon}
-              </span>
-              <span className={getStepLabelClassName(isActive)}>
-                <span className="sm:hidden">{stepItem.shortLabel}</span>
-                <span className="hidden sm:inline">{stepItem.label}</span>
-              </span>
-            </div>
-
-            {index === 0 && (
-              <span className={`mt-5 h-px flex-1 border-t-2 border-dotted ${lineClassName}`} aria-hidden="true" />
-            )}
-          </Fragment>
-        );
-      })}
-    </div>
-  );
-}
+import { HelpCircle } from "lucide-react";
+import RoleStepIndicator from "./RoleStepIndicator";
+import { useRoleModal } from "../hooks/useRoleModal";
+import { PERMISSION_GROUPS } from "../utils/roleConstants";
 
 export default function RoleModal({ open, mode, role, permissionOptions = [], isPermissionOptionsLoading = false, onClose, onSubmit, colorMode = "light" }) {
-  const isCreateMode = mode === "create";
-  const isEditMode = mode === "edit";
-  const isViewMode = mode === "view";
-  const isRoleNameEditable = isCreateMode;
-  const shouldUseSteps = isCreateMode;
-
-  const modalTitle =
-    mode === "create" ? "Add Role" : mode === "edit" ? "Edit Role" : "View Role";
-
-  const [roleName, setRoleName] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState([]);
-  const [step, setStep] = useState(1);
-  const [activeVoiceField, setActiveVoiceField] = useState("name");
-  const [error, setError] = useState("");
-  const [touched, setTouched] = useState({
-    name: false,
-    description: false,
+  const modalState = useRoleModal({
+    open,
+    mode,
+    role,
+    permissionOptions,
+    onSubmit,
+    onClose,
   });
 
-  const normalizedPermissionOptions = useMemo(
-    () =>
-      permissionOptions
-        .map((permission) => normalizePermissionOption(permission))
-        .filter(Boolean),
-    [permissionOptions],
-  );
-  const rolePermissionFallbackMap = useMemo(() => {
-    const rolePermissionIds = Array.isArray(role?.permissionIds)
-      ? role.permissionIds
-      : [];
-    const rolePermissionLabels = Array.isArray(role?.permissionLabels)
-      ? role.permissionLabels
-      : [];
-    const fallbackMap = new Map();
-
-    rolePermissionIds.forEach((permissionId, index) => {
-      const label = rolePermissionLabels[index];
-      if (permissionId && typeof label === "string" && label.trim()) {
-        fallbackMap.set(permissionId, label.trim());
-      }
-    });
-
-    return fallbackMap;
-  }, [role]);
-  
-  const mergedPermissionOptions = useMemo(() => {
-    const optionMap = new Map(
-      normalizedPermissionOptions.map((permission) => [permission.id, permission]),
-    );
-
-    selectedPermissionIds.forEach((permissionId) => {
-      if (!optionMap.has(permissionId)) {
-        optionMap.set(permissionId, {
-          id: permissionId,
-          permission:
-            rolePermissionFallbackMap.get(permissionId) ||
-            `Permission #${permissionId}`,
-        });
-      }
-    });
-
-    return Array.from(optionMap.values());
-  }, [
-    normalizedPermissionOptions,
-    rolePermissionFallbackMap,
+  const {
+    isCreateMode,
+    isViewMode,
+    isRoleNameEditable,
+    shouldUseSteps,
+    modalTitle,
+    roleName,
+    description,
     selectedPermissionIds,
-  ]);
-
-  const fieldErrors = useMemo(
-    () => ({
-      name: isRoleNameEditable && !roleName.trim() ? "Name is required." : "",
-      description: !description.trim() ? "Description is required." : "",
-    }),
-    [description, isRoleNameEditable, roleName],
-  );
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    if (isCreateMode) {
-      setRoleName("");
-      setDescription("");
-      setSelectedPermissionIds([]);
-    } else {
-      const rolePermissionIds = Array.isArray(role?.permissionIds)
-        ? role.permissionIds
-        : [];
-      const rolePermissionLabels = Array.isArray(role?.permissionLabels)
-        ? role.permissionLabels
-        : [];
-
-      setRoleName(normalizeTextValue(role?.role_name));
-      setDescription(normalizeTextValue(role?.description));
-      setSelectedPermissionIds(
-        rolePermissionIds.length > 0
-          ? rolePermissionIds
-          : mapPermissionNamesToIds(
-              rolePermissionLabels,
-              normalizedPermissionOptions,
-            ),
-      );
-    }
-
-    setStep(1);
-    setActiveVoiceField(isRoleNameEditable ? "name" : "description");
-    setError("");
-    setTouched({
-      name: false,
-      description: false,
-    });
-  }, [isCreateMode, isRoleNameEditable, normalizedPermissionOptions, open, role]);
-
-  const clearAlertError = () => {
-    if (error) {
-      setError("");
-    }
-  };
-
-  const setFieldTouched = (field) => {
-    setTouched((current) => ({ ...current, [field]: true }));
-  };
-
-  const validateForm = () => {
-    const firstError = fieldErrors.name || fieldErrors.description;
-    if (!firstError) {
-      setError("");
-      return true;
-    }
-    setError(firstError);
-    return false;
-  };
-
-  const activeVoiceFieldLabel =
-    !isRoleNameEditable || activeVoiceField === "description"
-      ? "Description"
-      : "Name";
-
-  const handleRoleNameChange = (value) => {
-    if (!isRoleNameEditable) return;
-    setRoleName(normalizeTextValue(value));
-    clearAlertError();
-  };
-
-  const handleDescriptionChange = (value) => {
-    setDescription(normalizeTextValue(value));
-    clearAlertError();
-  };
-
-  const handleSpeechTranscript = (transcript) => {
-    if (!isRoleNameEditable || activeVoiceField === "description") {
-      handleDescriptionChange(
-        description.trim()
-          ? `${description.trimEnd()} ${transcript}`
-          : transcript,
-      );
-      return;
-    }
-    handleRoleNameChange(transcript);
-  };
-
-  const togglePermission = (permissionId) => {
-    if (isViewMode) return;
-    setSelectedPermissionIds((currentIds) =>
-      currentIds.includes(permissionId)
-        ? currentIds.filter((currentId) => currentId !== permissionId)
-        : [...currentIds, permissionId],
-    );
-    clearAlertError();
-  };
-
-  const goToPermissionsStep = () => {
-    setTouched({ name: true, description: true });
-    if (!validateForm()) return;
-    setError("");
-    setStep(2);
-  };
-
-  const handleNextClick = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    goToPermissionsStep();
-  };
-
-  const goToDetailsStep = () => {
-    setError("");
-    setStep(1);
-  };
-
-  const handleDialogSubmit = (event) => {
-    event.preventDefault();
-    if (isViewMode) {
-      onClose();
-      return;
-    }
-
-    if (isCreateMode && step === 1) {
-      goToPermissionsStep();
-      return;
-    }
-
-    setTouched({ name: true, description: true });
-    if (!validateForm()) {
-      setStep(1);
-      return;
-    }
-
-    const submittedRoleName = isRoleNameEditable
-      ? roleName.trim()
-      : normalizeTextValue(role?.role_name).trim();
-
-    onSubmit({
-      id: role?.id,
-      role_name: submittedRoleName,
-      description: description.trim(),
-      permission_ids: selectedPermissionIds,
-    });
-  };
-
-  const showRoleDetails = !shouldUseSteps || step === 1;
-  const showPermissions = !shouldUseSteps || step === 2;
+    step,
+    activeVoiceField,
+    setActiveVoiceField,
+    error,
+    setError,
+    touched,
+    fieldErrors,
+    mergedPermissionOptions,
+    activeVoiceFieldLabel,
+    handleRoleNameChange,
+    handleDescriptionChange,
+    handleSpeechTranscript,
+    togglePermission,
+    handleNextClick,
+    goToDetailsStep,
+    handleDialogSubmit,
+    showRoleDetails,
+    showPermissions,
+  } = modalState;
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -430,7 +73,6 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
               <RoleStepIndicator currentStep={step} colorMode={colorMode} />
             </div>
           )}
-
 
           {isViewMode ? (
             <div className="space-y-6 pt-3 pb-4 px-2">
@@ -465,7 +107,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                       (p) => selectedPermissionIds.includes(p.id) && group.permissions.some(gp => gp.toLowerCase() === p.permission.toLowerCase())
                     );
                     if (groupPermissions.length === 0) return null;
-                    
+
                     return (
                       <FramePanel key={group.value}>
                         <Accordion type="multiple" className="border-none">
@@ -501,7 +143,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                     const otherPermissions = mergedPermissionOptions.filter(
                       (p) => selectedPermissionIds.includes(p.id) && !categorizedPermissions.includes(p.permission.toLowerCase())
                     );
-                    
+
                     if (otherPermissions.length === 0) return null;
                     return (
                       <FramePanel key="other">
@@ -532,7 +174,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                       </FramePanel>
                     );
                   })()}
-                  
+
                   {selectedPermissionIds.length === 0 && (
                     <Card className="min-h-[4rem] border-border/40 bg-muted/30">
                       <CardContent className="px-3 py-2 flex items-center justify-center h-full">
@@ -634,80 +276,80 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                             const groupPermissions = mergedPermissionOptions.filter((p) =>
                               group.permissions.some(gp => gp.toLowerCase() === p.permission.toLowerCase())
                             );
-                          if (groupPermissions.length === 0) return null;
-                          
-                          return (
-                            <Frame key={group.value} className="w-full" spacing="sm">
-                              <FrameHeader>
-                                <FrameTitle>{group.trigger}</FrameTitle>
-                              </FrameHeader>
-                              <FramePanel className="overflow-hidden p-0">
-                                <FieldGroup className="gap-0">
-                                  {groupPermissions.map((permission, index) => {
-                                    const isSelected = selectedPermissionIds.includes(permission.id);
-                                    return (
-                                      <Fragment key={permission.id}>
-                                        <Field>
-                                          <FieldLabel className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
-                                            <Checkbox
-                                              checked={isSelected}
-                                              onCheckedChange={() => togglePermission(permission.id)}
-                                              className="data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-[#f8d24e] dark:data-checked:!border-[#f8d24e] dark:data-checked:!text-[#7b0d15]"
-                                            />
-                                            <FieldTitle className="ml-2 leading-none font-medium text-sm">
-                                              {permission.permission}
-                                            </FieldTitle>
-                                          </FieldLabel>
-                                        </Field>
-                                        {index < groupPermissions.length - 1 && <Separator />}
-                                      </Fragment>
-                                    );
-                                  })}
-                                </FieldGroup>
-                              </FramePanel>
-                            </Frame>
-                          );
-                        })}
-                        
-                        {/* Handling Uncategorized permissions */}
-                        {(() => {
-                          const categorizedPermissions = PERMISSION_GROUPS.flatMap(g => g.permissions.map(p => p.toLowerCase()));
-                          const otherPermissions = mergedPermissionOptions.filter(
-                            (p) => !categorizedPermissions.includes(p.permission.toLowerCase())
-                          );
-                          
-                          if (otherPermissions.length === 0) return null;
-                          return (
-                            <Frame key="other" className="w-full" spacing="sm">
-                              <FrameHeader>
-                                <FrameTitle>Other</FrameTitle>
-                              </FrameHeader>
-                              <FramePanel className="overflow-hidden p-0">
-                                <FieldGroup className="gap-0">
-                                  {otherPermissions.map((permission, index) => {
-                                    const isSelected = selectedPermissionIds.includes(permission.id);
-                                    return (
-                                      <Fragment key={permission.id}>
-                                        <Field>
-                                          <FieldLabel className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
-                                            <Checkbox
-                                              checked={isSelected}
-                                              onCheckedChange={() => togglePermission(permission.id)}
-                                            />
-                                            <FieldTitle className="ml-2 leading-none font-medium text-sm">
-                                              {permission.permission}
-                                            </FieldTitle>
-                                          </FieldLabel>
-                                        </Field>
-                                        {index < otherPermissions.length - 1 && <Separator />}
-                                      </Fragment>
-                                    );
-                                  })}
-                                </FieldGroup>
-                              </FramePanel>
-                            </Frame>
-                          );
-                        })()}
+                            if (groupPermissions.length === 0) return null;
+
+                            return (
+                              <Frame key={group.value} className="w-full" spacing="sm">
+                                <FrameHeader>
+                                  <FrameTitle>{group.trigger}</FrameTitle>
+                                </FrameHeader>
+                                <FramePanel className="overflow-hidden p-0">
+                                  <FieldGroup className="gap-0">
+                                    {groupPermissions.map((permission, index) => {
+                                      const isSelected = selectedPermissionIds.includes(permission.id);
+                                      return (
+                                        <Fragment key={permission.id}>
+                                          <Field>
+                                            <FieldLabel className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                                              <Checkbox
+                                                checked={isSelected}
+                                                onCheckedChange={() => togglePermission(permission.id)}
+                                                className="data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-[#f8d24e] dark:data-checked:!border-[#f8d24e] dark:data-checked:!text-[#7b0d15]"
+                                              />
+                                              <FieldTitle className="ml-2 leading-none font-medium text-sm">
+                                                {permission.permission}
+                                              </FieldTitle>
+                                            </FieldLabel>
+                                          </Field>
+                                          {index < groupPermissions.length - 1 && <Separator />}
+                                        </Fragment>
+                                      );
+                                    })}
+                                  </FieldGroup>
+                                </FramePanel>
+                              </Frame>
+                            );
+                          })}
+
+                          {/* Handling Uncategorized permissions */}
+                          {(() => {
+                            const categorizedPermissions = PERMISSION_GROUPS.flatMap(g => g.permissions.map(p => p.toLowerCase()));
+                            const otherPermissions = mergedPermissionOptions.filter(
+                              (p) => !categorizedPermissions.includes(p.permission.toLowerCase())
+                            );
+
+                            if (otherPermissions.length === 0) return null;
+                            return (
+                              <Frame key="other" className="w-full" spacing="sm">
+                                <FrameHeader>
+                                  <FrameTitle>Other</FrameTitle>
+                                </FrameHeader>
+                                <FramePanel className="overflow-hidden p-0">
+                                  <FieldGroup className="gap-0">
+                                    {otherPermissions.map((permission, index) => {
+                                      const isSelected = selectedPermissionIds.includes(permission.id);
+                                      return (
+                                        <Fragment key={permission.id}>
+                                          <Field>
+                                            <FieldLabel className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                                              <Checkbox
+                                                checked={isSelected}
+                                                onCheckedChange={() => togglePermission(permission.id)}
+                                              />
+                                              <FieldTitle className="ml-2 leading-none font-medium text-sm">
+                                                {permission.permission}
+                                              </FieldTitle>
+                                            </FieldLabel>
+                                          </Field>
+                                          {index < otherPermissions.length - 1 && <Separator />}
+                                        </Fragment>
+                                      );
+                                    })}
+                                  </FieldGroup>
+                                </FramePanel>
+                              </Frame>
+                            );
+                          })()}
                         </div>
                       </div>
                     ) : (
@@ -748,8 +390,8 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                 {isViewMode ? "Close" : "Cancel"}
               </Button>
               {!isViewMode && (
-                <Button 
-                  form="role-form" 
+                <Button
+                  form="role-form"
                   type="submit"
                   className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] font-bold transition-colors duration-200"
                 >

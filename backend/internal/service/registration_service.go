@@ -17,7 +17,7 @@ import (
 type RegistrationService interface {
 	GetRegistrationConfig(ctx context.Context, permissions []string,
 		userID uuid.UUID, limit, page int,
-		sortBy, order string) (*dto.RegistrationConfigResponse, error)
+		sortBy, order, keyword string) (*dto.RegistrationConfigResponse, error)
 	GetClientsByAccountTypeID(ctx context.Context,
 		id int) (*dto.AccountTypeConfigResponse, error)
 	CreateAccountType(ctx context.Context,
@@ -55,33 +55,36 @@ func NewRegistrationService(
 
 func (s *regService) GetRegistrationConfig(ctx context.Context,
 	permissions []string, userID uuid.UUID, limit,
-	page int, sortBy, order string) (*dto.RegistrationConfigResponse, error) {
+	page int, sortBy, order, keyword string,
+) (*dto.RegistrationConfigResponse, error) {
 	var total int
 	var rows []repository.AccountTypeClientRow
 	var err error
 
 	if slices.Contains(permissions, "View all appclients") {
-		total, err = s.repo.CountAccountTypes(ctx)
+		total, err = s.repo.CountAccountTypes(ctx, keyword)
 		if err != nil {
 			return nil, err
 		}
 
 		offset := (page - 1) * limit
 		rows, err = s.repo.GetRegistrationConfig(
-			ctx, limit, offset, sortBy, order,
+			ctx, limit, offset, sortBy, order, keyword,
 		)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		total, err = s.repo.CountScopedAccountTypes(ctx, userID[:])
+		total, err = s.repo.CountScopedAccountTypes(
+			ctx, userID[:], keyword,
+		)
 		if err != nil {
 			return nil, err
 		}
 
 		offset := (page - 1) * limit
 		rows, err = s.repo.GetScopedRegistrationConfig(
-			ctx, userID[:], limit, offset, sortBy, order,
+			ctx, userID[:], limit, offset, sortBy, order, keyword,
 		)
 		if err != nil {
 			return nil, err

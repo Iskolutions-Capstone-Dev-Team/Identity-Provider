@@ -25,6 +25,7 @@ type Handlers struct {
 	MetricsHandler      *v1.MetricsHandler
 	BackupHandler       *v1.BackupHandler
 	ReportHandler       *v1.ReportHandler
+	DeviceHandler       *v1.DeviceHandler
 	UserRepo            repository.UserRepository
 
 	RoleRepo   repository.RoleRepository
@@ -162,6 +163,20 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			h.MFAHandler.DeleteAuthenticator,
 		)
 
+	}
+
+	// devices — JWT + API-key: manages user devices.
+	devices := v1Group.Group("/devices")
+	devices.Use(
+		h.ClientCORS,
+		middleware.RateLimitMiddleware(),
+		middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+		middleware.APIKeyMiddleware(),
+	)
+	{
+		devices.GET("", h.DeviceHandler.ListDevices)
+		devices.PATCH("/:id", h.DeviceHandler.UpdateDevice)
+		devices.DELETE("/:id", h.DeviceHandler.DeleteDevice)
 	}
 
 	// Public user registration

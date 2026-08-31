@@ -132,6 +132,34 @@ function getInputClassName(hasError, hasActionButton = false) {
   } ${hasActionButton ? "pr-12" : ""}`;
 }
 
+export function RegisterSuffixSelectField({ error, icon, label, placeholder, value, onChange, options }) {
+  return (
+    <div>
+      <FormLabel>{label}</FormLabel>
+      <div className="relative">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
+          {icon}
+        </span>
+        <Select value={value} onValueChange={(val) => onChange(val === "N/A" ? "" : val)}>
+          <SelectTrigger className={getInputClassName(error)}>
+            <span className={`truncate text-sm ${value ? "text-slate-800" : "text-slate-400"}`}>
+              <SelectValue placeholder={placeholder} />
+            </span>
+          </SelectTrigger>
+          <SelectContent alignItemWithTrigger={false} sideOffset={4} className="z-[90] bg-white shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl max-h-[300px]">
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value} className="py-2.5">
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <FieldError message={error} />
+    </div>
+  );
+}
+
 function getSelectContainerClassName(hasError) {
   return `relative rounded-xl border bg-white/95 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.9)] transition duration-200 ${
     hasError

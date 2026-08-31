@@ -59,7 +59,7 @@ type UpdateUserRoleRequest struct {
 type UpdateUserDetailsRequest struct {
 	AccountTypeID *int   `json:"account_type_id"`
 	RoleID        *int   `json:"role_id"`
-	MFACode       string `json:"mfa_code" binding:"required"`
+	MFACode       string `json:"mfa_code"`
 }
 
 type UpdateUserAccessRequest struct {

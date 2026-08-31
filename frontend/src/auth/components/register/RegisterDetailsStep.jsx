@@ -3,7 +3,9 @@ import { User, Mail, ShieldCheck } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Separator } from "../../../components/ui/separator";
 import { roleOptions } from "./registerRoleOptions";
-import { FieldError, FormLabel, RegisterSubmitButton, RegisterTextField, RoleSelectField } from "./registerUi";
+import { FieldError, FormLabel, RegisterSubmitButton, RegisterTextField, RoleSelectField, RegisterSuffixSelectField } from "./registerUi";
+
+import { SUFFIX_OPTIONS as suffixOptions } from "../../../utils/suffixOptions";
 
 export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, isSubmitting, loginPath, roleDropdownRef, onChange, onRoleMenuToggle, onRoleSelect, onSubmit }) {
   return (
@@ -32,8 +34,7 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
         />
 
         <div>
-          <RegisterTextField
-            autoComplete="honorific-suffix"
+          <RegisterSuffixSelectField
             icon={<User className="size-5" strokeWidth={1.5} />}
             label={
               <div className="flex items-center justify-between">
@@ -42,9 +43,9 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
               </div>
             }
             placeholder="Enter your suffix"
-            type="text"
             value={details.suffix}
-            onChange={(event) => onChange("suffix", event.target.value)}
+            onChange={(val) => onChange("suffix", val === "N/A" ? "" : val)}
+            options={suffixOptions}
           />
         </div>
       </div>
