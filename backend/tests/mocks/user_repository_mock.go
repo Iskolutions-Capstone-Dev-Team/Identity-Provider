@@ -348,6 +348,31 @@ func (mr *MockUserRepositoryMockRecorder) UpdateUserName(ctx, user any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserName", reflect.TypeOf((*MockUserRepository)(nil).UpdateUserName), ctx, user)
 }
 
+// UpdateUserEmail mocks base method.
+func (m *MockUserRepository) UpdateUserEmail(
+	ctx context.Context, id []byte, email string,
+) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserEmail", ctx, id, email)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUserEmail indicates an expected call of UpdateUserEmail.
+func (mr *MockUserRepositoryMockRecorder) UpdateUserEmail(
+	ctx, id, email any,
+) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"UpdateUserEmail",
+		reflect.TypeOf((*MockUserRepository)(nil).UpdateUserEmail),
+		ctx,
+		id,
+		email,
+	)
+}
+
 // UpdateUserPassword mocks base method.
 func (m *MockUserRepository) UpdateUserPassword(ctx context.Context, user *models.User) error {
 	m.ctrl.T.Helper()
