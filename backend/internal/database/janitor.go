@@ -23,6 +23,7 @@ func StartJanitor(ctx context.Context, db *sqlx.DB, interval time.Duration) {
 				cleanExpiredRecords(db, "authorization_codes")
 				cleanExpiredRecords(db, "refresh_tokens")
 				cleanExpiredRecords(db, "idp_sessions")
+				cleanExpiredRecords(db, "user_devices")
 			case <-ctx.Done():
 				log.Printf("[Janitor] %s: Shutting down", "Signal Received")
 				return

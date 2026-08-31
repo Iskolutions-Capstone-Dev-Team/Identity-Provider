@@ -22,8 +22,9 @@ type MFASetupResponse struct {
 }
 
 type MFAVerifyRequest struct {
-	Email string `json:"email" binding:"required"`
-	Code  string `json:"code" binding:"required"`
+	Email          string `json:"email" binding:"required"`
+	Code           string `json:"code" binding:"required"`
+	RememberDevice bool   `json:"remember_device"`
 }
 
 type MFADeleteRequest struct {

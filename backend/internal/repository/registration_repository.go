@@ -17,9 +17,9 @@ type AccountTypeClientRow struct {
 }
 
 type RegistrationRepository interface {
-	GetRegistrationConfig(ctx context.Context,
-		limit, offset int, sortBy, order string) ([]AccountTypeClientRow, error)
-	CountAccountTypes(ctx context.Context) (int, error)
+	GetRegistrationConfig(ctx context.Context, limit, offset int,
+		sortBy, order, keyword string) ([]AccountTypeClientRow, error)
+	CountAccountTypes(ctx context.Context, keyword string) (int, error)
 	GetClientsByAccountTypeID(ctx context.Context,
 		id int) ([]AccountTypeClientRow, error)
 	SyncPreapprovedClients(ctx context.Context, accountTypeID int,
@@ -29,8 +29,10 @@ type RegistrationRepository interface {
 	UpdateAccountType(ctx context.Context, id int, name string) error
 	DeleteAccountType(ctx context.Context, id int) error
 	GetScopedRegistrationConfig(ctx context.Context, userID []byte,
-		limit, offset int, sortBy, order string) ([]AccountTypeClientRow, error)
-	CountScopedAccountTypes(ctx context.Context, userID []byte) (int, error)
+		limit, offset int, sortBy, order, keyword string,
+	) ([]AccountTypeClientRow, error)
+	CountScopedAccountTypes(ctx context.Context, userID []byte,
+		keyword string) (int, error)
 }
 
 type regRepo struct {
@@ -65,9 +67,18 @@ func getSafeRegSubquery(sortBy, order string) (string, string, string) {
 }
 
 func (r *regRepo) GetRegistrationConfig(ctx context.Context,
-	limit, offset int, sortBy, order string,
+	limit, offset int, sortBy, order, keyword string,
 ) ([]AccountTypeClientRow, error) {
 	selectCol, orderCol, ordVal := getSafeRegSubquery(sortBy, order)
+
+	var queryParams []interface{}
+	whereClause := ""
+	if keyword != "" {
+		whereClause = "WHERE LOWER(at.name) LIKE ?"
+		queryParams = append(queryParams, "%"+strings.ToLower(keyword)+"%")
+	}
+	queryParams = append(queryParams, limit, offset)
+
 	query := fmt.Sprintf(`
 		SELECT account_type_id, account_type_name, client_id, client_name
 		FROM (
@@ -84,6 +95,7 @@ func (r *regRepo) GetRegistrationConfig(ctx context.Context,
 				FROM account_types at
 				LEFT JOIN preapproved_clients pc ON at.id = pc.account_type_id
 				LEFT JOIN clients cl ON pc.client_id = cl.id
+				%s
 				GROUP BY at.id, at.name
 				ORDER BY %s
 				LIMIT ? OFFSET ?
@@ -93,16 +105,24 @@ func (r *regRepo) GetRegistrationConfig(ctx context.Context,
 		) t
 		WHERE row_num <= 5
 		ORDER BY sort_val %s, account_type_id, client_name;
-	`, selectCol, orderCol, ordVal)
+	`, selectCol, whereClause, orderCol, ordVal)
 	var rows []AccountTypeClientRow
-	err := r.db.SelectContext(ctx, &rows, query, limit, offset)
+	err := r.db.SelectContext(ctx, &rows, query, queryParams...)
 	return rows, err
 }
 
-func (r *regRepo) CountAccountTypes(ctx context.Context) (int, error) {
+func (r *regRepo) CountAccountTypes(
+	ctx context.Context, keyword string,
+) (int, error) {
 	var count int
-	query := "SELECT COUNT(*) FROM account_types"
-	err := r.db.GetContext(ctx, &count, query)
+	var queryParams []interface{}
+	whereClause := ""
+	if keyword != "" {
+		whereClause = "WHERE LOWER(name) LIKE ?"
+		queryParams = append(queryParams, "%"+strings.ToLower(keyword)+"%")
+	}
+	query := fmt.Sprintf("SELECT COUNT(*) FROM account_types %s", whereClause)
+	err := r.db.GetContext(ctx, &count, query, queryParams...)
 	return count, err
 }
 
@@ -206,13 +226,23 @@ func (r *regRepo) DeleteAccountType(ctx context.Context, id int) error {
 }
 
 func (r *regRepo) GetScopedRegistrationConfig(ctx context.Context,
-	userID []byte, limit, offset int, sortBy, order string,
+	userID []byte, limit, offset int, sortBy, order, keyword string,
 ) ([]AccountTypeClientRow, error) {
 	selectCol, orderCol, ordVal := getSafeRegSubquery(sortBy, order)
 	selectCol = strings.ReplaceAll(selectCol, "at.", "at2.")
 	selectCol = strings.ReplaceAll(selectCol, "cl.", "cl2.")
 	orderCol = strings.ReplaceAll(orderCol, "at.", "at2.")
 	orderCol = strings.ReplaceAll(orderCol, "cl.", "cl2.")
+
+	var queryParams []interface{}
+	queryParams = append(queryParams, userID)
+
+	whereClause := "WHERE aac2.user_id = ?"
+	if keyword != "" {
+		whereClause += " AND LOWER(at2.name) LIKE ?"
+		queryParams = append(queryParams, "%"+strings.ToLower(keyword)+"%")
+	}
+	queryParams = append(queryParams, limit, offset, userID)
 
 	query := fmt.Sprintf(`
 		SELECT account_type_id, account_type_name, client_id, client_name
@@ -231,7 +261,7 @@ func (r *regRepo) GetScopedRegistrationConfig(ctx context.Context,
 				JOIN preapproved_clients pc2 ON at2.id = pc2.account_type_id
 				JOIN admin_allowed_clients aac2 ON pc2.client_id = aac2.client_id
 				LEFT JOIN clients cl2 ON pc2.client_id = cl2.id
-				WHERE aac2.user_id = ?
+				%s
 				GROUP BY at2.id, at2.name
 				ORDER BY %s
 				LIMIT ? OFFSET ?
@@ -243,22 +273,33 @@ func (r *regRepo) GetScopedRegistrationConfig(ctx context.Context,
 		) t
 		WHERE row_num <= 5
 		ORDER BY sort_val %s, account_type_id, client_name;
-	`, selectCol, orderCol, ordVal)
+	`, selectCol, whereClause, orderCol, ordVal)
 	var rows []AccountTypeClientRow
-	err := r.db.SelectContext(ctx, &rows, query, userID, limit, offset, userID)
+	err := r.db.SelectContext(ctx, &rows, query, queryParams...)
 	return rows, err
 }
 
 func (r *regRepo) CountScopedAccountTypes(ctx context.Context,
-	userID []byte) (int, error) {
+	userID []byte, keyword string,
+) (int, error) {
 	var count int
-	query := `
+	var queryParams []interface{}
+	queryParams = append(queryParams, userID)
+
+	whereClause := "WHERE aac.user_id = ?"
+	if keyword != "" {
+		whereClause += " AND LOWER(at.name) LIKE ?"
+		queryParams = append(queryParams, "%"+strings.ToLower(keyword)+"%")
+	}
+
+	query := fmt.Sprintf(`
 		SELECT COUNT(DISTINCT at.id)
 		FROM account_types at
 		JOIN preapproved_clients pc ON at.id = pc.account_type_id
 		JOIN admin_allowed_clients aac ON pc.client_id = aac.client_id
-		WHERE aac.user_id = ?
-	`
-	err := r.db.GetContext(ctx, &count, query, userID)
+		%s
+	`, whereClause)
+
+	err := r.db.GetContext(ctx, &count, query, queryParams...)
 	return count, err
 }

@@ -57,63 +57,63 @@ func (mr *MockUserRepositoryMockRecorder) ClearUserRelations(ctx, id any) *gomoc
 }
 
 // CountAdminUsers mocks base method.
-func (m *MockUserRepository) CountAdminUsers(ctx context.Context) (int, error) {
+func (m *MockUserRepository) CountAdminUsers(ctx context.Context, adminID []byte, hasViewAll bool) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountAdminUsers", ctx)
+	ret := m.ctrl.Call(m, "CountAdminUsers", ctx, adminID, hasViewAll)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountAdminUsers indicates an expected call of CountAdminUsers.
-func (mr *MockUserRepositoryMockRecorder) CountAdminUsers(ctx any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) CountAdminUsers(ctx, adminID, hasViewAll any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAdminUsers", reflect.TypeOf((*MockUserRepository)(nil).CountAdminUsers), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAdminUsers", reflect.TypeOf((*MockUserRepository)(nil).CountAdminUsers), ctx, adminID, hasViewAll)
 }
 
 // CountBoundUsers mocks base method.
-func (m *MockUserRepository) CountBoundUsers(ctx context.Context, adminID []byte) (int, error) {
+func (m *MockUserRepository) CountBoundUsers(ctx context.Context, adminID []byte, keyword string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountBoundUsers", ctx, adminID)
+	ret := m.ctrl.Call(m, "CountBoundUsers", ctx, adminID, keyword)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountBoundUsers indicates an expected call of CountBoundUsers.
-func (mr *MockUserRepositoryMockRecorder) CountBoundUsers(ctx, adminID any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) CountBoundUsers(ctx, adminID, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountBoundUsers", reflect.TypeOf((*MockUserRepository)(nil).CountBoundUsers), ctx, adminID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountBoundUsers", reflect.TypeOf((*MockUserRepository)(nil).CountBoundUsers), ctx, adminID, keyword)
 }
 
 // CountDeletedUsers mocks base method.
-func (m *MockUserRepository) CountDeletedUsers(ctx context.Context) (int, error) {
+func (m *MockUserRepository) CountDeletedUsers(ctx context.Context, keyword string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountDeletedUsers", ctx)
+	ret := m.ctrl.Call(m, "CountDeletedUsers", ctx, keyword)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountDeletedUsers indicates an expected call of CountDeletedUsers.
-func (mr *MockUserRepositoryMockRecorder) CountDeletedUsers(ctx any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) CountDeletedUsers(ctx, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeletedUsers", reflect.TypeOf((*MockUserRepository)(nil).CountDeletedUsers), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeletedUsers", reflect.TypeOf((*MockUserRepository)(nil).CountDeletedUsers), ctx, keyword)
 }
 
 // CountUsers mocks base method.
-func (m *MockUserRepository) CountUsers(ctx context.Context) (int, error) {
+func (m *MockUserRepository) CountUsers(ctx context.Context, keyword string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountUsers", ctx)
+	ret := m.ctrl.Call(m, "CountUsers", ctx, keyword)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountUsers indicates an expected call of CountUsers.
-func (mr *MockUserRepositoryMockRecorder) CountUsers(ctx any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) CountUsers(ctx, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountUsers", reflect.TypeOf((*MockUserRepository)(nil).CountUsers), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountUsers", reflect.TypeOf((*MockUserRepository)(nil).CountUsers), ctx, keyword)
 }
 
 // CreateUser mocks base method.
@@ -146,33 +146,33 @@ func (mr *MockUserRepositoryMockRecorder) GetAdminUserList(ctx, limit, offset, a
 }
 
 // GetBoundUserList mocks base method.
-func (m *MockUserRepository) GetBoundUserList(ctx context.Context, limit, offset int, adminID []byte, sortBy, order string) ([]models.User, error) {
+func (m *MockUserRepository) GetBoundUserList(ctx context.Context, limit, offset int, adminID []byte, sortBy, order, keyword string) ([]models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBoundUserList", ctx, limit, offset, adminID, sortBy, order)
+	ret := m.ctrl.Call(m, "GetBoundUserList", ctx, limit, offset, adminID, sortBy, order, keyword)
 	ret0, _ := ret[0].([]models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBoundUserList indicates an expected call of GetBoundUserList.
-func (mr *MockUserRepositoryMockRecorder) GetBoundUserList(ctx, limit, offset, adminID, sortBy, order any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) GetBoundUserList(ctx, limit, offset, adminID, sortBy, order, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundUserList", reflect.TypeOf((*MockUserRepository)(nil).GetBoundUserList), ctx, limit, offset, adminID, sortBy, order)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundUserList", reflect.TypeOf((*MockUserRepository)(nil).GetBoundUserList), ctx, limit, offset, adminID, sortBy, order, keyword)
 }
 
 // GetDeletedUserList mocks base method.
-func (m *MockUserRepository) GetDeletedUserList(ctx context.Context, limit, offset int) ([]models.User, error) {
+func (m *MockUserRepository) GetDeletedUserList(ctx context.Context, limit, offset int, keyword string) ([]models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDeletedUserList", ctx, limit, offset)
+	ret := m.ctrl.Call(m, "GetDeletedUserList", ctx, limit, offset, keyword)
 	ret0, _ := ret[0].([]models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetDeletedUserList indicates an expected call of GetDeletedUserList.
-func (mr *MockUserRepositoryMockRecorder) GetDeletedUserList(ctx, limit, offset any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) GetDeletedUserList(ctx, limit, offset, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeletedUserList", reflect.TypeOf((*MockUserRepository)(nil).GetDeletedUserList), ctx, limit, offset)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeletedUserList", reflect.TypeOf((*MockUserRepository)(nil).GetDeletedUserList), ctx, limit, offset, keyword)
 }
 
 // GetUserByEmail mocks base method.
@@ -221,18 +221,18 @@ func (mr *MockUserRepositoryMockRecorder) GetUserById(ctx, id, adminID, hasViewA
 }
 
 // GetUserList mocks base method.
-func (m *MockUserRepository) GetUserList(ctx context.Context, limit, offset int, sortBy, order string) ([]models.User, error) {
+func (m *MockUserRepository) GetUserList(ctx context.Context, limit, offset int, sortBy, order, keyword string) ([]models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserList", ctx, limit, offset, sortBy, order)
+	ret := m.ctrl.Call(m, "GetUserList", ctx, limit, offset, sortBy, order, keyword)
 	ret0, _ := ret[0].([]models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserList indicates an expected call of GetUserList.
-func (mr *MockUserRepositoryMockRecorder) GetUserList(ctx, limit, offset, sortBy, order any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) GetUserList(ctx, limit, offset, sortBy, order, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserList", reflect.TypeOf((*MockUserRepository)(nil).GetUserList), ctx, limit, offset, sortBy, order)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserList", reflect.TypeOf((*MockUserRepository)(nil).GetUserList), ctx, limit, offset, sortBy, order, keyword)
 }
 
 // GetUsersByAccountTypeID mocks base method.

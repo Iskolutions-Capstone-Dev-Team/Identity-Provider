@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
@@ -39,6 +41,7 @@ type UserHandler struct {
 	ClientService service.ClientService
 	AccessService service.ClientAllowedUserService
 	MFAService    service.MFAService
+	Cache         cache.Cache
 }
 
 // PostUser creates a new user in the system
@@ -260,6 +263,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	permissions := c.GetStringSlice("permissions")
+	keyword := c.Query("keyword")
 	resp, err := h.Service.GetFilteredUserList(
 		ctx,
 		permissions,
@@ -269,6 +273,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		sortBy,
 		order,
 		status,
+		keyword,
 	)
 	if err != nil {
 		log.Printf("[GetUserList] Service Execution: %v", err)
@@ -299,7 +304,7 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 	const defaultPage = "1"
 
 	// RBAC Check
-	if !middleware.HasPermission(c, "View all users") {
+	if !middleware.HasPermission(c, "View admins") {
 		errors.SendString(
 			c,
 			http.StatusUnauthorized,
@@ -1424,15 +1429,33 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 		actorName = adminIDStr
 	}
 
+	var clientNames []string
+	for _, idStr := range req.ClientIDs {
+		cid, err := uuid.Parse(idStr)
+		if err == nil {
+			cl, err := h.ClientService.GetClientByID(
+				ctx,
+				cid,
+				adminID,
+				c.GetStringSlice("permissions"),
+			)
+			if err == nil {
+				clientNames = append(clientNames, cl.Name)
+			} else {
+				clientNames = append(clientNames, idStr)
+			}
+		}
+	}
+
 	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action: actionUpdateAccess,
 			Target: targetIDStr,
 			Status: models.StatusSuccess,
 			Metadata: buildMetadata(map[string]interface{}{
-				"client_ids": req.ClientIDs,
-				"ip":         c.ClientIP(),
-				"user_agent": c.Request.UserAgent(),
+				"client_names": clientNames,
+				"ip":           c.ClientIP(),
+				"user_agent":   c.Request.UserAgent(),
 			}),
 		})
 
@@ -1500,6 +1523,24 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 		return
 	}
 
+	var clientNames []string
+	for _, idStr := range req.ClientIDs {
+		cid, err := uuid.Parse(idStr)
+		if err == nil {
+			cl, err := h.ClientService.GetClientByID(
+				ctx,
+				cid,
+				adminID,
+				c.GetStringSlice("permissions"),
+			)
+			if err == nil {
+				clientNames = append(clientNames, cl.Name)
+			} else {
+				clientNames = append(clientNames, idStr)
+			}
+		}
+	}
+
 	err = h.Service.SyncAdminClientAccess(ctx, targetID, req.ClientIDs)
 	if err != nil {
 		log.Printf("[PutAdminAccess] %v", err)
@@ -1509,8 +1550,9 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 				Target: targetUser.Email,
 				Status: models.StatusFail,
 				Metadata: buildMetadata(map[string]interface{}{
-					"error": err.Error(),
-					"ip":    c.ClientIP(),
+					"client_names": clientNames,
+					"error":        err.Error(),
+					"ip":           c.ClientIP(),
 				}),
 			})
 		errors.Send(
@@ -1529,7 +1571,8 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 			Target: targetUser.Email,
 			Status: models.StatusSuccess,
 			Metadata: buildMetadata(map[string]interface{}{
-				"ip": c.ClientIP(),
+				"client_names": clientNames,
+				"ip":           c.ClientIP(),
 			}),
 		})
 
@@ -1657,28 +1700,62 @@ func (h *UserHandler) PatchUserDetails(c *gin.Context) {
 	}
 
 	// Verify administrative MFA before allowing role/account changes
-	success, err := h.MFAService.VerifyCode(ctx, actorID[:], req.MFACode)
-	if err != nil {
-		log.Printf("[PatchUserDetails] MFA Verification: %v", err)
-		errors.Send(
-			c,
-			http.StatusInternalServerError,
-			errors.CodeInternalError,
-			"Failed to verify MFA code.",
-			err,
-		)
-		return
+	mfaSkipped := false
+	var cacheKey string
+	var remainingTime time.Duration
+
+	tokenID := c.GetString("token_id")
+	expiresAtVal, exists := c.Get("token_expires_at")
+	if h.Cache != nil && tokenID != "" && exists {
+		if expiresAt, ok := expiresAtVal.(time.Time); ok {
+			cacheKey = fmt.Sprintf("sudo_mfa:verified:%s", tokenID)
+			verified, _, _ := h.Cache.Get(ctx, cacheKey)
+			if verified == "true" {
+				mfaSkipped = true
+			}
+			remainingTime = time.Until(expiresAt)
+		}
 	}
-	if !success {
-		log.Printf("[PatchUserDetails] MFA Verification: invalid mfa code")
-		errors.SendString(
-			c,
-			http.StatusUnauthorized,
-			errors.CodeUnauthorized,
-			"Invalid MFA code provided.",
-			"Invalid MFA code",
-		)
-		return
+
+	if !mfaSkipped {
+		if req.MFACode == "" {
+			errors.SendString(
+				c,
+				http.StatusBadRequest,
+				errors.CodeInvalidInput,
+				"MFA code is required.",
+				"MFA Required",
+			)
+			return
+		}
+
+		success, err := h.MFAService.VerifyCode(ctx, actorID[:], req.MFACode)
+		if err != nil {
+			log.Printf("[PatchUserDetails] MFA Verification: %v", err)
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to verify MFA code.",
+				err,
+			)
+			return
+		}
+		if !success {
+			log.Printf("[PatchUserDetails] MFA Verification: invalid mfa code")
+			errors.SendString(
+				c,
+				http.StatusUnauthorized,
+				errors.CodeUnauthorized,
+				"Invalid MFA code provided.",
+				"Invalid MFA code",
+			)
+			return
+		}
+
+		if h.Cache != nil && cacheKey != "" && remainingTime > 0 {
+			_ = h.Cache.Set(ctx, cacheKey, "true", remainingTime)
+		}
 	}
 
 	metadata := buildMetadata(map[string]interface{}{

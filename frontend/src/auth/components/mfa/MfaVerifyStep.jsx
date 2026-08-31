@@ -2,6 +2,7 @@ import MfaCodeInput from "./MfaCodeInput";
 import { Mail, Smartphone, KeySquare } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Separator } from "../../../components/ui/separator";
+import MfaRememberDevice from "./MfaRememberDevice";
 
 function MfaMethodButton({ label, icon, isActive, isLoading = false, loadingText = "Checking...", disabled = false, onClick }) {
   return (
@@ -12,7 +13,7 @@ function MfaMethodButton({ label, icon, isActive, isLoading = false, loadingText
   );
 }
 
-export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSendingOtp, cooldown = 0, isVerifying, isCheckingAuthenticators, isCheckingPasskey, isCancelling = false, onSelectEmail, onSelectAuthenticator, onSelectPasskey, onCodeChange, onSendOtp, onVerify, onCancel }) {
+export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSendingOtp, cooldown = 0, isVerifying, isCheckingAuthenticators, isCheckingPasskey, isCancelling = false, onSelectEmail, onSelectAuthenticator, onSelectPasskey, onCodeChange, onSendOtp, onVerify, onCancel, rememberDevice, onRememberDeviceChange }) {
   const isEmailMode = mode === "email";
   const isAuthenticatorMode = mode === "authenticator";
   const isPasskeyMode = mode === "passkey";
@@ -58,6 +59,8 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
               disabled={isVerifying || cooldown > 0}
             />
 
+            <MfaRememberDevice checked={rememberDevice} onCheckedChange={onRememberDeviceChange} />
+
             <Button type="submit" disabled={isVerifying || cooldown > 0} className="h-12 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300 mt-2">
               {isVerifying ? "Verifying..." : verifyLabel}
             </Button>
@@ -85,11 +88,11 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
         </Button>
       </div>
 
-      {onCancel ? (
-        <Button variant="outline" type="button" onClick={onCancel} disabled={isCancelling} className="h-11 w-full bg-transparent text-white border-white/20 hover:bg-white/10 hover:text-white transition">
-          {isCancelling ? "Signing out..." : "Back to login"}
-        </Button>
-      ) : null}
+      {!shouldShowCodeInput && (
+        <MfaRememberDevice checked={rememberDevice} onCheckedChange={onRememberDeviceChange} />
+      )}
+
+
     </div>
   );
 }
