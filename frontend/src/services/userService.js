@@ -167,6 +167,44 @@ export const userService = {
     return res.data;
   },
 
+  async updateUserNameAdmin(id, data = {}) {
+    const userId = normalizeTextValue(id);
+
+    if (!userId) {
+      throw new Error("User ID is required.");
+    }
+
+    const payload = {
+      first_name: normalizeTextValue(data.firstName ?? data.first_name),
+      middle_name: normalizeTextValue(data.middleName ?? data.middle_name),
+      last_name: normalizeTextValue(data.lastName ?? data.last_name),
+      name_suffix: normalizeTextValue(
+        data.suffix ?? data.nameSuffix ?? data.name_suffix,
+      ),
+    };
+
+    if (!payload.first_name) {
+      throw new Error("First name is required.");
+    }
+
+    if (!payload.last_name) {
+      throw new Error("Last name is required.");
+    }
+
+    const res = await axiosInstance.patch(
+      `/admin/users/${userId}/name`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    clearUserCache();
+    return res.data;
+  },
+
   async updateUserEmailMe(email) {
     const payload = {
       email: normalizeTextValue(email),
