@@ -12,7 +12,7 @@ export default function AppClientComboboxField({ label, description, options, se
     ? "rounded-md border border-[#f8d24e]/25 bg-[#f8d24e]/12 text-[#ffe28a]"
     : "rounded-md border border-[#7b0d15]/20 bg-[#7b0d15]/10 text-[#7b0d15]";
   
-  const comboboxContainerClassName = `min-h-[2.625rem] rounded-md transition-[border-color,box-shadow,background-color] duration-200 ${
+  const comboboxContainerClassName = `min-h-10 rounded-lg transition-[border-color,box-shadow,background-color] duration-200 ${
     error ? "border-red-400" : ""
   }`;
   
@@ -22,15 +22,21 @@ export default function AppClientComboboxField({ label, description, options, se
   
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-col space-y-1 w-full mb-1">
-        <h3 className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
-          {label} <span className="text-red-500">*</span>
-        </h3>
-        <p className="m-0 text-sm text-muted-foreground">
-          {description}
-        </p>
-      </div>
-      <Separator />
+      {label && (
+        <>
+          <div className="flex flex-col space-y-1 w-full mb-1">
+            <h3 className="scroll-m-20 text-xl font-semibold tracking-tight uppercase text-foreground m-0 whitespace-nowrap">
+              {label} <span className="text-red-500">*</span>
+            </h3>
+            {description && (
+              <p className="m-0 text-sm text-muted-foreground">
+                {description}
+              </p>
+            )}
+          </div>
+          <Separator />
+        </>
+      )}
       <Field className="w-full">
         <Combobox
           multiple
