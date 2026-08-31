@@ -11,6 +11,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -266,11 +267,18 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 			c.Request.UserAgent(),
 		)
 		if err == nil {
+			existingCookie, _ := c.Cookie("remember_device")
+			updatedCookie := utils.UpdateRememberDeviceCookie(
+				existingCookie,
+				uID.String(),
+				token,
+			)
+
 			maxAge := int(time.Hour.Seconds() * 24 * 30)
 			c.SetSameSite(http.SameSiteStrictMode)
 			c.SetCookie(
 				"remember_device",
-				token,
+				updatedCookie,
 				maxAge,
 				"/",
 				"",
