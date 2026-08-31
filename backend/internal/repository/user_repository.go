@@ -60,6 +60,7 @@ type UserRepository interface {
 	UpdateUserAccountType(ctx context.Context, userID []byte,
 		accountTypeID sql.NullInt64) error
 	UpdateUserName(ctx context.Context, user *models.User) error
+	UpdateUserEmail(ctx context.Context, id []byte, email string) error
 	SoftDelete(ctx context.Context, id []byte) error
 	CountUsers(ctx context.Context, keyword string) (int, error)
 	CountAdminUsers(ctx context.Context, adminID []byte,
@@ -714,6 +715,17 @@ func (r *userRepository) UpdateUserName(ctx context.Context,
 		user.LastName, user.NameSuffix, user.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update user name: %w", err)
+	}
+	return nil
+}
+
+func (r *userRepository) UpdateUserEmail(
+	ctx context.Context, id []byte, email string,
+) error {
+	query := `UPDATE users SET email = ?, updated_at = NOW() WHERE id = ?`
+	_, err := r.db.ExecContext(ctx, query, email, id)
+	if err != nil {
+		return fmt.Errorf("failed to update user email: %w", err)
 	}
 	return nil
 }

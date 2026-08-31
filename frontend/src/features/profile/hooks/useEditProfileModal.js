@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 
 const initialFieldErrors = {
@@ -36,8 +37,12 @@ function validateProfile(profile, allowEmailEdit) {
     nextFieldErrors.lastName = "Last name is required.";
   }
 
-  if (allowEmailEdit && !profile.email.trim()) {
-    nextFieldErrors.email = "Email is required.";
+  if (allowEmailEdit) {
+    if (!profile.email.trim()) {
+      nextFieldErrors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim())) {
+      nextFieldErrors.email = "Please enter a valid email address.";
+    }
   }
 
   return nextFieldErrors;
@@ -147,7 +152,7 @@ export function useEditProfileModal({ open, onClose, profileData, updateProfile,
       onClose();
     } catch (error) {
       console.error("Update profile error:", error);
-      setErrorMessage(getProfileUpdateErrorMessage(error));
+      toast.error(getProfileUpdateErrorMessage(error));
     } finally {
       setIsSaving(false);
     }
