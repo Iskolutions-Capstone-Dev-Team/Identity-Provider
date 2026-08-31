@@ -13,6 +13,7 @@ import (
 type Handlers struct {
 	LogHandler          *v1.LogHandler
 	AuthHandler         *v1.AuthHandler
+	HealthHandler       *v1.HealthHandler
 	ClientHandler       *v1.ClientHandler
 	RoleHandler         *v1.RoleHandler
 	UserHandler         *v1.UserHandler
@@ -36,9 +37,7 @@ type Handlers struct {
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
 	// Open health check endpoints
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
-	})
+	r.GET("/health", h.HealthHandler.GetHealth)
 
 	wellKnown := r.Group("/.well-known")
 	{
@@ -46,9 +45,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	}
 
 	v1Group := r.Group("api/v1")
-	v1Group.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
-	})
+	v1Group.GET("/health", h.HealthHandler.GetHealth)
 	auth := v1Group.Group("/auth")
 	auth.Use(middleware.RateLimitMiddleware())
 	{
@@ -73,6 +70,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	me := v1Group.Group("/me")
 	me.Use(middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService))
 	me.GET("", h.UserHandler.GetMe)
+	me.PATCH("/email", h.UserHandler.PatchUserEmailMe)
 
 	otp := v1Group.Group("/otp")
 	otp.Use(middleware.RateLimitMiddleware())
@@ -263,6 +261,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 			users.PATCH("/:id", h.UserHandler.PatchUserDetails)
 			users.PATCH("/:id/status", h.UserHandler.PatchUserStatus)
 			users.PATCH("/:id/role", h.UserHandler.PatchUserRole)
+			users.PATCH("/:id/email", h.UserHandler.PatchUserEmailAdmin)
 			users.PATCH("/:id/name", h.UserHandler.PatchUserNameAdmin)
 			users.GET("/access", h.UserHandler.GetUserDetailedAccess)
 			users.PUT("/:id/access", h.UserHandler.PutUserAccess)

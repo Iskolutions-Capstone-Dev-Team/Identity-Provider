@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { useEditProfileModal } from "../hooks/useEditProfileModal";
 
 import { SUFFIX_OPTIONS } from "../../../utils/suffixOptions";
@@ -65,6 +66,23 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                 colorMode={colorMode}
               />
 
+            {allowEmailEdit && (
+              <Field className="mb-6 gap-0 space-y-1.5">
+                <FieldLabel htmlFor="email">
+                  Email Address <span className="text-red-500">*</span>
+                </FieldLabel>
+                <Input type="email" id="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className="h-10 rounded-lg" disabled={isSaving} aria-invalid={!!fieldErrors.email} />
+                {fieldErrors.email ? (
+                  <FieldError>{fieldErrors.email}</FieldError>
+                ) : (
+                  <p className={`${helperTextClassName}`}>
+                    Must be an active email account
+                  </p>
+                )}
+              </Field>
+            )}
+
+
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
                   <div className="flex items-center min-h-[24px]">
@@ -123,22 +141,6 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                   </div>
               </div>
             </div>
-
-            {allowEmailEdit && (
-              <div className="space-y-2">
-                <Label>
-                  Email Address <span className="text-red-500">*</span>
-                </Label>
-                <Input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className="h-10 rounded-lg" disabled={isSaving} />
-                {fieldErrors.email ? (
-                  <p className={fieldErrorClassName}>{fieldErrors.email}</p>
-                ) : (
-                  <p className={`${helperTextClassName} mt-2`}>
-                    Must be an active email account
-                  </p>
-                )}
-              </div>
-            )}
           </form>
         </div>
 
