@@ -51,6 +51,23 @@ export default function Mfa() {
   const [isCheckingAuthenticators, setIsCheckingAuthenticators] =
     useState(false);
   const [isCheckingPasskey, setIsCheckingPasskey] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    if (cooldown > 0) {
+      timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (cooldown > 0 && error && error.startsWith("Too many attempts. Please wait")) {
+      setError(`Too many attempts. Please wait ${cooldown}s.`);
+    } else if (cooldown === 0 && error && error.startsWith("Too many attempts. Please wait")) {
+      setError("");
+    }
+  }, [cooldown, error]);
 
   const finishMfa = () => {
     promotePendingMfaTokenResponse();
@@ -127,9 +144,14 @@ export default function Mfa() {
       await passwordResetService.sendOtp({ email });
       setHasSentOtp(true);
     } catch (otpError) {
-      setError(
-        getRequestErrorMessage(otpError, "Unable to send an OTP right now."),
-      );
+      if (otpError?.response?.status === 429 || getRequestErrorMessage(otpError, "").toLowerCase().includes("limit exceeded")) {
+        setCooldown(60);
+        setError("Too many attempts. Please wait 60s.");
+      } else {
+        setError(
+          getRequestErrorMessage(otpError, "Unable to send an OTP right now."),
+        );
+      }
     } finally {
       setIsSendingOtp(false);
     }
@@ -156,12 +178,17 @@ export default function Mfa() {
 
       navigate(MFA_AUTHENTICATOR_PATH);
     } catch (authenticatorError) {
-      setError(
-        getRequestErrorMessage(
-          authenticatorError,
-          "Unable to check your authenticator apps.",
-        ),
-      );
+      if (authenticatorError?.response?.status === 429 || getRequestErrorMessage(authenticatorError, "").toLowerCase().includes("limit exceeded")) {
+        setCooldown(60);
+        setError("Too many attempts. Please wait 60s.");
+      } else {
+        setError(
+          getRequestErrorMessage(
+            authenticatorError,
+            "Unable to check your authenticator apps.",
+          ),
+        );
+      }
     } finally {
       setIsCheckingAuthenticators(false);
     }
@@ -221,7 +248,12 @@ export default function Mfa() {
 
       await verifyPasskey();
     } catch (passkeyError) {
-      setError(getPasskeyErrorMessage(passkeyError));
+      if (passkeyError?.response?.status === 429 || getRequestErrorMessage(passkeyError, "").toLowerCase().includes("limit exceeded")) {
+        setCooldown(60);
+        setError("Too many attempts. Please wait 60s.");
+      } else {
+        setError(getPasskeyErrorMessage(passkeyError));
+      }
     } finally {
       setIsCheckingPasskey(false);
     }
@@ -245,9 +277,14 @@ export default function Mfa() {
 
       finishMfa();
     } catch (verifyError) {
-      setError(
-        getRequestErrorMessage(verifyError, "Unable to verify this code."),
-      );
+      if (verifyError?.response?.status === 429 || getRequestErrorMessage(verifyError, "").toLowerCase().includes("limit exceeded")) {
+        setCooldown(60);
+        setError("Too many attempts. Please wait 60s.");
+      } else {
+        setError(
+          getRequestErrorMessage(verifyError, "Unable to verify this code."),
+        );
+      }
     } finally {
       setIsVerifying(false);
     }
@@ -271,6 +308,7 @@ export default function Mfa() {
           isVerifying={isVerifying}
           isCheckingAuthenticators={isCheckingAuthenticators}
           isCheckingPasskey={isCheckingPasskey}
+          cooldown={cooldown}
           onSelectEmail={handleSelectEmail}
           onSelectAuthenticator={handleSelectAuthenticator}
           onSelectPasskey={handleSelectPasskey}

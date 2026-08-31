@@ -67,7 +67,7 @@ func TestGenerateSystemReport(t *testing.T) {
 
 	// 1. Success case - PDF format
 	mockUserRepo.EXPECT().
-		GetUserList(gomock.Any(), 10, 0, "created_at", "DESC").
+		GetUserList(gomock.Any(), 10, 0, "created_at", "DESC", "").
 		Return(users, nil)
 
 	mockClientRepo.EXPECT().
@@ -100,7 +100,7 @@ func TestGenerateSystemReport(t *testing.T) {
 
 	// 2. Success case - JSON format
 	mockUserRepo.EXPECT().
-		GetUserList(gomock.Any(), 5, 0, "created_at", "DESC").
+		GetUserList(gomock.Any(), 5, 0, "created_at", "DESC", "").
 		Return(users, nil)
 
 	mockClientRepo.EXPECT().

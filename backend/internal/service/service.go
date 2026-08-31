@@ -17,5 +17,6 @@ type ServiceContainer struct {
 	PasskeyService           PasskeyService
 	MetricsService           MetricsService
 	ReportService            ReportService
+	DeviceService            DeviceService
 	Cache                    cache.Cache
 }
