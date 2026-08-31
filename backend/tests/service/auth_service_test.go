@@ -35,6 +35,7 @@ func TestAuthLogout(t *testing.T) {
 		mockSessionRepo,
 		mockClientRepo,
 		nil, nil, // Keys not needed for logout
+		nil,
 	)
 
 	sessionID := "valid-session-id"
@@ -95,6 +96,7 @@ func TestCheckSessionOrPendingMFA_Fallback(t *testing.T) {
 		mockClientRepo,
 		privateKey,
 		publicKey,
+		nil,
 	)
 
 	// Set CLIENT_BASE_URL and KEY_ID env for token generation
@@ -191,6 +193,7 @@ func TestLoginAndAuthorize_SuspendedUser(t *testing.T) {
 		mockSessionRepo,
 		mockClientRepo,
 		nil, nil,
+		nil,
 	)
 
 	req := dto.LoginRequest{
@@ -202,11 +205,12 @@ func TestLoginAndAuthorize_SuspendedUser(t *testing.T) {
 		Return(nil, "", "suspended", nil).
 		Times(1)
 
-	_, _, err := authService.LoginAndAuthorize(
+	_, _, _, err := authService.LoginAndAuthorize(
 		context.Background(),
 		req,
 		"127.0.0.1",
 		"Mozilla",
+		"",
 	)
 
 	if err == nil || !strings.Contains(err.Error(), "suspended") {

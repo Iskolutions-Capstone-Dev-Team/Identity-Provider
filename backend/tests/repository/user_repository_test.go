@@ -79,3 +79,48 @@ func TestGetUserById(t *testing.T) {
 		t.Errorf("unmet expectations: %s", err)
 	}
 }
+
+func TestCountAdminUsers(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %s", err)
+	}
+	defer db.Close()
+
+	sqlxDB := sqlx.NewDb(db, "mysql")
+	repo := repository.NewUserRepository(sqlxDB)
+
+	adminID := uuid.New()
+
+	// Test 1: hasViewAll = true
+	mock.ExpectQuery(regexp.QuoteMeta(
+		"SELECT COUNT(*) FROM users " +
+			"WHERE deleted_at IS NULL AND role_id IS NOT NULL",
+	)).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(5))
+
+	count, err := repo.CountAdminUsers(context.Background(), adminID[:], true)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if count != 5 {
+		t.Errorf("expected count 5, got %d", count)
+	}
+
+	// Test 2: hasViewAll = false
+	mock.ExpectQuery(regexp.QuoteMeta(
+		"SELECT COUNT(id) FROM (",
+	)).WithArgs(adminID[:], adminID[:], adminID[:]).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+
+	count, err = repo.CountAdminUsers(context.Background(), adminID[:], false)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if count != 2 {
+		t.Errorf("expected count 2, got %d", count)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unmet expectations: %s", err)
+	}
+}

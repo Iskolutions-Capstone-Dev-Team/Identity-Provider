@@ -1,7 +1,6 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment } from "react";
 import { motion } from "framer-motion";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import { User, Settings, Monitor, FileText, Shield, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,103 +10,8 @@ import { Frame, FrameHeader, FramePanel, FrameTitle } from "@/components/reui/fr
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Stepper, StepperIndicator, StepperItem, StepperNav, StepperSeparator, StepperTitle, StepperTrigger } from "../../../components/reui/stepper";
-
-const PERMISSION_GROUPS = [
-  {
-    value: "userpool",
-    trigger: "Userpool",
-    icon: <User className="text-muted-foreground size-4" />,
-    permissions: [
-      "Activate user", "Add user", "Assign appclient to user", "Assign Roles", 
-      "Delete User", "Edit User", "View All Users", "View Users based on Appclient", 
-      "Remove appclient from user", "Remove Roles", "Suspend user"
-    ]
-  },
-  {
-    value: "role",
-    trigger: "Role",
-    icon: <Shield className="text-muted-foreground size-4" />,
-    permissions: [
-      "Add roles", "Delete Roles", "Edit Roles", "View roles"
-    ]
-  },
-  {
-    value: "appclient",
-    trigger: "AppClient",
-    icon: <Monitor className="text-muted-foreground size-4" />,
-    permissions: [
-      "Add appclient", "Delete appclient", "Edit appclient", "View all appclients", "View Connected Appclients"
-    ]
-  },
-  {
-    value: "auditlogs",
-    trigger: "Audit Logs",
-    icon: <FileText className="text-muted-foreground size-4" />,
-    permissions: [
-      "View Audit Logs", "View Security Logs"
-    ]
-  },
-  {
-    value: "registrationconfig",
-    trigger: "Registration Config",
-    icon: <Settings className="text-muted-foreground size-4" />,
-    permissions: [
-      "Create Registration Config", "Edit Registration Config", "View Registration Config", "Delete Registration Config"
-    ]
-  },
-  {
-    value: "backuprestore",
-    trigger: "Backup & Restore",
-    icon: <Database className="text-muted-foreground size-4" />,
-    permissions: [
-      "Manage Backup and Restore"
-    ]
-  }
-];
-
-const toPositiveInt = (value) => {
-  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-};
-
-const normalizeTextValue = (value) =>
-  typeof value === "string" ? value : "";
-
-const normalizePermissionLabel = (permission) => {
-  if (typeof permission === "string") {
-    return permission.trim();
-  }
-  if (!permission || typeof permission !== "object") {
-    return "";
-  }
-  const label =
-    permission.permission ??
-    permission.permission_name ??
-    permission.name ??
-    permission.PermissionName;
-  return typeof label === "string" ? label.trim() : "";
-};
-
-const normalizePermissionId = (permission) => {
-  if (permission && typeof permission === "object") {
-    return toPositiveInt(
-      permission.id ??
-      permission.permission_id ??
-      permission.permissionId ??
-      permission.ID,
-    );
-  }
-  return toPositiveInt(permission);
-};
-
-const normalizePermissionOption = (permission = {}) => {
-  const id = normalizePermissionId(permission);
-  const label = normalizePermissionLabel(permission);
-  if (id === null || !label) {
-    return null;
-  }
-  return { id, permission: label };
-};
+import { PERMISSION_GROUPS } from "../utils/roleConstants";
+import { useRoleCreateForm } from "../hooks/useRoleCreateForm";
 
 const steps = [
   { title: "Role Details" },
@@ -115,133 +19,36 @@ const steps = [
 ];
 
 export default function RoleCreateForm({ permissionOptions = [], isPermissionOptionsLoading = false, onClose, onSubmit, colorMode = "light" }) {
-  const shouldUseSteps = true;
-
-  const [roleName, setRoleName] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState([]);
-  const [step, setStep] = useState(1);
-  const [activeVoiceField, setActiveVoiceField] = useState("name");
-  const [error, setError] = useState("");
-  const [touched, setTouched] = useState({
-    name: false,
-    description: false,
+  const formState = useRoleCreateForm({
+    permissionOptions,
+    onSubmit,
   });
 
-  const normalizedPermissionOptions = useMemo(
-    () =>
-      permissionOptions
-        .map((permission) => normalizePermissionOption(permission))
-        .filter(Boolean),
-    [permissionOptions],
-  );
-  
-  const mergedPermissionOptions = useMemo(() => {
-    return normalizedPermissionOptions;
-  }, [normalizedPermissionOptions]);
-
-  const fieldErrors = useMemo(
-    () => ({
-      name: !roleName.trim() ? "Name is required." : "",
-      description: !description.trim() ? "Description is required." : "",
-    }),
-    [description, roleName],
-  );
-
-  const clearAlertError = () => {
-    if (error) {
-      setError("");
-    }
-  };
-
-  const setFieldTouched = (field) => {
-    setTouched((current) => ({ ...current, [field]: true }));
-  };
-
-  const validateForm = () => {
-    const firstError = fieldErrors.name || fieldErrors.description;
-    if (!firstError) {
-      setError("");
-      return true;
-    }
-    setError(firstError);
-    return false;
-  };
-
-  const activeVoiceFieldLabel = activeVoiceField === "description" ? "Role Description" : "Role Name";
-
-  const handleRoleNameChange = (value) => {
-    setRoleName(normalizeTextValue(value));
-    clearAlertError();
-  };
-
-  const handleDescriptionChange = (value) => {
-    setDescription(normalizeTextValue(value));
-    clearAlertError();
-  };
-
-  const handleSpeechTranscript = (transcript) => {
-    if (activeVoiceField === "description") {
-      handleDescriptionChange(
-        description.trim()
-          ? `${description.trimEnd()} ${transcript}`
-          : transcript,
-      );
-      return;
-    }
-    handleRoleNameChange(transcript);
-  };
-
-  const togglePermission = (permissionId) => {
-    setSelectedPermissionIds((currentIds) =>
-      currentIds.includes(permissionId)
-        ? currentIds.filter((currentId) => currentId !== permissionId)
-        : [...currentIds, permissionId],
-    );
-    clearAlertError();
-  };
-
-  const goToPermissionsStep = () => {
-    setTouched({ name: true, description: true });
-    if (!validateForm()) return;
-    setError("");
-    setStep(2);
-  };
-
-  const handleNextClick = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    goToPermissionsStep();
-  };
-
-  const goToDetailsStep = () => {
-    setError("");
-    setStep(1);
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-
-    if (step === 1) {
-      goToPermissionsStep();
-      return;
-    }
-
-    setTouched({ name: true, description: true });
-    if (!validateForm()) {
-      setStep(1);
-      return;
-    }
-
-    onSubmit({
-      role_name: roleName.trim(),
-      description: description.trim(),
-      permission_ids: selectedPermissionIds,
-    });
-  };
-
-  const showRoleDetails = !shouldUseSteps || step === 1;
-  const showPermissions = !shouldUseSteps || step === 2;
+  const {
+    shouldUseSteps,
+    roleName,
+    description,
+    selectedPermissionIds,
+    step,
+    setStep,
+    activeVoiceField,
+    setActiveVoiceField,
+    error,
+    setError,
+    touched,
+    fieldErrors,
+    mergedPermissionOptions,
+    activeVoiceFieldLabel,
+    handleRoleNameChange,
+    handleDescriptionChange,
+    handleSpeechTranscript,
+    togglePermission,
+    handleNextClick,
+    goToDetailsStep,
+    handleSubmit,
+    showRoleDetails,
+    showPermissions,
+  } = formState;
 
   const formContent = (
     <div className="space-y-6">
