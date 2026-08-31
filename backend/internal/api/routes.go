@@ -13,6 +13,7 @@ import (
 type Handlers struct {
 	LogHandler          *v1.LogHandler
 	AuthHandler         *v1.AuthHandler
+	HealthHandler       *v1.HealthHandler
 	ClientHandler       *v1.ClientHandler
 	RoleHandler         *v1.RoleHandler
 	UserHandler         *v1.UserHandler
@@ -36,9 +37,7 @@ type Handlers struct {
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
 	// Open health check endpoints
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
-	})
+	r.GET("/health", h.HealthHandler.GetHealth)
 
 	wellKnown := r.Group("/.well-known")
 	{
@@ -46,9 +45,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	}
 
 	v1Group := r.Group("api/v1")
-	v1Group.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
-	})
+	v1Group.GET("/health", h.HealthHandler.GetHealth)
 	auth := v1Group.Group("/auth")
 	auth.Use(middleware.RateLimitMiddleware())
 	{

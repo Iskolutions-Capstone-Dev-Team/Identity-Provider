@@ -10,6 +10,7 @@ import ReportTypeSelectionModal from "../components/ReportTypeSelectionModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/TopLoginsPanel";
 import SystemLoginsModal from "../components/SystemLoginsModal";
+import SystemHealthWidget from "../components/SystemHealthWidget";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useDashboard } from "../hooks/useDashboard";
@@ -107,6 +108,10 @@ export default function Dashboard() {
             />
           ))}
         </section>
+
+        <div className="grid gap-6">
+          <SystemHealthWidget colorMode={colorMode} isDashboardLoading={showLoading} />
+        </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <TopLoginsPanel
