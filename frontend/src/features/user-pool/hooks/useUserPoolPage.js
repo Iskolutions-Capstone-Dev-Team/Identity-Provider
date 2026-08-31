@@ -146,7 +146,7 @@ export function useUserPoolPage({
       const accountTypeId = await resolveReinviteAccountTypeId(userDetails);
       if (!accountTypeId) throw new Error("The user's account type is unavailable.");
       await mailService.sendInvitation({ email: userDetails.email, accountTypeId });
-      setSuccessMessage(`Invitation resent to ${userDetails.email}.`);
+      toast.success(`Invitation resent to ${userDetails.email}.`);
       setOpenReinvite(false);
       setUserToReinvite(null);
       setOpenViewEditModal(false);
