@@ -2,12 +2,15 @@ package handler_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
 	"github.com/gin-gonic/gin"
@@ -120,6 +123,11 @@ func TestPutAdminAccessHandler(t *testing.T) {
 	mockService.EXPECT().
 		SyncAdminClientAccess(gomock.Any(), userID, clientIDs).
 		Return(nil).
+		Times(1)
+
+	mockClientService.EXPECT().
+		GetClientByID(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(&dto.ClientResponse{Name: "Test Client"}, nil).
 		Times(1)
 
 	mockLogService.EXPECT().
@@ -506,6 +514,116 @@ func TestPostRestoreUserHandler(t *testing.T) {
 		t.Errorf(
 			"expected msg 'User restored successfully', got %s",
 			resp.Message,
+		)
+	}
+}
+
+type stubMfaCache struct {
+	cache.Cache
+	store map[string]string
+}
+
+func (s *stubMfaCache) Set(
+	ctx context.Context, key, val string, ttl time.Duration,
+) error {
+	s.store[key] = val
+	return nil
+}
+
+func (s *stubMfaCache) Get(
+	ctx context.Context, key string,
+) (string, bool, error) {
+	val, ok := s.store[key]
+	return val, ok, nil
+}
+
+func TestPatchUserDetailsHandler_MFASkipped(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockUserService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+	mockClientService := mocks.NewMockClientService(ctrl)
+	mockAccessService := mocks.NewMockClientAllowedUserService(ctrl)
+	mockMFAService := mocks.NewMockMFAService(ctrl)
+
+	cacheStore := make(map[string]string)
+	cacheStore["sudo_mfa:verified:token-123"] = "true"
+
+	handler := &v1.UserHandler{
+		Service:       mockService,
+		LogService:    mockLogService,
+		ClientService: mockClientService,
+		AccessService: mockAccessService,
+		MFAService:    mockMFAService,
+		Cache:         &stubMfaCache{store: cacheStore},
+	}
+
+	userID := uuid.New()
+	actorID := uuid.New()
+	accountTypeID := 2
+	roleID := 1
+
+	mockService.EXPECT().
+		UpdateUserAccountAndRole(
+			gomock.Any(),
+			userID,
+			gomock.Any(),
+			gomock.Any(),
+		).
+		Return(nil).
+		Times(1)
+
+	mockLogService.EXPECT().
+		GetUserEmail(gomock.Any(), gomock.Any()).
+		Return("admin@example.com", nil).
+		AnyTimes()
+
+	mockLogService.EXPECT().
+		PostAuditLogWithActorString(
+			gomock.Any(),
+			gomock.Any(),
+			gomock.Any(),
+		).
+		Return(nil).
+		AnyTimes()
+
+	mockLogService.EXPECT().
+		PostSecurityLog(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	c.Params = []gin.Param{{Key: "id", Value: userID.String()}}
+	c.Set("user_id", actorID.String())
+	c.Set("permissions", []string{"Edit user"})
+	c.Set("token_id", "token-123")
+	c.Set("token_expires_at", time.Now().Add(10*time.Minute))
+
+	reqBody := dto.UpdateUserDetailsRequest{
+		AccountTypeID: &accountTypeID,
+		RoleID:        &roleID,
+		MFACode:       "",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+	c.Request, _ = http.NewRequest(
+		"PATCH",
+		"/admin/users/"+userID.String(),
+		bytes.NewBuffer(bodyBytes),
+	)
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PatchUserDetails(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf(
+			"expected status 200, got %d. Body: %s",
+			w.Code,
+			w.Body.String(),
 		)
 	}
 }

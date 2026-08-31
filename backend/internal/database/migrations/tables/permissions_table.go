@@ -80,5 +80,11 @@ var PermissionsMigration = migrations.TableMigration{
 				('Manage Backup and Restore')
 			;`,
 		},
+		{
+			ID: "add-view-admins-permission",
+			SQL: `INSERT IGNORE INTO permissions (permission) VALUES 
+				('View admins')
+			;`,
+		},
 	},
 }

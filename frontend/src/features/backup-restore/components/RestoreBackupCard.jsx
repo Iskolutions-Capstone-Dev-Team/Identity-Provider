@@ -115,7 +115,7 @@ export function RestoreBackupCard({
                     </p>
                   </div>
                   
-                  <Button onClick={removeFile} variant="outline" size="icon" className="size-8 rounded-full shadow-sm shrink-0 hover:bg-destructive/10 hover:text-destructive">
+                  <Button onClick={removeFile} variant="outline" size="icon" className="size-8 rounded-full shadow-sm shrink-0 hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors duration-200">
                     <XIcon className="size-4" />
                   </Button>
                 </div>
