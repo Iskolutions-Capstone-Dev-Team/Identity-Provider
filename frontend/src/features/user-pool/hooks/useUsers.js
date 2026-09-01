@@ -430,6 +430,10 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
   const updateUser = async (updatedUser, originalUser = {}) => {
     const isAdminUserUpdate = updatedUser?.userType === ADMIN_USER_TYPE;
+    const shouldUpdateName = updatedUser?.givenName !== originalUser?.givenName || 
+                             updatedUser?.surname !== originalUser?.surname || 
+                             updatedUser?.middleName !== originalUser?.middleName || 
+                             updatedUser?.suffix !== originalUser?.suffix;
     const nextStatus = normalizeStatus(updatedUser?.status);
     const previousStatus = normalizeStatus(originalUser?.status);
     const nextAccessibleClientIds = normalizeClientIds(updatedUser?.accessibleClientIds);
@@ -458,6 +462,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     let manageableClientsWereUpdated = false;
     let roleWasUpdated = false;
     let accountTypeWasUpdated = false;
+    let nameWasUpdated = false;
 
     try {
       if (
@@ -465,7 +470,8 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         !shouldUpdateRole &&
         !shouldUpdateAccountType &&
         !shouldUpdateAccessibleClients &&
-        !shouldUpdateManageableClients
+        !shouldUpdateManageableClients &&
+        !shouldUpdateName
       ) {
         return;
       }
@@ -505,6 +511,16 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         accountTypeWasUpdated = shouldUpdateAccountType;
       }
 
+      if (shouldUpdateName) {
+        await userService.updateUserNameAdmin(updatedUser.id, {
+          firstName: updatedUser.givenName,
+          lastName: updatedUser.surname,
+          middleName: updatedUser.middleName,
+          suffix: updatedUser.suffix,
+        });
+        nameWasUpdated = true;
+      }
+
       if (shouldUpdateStatus) {
         await userService.updateUserStatus(updatedUser.id, nextStatus);
       }
@@ -524,13 +540,14 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         shouldUpdateRole ||
         shouldUpdateAccountType ||
         shouldUpdateAccessibleClients ||
-        shouldUpdateManageableClients
+        shouldUpdateManageableClients ||
+        shouldUpdateName
       ) {
         await fetchUsers(userType, sortBy, sort, { showLoading: false });
         return;
       }
     } catch (error) {
-      if (accessWasUpdated || manageableClientsWereUpdated || roleWasUpdated) {
+      if (accessWasUpdated || manageableClientsWereUpdated || roleWasUpdated || nameWasUpdated) {
         await fetchUsers(userType, sortBy, sort, { showLoading: false });
       }
 

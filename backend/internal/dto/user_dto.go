@@ -152,3 +152,7 @@ type UserInfoResponse struct {
 	Email      string `json:"email"`
 	Roles      string `json:"roles"`
 }
+
+type UpdateUserEmailRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}

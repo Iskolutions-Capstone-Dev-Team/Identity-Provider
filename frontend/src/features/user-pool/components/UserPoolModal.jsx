@@ -2,9 +2,11 @@ import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import UserPoolAuthAppMfaModal from "./UserPoolAuthAppMfaModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { SUFFIX_OPTIONS } from "../../../utils/suffixOptions";
 import { Badge } from "@/components/ui/badge";
 import { Mail, CheckIcon, User, Copy, CopyCheck } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -56,6 +58,8 @@ export default function UserPoolModal({
     isEmailCopied,
     isSelectOpen,
     setIsSelectOpen,
+    fieldErrors,
+    setFieldErrors,
     showMfaModal,
     setShowMfaModal,
     mfaCode,
@@ -214,7 +218,98 @@ export default function UserPoolModal({
           ) : (
             <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pt-3 pb-6">
               <div className="space-y-6">
-                {/* 1st Card: Account Type */}
+                {/* Name Edit Card */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-0 space-y-4">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase">Personal Information</h4>
+                      <p className="text-sm text-muted-foreground">Edit the user's name details.</p>
+                    </div>
+                    <Separator />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center min-h-[24px]">
+                          <Label htmlFor="givenName">First Name <span className="text-red-500">*</span></Label>
+                        </div>
+                        <Input 
+                          id="givenName" 
+                          value={formData.givenName} 
+                          onChange={(e) => {
+                            setFormData(curr => ({ ...curr, givenName: e.target.value }));
+                            if (fieldErrors?.givenName) setFieldErrors(curr => ({ ...curr, givenName: "" }));
+                          }} 
+                          placeholder="Enter first name" 
+                          maxLength={50}
+                          className="h-10 rounded-lg"
+                          aria-invalid={!!fieldErrors?.givenName}
+                        />
+                        {fieldErrors?.givenName && (
+                          <p className="!mt-0 text-xs text-destructive">{fieldErrors.givenName}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center min-h-[24px]">
+                          <Label htmlFor="surname">Last Name <span className="text-red-500">*</span></Label>
+                        </div>
+                        <Input 
+                          id="surname" 
+                          value={formData.surname} 
+                          onChange={(e) => {
+                            setFormData(curr => ({ ...curr, surname: e.target.value }));
+                            if (fieldErrors?.surname) setFieldErrors(curr => ({ ...curr, surname: "" }));
+                          }} 
+                          placeholder="Enter last name" 
+                          maxLength={50}
+                          className="h-10 rounded-lg"
+                          aria-invalid={!!fieldErrors?.surname}
+                        />
+                        {fieldErrors?.surname && (
+                          <p className="!mt-0 text-xs text-destructive">{fieldErrors.surname}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center min-h-[24px]">
+                          <Label htmlFor="middleName">Middle Name</Label>
+                        </div>
+                        <Input 
+                          id="middleName" 
+                          value={formData.middleName} 
+                          onChange={(e) => setFormData(curr => ({ ...curr, middleName: e.target.value }))} 
+                          placeholder="Enter middle name" 
+                          maxLength={50}
+                          className="h-10 rounded-lg"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between min-h-[24px]">
+                          <Label htmlFor="suffix">Suffix</Label>
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-[#7b0d15]/30 text-[#7b0d15] dark:border-[#f8d24e]/30 dark:text-[#ffe28a] tracking-wider bg-[#7b0d15]/5 dark:bg-[#f8d24e]/10">Optional</span>
+                        </div>
+                        <Select 
+                          value={formData.suffix} 
+                          onValueChange={(val) => setFormData(curr => ({ ...curr, suffix: val === "N/A" ? "" : val }))}
+                        >
+                          <SelectTrigger className="!h-10 w-full rounded-lg">
+                            <span className={`truncate text-sm ${formData.suffix ? "text-foreground" : "text-muted-foreground"}`}>
+                              <SelectValue placeholder="Enter suffix" />
+                            </span>
+                          </SelectTrigger>
+                          <SelectContent alignItemWithTrigger={false} className="max-h-[300px]">
+                            <SelectGroup>
+                              {SUFFIX_OPTIONS.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Account Type Card */}
                 <Card className="bg-muted/30 border-border/40">
                   <CardContent className="px-5 py-0 space-y-4">
                     <div>
@@ -228,7 +323,7 @@ export default function UserPoolModal({
                       </div>
                     ) : (
                       <Select key={accountTypeSelectOptions.length} value={formData.accountType} onValueChange={handleAccountTypeChange} onOpenChange={setIsSelectOpen}>
-                        <SelectTrigger className="h-10 w-full bg-muted/50 border-border/50">
+                        <SelectTrigger className="!h-10 w-full rounded-lg">
                           <SelectValue placeholder="Select Account Type" />
                         </SelectTrigger>
                         <SelectContent position="popper">
@@ -351,7 +446,7 @@ export default function UserPoolModal({
                       </div>
                     ) : (
                       <Select value={formData.status} onValueChange={handleStatusChange} onOpenChange={setIsSelectOpen}>
-                        <SelectTrigger className="h-10 w-full bg-muted/50 border-border/50">
+                        <SelectTrigger className="!h-10 w-full rounded-lg">
                           <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent position="popper">
