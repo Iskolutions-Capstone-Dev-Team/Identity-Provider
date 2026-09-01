@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	models "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	repository "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
@@ -209,5 +210,29 @@ func (mr *MockRegistrationRepositoryMockRecorder) UpdateAccountType(
 		id,
 		name,
 		isSelectable,
+	)
+}
+
+// GetSelectableAccountTypes mocks base method.
+func (m *MockRegistrationRepository) GetSelectableAccountTypes(
+	ctx context.Context,
+) ([]models.AccountType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSelectableAccountTypes", ctx)
+	ret0, _ := ret[0].([]models.AccountType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSelectableAccountTypes indicates an expected call of GetSelectableAccountTypes.
+func (mr *MockRegistrationRepositoryMockRecorder) GetSelectableAccountTypes(
+	ctx any,
+) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"GetSelectableAccountTypes",
+		reflect.TypeOf((*MockRegistrationRepository)(nil).GetSelectableAccountTypes),
+		ctx,
 	)
 }

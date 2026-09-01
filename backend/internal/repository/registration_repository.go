@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -36,6 +37,7 @@ type RegistrationRepository interface {
 	) ([]AccountTypeClientRow, error)
 	CountScopedAccountTypes(ctx context.Context, userID []byte,
 		keyword string) (int, error)
+	GetSelectableAccountTypes(ctx context.Context) ([]models.AccountType, error)
 }
 
 type regRepo struct {
@@ -330,4 +332,18 @@ func (r *regRepo) CountScopedAccountTypes(ctx context.Context,
 
 	err := r.db.GetContext(ctx, &count, query, queryParams...)
 	return count, err
+}
+
+func (r *regRepo) GetSelectableAccountTypes(
+	ctx context.Context,
+) ([]models.AccountType, error) {
+	query := `
+		SELECT id, name, is_selectable
+		FROM account_types
+		WHERE is_selectable = TRUE
+		ORDER BY name ASC;
+	`
+	var types []models.AccountType
+	err := r.db.SelectContext(ctx, &types, query)
+	return types, err
 }
