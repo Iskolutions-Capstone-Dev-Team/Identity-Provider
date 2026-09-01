@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useAppClients } from "../hooks/useAppClients";
+import { useAppClientPage } from "../hooks/useAppClientPage";
 import AppClientFilters from "../components/AppClientFilters";
 import ConnectedAppClientTable from "../components/ConnectedAppClientTable";
 import ConnectedAppClientCards from "../components/ConnectedAppClientCards";
@@ -17,182 +17,67 @@ import { createPortal } from "react-dom";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { PERMISSIONS } from "../../../utils/permissionAccess";
 import MetricsCard from "../../../components/MetricsCard";
-import { metricsService } from "../../../services/metricsService";
 
 export default function AppClient() {
-    const location = useLocation();
-    const navigate = useNavigate();
     const { colorMode = "light", globalViewType } = useOutletContext() || {};
     const { hasPermission } = usePermissionAccess();
     const canCreateClient = hasPermission(PERMISSIONS.ADD_APPCLIENT);
     const canEditClient = hasPermission(PERMISSIONS.EDIT_APPCLIENT);
     const canDeleteClient = hasPermission(PERMISSIONS.DELETE_APPCLIENT);
     const canViewAllClients = hasPermission(PERMISSIONS.VIEW_ALL_APPCLIENTS);
-    const canViewConnectedClients = hasPermission(
-        PERMISSIONS.VIEW_CONNECTED_APPCLIENTS,
-    );
+    const canViewConnectedClients = hasPermission(PERMISSIONS.VIEW_CONNECTED_APPCLIENTS);
     const canViewClientList = canViewAllClients || canViewConnectedClients;
-    const [clientMetrics, setClientMetrics] = useState(null);
-    const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+    const canRotateClientSecret = canEditClient;
 
-    useEffect(() => {
-        setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
-    }, []);
-
-    useEffect(() => {
-        metricsService.getClientMetrics().then(setClientMetrics).catch(() => { });
-    }, []);
-    
     const {
         search, setSearch, page, setPage,
-        limit, setLimit, sortBy, setSortBy, sort, setSort,
+        limit, sortBy, setSortBy, sort, setSort,
         paginatedClients, totalPages, totalResults,
         loading,
-        successMessage, setSuccessMessage,
+        setSuccessMessage,
         updateClient, deleteClient,
         getClientDetails,
         rotateClientSecret, secretModal, setSecretModal,
     } = useAppClients({ enabled: canViewClientList });
-    const [editViewOpen, setEditViewOpen] = useState(false);
-    const [mode, setMode] = useState("create");
-    const [activeClient, setActiveClient] = useState(null);
-    const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-    const [deleteTarget, setDeleteTarget] = useState(null);
-    const [showSecretConfirm, setShowSecretConfirm] = useState(false);
-    const [secretTarget, setSecretTarget] = useState(null);
-    const [pendingSuccessMessage, setPendingSuccessMessage] = useState("");
 
-    const [viewType, setViewType] = useState(() => {
-        return localStorage.getItem("appClientViewType") || globalViewType || "table";
-    });
-    
-    const isMounted = useRef(false);
-    useEffect(() => {
-        if (isMounted.current) {
-            if (globalViewType) {
-                setViewType(globalViewType);
-            }
-        } else {
-            isMounted.current = true;
-        }
-    }, [globalViewType]);
-
-    useEffect(() => {
-        localStorage.setItem("appClientViewType", viewType);
-    }, [viewType]);
-
-    const showLoading = useDelayedLoading(loading);
-    const canRotateClientSecret = canEditClient;
-    const closeSuccessAlert = useCallback(() => {
-        setSuccessMessage("");
-    }, [setSuccessMessage]);
-
-    const openCreate = () => {
-        if (!canCreateClient) {
-            return;
-        }
-
-        navigate("/app-client/create");
-    };
-
-    const openView = (client) => {
-        setMode("view");
-        setActiveClient(client);
-        setEditViewOpen(true);
-    };
-
-    const openEdit = (client) => {
-        if (!canEditClient) {
-            return;
-        }
-
-        setMode("edit");
-        setActiveClient(client);
-        setEditViewOpen(true);
-    };
-
-    const handleDeleteClick = (client) => {
-        if (!canDeleteClient) {
-            return;
-        }
-
-        setDeleteTarget(client);
-        setShowDeleteAlert(true);
-    };
-
-    const confirmDelete = async () => {
-        if (!deleteTarget) {
-            return;
-        }
-
-        try {
-            await deleteClient(deleteTarget.id || deleteTarget.clientId);
-        } finally {
-            setShowDeleteAlert(false);
-        }
-    };
-
-    const handleRotateClick = (client) => {
-        if (!canRotateClientSecret) {
-            return;
-        }
-
-        setSecretTarget(client || null);
-        setShowSecretConfirm(true);
-    };
-
-    const cancelRotateSecret = () => {
-        setShowSecretConfirm(false);
-        setSecretTarget(null);
-    };
-
-    const confirmRotateSecret = async () => {
-        if (!secretTarget) return;
-        await rotateClientSecret(secretTarget);
-        setShowSecretConfirm(false);
-        setSecretTarget(null);
-    };
-
-    const resetSecretModal = () => {
-        setSecretModal({
-            open: false,
-            clientId: "",
-            clientName: "",
-            secret: "",
-            title: "",
-            loading: false,
-            hasError: false,
-        });
-
-        if (pendingSuccessMessage) {
-            setSuccessMessage(pendingSuccessMessage);
-            setPendingSuccessMessage("");
-        }
-    };
-
-    useEffect(() => {
-        const routeState = location.state || {};
-
-        if (routeState.secretModal) {
-            setSecretModal(routeState.secretModal);
-
-            if (routeState.successMessage) {
-                setPendingSuccessMessage(routeState.successMessage);
-            }
-        } else if (routeState.successMessage) {
-            setSuccessMessage(routeState.successMessage);
-        }
-
-        if (routeState.successMessage || routeState.secretModal) {
-            navigate(location.pathname, { replace: true, state: {} });
-        }
-    }, [
-        location.pathname,
-        location.state,
-        navigate,
+    const pageState = useAppClientPage({
+        globalViewType,
+        canCreateClient,
+        canEditClient,
+        canDeleteClient,
+        canRotateClientSecret,
+        rotateClientSecret,
+        deleteClient,
+        secretModal,
         setSecretModal,
         setSuccessMessage,
-    ]);
+    });
+
+    const {
+        clientMetrics,
+        breadcrumbsContainer,
+        editViewOpen,
+        setEditViewOpen,
+        mode,
+        activeClient,
+        showDeleteAlert,
+        setShowDeleteAlert,
+        deleteTarget,
+        showSecretConfirm,
+        viewType,
+        setViewType,
+        openCreate,
+        openView,
+        openEdit,
+        handleDeleteClick,
+        confirmDelete,
+        handleRotateClick,
+        cancelRotateSecret,
+        confirmRotateSecret,
+        resetSecretModal,
+    } = pageState;
+
+    const showLoading = useDelayedLoading(loading);
 
     return (
         <>
@@ -332,8 +217,6 @@ export default function AppClient() {
                 }}
                 onConfirm={confirmDelete}
             />
-
-
         </>
     );
 }

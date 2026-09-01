@@ -397,7 +397,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	actorPerms := c.GetStringSlice("permissions")
 
 	// 1. Get client by id
-	_, err = h.ClientService.GetClientByID(
+	client, err := h.ClientService.GetClientByID(
 		c.Request.Context(),
 		cID,
 		userID,
@@ -415,11 +415,20 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
-	// 2. Revoke all user tokens
-	err = h.AuthService.RevokeAllUserTokens(c.Request.Context(), userID)
-	if err != nil {
-		log.Printf("[Logout] Token Revocation: %v", err)
+	// 2. Revoke all user tokens and active sessions
+	sessionToken, err := c.Cookie(service.SESSION_COOKIE_NAME)
+	if err == nil && sessionToken != "" {
+		_ = h.AuthService.Logout(c.Request.Context(), sessionToken)
+	} else {
+		_ = h.AuthService.RevokeAllUserTokens(c.Request.Context(), userID)
 	}
+
+	// Always clear the session cookie
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie(
+		service.SESSION_COOKIE_NAME, "", -1, "/", "",
+		true, true,
+	)
 
 	// metadata for logging
 	metadata := buildMetadata(map[string]interface{}{
@@ -435,8 +444,11 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 			Metadata: metadata,
 		})
 
-	logoutURL := os.Getenv("CLIENT_BASE_URL") + "/logout?client_id=" +
-		req.ClientID + "&user_id=" + uIDStr
+	logoutURL := client.LogoutURI
+	if logoutURL == "" {
+		logoutURL = os.Getenv("CLIENT_BASE_URL") + "/logout?client_id=" +
+			req.ClientID + "&user_id=" + uIDStr
+	}
 
 	c.Redirect(http.StatusFound, logoutURL)
 }

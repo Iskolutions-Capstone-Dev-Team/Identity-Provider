@@ -501,6 +501,50 @@ func addReportCell(
 	pdf.CellFormat(width, height, text, "1", 0, align, false, 0, "")
 }
 
+func addMultiCellReportRow(
+	pdf *gofpdf.Fpdf,
+	widths []float64,
+	minHeight float64,
+	texts []string,
+	aligns []string,
+) {
+	lineHeight := 5.0
+	paddingX := 1.5
+	paddingY := 2.0
+
+	pdf.SetFont("Arial", "", 9)
+
+	var rowHeight float64 = minHeight
+	for i, text := range texts {
+		lines := pdf.SplitLines([]byte(text), widths[i]-(paddingX*2))
+		reqHeight := float64(len(lines))*lineHeight + (paddingY * 2)
+		if reqHeight > rowHeight {
+			rowHeight = reqHeight
+		}
+	}
+
+	startX := pdf.GetX()
+	startY := pdf.GetY()
+
+	_, pageH := pdf.GetPageSize()
+	_, _, _, mBottom := pdf.GetMargins()
+	if startY+rowHeight > pageH-mBottom {
+		pdf.AddPage()
+		startY = pdf.GetY()
+		startX = pdf.GetX()
+	}
+
+	currentX := startX
+	for i, text := range texts {
+		pdf.Rect(currentX, startY, widths[i], rowHeight, "")
+		pdf.SetXY(currentX+paddingX, startY+paddingY)
+		pdf.MultiCell(widths[i]-(paddingX*2), lineHeight, text, "", aligns[i], false)
+		currentX += widths[i]
+	}
+
+	pdf.SetXY(startX, startY+rowHeight)
+}
+
 func addWrappedReportRow(
 	pdf *gofpdf.Fpdf,
 	labelWidth float64,

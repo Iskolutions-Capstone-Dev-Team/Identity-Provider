@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
@@ -28,6 +30,7 @@ const (
 	actionDeleteUser      = "delete_user"
 	actionUpdateAccess    = "update_user_access"
 	actionUpdateName      = "update_user_name"
+	actionAdminUpdateName = "admin_update_user_name"
 	actionRestoreUser     = "restore_user"
 	actionHardDeleteUser  = "hard_delete_user"
 )
@@ -39,6 +42,7 @@ type UserHandler struct {
 	ClientService service.ClientService
 	AccessService service.ClientAllowedUserService
 	MFAService    service.MFAService
+	Cache         cache.Cache
 }
 
 // PostUser creates a new user in the system
@@ -260,6 +264,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	permissions := c.GetStringSlice("permissions")
+	keyword := c.Query("keyword")
 	resp, err := h.Service.GetFilteredUserList(
 		ctx,
 		permissions,
@@ -269,6 +274,7 @@ func (h *UserHandler) GetUserList(c *gin.Context) {
 		sortBy,
 		order,
 		status,
+		keyword,
 	)
 	if err != nil {
 		log.Printf("[GetUserList] Service Execution: %v", err)
@@ -299,7 +305,7 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 	const defaultPage = "1"
 
 	// RBAC Check
-	if !middleware.HasPermission(c, "View all users") {
+	if !middleware.HasPermission(c, "View admins") {
 		errors.SendString(
 			c,
 			http.StatusUnauthorized,
@@ -1424,15 +1430,33 @@ func (h *UserHandler) PutUserAccess(c *gin.Context) {
 		actorName = adminIDStr
 	}
 
+	var clientNames []string
+	for _, idStr := range req.ClientIDs {
+		cid, err := uuid.Parse(idStr)
+		if err == nil {
+			cl, err := h.ClientService.GetClientByID(
+				ctx,
+				cid,
+				adminID,
+				c.GetStringSlice("permissions"),
+			)
+			if err == nil {
+				clientNames = append(clientNames, cl.Name)
+			} else {
+				clientNames = append(clientNames, idStr)
+			}
+		}
+	}
+
 	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName,
 		&dto.PostAuditLogRequest{
 			Action: actionUpdateAccess,
 			Target: targetIDStr,
 			Status: models.StatusSuccess,
 			Metadata: buildMetadata(map[string]interface{}{
-				"client_ids": req.ClientIDs,
-				"ip":         c.ClientIP(),
-				"user_agent": c.Request.UserAgent(),
+				"client_names": clientNames,
+				"ip":           c.ClientIP(),
+				"user_agent":   c.Request.UserAgent(),
 			}),
 		})
 
@@ -1500,6 +1524,24 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 		return
 	}
 
+	var clientNames []string
+	for _, idStr := range req.ClientIDs {
+		cid, err := uuid.Parse(idStr)
+		if err == nil {
+			cl, err := h.ClientService.GetClientByID(
+				ctx,
+				cid,
+				adminID,
+				c.GetStringSlice("permissions"),
+			)
+			if err == nil {
+				clientNames = append(clientNames, cl.Name)
+			} else {
+				clientNames = append(clientNames, idStr)
+			}
+		}
+	}
+
 	err = h.Service.SyncAdminClientAccess(ctx, targetID, req.ClientIDs)
 	if err != nil {
 		log.Printf("[PutAdminAccess] %v", err)
@@ -1509,8 +1551,9 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 				Target: targetUser.Email,
 				Status: models.StatusFail,
 				Metadata: buildMetadata(map[string]interface{}{
-					"error": err.Error(),
-					"ip":    c.ClientIP(),
+					"client_names": clientNames,
+					"error":        err.Error(),
+					"ip":           c.ClientIP(),
 				}),
 			})
 		errors.Send(
@@ -1529,7 +1572,8 @@ func (h *UserHandler) PutAdminAccess(c *gin.Context) {
 			Target: targetUser.Email,
 			Status: models.StatusSuccess,
 			Metadata: buildMetadata(map[string]interface{}{
-				"ip": c.ClientIP(),
+				"client_names": clientNames,
+				"ip":           c.ClientIP(),
 			}),
 		})
 
@@ -1657,28 +1701,62 @@ func (h *UserHandler) PatchUserDetails(c *gin.Context) {
 	}
 
 	// Verify administrative MFA before allowing role/account changes
-	success, err := h.MFAService.VerifyCode(ctx, actorID[:], req.MFACode)
-	if err != nil {
-		log.Printf("[PatchUserDetails] MFA Verification: %v", err)
-		errors.Send(
-			c,
-			http.StatusInternalServerError,
-			errors.CodeInternalError,
-			"Failed to verify MFA code.",
-			err,
-		)
-		return
+	mfaSkipped := false
+	var cacheKey string
+	var remainingTime time.Duration
+
+	tokenID := c.GetString("token_id")
+	expiresAtVal, exists := c.Get("token_expires_at")
+	if h.Cache != nil && tokenID != "" && exists {
+		if expiresAt, ok := expiresAtVal.(time.Time); ok {
+			cacheKey = fmt.Sprintf("sudo_mfa:verified:%s", tokenID)
+			verified, _, _ := h.Cache.Get(ctx, cacheKey)
+			if verified == "true" {
+				mfaSkipped = true
+			}
+			remainingTime = time.Until(expiresAt)
+		}
 	}
-	if !success {
-		log.Printf("[PatchUserDetails] MFA Verification: invalid mfa code")
-		errors.SendString(
-			c,
-			http.StatusUnauthorized,
-			errors.CodeUnauthorized,
-			"Invalid MFA code provided.",
-			"Invalid MFA code",
-		)
-		return
+
+	if !mfaSkipped {
+		if req.MFACode == "" {
+			errors.SendString(
+				c,
+				http.StatusBadRequest,
+				errors.CodeInvalidInput,
+				"MFA code is required.",
+				"MFA Required",
+			)
+			return
+		}
+
+		success, err := h.MFAService.VerifyCode(ctx, actorID[:], req.MFACode)
+		if err != nil {
+			log.Printf("[PatchUserDetails] MFA Verification: %v", err)
+			errors.Send(
+				c,
+				http.StatusInternalServerError,
+				errors.CodeInternalError,
+				"Failed to verify MFA code.",
+				err,
+			)
+			return
+		}
+		if !success {
+			log.Printf("[PatchUserDetails] MFA Verification: invalid mfa code")
+			errors.SendString(
+				c,
+				http.StatusUnauthorized,
+				errors.CodeUnauthorized,
+				"Invalid MFA code provided.",
+				"Invalid MFA code",
+			)
+			return
+		}
+
+		if h.Cache != nil && cacheKey != "" && remainingTime > 0 {
+			_ = h.Cache.Set(ctx, cacheKey, "true", remainingTime)
+		}
 	}
 
 	metadata := buildMetadata(map[string]interface{}{
@@ -1826,5 +1904,239 @@ func (h *UserHandler) PostRestoreUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "User restored successfully",
+	})
+}
+
+// PatchUserEmailAdmin changes a user's email address by an administrator.
+func (h *UserHandler) PatchUserEmailAdmin(c *gin.Context) {
+	id := c.Param("id")
+	targetUserID, err := uuid.Parse(id)
+	if err != nil {
+		log.Printf("[PatchUserEmailAdmin] UUID Parse: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
+		)
+		return
+	}
+
+	if !middleware.HasPermission(c, "Edit user") {
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
+		return
+	}
+
+	var req dto.UpdateUserEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PatchUserEmailAdmin] Bind JSON: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid input.",
+			err,
+		)
+		return
+	}
+
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	err = h.Service.UpdateUserEmail(ctx, targetUserID, req.Email)
+	if err != nil {
+		log.Printf("[PatchUserEmailAdmin] Service Error: %v", err)
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to update user email.",
+			err,
+		)
+		return
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(
+		ctx,
+		actorName,
+		&dto.PostAuditLogRequest{
+			Action: "update_user_email_admin",
+			Target: id,
+			Status: models.StatusSuccess,
+			Metadata: buildMetadata(map[string]interface{}{
+				"target_id":  id,
+				"new_email":  req.Email,
+				"ip":         c.ClientIP(),
+				"user_agent": c.Request.UserAgent(),
+			}),
+		},
+	)
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "User email updated successfully",
+	})
+}
+
+// PatchUserEmailMe changes the logged-in user's own email address.
+func (h *UserHandler) PatchUserEmailMe(c *gin.Context) {
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+	ctx := c.Request.Context()
+
+	var req dto.UpdateUserEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PatchUserEmailMe] Bind JSON: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid input.",
+			err,
+		)
+		return
+	}
+
+	actorName, _ := h.LogService.GetUserEmail(ctx, userID[:])
+	if actorName == "" {
+		actorName = userIDStr
+	}
+
+	err := h.Service.UpdateUserEmail(ctx, userID, req.Email)
+	if err != nil {
+		log.Printf("[PatchUserEmailMe] Service Error: %v", err)
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to update your email.",
+			err,
+		)
+		return
+	}
+
+	logReq := &dto.PostAuditLogRequest{
+		Action: "update_user_email_me",
+		Target: userIDStr,
+		Status: models.StatusSuccess,
+		Metadata: buildMetadata(map[string]interface{}{
+			"target_id":  userIDStr,
+			"new_email":  req.Email,
+			"ip":         c.ClientIP(),
+			"user_agent": c.Request.UserAgent(),
+		}),
+	}
+	_ = h.LogService.PostAuditLogWithActorString(ctx, actorName, logReq)
+	_ = h.LogService.PostSecurityLog(ctx, userID[:], logReq)
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Your email has been updated successfully",
+	})
+}
+
+// PatchUserNameAdmin updates any user's name fields by an administrator.
+func (h *UserHandler) PatchUserNameAdmin(c *gin.Context) {
+	id := c.Param("id")
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		log.Printf("[PatchUserNameAdmin] UUID Parse: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid ID Format.",
+			err,
+		)
+		return
+	}
+
+	if !middleware.HasPermission(c, "Edit user") {
+		errors.SendString(
+			c,
+			http.StatusUnauthorized,
+			errors.CodeUnauthorized,
+			"Unauthorized access.",
+			"Unauthorized",
+		)
+		return
+	}
+
+	var req dto.UpdateUserNameRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[PatchUserNameAdmin] Bind JSON: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request body.",
+			err,
+		)
+		return
+	}
+
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	ctx := c.Request.Context()
+	actorName, _ := h.LogService.GetUserEmail(ctx, actorID[:])
+	if actorName == "" {
+		actorName = actorIDStr
+	}
+
+	metadata := buildMetadata(map[string]interface{}{
+		"target_id": id,
+		"ip":        c.ClientIP(),
+	})
+
+	err = h.Service.UpdateUserName(ctx, userID, req)
+	if err != nil {
+		log.Printf("[PatchUserNameAdmin] %v", err)
+		_ = h.LogService.PostAuditLogWithActorString(
+			ctx,
+			actorName,
+			&dto.PostAuditLogRequest{
+				Action: actionAdminUpdateName,
+				Target: id,
+				Status: models.StatusFail,
+				Metadata: buildMetadata(map[string]interface{}{
+					"target_id": id,
+					"ip":        c.ClientIP(),
+					"error":     err.Error(),
+				}),
+			},
+		)
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to update user name. Check if the user exists.",
+			err,
+		)
+		return
+	}
+
+	_ = h.LogService.PostAuditLogWithActorString(
+		ctx,
+		actorName,
+		&dto.PostAuditLogRequest{
+			Action:   actionAdminUpdateName,
+			Target:   id,
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		},
+	)
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "User name updated successfully",
 	})
 }

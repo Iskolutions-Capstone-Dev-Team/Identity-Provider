@@ -64,6 +64,11 @@ func (s *mailService) SendAndSaveInvitation(ctx context.Context,
 		InvitationCode: code,
 	}
 
+	err = s.invRepo.DeleteInvitation(ctx, email)
+	if err != nil {
+		return fmt.Errorf("[MailService] Clean Existing Invitation: %w", err)
+	}
+
 	err = s.invRepo.CreateInvitation(ctx, inv)
 	if err != nil {
 		return fmt.Errorf("[MailService] Save Invitation: %w", err)

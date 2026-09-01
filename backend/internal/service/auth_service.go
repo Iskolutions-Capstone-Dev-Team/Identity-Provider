@@ -253,6 +253,7 @@ func (s *authService) RevokeAllUserTokens(
 	ctx context.Context,
 	userID uuid.UUID,
 ) error {
+	_ = s.SessionRepo.DeleteByUserID(ctx, userID[:])
 	return s.Repo.RevokeTokens(ctx, userID[:])
 }
 
