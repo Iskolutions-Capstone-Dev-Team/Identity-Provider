@@ -180,3 +180,43 @@ func TestGetRegistrationConfig_Scoped(t *testing.T) {
 		t.Errorf("expected 1 account types, got %d", len(resp.AccountTypes))
 	}
 }
+
+/**
+ * TestGetSelectableAccountTypes verifies fetching selectable account types.
+ */
+func TestGetSelectableAccountTypes(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRegRepo := mocks.NewMockRegistrationRepository(ctrl)
+	mockInvRepo := mocks.NewMockInvitationRepository(ctrl)
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	mockCauRepo := mocks.NewMockClientAllowedUserRepository(ctrl)
+
+	regService := service.NewRegistrationService(
+		mockRegRepo, mockInvRepo, mockUserRepo, mockCauRepo,
+	)
+
+	ctx := context.Background()
+	types := []models.AccountType{
+		{ID: 1, Name: "student", IsSelectable: true},
+		{ID: 2, Name: "faculty", IsSelectable: true},
+	}
+
+	mockRegRepo.EXPECT().
+		GetSelectableAccountTypes(ctx).
+		Return(types, nil)
+
+	res, err := regService.GetSelectableAccountTypes(ctx)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if len(res) != 2 {
+		t.Fatalf("expected 2 selectable account types, got %d", len(res))
+	}
+
+	if res[0].ID != 1 || res[0].Name != "student" {
+		t.Errorf("unexpected first item: %+v", res[0])
+	}
+}
