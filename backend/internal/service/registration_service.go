@@ -30,6 +30,8 @@ type RegistrationService interface {
 		req dto.ActivateAccountRequest) error
 	CheckInvitation(ctx context.Context,
 		code string) (bool, error)
+	GetSelectableAccountTypes(ctx context.Context) (
+		[]dto.SelectableAccountTypeResponse, error)
 }
 
 type regService struct {
@@ -308,4 +310,23 @@ func (s *regService) CheckInvitation(ctx context.Context,
 	}
 
 	return true, nil
+}
+
+func (s *regService) GetSelectableAccountTypes(
+	ctx context.Context,
+) ([]dto.SelectableAccountTypeResponse, error) {
+	types, err := s.repo.GetSelectableAccountTypes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]dto.SelectableAccountTypeResponse, 0, len(types))
+	for _, t := range types {
+		res = append(res, dto.SelectableAccountTypeResponse{
+			ID:   t.ID,
+			Name: t.Name,
+		})
+	}
+
+	return res, nil
 }
