@@ -446,6 +446,38 @@ export function useRegisterForm() {
     }
   };
 
+  const [roleOptions, setRoleOptions] = useState([]);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchRoles = async () => {
+      try {
+        setIsLoadingRoles(true);
+        const types = await registrationFlowService.getSelectableAccountTypes();
+        if (!cancelled) {
+          // Import icons mapping inside or dynamically
+          // To avoid huge imports here, we can just return the types and let UI map icons,
+          // or we can map them here using a basic icon fallback.
+          setRoleOptions(types.map(t => ({ id: t.name.toLowerCase(), label: t.name, originalId: t.id })));
+        }
+      } catch (err) {
+        console.error("Failed to load selectable roles", err);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingRoles(false);
+        }
+      }
+    };
+
+    fetchRoles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return {
     verificationInputsRef,
     roleDropdownRef,
@@ -468,6 +500,8 @@ export function useRegisterForm() {
     isVerifyingCode,
     isResendingCode,
     error,
+    roleOptions,
+    isLoadingRoles,
     setError,
     handleDetailChange,
     handleRoleSelect,

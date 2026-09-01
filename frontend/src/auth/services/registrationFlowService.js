@@ -131,4 +131,9 @@ export const registrationFlowService = {
 
     return response.data;
   },
+
+  async getSelectableAccountTypes() {
+    const response = await registrationFlowApi.get("/account-types");
+    return response.data || [];
+  },
 };

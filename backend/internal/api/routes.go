@@ -61,6 +61,8 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 
 	v1Group.POST("/activate", h.RegistrationHandler.ActivateAccount)
 	v1Group.GET("/activate/:code", h.RegistrationHandler.CheckInvitation)
+	v1Group.GET("/account-types", h.ClientCORS,
+		h.RegistrationHandler.GetSelectableAccountTypes)
 	v1Group.POST("/internal/logout", h.ClientCORS,
 		h.AuthHandler.InternalLogout)
 	v1Group.POST("/internal/auth/refresh", h.ClientCORS,
