@@ -32,3 +32,8 @@ type ActivateAccountRequest struct {
 	InvitationCode string `json:"invitation_code" binding:"required"`
 	Password       string `json:"password" binding:"required"`
 }
+
+type SelectableAccountTypeResponse struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
