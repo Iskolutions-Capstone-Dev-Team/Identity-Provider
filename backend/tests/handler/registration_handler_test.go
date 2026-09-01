@@ -142,3 +142,53 @@ func TestGetRegistrationConfigHandler(t *testing.T) {
 		}
 	})
 }
+
+/**
+ * TestGetSelectableAccountTypesHandler verifies GET /account-types endpoint.
+ */
+func TestGetSelectableAccountTypesHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRegService := mocks.NewMockRegistrationService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+
+	handler := &v1.RegistrationHandler{
+		Service:    mockRegService,
+		LogService: mockLogService,
+	}
+
+	expectedTypes := []dto.SelectableAccountTypeResponse{
+		{ID: 1, Name: "student"},
+		{ID: 2, Name: "faculty"},
+	}
+
+	mockRegService.EXPECT().
+		GetSelectableAccountTypes(gomock.Any()).
+		Return(expectedTypes, nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/api/v1/account-types", nil)
+
+	handler.GetSelectableAccountTypes(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var resp []dto.SelectableAccountTypeResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if len(resp) != 2 {
+		t.Fatalf("expected 2 items, got %d", len(resp))
+	}
+
+	if resp[0].ID != 1 || resp[0].Name != "student" {
+		t.Errorf("unexpected first element: %+v", resp[0])
+	}
+}

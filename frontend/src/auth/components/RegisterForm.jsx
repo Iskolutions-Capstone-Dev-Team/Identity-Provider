@@ -43,6 +43,8 @@ export default function RegisterForm({ clientId }) {
     handlePasswordChange,
     handlePasswordBlur,
     handlePasswordSubmit,
+    roleOptions,
+    isLoadingRoles,
   } = useRegisterForm();
 
   const loginPath = buildLoginPath(clientId);
@@ -64,6 +66,8 @@ export default function RegisterForm({ clientId }) {
                 isSubmitting={isSendingOtp}
                 loginPath={loginPath}
                 roleDropdownRef={roleDropdownRef}
+                roleOptions={roleOptions}
+                isLoadingRoles={isLoadingRoles}
                 onChange={handleDetailChange}
                 onRoleMenuToggle={() =>
                   setIsRoleMenuOpen((currentValue) => !currentValue)
