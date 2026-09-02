@@ -68,6 +68,7 @@ func InitializeHandlers(db *sqlx.DB,
 			service.LogService,
 			service.UserService,
 			service.AuthService,
+			service.DeviceService,
 		),
 		MFAHandler: v1.NewMFAHandler(
 			service.MFAService,
