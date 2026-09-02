@@ -40,7 +40,7 @@ jobs:
       - name: Backend - Unit Tests
         run: |
           cd backend
-          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+          go test -v -race -coverpkg=./... -covermode=atomic ./...
 
       - name: Backend - Build Check
         run: |
