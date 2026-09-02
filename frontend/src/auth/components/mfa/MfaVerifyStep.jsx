@@ -59,8 +59,6 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
               disabled={isVerifying || cooldown > 0}
             />
 
-            <MfaRememberDevice checked={rememberDevice} onCheckedChange={onRememberDeviceChange} />
-
             <Button type="submit" disabled={isVerifying || cooldown > 0} className="h-12 w-full bg-[#ffd700] text-[#991b1b] hover:bg-[#991b1b] hover:text-white font-bold transition duration-300 mt-2">
               {isVerifying ? "Verifying..." : verifyLabel}
             </Button>
@@ -88,9 +86,7 @@ export default function MfaVerifyStep({ email, code, mode, hasSentOtp, isSending
         </Button>
       </div>
 
-      {!shouldShowCodeInput && (
-        <MfaRememberDevice checked={rememberDevice} onCheckedChange={onRememberDeviceChange} />
-      )}
+      <MfaRememberDevice checked={rememberDevice} onCheckedChange={onRememberDeviceChange} />
 
 
     </div>
