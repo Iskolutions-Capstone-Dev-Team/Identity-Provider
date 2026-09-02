@@ -3,11 +3,13 @@ package v1
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -18,10 +20,11 @@ const (
 )
 
 type OTPHandler struct {
-	OTPService  service.OTPService
-	LogService  service.LogService
-	UserService service.UserService
-	AuthService service.AuthService
+	OTPService    service.OTPService
+	LogService    service.LogService
+	UserService   service.UserService
+	AuthService   service.AuthService
+	DeviceService service.DeviceService
 }
 
 // SendOTP is a handler to generate and send an OTP code to a user's email.
@@ -224,6 +227,46 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 		clearCookie()
 	}
 
+	if req.RememberDevice {
+		if uID == uuid.Nil {
+			user, errUser := h.UserService.
+				GetUserByEmail(reqCtx, req.Email)
+			if errUser == nil {
+				uID, _ = uuid.Parse(user.ID)
+			}
+		}
+		if uID != uuid.Nil {
+			token, err := h.DeviceService.RegisterDevice(
+				reqCtx,
+				uID,
+				c.ClientIP(),
+				c.Request.UserAgent(),
+			)
+			if err == nil {
+				existingCookie, _ := c.Cookie("remember_device")
+				updatedCookie := utils.UpdateRememberDeviceCookie(
+					existingCookie,
+					uID.String(),
+					token,
+				)
+
+				maxAge := int(time.Hour.Seconds() * 24 * 30)
+				c.SetSameSite(http.SameSiteStrictMode)
+				c.SetCookie(
+					"remember_device",
+					updatedCookie,
+					maxAge,
+					"/",
+					"",
+					true,
+					true,
+				)
+			} else {
+				log.Printf("[VerifyOTP] RegisterDevice: %v", err)
+			}
+		}
+	}
+
 	_ = h.LogService.PostAuditLogWithActorString(reqCtx, req.Email, logReq)
 	_ = h.LogService.PostSecurityLogWithActorString(reqCtx, req.Email, logReq)
 
@@ -236,11 +279,13 @@ func NewOTPHandler(
 	ls service.LogService,
 	us service.UserService,
 	as service.AuthService,
+	ds service.DeviceService,
 ) *OTPHandler {
 	return &OTPHandler{
-		OTPService:  os,
-		LogService:  ls,
-		UserService: us,
-		AuthService: as,
+		OTPService:    os,
+		LogService:    ls,
+		UserService:   us,
+		AuthService:   as,
+		DeviceService: ds,
 	}
 }

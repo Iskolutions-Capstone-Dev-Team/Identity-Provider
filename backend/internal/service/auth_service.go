@@ -163,26 +163,34 @@ func (s *authService) LoginAndAuthorize(
 	// 3. Resolve user ID and check device match
 	uID, _ := uuid.Parse(claims.UserID)
 	if deviceToken != "" {
-		valid, devErr := s.DeviceSvc.VerifyDevice(ctx, uID, deviceToken)
-		if devErr == nil && valid {
-			// Device matches, skip MFA and establish session
-			sessionID, err := s.GetSessionToken(ctx, uID, ipAddress, userAgent)
-			if err != nil {
-				return "", "", false, err
-			}
+		userToken := utils.GetDeviceTokenForUser(deviceToken, uID.String())
+		if userToken != "" {
+			valid, devErr := s.DeviceSvc.VerifyDevice(ctx, uID, userToken)
+			if devErr == nil && valid {
+				// Device matches, skip MFA and establish session
+				sessionID, err := s.GetSessionToken(
+					ctx,
+					uID,
+					ipAddress,
+					userAgent,
+				)
+				if err != nil {
+					return "", "", false, err
+				}
 
-			backendURL := os.Getenv("VITE_BACKEND_URL")
-			if backendURL == "" {
-				backendURL = "http://localhost:8080"
-			}
+				backendURL := os.Getenv("VITE_BACKEND_URL")
+				if backendURL == "" {
+					backendURL = "http://localhost:8080"
+				}
 
-			redirectURL := fmt.Sprintf(
-				"%s/api/v1/auth/authorize?client_id=%s&redirect_uri=%s",
-				backendURL,
-				req.ClientID,
-				url.QueryEscape(regURI),
-			)
-			return redirectURL, sessionID, false, nil
+				redirectURL := fmt.Sprintf(
+					"%s/api/v1/auth/authorize?client_id=%s&redirect_uri=%s",
+					backendURL,
+					req.ClientID,
+					url.QueryEscape(regURI),
+				)
+				return redirectURL, sessionID, false, nil
+			}
 		}
 	}
 
