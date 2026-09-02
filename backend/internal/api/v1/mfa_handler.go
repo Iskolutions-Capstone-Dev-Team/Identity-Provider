@@ -164,6 +164,37 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 		clearCookie()
 	}
 
+	if req.RememberDevice {
+		token, err := h.DeviceService.RegisterDevice(
+			c.Request.Context(),
+			uID,
+			c.ClientIP(),
+			c.Request.UserAgent(),
+		)
+		if err == nil {
+			existingCookie, _ := c.Cookie("remember_device")
+			updatedCookie := utils.UpdateRememberDeviceCookie(
+				existingCookie,
+				uID.String(),
+				token,
+			)
+
+			maxAge := int(time.Hour.Seconds() * 24 * 30)
+			c.SetSameSite(http.SameSiteStrictMode)
+			c.SetCookie(
+				"remember_device",
+				updatedCookie,
+				maxAge,
+				"/",
+				"",
+				true,
+				true,
+			)
+		} else {
+			log.Printf("[PostAuthenticator] RegisterDevice: %v", err)
+		}
+	}
+
 	// We return the URI again just in case, plus backup codes
 	issuer := "Identity-Provider"
 	uri := fmt.Sprintf("otpauth://totp/%s:%s?secret=%s&issuer=%s",
