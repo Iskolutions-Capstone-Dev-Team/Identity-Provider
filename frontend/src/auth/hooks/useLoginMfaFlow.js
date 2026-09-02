@@ -254,7 +254,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     );
     const credential = await createPasskeyCredential(options);
 
-    await mfaService.finishPasskeyRegistration(email, credential);
+    await mfaService.finishPasskeyRegistration(email, credential, rememberDevice);
     finishMfa();
   };
 
@@ -433,6 +433,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
         secret: setup.secret,
         code,
         name,
+        rememberDevice,
       });
 
       setBackupCodes(result.backupCodes);
