@@ -19,8 +19,6 @@ export default function MfaAuthenticatorCodeStep({ code, cooldown = 0, isVerifyi
           disabled={isVerifying || cooldown > 0}
         />
 
-        <MfaRememberDevice checked={rememberDevice} onCheckedChange={onRememberDeviceChange} />
-
         <Button type="submit" disabled={isVerifying || cooldown > 0} className="h-12 w-full rounded-lg border border-[#ffd700] bg-[#ffd700] text-[#991b1b] transition hover:border-[#991b1b] hover:bg-[#991b1b] hover:text-white disabled:opacity-60">
           {isVerifying ? "Verifying..." : "Verify Code"}
         </Button>
