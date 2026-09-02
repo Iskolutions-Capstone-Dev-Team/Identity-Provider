@@ -199,6 +199,38 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 		clearCookie()
 	}
 
+	rememberDevice := c.Query("remember_device") == "true"
+	if rememberDevice {
+		token, err := h.DeviceService.RegisterDevice(
+			c.Request.Context(),
+			uID,
+			c.ClientIP(),
+			c.Request.UserAgent(),
+		)
+		if err == nil {
+			existingCookie, _ := c.Cookie("remember_device")
+			updatedCookie := utils.UpdateRememberDeviceCookie(
+				existingCookie,
+				uID.String(),
+				token,
+			)
+
+			maxAge := int(time.Hour.Seconds() * 24 * 30)
+			c.SetSameSite(http.SameSiteStrictMode)
+			c.SetCookie(
+				"remember_device",
+				updatedCookie,
+				maxAge,
+				"/",
+				"",
+				true,
+				true,
+			)
+		} else {
+			log.Printf("[FinishRegistration] RegisterDevice: %v", err)
+		}
+	}
+
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Passkey registered successfully",
 	})
