@@ -10,6 +10,8 @@ definitions:
         type: array
       id:
         type: integer
+      is_selectable:
+        type: boolean
     type: object
   dto.ActivateAccountRequest:
     properties:
@@ -392,6 +394,8 @@ definitions:
         type: array
       id:
         type: integer
+      is_selectable:
+        type: boolean
       name:
         type: string
     required:

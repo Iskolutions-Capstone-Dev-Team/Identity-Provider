@@ -38,12 +38,13 @@ export const mfaService = {
     };
   },
 
-  async createAuthenticator({ email, secret, code, name } = {}) {
+  async createAuthenticator({ email, secret, code, name, rememberDevice } = {}) {
     const response = await axiosInstance.post("/mfa/totp/authenticators", {
       email: getRequiredTextValue(email, "Email address"),
       secret: getRequiredTextValue(secret, "Secret"),
       code: getRequiredTextValue(code, "Verification code"),
       name: getRequiredTextValue(name, "Authenticator name"),
+      remember_device: rememberDevice === true,
     });
 
     return {
@@ -54,12 +55,13 @@ export const mfaService = {
     };
   },
 
-  async verifyCode({ email, code } = {}) {
+  async verifyCode({ email, code, rememberDevice } = {}) {
     const response = await axiosInstance.post(
       "/mfa/totp/verify",
       {
         email: getRequiredTextValue(email, "Email address"),
         code: getRequiredTextValue(code, "Verification code"),
+        remember_device: rememberDevice === true,
       },
       {
         skipUnauthorizedRedirect: true,
@@ -87,7 +89,6 @@ export const mfaService = {
       params: {
         email: getRequiredTextValue(email, "Email address"),
       },
-      skipAuthHeader: true,
     });
 
     return getExistsValue(response.data, "has_totp");
@@ -98,7 +99,6 @@ export const mfaService = {
       params: {
         email: getRequiredTextValue(email, "Email address"),
       },
-      skipAuthHeader: true,
     });
 
     return getExistsValue(response.data, "has_passkey");
@@ -137,13 +137,14 @@ export const mfaService = {
    * Passkey (WebAuthn) — Registration
    * Step 2: send the signed attestation back to complete enrolment.
    */
-  async finishPasskeyRegistration(email, credential) {
+  async finishPasskeyRegistration(email, credential, rememberDevice) {
     const response = await axiosInstance.post(
       "/mfa/passkey/register/finish",
       credential,
       {
         params: {
           email: getRequiredTextValue(email, "Email address"),
+          remember_device: rememberDevice === true,
         },
         skipUnauthorizedRedirect: true,
       },
@@ -161,10 +162,7 @@ export const mfaService = {
       {
         email: getRequiredTextValue(email, "Email address"),
         platform_available: platformAvailable,
-      },
-      {
-        skipAuthHeader: true,
-      },
+      }
     );
     return response.data;
   },
@@ -174,13 +172,14 @@ export const mfaService = {
    * Step 2: send the signed assertion to complete verification.
    * Returns 200 on success; call finishMfa() afterwards.
    */
-  async finishPasskeyVerification(email, assertion) {
+  async finishPasskeyVerification(email, assertion, rememberDevice) {
     const response = await axiosInstance.post(
       "/mfa/passkey/verify/finish",
       assertion,
       {
         params: {
           email: getRequiredTextValue(email, "Email address"),
+          remember_device: rememberDevice === true,
         },
         skipUnauthorizedRedirect: true,
       },

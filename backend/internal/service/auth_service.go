@@ -23,7 +23,7 @@ type AuthService interface {
 	Authorize(ctx context.Context, clientIDStr string,
 		sessionToken string) (string, error)
 	LoginAndAuthorize(ctx context.Context, req dto.LoginRequest,
-		ipAddress, userAgent string) (string, string, error)
+		ipAddress, userAgent, deviceToken string) (string, string, bool, error)
 	Logout(ctx context.Context, sessionID string) error
 	ValidateSession(ctx context.Context,
 		sessionID string) (*models.IdPSession, error)
@@ -55,12 +55,14 @@ type authService struct {
 	ClientRepo  repository.ClientRepository
 	PrivateKey  *rsa.PrivateKey
 	PublicKey   *rsa.PublicKey
+	DeviceSvc   DeviceService
 }
 
 func NewAuthService(repo repository.AuthCodeRepository,
 	sessionRepo repository.SessionRepository,
 	clientRepo repository.ClientRepository,
 	privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey,
+	deviceSvc DeviceService,
 ) AuthService {
 	return &authService{
 		Repo:        repo,
@@ -68,6 +70,7 @@ func NewAuthService(repo repository.AuthCodeRepository,
 		ClientRepo:  clientRepo,
 		PrivateKey:  privateKey,
 		PublicKey:   publicKey,
+		DeviceSvc:   deviceSvc,
 	}
 }
 
@@ -128,35 +131,70 @@ func (s *authService) LoginAndAuthorize(
 	ctx context.Context,
 	req dto.LoginRequest,
 	ipAddress,
-	userAgent string,
-) (string, string, error) {
+	userAgent,
+	deviceToken string,
+) (string, string, bool, error) {
 	// 1. Authenticate User
 	claims, storedHash, status, err := s.Repo.GetUserForAuth(
 		ctx,
 		req.Email,
 	)
 	if err != nil {
-		return "", "", fmt.Errorf("database query (UserLookup): %w", err)
+		return "", "", false, fmt.Errorf("database query (UserLookup): %w", err)
 	}
 
 	if status == string(models.StatusSuspended) {
-		return "", "", fmt.Errorf(
+		return "", "", false, fmt.Errorf(
 			"user authentication: user is suspended",
 		)
 	}
 
 	if err := utils.CompareSecret(storedHash, req.Password); err != nil {
-		return "", "", fmt.Errorf("secret verification: invalid credentials")
+		return "", "", false, fmt.Errorf("secret verification: invalid credentials")
 	}
 
 	// 2. Client Validation
 	clientUUID, _ := uuid.Parse(req.ClientID)
 	regURI, err := s.Repo.GetClientRedirectURI(ctx, clientUUID[:])
 	if err != nil {
-		return "", "", fmt.Errorf("database query (ClientLookup): %w", err)
+		return "", "", false, fmt.Errorf("database query (ClientLookup): %w", err)
 	}
 
-	// 3. Generate MFA Pending Token
+	// 3. Resolve user ID and check device match
+	uID, _ := uuid.Parse(claims.UserID)
+	if deviceToken != "" {
+		userToken := utils.GetDeviceTokenForUser(deviceToken, uID.String())
+		if userToken != "" {
+			valid, devErr := s.DeviceSvc.VerifyDevice(ctx, uID, userToken)
+			if devErr == nil && valid {
+				// Device matches, skip MFA and establish session
+				sessionID, err := s.GetSessionToken(
+					ctx,
+					uID,
+					ipAddress,
+					userAgent,
+				)
+				if err != nil {
+					return "", "", false, err
+				}
+
+				backendURL := os.Getenv("VITE_BACKEND_URL")
+				if backendURL == "" {
+					backendURL = "http://localhost:8080"
+				}
+
+				redirectURL := fmt.Sprintf(
+					"%s/api/v1/auth/authorize?client_id=%s&redirect_uri=%s",
+					backendURL,
+					req.ClientID,
+					url.QueryEscape(regURI),
+				)
+				return redirectURL, sessionID, false, nil
+			}
+		}
+	}
+
+	// 4. Generate MFA Pending Token
 	mfaPendingToken, err := GenerateMFAPendingToken(
 		s.PrivateKey,
 		claims.UserID,
@@ -165,7 +203,7 @@ func (s *authService) LoginAndAuthorize(
 		userAgent,
 	)
 	if err != nil {
-		return "", "", fmt.Errorf("mfa pending token generation: %w", err)
+		return "", "", false, fmt.Errorf("mfa pending token generation: %w", err)
 	}
 
 	backendURL := os.Getenv("VITE_BACKEND_URL")
@@ -179,7 +217,7 @@ func (s *authService) LoginAndAuthorize(
 		req.ClientID,
 		url.QueryEscape(regURI),
 	)
-	return redirectURL, mfaPendingToken, nil
+	return redirectURL, mfaPendingToken, true, nil
 }
 
 /**
@@ -215,6 +253,7 @@ func (s *authService) RevokeAllUserTokens(
 	ctx context.Context,
 	userID uuid.UUID,
 ) error {
+	_ = s.SessionRepo.DeleteByUserID(ctx, userID[:])
 	return s.Repo.RevokeTokens(ctx, userID[:])
 }
 

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { useEffect } from "react";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useUsers } from "../hooks/useUsers";
+import { useUserPoolPage } from "../hooks/useUserPoolPage";
 import UserPoolFilters from "../components/UserPoolFilters";
 import UserPoolTable from "../components/UserPoolTable";
 import UserPoolCards from "../components/UserPoolCards";
@@ -13,13 +13,10 @@ import InvitationConfirmModal from "../components/InvitationConfirmModal";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
-import { mailService } from "../../../services/mailService";
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE, hasSuperAdminRole } from "../../../utils/userPoolAccess";
 import { PERMISSIONS, USER_ACCESS_EDIT_PERMISSIONS, USER_ROLE_EDIT_PERMISSIONS, USER_STATUS_EDIT_PERMISSIONS } from "../../../utils/permissionAccess";
-import { resolveReinviteAccountTypeId } from "../utils/reinviteAccountType";
 import { getUserLabel } from "../utils/userLabels";
 import MetricsCard from "../../../components/MetricsCard";
-import { metricsService } from "../../../services/metricsService";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Users, Plus, User, Archive } from "lucide-react";
@@ -27,12 +24,7 @@ import { createPortal } from "react-dom";
 
 const ITEMS_PER_PAGE = 10;
 
-function getRequestErrorMessage(error, fallbackMessage) {
-  return error?.response?.data?.error || error?.response?.data?.message || error?.message || fallbackMessage;
-}
-
 export default function UserPool() {
-  const location = useLocation();
   const navigate = useNavigate();
   const outletContext = useOutletContext() || {};
   const colorMode = outletContext.colorMode || "light";
@@ -40,27 +32,17 @@ export default function UserPool() {
   const isLoadingCurrentUser = Boolean(outletContext.isLoadingCurrentUser);
   const globalViewType = outletContext.globalViewType;
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
-  const [userMetrics, setUserMetrics] = useState(null);
-  const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
-
-  useEffect(() => {
-    setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
-  }, []);
-
-  useEffect(() => {
-    metricsService.getUserMetrics().then(setUserMetrics).catch(() => {});
-  }, []);
 
   const isCurrentUserSuperAdmin = hasSuperAdminRole(currentUser?.roles);
   const { appClients: appClientOptions, isLoadingAppClients } = useAllAppClients({
     enabled: !isLoadingCurrentUser,
   });
-  
+
   const shouldShowAllRegularUsers = isCurrentUserSuperAdmin;
   const visibleClientIds = shouldShowAllRegularUsers
     ? []
     : appClientOptions.map((client) => client?.id).filter(Boolean);
-    
+
   const {
     search,
     setSearch,
@@ -77,7 +59,6 @@ export default function UserPool() {
     paginatedUsers,
     totalPages,
     totalResults,
-    successMessage,
     setSuccessMessage,
     fetchError,
     setFetchError,
@@ -87,44 +68,9 @@ export default function UserPool() {
     deleteUser,
   } = useUsers({ visibleClientIds });
 
-  const [openViewEditModal, setOpenViewEditModal] = useState(false);
-  const [modalMode, setModalMode] = useState("view");
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [isLoadingSelectedUser, setIsLoadingSelectedUser] = useState(false);
-  const [openDelete, setOpenDelete] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
-  const [openReinvite, setOpenReinvite] = useState(false);
-  const [userToReinvite, setUserToReinvite] = useState(null);
-  const [isSendingReinvite, setIsSendingReinvite] = useState(false);
-
-  const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("userPoolViewType") || globalViewType || "table";
-  });
-  
-  const isMounted = useRef(false);
-  useEffect(() => {
-    if (isMounted.current) {
-      if (globalViewType) {
-        setViewType(globalViewType);
-      }
-    } else {
-      isMounted.current = true;
-    }
-  }, [globalViewType]);
-
-  useEffect(() => {
-    localStorage.setItem("userPoolViewType", viewType);
-  }, [viewType]);
-  
-  const selectedUserRequestRef = useRef(0);
-  
-  const showLoading = useDelayedLoading(
-    loading || (userType === REGULAR_USER_TYPE && (isLoadingAppClients || isLoadingCurrentUser)),
-  );
-  
   const canAddUsers = hasPermission(PERMISSIONS.ADD_USER);
   const canDeleteUsers = hasPermission(PERMISSIONS.DELETE_USER);
-  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ALL_USERS);
+  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ADMINS);
   const canEditUserStatus = hasAnyPermission(USER_STATUS_EDIT_PERMISSIONS);
   const canEditUserRole = hasAnyPermission(USER_ROLE_EDIT_PERMISSIONS);
   const canEditUserAccess = hasAnyPermission(USER_ACCESS_EDIT_PERMISSIONS);
@@ -136,99 +82,56 @@ export default function UserPool() {
   const canDeleteCurrentUserType = userType === ADMIN_USER_TYPE ? canManageAdminUsers && canDeleteUsers : canDeleteUsers;
   const canReinviteCurrentUserType = userType === REGULAR_USER_TYPE && canAddUsers;
 
+  const pageState = useUserPoolPage({
+    globalViewType,
+    userType,
+    setUserType,
+    getUserDetails,
+    deleteUser,
+    setSuccessMessage,
+    setFetchError,
+    canEditCurrentUserType,
+    canViewCurrentUserType,
+    canDeleteCurrentUserType,
+    canReinviteCurrentUserType,
+  });
+
   useEffect(() => {
-    const routeState = location.state || {};
-    if (routeState.userType) setUserType(routeState.userType);
-    if (routeState.successMessage) {
-      toast.success(routeState.successMessage);
+    if (userType === ADMIN_USER_TYPE && !canViewAdminUsers) {
+      setUserType(REGULAR_USER_TYPE);
     }
-    if (routeState.userType || routeState.successMessage) {
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location.pathname, location.state, navigate, setUserType]);
+  }, [userType, canViewAdminUsers, setUserType]);
 
-  const openUserModal = async (user, mode) => {
-    const canOpenModal = mode === "edit" ? canEditCurrentUserType : canViewCurrentUserType;
-    if (!canOpenModal) return;
+  const {
+    userMetrics,
+    breadcrumbsContainer,
+    openViewEditModal,
+    modalMode,
+    selectedUser,
+    isLoadingSelectedUser,
+    openDelete,
+    setOpenDelete,
+    userToDelete,
+    setUserToDelete,
+    openReinvite,
+    setOpenReinvite,
+    userToReinvite,
+    setUserToReinvite,
+    isSendingReinvite,
+    viewType,
+    setViewType,
+    handleView,
+    handleEdit,
+    handleDeleteClick,
+    handleReinviteClick,
+    handleConfirmDelete,
+    handleConfirmReinvite,
+    closeViewEditModal,
+  } = pageState;
 
-    const requestId = selectedUserRequestRef.current + 1;
-    selectedUserRequestRef.current = requestId;
-    setSelectedUser(user);
-    setModalMode(mode);
-    setOpenViewEditModal(true);
-    setIsLoadingSelectedUser(true);
-
-    try {
-      const detailedUser = await getUserDetails(user);
-      if (selectedUserRequestRef.current === requestId) {
-        setSelectedUser(detailedUser);
-      }
-    } catch (error) {
-      console.error("Fetch user details error:", error);
-      if (selectedUserRequestRef.current === requestId) {
-        setFetchError("Unable to load the latest user details.");
-      }
-    } finally {
-      if (selectedUserRequestRef.current === requestId) {
-        setIsLoadingSelectedUser(false);
-      }
-    }
-  };
-
-  const handleView = (user) => openUserModal(user, "view");
-  const handleEdit = (user) => openUserModal(user, "edit");
-  
-  const handleDeleteClick = (user) => {
-    if (!canDeleteCurrentUserType) return;
-    setUserToDelete(user);
-    setOpenDelete(true);
-  };
-
-  const handleReinviteClick = (user) => {
-    if (!canReinviteCurrentUserType) return;
-    setUserToReinvite(user);
-    setOpenReinvite(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!userToDelete) return;
-    try {
-      await deleteUser(userToDelete.id, getUserLabel(userToDelete));
-      toast.success(`${userToDelete?.email} removed successfully`);
-    } catch (e) {
-      toast.error(`Failed to remove user`, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
-    } finally {
-      setOpenDelete(false);
-      setUserToDelete(null);
-    }
-  };
-
-  const handleConfirmReinvite = async () => {
-    if (!userToReinvite || isSendingReinvite) return;
-    const reinviteUserLabel = getUserLabel(userToReinvite);
-    try {
-      setIsSendingReinvite(true);
-      setFetchError("");
-      const userDetails = await getUserDetails(userToReinvite);
-      const accountTypeId = await resolveReinviteAccountTypeId(userDetails);
-      if (!accountTypeId) throw new Error("The user's account type is unavailable.");
-      await mailService.sendInvitation({ email: userDetails.email, accountTypeId });
-      setSuccessMessage(`Invitation resent to ${userDetails.email}.`);
-      setOpenReinvite(false);
-      setUserToReinvite(null);
-      setOpenViewEditModal(false);
-      setSelectedUser(null);
-    } catch (error) {
-      console.error("Reinvitation error:", error);
-      setFetchError(getRequestErrorMessage(error, `Unable to resend invitation to ${reinviteUserLabel}.`));
-      setOpenReinvite(false);
-      setUserToReinvite(null);
-      setOpenViewEditModal(false);
-      setSelectedUser(null);
-    } finally {
-      setIsSendingReinvite(false);
-    }
-  };
+  const showLoading = useDelayedLoading(
+    loading || (userType === REGULAR_USER_TYPE && (isLoadingAppClients || isLoadingCurrentUser)),
+  );
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -283,7 +186,7 @@ export default function UserPool() {
 
       <div className="flex flex-col gap-6">
         <ErrorAlert message={fetchError} onClose={() => setFetchError("")} />
-        
+
         <UserPoolFilters
           search={search}
           setSearch={setSearch}
@@ -300,7 +203,7 @@ export default function UserPool() {
           showAdminUserType={canViewAdminUsers}
           colorMode={colorMode}
         />
-        
+
         {viewType === "table" ? (
           <UserPoolTable
             loading={showLoading}
@@ -356,11 +259,7 @@ export default function UserPool() {
           isLoadingUserDetails={isLoadingSelectedUser}
           onSubmit={updateUser}
           onReinvite={handleReinviteClick}
-          onClose={() => {
-            selectedUserRequestRef.current += 1;
-            setIsLoadingSelectedUser(false);
-            setOpenViewEditModal(false);
-          }}
+          onClose={closeViewEditModal}
           canEditStatus={canEditUserStatus}
           canEditRole={canEditUserRole}
           canEditAccess={canEditUserAccess}

@@ -76,6 +76,7 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
 
+	keyword := c.Query("keyword")
 	config, err := h.Service.GetRegistrationConfig(
 		c.Request.Context(),
 		permissions,
@@ -84,6 +85,7 @@ func (h *RegistrationHandler) GetRegistrationConfig(c *gin.Context) {
 		page,
 		sortBy,
 		order,
+		keyword,
 	)
 	if err != nil {
 		log.Printf("[GetRegistrationConfig] %v", err)
@@ -597,4 +599,29 @@ func (h *RegistrationHandler) CheckInvitation(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "invitation code is valid",
 	})
+}
+
+// GetSelectableAccountTypes returns account types where is_selectable is true.
+// @Summary Get Selectable Account Types
+// @Description Fetch all selectable account types containing only id and name.
+// @Tags Registration
+// @Produce json
+// @Success 200 {array} dto.SelectableAccountTypeResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /account-types [get]
+func (h *RegistrationHandler) GetSelectableAccountTypes(c *gin.Context) {
+	types, err := h.Service.GetSelectableAccountTypes(c.Request.Context())
+	if err != nil {
+		log.Printf("[GetSelectableAccountTypes] %v", err)
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to fetch selectable account types.",
+			err,
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, types)
 }
