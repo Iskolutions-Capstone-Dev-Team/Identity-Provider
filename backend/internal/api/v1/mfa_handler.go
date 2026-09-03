@@ -6,17 +6,21 @@ import (
 	"net/http"
 	"net/url"
 
+	"time"
+
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type MFAHandler struct {
-	MFAService  service.MFAService
-	UserService service.UserService
-	AuthService service.AuthService
+	MFAService    service.MFAService
+	UserService   service.UserService
+	AuthService   service.AuthService
+	DeviceService service.DeviceService
 }
 
 // GetTOTPSetup returns the secret and URI for a new TOTP authenticator.
@@ -160,6 +164,37 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 		clearCookie()
 	}
 
+	if req.RememberDevice {
+		token, err := h.DeviceService.RegisterDevice(
+			c.Request.Context(),
+			uID,
+			c.ClientIP(),
+			c.Request.UserAgent(),
+		)
+		if err == nil {
+			existingCookie, _ := c.Cookie("remember_device")
+			updatedCookie := utils.UpdateRememberDeviceCookie(
+				existingCookie,
+				uID.String(),
+				token,
+			)
+
+			maxAge := int(time.Hour.Seconds() * 24 * 30)
+			c.SetSameSite(http.SameSiteStrictMode)
+			c.SetCookie(
+				"remember_device",
+				updatedCookie,
+				maxAge,
+				"/",
+				"",
+				true,
+				true,
+			)
+		} else {
+			log.Printf("[PostAuthenticator] RegisterDevice: %v", err)
+		}
+	}
+
 	// We return the URI again just in case, plus backup codes
 	issuer := "Identity-Provider"
 	uri := fmt.Sprintf("otpauth://totp/%s:%s?secret=%s&issuer=%s",
@@ -253,6 +288,37 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 			"Invalid code",
 		)
 		return
+	}
+
+	if req.RememberDevice {
+		token, err := h.DeviceService.RegisterDevice(
+			c.Request.Context(),
+			uID,
+			c.ClientIP(),
+			c.Request.UserAgent(),
+		)
+		if err == nil {
+			existingCookie, _ := c.Cookie("remember_device")
+			updatedCookie := utils.UpdateRememberDeviceCookie(
+				existingCookie,
+				uID.String(),
+				token,
+			)
+
+			maxAge := int(time.Hour.Seconds() * 24 * 30)
+			c.SetSameSite(http.SameSiteStrictMode)
+			c.SetCookie(
+				"remember_device",
+				updatedCookie,
+				maxAge,
+				"/",
+				"",
+				true,
+				true,
+			)
+		} else {
+			log.Printf("[PostVerifyMFA] RegisterDevice: %v", err)
+		}
 	}
 
 	if isPending {
@@ -468,10 +534,12 @@ func (h *MFAHandler) GetHasTOTP(c *gin.Context) {
 func NewMFAHandler(mfaService service.MFAService,
 	userService service.UserService,
 	authService service.AuthService,
+	deviceService service.DeviceService,
 ) *MFAHandler {
 	return &MFAHandler{
-		MFAService:  mfaService,
-		UserService: userService,
-		AuthService: authService,
+		MFAService:    mfaService,
+		UserService:   userService,
+		AuthService:   authService,
+		DeviceService: deviceService,
 	}
 }

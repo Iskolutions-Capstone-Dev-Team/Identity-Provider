@@ -1,176 +1,18 @@
-import { useEffect, useRef, useState, Fragment } from "react";
-import { toast } from "sonner";
-import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
-import { Field } from "@/components/ui/field";
-import { useAllRoles } from "../../roles/hooks/useAllRoles";
-import { useCurrentUser } from "../../../hooks/useCurrentUser";
-import { useRegistrationAccountTypes } from "../../registration/hooks/useRegistrationAccountTypes";
 import UserPoolRoleRadioGroup from "./UserPoolRoleRadioGroup";
 import UserPoolAuthAppMfaModal from "./UserPoolAuthAppMfaModal";
-import { ADMIN_USER_TYPE, getAdminRoleOptions, getAllAppClientSelectOptions, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
-import { isAdminAccountType, getAccountTypeValue } from "../../../utils/accountTypes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { SUFFIX_OPTIONS } from "../../../utils/suffixOptions";
 import { Badge } from "@/components/ui/badge";
 import { Mail, CheckIcon, User, Copy, CopyCheck } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
-
-const initialFormData = {
-  id: "",
-  email: "",
-  givenName: "",
-  middleName: "",
-  surname: "",
-  suffix: "",
-  status: "active",
-  roleId: null,
-  roles: [],
-  accessibleClientIds: [],
-  accessibleClientNames: [],
-  manageableClientIds: [],
-  manageableClientNames: [],
-  accountType: "",
-};
-
-const STATUS_VALUES = new Set(["active", "inactive", "suspended"]);
-const normalizeText = (value) => (typeof value === "string" ? value.trim() : "");
-const normalizeStatus = (value) => {
-  const normalizedValue = normalizeText(value).toLowerCase();
-  return STATUS_VALUES.has(normalizedValue) ? normalizedValue : "active";
-};
-const normalizeRoleId = (value) => {
-  if (value === null || value === undefined || value === "") return null;
-  const normalizedValue = Number.parseInt(value, 10);
-  return Number.isInteger(normalizedValue) && normalizedValue > 0 ? normalizedValue : null;
-};
-const normalizeAccountTypeId = (value) => {
-  if (value === null || value === undefined || value === "") return null;
-  const normalizedValue = Number.parseInt(value, 10);
-  return Number.isInteger(normalizedValue) && normalizedValue > 0 ? normalizedValue : null;
-};
-const normalizeClientIds = (clientIds) =>
-  Array.from(new Set((Array.isArray(clientIds) ? clientIds : []).filter(Boolean)));
-const normalizeClientNames = (clientNames) =>
-  (Array.isArray(clientNames) ? clientNames : [])
-    .map((clientName) => (typeof clientName === "string" ? clientName.trim() : ""))
-    .filter(Boolean);
-const normalizeRoleNames = (roles) => {
-  const normalizedRoles = Array.isArray(roles) ? roles : roles === null || roles === undefined ? [] : [roles];
-  return Array.from(
-    new Set(
-      normalizedRoles
-        .map((role) => {
-          if (typeof role === "string") return role.trim();
-          return normalizeText(role?.role_name || role?.roleName || role?.name);
-        })
-        .filter(Boolean),
-    ),
-  );
-};
-const extractErrorMessage = (error) =>
-  error?.response?.data?.error ||
-  error?.response?.data?.message ||
-  error?.message ||
-  "Unable to save user changes.";
-
-function AppClientComboboxField({ options, selectedIds, onChange, placeholder, isDarkMode, lockedSelectedValues = [] }) {
-  const anchor = useComboboxAnchor();
-  const stringifiedSelectedIds = selectedIds.map(id => String(id));
-  
-  const chipClassName = isDarkMode
-    ? "rounded-md border border-[#f8d24e]/25 bg-[#f8d24e]/12 text-[#ffe28a]"
-    : "rounded-md border border-[#7b0d15]/20 bg-[#7b0d15]/10 text-[#7b0d15]";
-  
-  const comboboxContainerClassName = `min-h-[2.625rem] rounded-md transition-[border-color,box-shadow,background-color] duration-200`;
-  
-  const inputPlaceholderClassName = isDarkMode
-    ? "placeholder:text-[#a58d95] text-[#f4eaea] bg-transparent outline-none flex-1 ml-1"
-    : "placeholder:text-[#9b7d84] text-[#4a1921] bg-transparent outline-none flex-1 ml-1";
-  
-  return (
-    <Field className="w-full">
-      <Combobox
-        multiple
-        autoHighlight
-        items={options}
-        itemToString={(item) => (item ? item.label : "")}
-        value={stringifiedSelectedIds}
-        onValueChange={onChange}
-      >
-        <ComboboxChips ref={anchor} className={comboboxContainerClassName}>
-          <ComboboxValue>
-            {(values) => (
-              <Fragment>
-                {values.map((val) => {
-                  const opt = options.find(o => String(o.value ?? o.id) === String(val));
-                  const isLocked = lockedSelectedValues.includes(val) || lockedSelectedValues.includes(Number(val));
-                  return (
-                    <ComboboxChip key={val} className={chipClassName} showRemove={!isLocked}>
-                      {opt ? opt.label : val}
-                    </ComboboxChip>
-                  );
-                })}
-                <ComboboxChipsInput placeholder={placeholder} className={inputPlaceholderClassName} />
-              </Fragment>
-            )}
-          </ComboboxValue>
-        </ComboboxChips>
-        <ComboboxContent anchor={anchor}>
-          <ComboboxEmpty>No client found.</ComboboxEmpty>
-          <ComboboxList>
-            {(item) => {
-              const optValue = String(item.value ?? item.id);
-              return (
-                <ComboboxItem key={optValue} value={optValue}>
-                  {item.label}
-                </ComboboxItem>
-              );
-            }}
-          </ComboboxList>
-        </ComboboxContent>
-      </Combobox>
-    </Field>
-  );
-}
-
-const createFormData = (user) => ({
-  id: user?.id || "",
-  email: user?.email || "",
-  givenName: user?.givenName || "",
-  middleName: user?.middleName || "",
-  surname: user?.surname || "",
-  suffix: user?.suffix || user?.name_suffix || user?.suffixName || user?.suffix_name || "",
-  status: normalizeStatus(user?.status),
-  roleId: normalizeRoleId(user?.roleId),
-  roles: normalizeRoleNames(user?.roles),
-  accessibleClientIds: normalizeClientIds(user?.accessibleClientIds),
-  accessibleClientNames: normalizeClientNames(user?.accessibleClientNames),
-  manageableClientIds: normalizeClientIds(user?.manageableClientIds),
-  manageableClientNames: normalizeClientNames(user?.manageableClientNames),
-  accountType: getAccountTypeValue(user?.accountType || user?.account_type || ""),
-  accountTypeId: normalizeAccountTypeId(user?.accountTypeId || user?.account_type_id),
-});
-
-const getSelectedClientOptions = (clientIds = [], clientNames = []) =>
-  normalizeClientIds(clientIds).map((clientId, index) => ({
-    id: clientId,
-    label: normalizeText(clientNames[index]) || clientId,
-  }));
-
-const mergeClientOptions = (baseOptions = [], ...selectedOptionLists) => {
-  const optionMap = new Map();
-  baseOptions.forEach((option) => {
-    if (option?.id && option?.label) optionMap.set(option.id, option);
-  });
-  selectedOptionLists.flat().forEach((option) => {
-    if (option?.id && option?.label && !optionMap.has(option.id)) optionMap.set(option.id, option);
-  });
-  return Array.from(optionMap.values());
-};
+import AppClientComboboxField from "./AppClientComboboxField";
+import { useUserPoolModal } from "../hooks/useUserPoolModal";
 
 export default function UserPoolModal({
   open,
@@ -190,171 +32,59 @@ export default function UserPoolModal({
   includeSuperAdminRoleOptions = false,
   colorMode = "light",
 }) {
-  const isViewMode = mode === "view";
-  const isEditMode = mode === "edit";
-  const isAdminView = userType === ADMIN_USER_TYPE;
   const isDarkMode = colorMode === "dark";
-  const [formData, setFormData] = useState(initialFormData);
-  const [originalUser, setOriginalUser] = useState(initialFormData);
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
-  const [isSelectOpen, setIsSelectOpen] = useState(false);
-  const [showMfaModal, setShowMfaModal] = useState(false);
-  const [mfaCode, setMfaCode] = useState("");
-  const [mfaError, setMfaError] = useState("");
-  const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
-  const isSubmittingRef = useRef(false);
-  const { currentUser } = useCurrentUser();
-  const { accountTypeOptions, isLoadingAccountTypes } = useRegistrationAccountTypes({
-    enabled: open,
+  
+  const modalState = useUserPoolModal({
+    open,
+    mode,
+    user,
+    userType,
+    appClientOptions,
+    onSubmit,
+    onClose,
+    canEditStatus,
+    canEditRole,
+    canEditAccess,
+    includeSuperAdminRoleOptions,
   });
 
-  const accountTypeSelectOptions = accountTypeOptions.map((opt) => ({
-    value: opt.value,
-    label: opt.label,
-  }));
-
-  const selectedAccountTypeIsAdmin = !isAdminView && isAdminAccountType(formData.accountType, accountTypeOptions);
-  const isAdminAccountSetup = isAdminView || selectedAccountTypeIsAdmin;
-  
-  const rolesEndpoint = isAdminAccountSetup && includeSuperAdminRoleOptions ? "all" : isAdminAccountSetup ? "default" : "all";
-  
-  const canEditThisUser = isAdminView ? canEditStatus || canEditRole || canEditAccess : canEditStatus || canEditAccess;
-  const canEditRoleField = isAdminAccountSetup && canEditRole;
-  const canEditAccessField = canEditAccess;
-  
-  const availableRoles = useAllRoles({
-    endpoint: rolesEndpoint,
-    enabled: open && isAdminAccountSetup,
-  });
-  const adminRoleOptions = getAdminRoleOptions(availableRoles, {
-    includeSuperAdmin: includeSuperAdminRoleOptions,
-  });
-
-  useEffect(() => {
-    if (!open) return;
-    const nextFormData = createFormData(user);
-    setFormData(nextFormData);
-    setOriginalUser(nextFormData);
-    setIsSubmitting(false);
-    isSubmittingRef.current = false;
-    setIsCopied(false);
-    setError("");
-    setShowMfaModal(false);
-    setMfaCode("");
-    setMfaError("");
-    setIsVerifyingMfa(false);
-  }, [open, user]);
-
-  const handleCopyId = () => {
-    navigator.clipboard.writeText(formData.id);
-    setIsCopied(true);
-    toast.success("User ID copied to clipboard");
-    setTimeout(() => setIsCopied(false), 2000);
-  };
-
-  const handleStatusChange = (value) => {
-    setFormData((current) => ({ ...current, status: normalizeStatus(value) }));
-    if (error) setError("");
-  };
-
-  const handleAccountTypeChange = (value) => {
-    const selectedAccountType = accountTypeOptions.find(opt => opt.value === value);
-    
-    setFormData((current) => {
-      const nextData = {
-        ...current,
-        accountType: value,
-        accountTypeId: selectedAccountType?.backendId || current.accountTypeId,
-      };
-      
-      if (selectedAccountType?.clients && Array.isArray(selectedAccountType.clients)) {
-        const validClients = selectedAccountType.clients.filter(client =>
-          appClientOptions.some(opt => (opt.id || opt.value) === client.id)
-        );
-        nextData.accessibleClientIds = validClients.map(c => c.id);
-        nextData.accessibleClientNames = validClients.map(c => c.name);
-      }
-      
-      return nextData;
-    });
-
-    if (error) {
-      setError("");
-    }
-  };
-
-  const handleAdminRoleChange = (roleId) => {
-    const normalizedRoleId = normalizeRoleId(roleId);
-    const selectedRole = adminRoleOptions.find((role) => role.id === normalizedRoleId);
-    setFormData((current) => ({
-      ...current,
-      roleId: normalizedRoleId,
-      roles: selectedRole ? [selectedRole.role_name] : [],
-    }));
-    if (error) setError("");
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (isSubmittingRef.current) return;
-    if (isViewMode || !canEditThisUser) {
-      onClose();
-      return;
-    }
-    if (!STATUS_VALUES.has(formData.status)) {
-      setError("Select a valid status.");
-      return;
-    }
-    try {
-      isSubmittingRef.current = true;
-      setIsSubmitting(true);
-      setError("");
-      await onSubmit({ ...formData, userType }, originalUser);
-      toast.success("User updated successfully");
-      onClose();
-    } catch (submitError) {
-      const errMsg = extractErrorMessage(submitError);
-      if (errMsg.toLowerCase().includes("mfa") || submitError?.response?.data?.mfaRequired) {
-        setShowMfaModal(true);
-        setMfaError("");
-      } else {
-        setError(errMsg);
-      }
-    } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleMfaVerify = async () => {
-    try {
-      setIsVerifyingMfa(true);
-      setMfaError("");
-      await onSubmit({ ...formData, userType, mfaCode }, originalUser);
-      toast.success("User updated successfully");
-      setShowMfaModal(false);
-      onClose();
-    } catch (mfaErr) {
-      setMfaError(extractErrorMessage(mfaErr) || "Invalid verification code. Please try again.");
-    } finally {
-      setIsVerifyingMfa(false);
-    }
-  };
-
-  const editableAppClientOptions = getAllAppClientSelectOptions(appClientOptions);
-  const editableAppClientIdLookup = new Set(editableAppClientOptions.map((client) => client.id).filter(Boolean));
-  const appClientSelectOptions = mergeClientOptions(
-    editableAppClientOptions,
-    getSelectedClientOptions(formData.accessibleClientIds, formData.accessibleClientNames),
-    getSelectedClientOptions(formData.manageableClientIds, formData.manageableClientNames),
-  );
-  
-  const roleAccessItems = formData.roles.length > 0 ? formData.roles : adminRoleOptions.filter((role) => role.id === formData.roleId).map((role) => role.role_name);
-  const clientAccessDisplayItems = formData.accessibleClientNames.length > 0 ? formData.accessibleClientNames : getAppClientNamesByIds(formData.accessibleClientIds, appClientSelectOptions);
-  const manageableClientDisplayItems = formData.manageableClientNames.length > 0 ? formData.manageableClientNames : getAppClientNamesByIds(formData.manageableClientIds, appClientSelectOptions);
-  const accountTypeDisplayLabel = accountTypeOptions.find((opt) => opt.value === formData.accountType)?.label || formData.accountType;
+  const {
+    isViewMode,
+    isAdminView,
+    formData,
+    setFormData,
+    isSubmitting,
+    isCopied,
+    isEmailCopied,
+    isSelectOpen,
+    setIsSelectOpen,
+    fieldErrors,
+    setFieldErrors,
+    showMfaModal,
+    setShowMfaModal,
+    mfaCode,
+    setMfaCode,
+    mfaError,
+    isVerifyingMfa,
+    accountTypeSelectOptions,
+    isAdminAccountSetup,
+    canEditThisUser,
+    canEditRoleField,
+    canEditAccessField,
+    adminRoleOptions,
+    handleCopyId,
+    handleCopyEmail,
+    handleStatusChange,
+    handleAccountTypeChange,
+    handleAdminRoleChange,
+    handleSubmit,
+    handleMfaVerify,
+    editableAppClientIdLookup,
+    roleAccessItems,
+    clientAccessDisplayItems,
+    manageableClientDisplayItems,
+    accountTypeDisplayLabel,
+  } = modalState;
 
   return (
     <>
@@ -422,7 +152,14 @@ export default function UserPoolModal({
                   <Card className="bg-muted/30 border-border/40">
                     <CardContent className="px-5 py-3 space-y-4">
                   <div>
-                    <Label className="text-xs text-muted-foreground font-semibold">Email Address</Label>
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-xs text-muted-foreground font-semibold">Email Address</Label>
+                      {formData.email && (
+                        <Button type="button" size="icon-sm" variant="ghost" aria-label="Copy Email" onClick={handleCopyEmail}>
+                          {isEmailCopied ? <CopyCheck aria-hidden="true" className="text-[#00d053]" /> : <Copy aria-hidden="true" />}
+                        </Button>
+                      )}
+                    </div>
                     <p className="font-medium text-sm mt-0.5 break-all">{formData.email || "-"}</p>
                   </div>
                   <div>
@@ -481,7 +218,98 @@ export default function UserPoolModal({
           ) : (
             <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pt-3 pb-6">
               <div className="space-y-6">
-                {/* 1st Card: Account Type */}
+                {/* Name Edit Card */}
+                <Card className="bg-muted/30 border-border/40">
+                  <CardContent className="px-5 py-0 space-y-4">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase">Personal Information</h4>
+                      <p className="text-sm text-muted-foreground">Edit the user's name details.</p>
+                    </div>
+                    <Separator />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center min-h-[24px]">
+                          <Label htmlFor="givenName">First Name <span className="text-red-500">*</span></Label>
+                        </div>
+                        <Input 
+                          id="givenName" 
+                          value={formData.givenName} 
+                          onChange={(e) => {
+                            setFormData(curr => ({ ...curr, givenName: e.target.value }));
+                            if (fieldErrors?.givenName) setFieldErrors(curr => ({ ...curr, givenName: "" }));
+                          }} 
+                          placeholder="Enter first name" 
+                          maxLength={50}
+                          className="h-10 rounded-lg"
+                          aria-invalid={!!fieldErrors?.givenName}
+                        />
+                        {fieldErrors?.givenName && (
+                          <p className="!mt-0 text-xs text-destructive">{fieldErrors.givenName}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center min-h-[24px]">
+                          <Label htmlFor="surname">Last Name <span className="text-red-500">*</span></Label>
+                        </div>
+                        <Input 
+                          id="surname" 
+                          value={formData.surname} 
+                          onChange={(e) => {
+                            setFormData(curr => ({ ...curr, surname: e.target.value }));
+                            if (fieldErrors?.surname) setFieldErrors(curr => ({ ...curr, surname: "" }));
+                          }} 
+                          placeholder="Enter last name" 
+                          maxLength={50}
+                          className="h-10 rounded-lg"
+                          aria-invalid={!!fieldErrors?.surname}
+                        />
+                        {fieldErrors?.surname && (
+                          <p className="!mt-0 text-xs text-destructive">{fieldErrors.surname}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center min-h-[24px]">
+                          <Label htmlFor="middleName">Middle Name</Label>
+                        </div>
+                        <Input 
+                          id="middleName" 
+                          value={formData.middleName} 
+                          onChange={(e) => setFormData(curr => ({ ...curr, middleName: e.target.value }))} 
+                          placeholder="Enter middle name" 
+                          maxLength={50}
+                          className="h-10 rounded-lg"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between min-h-[24px]">
+                          <Label htmlFor="suffix">Suffix</Label>
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-[#7b0d15]/30 text-[#7b0d15] dark:border-[#f8d24e]/30 dark:text-[#ffe28a] tracking-wider bg-[#7b0d15]/5 dark:bg-[#f8d24e]/10">Optional</span>
+                        </div>
+                        <Select 
+                          value={formData.suffix} 
+                          onValueChange={(val) => setFormData(curr => ({ ...curr, suffix: val === "N/A" ? "" : val }))}
+                        >
+                          <SelectTrigger className="!h-10 w-full rounded-lg">
+                            <span className={`truncate text-sm ${formData.suffix ? "text-foreground" : "text-muted-foreground"}`}>
+                              <SelectValue placeholder="Enter suffix" />
+                            </span>
+                          </SelectTrigger>
+                          <SelectContent alignItemWithTrigger={false} className="max-h-[300px]">
+                            <SelectGroup>
+                              {SUFFIX_OPTIONS.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Account Type Card */}
                 <Card className="bg-muted/30 border-border/40">
                   <CardContent className="px-5 py-0 space-y-4">
                     <div>
@@ -495,7 +323,7 @@ export default function UserPoolModal({
                       </div>
                     ) : (
                       <Select key={accountTypeSelectOptions.length} value={formData.accountType} onValueChange={handleAccountTypeChange} onOpenChange={setIsSelectOpen}>
-                        <SelectTrigger className="h-10 w-full bg-muted/50 border-border/50">
+                        <SelectTrigger className="!h-10 w-full rounded-lg">
                           <SelectValue placeholder="Select Account Type" />
                         </SelectTrigger>
                         <SelectContent position="popper">
@@ -559,7 +387,7 @@ export default function UserPoolModal({
                       ) : (
                         <AppClientComboboxField
                           key={`accessible-${formData.accountType}`}
-                          options={getAllAppClientSelectOptions(appClientOptions)}
+                          options={modalState.editableAppClientOptions}
                           selectedIds={formData.accessibleClientIds}
                           onChange={(vals) => setFormData((curr) => ({ ...curr, accessibleClientIds: vals }))}
                           placeholder="Select accessible app clients"
@@ -586,7 +414,7 @@ export default function UserPoolModal({
                       ) : (
                         <AppClientComboboxField
                           key={`manageable-${formData.accountType}`}
-                          options={getAllAppClientSelectOptions(appClientOptions)}
+                          options={modalState.editableAppClientOptions}
                           selectedIds={formData.manageableClientIds}
                           onChange={(vals) => setFormData((curr) => ({ ...curr, manageableClientIds: vals }))}
                           placeholder="Select manageable app clients"
@@ -618,7 +446,7 @@ export default function UserPoolModal({
                       </div>
                     ) : (
                       <Select value={formData.status} onValueChange={handleStatusChange} onOpenChange={setIsSelectOpen}>
-                        <SelectTrigger className="h-10 w-full bg-muted/50 border-border/50">
+                        <SelectTrigger className="!h-10 w-full rounded-lg">
                           <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent position="popper">

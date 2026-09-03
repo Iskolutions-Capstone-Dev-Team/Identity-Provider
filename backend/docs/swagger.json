@@ -2612,6 +2612,9 @@
                 },
                 "id": {
                     "type": "integer"
+                },
+                "is_selectable": {
+                    "type": "boolean"
                 }
             }
         },
@@ -3195,6 +3198,9 @@
                 },
                 "id": {
                     "type": "integer"
+                },
+                "is_selectable": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"

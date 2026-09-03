@@ -4,9 +4,12 @@ import (
 	"log"
 	"net/http"
 
+	"time"
+
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -16,6 +19,7 @@ type PasskeyHandler struct {
 	PasskeyService service.PasskeyService
 	UserService    service.UserService
 	AuthService    service.AuthService
+	DeviceService  service.DeviceService
 }
 
 /**
@@ -193,6 +197,38 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 			return
 		}
 		clearCookie()
+	}
+
+	rememberDevice := c.Query("remember_device") == "true"
+	if rememberDevice {
+		token, err := h.DeviceService.RegisterDevice(
+			c.Request.Context(),
+			uID,
+			c.ClientIP(),
+			c.Request.UserAgent(),
+		)
+		if err == nil {
+			existingCookie, _ := c.Cookie("remember_device")
+			updatedCookie := utils.UpdateRememberDeviceCookie(
+				existingCookie,
+				uID.String(),
+				token,
+			)
+
+			maxAge := int(time.Hour.Seconds() * 24 * 30)
+			c.SetSameSite(http.SameSiteStrictMode)
+			c.SetCookie(
+				"remember_device",
+				updatedCookie,
+				maxAge,
+				"/",
+				"",
+				true,
+				true,
+			)
+		} else {
+			log.Printf("[FinishRegistration] RegisterDevice: %v", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse{
@@ -378,6 +414,38 @@ func (h *PasskeyHandler) FinishVerification(c *gin.Context) {
 		clearCookie()
 	}
 
+	rememberDevice := c.Query("remember_device") == "true"
+	if rememberDevice {
+		token, err := h.DeviceService.RegisterDevice(
+			c.Request.Context(),
+			uID,
+			c.ClientIP(),
+			c.Request.UserAgent(),
+		)
+		if err == nil {
+			existingCookie, _ := c.Cookie("remember_device")
+			updatedCookie := utils.UpdateRememberDeviceCookie(
+				existingCookie,
+				uID.String(),
+				token,
+			)
+
+			maxAge := int(time.Hour.Seconds() * 24 * 30)
+			c.SetSameSite(http.SameSiteStrictMode)
+			c.SetCookie(
+				"remember_device",
+				updatedCookie,
+				maxAge,
+				"/",
+				"",
+				true,
+				true,
+			)
+		} else {
+			log.Printf("[FinishVerification] RegisterDevice: %v", err)
+		}
+	}
+
 	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Passkey verified successfully",
 	})
@@ -467,10 +535,12 @@ func NewPasskeyHandler(
 	ps service.PasskeyService,
 	us service.UserService,
 	as service.AuthService,
+	ds service.DeviceService,
 ) *PasskeyHandler {
 	return &PasskeyHandler{
 		PasskeyService: ps,
 		UserService:    us,
 		AuthService:    as,
+		DeviceService:  ds,
 	}
 }

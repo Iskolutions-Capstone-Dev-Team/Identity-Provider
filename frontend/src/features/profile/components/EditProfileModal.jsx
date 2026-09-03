@@ -1,171 +1,45 @@
-import { useEffect, useState } from "react";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
-import { formatTimestamp } from "../../../utils/formatTimestamp";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { useEditProfileModal } from "../hooks/useEditProfileModal";
 
-const initialFieldErrors = {
-  firstName: "",
-  lastName: "",
-  email: "",
-};
-
-const createProfileState = (profileData = {}) => ({
-  ...profileData,
-  firstName: profileData.firstName || "",
-  middleName: profileData.middleName || "",
-  lastName: profileData.lastName || "",
-  suffix: profileData.suffix || "",
-  email: profileData.email || "",
-});
-
-const sanitizeProfile = (profileData = {}) => ({
-  ...profileData,
-  firstName: (profileData.firstName || "").trim(),
-  middleName: (profileData.middleName || "").trim(),
-  lastName: (profileData.lastName || "").trim(),
-  suffix: (profileData.suffix || "").trim(),
-  email: (profileData.email || "").trim(),
-});
-
-function validateProfile(profile, allowEmailEdit) {
-  const nextFieldErrors = { ...initialFieldErrors };
-
-  if (!profile.firstName.trim()) {
-    nextFieldErrors.firstName = "First name is required.";
-  }
-
-  if (!profile.lastName.trim()) {
-    nextFieldErrors.lastName = "Last name is required.";
-  }
-
-  if (allowEmailEdit && !profile.email.trim()) {
-    nextFieldErrors.email = "Email is required.";
-  }
-
-  return nextFieldErrors;
-}
-
-function getProfileUpdateErrorMessage(error) {
-  const responseMessage =
-    error?.response?.data?.error || error?.response?.data?.message;
-
-  if (typeof responseMessage === "string" && responseMessage.trim()) {
-    return responseMessage.trim();
-  }
-
-  if (error instanceof Error && error.message.trim()) {
-    return error.message.trim();
-  }
-
-  return "Unable to update profile right now. Please try again.";
-}
+import { SUFFIX_OPTIONS } from "../../../utils/suffixOptions";
 
 export default function EditProfileModal({ open, onClose, profileData, updateProfile, addAuditLog, allowEmailEdit = false, colorMode = "light" }) {
-  const [profile, setProfile] = useState(createProfileState());
-  const [fieldErrors, setFieldErrors] = useState(initialFieldErrors);
-  const [activeVoiceField, setActiveVoiceField] = useState("firstName");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const modalState = useEditProfileModal({
+    open,
+    onClose,
+    profileData,
+    updateProfile,
+    addAuditLog,
+    allowEmailEdit,
+  });
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    setFieldErrors(initialFieldErrors);
-    setErrorMessage("");
-    setProfile(createProfileState(profileData));
-    setActiveVoiceField("firstName");
-    setIsSaving(false);
-  }, [open, profileData]);
-
-  const updateProfileField = (name, value) => {
-    setProfile((currentProfile) => ({
-      ...currentProfile,
-      [name]: value,
-    }));
-
-    setFieldErrors((currentErrors) =>
-      currentErrors[name]
-        ? {
-            ...currentErrors,
-            [name]: "",
-          }
-        : currentErrors,
-    );
-
-    if (errorMessage) {
-      setErrorMessage("");
-    }
-  };
-
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    updateProfileField(name, value);
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    if (isSaving) {
-      return;
-    }
-
-    const nextProfile = sanitizeProfile(profile);
-    const nextFieldErrors = validateProfile(nextProfile, allowEmailEdit);
-    const firstError =
-      nextFieldErrors.firstName ||
-      nextFieldErrors.lastName ||
-      nextFieldErrors.email;
-
-    setProfile(nextProfile);
-    setFieldErrors(nextFieldErrors);
-
-    if (firstError) {
-      setErrorMessage(firstError);
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-
-      if (updateProfile) {
-        await updateProfile(nextProfile);
-      }
-
-      if (addAuditLog) {
-        addAuditLog({
-          timestamp: formatTimestamp(new Date().toISOString()),
-          action: "PROFILE_UPDATE",
-          details: "Updated profile information",
-          color: "blue",
-        });
-      }
-
-      onClose();
-    } catch (error) {
-      console.error("Update profile error:", error);
-      setErrorMessage(getProfileUpdateErrorMessage(error));
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const {
+    profile,
+    fieldErrors,
+    activeVoiceField,
+    setActiveVoiceField,
+    errorMessage,
+    setErrorMessage,
+    isSaving,
+    handleChange,
+    handleVoiceInput,
+    handleSubmit,
+  } = modalState;
 
   const activeVoiceFieldLabel =
     activeVoiceField === "lastName"
       ? "Last Name"
       : activeVoiceField === "suffix"
         ? "Suffix"
-      : activeVoiceField === "middleName"
-        ? "Middle Name"
-        : "First Name";
-
-  const handleVoiceInput = (transcript) => {
-    updateProfileField(activeVoiceField, transcript);
-  };
+        : activeVoiceField === "middleName"
+          ? "Middle Name"
+          : "First Name";
 
   if (!open) {
     return null;
@@ -173,10 +47,6 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
 
   const isDarkMode = colorMode === "dark";
   const fieldErrorClassName = "!mt-0 text-xs text-destructive";
-  const requiredNoteClassName = isDarkMode
-    ? "text-sm text-[#c7adb4]"
-    : "text-sm text-[#8f6f76]";
-
   const helperTextClassName = "text-sm text-muted-foreground";
 
   return (
@@ -187,8 +57,6 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
         </DialogHeader>
 
         <div className="-mx-4 no-scrollbar max-h-[60vh] overflow-y-auto px-4">
-
-
           <form id="edit-profile-form" noValidate onSubmit={handleSubmit} className="space-y-6 px-2 pb-6">
             <div className="space-y-4">
               <SpeechInputToolbar
@@ -198,6 +66,23 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                 colorMode={colorMode}
               />
 
+            {allowEmailEdit && (
+              <Field className="mb-6 gap-0 space-y-1.5">
+                <FieldLabel htmlFor="email">
+                  Email Address <span className="text-red-500">*</span>
+                </FieldLabel>
+                <Input type="email" id="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className="h-10 rounded-lg" disabled={isSaving} aria-invalid={!!fieldErrors.email} />
+                {fieldErrors.email ? (
+                  <FieldError>{fieldErrors.email}</FieldError>
+                ) : (
+                  <p className={`${helperTextClassName}`}>
+                    Must be an active email account
+                  </p>
+                )}
+              </Field>
+            )}
+
+
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
                   <div className="flex items-center min-h-[24px]">
@@ -205,7 +90,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                       First Name <span className="text-red-500">*</span>
                     </Label>
                   </div>
-                  <Input type="text" name="firstName" value={profile.firstName} onChange={handleChange} onFocus={() => setActiveVoiceField("firstName")} placeholder="Enter first name" maxLength={50} className="h-10 rounded-lg" disabled={isSaving}/>
+                  <Input type="text" name="firstName" value={profile.firstName} onChange={handleChange} onFocus={() => setActiveVoiceField("firstName")} placeholder="Enter first name" maxLength={50} className="h-10 rounded-lg" disabled={isSaving} />
                   {fieldErrors.firstName && (
                     <p className={fieldErrorClassName}>
                       {fieldErrors.firstName}
@@ -217,7 +102,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                   <div className="flex items-center min-h-[24px]">
                     <Label>Middle Name</Label>
                   </div>
-                  <Input type="text" name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className="h-10 rounded-lg" disabled={isSaving}/>
+                  <Input type="text" name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className="h-10 rounded-lg" disabled={isSaving} />
                 </div>
 
                 <div className="space-y-2">
@@ -226,39 +111,36 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                       Last Name <span className="text-red-500">*</span>
                     </Label>
                   </div>
-                  <Input type="text" name="lastName" value={profile.lastName} onChange={handleChange} onFocus={() => setActiveVoiceField("lastName")} placeholder="Enter last name" maxLength={50} className="h-10 rounded-lg" disabled={isSaving}/>
+                  <Input type="text" name="lastName" value={profile.lastName} onChange={handleChange} onFocus={() => setActiveVoiceField("lastName")} placeholder="Enter last name" maxLength={50} className="h-10 rounded-lg" disabled={isSaving} />
                   {fieldErrors.lastName && (
                     <p className={fieldErrorClassName}>{fieldErrors.lastName}</p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between min-h-[24px]">
-                    <Label>Suffix</Label>
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-[#7b0d15]/30 text-[#7b0d15] dark:border-[#f8d24e]/30 dark:text-[#ffe28a] tracking-wider bg-[#7b0d15]/5 dark:bg-[#f8d24e]/10">Optional</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between min-h-[24px]">
+                      <Label>Suffix</Label>
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-[#7b0d15]/30 text-[#7b0d15] dark:border-[#f8d24e]/30 dark:text-[#ffe28a] tracking-wider bg-[#7b0d15]/5 dark:bg-[#f8d24e]/10">Optional</span>
+                    </div>
+                    <Select value={profile.suffix} onValueChange={(val) => handleChange({ target: { name: "suffix", value: val === "N/A" ? "" : val } })} disabled={isSaving}>
+                      <SelectTrigger className="!h-10 w-full rounded-lg">
+                        <span className={`truncate text-sm ${profile.suffix ? "text-foreground" : "text-muted-foreground"}`}>
+                          <SelectValue placeholder="Enter suffix" />
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger={false} className="max-h-[300px]">
+                        <SelectGroup>
+                          {SUFFIX_OPTIONS.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Input type="text" name="suffix" value={profile.suffix} onChange={handleChange} onFocus={() => setActiveVoiceField("suffix")} placeholder="Enter suffix" maxLength={20} className="h-10 rounded-lg" disabled={isSaving}/>
-                </div>
               </div>
             </div>
-
-            {allowEmailEdit && (
-              <div className="space-y-2">
-                <Label>
-                  Email Address <span className="text-red-500">*</span>
-                </Label>
-                <Input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className="h-10 rounded-lg" disabled={isSaving}/>
-                {fieldErrors.email ? (
-                  <p className={fieldErrorClassName}>{fieldErrors.email}</p>
-                ) : (
-                  <p className={`${helperTextClassName} mt-2`}>
-                    Must be an active email account
-                  </p>
-                )}
-              </div>
-            )}
-
-
           </form>
         </div>
 

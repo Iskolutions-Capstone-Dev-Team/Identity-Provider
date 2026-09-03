@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -28,13 +31,13 @@ type UserService interface {
 	GetMe(ctx context.Context, userID uuid.UUID) (*dto.UserInfoResponse, error)
 	GetFilteredUserList(ctx context.Context, permissions []string,
 		userID uuid.UUID, limit, page int,
-		sortBy, order string, status string,
+		sortBy, order string, status string, keyword string,
 	) (*dto.UserSimplifiedResponseList, error)
 	GetUserList(ctx context.Context, limit, page int,
-		sortBy, order string) (*dto.UserSimplifiedResponseList, error)
+		sortBy, order string, keyword string) (*dto.UserSimplifiedResponseList, error)
 	GetBoundUserList(ctx context.Context, limit, page int,
 		userID uuid.UUID,
-		sortBy, order string) (*dto.UserSimplifiedResponseList, error)
+		sortBy, order string, keyword string) (*dto.UserSimplifiedResponseList, error)
 	GetAdminUserList(ctx context.Context, limit, page int,
 		adminID uuid.UUID, permissions []string,
 		sortBy, order string) (*dto.UserResponseList, error)
@@ -50,13 +53,15 @@ type UserService interface {
 		accountTypeID *int, roleID *int) error
 	UpdateUserName(ctx context.Context, id uuid.UUID,
 		req dto.UpdateUserNameRequest) error
+	UpdateUserEmail(ctx context.Context, id uuid.UUID,
+		newEmail string) error
 	ChangePassword(ctx context.Context, id uuid.UUID,
 		oldPassword, newPassword string) error
 	SyncAdminClientAccess(ctx context.Context, id uuid.UUID,
 		clientIDs []string) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	GetDeletedUserList(ctx context.Context, limit,
-		page int) (*dto.UserSimplifiedResponseList, error)
+		page int, keyword string) (*dto.UserSimplifiedResponseList, error)
 	UnarchiveUser(ctx context.Context, id uuid.UUID) error
 	HardDeleteUser(ctx context.Context, id uuid.UUID) error
 }
@@ -455,11 +460,6 @@ func (s *userService) CreateAdminUser(
 /**
  * GetUserByID retrieves a single user by their UUID.
  */
-/**
- * GetUserByID retrieves a single user by their UUID.
- * hasViewAll controls whether client data is unfiltered or
- * scoped to the requesting admin's admin_allowed_clients.
- */
 func (s *userService) GetUserByID(
 	ctx context.Context,
 	id uuid.UUID,
@@ -534,6 +534,7 @@ func (s *userService) GetFilteredUserList(
 	sortBy,
 	order string,
 	status string,
+	keyword string,
 ) (*dto.UserSimplifiedResponseList, error) {
 	var resp *dto.UserSimplifiedResponseList
 	var err error
@@ -544,15 +545,15 @@ func (s *userService) GetFilteredUserList(
 				"privilege validation: unauthorized to view deleted users",
 			)
 		}
-		resp, err = s.GetDeletedUserList(ctx, limit, page)
+		resp, err = s.GetDeletedUserList(ctx, limit, page, keyword)
 	} else {
 		if slices.Contains(permissions, "View all users") {
-			resp, err = s.GetUserList(ctx, limit, page, sortBy, order)
+			resp, err = s.GetUserList(ctx, limit, page, sortBy, order, keyword)
 		} else if slices.Contains(
 			permissions, "View users based on appclient",
 		) {
 			resp, err = s.GetBoundUserList(
-				ctx, limit, page, userID, sortBy, order,
+				ctx, limit, page, userID, sortBy, order, keyword,
 			)
 		} else {
 			return nil, fmt.Errorf("privilege validation: unauthorized level")
@@ -572,13 +573,14 @@ func (s *userService) getUserListCacheKey(
 	userID string,
 	limit, page int,
 	sortBy, order string,
+	keyword string,
 ) string {
 	version, _, _ := s.Cache.Get(ctx, "cache:version:users")
 	if version == "" {
 		version = "0"
 	}
 	return fmt.Sprintf(
-		"users:v%s:%s:uid:%s:lim:%d:pg:%d:sb:%s:or:%s",
+		"users:v%s:%s:uid:%s:lim:%d:pg:%d:sb:%s:or:%s:kw:%s",
 		version,
 		prefix,
 		userID,
@@ -586,6 +588,7 @@ func (s *userService) getUserListCacheKey(
 		page,
 		sortBy,
 		order,
+		keyword,
 	)
 }
 
@@ -598,9 +601,10 @@ func (s *userService) GetUserList(
 	page int,
 	sortBy,
 	order string,
+	keyword string,
 ) (*dto.UserSimplifiedResponseList, error) {
 	cacheKey := s.getUserListCacheKey(
-		ctx, "list", "", limit, page, sortBy, order,
+		ctx, "list", "", limit, page, sortBy, order, keyword,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserSimplifiedResponseList
@@ -611,12 +615,14 @@ func (s *userService) GetUserList(
 
 	offset := (page - 1) * limit
 
-	users, err := s.Repo.GetUserList(ctx, limit, offset, sortBy, order)
+	users, err := s.Repo.GetUserList(
+		ctx, limit, offset, sortBy, order, keyword,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("database query (GetUserList): %w", err)
 	}
 
-	total, err := s.Repo.CountUsers(ctx)
+	total, err := s.Repo.CountUsers(ctx, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("database query (CountUsers): %w", err)
 	}
@@ -657,6 +663,7 @@ func (s *userService) GetBoundUserList(
 	userID uuid.UUID,
 	sortBy,
 	order string,
+	keyword string,
 ) (*dto.UserSimplifiedResponseList, error) {
 	cacheKey := s.getUserListCacheKey(
 		ctx,
@@ -666,6 +673,7 @@ func (s *userService) GetBoundUserList(
 		page,
 		sortBy,
 		order,
+		keyword,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserSimplifiedResponseList
@@ -677,13 +685,13 @@ func (s *userService) GetBoundUserList(
 	offset := (page - 1) * limit
 
 	users, err := s.Repo.GetBoundUserList(
-		ctx, limit, offset, userID[:], sortBy, order,
+		ctx, limit, offset, userID[:], sortBy, order, keyword,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database query (GetBound): %w", err)
 	}
 
-	total, err := s.Repo.CountBoundUsers(ctx, userID[:])
+	total, err := s.Repo.CountBoundUsers(ctx, userID[:], keyword)
 	if err != nil {
 		return nil, fmt.Errorf("database query (CountBound): %w", err)
 	}
@@ -972,6 +980,33 @@ func (s *userService) UpdateUserName(
 }
 
 /**
+ * UpdateUserEmail modifies the email address of a specific user.
+ */
+func (s *userService) UpdateUserEmail(
+	ctx context.Context,
+	id uuid.UUID,
+	newEmail string,
+) error {
+	// Check for active conflict
+	existing, err := s.Repo.GetUserByEmail(ctx, newEmail)
+	if err != nil {
+		return fmt.Errorf("lookup user email: %w", err)
+	}
+	if existing != nil {
+		return fmt.Errorf("conflict: email %s already in use", newEmail)
+	}
+
+	err = s.Repo.UpdateUserEmail(ctx, id[:], newEmail)
+	if err != nil {
+		return fmt.Errorf("database query (UpdateUserEmail): %w", err)
+	}
+
+	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
+	return nil
+}
+
+/**
  * ChangePassword verifies the old password before applying the new one.
  */
 func (s *userService) ChangePassword(
@@ -1156,6 +1191,7 @@ func (s *userService) GetAdminUserList(
 		page,
 		sortBy,
 		order,
+		"",
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserResponseList
@@ -1165,7 +1201,7 @@ func (s *userService) GetAdminUserList(
 	}
 
 	offset := (page - 1) * limit
-	hasViewAll := slices.Contains(permissions, "View all appclients")
+	hasViewAll := slices.Contains(permissions, "View all users")
 
 	users, err := s.Repo.GetAdminUserList(
 		ctx, limit, offset, adminID[:], hasViewAll, sortBy, order,
@@ -1176,7 +1212,7 @@ func (s *userService) GetAdminUserList(
 		)
 	}
 
-	total, err := s.Repo.CountAdminUsers(ctx)
+	total, err := s.Repo.CountAdminUsers(ctx, adminID[:], hasViewAll)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"database query (CountAdmins): %w", err,
@@ -1216,10 +1252,11 @@ func (s *userService) GetDeletedUserList(
 	ctx context.Context,
 	limit,
 	page int,
+	keyword string,
 ) (*dto.UserSimplifiedResponseList, error) {
 	offset := (page - 1) * limit
 
-	users, err := s.Repo.GetDeletedUserList(ctx, limit, offset)
+	users, err := s.Repo.GetDeletedUserList(ctx, limit, offset, keyword)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"database query (GetDeletedUserList): %w",
@@ -1227,7 +1264,7 @@ func (s *userService) GetDeletedUserList(
 		)
 	}
 
-	total, err := s.Repo.CountDeletedUsers(ctx)
+	total, err := s.Repo.CountDeletedUsers(ctx, keyword)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"database query (CountDeletedUsers): %w",
@@ -1279,6 +1316,32 @@ func (s *userService) HardDeleteUser(
 	}
 
 	_, _ = s.Cache.Incr(ctx, "cache:version:users")
+
+	// Call One-Portal API to delete user's records there
+	opURL := os.Getenv("ONE_PORTAL_BACKEND_URL")
+	if opURL == "" {
+		opURL = "http://localhost:8000"
+	}
+	deleteURL := fmt.Sprintf("%s/api/v1/user/%s", opURL, id.String())
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodDelete,
+		deleteURL,
+		nil,
+	)
+	if err == nil {
+		req.Header.Set("X-API-Key", os.Getenv("BACKEND_API_KEY"))
+		client := &http.Client{}
+		resp, postErr := client.Do(req)
+		if postErr != nil {
+			log.Printf("[HardDeleteUser] One-Portal call failed: %v", postErr)
+		} else {
+			resp.Body.Close()
+		}
+	} else {
+		log.Printf("[HardDeleteUser] One-Portal build req failed: %v", err)
+	}
 
 	return nil
 }

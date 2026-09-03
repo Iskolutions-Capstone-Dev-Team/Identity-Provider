@@ -1,8 +1,9 @@
 import MfaCodeInput from "./MfaCodeInput";
 import { Button } from "../../../components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import MfaRememberDevice from "./MfaRememberDevice";
 
-export default function MfaAuthenticatorCodeStep({ code, cooldown = 0, isVerifying, onCodeChange, onVerify, onUseBackupCode, onBack }) {
+export default function MfaAuthenticatorCodeStep({ code, cooldown = 0, isVerifying, onCodeChange, onVerify, onUseBackupCode, onBack, rememberDevice, onRememberDeviceChange }) {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">

@@ -64,26 +64,27 @@ async function getAllUsersFromEndpoint(fetchPage) {
   return collectedUsers;
 }
 
-async function getRegularUsers(sortBy, order) {
+async function getRegularUsers(sortBy, order, keyword = "") {
   const allUsers = await getAllUsersFromEndpoint((page) =>
-    userService.getUsers({ page, limit: FETCH_LIMIT, sortBy, order }),
+    userService.getUsers({ page, limit: FETCH_LIMIT, sortBy, order, keyword }),
   );
 
   return allUsers.map((user) => mapUserResponse(user, { isAdmin: false }));
 }
 
-async function getAdminUsers(sortBy, order) {
+async function getAdminUsers(sortBy, order, keyword = "") {
   const adminUsers = await getAllUsersFromEndpoint((page) =>
-    userService.getAdminUsers({ page, limit: FETCH_LIMIT, sortBy, order }),
+    userService.getAdminUsers({ page, limit: FETCH_LIMIT, sortBy, order, keyword }),
   );
 
   return adminUsers.map((user) => mapUserResponse(user, { isAdmin: true }));
 }
 
-async function getUsersByType(userType, sortBy, order) {
+async function getUsersByType(userType, sortBy, order, keyword = "") {
   const normalizedUserType =
     userType === ADMIN_USER_TYPE ? ADMIN_USER_TYPE : REGULAR_USER_TYPE;
-  const requestKey = `${normalizedUserType}:${sortBy}:${order}`;
+  const normalizedKeyword = typeof keyword === "string" ? keyword.trim() : "";
+  const requestKey = `${normalizedUserType}:${sortBy}:${order}:${normalizedKeyword}`;
   const currentRequest = userListRequests.get(requestKey);
 
   if (currentRequest) {
@@ -91,7 +92,7 @@ async function getUsersByType(userType, sortBy, order) {
   }
 
   const nextRequest = (
-    normalizedUserType === ADMIN_USER_TYPE ? getAdminUsers(sortBy, order) : getRegularUsers(sortBy, order)
+    normalizedUserType === ADMIN_USER_TYPE ? getAdminUsers(sortBy, order, normalizedKeyword) : getRegularUsers(sortBy, order, normalizedKeyword)
   ).finally(() => {
     userListRequests.delete(requestKey);
   });
@@ -185,10 +186,13 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     );
   };
 
+  const searchKeyword = typeof search === "string" ? search.trim() : "";
+
   const fetchUsers = async (
     selectedUserType = userType,
     selectedSortBy = sortBy,
     selectedSort = sort,
+    selectedKeyword = searchKeyword,
     { showLoading = true } = {},
   ) => {
     const fetchId = latestFetchRef.current + 1;
@@ -199,7 +203,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         setLoading(true);
       }
 
-      const nextUsers = await getUsersByType(selectedUserType, selectedSortBy, selectedSort);
+      const nextUsers = await getUsersByType(selectedUserType, selectedSortBy, selectedSort, selectedKeyword);
       const usersWithLocalSelections = applyUserClientSelections(
         nextUsers,
         userAccessSelectionsRef.current,
@@ -231,8 +235,8 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   };
 
   useEffect(() => {
-    fetchUsers(userType, sortBy, sort);
-  }, [userType, sortBy, sort]);
+    fetchUsers(userType, sortBy, sort, searchKeyword);
+  }, [userType, sortBy, sort, searchKeyword]);
 
   const setSearchKeyword = (value) => {
     const nextValue = typeof value === "string" ? value : "";
@@ -426,6 +430,10 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
   const updateUser = async (updatedUser, originalUser = {}) => {
     const isAdminUserUpdate = updatedUser?.userType === ADMIN_USER_TYPE;
+    const shouldUpdateName = updatedUser?.givenName !== originalUser?.givenName || 
+                             updatedUser?.surname !== originalUser?.surname || 
+                             updatedUser?.middleName !== originalUser?.middleName || 
+                             updatedUser?.suffix !== originalUser?.suffix;
     const nextStatus = normalizeStatus(updatedUser?.status);
     const previousStatus = normalizeStatus(originalUser?.status);
     const nextAccessibleClientIds = normalizeClientIds(updatedUser?.accessibleClientIds);
@@ -454,6 +462,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     let manageableClientsWereUpdated = false;
     let roleWasUpdated = false;
     let accountTypeWasUpdated = false;
+    let nameWasUpdated = false;
 
     try {
       if (
@@ -461,7 +470,8 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         !shouldUpdateRole &&
         !shouldUpdateAccountType &&
         !shouldUpdateAccessibleClients &&
-        !shouldUpdateManageableClients
+        !shouldUpdateManageableClients &&
+        !shouldUpdateName
       ) {
         return;
       }
@@ -486,9 +496,6 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       }
 
       if (shouldUpdateRole || shouldUpdateAccountType) {
-        if (!updatedUser.mfaCode) {
-           throw new Error("MFA Code is required to update Account Type or Role.");
-        }
         
         const nextAccountTypeId = normalizeAccountTypeId(updatedUser?.accountTypeId) || getAccountTypeBackendId(nextAccountType);
         const finalRoleId = nextRoleId !== previousRoleId ? nextRoleId : previousRoleId;
@@ -502,6 +509,16 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         
         roleWasUpdated = shouldUpdateRole;
         accountTypeWasUpdated = shouldUpdateAccountType;
+      }
+
+      if (shouldUpdateName) {
+        await userService.updateUserNameAdmin(updatedUser.id, {
+          firstName: updatedUser.givenName,
+          lastName: updatedUser.surname,
+          middleName: updatedUser.middleName,
+          suffix: updatedUser.suffix,
+        });
+        nameWasUpdated = true;
       }
 
       if (shouldUpdateStatus) {
@@ -523,13 +540,14 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         shouldUpdateRole ||
         shouldUpdateAccountType ||
         shouldUpdateAccessibleClients ||
-        shouldUpdateManageableClients
+        shouldUpdateManageableClients ||
+        shouldUpdateName
       ) {
         await fetchUsers(userType, sortBy, sort, { showLoading: false });
         return;
       }
     } catch (error) {
-      if (accessWasUpdated || manageableClientsWereUpdated || roleWasUpdated) {
+      if (accessWasUpdated || manageableClientsWereUpdated || roleWasUpdated || nameWasUpdated) {
         await fetchUsers(userType, sortBy, sort, { showLoading: false });
       }
 
@@ -557,13 +575,12 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   };
 
   const filteredUsers = users.filter((user) => {
-    const matchesSearch = matchesUserSearch(user, search);
     const matchesStatus = status ? user.status === status : true;
     const matchesVisibleClients =
       userType !== REGULAR_USER_TYPE ||
       userHasVisibleClient(user, visibleClientLookup);
 
-    return matchesSearch && matchesStatus && matchesVisibleClients;
+    return matchesStatus && matchesVisibleClients;
   });
 
   const totalResults = filteredUsers.length;

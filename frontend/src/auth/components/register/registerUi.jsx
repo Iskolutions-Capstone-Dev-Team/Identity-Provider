@@ -74,13 +74,10 @@ export const RoleSelectField = forwardRef(function RoleSelectField(
   },
   ref,
 ) {
-  const selectedOption = options.find((option) => option.id === value);
-  const SelectedIcon = selectedOption?.Icon;
-
   return (
     <div className="relative">
       <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
-        {SelectedIcon ? <SelectedIcon className="size-5" strokeWidth={1.5} /> : placeholderIcon}
+        {placeholderIcon}
       </span>
       <Select value={value} onValueChange={(val) => onSelect(val === "none" ? "" : val)} disabled={isDisabled}>
         <SelectTrigger ref={ref} className={getInputClassName(error)}>
@@ -88,19 +85,13 @@ export const RoleSelectField = forwardRef(function RoleSelectField(
             <SelectValue placeholder="Select your role" />
           </span>
         </SelectTrigger>
-        <SelectContent alignItemWithTrigger={false} sideOffset={4} className="z-[90] bg-white shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl">
+        <SelectContent alignItemWithTrigger={false} sideOffset={4} className="z-[90] bg-white shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl max-h-[300px]">
           <SelectItem value="none" className="py-2.5">
-            <span className="flex items-center gap-3">
-              {placeholderIcon}
-              Select your role
-            </span>
+            Select your role
           </SelectItem>
           {options.map((option) => (
             <SelectItem key={option.id} value={option.id} className="py-2.5">
-              <span className="flex items-center gap-3">
-                <option.Icon className="size-5" strokeWidth={1.5} />
-                {option.label}
-              </span>
+              {option.label}
             </SelectItem>
           ))}
         </SelectContent>
@@ -130,6 +121,34 @@ function getInputClassName(hasError, hasActionButton = false) {
       ? "border-red-300 focus:border-red-300 focus:ring-red-200/70"
       : "border-white/20 focus:border-[#ffd700] focus:ring-[#ffd700]/20"
   } ${hasActionButton ? "pr-12" : ""}`;
+}
+
+export function RegisterSuffixSelectField({ error, icon, label, placeholder, value, onChange, options }) {
+  return (
+    <div>
+      <FormLabel>{label}</FormLabel>
+      <div className="relative">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
+          {icon}
+        </span>
+        <Select value={value} onValueChange={(val) => onChange(val === "N/A" ? "" : val)}>
+          <SelectTrigger className={getInputClassName(error)}>
+            <span className={`truncate text-sm ${value ? "text-slate-800" : "text-slate-400"}`}>
+              <SelectValue placeholder={placeholder} />
+            </span>
+          </SelectTrigger>
+          <SelectContent alignItemWithTrigger={false} sideOffset={4} className="z-[90] bg-white shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl max-h-[300px]">
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value} className="py-2.5">
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <FieldError message={error} />
+    </div>
+  );
 }
 
 function getSelectContainerClassName(hasError) {

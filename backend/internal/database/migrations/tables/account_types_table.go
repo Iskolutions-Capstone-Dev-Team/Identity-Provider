@@ -28,5 +28,11 @@ var AccountTypesMigration = migrations.TableMigration{
 			SET name = 'System Administrator' 
 			WHERE name = 'admin';`,
 		},
+		{
+			ID: "add-is-selectable-column",
+			SQL: `
+			ALTER TABLE account_types 
+			ADD COLUMN is_selectable BOOLEAN NOT NULL DEFAULT TRUE;`,
+		},
 	},
 }

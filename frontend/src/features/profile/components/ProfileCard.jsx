@@ -43,6 +43,10 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
 
     await userService.updateUserName(profileId, updatedProfile);
 
+    if (updatedProfile.email && updatedProfile.email !== currentProfile.email) {
+      await userService.updateUserEmailMe(updatedProfile.email);
+    }
+
     const nextProfile = {
       ...currentProfile,
       ...updatedProfile,
