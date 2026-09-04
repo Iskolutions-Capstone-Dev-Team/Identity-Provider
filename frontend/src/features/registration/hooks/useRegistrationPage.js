@@ -57,7 +57,7 @@ export function getRegistrationActionError(error, fallbackMessage) {
 export function useRegistrationPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { colorMode = "light", globalViewType } = useOutletContext() || {};
+  const { colorMode = "light", globalViewType, setGlobalViewType } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
   
   const canCreateRegistration = hasPermission(PERMISSIONS.CREATE_REGISTRATION_CONFIG);
@@ -81,8 +81,15 @@ export function useRegistrationPage() {
   const [sortBy, setSortBy] = useState("account_type_name");
   const [sort, setSort] = useState("desc");
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("registrationViewType") || globalViewType || "card";
+    return globalViewType || "card";
   });
+
+  const handleSetViewType = (newViewType) => {
+    setViewType(newViewType);
+    if (setGlobalViewType) {
+      setGlobalViewType(newViewType);
+    }
+  };
 
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
@@ -97,26 +104,16 @@ export function useRegistrationPage() {
   const isDarkMode = colorMode === "dark";
   const searchKeyword = search.trim();
 
-  const isMounted = useRef(false);
-
   useEffect(() => {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
     metricsService.getRegistrationMetrics().then(setRegistrationMetrics).catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (isMounted.current) {
-      if (globalViewType) {
-        setViewType(globalViewType);
-      }
-    } else {
-      isMounted.current = true;
+    if (globalViewType) {
+      setViewType(globalViewType);
     }
   }, [globalViewType]);
-
-  useEffect(() => {
-    localStorage.setItem("registrationViewType", viewType);
-  }, [viewType]);
 
   const appClientOptions = useMemo(
     () => getAllAppClientSelectOptions(appClients),
@@ -404,7 +401,7 @@ export function useRegistrationPage() {
     sort,
     setSort,
     viewType,
-    setViewType,
+    setViewType: handleSetViewType,
     totalPages,
     totalResults,
     selectedConfig,

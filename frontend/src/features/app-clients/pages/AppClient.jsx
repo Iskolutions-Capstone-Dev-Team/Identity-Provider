@@ -19,7 +19,7 @@ import { PERMISSIONS } from "../../../utils/permissionAccess";
 import MetricsCard from "../../../components/MetricsCard";
 
 export default function AppClient() {
-    const { colorMode = "light", globalViewType } = useOutletContext() || {};
+    const { colorMode = "light", globalViewType, setGlobalViewType } = useOutletContext() || {};
     const { hasPermission } = usePermissionAccess();
     const canCreateClient = hasPermission(PERMISSIONS.ADD_APPCLIENT);
     const canEditClient = hasPermission(PERMISSIONS.EDIT_APPCLIENT);
@@ -42,6 +42,7 @@ export default function AppClient() {
 
     const pageState = useAppClientPage({
         globalViewType,
+        setGlobalViewType,
         canCreateClient,
         canEditClient,
         canDeleteClient,

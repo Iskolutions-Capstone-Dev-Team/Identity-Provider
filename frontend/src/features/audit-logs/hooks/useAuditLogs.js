@@ -137,7 +137,7 @@ function getTotalPages(payload) {
     : 1;
 }
 
-export function useAuditLogs({ globalViewType }) {
+export function useAuditLogs({ globalViewType, setGlobalViewType }) {
   const { hasPermission } = usePermissionAccess();
   const canViewSecurityLogs = hasPermission(PERMISSIONS.VIEW_SECURITY_LOGS);
 
@@ -148,23 +148,15 @@ export function useAuditLogs({ globalViewType }) {
   const [sortBy, setSortBy] = useState("created_at");
   const [sort, setSort] = useState("desc");
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("auditLogsViewType") || globalViewType || "table";
+    return globalViewType || "table";
   });
 
-  const isMounted = useRef(false);
-  useEffect(() => {
-    if (isMounted.current) {
-      if (globalViewType) {
-        setViewType(globalViewType);
-      }
-    } else {
-      isMounted.current = true;
+  const handleSetViewType = (newViewType) => {
+    setViewType(newViewType);
+    if (setGlobalViewType) {
+      setGlobalViewType(newViewType);
     }
-  }, [globalViewType]);
-
-  useEffect(() => {
-    localStorage.setItem("auditLogsViewType", viewType);
-  }, [viewType]);
+  };
 
   const [logs, setLogs] = useState([]);
   const [totalResults, setTotalResults] = useState(0);
@@ -188,6 +180,12 @@ export function useAuditLogs({ globalViewType }) {
   useEffect(() => {
     metricsService.getLogMetrics().then(setLogMetrics).catch(() => { });
   }, []);
+
+  useEffect(() => {
+    if (globalViewType) {
+      setViewType(globalViewType);
+    }
+  }, [globalViewType]);
 
   useEffect(() => {
     if (isSecurityLogType && !canViewSecurityLogs) {
@@ -358,7 +356,7 @@ export function useAuditLogs({ globalViewType }) {
     sort,
     setSort,
     viewType,
-    setViewType,
+    setViewType: handleSetViewType,
     logs,
     totalResults,
     totalPages,
