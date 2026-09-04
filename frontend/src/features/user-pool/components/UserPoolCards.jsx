@@ -1,11 +1,11 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
 import { Eye, Pencil, Trash, Copy, CopyCheck, Ellipsis, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -135,9 +135,7 @@ export default function UserPoolCards({
             </CardContent>
             <CardFooter className="p-4 pt-4 flex items-center justify-between mt-auto border-t">
               <Skeleton className="h-6 w-16 rounded-full" />
-              <div className="flex gap-2">
-                <Skeleton className="h-8 w-8 rounded-md" />
-                <Skeleton className="h-8 w-8 rounded-md" />
+              <div className="flex items-center justify-center gap-1">
                 <Skeleton className="h-8 w-8 rounded-md" />
               </div>
             </CardFooter>
@@ -253,22 +251,34 @@ export default function UserPoolCards({
                 {user.status}
               </Badge>
               
-              <div className="flex items-center gap-1">
-                {showViewAction && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(user)} title={`View ${getUserLabel(user)}`}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                )}
-                {showEditAction && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(user)} title={`Edit ${getUserLabel(user)}`}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                )}
-                {showDeleteAction && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onDelete(user)} title={`Delete ${getUserLabel(user)}`}>
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                )}
+              <div className="flex items-center justify-center gap-1">
+                <Menubar className="border-none bg-transparent shadow-none">
+                  <MenubarMenu>
+                    <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${getUserLabel(user)}`}>
+                      <Ellipsis className="h-4 w-4" />
+                    </MenubarTrigger>
+                    <MenubarContent align="end">
+                      {showViewAction && (
+                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onView(user)}>
+                          <Eye className="h-4 w-4" />
+                          View
+                        </MenubarItem>
+                      )}
+                      {showEditAction && (
+                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onEdit(user)}>
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </MenubarItem>
+                      )}
+                      {showDeleteAction && (
+                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onDelete(user)}>
+                          <Trash className="h-4 w-4" />
+                          Delete
+                        </MenubarItem>
+                      )}
+                    </MenubarContent>
+                  </MenubarMenu>
+                </Menubar>
               </div>
             </CardFooter>
           </Card>
