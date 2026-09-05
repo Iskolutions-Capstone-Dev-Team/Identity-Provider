@@ -105,7 +105,7 @@ export default function RolesListCards({ loading = false, roles, onView, onEdit,
                     {permissions.length > 3 ? (
                       <>
                         {permissions.slice(0, 3).map((item, idx) => (
-                          <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-[10px]">
+                          <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-[10px] whitespace-normal break-words text-center">
                             {item}
                           </Badge>
                         ))}
@@ -124,7 +124,7 @@ export default function RolesListCards({ loading = false, roles, onView, onEdit,
                               </h4>
                               <div className="flex flex-wrap gap-1 max-h-40 overflow-y-auto pt-1 pr-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/25 hover:[&::-webkit-scrollbar-thumb]:bg-foreground/40 [&::-webkit-scrollbar-track]:bg-transparent">
                                 {permissions.map((item, idx) => (
-                                  <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-xs">
+                                  <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-xs whitespace-normal break-words text-center">
                                     {item}
                                   </Badge>
                                 ))}
@@ -135,7 +135,7 @@ export default function RolesListCards({ loading = false, roles, onView, onEdit,
                       </>
                     ) : (
                       permissions.map((item, idx) => (
-                        <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-[10px]">
+                        <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-[10px] whitespace-normal break-words text-center">
                           {item}
                         </Badge>
                       ))
