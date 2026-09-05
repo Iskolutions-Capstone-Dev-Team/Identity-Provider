@@ -1,12 +1,13 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { KeyRound, Eye, Pencil, Trash2, Copy, CopyCheck, Monitor } from "lucide-react";
+import { Ellipsis, KeyRound, Eye, Pencil, Trash2, Copy, CopyCheck, Monitor } from "lucide-react";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { IconStack } from "@/components/reui/icon-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
 
 const getClientId = (client) => client?.id ?? client?.clientId ?? "";
 
@@ -91,8 +92,6 @@ export default function ConnectedAppClientTable({
                     <TableCell className="text-center"><Skeleton className="h-8 w-8 rounded-md mx-auto" /></TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <Skeleton className="h-8 w-8 rounded-md" />
-                        <Skeleton className="h-8 w-8 rounded-md" />
                         <Skeleton className="h-8 w-8 rounded-md" />
                       </div>
                     </TableCell>
@@ -193,28 +192,31 @@ export default function ConnectedAppClientTable({
 
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          {renderActionButton({
-                            label: `View ${client.name}`,
-                            onClick: () => onView?.(client),
-                            className: actionButtonClassName,
-                            children: (<Eye className="h-4 w-4" />),
-                          })}
-
-                          {showEditAction &&
-                            renderActionButton({
-                              label: `Edit ${client.name}`,
-                              onClick: () => onEdit?.(client),
-                              className: actionButtonClassName,
-                              children: (<Pencil className="h-4 w-4" />),
-                            })}
-
-                          {showDeleteAction &&
-                            renderActionButton({
-                              label: `Delete ${client.name}`,
-                              onClick: () => onDelete?.(client),
-                              className: actionButtonClassName,
-                              children: (<Trash2 className="h-4 w-4" />),
-                            })}
+                          <Menubar className="border-none bg-transparent shadow-none">
+                            <MenubarMenu>
+                              <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${client.name}`}>
+                                <Ellipsis className="h-4 w-4" />
+                              </MenubarTrigger>
+                              <MenubarContent align="end">
+                                <MenubarItem className="cursor-pointer gap-2" onClick={() => onView?.(client)}>
+                                  <Eye className="h-4 w-4" />
+                                  View
+                                </MenubarItem>
+                                {showEditAction && (
+                                  <MenubarItem className="cursor-pointer gap-2" onClick={() => onEdit?.(client)}>
+                                    <Pencil className="h-4 w-4" />
+                                    Edit
+                                  </MenubarItem>
+                                )}
+                                {showDeleteAction && (
+                                  <MenubarItem className="cursor-pointer gap-2" onClick={() => onDelete?.(client)}>
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete
+                                  </MenubarItem>
+                                )}
+                              </MenubarContent>
+                            </MenubarMenu>
+                          </Menubar>
                         </div>
                       </TableCell>
                     </TableRow>

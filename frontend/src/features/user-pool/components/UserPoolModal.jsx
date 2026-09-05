@@ -189,7 +189,7 @@ export default function UserPoolModal({
                       <CardContent className="px-3 py-2 flex flex-wrap gap-2">
                       {clientAccessDisplayItems.length > 0 ? (
                         clientAccessDisplayItems.map((item, idx) => (
-                          <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>
+                          <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center" key={idx}>{item}</Badge>
                         ))
                       ) : (
                         <span className="text-sm text-muted-foreground self-center">No clients selected</span>
@@ -204,7 +204,7 @@ export default function UserPoolModal({
                       <CardContent className="px-3 py-2 flex flex-wrap gap-2">
                       {manageableClientDisplayItems.length > 0 ? (
                         manageableClientDisplayItems.map((item, idx) => (
-                          <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>
+                          <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center" key={idx}>{item}</Badge>
                         ))
                       ) : (
                         <span className="text-sm text-muted-foreground self-center">No manageable clients selected</span>
@@ -351,7 +351,7 @@ export default function UserPoolModal({
                         {!canEditRoleField ? (
                           <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                             {roleAccessItems.length > 0 ? (
-                              roleAccessItems.map((item, idx) => <Badge key={idx}>{item}</Badge>)
+                              roleAccessItems.map((item, idx) => <Badge key={idx} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center">{item}</Badge>)
                             ) : (
                               <span className="text-sm text-muted-foreground">No role assigned</span>
                             )}
@@ -379,7 +379,7 @@ export default function UserPoolModal({
                       {!canEditAccessField ? (
                         <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                           {clientAccessDisplayItems.length > 0 ? (
-                            clientAccessDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>)
+                            clientAccessDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center" key={idx}>{item}</Badge>)
                           ) : (
                             <span className="text-sm text-muted-foreground">No clients selected</span>
                           )}
@@ -406,7 +406,7 @@ export default function UserPoolModal({
                       {!canEditAccessField ? (
                         <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                           {manageableClientDisplayItems.length > 0 ? (
-                            manageableClientDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>)
+                            manageableClientDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center" key={idx}>{item}</Badge>)
                           ) : (
                             <span className="text-sm text-muted-foreground">No manageable clients selected</span>
                           )}

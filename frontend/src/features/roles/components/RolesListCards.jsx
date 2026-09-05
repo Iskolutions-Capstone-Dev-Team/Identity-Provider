@@ -1,9 +1,10 @@
-﻿import { Eye, Pencil, Trash, ShieldUser, Ellipsis } from "lucide-react";
+import { Eye, Pencil, Trash, ShieldUser, Ellipsis } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { IconStack } from "@/components/reui/icon-stack";
@@ -41,9 +42,7 @@ export default function RolesListCards({ loading = false, roles, onView, onEdit,
               </div>
             </CardContent>
             <CardFooter className="p-4 pt-4 flex items-center justify-end mt-auto border-t">
-              <div className="flex gap-2">
-                <Skeleton className="h-8 w-8 rounded-md" />
-                <Skeleton className="h-8 w-8 rounded-md" />
+              <div className="flex items-center justify-center gap-1">
                 <Skeleton className="h-8 w-8 rounded-md" />
               </div>
             </CardFooter>
@@ -106,7 +105,7 @@ export default function RolesListCards({ loading = false, roles, onView, onEdit,
                     {permissions.length > 3 ? (
                       <>
                         {permissions.slice(0, 3).map((item, idx) => (
-                          <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-[10px]">
+                          <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-[10px] whitespace-normal break-words text-center">
                             {item}
                           </Badge>
                         ))}
@@ -125,7 +124,7 @@ export default function RolesListCards({ loading = false, roles, onView, onEdit,
                               </h4>
                               <div className="flex flex-wrap gap-1 max-h-40 overflow-y-auto pt-1 pr-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/25 hover:[&::-webkit-scrollbar-thumb]:bg-foreground/40 [&::-webkit-scrollbar-track]:bg-transparent">
                                 {permissions.map((item, idx) => (
-                                  <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-xs">
+                                  <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-xs whitespace-normal break-words text-center">
                                     {item}
                                   </Badge>
                                 ))}
@@ -136,7 +135,7 @@ export default function RolesListCards({ loading = false, roles, onView, onEdit,
                       </>
                     ) : (
                       permissions.map((item, idx) => (
-                        <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-[10px]">
+                        <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2 py-0.5 text-[10px] whitespace-normal break-words text-center">
                           {item}
                         </Badge>
                       ))
@@ -149,20 +148,32 @@ export default function RolesListCards({ loading = false, roles, onView, onEdit,
             </CardContent>
             
             <CardFooter className="p-4 pt-3 flex items-center justify-end border-t mt-auto bg-card">
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(role)} title={`View Role`}>
-                  <Eye className="h-4 w-4" />
-                </Button>
-                {role.canEdit && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(role)} title={`Edit Role`}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                )}
-                {role.canDelete && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onDelete(role.id)} title={`Delete Role`}>
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                )}
+              <div className="flex items-center justify-center gap-1">
+                <Menubar className="border-none bg-transparent shadow-none">
+                  <MenubarMenu>
+                    <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${role.role_name}`}>
+                      <Ellipsis className="h-4 w-4" />
+                    </MenubarTrigger>
+                    <MenubarContent align="end">
+                      <MenubarItem className="cursor-pointer gap-2" onClick={() => onView(role)}>
+                        <Eye className="h-4 w-4" />
+                        View
+                      </MenubarItem>
+                      {role.canEdit && (
+                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onEdit(role)}>
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </MenubarItem>
+                      )}
+                      {role.canDelete && (
+                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onDelete(role.id)}>
+                          <Trash className="h-4 w-4" />
+                          Delete
+                        </MenubarItem>
+                      )}
+                    </MenubarContent>
+                  </MenubarMenu>
+                </Menubar>
               </div>
             </CardFooter>
           </Card>

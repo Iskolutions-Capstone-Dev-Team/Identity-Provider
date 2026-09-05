@@ -4,6 +4,7 @@ import { metricsService } from "../../../services/metricsService";
 
 export function useAppClientPage({
   globalViewType,
+  setGlobalViewType,
   canCreateClient,
   canEditClient,
   canDeleteClient,
@@ -38,23 +39,21 @@ export function useAppClientPage({
   const [pendingSuccessMessage, setPendingSuccessMessage] = useState("");
 
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("appClientViewType") || globalViewType || "table";
+    return globalViewType || "table";
   });
 
-  const isMounted = useRef(false);
-  useEffect(() => {
-    if (isMounted.current) {
-      if (globalViewType) {
-        setViewType(globalViewType);
-      }
-    } else {
-      isMounted.current = true;
+  const handleSetViewType = (newViewType) => {
+    setViewType(newViewType);
+    if (setGlobalViewType) {
+      setGlobalViewType(newViewType);
     }
-  }, [globalViewType]);
+  };
 
   useEffect(() => {
-    localStorage.setItem("appClientViewType", viewType);
-  }, [viewType]);
+    if (globalViewType) {
+      setViewType(globalViewType);
+    }
+  }, [globalViewType]);
 
   const openCreate = () => {
     if (!canCreateClient) return;
@@ -159,7 +158,7 @@ export function useAppClientPage({
     deleteTarget,
     showSecretConfirm,
     viewType,
-    setViewType,
+    setViewType: handleSetViewType,
     openCreate,
     openView,
     openEdit,
