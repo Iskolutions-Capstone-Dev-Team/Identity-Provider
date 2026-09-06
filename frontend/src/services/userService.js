@@ -222,6 +222,29 @@ export const userService = {
     return res.data;
   },
 
+  async updateUserEmailAdmin(id, email) {
+    const userId = normalizeTextValue(id);
+
+    if (!userId) {
+      throw new Error("User ID is required.");
+    }
+
+    const payload = {
+      email: normalizeTextValue(email),
+    };
+
+    if (!payload.email) {
+      throw new Error("Email is required.");
+    }
+
+    const res = await axiosInstance.patch(`/admin/users/${userId}/email`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    clearUserCache();
+    return res.data;
+  },
+
   async createUser(data) {
     const accountTypeId = normalizeAccountTypeId(data.account_type_id);
 

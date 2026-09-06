@@ -434,6 +434,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
                              updatedUser?.surname !== originalUser?.surname || 
                              updatedUser?.middleName !== originalUser?.middleName || 
                              updatedUser?.suffix !== originalUser?.suffix;
+    const shouldUpdateEmail = updatedUser?.email !== originalUser?.email;
     const nextStatus = normalizeStatus(updatedUser?.status);
     const previousStatus = normalizeStatus(originalUser?.status);
     const nextAccessibleClientIds = normalizeClientIds(updatedUser?.accessibleClientIds);
@@ -463,6 +464,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     let roleWasUpdated = false;
     let accountTypeWasUpdated = false;
     let nameWasUpdated = false;
+    let emailWasUpdated = false;
 
     try {
       if (
@@ -471,7 +473,8 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         !shouldUpdateAccountType &&
         !shouldUpdateAccessibleClients &&
         !shouldUpdateManageableClients &&
-        !shouldUpdateName
+        !shouldUpdateName &&
+        !shouldUpdateEmail
       ) {
         return;
       }
@@ -521,6 +524,11 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         nameWasUpdated = true;
       }
 
+      if (shouldUpdateEmail) {
+        await userService.updateUserEmailAdmin(updatedUser.id, updatedUser.email);
+        emailWasUpdated = true;
+      }
+
       if (shouldUpdateStatus) {
         await userService.updateUserStatus(updatedUser.id, nextStatus);
       }
@@ -541,13 +549,14 @@ export function useUsers({ visibleClientIds = [] } = {}) {
         shouldUpdateAccountType ||
         shouldUpdateAccessibleClients ||
         shouldUpdateManageableClients ||
-        shouldUpdateName
+        shouldUpdateName ||
+        shouldUpdateEmail
       ) {
         await fetchUsers(userType, sortBy, sort, { showLoading: false });
         return;
       }
     } catch (error) {
-      if (accessWasUpdated || manageableClientsWereUpdated || roleWasUpdated || nameWasUpdated) {
+      if (accessWasUpdated || manageableClientsWereUpdated || roleWasUpdated || nameWasUpdated || emailWasUpdated) {
         await fetchUsers(userType, sortBy, sort, { showLoading: false });
       }
 
