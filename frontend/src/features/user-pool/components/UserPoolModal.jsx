@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { SUFFIX_OPTIONS } from "../../../utils/suffixOptions";
@@ -216,7 +217,7 @@ export default function UserPoolModal({
               </div>
             </div>
           ) : (
-            <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pt-3 pb-6">
+            <form id="user-pool-form" noValidate onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pt-3 pb-6">
               <div className="space-y-6">
                 {/* Name Edit Card */}
                 <Card className="bg-muted/30 border-border/40">
@@ -226,6 +227,32 @@ export default function UserPoolModal({
                       <p className="text-sm text-muted-foreground">Edit the user's name details.</p>
                     </div>
                     <Separator />
+                    <Field className="gap-0 space-y-1.5">
+                      <FieldLabel htmlFor="email">
+                        Email Address <span className="text-red-500">*</span>
+                      </FieldLabel>
+                      <Input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        value={formData.email || ""} 
+                        onChange={(e) => {
+                          setFormData(curr => ({ ...curr, email: e.target.value }));
+                          if (fieldErrors?.email) setFieldErrors(curr => ({ ...curr, email: "" }));
+                        }} 
+                        placeholder="Enter email" 
+                        className="h-10 rounded-lg" 
+                        disabled={isSubmitting} 
+                        aria-invalid={!!fieldErrors?.email} 
+                      />
+                      {fieldErrors?.email ? (
+                        <FieldError>{fieldErrors.email}</FieldError>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Must be an active email account
+                        </p>
+                      )}
+                    </Field>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <div className="flex items-center min-h-[24px]">
