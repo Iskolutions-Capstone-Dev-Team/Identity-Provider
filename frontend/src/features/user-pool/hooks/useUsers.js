@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { mailService } from "../../../services/mailService";
 import { userService } from "../../../services/userService";
 import { generateHiddenInvitationPassword } from "../../../utils/passwordRules";
@@ -188,55 +189,42 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
   const searchKeyword = typeof search === "string" ? search.trim() : "";
 
-  const fetchUsers = async (
-    selectedUserType = userType,
-    selectedSortBy = sortBy,
-    selectedSort = sort,
-    selectedKeyword = searchKeyword,
-    { showLoading = true } = {},
-  ) => {
-    const fetchId = latestFetchRef.current + 1;
-    latestFetchRef.current = fetchId;
+  const queryClient = useQueryClient();
 
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-
-      const nextUsers = await getUsersByType(selectedUserType, selectedSortBy, selectedSort, selectedKeyword);
-      const usersWithLocalSelections = applyUserClientSelections(
+  const { data: queryUsers, isLoading: isQueryLoading, error: queryError } = useQuery({
+    queryKey: ['users', userType, sortBy, sort, searchKeyword],
+    queryFn: async () => {
+      const nextUsers = await getUsersByType(userType, sortBy, sort, searchKeyword);
+      return applyUserClientSelections(
         nextUsers,
         userAccessSelectionsRef.current,
         userManageableSelectionsRef.current,
       );
-
-      if (latestFetchRef.current !== fetchId) {
-        return;
-      }
-
-      setUsers(usersWithLocalSelections);
-      setFetchError("");
-      return usersWithLocalSelections;
-    } catch (error) {
-      console.error("Fetch users error:", error);
-
-      if (latestFetchRef.current !== fetchId) {
-        return;
-      }
-
-      setUsers([]);
-      setFetchError("Unable to load users right now.");
-      return [];
-    } finally {
-      if (showLoading && latestFetchRef.current === fetchId) {
-        setLoading(false);
-      }
     }
-  };
+  });
 
   useEffect(() => {
-    fetchUsers(userType, sortBy, sort, searchKeyword);
-  }, [userType, sortBy, sort, searchKeyword]);
+    if (queryUsers) {
+      setUsers(queryUsers);
+      setFetchError("");
+    }
+  }, [queryUsers]);
+
+  useEffect(() => {
+    if (queryError) {
+      console.error("Fetch users error:", queryError);
+      setUsers([]);
+      setFetchError("Unable to load users right now.");
+    }
+  }, [queryError]);
+
+  useEffect(() => {
+    setLoading(isQueryLoading);
+  }, [isQueryLoading]);
+
+  const fetchUsers = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['users'] });
+  };
 
   const setSearchKeyword = (value) => {
     const nextValue = typeof value === "string" ? value : "";
@@ -280,7 +268,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     return userWithLocalSelections;
   };
 
-  const createUser = async (newUser) => {
+  const createUserInternal = async (newUser) => {
     const isAdminUser = newUser.userType === ADMIN_USER_TYPE;
     const accountType = isAdminUser
       ? getAccountTypeValue(SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE)
@@ -416,19 +404,34 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     }
   };
 
-  const deleteUser = async (userId, label) => {
-    try {
-      setFetchError("");
-      await userService.deleteUser(userId);
-      await fetchUsers(userType, sortBy, sort, { showLoading: false });
-    } catch (error) {
-      console.error("Delete error:", error);
-      setFetchError(`Failed to delete ${label}.`);
-      throw error;
-    }
+  const createUserMutation = useMutation({
+    mutationFn: createUserInternal,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] })
+  });
+
+  const createUser = async (newUser) => {
+    return createUserMutation.mutateAsync(newUser);
   };
 
-  const updateUser = async (updatedUser, originalUser = {}) => {
+  const deleteUserMutation = useMutation({
+    mutationFn: async ({ userId, label }) => {
+      setFetchError("");
+      await userService.deleteUser(userId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error, variables) => {
+      console.error("Delete error:", error);
+      setFetchError(`Failed to delete ${variables.label}.`);
+    }
+  });
+
+  const deleteUser = async (userId, label) => {
+    return deleteUserMutation.mutateAsync({ userId, label });
+  };
+
+  const updateUserInternal = async (updatedUser, originalUser = {}) => {
     const isAdminUserUpdate = updatedUser?.userType === ADMIN_USER_TYPE;
     const shouldUpdateName = updatedUser?.givenName !== originalUser?.givenName || 
                              updatedUser?.surname !== originalUser?.surname || 
@@ -581,6 +584,15 @@ export function useUsers({ visibleClientIds = [] } = {}) {
       console.error("Update user error:", error);
       throw error;
     }
+  };
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ updatedUser, originalUser }) => updateUserInternal(updatedUser, originalUser),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] })
+  });
+
+  const updateUser = async (updatedUser, originalUser = {}) => {
+    return updateUserMutation.mutateAsync({ updatedUser, originalUser });
   };
 
   const filteredUsers = users.filter((user) => {
