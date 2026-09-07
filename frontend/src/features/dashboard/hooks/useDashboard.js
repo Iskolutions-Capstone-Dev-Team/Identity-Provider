@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
@@ -107,17 +108,23 @@ export function useDashboard() {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
   }, []);
 
-  const [metrics, setMetrics] = useState(null);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("today");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [reportError, setReportError] = useState("");
   const [isReportTypeSelectionOpen, setIsReportTypeSelectionOpen] = useState(false);
   const [isReportConfirmOpen, setIsReportConfirmOpen] = useState(false);
   const [isSystemReportConfirmOpen, setIsSystemReportConfirmOpen] = useState(false);
-  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
   const [isLoginsModalOpen, setIsLoginsModalOpen] = useState(false);
   const [selectedModalPeriod, setSelectedModalPeriod] = useState(null);
+
+  const { data: metricsData, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['dashboardMetrics'],
+    queryFn: () => metricsService.getDashboardMetrics(),
+  });
+
+  const metrics = metricsData || null;
+  let error = "";
+  if (queryError) {
+    error = "Dashboard metrics are unavailable. Please check the backend connection.";
+  }
 
   const showLoading = useDelayedLoading(loading);
   const normalizedMetrics = useMemo(() => normalizeMetrics(metrics), [metrics]);
@@ -143,70 +150,42 @@ export function useDashboard() {
     }
   };
 
-  useEffect(() => {
-    let ignore = false;
+  const [reportError, setReportError] = useState("");
 
-    const loadMetrics = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const payload = await metricsService.getDashboardMetrics();
-
-        if (!ignore) {
-          setMetrics(payload);
-        }
-      } catch (fetchError) {
-        console.error("Dashboard metrics error:", fetchError);
-
-        if (!ignore) {
-          setMetrics(null);
-          setError("Dashboard metrics are unavailable. Please check the backend connection.");
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadMetrics();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  const handleDownloadReport = async (filters) => {
-    try {
-      setIsDownloadingReport(true);
+  const downloadReportMutation = useMutation({
+    mutationFn: (filters) => metricsService.downloadReport(filters),
+    onSuccess: (reportBlob) => {
       setReportError("");
-
-      const reportBlob = await metricsService.downloadReport(filters);
       downloadBlob(reportBlob, createReportFileName());
-    } catch (downloadError) {
+    },
+    onError: (downloadError) => {
       console.error("Metrics report download error:", downloadError);
       setReportError("Unable to generate the metrics report right now.");
-    } finally {
-      setIsDownloadingReport(false);
     }
+  });
+
+  const handleDownloadReport = (filters) => {
+    downloadReportMutation.mutate(filters);
   };
 
-  const handleDownloadSystemReport = async (filters) => {
-    try {
-      setIsDownloadingReport(true);
+  const downloadSystemReportMutation = useMutation({
+    mutationFn: (filters) => metricsService.downloadSystemReport(filters),
+    onSuccess: (reportBlob) => {
       setReportError("");
-
-      const reportBlob = await metricsService.downloadSystemReport(filters);
       const datePart = new Date().toISOString().slice(0, 10);
       downloadBlob(reportBlob, `system_report_${datePart}.pdf`);
-    } catch (downloadError) {
+    },
+    onError: (downloadError) => {
       console.error("System report download error:", downloadError);
       setReportError("Unable to generate the system report right now.");
-    } finally {
-      setIsDownloadingReport(false);
     }
+  });
+
+  const handleDownloadSystemReport = (filters) => {
+    downloadSystemReportMutation.mutate(filters);
   };
+
+  const isDownloadingReport = downloadReportMutation.isPending || downloadSystemReportMutation.isPending;
 
   const handleSelectReportType = (type) => {
     if (type === 'authentication') {
