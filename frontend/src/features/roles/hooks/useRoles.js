@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { roleService } from "../../../services/roleService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 
@@ -127,7 +128,7 @@ function normalizeRoles(roles = []) {
 }
 
 export function useRoles() {
-  const [roles, setRoles] = useState([]);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -136,62 +137,44 @@ export function useRoles() {
   const [viewType, setViewType] = useState(() => {
     return localStorage.getItem("rolesViewType") || "table";
   });
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalResults, setTotalResults] = useState(0);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [loading, setLoading] = useState(true);
   const searchKeyword = search.trim();
 
   useEffect(() => {
     localStorage.setItem("rolesViewType", viewType);
   }, [viewType]);
 
-  const fetchRoles = async (pageNumber = page, { showLoading = true } = {}) => {
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-
-      const data = await roleService.getRoles({
-        page: pageNumber,
-        limit,
-        keyword: searchKeyword,
-        sortBy,
-        order: sort
-      });
-      const nextRoles = normalizeRoles(data?.roles);
-      const nextTotalPages =
-        Number.isInteger(data?.last_page) && data.last_page > 0
-          ? data.last_page
-          : 1;
-      const nextTotalResults =
-        Number.isInteger(data?.total_count) && data.total_count >= 0
-          ? data.total_count
-          : nextRoles.length;
-
-      if (pageNumber > nextTotalPages) {
-        setPage(nextTotalPages);
-        return;
-      }
-
-      setRoles(nextRoles);
-      setTotalPages(nextTotalPages);
-      setTotalResults(nextTotalResults);
-    } catch (error) {
-      console.error("Failed to fetch roles:", error);
-      setRoles([]);
-      setTotalPages(1);
-      setTotalResults(0);
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
+  const fetchRolesFn = async () => {
+    const data = await roleService.getRoles({
+      page,
+      limit,
+      keyword: searchKeyword,
+      sortBy,
+      order: sort
+    });
+    
+    const nextRoles = normalizeRoles(data?.roles);
+    const nextTotalPages = Number.isInteger(data?.last_page) && data.last_page > 0 ? data.last_page : 1;
+    const nextTotalResults = Number.isInteger(data?.total_count) && data.total_count >= 0 ? data.total_count : nextRoles.length;
+    
+    if (page > nextTotalPages) {
+      setPage(nextTotalPages);
     }
+    
+    return {
+      roles: nextRoles,
+      totalPages: nextTotalPages,
+      totalResults: nextTotalResults,
+    };
   };
 
-  useEffect(() => {
-    fetchRoles(page);
-  }, [page, searchKeyword, limit, sortBy, sort]);
+  const { data, isLoading } = useQuery({
+    queryKey: ['roles', page, limit, searchKeyword, sortBy, sort],
+    queryFn: fetchRolesFn,
+  });
+
+  const roles = data?.roles || [];
+  const totalPages = data?.totalPages || 1;
+  const totalResults = data?.totalResults || 0;
 
   const setSearchKeyword = (value) => {
     const nextValue = typeof value === "string" ? value : "";
@@ -199,41 +182,36 @@ export function useRoles() {
     setSearch(nextValue);
   };
 
-  const createRole = async (data) => {
-    try {
-      await roleService.createRole(data);
-      await fetchRoles(page, { showLoading: false });
-    } catch (error) {
-      console.error("Create failed:", error);
-      throw error;
-    }
+  const refreshRoles = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['roles'] });
+    await queryClient.invalidateQueries({ queryKey: ['allRoles'] });
   };
 
-  const updateRole = async (data) => {
-    try {
-      await roleService.updateRole(data.id, data);
-      await fetchRoles(page, { showLoading: false });
-    } catch (error) {
-      console.error("Update failed:", error);
-      throw error;
-    }
-  };
+  const createRoleMutation = useMutation({
+    mutationFn: async (data) => roleService.createRole(data),
+    onSuccess: () => refreshRoles(),
+    onError: (error) => console.error("Create failed:", error),
+  });
 
-  const deleteRole = async (id) => {
-    try {
-      await roleService.deleteRole(id);
-      await fetchRoles(page, { showLoading: false });
-    } catch (error) {
-      console.error("Delete failed:", error);
-      throw error;
-    }
-  };
+  const createRole = async (data) => createRoleMutation.mutateAsync(data);
 
-  useEffect(() => {
-    if (!successMessage) return;
-    const timer = setTimeout(() => setSuccessMessage(""), 3000);
-    return () => clearTimeout(timer);
-  }, [successMessage]);
+  const updateRoleMutation = useMutation({
+    mutationFn: async (data) => roleService.updateRole(data.id, data),
+    onSuccess: () => refreshRoles(),
+    onError: (error) => console.error("Update failed:", error),
+  });
+
+  const updateRole = async (data) => updateRoleMutation.mutateAsync(data);
+
+  const deleteRoleMutation = useMutation({
+    mutationFn: async (id) => roleService.deleteRole(id),
+    onSuccess: () => refreshRoles(),
+    onError: (error) => console.error("Delete failed:", error),
+  });
+
+  const deleteRole = async (id) => deleteRoleMutation.mutateAsync(id);
+
+
 
   return {
     search,
@@ -251,11 +229,11 @@ export function useRoles() {
     totalPages,
     totalResults,
     paginatedRoles: roles,
-    successMessage,
-    setSuccessMessage,
+    successMessage: "",
+    setSuccessMessage: () => {},
     createRole,
     updateRole,
     deleteRole,
-    loading,
+    loading: isLoading,
   };
 }
