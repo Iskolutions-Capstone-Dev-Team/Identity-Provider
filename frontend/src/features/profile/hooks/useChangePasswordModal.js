@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { passwordResetService } from "../../../services/passwordResetService";
 import { getPasswordValidationState } from "../components/ChangePasswordStep";
@@ -79,9 +80,6 @@ export function useChangePasswordModal({
   const [canResend, setCanResend] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [otpTimerKey, setOtpTimerKey] = useState(0);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const passwordValidation = useMemo(
     () => getPasswordValidationState(form),
@@ -193,7 +191,24 @@ export function useChangePasswordModal({
     setOtpTimerKey((currentKey) => currentKey + 1);
   };
 
-  const handleEmailContinue = async () => {
+  const sendOtpMutation = useMutation({
+    mutationFn: (email) => passwordResetService.sendOtp({ email }),
+    onSuccess: (res) => {
+      const seconds = res?.remaining_seconds ?? OTP_TIMER_SECONDS;
+      setTimer(seconds);
+      setCanResend(seconds <= 0);
+      setOtp(EMPTY_OTP);
+      setStep("otp");
+      restartOtpTimer();
+    },
+    onError: (error) => {
+      setEmailError(getRequestErrorMessage(error, "Unable to send the OTP right now."));
+      setPasswordError(getRequestErrorMessage(error, "Unable to send the OTP right now."));
+      setOtpError(getRequestErrorMessage(error, "Unable to resend the OTP right now."));
+    }
+  });
+
+  const handleEmailContinue = () => {
     if (!trimmedRecoveryEmail) {
       setEmailError("Email address is required.");
       return;
@@ -207,24 +222,20 @@ export function useChangePasswordModal({
     setEmailError("");
     setOtpError("");
     setPasswordError("");
-    setIsSendingOtp(true);
 
-    try {
-      const res = await passwordResetService.sendOtp({ email: trimmedRecoveryEmail });
-      const seconds = res?.remaining_seconds ?? OTP_TIMER_SECONDS;
-      setTimer(seconds);
-      setCanResend(seconds <= 0);
-      setOtp(EMPTY_OTP);
-      setStep("otp");
-      restartOtpTimer();
-    } catch (error) {
-      setEmailError(
-        getRequestErrorMessage(error, "Unable to send the OTP right now."),
-      );
-    } finally {
-      setIsSendingOtp(false);
-    }
+    sendOtpMutation.mutate(trimmedRecoveryEmail);
   };
+
+  const updateForgotPasswordMutation = useMutation({
+    mutationFn: (data) => passwordResetService.updateForgotPassword(data),
+    onSuccess: () => {
+      logPasswordChange();
+      setStep("success");
+    },
+    onError: (error) => {
+      setPasswordError(getRequestErrorMessage(error, "Unable to change the password right now."));
+    }
+  });
 
   const handlePasswordContinue = async () => {
     if (!passwordValidation.isValid) {
@@ -245,26 +256,10 @@ export function useChangePasswordModal({
       }
 
       setPasswordError("");
-      setIsUpdatingPassword(true);
-
-      try {
-        await passwordResetService.updateForgotPassword({
-          email: trimmedRecoveryEmail,
-          newPassword: form.newPassword,
-        });
-        logPasswordChange();
-        setStep("success");
-      } catch (error) {
-        setPasswordError(
-          getRequestErrorMessage(
-            error,
-            "Unable to change the password right now.",
-          ),
-        );
-      } finally {
-        setIsUpdatingPassword(false);
-      }
-
+      updateForgotPasswordMutation.mutate({
+        email: trimmedRecoveryEmail,
+        newPassword: form.newPassword,
+      });
       return;
     }
 
@@ -275,23 +270,7 @@ export function useChangePasswordModal({
 
     setPasswordError("");
     setOtpError("");
-    setIsSendingOtp(true);
-
-    try {
-      const res = await passwordResetService.sendOtp({ email: otpTargetEmail });
-      const seconds = res?.remaining_seconds ?? OTP_TIMER_SECONDS;
-      setTimer(seconds);
-      setCanResend(seconds <= 0);
-      setOtp(EMPTY_OTP);
-      setStep("otp");
-      restartOtpTimer();
-    } catch (error) {
-      setPasswordError(
-        getRequestErrorMessage(error, "Unable to send the OTP right now."),
-      );
-    } finally {
-      setIsSendingOtp(false);
-    }
+    sendOtpMutation.mutate(otpTargetEmail);
   };
 
   const handleRecoveryEmailChange = (value) => {
@@ -327,24 +306,41 @@ export function useChangePasswordModal({
     setOtpError("");
     setEmailError("");
     setPasswordError("");
-    setIsSendingOtp(true);
-
-    try {
-      const res = await passwordResetService.sendOtp({ email: otpTargetEmail });
-      const seconds = res?.remaining_seconds ?? OTP_TIMER_SECONDS;
-      setTimer(seconds);
-      setCanResend(seconds <= 0);
-      restartOtpTimer();
-    } catch (error) {
-      setOtpError(
-        getRequestErrorMessage(error, "Unable to resend the OTP right now."),
-      );
-    } finally {
-      setIsSendingOtp(false);
-    }
+    sendOtpMutation.mutate(otpTargetEmail);
   };
 
-  const verifyOTP = async () => {
+  const changePasswordMutation = useMutation({
+    mutationFn: (data) => passwordResetService.changePassword(data),
+    onSuccess: () => {
+      logPasswordChange();
+      setStep("success");
+    },
+    onError: (error) => {
+      setOtp(EMPTY_OTP);
+      setPasswordError(getRequestErrorMessage(error, "Unable to change the password right now."));
+      setStep("password");
+    }
+  });
+
+  const verifyOtpMutation = useMutation({
+    mutationFn: (data) => passwordResetService.verifyOtp(data),
+    onSuccess: () => {
+      if (isForgotPasswordFlow) {
+        setPasswordError("");
+        setStep("password");
+        return;
+      }
+      changePasswordMutation.mutate({
+        currentPassword: form.currentPassword,
+        newPassword: form.newPassword,
+      });
+    },
+    onError: (error) => {
+      setOtpError(getRequestErrorMessage(error, "Unable to verify the OTP right now."));
+    }
+  });
+
+  const verifyOTP = () => {
     const code = otp.join("");
 
     if (code.length !== 6 || !/^\d+$/.test(code)) {
@@ -358,44 +354,10 @@ export function useChangePasswordModal({
     }
 
     setOtpError("");
-    setIsVerifyingOtp(true);
-
-    try {
-      await passwordResetService.verifyOtp({
-        email: otpTargetEmail,
-        otp: code,
-      });
-
-      if (isForgotPasswordFlow) {
-        setPasswordError("");
-        setStep("password");
-        return;
-      }
-
-      try {
-        await passwordResetService.changePassword({
-          currentPassword: form.currentPassword,
-          newPassword: form.newPassword,
-        });
-        logPasswordChange();
-        setStep("success");
-      } catch (error) {
-        setOtp(EMPTY_OTP);
-        setPasswordError(
-          getRequestErrorMessage(
-            error,
-            "Unable to change the password right now.",
-          ),
-        );
-        setStep("password");
-      }
-    } catch (error) {
-      setOtpError(
-        getRequestErrorMessage(error, "Unable to verify the OTP right now."),
-      );
-    } finally {
-      setIsVerifyingOtp(false);
-    }
+    verifyOtpMutation.mutate({
+      email: otpTargetEmail,
+      otp: code,
+    });
   };
 
   return {
@@ -414,9 +376,9 @@ export function useChangePasswordModal({
     timer,
     canResend,
     successMessage,
-    isSendingOtp,
-    isVerifyingOtp,
-    isUpdatingPassword,
+    isSendingOtp: sendOtpMutation.isPending,
+    isVerifyingOtp: verifyOtpMutation.isPending,
+    isUpdatingPassword: updateForgotPasswordMutation?.isPending || changePasswordMutation?.isPending,
     passwordValidation,
     isForgotPasswordFlow,
     isCurrentPasswordMissing,

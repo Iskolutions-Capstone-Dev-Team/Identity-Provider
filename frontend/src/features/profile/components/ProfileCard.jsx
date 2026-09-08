@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import EditProfileModal from "./EditProfileModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import ProfileDetails from "./ProfileDetails";
@@ -34,28 +35,38 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
     setCurrentProfile(profile);
   }, [profile]);
 
+  const queryClient = useQueryClient();
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (updatedProfile) => {
+      const profileId = updatedProfile?.id || currentProfile?.id;
+      if (!profileId) {
+        throw new Error("User profile is unavailable.");
+      }
+
+      await userService.updateUserName(profileId, updatedProfile);
+
+      if (updatedProfile.email && updatedProfile.email !== currentProfile.email) {
+        await userService.updateUserEmailMe(updatedProfile.email);
+      }
+
+      return {
+        ...currentProfile,
+        ...updatedProfile,
+        id: profileId,
+      };
+    },
+    onSuccess: (nextProfile) => {
+      setCurrentProfile(nextProfile);
+      updateCurrentUser?.(nextProfile);
+      toast.success("Profile updated successfully!");
+      // Optionally invalidate any profile queries here if they existed globally
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+    },
+  });
+
   const handleProfileUpdate = async (updatedProfile) => {
-    const profileId = updatedProfile?.id || currentProfile?.id;
-
-    if (!profileId) {
-      throw new Error("User profile is unavailable.");
-    }
-
-    await userService.updateUserName(profileId, updatedProfile);
-
-    if (updatedProfile.email && updatedProfile.email !== currentProfile.email) {
-      await userService.updateUserEmailMe(updatedProfile.email);
-    }
-
-    const nextProfile = {
-      ...currentProfile,
-      ...updatedProfile,
-      id: profileId,
-    };
-
-    setCurrentProfile(nextProfile);
-    updateCurrentUser?.(nextProfile);
-    toast.success("Profile updated successfully!");
+    return updateProfileMutation.mutateAsync(updatedProfile);
   };
 
   const profileName = formatProfileName(currentProfile) || "Profile";
