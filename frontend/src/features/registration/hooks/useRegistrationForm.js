@@ -17,6 +17,7 @@ function getClientNames(clientIds = [], appClientOptions = []) {
 export function useRegistrationForm({ mode = "create", config = null, appClientOptions = [], onSave, onClose }) {
   const [accountTypeName, setAccountTypeName] = useState("");
   const [selectedClientIds, setSelectedClientIds] = useState([]);
+  const [isSelectable, setIsSelectable] = useState(true);
   const [accountTypeNameError, setAccountTypeNameError] = useState("");
 
   const isCreateMode = mode === "create";
@@ -35,12 +36,14 @@ export function useRegistrationForm({ mode = "create", config = null, appClientO
     if (isCreateMode) {
       setAccountTypeName("");
       setSelectedClientIds([]);
+      setIsSelectable(true);
       setAccountTypeNameError("");
       return;
     }
 
     setAccountTypeName(config?.label ?? "");
     setSelectedClientIds(Array.isArray(config?.clientIds) ? config.clientIds : []);
+    setIsSelectable(config?.isSelectable ?? true);
     setAccountTypeNameError("");
   }, [config, isCreateMode]);
 
@@ -91,6 +94,7 @@ export function useRegistrationForm({ mode = "create", config = null, appClientO
           name: nextAccountTypeName,
           label: nextAccountTypeName,
           clientIds: selectedClientIds,
+          isSelectable,
         });
       }
       if (onClose && !isCreateMode) onClose();
@@ -103,6 +107,8 @@ export function useRegistrationForm({ mode = "create", config = null, appClientO
     accountTypeName,
     selectedClientIds,
     setSelectedClientIds,
+    isSelectable,
+    setIsSelectable,
     accountTypeNameError,
     isCreateMode,
     isViewMode,
