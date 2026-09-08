@@ -38,6 +38,7 @@ export function buildRegistrationRows(registrationConfigs = [], accountTypeOptio
       accountTypeValue: config.accountTypeValue,
       label: matchedOption?.label ?? config.label,
       backendId,
+      isSelectable: config.isSelectable ?? true,
       clientIds,
       clientNames,
       totalClientCount,
@@ -313,6 +314,7 @@ export function useRegistrationPage() {
       await registrationService.updateAccountType({
         accountTypeId: backendId,
         name: accountTypeName,
+        isSelectable: nextConfig.isSelectable,
         clientIds: nextConfig.clientIds,
       });
       await loadRegistrationConfig({ showLoading: false });
