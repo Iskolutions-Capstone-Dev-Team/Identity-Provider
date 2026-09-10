@@ -50,7 +50,7 @@ func (s *deviceService) RegisterDevice(ctx context.Context,
 	}
 
 	deviceName := parseUserAgent(ua)
-	expiresAt := time.Now().AddDate(0, 0, 30)
+	expiresAt := time.Now().AddDate(0, 0, 7)
 
 	device := &models.UserDevice{
 		ID:              id[:],
