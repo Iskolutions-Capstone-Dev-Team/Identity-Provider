@@ -2,9 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Field } from "@/components/ui/field";
+import { Field, FieldContent, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import AppClientComboboxField from "./AppClientComboboxField";
 import { useRegistrationForm } from "../hooks/useRegistrationForm";
 
@@ -21,6 +22,8 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
     accountTypeName,
     selectedClientIds,
     setSelectedClientIds,
+    isSelectable,
+    setIsSelectable,
     accountTypeNameError,
     isCreateMode,
     isViewMode,
@@ -115,6 +118,21 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
                       </div>
                     )}
                   </Field>
+                  <FieldGroup className="pt-2">
+                    <FieldLabel>
+                      <Field orientation="horizontal">
+                        <Checkbox
+                          id="is-selectable"
+                          checked={isSelectable}
+                          onCheckedChange={setIsSelectable}
+                          className="data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-[#f8d24e] dark:data-checked:!border-[#f8d24e] dark:data-checked:!text-[#7b0d15]"
+                        />
+                        <FieldContent>
+                          <FieldTitle>Allow users to select this account type during registration</FieldTitle>
+                        </FieldContent>
+                      </Field>
+                    </FieldLabel>
+                  </FieldGroup>
                 </CardContent>
               </Card>
 

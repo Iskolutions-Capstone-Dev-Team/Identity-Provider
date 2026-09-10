@@ -94,6 +94,7 @@ function normalizeAccountTypeConfig(
       accountTypeOption?.value || normalizeAccountType(rawAccountType),
     label: accountTypeOption?.label || rawAccountType,
     backendId: responseBackendId ?? accountTypeOption?.backendId ?? null,
+    isSelectable: config?.is_selectable ?? true,
     clients: (Array.isArray(config?.clients) ? config.clients : [])
       .map(normalizeClient)
       .filter((client) => client.id && client.name),
@@ -259,7 +260,7 @@ export const registrationService = {
     return response.data;
   },
 
-  async updateAccountType({ accountTypeId, name, clientIds = [] } = {}) {
+  async updateAccountType({ accountTypeId, name, isSelectable, clientIds = [] } = {}) {
     if (!Number.isInteger(accountTypeId) || accountTypeId <= 0) {
       throw new Error("Account type ID is required.");
     }
@@ -275,6 +276,7 @@ export const registrationService = {
       {
         id: accountTypeId,
         name: normalizedName,
+        is_selectable: isSelectable,
         client_ids: (Array.isArray(clientIds) ? clientIds : []).filter(Boolean),
       },
       {

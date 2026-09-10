@@ -215,7 +215,7 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 				token,
 			)
 
-			maxAge := int(time.Hour.Seconds() * 24 * 30)
+			maxAge := int(time.Hour.Seconds() * 24 * 7)
 			c.SetSameSite(http.SameSiteStrictMode)
 			c.SetCookie(
 				"remember_device",
@@ -430,7 +430,7 @@ func (h *PasskeyHandler) FinishVerification(c *gin.Context) {
 				token,
 			)
 
-			maxAge := int(time.Hour.Seconds() * 24 * 30)
+			maxAge := int(time.Hour.Seconds() * 24 * 7)
 			c.SetSameSite(http.SameSiteStrictMode)
 			c.SetCookie(
 				"remember_device",
