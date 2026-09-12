@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { consumeMfaReturnPath, rememberMfaVerified } from "../utils/mfaFlow";
 import { promotePendingMfaTokenResponse } from "../utils/authCookies";
 import { mfaService } from "../../services/mfaService";
@@ -23,47 +24,45 @@ export default function MfaBackupCode() {
   const [email, setEmail] = useState("");
   const [backupCode, setBackupCode] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const { data: currentUser, isLoading } = useQuery({
+    queryKey: ['currentUserMfaBackup'],
+    queryFn: () => userService.getMe(),
+    retry: false
+  });
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadCurrentUser() {
-      try {
-        const currentUser = await userService.getMe();
-
-        if (!isMounted) {
-          return;
-        }
-
-        setEmail(currentUser?.email || "");
-      } catch (loadError) {
-        if (!isMounted) {
-          return;
-        }
-
-        setError(
-          getRequestErrorMessage(
-            loadError,
-            "Unable to prepare backup code verification.",
-          ),
-        );
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+    if (currentUser?.email) {
+      setEmail(currentUser.email);
     }
+  }, [currentUser]);
 
-    loadCurrentUser();
+  useEffect(() => {
+    if (!isLoading && !currentUser) {
+      setError("Unable to prepare backup code verification.");
+    }
+  }, [isLoading, currentUser]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const verifyMutation = useMutation({
+    mutationFn: (normalizedBackupCode) => mfaService.verifyCode({
+      email,
+      code: normalizedBackupCode,
+    }),
+    onSuccess: () => {
+      promotePendingMfaTokenResponse();
+      rememberMfaVerified();
+      navigate(consumeMfaReturnPath(), { replace: true });
+    },
+    onError: (verifyError) => {
+      setError(
+        getRequestErrorMessage(
+          verifyError,
+          "Unable to verify this backup code.",
+        ),
+      );
+    }
+  });
 
-  const handleVerify = async (event) => {
+  const handleVerify = (event) => {
     event.preventDefault();
     setError("");
 
@@ -74,25 +73,7 @@ export default function MfaBackupCode() {
       return;
     }
 
-    try {
-      setIsVerifying(true);
-      await mfaService.verifyCode({
-        email,
-        code: normalizedBackupCode,
-      });
-      promotePendingMfaTokenResponse();
-      rememberMfaVerified();
-      navigate(consumeMfaReturnPath(), { replace: true });
-    } catch (verifyError) {
-      setError(
-        getRequestErrorMessage(
-          verifyError,
-          "Unable to verify this backup code.",
-        ),
-      );
-    } finally {
-      setIsVerifying(false);
-    }
+    verifyMutation.mutate(normalizedBackupCode);
   };
 
   return (
@@ -106,7 +87,7 @@ export default function MfaBackupCode() {
       ) : (
         <MfaBackupCodeStep
           backupCode={backupCode}
-          isVerifying={isVerifying}
+          isVerifying={verifyMutation.isPending}
           onBackupCodeChange={setBackupCode}
           onVerify={handleVerify}
         />

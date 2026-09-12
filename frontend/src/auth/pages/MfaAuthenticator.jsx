@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { consumeMfaReturnPath, rememberMfaVerified } from "../utils/mfaFlow";
 import { promotePendingMfaTokenResponse } from "../utils/authCookies";
 import { mfaService } from "../../services/mfaService";
@@ -24,47 +25,42 @@ export default function MfaAuthenticator() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const { data: currentUser, isLoading } = useQuery({
+    queryKey: ['currentUserMfaAuth'],
+    queryFn: () => userService.getMe(),
+    retry: false
+  });
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadCurrentUser() {
-      try {
-        const currentUser = await userService.getMe();
-
-        if (!isMounted) {
-          return;
-        }
-
-        setEmail(currentUser?.email || "");
-      } catch (loadError) {
-        if (!isMounted) {
-          return;
-        }
-
-        setError(
-          getRequestErrorMessage(
-            loadError,
-            "Unable to prepare authenticator verification.",
-          ),
-        );
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+    if (currentUser?.email) {
+      setEmail(currentUser.email);
     }
+  }, [currentUser]);
 
-    loadCurrentUser();
+  useEffect(() => {
+    if (!isLoading && !currentUser) {
+      setError("Unable to prepare authenticator verification.");
+    }
+  }, [isLoading, currentUser]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const verifyMutation = useMutation({
+    mutationFn: () => mfaService.verifyCode({ email, code }),
+    onSuccess: () => {
+      promotePendingMfaTokenResponse();
+      rememberMfaVerified();
+      navigate(consumeMfaReturnPath(), { replace: true });
+    },
+    onError: (verifyError) => {
+      setError(
+        getRequestErrorMessage(
+          verifyError,
+          "Unable to verify this authenticator code.",
+        ),
+      );
+    }
+  });
 
-  const handleVerify = async (event) => {
+  const handleVerify = (event) => {
     event.preventDefault();
     setError("");
 
@@ -73,22 +69,7 @@ export default function MfaAuthenticator() {
       return;
     }
 
-    try {
-      setIsVerifying(true);
-      await mfaService.verifyCode({ email, code });
-      promotePendingMfaTokenResponse();
-      rememberMfaVerified();
-      navigate(consumeMfaReturnPath(), { replace: true });
-    } catch (verifyError) {
-      setError(
-        getRequestErrorMessage(
-          verifyError,
-          "Unable to verify this authenticator code.",
-        ),
-      );
-    } finally {
-      setIsVerifying(false);
-    }
+    verifyMutation.mutate();
   };
 
   return (
@@ -102,7 +83,7 @@ export default function MfaAuthenticator() {
       ) : (
         <MfaAuthenticatorCodeStep
           code={code}
-          isVerifying={isVerifying}
+          isVerifying={verifyMutation.isPending}
           onCodeChange={(value) => setCode(getDigits(value))}
           onVerify={handleVerify}
         />

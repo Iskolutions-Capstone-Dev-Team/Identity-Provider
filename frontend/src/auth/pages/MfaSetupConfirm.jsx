@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import { clearMfaSetup, consumeMfaReturnPath, getMfaSetup, MFA_SETUP_PATH, rememberMfaVerified } from "../utils/mfaFlow";
 import { promotePendingMfaTokenResponse } from "../utils/authCookies";
 import { mfaService } from "../../services/mfaService";
@@ -26,7 +27,6 @@ export default function MfaSetupConfirm() {
   const [backupCodes, setBackupCodes] = useState([]);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleFlowError = (errorObj, defaultMessage) => {
     const message = getRequestErrorMessage(errorObj, defaultMessage);
@@ -60,7 +60,22 @@ export default function MfaSetupConfirm() {
     navigate(consumeMfaReturnPath(), { replace: true });
   };
 
-  const handleSaveAuthenticator = async (event) => {
+  const createMutation = useMutation({
+    mutationFn: () => mfaService.createAuthenticator({
+      email: setup.email,
+      secret: setup.secret,
+      code,
+      name,
+    }),
+    onSuccess: (result) => {
+      setBackupCodes(result.backupCodes);
+    },
+    onError: (saveError) => {
+      handleFlowError(saveError, "Unable to save this authenticator.");
+    }
+  });
+
+  const handleSaveAuthenticator = (event) => {
     event.preventDefault();
     setError("");
 
@@ -74,24 +89,7 @@ export default function MfaSetupConfirm() {
       return;
     }
 
-    try {
-      setIsSaving(true);
-      const result = await mfaService.createAuthenticator({
-        email: setup.email,
-        secret: setup.secret,
-        code,
-        name,
-      });
-
-      setBackupCodes(result.backupCodes);
-    } catch (saveError) {
-      handleFlowError(
-        saveError,
-        "Unable to save this authenticator.",
-      );
-    } finally {
-      setIsSaving(false);
-    }
+    createMutation.mutate();
   };
 
   return (
@@ -105,7 +103,7 @@ export default function MfaSetupConfirm() {
         code={code}
         name={name}
         backupCodes={backupCodes}
-        isSaving={isSaving}
+        isSaving={createMutation.isPending}
         onCodeChange={(value) => setCode(getDigits(value))}
         onNameChange={setName}
         onSubmit={handleSaveAuthenticator}
