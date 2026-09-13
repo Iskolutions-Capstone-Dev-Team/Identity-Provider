@@ -51,7 +51,9 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
-                  <div className="flex justify-center gap-2">
+                  <div className="flex justify-center gap-1">
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                    <Skeleton className="h-8 w-8 rounded-md" />
                     <Skeleton className="h-8 w-8 rounded-md" />
                   </div>
                 </TableCell>
@@ -130,33 +132,21 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
               </TableCell>
               <TableCell className="text-center">
                 <div className="flex items-center justify-center gap-1">
-                  <Menubar className="border-none bg-transparent shadow-none">
-                    <MenubarMenu>
-                      <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${role.role_name}`}>
-                        <Ellipsis className="h-4 w-4" />
-                      </MenubarTrigger>
-                      <MenubarContent align="end">
-                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onView(role)}>
-                          <Eye className="h-4 w-4" />
-                          View
-                        </MenubarItem>
-                        
-                        {role.canEdit && (
-                          <MenubarItem className="cursor-pointer gap-2" onClick={() => onEdit(role)}>
-                            <Pencil className="h-4 w-4" />
-                            Edit
-                          </MenubarItem>
-                        )}
-                        
-                        {role.canDelete && (
-                          <MenubarItem className="cursor-pointer gap-2" onClick={() => onDelete(role.id)}>
-                            <Trash className="h-4 w-4" />
-                            Delete
-                          </MenubarItem>
-                        )}
-                      </MenubarContent>
-                    </MenubarMenu>
-                  </Menubar>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(role)} title="View">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    
+                    {role.canEdit && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(role)} title="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    
+                    {role.canDelete && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => onDelete(role.id)} title="Delete">
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    )}
                 </div>
               </TableCell>
             </TableRow>
