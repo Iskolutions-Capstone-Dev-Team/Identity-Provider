@@ -148,8 +148,10 @@ export default function UserPoolTable({
                 <TableCell className="text-center"><Skeleton className="h-6 w-16 mx-auto rounded-full" /></TableCell>
                 {showActionsColumn && (
                   <TableCell className="text-center">
-                    <div className="flex justify-center gap-2">
-                      <Skeleton className="h-8 w-8 rounded-md" />
+                    <div className="flex justify-center gap-1">
+                      {showViewAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                      {showEditAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                      {showDeleteAction && <Skeleton className="h-8 w-8 rounded-md" />}
                     </div>
                   </TableCell>
                 )}
@@ -280,33 +282,21 @@ export default function UserPoolTable({
                 {showActionsColumn && (
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <Menubar className="border-none bg-transparent shadow-none">
-                        <MenubarMenu>
-                          <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${getUserLabel(user)}`}>
-                            <Ellipsis className="h-4 w-4" />
-                          </MenubarTrigger>
-                          <MenubarContent align="end">
-                            {showViewAction && (
-                              <MenubarItem className="cursor-pointer gap-2" onClick={() => onView(user)}>
-                                <Eye className="h-4 w-4" />
-                                View
-                              </MenubarItem>
-                            )}
-                            {showEditAction && (
-                              <MenubarItem className="cursor-pointer gap-2" onClick={() => onEdit(user)}>
-                                <Pencil className="h-4 w-4" />
-                                Edit
-                              </MenubarItem>
-                            )}
-                            {showDeleteAction && (
-                              <MenubarItem className="cursor-pointer gap-2" onClick={() => onDelete(user)}>
-                                <Trash className="h-4 w-4" />
-                                Delete
-                              </MenubarItem>
-                            )}
-                          </MenubarContent>
-                        </MenubarMenu>
-                      </Menubar>
+                      {showViewAction && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(user)} title="View">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {showEditAction && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(user)} title="Edit">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {showDeleteAction && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => onDelete(user)} title="Delete">
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 )}
