@@ -22,6 +22,7 @@ const (
 	actionAuthorize     = "authorize"
 	actionLogin         = "login"
 	actionLogout        = "logout"
+	actionLogoutAll     = "logout_all"
 	actionSessionCheck  = "session_check"
 	actionJWKS          = "jwks"
 	actionTokenExchange = "token_exchange"
@@ -538,6 +539,183 @@ func (h *AuthHandler) InternalLogout(c *gin.Context) {
 		})
 
 	// 4. Redirect based on client_id's logout uri
+	c.Redirect(http.StatusFound, client.LogoutURI)
+}
+
+// LogoutAll handles logging out a user from all logged-in devices.
+// @Summary Sign Out All Devices
+// @Description Invalidates all active user sessions and refresh tokens
+// @Tags Authentication
+// @Accept json,x-www-form-urlencoded
+// @Produce json
+// @Success 302
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Router /auth/logout-all [post]
+func (h *AuthHandler) LogoutAll(c *gin.Context) {
+	var req dto.LogoutAllRequest
+	if err := c.ShouldBind(&req); err != nil {
+		req.ClientID = c.Query("client_id")
+	}
+
+	uIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(uIDStr)
+	if err != nil {
+		log.Printf("[LogoutAll] User ID Parse: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid user context.",
+			err,
+		)
+		return
+	}
+
+	cID, err := uuid.Parse(req.ClientID)
+	if err != nil {
+		log.Printf("[LogoutAll] Client ID Parse: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeClientError,
+			"The Client ID is invalid.",
+			err,
+		)
+		return
+	}
+
+	actorPerms := c.GetStringSlice("permissions")
+
+	client, err := h.ClientService.GetClientByID(
+		c.Request.Context(),
+		cID,
+		userID,
+		actorPerms,
+	)
+	if err != nil {
+		log.Printf("[LogoutAll] Client Lookup: %v", err)
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"The requested client application was not found.",
+			err,
+		)
+		return
+	}
+
+	_ = h.AuthService.RevokeAllUserTokens(c.Request.Context(), userID)
+
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie(
+		service.SESSION_COOKIE_NAME, "", -1, "/", "",
+		true, true,
+	)
+
+	metadata := buildMetadata(map[string]interface{}{
+		"client_id": req.ClientID,
+		"ip":        c.ClientIP(),
+	})
+
+	_ = h.LogService.PostAuditLog(c.Request.Context(), userID[:],
+		&dto.PostAuditLogRequest{
+			Action:   actionLogoutAll,
+			Target:   "global_all_devices",
+			Status:   models.StatusSuccess,
+			Metadata: metadata,
+		})
+
+	logoutURL := client.LogoutURI
+	if logoutURL == "" {
+		logoutURL = os.Getenv("CLIENT_BASE_URL") + "/logout?client_id=" +
+			req.ClientID + "&user_id=" + uIDStr
+	}
+
+	c.Redirect(http.StatusFound, logoutURL)
+}
+
+// InternalLogoutAll handles server-side sign out from all devices.
+func (h *AuthHandler) InternalLogoutAll(c *gin.Context) {
+	var req dto.InternalLogoutAllRequest
+	if err := c.ShouldBind(&req); err != nil {
+		log.Printf("[InternalLogoutAll] Bind: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid request payload.",
+			err,
+		)
+		return
+	}
+
+	uID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		log.Printf("[InternalLogoutAll] User UUID Parse: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"The User ID is invalid.",
+			err,
+		)
+		return
+	}
+
+	cID, err := uuid.Parse(req.ClientID)
+	if err != nil {
+		log.Printf("[InternalLogoutAll] Client UUID Parse: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeClientError,
+			"The Client ID is invalid.",
+			err,
+		)
+		return
+	}
+
+	actorIDStr := c.GetString("user_id")
+	actorID, _ := uuid.Parse(actorIDStr)
+	actorPerms := c.GetStringSlice("permissions")
+
+	client, err := h.ClientService.GetClientByID(
+		c.Request.Context(),
+		cID,
+		actorID,
+		actorPerms,
+	)
+	if err != nil {
+		log.Printf("[InternalLogoutAll] Client Lookup: %v", err)
+		errors.Send(
+			c,
+			http.StatusNotFound,
+			errors.CodeNotFound,
+			"The requested client application was not found.",
+			err,
+		)
+		return
+	}
+
+	err = h.AuthService.RevokeAllUserTokens(c.Request.Context(), uID)
+	if err != nil {
+		log.Printf("[InternalLogoutAll] Token Revocation: %v", err)
+	}
+
+	h.AuthService.RevokeCookies(c)
+
+	_ = h.LogService.PostAuditLog(c.Request.Context(), uID[:],
+		&dto.PostAuditLogRequest{
+			Action: actionLogoutAll,
+			Target: "internal_all_devices",
+			Status: models.StatusSuccess,
+			Metadata: buildMetadata(map[string]interface{}{
+				"client_id": req.ClientID,
+				"ip":        c.ClientIP(),
+			}),
+		})
+
 	c.Redirect(http.StatusFound, client.LogoutURI)
 }
 

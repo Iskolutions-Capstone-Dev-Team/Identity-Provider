@@ -1,10 +1,11 @@
-﻿import { Eye, Pencil, Trash2, KeyRound, Copy, CopyCheck, Monitor } from "lucide-react";
+import { Eye, Pencil, Trash2, KeyRound, Copy, CopyCheck, Monitor, Ellipsis } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { IconStack } from "@/components/reui/icon-stack";
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -72,9 +73,7 @@ export default function ConnectedAppClientCards({
               <div>
                 <Skeleton className="h-8 w-8 rounded-md" />
               </div>
-              <div className="flex gap-1">
-                <Skeleton className="h-8 w-8 rounded-md" />
-                <Skeleton className="h-8 w-8 rounded-md" />
+              <div className="flex items-center justify-center gap-1">
                 <Skeleton className="h-8 w-8 rounded-md" />
               </div>
             </CardFooter>
@@ -155,20 +154,32 @@ export default function ConnectedAppClientCards({
                   </Button>
                 )}
               </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView?.(client)} title={`View ${client.name}`}>
-                  <Eye className="h-4 w-4" />
-                </Button>
-                {showEditAction && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit?.(client)} title={`Edit ${client.name}`}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                )}
-                {showDeleteAction && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onDelete?.(client)} title={`Delete ${client.name}`}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+              <div className="flex items-center justify-center gap-1">
+                <Menubar className="border-none bg-transparent shadow-none">
+                  <MenubarMenu>
+                    <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${client.name}`}>
+                      <Ellipsis className="h-4 w-4" />
+                    </MenubarTrigger>
+                    <MenubarContent align="end">
+                      <MenubarItem className="cursor-pointer gap-2" onClick={() => onView?.(client)}>
+                        <Eye className="h-4 w-4" />
+                        View
+                      </MenubarItem>
+                      {showEditAction && (
+                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onEdit?.(client)}>
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </MenubarItem>
+                      )}
+                      {showDeleteAction && (
+                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onDelete?.(client)}>
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </MenubarItem>
+                      )}
+                    </MenubarContent>
+                  </MenubarMenu>
+                </Menubar>
               </div>
             </CardFooter>
           </Card>

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { SUFFIX_OPTIONS } from "../../../utils/suffixOptions";
@@ -189,7 +190,7 @@ export default function UserPoolModal({
                       <CardContent className="px-3 py-2 flex flex-wrap gap-2">
                       {clientAccessDisplayItems.length > 0 ? (
                         clientAccessDisplayItems.map((item, idx) => (
-                          <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>
+                          <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center" key={idx}>{item}</Badge>
                         ))
                       ) : (
                         <span className="text-sm text-muted-foreground self-center">No clients selected</span>
@@ -204,7 +205,7 @@ export default function UserPoolModal({
                       <CardContent className="px-3 py-2 flex flex-wrap gap-2">
                       {manageableClientDisplayItems.length > 0 ? (
                         manageableClientDisplayItems.map((item, idx) => (
-                          <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>
+                          <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center" key={idx}>{item}</Badge>
                         ))
                       ) : (
                         <span className="text-sm text-muted-foreground self-center">No manageable clients selected</span>
@@ -216,7 +217,7 @@ export default function UserPoolModal({
               </div>
             </div>
           ) : (
-            <form id="user-pool-form" onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pt-3 pb-6">
+            <form id="user-pool-form" noValidate onSubmit={handleSubmit} className="space-y-6 px-2 mt-2 pt-3 pb-6">
               <div className="space-y-6">
                 {/* Name Edit Card */}
                 <Card className="bg-muted/30 border-border/40">
@@ -226,6 +227,32 @@ export default function UserPoolModal({
                       <p className="text-sm text-muted-foreground">Edit the user's name details.</p>
                     </div>
                     <Separator />
+                    <Field className="gap-0 space-y-1.5">
+                      <FieldLabel htmlFor="email">
+                        Email Address <span className="text-red-500">*</span>
+                      </FieldLabel>
+                      <Input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        value={formData.email || ""} 
+                        onChange={(e) => {
+                          setFormData(curr => ({ ...curr, email: e.target.value }));
+                          if (fieldErrors?.email) setFieldErrors(curr => ({ ...curr, email: "" }));
+                        }} 
+                        placeholder="Enter email" 
+                        className="h-10 rounded-lg" 
+                        disabled={isSubmitting} 
+                        aria-invalid={!!fieldErrors?.email} 
+                      />
+                      {fieldErrors?.email ? (
+                        <FieldError>{fieldErrors.email}</FieldError>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Must be an active email account
+                        </p>
+                      )}
+                    </Field>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <div className="flex items-center min-h-[24px]">
@@ -351,7 +378,7 @@ export default function UserPoolModal({
                         {!canEditRoleField ? (
                           <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                             {roleAccessItems.length > 0 ? (
-                              roleAccessItems.map((item, idx) => <Badge key={idx}>{item}</Badge>)
+                              roleAccessItems.map((item, idx) => <Badge key={idx} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center">{item}</Badge>)
                             ) : (
                               <span className="text-sm text-muted-foreground">No role assigned</span>
                             )}
@@ -379,7 +406,7 @@ export default function UserPoolModal({
                       {!canEditAccessField ? (
                         <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                           {clientAccessDisplayItems.length > 0 ? (
-                            clientAccessDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>)
+                            clientAccessDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center" key={idx}>{item}</Badge>)
                           ) : (
                             <span className="text-sm text-muted-foreground">No clients selected</span>
                           )}
@@ -406,7 +433,7 @@ export default function UserPoolModal({
                       {!canEditAccessField ? (
                         <div className="min-h-[4rem] p-4 rounded-md border bg-muted/50 flex flex-wrap gap-2">
                           {manageableClientDisplayItems.length > 0 ? (
-                            manageableClientDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1" key={idx}>{item}</Badge>)
+                            manageableClientDisplayItems.map((item, idx) => <Badge className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center" key={idx}>{item}</Badge>)
                           ) : (
                             <span className="text-sm text-muted-foreground">No manageable clients selected</span>
                           )}

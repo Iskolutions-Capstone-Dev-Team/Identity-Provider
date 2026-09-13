@@ -63,24 +63,24 @@ export default function ArchivedUsers() {
   const [userToUnarchive, setUserToUnarchive] = useState(null);
 
   const globalViewType = outletContext.globalViewType;
+  const setGlobalViewType = outletContext.setGlobalViewType;
+
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("archivedUserViewType") || globalViewType || "table";
+    return globalViewType || "table";
   });
 
-  const isMounted = useRef(false);
-  useEffect(() => {
-    if (isMounted.current) {
-      if (globalViewType) {
-        setViewType(globalViewType);
-      }
-    } else {
-      isMounted.current = true;
+  const handleSetViewType = (newViewType) => {
+    setViewType(newViewType);
+    if (setGlobalViewType) {
+      setGlobalViewType(newViewType);
     }
-  }, [globalViewType]);
+  };
 
   useEffect(() => {
-    localStorage.setItem("archivedUserViewType", viewType);
-  }, [viewType]);
+    if (globalViewType) {
+      setViewType(globalViewType);
+    }
+  }, [globalViewType]);
 
   const showLoading = useDelayedLoading(loading || isLoadingAppClients || isLoadingCurrentUser);
 
@@ -176,7 +176,7 @@ export default function ArchivedUsers() {
           sort={sort}
           setSort={setSort}
           viewType={viewType}
-          setViewType={setViewType}
+          setViewType={handleSetViewType}
         />
         
         {viewType === "table" ? (

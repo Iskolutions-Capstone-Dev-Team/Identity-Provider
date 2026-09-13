@@ -30,7 +30,7 @@ export default function UserPool() {
   const colorMode = outletContext.colorMode || "light";
   const currentUser = outletContext.currentUser || {};
   const isLoadingCurrentUser = Boolean(outletContext.isLoadingCurrentUser);
-  const globalViewType = outletContext.globalViewType;
+  const { globalViewType, setGlobalViewType } = outletContext;
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
 
   const isCurrentUserSuperAdmin = hasSuperAdminRole(currentUser?.roles);
@@ -84,6 +84,7 @@ export default function UserPool() {
 
   const pageState = useUserPoolPage({
     globalViewType,
+    setGlobalViewType,
     userType,
     setUserType,
     getUserDetails,

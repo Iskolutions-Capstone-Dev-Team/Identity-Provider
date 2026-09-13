@@ -56,6 +56,9 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		auth.POST("/logout",
 			middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
 			h.AuthHandler.Logout)
+		auth.POST("/logout-all",
+			middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+			h.AuthHandler.LogoutAll)
 		auth.GET("/session", h.AuthHandler.CheckSession)
 	}
 
@@ -65,6 +68,8 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		h.RegistrationHandler.GetSelectableAccountTypes)
 	v1Group.POST("/internal/logout", h.ClientCORS,
 		h.AuthHandler.InternalLogout)
+	v1Group.POST("/internal/logout-all", h.ClientCORS,
+		h.AuthHandler.InternalLogoutAll)
 	v1Group.POST("/internal/auth/refresh", h.ClientCORS,
 		h.AuthHandler.PostInternalRefresh)
 
