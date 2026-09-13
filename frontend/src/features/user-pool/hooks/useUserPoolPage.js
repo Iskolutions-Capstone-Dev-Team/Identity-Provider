@@ -13,6 +13,7 @@ function getRequestErrorMessage(error, fallbackMessage) {
 
 export function useUserPoolPage({
   globalViewType,
+  setGlobalViewType,
   userType,
   setUserType,
   getUserDetails,
@@ -49,17 +50,19 @@ export function useUserPoolPage({
   const [isSendingReinvite, setIsSendingReinvite] = useState(false);
 
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("userPoolViewType") || globalViewType || "table";
+    return globalViewType || "table";
   });
   
-  const isMounted = useRef(false);
+  const handleSetViewType = (newViewType) => {
+    setViewType(newViewType);
+    if (setGlobalViewType) {
+      setGlobalViewType(newViewType);
+    }
+  };
+
   useEffect(() => {
-    if (isMounted.current) {
-      if (globalViewType) {
-        setViewType(globalViewType);
-      }
-    } else {
-      isMounted.current = true;
+    if (globalViewType) {
+      setViewType(globalViewType);
     }
   }, [globalViewType]);
 
@@ -187,7 +190,7 @@ export function useUserPoolPage({
     setUserToReinvite,
     isSendingReinvite,
     viewType,
-    setViewType,
+    setViewType: handleSetViewType,
     handleView,
     handleEdit,
     handleDeleteClick,

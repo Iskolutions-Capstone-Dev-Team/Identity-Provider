@@ -179,7 +179,7 @@ func (h *MFAHandler) PostAuthenticator(c *gin.Context) {
 				token,
 			)
 
-			maxAge := int(time.Hour.Seconds() * 24 * 30)
+			maxAge := int(time.Hour.Seconds() * 24 * 7)
 			c.SetSameSite(http.SameSiteStrictMode)
 			c.SetCookie(
 				"remember_device",
@@ -305,7 +305,7 @@ func (h *MFAHandler) PostVerifyMFA(c *gin.Context) {
 				token,
 			)
 
-			maxAge := int(time.Hour.Seconds() * 24 * 30)
+			maxAge := int(time.Hour.Seconds() * 24 * 7)
 			c.SetSameSite(http.SameSiteStrictMode)
 			c.SetCookie(
 				"remember_device",

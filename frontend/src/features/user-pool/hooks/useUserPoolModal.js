@@ -251,6 +251,12 @@ export function useUserPoolModal({
     }
 
     const nextFieldErrors = {};
+    if (!formData.email?.trim()) {
+      nextFieldErrors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      nextFieldErrors.email = "Please enter a valid email address.";
+    }
+    
     if (!formData.givenName?.trim()) {
       nextFieldErrors.givenName = "First name is required.";
     }
@@ -276,7 +282,7 @@ export function useUserPoolModal({
         setShowMfaModal(true);
         setMfaError("");
       } else {
-        setError(errMsg);
+        toast.error(errMsg);
       }
     } finally {
       isSubmittingRef.current = false;
