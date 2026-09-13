@@ -33,7 +33,7 @@ func GenerateToken(privateKey *rsa.PrivateKey,
 	duration := time.Duration(ttlMinutes) * time.Minute
 
 	claims.RegisteredClaims = jwt.RegisteredClaims{
-		Subject:   claims.ID,
+		Subject:   claims.UserID,
 		Issuer:    os.Getenv("CLIENT_BASE_URL"),
 		Audience:  jwt.ClaimStrings{client.BaseUrl},
 		ExpiresAt: jwt.NewNumericDate(now.Add(duration)),

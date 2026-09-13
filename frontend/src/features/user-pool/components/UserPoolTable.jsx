@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { ADMIN_USER_TYPE, getAppClientNamesByIds } from "../../../utils/userPoolAccess";
 import { Eye, Pencil, Trash, Copy, CopyCheck, Ellipsis, User } from "lucide-react";
@@ -11,6 +11,7 @@ import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { IconStack } from "@/components/reui/icon-stack";
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
 
 function getStatusBadgeVariant(status) {
   if (status === "active") return "success-outline";
@@ -147,7 +148,7 @@ export default function UserPoolTable({
                 <TableCell className="text-center"><Skeleton className="h-6 w-16 mx-auto rounded-full" /></TableCell>
                 {showActionsColumn && (
                   <TableCell className="text-center">
-                    <div className="flex justify-center gap-2">
+                    <div className="flex justify-center gap-1">
                       {showViewAction && <Skeleton className="h-8 w-8 rounded-md" />}
                       {showEditAction && <Skeleton className="h-8 w-8 rounded-md" />}
                       {showDeleteAction && <Skeleton className="h-8 w-8 rounded-md" />}
@@ -233,7 +234,7 @@ export default function UserPoolTable({
                       {accessItems.length > 5 ? (
                         <>
                           {accessItems.slice(0, 5).map((item, idx) => (
-                            <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
+                            <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center">
                               {item}
                             </Badge>
                           ))}
@@ -252,7 +253,7 @@ export default function UserPoolTable({
                                 </h4>
                                 <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pt-1 pr-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/25 hover:[&::-webkit-scrollbar-thumb]:bg-foreground/40 [&::-webkit-scrollbar-track]:bg-transparent">
                                   {accessItems.map((item, idx) => (
-                                    <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2.5 py-1 text-xs">
+                                    <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-2.5 py-1 text-xs whitespace-normal break-words text-center">
                                       {item}
                                     </Badge>
                                   ))}
@@ -263,7 +264,7 @@ export default function UserPoolTable({
                         </>
                       ) : (
                         accessItems.map((item, idx) => (
-                          <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
+                          <Badge key={`${item}-${idx}`} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center">
                             {item}
                           </Badge>
                         ))
@@ -280,37 +281,19 @@ export default function UserPoolTable({
                 </TableCell>
                 {showActionsColumn && (
                   <TableCell className="text-center">
-                    <div className="flex justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1">
                       {showViewAction && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors"
-                          onClick={() => onView(user)}
-                          title={`View ${getUserLabel(user)}`}
-                        >
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(user)} title="View">
                           <Eye className="h-4 w-4" />
                         </Button>
                       )}
                       {showEditAction && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors"
-                          onClick={() => onEdit(user)}
-                          title={`Edit ${getUserLabel(user)}`}
-                        >
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(user)} title="Edit">
                           <Pencil className="h-4 w-4" />
                         </Button>
                       )}
                       {showDeleteAction && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors"
-                          onClick={() => onDelete(user)}
-                          title={`Delete ${getUserLabel(user)}`}
-                        >
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => onDelete(user)} title="Delete">
                           <Trash className="h-4 w-4" />
                         </Button>
                       )}

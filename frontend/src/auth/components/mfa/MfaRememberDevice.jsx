@@ -11,7 +11,7 @@ export default function MfaRememberDevice({ checked, onCheckedChange }) {
             <ShieldLock className="size-5 text-white/80 group-has-data-checked/field-label:text-[#ffd700]" strokeWidth={2} />
             <div className="flex flex-col items-start gap-0.5">
               <span className="text-sm font-semibold text-white">Remember this device</span>
-              <span className="text-white/60 text-xs font-normal">Skip MFA for 30 days</span>
+              <span className="text-white/60 text-xs font-normal">Skip MFA for 7 days</span>
             </div>
           </FieldTitle>
           <Checkbox

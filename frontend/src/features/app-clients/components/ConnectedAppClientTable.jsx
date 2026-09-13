@@ -1,12 +1,14 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { KeyRound, Eye, Pencil, Trash2, Copy, CopyCheck, Monitor } from "lucide-react";
+import { Ellipsis, KeyRound, Eye, Pencil, Trash2, Copy, CopyCheck, Monitor } from "lucide-react";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { IconStack } from "@/components/reui/icon-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
+import { Button } from "@/components/ui/button";
 
 const getClientId = (client) => client?.id ?? client?.clientId ?? "";
 
@@ -92,8 +94,8 @@ export default function ConnectedAppClientTable({
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Skeleton className="h-8 w-8 rounded-md" />
-                        <Skeleton className="h-8 w-8 rounded-md" />
-                        <Skeleton className="h-8 w-8 rounded-md" />
+                        {showEditAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                        {showDeleteAction && <Skeleton className="h-8 w-8 rounded-md" />}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -193,28 +195,19 @@ export default function ConnectedAppClientTable({
 
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          {renderActionButton({
-                            label: `View ${client.name}`,
-                            onClick: () => onView?.(client),
-                            className: actionButtonClassName,
-                            children: (<Eye className="h-4 w-4" />),
-                          })}
-
-                          {showEditAction &&
-                            renderActionButton({
-                              label: `Edit ${client.name}`,
-                              onClick: () => onEdit?.(client),
-                              className: actionButtonClassName,
-                              children: (<Pencil className="h-4 w-4" />),
-                            })}
-
-                          {showDeleteAction &&
-                            renderActionButton({
-                              label: `Delete ${client.name}`,
-                              onClick: () => onDelete?.(client),
-                              className: actionButtonClassName,
-                              children: (<Trash2 className="h-4 w-4" />),
-                            })}
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView?.(client)} title="View">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {showEditAction && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit?.(client)} title="Edit">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {showDeleteAction && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => onDelete?.(client)} title="Delete">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

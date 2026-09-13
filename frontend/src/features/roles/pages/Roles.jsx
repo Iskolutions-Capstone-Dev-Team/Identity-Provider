@@ -22,7 +22,7 @@ const ITEMS_PER_PAGE = 10;
 export default function Roles() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { colorMode = "light", globalViewType } = useOutletContext() || {};
+  const { colorMode = "light", globalViewType, setGlobalViewType } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
   const [roleMetrics, setRoleMetrics] = useState(null);
   const [permissionMetrics, setPermissionMetrics] = useState(null);
@@ -64,23 +64,21 @@ export default function Roles() {
   } = usePermissions();
 
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("rolesViewType") || globalViewType || "table";
+    return globalViewType || "table";
   });
   
-  const isMounted = useRef(false);
-  useEffect(() => {
-    if (isMounted.current) {
-      if (globalViewType) {
-        setViewType(globalViewType);
-      }
-    } else {
-      isMounted.current = true;
+  const handleSetViewType = (newViewType) => {
+    setViewType(newViewType);
+    if (setGlobalViewType) {
+      setGlobalViewType(newViewType);
     }
-  }, [globalViewType]);
+  };
 
   useEffect(() => {
-    localStorage.setItem("rolesViewType", viewType);
-  }, [viewType]);
+    if (globalViewType) {
+      setViewType(globalViewType);
+    }
+  }, [globalViewType]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState("create");
@@ -233,7 +231,7 @@ export default function Roles() {
           sort={sort}
           setSort={setSort}
           viewType={viewType}
-          setViewType={setViewType}
+          setViewType={handleSetViewType}
         />
 
         <div className="relative">
