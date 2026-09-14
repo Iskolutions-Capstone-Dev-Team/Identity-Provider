@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { mailService } from "../../../services/mailService";
 import { userService } from "../../../services/userService";
 import { generateHiddenInvitationPassword } from "../../../utils/passwordRules";
@@ -39,67 +39,21 @@ async function getUserDetailsById(userId, { isAdmin = false } = {}) {
   return nextRequest;
 }
 
-async function getAllUsersFromEndpoint(fetchPage) {
-  const firstPage = await fetchPage(1);
-  const collectedUsers = Array.isArray(firstPage?.users) ? [...firstPage.users] : [];
-  const lastPage =
-    Number.isInteger(firstPage?.last_page) && firstPage.last_page > 1
-      ? firstPage.last_page
-      : 1;
-
-  if (lastPage > 1) {
-    const pageRequests = [];
-
-    for (let nextPage = 2; nextPage <= lastPage; nextPage += 1) {
-      pageRequests.push(fetchPage(nextPage));
-    }
-
-    const pageResults = await Promise.all(pageRequests);
-    pageResults.forEach((pagePayload) => {
-      if (Array.isArray(pagePayload?.users)) {
-        collectedUsers.push(...pagePayload.users);
-      }
-    });
-  }
-
-  return collectedUsers;
-}
-
-async function getRegularUsers(sortBy, order, keyword = "") {
-  const allUsers = await getAllUsersFromEndpoint((page) =>
-    userService.getUsers({ page, limit: FETCH_LIMIT, sortBy, order, keyword }),
-  );
-
-  return allUsers.map((user) => mapUserResponse(user, { isAdmin: false }));
-}
-
-async function getAdminUsers(sortBy, order, keyword = "") {
-  const adminUsers = await getAllUsersFromEndpoint((page) =>
-    userService.getAdminUsers({ page, limit: FETCH_LIMIT, sortBy, order, keyword }),
-  );
-
-  return adminUsers.map((user) => mapUserResponse(user, { isAdmin: true }));
-}
-
-async function getUsersByType(userType, sortBy, order, keyword = "") {
-  const normalizedUserType =
-    userType === ADMIN_USER_TYPE ? ADMIN_USER_TYPE : REGULAR_USER_TYPE;
+async function fetchUsersPage(userType, page, limit, sortBy, order, keyword = "") {
   const normalizedKeyword = typeof keyword === "string" ? keyword.trim() : "";
-  const requestKey = `${normalizedUserType}:${sortBy}:${order}:${normalizedKeyword}`;
-  const currentRequest = userListRequests.get(requestKey);
-
-  if (currentRequest) {
-    return currentRequest;
-  }
-
-  const nextRequest = (
-    normalizedUserType === ADMIN_USER_TYPE ? getAdminUsers(sortBy, order, normalizedKeyword) : getRegularUsers(sortBy, order, normalizedKeyword)
-  ).finally(() => {
-    userListRequests.delete(requestKey);
-  });
-
-  userListRequests.set(requestKey, nextRequest);
-  return nextRequest;
+  const fetchFn = userType === ADMIN_USER_TYPE ? userService.getAdminUsers : userService.getUsers;
+  
+  const response = await fetchFn({ page, limit, sortBy, order, keyword: normalizedKeyword });
+  
+  const mappedUsers = (response?.users || []).map((user) => 
+    mapUserResponse(user, { isAdmin: userType === ADMIN_USER_TYPE })
+  );
+  
+  return {
+    users: mappedUsers,
+    total: response?.total_count || 0,
+    lastPage: response?.last_page || 1,
+  };
 }
 
 async function findRegularUserByEmail(email) {
@@ -109,7 +63,8 @@ async function findRegularUserByEmail(email) {
     return null;
   }
 
-  const regularUsers = await getRegularUsers("created_at", "desc");
+  const response = await userService.getUsers({ page: 1, limit: 10, keyword: normalizedEmail });
+  const regularUsers = (response?.users || []).map((user) => mapUserResponse(user, { isAdmin: false }));
 
   return (
     regularUsers.find(
@@ -118,7 +73,7 @@ async function findRegularUserByEmail(email) {
   );
 }
 
-export function useUsers({ visibleClientIds = [] } = {}) {
+export function useUsers() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [userType, setUserType] = useState(REGULAR_USER_TYPE);
@@ -133,7 +88,6 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   const filterLoadingTimeoutRef = useRef(null);
   const userAccessSelectionsRef = useRef({});
   const userManageableSelectionsRef = useRef({});
-  const visibleClientLookup = new Set(normalizeClientIds(visibleClientIds));
 
   const showFilterLoading = () => {
     if (filterLoadingTimeoutRef.current) {
@@ -190,24 +144,29 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
   const queryClient = useQueryClient();
 
-  const { data: queryUsers, isLoading: isQueryLoading, error: queryError } = useQuery({
-    queryKey: ['users', userType, sortBy, sort, searchKeyword],
+  const { data: queryData, isLoading: isQueryLoading, error: queryError } = useQuery({
+    queryKey: ['users', userType, page, sortBy, sort, searchKeyword],
     queryFn: async () => {
-      const nextUsers = await getUsersByType(userType, sortBy, sort, searchKeyword);
-      return applyUserClientSelections(
-        nextUsers,
+      const result = await fetchUsersPage(userType, page, ITEMS_PER_PAGE, sortBy, sort, searchKeyword);
+      const updatedUsers = applyUserClientSelections(
+        result.users,
         userAccessSelectionsRef.current,
         userManageableSelectionsRef.current,
       );
-    }
+      return {
+        ...result,
+        users: updatedUsers
+      };
+    },
+    placeholderData: keepPreviousData,
   });
 
   useEffect(() => {
-    if (queryUsers) {
-      setUsers(queryUsers);
+    if (queryData?.users) {
+      setUsers(queryData.users);
       setFetchError("");
     }
-  }, [queryUsers]);
+  }, [queryData]);
 
   useEffect(() => {
     if (queryError) {
@@ -586,27 +545,15 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     return updateUserMutation.mutateAsync({ updatedUser, originalUser });
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesVisibleClients =
-      userType !== REGULAR_USER_TYPE ||
-      userHasVisibleClient(user, visibleClientLookup);
-
-    return matchesVisibleClients;
-  });
-
-  const totalResults = filteredUsers.length;
-  const totalPages = Math.max(1, Math.ceil(totalResults / ITEMS_PER_PAGE));
-  const currentPage = Math.min(page, totalPages);
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
+  const totalResults = queryData?.total || 0;
+  const totalPages = queryData?.lastPage || 1;
+  const paginatedUsers = users;
 
   useEffect(() => {
-    if (page !== currentPage) {
-      setPage(currentPage);
+    if (page > totalPages && totalPages > 0) {
+      setPage(totalPages);
     }
-  }, [currentPage, page]);
+  }, [totalPages, page]);
 
   useEffect(() => {
     return () => {
@@ -626,7 +573,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     setSortBy,
     sort,
     setSort,
-    page: currentPage,
+    page,
     setPage,
     paginatedUsers,
     totalPages,

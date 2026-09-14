@@ -38,11 +38,6 @@ export default function UserPool() {
     enabled: !isLoadingCurrentUser,
   });
 
-  const shouldShowAllRegularUsers = isCurrentUserSuperAdmin;
-  const visibleClientIds = shouldShowAllRegularUsers
-    ? []
-    : appClientOptions.map((client) => client?.id).filter(Boolean);
-
   const {
     search,
     setSearch,
@@ -64,7 +59,7 @@ export default function UserPool() {
     getUserDetails,
     updateUser,
     deleteUser,
-  } = useUsers({ visibleClientIds });
+  } = useUsers();
 
   const canAddUsers = hasPermission(PERMISSIONS.ADD_USER);
   const canDeleteUsers = hasPermission(PERMISSIONS.DELETE_USER);
