@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { logService } from "../../../services/logService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
@@ -221,6 +221,7 @@ export function useAuditLogs({ globalViewType, setGlobalViewType }) {
   const { data: logsData, isLoading: loading, error: queryError } = useQuery({
     queryKey: ['logs', logType, page, limit, sortBy, sort, search, selectedLogTypeLabel],
     queryFn: fetchLogsFn,
+    placeholderData: keepPreviousData,
   });
 
   const logs = logsData?.logs || [];

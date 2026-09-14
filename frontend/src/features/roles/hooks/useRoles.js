@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { roleService } from "../../../services/roleService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 
@@ -170,6 +170,7 @@ export function useRoles() {
   const { data, isLoading } = useQuery({
     queryKey: ['roles', page, limit, searchKeyword, sortBy, sort],
     queryFn: fetchRolesFn,
+    placeholderData: keepPreviousData,
   });
 
   const roles = data?.roles || [];

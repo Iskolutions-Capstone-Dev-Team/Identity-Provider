@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { toast } from "sonner";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
@@ -156,6 +156,7 @@ export function useRegistrationPage() {
   const { data: configData, isLoading: isLoadingRegistration, error: queryError } = useQuery({
     queryKey: ['registrationConfigs', page, limit, searchKeyword, sortBy, sort],
     queryFn: fetchConfigsFn,
+    placeholderData: keepPreviousData,
   });
 
   const registrationConfigs = configData?.configs || [];

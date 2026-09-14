@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { clientService } from "../../../services/clientService";
 import { toast } from "sonner";
 
@@ -138,6 +138,7 @@ export function useAppClients({ enabled = true } = {}) {
     queryKey: ['appClients', page, limit, searchKeyword, sortBy, sort],
     queryFn: fetchAppClientsFn,
     enabled,
+    placeholderData: keepPreviousData,
   });
 
   const clients = data?.clients || [];
