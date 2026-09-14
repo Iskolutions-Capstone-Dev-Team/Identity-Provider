@@ -122,7 +122,6 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [userType, setUserType] = useState(REGULAR_USER_TYPE);
-  const [status, setStatus] = useState("");
   const [sortBy, setSortBy] = useState("created_at");
   const [sort, setSort] = useState("desc");
   const [page, setPage] = useState(1);
@@ -232,14 +231,6 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     showFilterLoading();
     setPage(1);
     setSearch(nextValue);
-  };
-
-  const setStatusFilter = (value) => {
-    const nextValue = typeof value === "string" ? value : "";
-
-    showFilterLoading();
-    setPage(1);
-    setStatus(nextValue);
   };
 
   const setUserTypeFilter = (value) => {
@@ -596,12 +587,11 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   };
 
   const filteredUsers = users.filter((user) => {
-    const matchesStatus = status ? user.status === status : true;
     const matchesVisibleClients =
       userType !== REGULAR_USER_TYPE ||
       userHasVisibleClient(user, visibleClientLookup);
 
-    return matchesStatus && matchesVisibleClients;
+    return matchesVisibleClients;
   });
 
   const totalResults = filteredUsers.length;
@@ -632,8 +622,6 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     setSearch: setSearchKeyword,
     userType,
     setUserType: setUserTypeFilter,
-    status,
-    setStatus: setStatusFilter,
     sortBy,
     setSortBy,
     sort,

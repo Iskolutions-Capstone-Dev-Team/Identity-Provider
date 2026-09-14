@@ -48,8 +48,6 @@ export default function UserPool() {
     setSearch,
     userType,
     setUserType,
-    status,
-    setStatus,
     sortBy,
     setSortBy,
     sort,
@@ -193,8 +191,6 @@ export default function UserPool() {
           setSearch={setSearch}
           userType={userType}
           setUserType={setUserType}
-          status={status}
-          setStatus={setStatus}
           sortBy={sortBy}
           setSortBy={setSortBy}
           sort={sort}
