@@ -128,9 +128,6 @@ export function useChangePasswordModal({
       setPasswordError("");
       setSuccessMessage("");
       setOtpTimerKey(0);
-      setIsSendingOtp(false);
-      setIsVerifyingOtp(false);
-      setIsUpdatingPassword(false);
     }
   }, [isOpen, showCurrentPassword]);
 

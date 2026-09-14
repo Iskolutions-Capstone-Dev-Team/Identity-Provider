@@ -48,13 +48,13 @@ export default function BackupRestore() {
           <CreateBackupCard
             loadingLatest={loadingLatest}
             latestBackup={latestBackup}
-            loadingBackup={runBackupMutation.isPending}
+            loadingBackup={loadingBackup}
             onRunBackup={handleRunBackup}
           />
           <RestoreBackupCard
             selectedFile={selectedFile}
             onFileChange={handleFileChange}
-            loadingRestore={restoreBackupMutation.isPending}
+            loadingRestore={loadingRestore}
             onRestoreBackup={handleRestoreBackup}
           />
         </div>
