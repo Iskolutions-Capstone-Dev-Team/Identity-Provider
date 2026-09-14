@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { userService } from "../services/userService";
 
 export const EMPTY_CURRENT_USER = {
@@ -87,54 +87,36 @@ export function hasCurrentUserRole(
 }
 
 export function useCurrentUser() {
-  const [currentUser, setCurrentUser] = useState(EMPTY_CURRENT_USER);
-  const [isLoadingCurrentUser, setIsLoadingCurrentUser] = useState(true);
+  const queryClient = useQueryClient();
 
-  const updateCurrentUser = (updates = {}) => {
-    setCurrentUser((currentUserData) => ({
-      ...currentUserData,
-      id: updates.id || currentUserData.id,
-      firstName: updates.firstName ?? currentUserData.firstName,
-      middleName: updates.middleName ?? currentUserData.middleName,
-      lastName: updates.lastName ?? currentUserData.lastName,
-      suffix: updates.suffix ?? currentUserData.suffix,
-      email: updates.email ?? currentUserData.email,
-    }));
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchCurrentUser = async () => {
+  const { data: currentUser = EMPTY_CURRENT_USER, isLoading: isLoadingCurrentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
       try {
         const user = await userService.getMe();
-
-        if (!isMounted) {
-          return;
-        }
-
-        setCurrentUser(mapCurrentUser(user));
+        return mapCurrentUser(user);
       } catch (error) {
         console.error("Failed to load current user:", error);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setCurrentUser(EMPTY_CURRENT_USER);
-      } finally {
-        if (isMounted) {
-          setIsLoadingCurrentUser(false);
-        }
+        return EMPTY_CURRENT_USER;
       }
-    };
+    },
+    retry: false,
+  });
 
-    fetchCurrentUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const updateCurrentUser = (updates = {}) => {
+    queryClient.setQueryData(['currentUser'], (oldData) => {
+      const current = oldData || EMPTY_CURRENT_USER;
+      return {
+        ...current,
+        id: updates.id || current.id,
+        firstName: updates.firstName ?? current.firstName,
+        middleName: updates.middleName ?? current.middleName,
+        lastName: updates.lastName ?? current.lastName,
+        suffix: updates.suffix ?? current.suffix,
+        email: updates.email ?? current.email,
+      };
+    });
+  };
 
   return {
     currentUser,
