@@ -10,6 +10,11 @@ import { Toaster } from "@/components/ui/sonner";
 
 clearLegacyRefreshTokenCookie();
 
+// Automatically reload the page if a dynamically imported chunk fails to load 
+// (e.g., when a new build is deployed and the old chunk hashes no longer exist)
+window.addEventListener('vite:preloadError', () => {
+  window.location.reload();
+});
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
