@@ -68,6 +68,22 @@ export const authService = {
     });
   },
 
+  async logoutAll({ clientId = authClientId, userId = "" } = {}) {
+    const normalizedClientId = normalizeTextValue(clientId);
+    const normalizedUserId = normalizeTextValue(userId);
+
+    if (!normalizedClientId || !normalizedUserId) {
+      throw new Error("Client ID and user ID are required for logout-all.");
+    }
+
+    return axiosInstance.post("/internal/logout-all", {
+      client_id: normalizedClientId,
+      user_id: normalizedUserId,
+    }, {
+      skipAuthRefresh: true,
+    });
+  },
+
   async checkSession() {
     const response = await axiosInstance.get("/auth/session", {
       skipAuthRefresh: true,

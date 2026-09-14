@@ -74,6 +74,44 @@ func TestAuthLogout(t *testing.T) {
 }
 
 /**
+ * TestAuthRevokeAllUserTokens verifies revoking all sessions for a user.
+ */
+func TestAuthRevokeAllUserTokens(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAuthRepo := mocks.NewMockAuthCodeRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockClientRepo := mocks.NewMockClientRepository(ctrl)
+
+	authService := service.NewAuthService(
+		mockAuthRepo,
+		mockSessionRepo,
+		mockClientRepo,
+		nil, nil,
+		nil,
+	)
+
+	userID := uuid.New()
+
+	mockSessionRepo.EXPECT().
+		DeleteByUserID(gomock.Any(), userID[:]).
+		Return(nil).
+		Times(1)
+
+	mockAuthRepo.EXPECT().
+		RevokeTokens(gomock.Any(), userID[:]).
+		Return(nil).
+		Times(1)
+
+	err := authService.RevokeAllUserTokens(context.Background(), userID)
+
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}
+
+/**
  * TestCheckSessionOrPendingMFA_Fallback verifies fallback token validation.
  */
 func TestCheckSessionOrPendingMFA_Fallback(t *testing.T) {

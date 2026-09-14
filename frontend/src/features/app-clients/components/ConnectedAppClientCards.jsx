@@ -75,6 +75,8 @@ export default function ConnectedAppClientCards({
               </div>
               <div className="flex items-center justify-center gap-1">
                 <Skeleton className="h-8 w-8 rounded-md" />
+                {showEditAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                {showDeleteAction && <Skeleton className="h-8 w-8 rounded-md" />}
               </div>
             </CardFooter>
           </Card>
@@ -155,31 +157,19 @@ export default function ConnectedAppClientCards({
                 )}
               </div>
               <div className="flex items-center justify-center gap-1">
-                <Menubar className="border-none bg-transparent shadow-none">
-                  <MenubarMenu>
-                    <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${client.name}`}>
-                      <Ellipsis className="h-4 w-4" />
-                    </MenubarTrigger>
-                    <MenubarContent align="end">
-                      <MenubarItem className="cursor-pointer gap-2" onClick={() => onView?.(client)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView?.(client)} title="View">
                         <Eye className="h-4 w-4" />
-                        View
-                      </MenubarItem>
+                      </Button>
                       {showEditAction && (
-                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onEdit?.(client)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit?.(client)} title="Edit">
                           <Pencil className="h-4 w-4" />
-                          Edit
-                        </MenubarItem>
+                        </Button>
                       )}
                       {showDeleteAction && (
-                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onDelete?.(client)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => onDelete?.(client)} title="Delete">
                           <Trash2 className="h-4 w-4" />
-                          Delete
-                        </MenubarItem>
+                        </Button>
                       )}
-                    </MenubarContent>
-                  </MenubarMenu>
-                </Menubar>
               </div>
             </CardFooter>
           </Card>

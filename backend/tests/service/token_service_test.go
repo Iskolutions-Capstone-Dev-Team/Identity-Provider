@@ -55,4 +55,21 @@ func TestGenerateAndValidateToken(t *testing.T) {
 	if !valid {
 		t.Error("expected token to be valid")
 	}
+
+	parsedToken, err := service.GetParsedToken(token, publicKey)
+	if err != nil {
+		t.Fatalf("failed to parse token: %v", err)
+	}
+
+	userClaims, ok := parsedToken.Claims.(*models.UserClaims)
+	if !ok {
+		t.Fatal("expected UserClaims type in token claims")
+	}
+
+	if userClaims.Subject != "user-123" {
+		t.Errorf("expected Subject 'user-123', got '%s'", userClaims.Subject)
+	}
+	if userClaims.UserID != "user-123" {
+		t.Errorf("expected UserID 'user-123', got '%s'", userClaims.UserID)
+	}
 }

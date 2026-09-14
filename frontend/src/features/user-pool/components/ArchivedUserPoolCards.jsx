@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -136,7 +137,9 @@ export default function ArchivedUserPoolCards({
             <CardFooter className="p-4 pt-4 flex items-center justify-between mt-auto border-t">
               <Skeleton className="h-6 w-16 rounded-full" />
               <div className="flex items-center justify-center gap-1">
-                <Skeleton className="h-8 w-8 rounded-md" />
+                {showViewAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                {showUnarchiveAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                {showHardDeleteAction && <Skeleton className="h-8 w-8 rounded-md" />}
               </div>
             </CardFooter>
           </Card>
@@ -259,33 +262,21 @@ export default function ArchivedUserPoolCards({
               </Badge>
               
               <div className="flex items-center justify-center gap-1">
-                <Menubar className="border-none bg-transparent shadow-none">
-                  <MenubarMenu>
-                    <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${getUserLabel(user)}`}>
-                      <Ellipsis className="h-4 w-4" />
-                    </MenubarTrigger>
-                    <MenubarContent align="end">
                       {showViewAction && (
-                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onView(user)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(user)} title="View">
                           <Eye className="h-4 w-4" />
-                          View
-                        </MenubarItem>
+                        </Button>
                       )}
                       {showUnarchiveAction && (
-                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onUnarchive(user)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onUnarchive(user)} title="Restore">
                           <ArchiveRestore className="h-4 w-4" />
-                          Restore
-                        </MenubarItem>
+                        </Button>
                       )}
                       {showHardDeleteAction && (
-                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onHardDelete(user)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => onHardDelete(user)} title="Delete Permanently">
                           <Trash2 className="h-4 w-4" />
-                          Delete Permanently
-                        </MenubarItem>
+                        </Button>
                       )}
-                    </MenubarContent>
-                  </MenubarMenu>
-                </Menubar>
               </div>
             </CardFooter>
           </Card>

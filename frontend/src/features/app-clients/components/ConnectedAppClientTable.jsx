@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
+import { Button } from "@/components/ui/button";
 
 const getClientId = (client) => client?.id ?? client?.clientId ?? "";
 
@@ -93,6 +94,8 @@ export default function ConnectedAppClientTable({
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Skeleton className="h-8 w-8 rounded-md" />
+                        {showEditAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                        {showDeleteAction && <Skeleton className="h-8 w-8 rounded-md" />}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -192,31 +195,19 @@ export default function ConnectedAppClientTable({
 
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <Menubar className="border-none bg-transparent shadow-none">
-                            <MenubarMenu>
-                              <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${client.name}`}>
-                                <Ellipsis className="h-4 w-4" />
-                              </MenubarTrigger>
-                              <MenubarContent align="end">
-                                <MenubarItem className="cursor-pointer gap-2" onClick={() => onView?.(client)}>
-                                  <Eye className="h-4 w-4" />
-                                  View
-                                </MenubarItem>
-                                {showEditAction && (
-                                  <MenubarItem className="cursor-pointer gap-2" onClick={() => onEdit?.(client)}>
-                                    <Pencil className="h-4 w-4" />
-                                    Edit
-                                  </MenubarItem>
-                                )}
-                                {showDeleteAction && (
-                                  <MenubarItem className="cursor-pointer gap-2" onClick={() => onDelete?.(client)}>
-                                    <Trash2 className="h-4 w-4" />
-                                    Delete
-                                  </MenubarItem>
-                                )}
-                              </MenubarContent>
-                            </MenubarMenu>
-                          </Menubar>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView?.(client)} title="View">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {showEditAction && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit?.(client)} title="Edit">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {showDeleteAction && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => onDelete?.(client)} title="Delete">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

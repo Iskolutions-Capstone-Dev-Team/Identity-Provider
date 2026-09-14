@@ -148,8 +148,10 @@ export default function ArchivedUserPoolTable({
                 <TableCell className="text-center"><Skeleton className="h-6 w-16 mx-auto rounded-full" /></TableCell>
                 {showActionsColumn && (
                   <TableCell className="text-center">
-                    <div className="flex justify-center gap-2">
-                      <Skeleton className="h-8 w-8 rounded-md" />
+                    <div className="flex justify-center gap-1">
+                      {showViewAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                      {showUnarchiveAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                      {showHardDeleteAction && <Skeleton className="h-8 w-8 rounded-md" />}
                     </div>
                   </TableCell>
                 )}
@@ -287,33 +289,21 @@ export default function ArchivedUserPoolTable({
                 {showActionsColumn && (
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <Menubar className="border-none bg-transparent shadow-none">
-                        <MenubarMenu>
-                          <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${getUserLabel(user)}`}>
-                            <Ellipsis className="h-4 w-4" />
-                          </MenubarTrigger>
-                          <MenubarContent align="end">
-                            {showViewAction && (
-                              <MenubarItem className="cursor-pointer gap-2" onClick={() => onView(user)}>
-                                <Eye className="h-4 w-4" />
-                                View
-                              </MenubarItem>
-                            )}
-                            {showUnarchiveAction && (
-                              <MenubarItem className="cursor-pointer gap-2" onClick={() => onUnarchive(user)}>
-                                <ArchiveRestore className="h-4 w-4" />
-                                Restore
-                              </MenubarItem>
-                            )}
-                            {showHardDeleteAction && (
-                              <MenubarItem className="cursor-pointer gap-2" onClick={() => onHardDelete(user)}>
-                                <Trash2 className="h-4 w-4" />
-                                Delete Permanently
-                              </MenubarItem>
-                            )}
-                          </MenubarContent>
-                        </MenubarMenu>
-                      </Menubar>
+                      {showViewAction && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(user)} title="View">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {showUnarchiveAction && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onUnarchive(user)} title="Restore">
+                          <ArchiveRestore className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {showHardDeleteAction && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => onHardDelete(user)} title="Delete Permanently">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 )}

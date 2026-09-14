@@ -50,6 +50,8 @@ export default function RegistrationCards({ loading = false, rows = [], onView, 
             <CardFooter className="p-4 pt-4 flex items-center justify-end mt-auto border-t">
               <div className="flex items-center justify-center gap-1">
                 <Skeleton className="h-8 w-8 rounded-md" />
+                {showEditAction && <Skeleton className="h-8 w-8 rounded-md" />}
+                {showDeleteAction && <Skeleton className="h-8 w-8 rounded-md" />}
               </div>
             </CardFooter>
           </Card>
@@ -127,33 +129,21 @@ export default function RegistrationCards({ loading = false, rows = [], onView, 
             
             <CardFooter className="p-4 pt-3 flex items-center justify-end border-t mt-auto bg-card">
               <div className="flex items-center justify-center gap-1">
-                <Menubar className="border-none bg-transparent shadow-none">
-                  <MenubarMenu>
-                    <MenubarTrigger className="cursor-pointer" aria-label={`Actions for ${row.label} registration settings`}>
-                      <Ellipsis className="h-4 w-4" />
-                    </MenubarTrigger>
-                    <MenubarContent align="end">
-                      <MenubarItem className="cursor-pointer gap-2" onClick={() => onView(row)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(row)} title="View">
                         <Eye className="h-4 w-4" />
-                        View
-                      </MenubarItem>
+                      </Button>
 
                       {showEditAction && (
-                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onEdit(row)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(row)} title="Edit">
                           <Pencil className="h-4 w-4" />
-                          Edit
-                        </MenubarItem>
+                        </Button>
                       )}
 
                       {showDeleteAction && row.canDelete !== false && (
-                        <MenubarItem className="cursor-pointer gap-2" onClick={() => onDelete(row)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => onDelete(row)} title="Delete">
                           <Trash className="h-4 w-4" />
-                          Delete
-                        </MenubarItem>
+                        </Button>
                       )}
-                    </MenubarContent>
-                  </MenubarMenu>
-                </Menubar>
               </div>
             </CardFooter>
           </Card>
