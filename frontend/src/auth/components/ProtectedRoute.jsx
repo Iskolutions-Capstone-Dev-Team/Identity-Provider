@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import AuthLoadingScreen from "./AuthLoadingScreen";
 import { clearAuthState } from "../utils/authCookies";
 import { rememberAuthorizeReturnPath } from "../utils/authorizeFlow";
@@ -16,76 +17,80 @@ export default function ProtectedRoute({ children }) {
     `${location.pathname}${location.search}${location.hash}` || "/";
   const isCurrentMfaPath = isMfaPath(location.pathname);
 
+  const needsMfaVerification = hasMfaChallengePending() && !hasMfaVerified();
+  const hasTokens = hasStoredAuthTokens();
+
+  const { data: currentUser, isError, error, isLoading } = useQuery({
+    queryKey: ['currentUserProtected'],
+    queryFn: () => userService.getMe(),
+    enabled: hasTokens && (!needsMfaVerification || isCurrentMfaPath),
+    retry: false
+  });
+
   useEffect(() => {
-    let isActive = true;
+    if (!isCurrentMfaPath && needsMfaVerification) {
+      rememberMfaReturnPath(returnPath);
+      setAuthState("needs-mfa");
+      return;
+    }
 
-    const validate = async () => {
-      const needsMfaVerification =
-        hasMfaChallengePending() && !hasMfaVerified();
+    if (!hasTokens) {
+      rememberAuthorizeReturnPath(returnPath);
+      setAuthState("redirect-to-sso");
+      return;
+    }
 
-      if (!isCurrentMfaPath && needsMfaVerification) {
+    if (isLoading) {
+      setAuthState("loading");
+      return;
+    }
+
+    if (isError) {
+      if (error?.response?.status === 403) {
+        setAuthState("unauthorized");
+        return;
+      }
+
+      clearAuthState();
+      rememberAuthorizeReturnPath(returnPath);
+
+      if (error?.response?.status === 401) {
+        setAuthState("redirect-to-sso");
+        return;
+      }
+
+      setAuthState("denied");
+      return;
+    }
+
+    if (currentUser) {
+      if (!hasAssignedRoles(currentUser)) {
+        setAuthState("unauthorized");
+        return;
+      }
+
+      const hasCompletedMfa =
+        hasMfaVerified() ||
+        (hasStoredAccessToken() && !hasMfaChallengePending());
+
+      if (!isCurrentMfaPath && !hasCompletedMfa) {
         rememberMfaReturnPath(returnPath);
         setAuthState("needs-mfa");
         return;
       }
 
-      if (!hasStoredAuthTokens()) {
-        rememberAuthorizeReturnPath(returnPath);
-        setAuthState("redirect-to-sso");
-        return;
-      }
-
-      try {
-        const currentUser = await userService.getMe();
-
-        if (!isActive) {
-          return;
-        }
-
-        if (!hasAssignedRoles(currentUser)) {
-          setAuthState("unauthorized");
-          return;
-        }
-
-        const hasCompletedMfa =
-          hasMfaVerified() ||
-          (hasStoredAccessToken() && !hasMfaChallengePending());
-
-        if (!isCurrentMfaPath && !hasCompletedMfa) {
-          rememberMfaReturnPath(returnPath);
-          setAuthState("needs-mfa");
-          return;
-        }
-
-        setAuthState("allowed");
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        if (error.response?.status === 403) {
-          setAuthState("unauthorized");
-          return;
-        }
-
-        clearAuthState();
-        rememberAuthorizeReturnPath(returnPath);
-
-        if (error.response?.status === 401) {
-          setAuthState("redirect-to-sso");
-          return;
-        }
-
-        setAuthState("denied");
-      }
-    };
-
-    validate();
-
-    return () => {
-      isActive = false;
-    };
-  }, [isCurrentMfaPath, location.hash, location.pathname, location.search, returnPath]);
+      setAuthState("allowed");
+    }
+  }, [
+    isCurrentMfaPath,
+    needsMfaVerification,
+    hasTokens,
+    isLoading,
+    isError,
+    error,
+    currentUser,
+    returnPath
+  ]);
 
   if (authState === "loading") {
     return <AuthLoadingScreen message="Loading..." />;

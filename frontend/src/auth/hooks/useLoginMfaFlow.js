@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { promotePendingMfaTokenResponse } from "../utils/authCookies";
 import { clearMfaSetup, consumeMfaReturnPath, getMfaChallengeEmail, getMfaSetup, rememberMfaSetup, rememberMfaVerified } from "../utils/mfaFlow";
 import { createPasskeyCredential, getPasskeyCredential } from "../utils/webAuthn";
@@ -47,17 +48,13 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
   const [mode, setMode] = useState("email");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  
   const [hasSentOtp, setHasSentOtp] = useState(false);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isCheckingAuthenticators, setIsCheckingAuthenticators] = useState(false);
-  const [isCheckingPasskey, setIsCheckingPasskey] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [setup, setSetup] = useState({ email: "", secret: "", otpAuthUri: "" });
   const [name, setName] = useState("");
   const [backupCodes, setBackupCodes] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
+  
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [cooldown, setCooldown] = useState(0);
   const [verifyAttemptCount, setVerifyAttemptCount] = useState(0);
@@ -144,67 +141,49 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadCurrentUser() {
+  const { isLoading: isUserLoading } = useQuery({
+    queryKey: ['mfaCurrentUser', initialEmail],
+    queryFn: async () => {
       const challengeEmail = initialEmail || getMfaChallengeEmail();
-
       if (challengeEmail) {
         setEmail(challengeEmail);
-        setIsLoading(false);
-        return;
+        return { email: challengeEmail };
       }
-
       try {
         const currentUser = await userService.getMe();
-
-        if (isMounted) {
-          setEmail(currentUser?.email || "");
-        }
+        setEmail(currentUser?.email || "");
+        return currentUser;
       } catch (loadError) {
-        if (isMounted) {
-          handleFlowError(
-            loadError,
-            "Unable to prepare MFA. Please sign in again.",
-          );
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        handleFlowError(loadError, "Unable to prepare MFA. Please sign in again.");
+        throw loadError;
       }
-    }
+    },
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
 
-    loadCurrentUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [initialEmail]);
-
-  const handleSendOtp = async () => {
-    setError("");
-
-    if (!email) {
-      setError("Your email address is unavailable.");
-      return;
-    }
-
-    try {
-      setIsSendingOtp(true);
-      await passwordResetService.sendOtp({ email });
+  const sendOtpMutation = useMutation({
+    mutationFn: (userEmail) => passwordResetService.sendOtp({ email: userEmail }),
+    onSuccess: () => {
       setHasSentOtp(true);
       setOtpCooldown(60);
-    } catch (otpError) {
+    },
+    onError: (otpError) => {
       if (otpError?.response?.status === 429) {
         handleFlowError(otpError, "Too many attempts. Please wait.");
       } else {
         handleFlowError(otpError, "Unable to send an OTP right now.");
       }
-    } finally {
-      setIsSendingOtp(false);
     }
+  });
+
+  const handleSendOtp = async () => {
+    setError("");
+    if (!email) {
+      setError("Your email address is unavailable.");
+      return;
+    }
+    sendOtpMutation.mutate(email);
   };
 
   const handleSelectEmail = () => {
@@ -214,193 +193,153 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     setError("");
   };
 
-  const handleSelectAuthenticator = async () => {
-    setError("");
-    setCode("");
-    setMode("authenticator");
-
-    try {
-      setIsCheckingAuthenticators(true);
-      const hasAuthenticator = await mfaService.hasTotpAuthenticator(email);
-
-      if (!hasAuthenticator) {
-        await loadAuthenticatorSetup();
-        return;
-      }
-
-      setStep(MFA_STEPS.AUTHENTICATOR);
-    } catch (authenticatorError) {
-      handleFlowError(
-        authenticatorError,
-        "Unable to check your authenticator apps.",
-      );
-    } finally {
-      setIsCheckingAuthenticators(false);
-    }
-  };
-
-  const registerPasskey = async () => {
-    let platformAvailable = false;
-    if (window.PublicKeyCredential &&
-      typeof window.PublicKeyCredential
-        .isUserVerifyingPlatformAuthenticatorAvailable === "function") {
-      platformAvailable = await window.PublicKeyCredential
-        .isUserVerifyingPlatformAuthenticatorAvailable();
-    }
-
-    const options = await mfaService.beginPasskeyRegistration(
-      email,
-      platformAvailable,
-    );
-    const credential = await createPasskeyCredential(options);
-
-    await mfaService.finishPasskeyRegistration(email, credential, rememberDevice);
-    finishMfa();
-  };
-
-  const verifyPasskey = async () => {
-    let platformAvailable = false;
-    if (window.PublicKeyCredential &&
-      typeof window.PublicKeyCredential
-        .isUserVerifyingPlatformAuthenticatorAvailable === "function") {
-      platformAvailable = await window.PublicKeyCredential
-        .isUserVerifyingPlatformAuthenticatorAvailable();
-    }
-
-    const options = await mfaService.beginPasskeyVerification(
-      email,
-      platformAvailable,
-    );
-    const credential = await getPasskeyCredential(options);
-
-    await mfaService.finishPasskeyVerification(email, credential, rememberDevice);
-    finishMfa();
-  };
-
-  const handleSelectPasskey = async () => {
-    setError("");
-    setCode("");
-    setMode("passkey");
-
-    try {
-      setIsCheckingPasskey(true);
-      const hasPasskey = await mfaService.hasPasskey(email);
-
-      if (!hasPasskey) {
-        await registerPasskey();
-        return;
-      }
-
-      await verifyPasskey();
-    } catch (passkeyError) {
-      setError(getPasskeyErrorMessage(passkeyError));
-    } finally {
-      setIsCheckingPasskey(false);
-    }
-  };
-
-  const loadAuthenticatorSetup = async () => {
-    setStep(MFA_STEPS.SETUP);
-    setQrCodeUrl("");
-    setError("");
-
-    try {
-      const nextSetup = await mfaService.getSetup(email);
+  const loadAuthenticatorSetupMutation = useMutation({
+    mutationFn: async (userEmail) => {
+      const nextSetup = await mfaService.getSetup(userEmail);
       const nextQrCodeUrl = await QRCode.toDataURL(nextSetup.otpAuthUri, {
         errorCorrectionLevel: "M",
         margin: 2,
         width: 320,
       });
-
+      return { nextSetup, nextQrCodeUrl };
+    },
+    onSuccess: ({ nextSetup, nextQrCodeUrl }) => {
       rememberMfaSetup({ ...nextSetup, email });
       setQrCodeUrl(nextQrCodeUrl);
-    } catch (setupError) {
-      handleFlowError(
-        setupError,
-        "Unable to load authenticator setup.",
-      );
+      setStep(MFA_STEPS.SETUP);
+    },
+    onError: (setupError) => {
+      handleFlowError(setupError, "Unable to load authenticator setup.");
     }
+  });
+
+  const checkAuthenticatorsMutation = useMutation({
+    mutationFn: (userEmail) => mfaService.hasTotpAuthenticator(userEmail),
+    onSuccess: (hasAuthenticator) => {
+      if (!hasAuthenticator) {
+        setStep(MFA_STEPS.SETUP);
+        setQrCodeUrl("");
+        setError("");
+        loadAuthenticatorSetupMutation.mutate(email);
+        return;
+      }
+      setStep(MFA_STEPS.AUTHENTICATOR);
+    },
+    onError: (authenticatorError) => {
+      handleFlowError(authenticatorError, "Unable to check your authenticator apps.");
+    }
+  });
+
+  const handleSelectAuthenticator = () => {
+    setError("");
+    setCode("");
+    setMode("authenticator");
+    checkAuthenticatorsMutation.mutate(email);
   };
 
-  const handleVerifyEmailOtp = async (event) => {
+  const checkPasskeyMutation = useMutation({
+    mutationFn: async (userEmail) => {
+      const hasPasskey = await mfaService.hasPasskey(userEmail);
+      let platformAvailable = false;
+      if (window.PublicKeyCredential && typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function") {
+        platformAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      }
+
+      if (!hasPasskey) {
+        const options = await mfaService.beginPasskeyRegistration(userEmail, platformAvailable);
+        const credential = await createPasskeyCredential(options);
+        await mfaService.finishPasskeyRegistration(userEmail, credential, rememberDevice);
+      } else {
+        const options = await mfaService.beginPasskeyVerification(userEmail, platformAvailable);
+        const credential = await getPasskeyCredential(options);
+        await mfaService.finishPasskeyVerification(userEmail, credential, rememberDevice);
+      }
+    },
+    onSuccess: () => {
+      finishMfa();
+    },
+    onError: (passkeyError) => {
+      setError(getPasskeyErrorMessage(passkeyError));
+    }
+  });
+
+  const handleSelectPasskey = () => {
+    setError("");
+    setCode("");
+    setMode("passkey");
+    checkPasskeyMutation.mutate(email);
+  };
+
+  const verifyEmailOtpMutation = useMutation({
+    mutationFn: () => passwordResetService.verifyOtp({ email, otp: code, rememberDevice }),
+    onSuccess: () => {
+      setVerifyAttemptCount(0);
+      finishMfa();
+    },
+    onError: (verifyError) => {
+      handleFailedVerification(verifyError, "Unable to verify this code.");
+    }
+  });
+
+  const handleVerifyEmailOtp = (event) => {
     event.preventDefault();
     setError("");
-
     if (code.length !== 6) {
       setError("Enter the 6-digit verification code.");
       return;
     }
-
-    try {
-      setIsVerifying(true);
-      await passwordResetService.verifyOtp({ email, otp: code, rememberDevice });
-      setVerifyAttemptCount(0);
-      finishMfa();
-    } catch (verifyError) {
-      handleFailedVerification(verifyError, "Unable to verify this code.");
-    } finally {
-      setIsVerifying(false);
-    }
+    verifyEmailOtpMutation.mutate();
   };
 
-  const handleVerifyAuthenticator = async (event) => {
+  const verifyAuthenticatorMutation = useMutation({
+    mutationFn: () => mfaService.verifyCode({ email, code, rememberDevice }),
+    onSuccess: () => {
+      setVerifyAttemptCount(0);
+      finishMfa();
+    },
+    onError: (verifyError) => {
+      handleFailedVerification(verifyError, "Unable to verify this authenticator code.");
+    }
+  });
+
+  const handleVerifyAuthenticator = (event) => {
     event.preventDefault();
     setError("");
-
     if (code.length !== 6) {
       setError("Enter the 6-digit authenticator code.");
       return;
     }
-
-    try {
-      setIsVerifying(true);
-      await mfaService.verifyCode({ email, code, rememberDevice });
-      setVerifyAttemptCount(0);
-      finishMfa();
-    } catch (verifyError) {
-      handleFailedVerification(
-        verifyError,
-        "Unable to verify this authenticator code.",
-      );
-    } finally {
-      setIsVerifying(false);
-    }
+    verifyAuthenticatorMutation.mutate();
   };
 
-  const handleVerifyBackupCode = async (event) => {
+  const verifyBackupCodeMutation = useMutation({
+    mutationFn: (normalizedBackupCode) => mfaService.verifyCode({ email, code: normalizedBackupCode, rememberDevice }),
+    onSuccess: () => {
+      setVerifyAttemptCount(0);
+      finishMfa();
+    },
+    onError: (verifyError) => {
+      handleFailedVerification(verifyError, "Unable to verify this backup code.");
+    }
+  });
+
+  const handleVerifyBackupCode = (event) => {
     event.preventDefault();
     setError("");
-
     const normalizedBackupCode = backupCode.trim();
-
     if (!normalizedBackupCode) {
       setError("Enter your backup code.");
       return;
     }
-
-    try {
-      setIsVerifying(true);
-      await mfaService.verifyCode({ email, code: normalizedBackupCode, rememberDevice });
-      setVerifyAttemptCount(0);
-      finishMfa();
-    } catch (verifyError) {
-      handleFailedVerification(
-        verifyError,
-        "Unable to verify this backup code.",
-      );
-    } finally {
-      setIsVerifying(false);
-    }
+    verifyBackupCodeMutation.mutate(normalizedBackupCode);
   };
 
   const handleOpenSetupConfirm = () => {
     const storedSetup = getMfaSetup();
-
     if (!storedSetup.secret) {
       setError("Authenticator setup is unavailable. Please try again.");
       return;
     }
-
     setSetup(storedSetup);
     setCode("");
     setStep(MFA_STEPS.SETUP_CONFIRM);
@@ -412,36 +351,34 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     setStep(MFA_STEPS.SETUP);
   };
 
-  const handleSaveAuthenticator = async (event) => {
+  const saveAuthenticatorMutation = useMutation({
+    mutationFn: () => mfaService.createAuthenticator({
+      email: setup.email,
+      secret: setup.secret,
+      code,
+      name,
+      rememberDevice,
+    }),
+    onSuccess: (result) => {
+      setBackupCodes(result.backupCodes);
+    },
+    onError: (saveError) => {
+      handleFlowError(saveError, "Unable to save this authenticator.");
+    }
+  });
+
+  const handleSaveAuthenticator = (event) => {
     event.preventDefault();
     setError("");
-
     if (code.length !== 6) {
       setError("Enter the 6-digit code from your authenticator app.");
       return;
     }
-
     if (!name.trim()) {
       setError("Enter the authenticator app name.");
       return;
     }
-
-    try {
-      setIsSaving(true);
-      const result = await mfaService.createAuthenticator({
-        email: setup.email,
-        secret: setup.secret,
-        code,
-        name,
-        rememberDevice,
-      });
-
-      setBackupCodes(result.backupCodes);
-    } catch (saveError) {
-      handleFlowError(saveError, "Unable to save this authenticator.");
-    } finally {
-      setIsSaving(false);
-    }
+    saveAuthenticatorMutation.mutate();
   };
 
   return {
@@ -458,17 +395,17 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
     setError,
     info,
     setInfo,
-    isLoading,
+    isLoading: isUserLoading,
     hasSentOtp,
-    isSendingOtp,
-    isVerifying,
-    isCheckingAuthenticators,
-    isCheckingPasskey,
+    isSendingOtp: sendOtpMutation.isPending,
+    isVerifying: verifyEmailOtpMutation.isPending || verifyAuthenticatorMutation.isPending || verifyBackupCodeMutation.isPending,
+    isCheckingAuthenticators: checkAuthenticatorsMutation.isPending || loadAuthenticatorSetupMutation.isPending,
+    isCheckingPasskey: checkPasskeyMutation.isPending,
     qrCodeUrl,
     name,
     setName,
     backupCodes,
-    isSaving,
+    isSaving: saveAuthenticatorMutation.isPending,
     otpCooldown,
     cooldown,
     finishMfa,

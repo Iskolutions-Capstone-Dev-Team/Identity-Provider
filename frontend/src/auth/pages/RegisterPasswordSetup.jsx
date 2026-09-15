@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import AuthLayout from "../layouts/AuthLayout";
 import RegisterPasswordSetupForm from "../components/RegisterPasswordSetupForm";
 import { isInvitationForbiddenError, registrationActivationService } from "../services/registrationActivationService";
@@ -22,58 +23,33 @@ export default function RegisterPasswordSetup() {
   const email = searchParams.get("email") || "";
   const invitationCode = normalizeTextValue(searchParams.get("invitation_code"));
   const loginPath = buildLoginPath(clientId);
-  const [validationState, setValidationState] = useState(
-    invitationCode
-      ? VALIDATION_STATE.CHECKING
-      : VALIDATION_STATE.FORBIDDEN,
-  );
-  const [validationError, setValidationError] = useState("");
+  const [hasForcedInvalid, setHasForcedInvalid] = useState(false);
 
-  useEffect(() => {
-    let isCancelled = false;
+  const { isLoading, isError, error, isSuccess } = useQuery({
+    queryKey: ['checkInvitation', invitationCode],
+    queryFn: () => registrationActivationService.checkInvitation(invitationCode),
+    enabled: !!invitationCode && !hasForcedInvalid,
+    retry: false
+  });
 
-    if (!invitationCode) {
-      setValidationState(VALIDATION_STATE.FORBIDDEN);
-      return undefined;
-    }
+  const isForbidden = hasForcedInvalid || !invitationCode || (isError && isInvitationForbiddenError(error));
+  const isChecking = isLoading && !isForbidden;
+  const isGenericError = isError && !isForbidden;
 
-    const validateInvitation = async () => {
-      try {
-        setValidationState(VALIDATION_STATE.CHECKING);
-        setValidationError("");
-        await registrationActivationService.checkInvitation(invitationCode);
+  const validationState = isChecking
+    ? VALIDATION_STATE.CHECKING
+    : isForbidden
+      ? VALIDATION_STATE.FORBIDDEN
+      : isGenericError
+        ? VALIDATION_STATE.ERROR
+        : VALIDATION_STATE.READY;
 
-        if (!isCancelled) {
-          setValidationState(VALIDATION_STATE.READY);
-        }
-      } catch (error) {
-        if (isCancelled) {
-          return;
-        }
-
-        if (isInvitationForbiddenError(error)) {
-          setValidationState(VALIDATION_STATE.FORBIDDEN);
-          return;
-        }
-
-        setValidationState(VALIDATION_STATE.ERROR);
-        setValidationError(
-          error?.response?.data?.error ||
-            error?.message ||
-            "Unable to validate the invitation link right now.",
-        );
-      }
-    };
-
-    validateInvitation();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [invitationCode]);
+  const validationError = isGenericError
+    ? error?.response?.data?.error || error?.message || "Unable to validate the invitation link right now."
+    : "";
 
   const handleInvalidInvitation = () => {
-    setValidationState(VALIDATION_STATE.FORBIDDEN);
+    setHasForcedInvalid(true);
   };
 
   return (

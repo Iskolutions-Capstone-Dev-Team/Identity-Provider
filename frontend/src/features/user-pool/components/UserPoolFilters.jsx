@@ -8,13 +8,7 @@ import { Search, Users, Shield, Table, WalletCards, Settings, ListFilter, View, 
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Label } from "@/components/ui/label";
 
-const statusOptions = [
-  { value: "", label: "All Status" },
-  { value: "active", label: "Active" },
-  { value: "suspended", label: "Suspended" },
-];
-
-export default function UserPoolFilters({ search, setSearch, userType, setUserType, status, setStatus, sortBy = "created_at", setSortBy, sort = "desc", setSort, viewType = "table", setViewType, showAdminUserType = true }) {
+export default function UserPoolFilters({ search, setSearch, userType, setUserType, sortBy = "created_at", setSortBy, sort = "desc", setSort, viewType = "table", setViewType, showAdminUserType = true }) {
   const visibleUserTypeOptions = showAdminUserType
     ? [
         { value: REGULAR_USER_TYPE, label: "Users", Icon: Users },
@@ -54,22 +48,6 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
               ))}
             </TabsList>
           </Tabs>
-        </div>
-
-        <div className="w-full lg:w-[150px] shrink-0 flex flex-col gap-2">
-          <Label>Status</Label>
-          <Select value={status || ""} onValueChange={(v) => setStatus(v)}>
-            <SelectTrigger className="h-10! w-full">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((opt) => (
-                <SelectItem key={opt.value || "all"} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="flex flex-row gap-4 w-full lg:w-auto mt-auto">

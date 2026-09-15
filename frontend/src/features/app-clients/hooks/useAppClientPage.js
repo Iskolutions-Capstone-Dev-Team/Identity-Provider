@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { metricsService } from "../../../services/metricsService";
 
@@ -18,15 +19,15 @@ export function useAppClientPage({
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [clientMetrics, setClientMetrics] = useState(null);
+  const { data: clientMetrics = null } = useQuery({
+    queryKey: ['clientMetrics'],
+    queryFn: () => metricsService.getClientMetrics()
+  });
+
   const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
 
   useEffect(() => {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
-  }, []);
-
-  useEffect(() => {
-    metricsService.getClientMetrics().then(setClientMetrics).catch(() => { });
   }, []);
 
   const [editViewOpen, setEditViewOpen] = useState(false);

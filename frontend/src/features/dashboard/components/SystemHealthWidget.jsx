@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Database, Server, HardDrive, CheckCircle2, AlertTriangle, XCircle, Cpu, Layers } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
@@ -32,32 +33,13 @@ function ResourceMetric({ icon, label, value, subtext, alertIcon, isLoading }) {
 }
 
 export default function SystemHealthWidget({ colorMode = "light", isDashboardLoading = false }) {
-  const [healthData, setHealthData] = useState(null);
-  const [isWidgetLoading, setIsWidgetLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data: healthData = null, isLoading: isWidgetLoading, error: queryError } = useQuery({
+    queryKey: ['systemHealth'],
+    queryFn: getSystemHealth,
+    refetchInterval: 30000,
+  });
 
-  const isLoading = isWidgetLoading || isDashboardLoading;
-
-  useEffect(() => {
-    const fetchHealth = async () => {
-      try {
-        setIsWidgetLoading(true);
-        const data = await getSystemHealth();
-        setHealthData(data);
-        setError(null);
-      } catch (err) {
-        setError("Failed to fetch system health.");
-        console.error("Health check error:", err);
-      } finally {
-        setIsWidgetLoading(false);
-      }
-    };
-
-    fetchHealth();
-    // Optional: Refresh every 30 seconds
-    const interval = setInterval(fetchHealth, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const error = queryError ? "Failed to fetch system health." : null;
 
   const getStatusIcon = (status) => {
     switch (status) {

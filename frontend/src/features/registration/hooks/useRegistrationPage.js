@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { toast } from "sonner";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
@@ -64,18 +65,17 @@ export function useRegistrationPage() {
   const canCreateRegistration = hasPermission(PERMISSIONS.CREATE_REGISTRATION_CONFIG);
   const canEditRegistration = hasPermission(PERMISSIONS.EDIT_REGISTRATION_CONFIG);
   const canDeleteRegistration = hasPermission(PERMISSIONS.DELETE_REGISTRATION_CONFIG);
+  
+  const queryClient = useQueryClient();
 
   const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
-  const [registrationMetrics, setRegistrationMetrics] = useState(null);
   
   const shouldLoadEditableAppClients = canCreateRegistration || canEditRegistration;
   const { appClients, appClientsError, isLoadingAppClients } = useAllAppClients({
     enabled: shouldLoadEditableAppClients,
   });
 
-  const [registrationConfigs, setRegistrationConfigs] = useState([]);
-  const [isLoadingRegistration, setIsLoadingRegistration] = useState(true);
-  const [registrationError, setRegistrationError] = useState("");
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -100,15 +100,17 @@ export function useRegistrationPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [syncTarget, setSyncTarget] = useState(null);
   const [isSyncingUsers, setIsSyncingUsers] = useState(false);
-
-  const showLoading = useDelayedLoading(isLoadingRegistration);
   const isDarkMode = colorMode === "dark";
   const searchKeyword = search.trim();
 
   useEffect(() => {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
-    metricsService.getRegistrationMetrics().then(setRegistrationMetrics).catch(() => {});
   }, []);
+
+  const { data: registrationMetrics = null } = useQuery({
+    queryKey: ['registrationMetrics'],
+    queryFn: () => metricsService.getRegistrationMetrics()
+  });
 
   useEffect(() => {
     if (globalViewType) {
@@ -120,6 +122,53 @@ export function useRegistrationPage() {
     () => getAllAppClientSelectOptions(appClients),
     [appClients],
   );
+
+
+
+  const setSearchKeyword = (value) => {
+    const nextValue = typeof value === "string" ? value : "";
+    setPage(1);
+    setSearch(nextValue);
+  };
+
+  const fetchConfigsFn = async () => {
+    const pageData = await registrationService.getRegistrationConfigPage({
+      limit,
+      page,
+      keyword: searchKeyword,
+      sortBy,
+      order: sort,
+    });
+    
+    const nextConfigs = Array.isArray(pageData?.configs) ? pageData.configs : [];
+    
+    if (page > 1 && nextConfigs.length === 0) {
+      setPage(1);
+    }
+    
+    return {
+      configs: nextConfigs,
+      totalPages: pageData?.lastPage ?? 1,
+      totalResults: pageData?.total ?? 0,
+    };
+  };
+
+  const { data: configData, isLoading: isLoadingRegistration, error: queryError } = useQuery({
+    queryKey: ['registrationConfigs', page, limit, searchKeyword, sortBy, sort],
+    queryFn: fetchConfigsFn,
+    placeholderData: keepPreviousData,
+  });
+
+  const registrationConfigs = configData?.configs || [];
+  const registrationError = queryError ? getRegistrationActionError(queryError, "Failed to load registration settings.") : "";
+  const showLoading = useDelayedLoading(isLoadingRegistration);
+
+  useEffect(() => {
+    if (configData) {
+      setTotalPages(configData.totalPages);
+      setTotalResults(configData.totalResults);
+    }
+  }, [configData]);
 
   const registrationAccountTypeOptions = useMemo(
     () => {
@@ -144,59 +193,6 @@ export function useRegistrationPage() {
     [registrationAccountTypeOptions, registrationConfigs],
   );
 
-  const setSearchKeyword = (value) => {
-    const nextValue = typeof value === "string" ? value : "";
-    setPage(1);
-    setSearch(nextValue);
-  };
-
-  const loadRegistrationConfig = useCallback(async ({ showLoading = true } = {}) => {
-    try {
-      if (showLoading) {
-        setIsLoadingRegistration(true);
-      }
-      setRegistrationError("");
-
-      const pageData = await registrationService.getRegistrationConfigPage({
-        limit,
-        page,
-        keyword: searchKeyword,
-        sortBy,
-        order: sort,
-      });
-      
-      const nextConfigs = Array.isArray(pageData?.configs) ? pageData.configs : [];
-      
-      if (page > 1 && nextConfigs.length === 0) {
-        setPage(1);
-        return;
-      }
-
-      setRegistrationConfigs(nextConfigs);
-      setTotalPages(pageData?.lastPage ?? 1);
-      setTotalResults(pageData?.total ?? 0);
-    } catch (error) {
-      console.error("Failed to load registration configuration:", error);
-      setRegistrationConfigs([]);
-      setTotalPages(1);
-      setTotalResults(0);
-      setRegistrationError(
-        getRegistrationActionError(
-          error,
-          "Failed to load registration settings. Check the backend connection.",
-        ),
-      );
-    } finally {
-      if (showLoading) {
-        setIsLoadingRegistration(false);
-      }
-    }
-  }, [page, searchKeyword, limit, sortBy, sort]);
-
-  useEffect(() => {
-    loadRegistrationConfig();
-  }, [loadRegistrationConfig]);
-
   useEffect(() => {
     const routeState = location.state || {};
     if (routeState.successMessage) {
@@ -211,10 +207,12 @@ export function useRegistrationPage() {
     if (Number.isInteger(config?.backendId) && config.backendId > 0) {
       return config.backendId;
     }
-    return registrationService.resolveAccountTypeIdByName(
-      config?.accountTypeValue || config?.label || config?.name,
-    );
-  }, []);
+    const name = config?.accountTypeValue || config?.label || config?.name;
+    return queryClient.fetchQuery({
+      queryKey: ['resolveAccountTypeId', name],
+      queryFn: () => registrationService.resolveAccountTypeIdByName(name)
+    });
+  }, [queryClient]);
 
   const getFullRegistrationConfig = useCallback(async (row) => {
     const backendId = await resolveAccountTypeId(row);
@@ -228,10 +226,13 @@ export function useRegistrationPage() {
     };
 
     try {
-      const fullConfig = await registrationService.getClientsByAccountTypeId(
-        backendId,
-        row.accountTypeValue,
-      );
+      const fullConfig = await queryClient.fetchQuery({
+        queryKey: ['registrationConfigDetails', backendId, row.accountTypeValue],
+        queryFn: () => registrationService.getClientsByAccountTypeId(
+          backendId,
+          row.accountTypeValue,
+        )
+      });
       const { clientIds, clientNames, totalClientCount } = getClientSummary(
         fullConfig.clients,
       );
@@ -252,7 +253,7 @@ export function useRegistrationPage() {
     }
 
     return nextConfig;
-  }, [resolveAccountTypeId]);
+  }, [queryClient, resolveAccountTypeId]);
 
   const handleOpenCreate = () => {
     if (!canCreateRegistration) return;
@@ -299,6 +300,14 @@ export function useRegistrationPage() {
     setModalMode("view");
   };
 
+  const updateMutation = useMutation({
+    mutationFn: async (payload) => registrationService.updateAccountType(payload),
+    onSuccess: (data, payload) => {
+      queryClient.invalidateQueries({ queryKey: ['registrationConfigs'] });
+      queryClient.invalidateQueries({ queryKey: ['registrationAccountTypes'] });
+    }
+  });
+
   const handleSave = async (nextConfig) => {
     const accountTypeName = nextConfig?.name || nextConfig?.label || "";
     const backendId = nextConfig?.backendId ?? (await resolveAccountTypeId(nextConfig));
@@ -308,13 +317,13 @@ export function useRegistrationPage() {
     }
 
     try {
-      await registrationService.updateAccountType({
+      await updateMutation.mutateAsync({
         accountTypeId: backendId,
         name: accountTypeName,
         isSelectable: nextConfig.isSelectable,
         clientIds: nextConfig.clientIds,
       });
-      await loadRegistrationConfig({ showLoading: false });
+      
       setSyncTarget({
         backendId,
         label: accountTypeName,
@@ -337,12 +346,19 @@ export function useRegistrationPage() {
     setSyncTarget(null);
   };
 
+  const syncMutation = useMutation({
+    mutationFn: async (backendId) => registrationService.syncAccountTypeUsers(backendId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['registrationConfigs'] });
+    }
+  });
+
   const handleConfirmSync = async () => {
     if (!syncTarget) return;
 
     try {
       setIsSyncingUsers(true);
-      await registrationService.syncAccountTypeUsers(syncTarget.backendId);
+      await syncMutation.mutateAsync(syncTarget.backendId);
       toast.success(`Updated all ${syncTarget.label} users.`);
     } catch (error) {
       console.error("Failed to sync account type users:", error);
@@ -359,12 +375,19 @@ export function useRegistrationPage() {
     }
   };
 
+  const deleteMutation = useMutation({
+    mutationFn: async (backendId) => registrationService.deleteAccountType(backendId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['registrationConfigs'] });
+      queryClient.invalidateQueries({ queryKey: ['registrationAccountTypes'] });
+    }
+  });
+
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
 
     try {
-      await registrationService.deleteAccountType(deleteTarget.backendId);
-      await loadRegistrationConfig({ showLoading: false });
+      await deleteMutation.mutateAsync(deleteTarget.backendId);
       toast.success(`Deleted ${deleteTarget.label} account type.`);
     } catch (error) {
       console.error("Failed to delete account type:", error);

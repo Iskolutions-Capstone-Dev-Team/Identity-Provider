@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { permissionService } from "../services/permissionService";
 import {
   createPermissionLookup,
@@ -9,40 +10,18 @@ import {
 const PermissionContext = createContext(null);
 
 export function PermissionProvider({ children }) {
-  const [permissions, setPermissions] = useState([]);
-  const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchPermissions = async () => {
+  const { data: permissions = [], isLoading: isLoadingPermissions } = useQuery({
+    queryKey: ['currentUserPermissions'],
+    queryFn: async () => {
       try {
-        setIsLoadingPermissions(true);
-        const nextPermissions =
-          await permissionService.getCurrentUserPermissions();
-
-        if (!cancelled) {
-          setPermissions(nextPermissions);
-        }
+        return await permissionService.getCurrentUserPermissions();
       } catch (error) {
         console.error("Failed to load current user permissions:", error);
-
-        if (!cancelled) {
-          setPermissions([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoadingPermissions(false);
-        }
+        return [];
       }
-    };
-
-    fetchPermissions();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    },
+    retry: false,
+  });
 
   const value = useMemo(() => {
     const permissionLookup = createPermissionLookup(permissions);

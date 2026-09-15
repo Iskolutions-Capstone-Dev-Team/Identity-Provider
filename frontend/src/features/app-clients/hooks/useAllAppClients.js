@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { clientService } from "../../../services/clientService";
 
 const ITEMS_PER_PAGE = 50;
-let allAppClientsRequest = null;
-
 const normalizeRoleNames = (roles = []) =>
   Array.from(
     new Set(
@@ -77,69 +75,22 @@ async function getAllAppClientOptions() {
   );
 }
 
-function loadAllAppClientOptions() {
-  if (allAppClientsRequest) {
-    return allAppClientsRequest;
-  }
-
-  allAppClientsRequest = getAllAppClientOptions().finally(() => {
-    allAppClientsRequest = null;
+export function useAllAppClients({ enabled = true } = {}) {
+  const {
+    data: appClients = [],
+    isLoading: isLoadingAppClients,
+    error,
+  } = useQuery({
+    queryKey: ['allAppClients'],
+    queryFn: getAllAppClientOptions,
+    enabled,
   });
 
-  return allAppClientsRequest;
-}
-
-export function useAllAppClients({ enabled = true } = {}) {
-  const [appClients, setAppClients] = useState([]);
-  const [isLoadingAppClients, setIsLoadingAppClients] = useState(enabled);
-  const [appClientsError, setAppClientsError] = useState("");
-
-  useEffect(() => {
-    if (!enabled) {
-      setAppClients([]);
-      setAppClientsError("");
-      setIsLoadingAppClients(false);
-      return undefined;
-    }
-
-    let cancelled = false;
-
-    const fetchAllAppClients = async () => {
-      try {
-        setIsLoadingAppClients(true);
-        setAppClientsError("");
-
-        const nextAppClients = await loadAllAppClientOptions();
-
-        if (!cancelled) {
-          setAppClients(nextAppClients);
-        }
-      } catch (error) {
-        console.error("Failed to fetch app clients:", error);
-
-        if (!cancelled) {
-          setAppClients([]);
-          setAppClientsError(
-            "Failed to load app clients. Check the backend connection.",
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoadingAppClients(false);
-        }
-      }
-    };
-
-    fetchAllAppClients();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled]);
+  const appClientsError = error ? "Failed to load app clients. Check the backend connection." : "";
 
   return {
     appClients,
     appClientsError,
-    isLoadingAppClients,
+    isLoadingAppClients: enabled ? isLoadingAppClients : false,
   };
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { registrationService } from "../../../services/registrationService";
 import { ACCOUNT_TYPE_OPTIONS, mergeAccountTypeOptions } from "../../../utils/accountTypes";
 
@@ -7,67 +7,33 @@ function getFallbackAccountTypeOptions() {
 }
 
 export function useRegistrationAccountTypes({ enabled = true } = {}) {
-  const [accountTypeOptions, setAccountTypeOptions] = useState(() =>
-    getFallbackAccountTypeOptions(),
-  );
-  const [isLoadingAccountTypes, setIsLoadingAccountTypes] = useState(enabled);
+  const fetchAccountTypesFn = async () => {
+    const registrationConfigs = await registrationService.getRegistrationConfig({
+      skipForbiddenAlert: true,
+      skipForbiddenRedirect: true,
+    });
+    
+    const apiAccountTypeOptions = registrationConfigs.map((config) => ({
+      value: config.accountTypeValue,
+      label: config.label,
+      backendId: config.backendId,
+      clients: config.clients,
+    }));
+    
+    return mergeAccountTypeOptions(
+      getFallbackAccountTypeOptions(),
+      apiAccountTypeOptions,
+    );
+  };
 
-  useEffect(() => {
-    const fallbackAccountTypeOptions = getFallbackAccountTypeOptions();
-    setAccountTypeOptions(fallbackAccountTypeOptions);
-
-    if (!enabled) {
-      setIsLoadingAccountTypes(false);
-      return undefined;
-    }
-
-    let cancelled = false;
-
-    const fetchAccountTypes = async () => {
-      try {
-        setIsLoadingAccountTypes(true);
-        const registrationConfigs =
-          await registrationService.getRegistrationConfig({
-            skipForbiddenAlert: true,
-            skipForbiddenRedirect: true,
-          });
-        const apiAccountTypeOptions = registrationConfigs.map((config) => ({
-          value: config.accountTypeValue,
-          label: config.label,
-          backendId: config.backendId,
-          clients: config.clients,
-        }));
-
-        if (!cancelled) {
-          setAccountTypeOptions(
-            mergeAccountTypeOptions(
-              fallbackAccountTypeOptions,
-              apiAccountTypeOptions,
-            ),
-          );
-        }
-      } catch (error) {
-        console.error("Failed to load registration account types:", error);
-
-        if (!cancelled) {
-          setAccountTypeOptions(fallbackAccountTypeOptions);
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoadingAccountTypes(false);
-        }
-      }
-    };
-
-    fetchAccountTypes();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled]);
+  const { data: accountTypeOptions = getFallbackAccountTypeOptions(), isLoading } = useQuery({
+    queryKey: ['registrationAccountTypes'],
+    queryFn: fetchAccountTypesFn,
+    enabled,
+  });
 
   return {
     accountTypeOptions,
-    isLoadingAccountTypes,
+    isLoadingAccountTypes: isLoading,
   };
 }
