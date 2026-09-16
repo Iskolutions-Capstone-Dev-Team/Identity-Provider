@@ -109,7 +109,7 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
                   <FieldLabel htmlFor="role-name">
                     Name <span className="text-destructive">*</span>
                   </FieldLabel>
-                  <Input id="role-name" type="text" required value={roleName} onChange={(event) => handleRoleNameChange(event.target.value)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., admin)" autoCapitalize="none" spellCheck={false} className="h-10 rounded-lg"/>
+                  <Input id="role-name" type="text" required value={roleName} onChange={(event) => handleRoleNameChange(event.target.value)} onFocus={() => setActiveVoiceField("name")} placeholder="(e.g., admin)" autoCapitalize="none" spellCheck={false} maxLength={50} className="h-10 rounded-lg"/>
                   {touched.name && fieldErrors.name && (
                     <p className="!mt-0 text-xs text-destructive">{fieldErrors.name}</p>
                   )}
@@ -121,7 +121,7 @@ export default function RoleCreateForm({ permissionOptions = [], isPermissionOpt
                   <FieldLabel htmlFor="role-description">
                     Description <span className="text-destructive">*</span>
                   </FieldLabel>
-                  <Textarea id="role-description" required value={description} onChange={(event) => handleDescriptionChange(event.target.value)} onFocus={() => setActiveVoiceField("description")} rows={4} placeholder="Type role description here…" className="rounded-lg"/>
+                  <Textarea id="role-description" required value={description} onChange={(event) => handleDescriptionChange(event.target.value)} onFocus={() => setActiveVoiceField("description")} rows={4} placeholder="Type role description here…" maxLength={255} className="rounded-lg"/>
                   {touched.description && fieldErrors.description && (
                     <p className="!mt-0 text-xs text-destructive">{fieldErrors.description}</p>
                   )}
