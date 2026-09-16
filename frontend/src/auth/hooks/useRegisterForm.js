@@ -41,16 +41,23 @@ function getFirstErrorMessage(errors) {
 }
 
 function getFirstNameError(value) {
-  return value.trim() ? "" : "First name is required.";
+  if (!value.trim()) return "First name is required.";
+  if (value.trim().length > 50) return "First name cannot exceed 50 characters.";
+  return "";
 }
 
 function getLastNameError(value) {
-  return value.trim() ? "" : "Last name is required.";
+  if (!value.trim()) return "Last name is required.";
+  if (value.trim().length > 50) return "Last name cannot exceed 50 characters.";
+  return "";
 }
 
 function getEmailError(value) {
   if (!value.trim()) {
     return "Email address is required.";
+  }
+  if (value.trim().length > 100) {
+    return "Email address cannot exceed 100 characters.";
   }
 
   return emailRegex.test(value) ? "" : "Enter a valid email address.";
@@ -201,7 +208,7 @@ export function useRegisterForm() {
     const nextErrors = {
       firstName: getFirstNameError(details.firstName),
       lastName: getLastNameError(details.lastName),
-      middleName: "",
+      middleName: details.middleName?.trim().length > 50 ? "Middle name cannot exceed 50 characters." : "",
       suffix: "",
       email: getEmailError(details.email),
       accountType: getAccountTypeError(details.accountType),

@@ -223,6 +223,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                               placeholder="(e.g., admin)"
                               autoCapitalize="none"
                               spellCheck={false}
+                              maxLength={50}
                               className="h-10 rounded-lg"
                             />
                             {touched.name && fieldErrors.name && (
@@ -248,6 +249,7 @@ export default function RoleModal({ open, mode, role, permissionOptions = [], is
                           onFocus={() => setActiveVoiceField("description")}
                           rows={4}
                           placeholder="Type role description here…"
+                          maxLength={255}
                           className="rounded-lg"
                         />
                         {touched.description && fieldErrors.description && (

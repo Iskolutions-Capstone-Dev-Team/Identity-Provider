@@ -110,6 +110,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
                           value={accountTypeName}
                           onChange={(e) => handleAccountTypeNameChange(e.target.value)}
                           placeholder="Enter account type"
+                          maxLength={50}
                           className={`h-10 rounded-lg ${accountTypeNameError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         />
                         {accountTypeNameError && (

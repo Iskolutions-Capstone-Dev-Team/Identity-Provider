@@ -18,6 +18,7 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
         type="text"
         value={details.firstName}
         onChange={(event) => onChange("firstName", event.target.value)}
+        maxLength={50}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -29,6 +30,7 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
           type="text"
           value={details.middleName}
           onChange={(event) => onChange("middleName", event.target.value)}
+          maxLength={50}
         />
 
         <div>
@@ -58,6 +60,7 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
         type="text"
         value={details.lastName}
         onChange={(event) => onChange("lastName", event.target.value)}
+        maxLength={50}
       />
 
       <RegisterTextField
@@ -70,6 +73,7 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
         type="email"
         value={details.email}
         onChange={(event) => onChange("email", event.target.value)}
+        maxLength={100}
       />
 
       <div>

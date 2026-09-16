@@ -378,6 +378,10 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
       setError("Enter the authenticator app name.");
       return;
     }
+    if (name.trim().length > 255) {
+      setError("Authenticator app name cannot exceed 255 characters.");
+      return;
+    }
     saveAuthenticatorMutation.mutate();
   };
 
