@@ -1,8 +1,11 @@
+import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Download } from "lucide-react";
 import { createPortal } from "react-dom";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { cn } from "@/lib/utils";
 import MetricFilterCard from "../components/MetricFilterCard";
 import ReportConfirmModal from "../components/ReportConfirmModal";
 import SystemReportConfirmModal from "../components/SystemReportConfirmModal";
@@ -46,6 +49,28 @@ export default function Dashboard() {
     handleSystemReportConfirmCancel,
     handleSystemReportConfirm,
   } = dashboardState;
+
+  const [api, setApi] = useState();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!api) return;
+
+    const onSelect = () => {
+      setCount(api.scrollSnapList().length);
+      setCurrent(api.selectedScrollSnap());
+    };
+
+    onSelect();
+    api.on("reInit", onSelect);
+    api.on("select", onSelect);
+
+    return () => {
+      api.off("reInit", onSelect);
+      api.off("select", onSelect);
+    };
+  }, [api]);
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-[96rem] flex-col gap-4 px-1 min-[1800px]:max-w-[112rem] min-[2200px]:max-w-[128rem] sm:px-0">
@@ -96,7 +121,7 @@ export default function Dashboard() {
           </div>
         ) : null}
 
-        <section className="w-full grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <section className="hidden sm:grid w-full gap-6 md:grid-cols-2 lg:grid-cols-3">
           {normalizedMetrics.loginStats.map((stat) => (
             <MetricFilterCard
               key={stat.key}
@@ -107,6 +132,39 @@ export default function Dashboard() {
               isClickable={stat.type === "success"}
             />
           ))}
+        </section>
+
+        <section className="block sm:hidden w-full">
+          <Carousel setApi={setApi} className="w-full">
+            <CarouselContent>
+              {normalizedMetrics.loginStats.map((stat) => (
+                <CarouselItem key={stat.key}>
+                  <MetricFilterCard
+                    stat={stat}
+                    colorMode={colorMode}
+                    isLoading={showLoading}
+                    onClick={() => handleCardClick(stat)}
+                    isClickable={stat.type === "success"}
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="flex justify-center gap-2 py-3 mt-1">
+              {Array.from({ length: count }).map((_, index) => (
+                <button
+                  key={index}
+                  className={cn(
+                    "h-2 cursor-pointer rounded-full transition-all duration-500 ease-in-out",
+                    index === current
+                      ? "bg-primary w-4 opacity-100"
+                      : "bg-muted-foreground w-2 opacity-30 hover:opacity-50"
+                  )}
+                  onClick={() => api?.scrollTo(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+          </Carousel>
         </section>
 
         <div className="grid gap-6">
