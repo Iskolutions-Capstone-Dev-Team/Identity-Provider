@@ -30,7 +30,7 @@ export function RegisterSubmitButton({ children, compactTracking = false, disabl
   );
 }
 
-export function RegisterTextField({ autoComplete, error = "", icon, label, placeholder, required = false, type, value, onChange }) {
+export function RegisterTextField({ autoComplete, error = "", icon, label, placeholder, required = false, type, value, onChange, maxLength }) {
   return (
     <div>
       <FormLabel required={required}>{label}</FormLabel>
@@ -38,7 +38,7 @@ export function RegisterTextField({ autoComplete, error = "", icon, label, place
         <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
           {icon}
         </span>
-        <Input type={type} value={value} onChange={onChange} autoComplete={autoComplete} placeholder={placeholder} className={getInputClassName(error)}/>
+        <Input type={type} value={value} onChange={onChange} autoComplete={autoComplete} placeholder={placeholder} maxLength={maxLength} className={getInputClassName(error)}/>
       </div>
       <FieldError message={error} />
     </div>
