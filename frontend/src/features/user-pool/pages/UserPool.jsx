@@ -38,18 +38,11 @@ export default function UserPool() {
     enabled: !isLoadingCurrentUser,
   });
 
-  const shouldShowAllRegularUsers = isCurrentUserSuperAdmin;
-  const visibleClientIds = shouldShowAllRegularUsers
-    ? []
-    : appClientOptions.map((client) => client?.id).filter(Boolean);
-
   const {
     search,
     setSearch,
     userType,
     setUserType,
-    status,
-    setStatus,
     sortBy,
     setSortBy,
     sort,
@@ -66,7 +59,7 @@ export default function UserPool() {
     getUserDetails,
     updateUser,
     deleteUser,
-  } = useUsers({ visibleClientIds });
+  } = useUsers();
 
   const canAddUsers = hasPermission(PERMISSIONS.ADD_USER);
   const canDeleteUsers = hasPermission(PERMISSIONS.DELETE_USER);
@@ -193,8 +186,6 @@ export default function UserPool() {
           setSearch={setSearch}
           userType={userType}
           setUserType={setUserType}
-          status={status}
-          setStatus={setStatus}
           sortBy={sortBy}
           setSortBy={setSortBy}
           sort={sort}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import RegistrationCreateForm from "../components/RegistrationCreateForm";
@@ -27,11 +28,20 @@ export default function CreateRegistrationConfigPage() {
     navigate("/registration");
   };
 
+  const queryClient = useQueryClient();
+  const createMutation = useMutation({
+    mutationFn: async (payload) => registrationService.createAccountType(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['registrationConfigs'] });
+      queryClient.invalidateQueries({ queryKey: ['registrationAccountTypes'] });
+    }
+  });
+
   const handleSave = async (nextConfig) => {
     const accountTypeName = nextConfig?.name || nextConfig?.label || "";
 
     try {
-      await registrationService.createAccountType({
+      await createMutation.mutateAsync({
         name: accountTypeName,
         clientIds: nextConfig.clientIds,
       });

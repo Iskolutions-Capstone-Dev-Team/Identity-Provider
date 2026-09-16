@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { mailService } from "../../../services/mailService";
 import { userService } from "../../../services/userService";
 import { generateHiddenInvitationPassword } from "../../../utils/passwordRules";
@@ -38,67 +39,21 @@ async function getUserDetailsById(userId, { isAdmin = false } = {}) {
   return nextRequest;
 }
 
-async function getAllUsersFromEndpoint(fetchPage) {
-  const firstPage = await fetchPage(1);
-  const collectedUsers = Array.isArray(firstPage?.users) ? [...firstPage.users] : [];
-  const lastPage =
-    Number.isInteger(firstPage?.last_page) && firstPage.last_page > 1
-      ? firstPage.last_page
-      : 1;
-
-  if (lastPage > 1) {
-    const pageRequests = [];
-
-    for (let nextPage = 2; nextPage <= lastPage; nextPage += 1) {
-      pageRequests.push(fetchPage(nextPage));
-    }
-
-    const pageResults = await Promise.all(pageRequests);
-    pageResults.forEach((pagePayload) => {
-      if (Array.isArray(pagePayload?.users)) {
-        collectedUsers.push(...pagePayload.users);
-      }
-    });
-  }
-
-  return collectedUsers;
-}
-
-async function getRegularUsers(sortBy, order, keyword = "") {
-  const allUsers = await getAllUsersFromEndpoint((page) =>
-    userService.getUsers({ page, limit: FETCH_LIMIT, sortBy, order, keyword }),
-  );
-
-  return allUsers.map((user) => mapUserResponse(user, { isAdmin: false }));
-}
-
-async function getAdminUsers(sortBy, order, keyword = "") {
-  const adminUsers = await getAllUsersFromEndpoint((page) =>
-    userService.getAdminUsers({ page, limit: FETCH_LIMIT, sortBy, order, keyword }),
-  );
-
-  return adminUsers.map((user) => mapUserResponse(user, { isAdmin: true }));
-}
-
-async function getUsersByType(userType, sortBy, order, keyword = "") {
-  const normalizedUserType =
-    userType === ADMIN_USER_TYPE ? ADMIN_USER_TYPE : REGULAR_USER_TYPE;
+async function fetchUsersPage(userType, page, limit, sortBy, order, keyword = "") {
   const normalizedKeyword = typeof keyword === "string" ? keyword.trim() : "";
-  const requestKey = `${normalizedUserType}:${sortBy}:${order}:${normalizedKeyword}`;
-  const currentRequest = userListRequests.get(requestKey);
-
-  if (currentRequest) {
-    return currentRequest;
-  }
-
-  const nextRequest = (
-    normalizedUserType === ADMIN_USER_TYPE ? getAdminUsers(sortBy, order, normalizedKeyword) : getRegularUsers(sortBy, order, normalizedKeyword)
-  ).finally(() => {
-    userListRequests.delete(requestKey);
-  });
-
-  userListRequests.set(requestKey, nextRequest);
-  return nextRequest;
+  const fetchFn = userType === ADMIN_USER_TYPE ? userService.getAdminUsers : userService.getUsers;
+  
+  const response = await fetchFn({ page, limit, sortBy, order, keyword: normalizedKeyword });
+  
+  const mappedUsers = (response?.users || []).map((user) => 
+    mapUserResponse(user, { isAdmin: userType === ADMIN_USER_TYPE })
+  );
+  
+  return {
+    users: mappedUsers,
+    total: response?.total_count || 0,
+    lastPage: response?.last_page || 1,
+  };
 }
 
 async function findRegularUserByEmail(email) {
@@ -108,7 +63,8 @@ async function findRegularUserByEmail(email) {
     return null;
   }
 
-  const regularUsers = await getRegularUsers("created_at", "desc");
+  const response = await userService.getUsers({ page: 1, limit: 10, keyword: normalizedEmail });
+  const regularUsers = (response?.users || []).map((user) => mapUserResponse(user, { isAdmin: false }));
 
   return (
     regularUsers.find(
@@ -117,11 +73,10 @@ async function findRegularUserByEmail(email) {
   );
 }
 
-export function useUsers({ visibleClientIds = [] } = {}) {
+export function useUsers() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [userType, setUserType] = useState(REGULAR_USER_TYPE);
-  const [status, setStatus] = useState("");
   const [sortBy, setSortBy] = useState("created_at");
   const [sort, setSort] = useState("desc");
   const [page, setPage] = useState(1);
@@ -133,7 +88,6 @@ export function useUsers({ visibleClientIds = [] } = {}) {
   const filterLoadingTimeoutRef = useRef(null);
   const userAccessSelectionsRef = useRef({});
   const userManageableSelectionsRef = useRef({});
-  const visibleClientLookup = new Set(normalizeClientIds(visibleClientIds));
 
   const showFilterLoading = () => {
     if (filterLoadingTimeoutRef.current) {
@@ -188,55 +142,47 @@ export function useUsers({ visibleClientIds = [] } = {}) {
 
   const searchKeyword = typeof search === "string" ? search.trim() : "";
 
-  const fetchUsers = async (
-    selectedUserType = userType,
-    selectedSortBy = sortBy,
-    selectedSort = sort,
-    selectedKeyword = searchKeyword,
-    { showLoading = true } = {},
-  ) => {
-    const fetchId = latestFetchRef.current + 1;
-    latestFetchRef.current = fetchId;
+  const queryClient = useQueryClient();
 
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-
-      const nextUsers = await getUsersByType(selectedUserType, selectedSortBy, selectedSort, selectedKeyword);
-      const usersWithLocalSelections = applyUserClientSelections(
-        nextUsers,
+  const { data: queryData, isLoading: isQueryLoading, error: queryError } = useQuery({
+    queryKey: ['users', userType, page, sortBy, sort, searchKeyword],
+    queryFn: async () => {
+      const result = await fetchUsersPage(userType, page, ITEMS_PER_PAGE, sortBy, sort, searchKeyword);
+      const updatedUsers = applyUserClientSelections(
+        result.users,
         userAccessSelectionsRef.current,
         userManageableSelectionsRef.current,
       );
-
-      if (latestFetchRef.current !== fetchId) {
-        return;
-      }
-
-      setUsers(usersWithLocalSelections);
-      setFetchError("");
-      return usersWithLocalSelections;
-    } catch (error) {
-      console.error("Fetch users error:", error);
-
-      if (latestFetchRef.current !== fetchId) {
-        return;
-      }
-
-      setUsers([]);
-      setFetchError("Unable to load users right now.");
-      return [];
-    } finally {
-      if (showLoading && latestFetchRef.current === fetchId) {
-        setLoading(false);
-      }
-    }
-  };
+      return {
+        ...result,
+        users: updatedUsers
+      };
+    },
+    placeholderData: keepPreviousData,
+  });
 
   useEffect(() => {
-    fetchUsers(userType, sortBy, sort, searchKeyword);
-  }, [userType, sortBy, sort, searchKeyword]);
+    if (queryData?.users) {
+      setUsers(queryData.users);
+      setFetchError("");
+    }
+  }, [queryData]);
+
+  useEffect(() => {
+    if (queryError) {
+      console.error("Fetch users error:", queryError);
+      setUsers([]);
+      setFetchError("Unable to load users right now.");
+    }
+  }, [queryError]);
+
+  useEffect(() => {
+    setLoading(isQueryLoading);
+  }, [isQueryLoading]);
+
+  const fetchUsers = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['users'] });
+  };
 
   const setSearchKeyword = (value) => {
     const nextValue = typeof value === "string" ? value : "";
@@ -244,14 +190,6 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     showFilterLoading();
     setPage(1);
     setSearch(nextValue);
-  };
-
-  const setStatusFilter = (value) => {
-    const nextValue = typeof value === "string" ? value : "";
-
-    showFilterLoading();
-    setPage(1);
-    setStatus(nextValue);
   };
 
   const setUserTypeFilter = (value) => {
@@ -280,7 +218,7 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     return userWithLocalSelections;
   };
 
-  const createUser = async (newUser) => {
+  const createUserInternal = async (newUser) => {
     const isAdminUser = newUser.userType === ADMIN_USER_TYPE;
     const accountType = isAdminUser
       ? getAccountTypeValue(SYSTEM_ADMINISTRATOR_ACCOUNT_TYPE)
@@ -416,19 +354,34 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     }
   };
 
-  const deleteUser = async (userId, label) => {
-    try {
-      setFetchError("");
-      await userService.deleteUser(userId);
-      await fetchUsers(userType, sortBy, sort, { showLoading: false });
-    } catch (error) {
-      console.error("Delete error:", error);
-      setFetchError(`Failed to delete ${label}.`);
-      throw error;
-    }
+  const createUserMutation = useMutation({
+    mutationFn: createUserInternal,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] })
+  });
+
+  const createUser = async (newUser) => {
+    return createUserMutation.mutateAsync(newUser);
   };
 
-  const updateUser = async (updatedUser, originalUser = {}) => {
+  const deleteUserMutation = useMutation({
+    mutationFn: async ({ userId, label }) => {
+      setFetchError("");
+      await userService.deleteUser(userId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error, variables) => {
+      console.error("Delete error:", error);
+      setFetchError(`Failed to delete ${variables.label}.`);
+    }
+  });
+
+  const deleteUser = async (userId, label) => {
+    return deleteUserMutation.mutateAsync({ userId, label });
+  };
+
+  const updateUserInternal = async (updatedUser, originalUser = {}) => {
     const isAdminUserUpdate = updatedUser?.userType === ADMIN_USER_TYPE;
     const shouldUpdateName = updatedUser?.givenName !== originalUser?.givenName || 
                              updatedUser?.surname !== originalUser?.surname || 
@@ -583,28 +536,24 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesStatus = status ? user.status === status : true;
-    const matchesVisibleClients =
-      userType !== REGULAR_USER_TYPE ||
-      userHasVisibleClient(user, visibleClientLookup);
-
-    return matchesStatus && matchesVisibleClients;
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ updatedUser, originalUser }) => updateUserInternal(updatedUser, originalUser),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] })
   });
 
-  const totalResults = filteredUsers.length;
-  const totalPages = Math.max(1, Math.ceil(totalResults / ITEMS_PER_PAGE));
-  const currentPage = Math.min(page, totalPages);
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
+  const updateUser = async (updatedUser, originalUser = {}) => {
+    return updateUserMutation.mutateAsync({ updatedUser, originalUser });
+  };
+
+  const totalResults = queryData?.total || 0;
+  const totalPages = queryData?.lastPage || 1;
+  const paginatedUsers = users;
 
   useEffect(() => {
-    if (page !== currentPage) {
-      setPage(currentPage);
+    if (page > totalPages && totalPages > 0) {
+      setPage(totalPages);
     }
-  }, [currentPage, page]);
+  }, [totalPages, page]);
 
   useEffect(() => {
     return () => {
@@ -620,13 +569,11 @@ export function useUsers({ visibleClientIds = [] } = {}) {
     setSearch: setSearchKeyword,
     userType,
     setUserType: setUserTypeFilter,
-    status,
-    setStatus: setStatusFilter,
     sortBy,
     setSortBy,
     sort,
     setSort,
-    page: currentPage,
+    page,
     setPage,
     paginatedUsers,
     totalPages,

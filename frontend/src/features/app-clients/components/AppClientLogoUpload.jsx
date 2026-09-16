@@ -23,7 +23,7 @@ export function AppClientLogoUpload({
   const defaultImages = initialPreview ? [
     {
       id: "initial-logo",
-      name: "system-logo.png",
+      name: "",
       size: 0,
       type: "image/png",
       url: initialPreview,
@@ -227,7 +227,7 @@ export function AppClientLogoUpload({
                     <p className="inline-flex flex-col justify-center gap-1 truncate font-medium">
                       <span className="text-sm">{fileItem.file.name}</span>
                       <span className="text-muted-foreground text-xs">
-                        {formatBytes(fileItem.file.size)}
+                        {fileItem.file.size > 0 ? formatBytes(fileItem.file.size) : null}
                       </span>
                     </p>
                     <div className="flex items-center gap-2">

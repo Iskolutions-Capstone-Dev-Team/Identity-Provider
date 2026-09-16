@@ -1,5 +1,8 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { cn } from "@/lib/utils";
 
 export default function MetricsCard({ metrics = [], colorMode = "light", isLoading = false }) {
   const hoverClassName = "transition-transform duration-200 ease-out hover:-translate-y-1";
@@ -8,57 +11,112 @@ export default function MetricsCard({ metrics = [], colorMode = "light", isLoadi
     ? metrics 
     : (isLoading ? Array(4).fill({}) : []);
 
+  const [api, setApi] = useState();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!api) return;
+
+    const onSelect = () => {
+      setCount(api.scrollSnapList().length);
+      setCurrent(api.selectedScrollSnap());
+    };
+
+    onSelect(); // initial call
+    api.on("reInit", onSelect);
+    api.on("select", onSelect);
+
+    return () => {
+      api.off("reInit", onSelect);
+      api.off("select", onSelect);
+    };
+  }, [api]);
+
   if (displayMetrics.length === 0) return null;
 
   const cols = displayMetrics.length;
   const lgColsClass = cols === 1 ? "lg:grid-cols-1" : cols === 2 ? "lg:grid-cols-2" : cols === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4";
   const mdColsClass = cols === 1 ? "md:grid-cols-1" : "md:grid-cols-2";
 
+  const renderCard = (metric, idx) => {
+    const Icon = metric.Icon;
+    return (
+      <Card key={idx} className={`${hoverClassName} border-[#7b0d15]/30 dark:border-[#f8d24e]/30 bg-card shadow-sm border h-full`}>
+        <CardContent className="flex items-center gap-4 px-4 py-3 h-full">
+          {Icon ? (
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15]">
+              <Icon className="h-6 w-6" />
+            </span>
+          ) : isLoading ? (
+            <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
+          ) : null}
+
+          <div className="min-w-0 flex flex-col justify-center">
+            {metric.title ? (
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                {metric.title}
+              </p>
+            ) : isLoading ? (
+              <Skeleton className="mb-1 h-3 w-20" />
+            ) : null}
+            
+            {isLoading ? (
+              <Skeleton className="mt-1 h-8 w-16" />
+            ) : (
+              <p className="text-3xl font-black leading-none mt-1 text-foreground">
+                {typeof metric.value === 'number' ? metric.value.toLocaleString() : metric.value ?? "—"}
+              </p>
+            )}
+
+            {metric.description && !isLoading && (
+              <p className="mt-1 text-sm font-medium text-muted-foreground">
+                {metric.description}
+              </p>
+            )}
+            {isLoading && !metric.title && (
+              <Skeleton className="mt-1 h-3 w-32" />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
-    <div className={`w-full grid gap-4 ${mdColsClass} ${lgColsClass}`}>
-      {displayMetrics.map((metric, idx) => {
-        const Icon = metric.Icon;
-        return (
-          <Card key={idx} className={`${hoverClassName} border-[#7b0d15]/30 dark:border-[#f8d24e]/30 bg-card shadow-sm border`}>
-            <CardContent className="flex items-center gap-4 px-4 py-3">
-              {Icon ? (
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15]">
-                  <Icon className="h-6 w-6" />
-                </span>
-              ) : isLoading ? (
-                <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
-              ) : null}
+    <>
+      {/* Desktop Grid */}
+      <div className={`hidden sm:grid w-full gap-4 ${mdColsClass} ${lgColsClass}`}>
+        {displayMetrics.map((metric, idx) => renderCard(metric, idx))}
+      </div>
 
-              <div className="min-w-0 flex flex-col justify-center">
-                {metric.title ? (
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {metric.title}
-                  </p>
-                ) : isLoading ? (
-                  <Skeleton className="mb-1 h-3 w-20" />
-                ) : null}
-                
-                {isLoading ? (
-                  <Skeleton className="mt-1 h-8 w-16" />
-                ) : (
-                  <p className="text-3xl font-black leading-none mt-1 text-foreground">
-                    {typeof metric.value === 'number' ? metric.value.toLocaleString() : metric.value ?? "—"}
-                  </p>
+      {/* Mobile Carousel */}
+      <div className="block sm:hidden w-full">
+        <Carousel setApi={setApi} className="w-full">
+          <CarouselContent>
+            {displayMetrics.map((metric, i) => (
+              <CarouselItem key={i}>
+                {renderCard(metric, i)}
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="flex justify-center gap-2 py-3 mt-1">
+            {Array.from({ length: count }).map((_, index) => (
+              <button
+                key={index}
+                className={cn(
+                  "h-2 cursor-pointer rounded-full transition-all duration-500 ease-in-out",
+                  index === current
+                    ? "bg-primary w-4 opacity-100"
+                    : "bg-muted-foreground w-2 opacity-30 hover:opacity-50"
                 )}
-
-                {metric.description && !isLoading && (
-                  <p className="mt-1 text-sm font-medium text-muted-foreground">
-                    {metric.description}
-                  </p>
-                )}
-                {isLoading && !metric.title && (
-                  <Skeleton className="mt-1 h-3 w-32" />
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+                onClick={() => api?.scrollTo(index)}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        </Carousel>
+      </div>
+    </>
   );
 }

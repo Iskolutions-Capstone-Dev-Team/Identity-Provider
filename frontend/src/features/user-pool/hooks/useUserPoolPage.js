@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { mailService } from "../../../services/mailService";
@@ -28,16 +29,16 @@ export function useUserPoolPage({
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [userMetrics, setUserMetrics] = useState(null);
   const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
 
   useEffect(() => {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
   }, []);
 
-  useEffect(() => {
-    metricsService.getUserMetrics().then(setUserMetrics).catch(() => {});
-  }, []);
+  const { data: userMetrics = null } = useQuery({
+    queryKey: ['userMetrics'],
+    queryFn: () => metricsService.getUserMetrics()
+  });
 
   const [openViewEditModal, setOpenViewEditModal] = useState(false);
   const [modalMode, setModalMode] = useState("view");
@@ -139,31 +140,36 @@ export function useUserPoolPage({
     }
   };
 
-  const handleConfirmReinvite = async () => {
-    if (!userToReinvite || isSendingReinvite) return;
-    const reinviteUserLabel = getUserLabel(userToReinvite);
-    try {
-      setIsSendingReinvite(true);
-      setFetchError("");
+  const reinviteMutation = useMutation({
+    mutationFn: async (userToReinvite) => {
       const userDetails = await getUserDetails(userToReinvite);
       const accountTypeId = await resolveReinviteAccountTypeId(userDetails);
       if (!accountTypeId) throw new Error("The user's account type is unavailable.");
       await mailService.sendInvitation({ email: userDetails.email, accountTypeId });
+      return userDetails;
+    },
+    onSuccess: (userDetails) => {
       toast.success(`Invitation resent to ${userDetails.email}.`);
       setOpenReinvite(false);
       setUserToReinvite(null);
       setOpenViewEditModal(false);
       setSelectedUser(null);
-    } catch (error) {
+    },
+    onError: (error, userToReinvite) => {
+      const reinviteUserLabel = getUserLabel(userToReinvite);
       console.error("Reinvitation error:", error);
       setFetchError(getRequestErrorMessage(error, `Unable to resend invitation to ${reinviteUserLabel}.`));
       setOpenReinvite(false);
       setUserToReinvite(null);
       setOpenViewEditModal(false);
       setSelectedUser(null);
-    } finally {
-      setIsSendingReinvite(false);
     }
+  });
+
+  const handleConfirmReinvite = async () => {
+    if (!userToReinvite || reinviteMutation.isPending) return;
+    setFetchError("");
+    await reinviteMutation.mutateAsync(userToReinvite);
   };
 
   const closeViewEditModal = () => {
@@ -188,7 +194,7 @@ export function useUserPoolPage({
     setOpenReinvite,
     userToReinvite,
     setUserToReinvite,
-    isSendingReinvite,
+    isSendingReinvite: reinviteMutation.isPending,
     viewType,
     setViewType: handleSetViewType,
     handleView,
