@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { clientService } from "../../../services/clientService";
 import { toast } from "sonner";
 
@@ -85,7 +86,6 @@ const normalizeClientDetailPayload = (payload = {}) => {
 };
 
 export function useAppClients({ enabled = true } = {}) {
-  const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -94,9 +94,8 @@ export function useAppClients({ enabled = true } = {}) {
   const [viewType, setViewType] = useState(() => {
     return localStorage.getItem("appClientsViewType") || "table";
   });
-  const [totalClientCount, setTotalClientCount] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
-  const [loading, setLoading] = useState(enabled);
+  const queryClient = useQueryClient();
   const [secretModal, setSecretModal] = useState({
     open: false,
     clientId: "",
@@ -113,63 +112,37 @@ export function useAppClients({ enabled = true } = {}) {
     localStorage.setItem("appClientsViewType", viewType);
   }, [viewType]);
 
-  const resetClients = useCallback(() => {
-    setClients([]);
-    setTotalClientCount(0);
-    setLoading(false);
-  }, []);
-
-  const fetchClients = useCallback(async ({ showLoading = true } = {}) => {
-    if (!enabled) {
-      resetClients();
-      return;
+  const fetchAppClientsFn = async () => {
+    const { items, total, lastPage } = await clientService.getClients({
+      limit,
+      page,
+      keyword: searchKeyword,
+      sortBy,
+      order: sort,
+    });
+    const nextClients = Array.isArray(items) ? items.map(mapClientSummary) : [];
+    const nextTotalResults = toNonNegativeInteger(total, nextClients.length);
+    const nextTotalPages = toPositiveInteger(lastPage, Math.max(1, Math.ceil(nextTotalResults / limit)));
+    
+    if (page > nextTotalPages) {
+      setPage(nextTotalPages);
     }
+    
+    return {
+      clients: nextClients,
+      totalClientCount: nextTotalResults,
+    };
+  };
 
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
+  const { data, isLoading } = useQuery({
+    queryKey: ['appClients', page, limit, searchKeyword, sortBy, sort],
+    queryFn: fetchAppClientsFn,
+    enabled,
+    placeholderData: keepPreviousData,
+  });
 
-      const { items, total, lastPage } = await clientService.getClients({
-        limit,
-        page,
-        keyword: searchKeyword,
-        sortBy,
-        order: sort,
-      });
-      const nextClients = Array.isArray(items)
-        ? items.map(mapClientSummary)
-        : [];
-      const nextTotalResults = toNonNegativeInteger(
-        total,
-        nextClients.length,
-      );
-      const nextTotalPages = toPositiveInteger(
-        lastPage,
-        Math.max(1, Math.ceil(nextTotalResults / limit)),
-      );
-
-      if (page > nextTotalPages) {
-        setPage(nextTotalPages);
-        return;
-      }
-
-      setClients(nextClients);
-      setTotalClientCount(nextTotalResults);
-    } catch (error) {
-      console.error("Fetch clients error:", error);
-      setClients([]);
-      setTotalClientCount(0);
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-    }
-  }, [enabled, page, resetClients, searchKeyword, limit, sortBy, sort]);
-
-  useEffect(() => {
-    fetchClients();
-  }, [fetchClients]);
+  const clients = data?.clients || [];
+  const totalClientCount = data?.totalClientCount || 0;
 
   const setSearchKeyword = useCallback((value) => {
     const nextValue = typeof value === "string" ? value : "";
@@ -187,42 +160,54 @@ export function useAppClients({ enabled = true } = {}) {
     }
   }, [currentPage, page]);
 
-  const refreshClients = async ({ showLoading = true } = {}) => {
-    await fetchClients({ showLoading });
+  const refreshClients = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['appClients'] });
+    await queryClient.invalidateQueries({ queryKey: ['allAppClients'] });
   };
 
-  const createClient = async (payload) => {
-    const response = await clientService.createClient(payload);
-
-    toast.success("App client successfully created!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
-    await refreshClients({ showLoading: false });
-    return response;
-  };
-
-  const updateClient = async (payload) => {
-    try {
-      await clientService.updateClient(payload.id, payload);
-      toast.success("App client successfully updated!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
-      await refreshClients({ showLoading: false });
-    } catch (error) {
-      console.error("Update failed:", error);
-      throw error;
+  const createClientMutation = useMutation({
+    mutationFn: async (payload) => clientService.createClient(payload),
+    onSuccess: () => {
+      toast.success("App client successfully created!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      refreshClients();
     }
-  };
+  });
 
-  const deleteClient = async (id) => {
-    await clientService.deleteClient(id);
-    toast.success("App client successfully deleted!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
-    await refreshClients({ showLoading: false });
-  };
+  const createClient = async (payload) => createClientMutation.mutateAsync(payload);
+
+  const updateClientMutation = useMutation({
+    mutationFn: async (payload) => clientService.updateClient(payload.id, payload),
+    onSuccess: () => {
+      toast.success("App client successfully updated!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      refreshClients();
+    },
+    onError: (error) => {
+      console.error("Update failed:", error);
+    }
+  });
+
+  const updateClient = async (payload) => updateClientMutation.mutateAsync(payload);
+
+  const deleteClientMutation = useMutation({
+    mutationFn: async (id) => clientService.deleteClient(id),
+    onSuccess: () => {
+      toast.success("App client successfully deleted!", { style: { backgroundColor: "#22c55e", color: "white", borderColor: "#22c55e" } });
+      refreshClients();
+    }
+  });
+
+  const deleteClient = async (id) => deleteClientMutation.mutateAsync(id);
 
   const getClientDetails = useCallback(async (id) => {
-    const payload = await clientService.getClientById(id);
+    const payload = await queryClient.fetchQuery({
+      queryKey: ['appClient', id],
+      queryFn: () => clientService.getClientById(id)
+    });
 
     return normalizeClientDetailPayload(payload);
-  }, []);
+  }, [queryClient]);
 
-  const rotateClientSecret = async (client) => {
+  const rotateClientSecretInternal = async (client) => {
     const id = typeof client === "string" ? client : client?.id;
     const name = typeof client === "string" ? "" : client?.name || "";
 
@@ -275,6 +260,13 @@ export function useAppClients({ enabled = true } = {}) {
     }
   };
 
+  const rotateClientSecretMutation = useMutation({
+    mutationFn: rotateClientSecretInternal,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appClients'] })
+  });
+
+  const rotateClientSecret = async (client) => rotateClientSecretMutation.mutateAsync(client);
+
   return {
     search,
     setSearch: setSearchKeyword,
@@ -291,7 +283,7 @@ export function useAppClients({ enabled = true } = {}) {
     paginatedClients: clients,
     totalPages,
     totalResults: totalClientCount,
-    loading,
+    loading: isLoading,
     successMessage,
     setSuccessMessage,
     createClient,

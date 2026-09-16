@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Database, Server, HardDrive, CheckCircle2, AlertTriangle, XCircle, Cpu, Layers } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
@@ -31,33 +32,46 @@ function ResourceMetric({ icon, label, value, subtext, alertIcon, isLoading }) {
   );
 }
 
+const HealthSkeleton = () => (
+  <div className="grid md:grid-cols-[2fr_1fr] gap-8 h-full">
+    <div className="space-y-3">
+      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Services</h4>
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-card/50 shadow-sm">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-4 w-4 rounded-full" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className="h-5 w-5 rounded-full" />
+        </div>
+      ))}
+    </div>
+    <div className="flex flex-col h-full">
+      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Resources</h4>
+      <div className="grid grid-cols-2 gap-4 flex-1">
+        <ResourceMetric
+          icon={<Cpu />}
+          label="CPU Load (1m)"
+          isLoading={true}
+        />
+        <ResourceMetric
+          icon={<Layers />}
+          label="Memory Usage"
+          isLoading={true}
+        />
+      </div>
+    </div>
+  </div>
+);
+
 export default function SystemHealthWidget({ colorMode = "light", isDashboardLoading = false }) {
-  const [healthData, setHealthData] = useState(null);
-  const [isWidgetLoading, setIsWidgetLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data: healthData = null, isLoading: isWidgetLoading, error: queryError } = useQuery({
+    queryKey: ['systemHealth'],
+    queryFn: getSystemHealth,
+    refetchInterval: 30000,
+  });
 
-  const isLoading = isWidgetLoading || isDashboardLoading;
-
-  useEffect(() => {
-    const fetchHealth = async () => {
-      try {
-        setIsWidgetLoading(true);
-        const data = await getSystemHealth();
-        setHealthData(data);
-        setError(null);
-      } catch (err) {
-        setError("Failed to fetch system health.");
-        console.error("Health check error:", err);
-      } finally {
-        setIsWidgetLoading(false);
-      }
-    };
-
-    fetchHealth();
-    // Optional: Refresh every 30 seconds
-    const interval = setInterval(fetchHealth, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const error = queryError ? "Failed to fetch system health." : null;
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -80,38 +94,6 @@ export default function SystemHealthWidget({ colorMode = "light", isDashboardLoa
       default: return "text-muted-foreground bg-muted border-border";
     }
   };
-
-  const HealthSkeleton = () => (
-    <div className="grid md:grid-cols-[2fr_1fr] gap-8 h-full">
-      <div className="space-y-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Services</h4>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-card/50 shadow-sm">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-4 w-4 rounded-full" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-            <Skeleton className="h-5 w-5 rounded-full" />
-          </div>
-        ))}
-      </div>
-      <div className="flex flex-col h-full">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Resources</h4>
-        <div className="grid grid-cols-2 gap-4 flex-1">
-          <ResourceMetric
-            icon={<Cpu />}
-            label="CPU Load (1m)"
-            isLoading={true}
-          />
-          <ResourceMetric
-            icon={<Layers />}
-            label="Memory Usage"
-            isLoading={true}
-          />
-        </div>
-      </div>
-    </div>
-  );
 
   const showSkeleton = isDashboardLoading || (isWidgetLoading && !healthData);
 

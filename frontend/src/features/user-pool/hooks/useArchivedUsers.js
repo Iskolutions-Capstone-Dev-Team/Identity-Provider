@@ -1,11 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { userService } from "../../../services/userService";
 import { mapUserResponse } from "../utils/userPoolMappers";
 
 const ITEMS_PER_PAGE = 10;
 const FETCH_LIMIT = 100;
-
-
 
 export function useArchivedUsers() {
   const [users, setUsers] = useState([]);
@@ -17,48 +16,75 @@ export function useArchivedUsers() {
   const [fetchError, setFetchError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const fetchArchivedUsers = useCallback(async (currentSearch = "") => {
-    try {
-      setLoading(true);
-      setFetchError("");
-      
-      const res = await userService.getArchivedUsers({ page: 1, limit: FETCH_LIMIT, sortBy: "created_at", order: "desc", keyword: currentSearch });
-      const fetchedUsers = Array.isArray(res?.users) ? res.users : [];
-      setUsers(fetchedUsers.map(u => mapUserResponse(u, { isAdmin: false })));
-    } catch (error) {
-      console.error("Fetch archived users error:", error);
-      setFetchError("Failed to load archived users. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const searchKeyword = typeof search === "string" ? search.trim() : "";
 
-  useEffect(() => {
-    fetchArchivedUsers(searchKeyword);
-  }, [fetchArchivedUsers, searchKeyword]);
+  const queryClient = useQueryClient();
 
-  const unarchiveUser = async (userId, label) => {
-    try {
-      await userService.unarchiveUser(userId);
-      setSuccessMessage(`${label} has been restored successfully.`);
-      await fetchArchivedUsers();
-    } catch (error) {
-      console.error("Unarchive error:", error);
-      throw error;
+  const { data: queryUsers, isLoading: isQueryLoading, error: queryError } = useQuery({
+    queryKey: ['archivedUsers', searchKeyword],
+    queryFn: async () => {
+      const res = await userService.getArchivedUsers({ page: 1, limit: FETCH_LIMIT, sortBy: "created_at", order: "desc", keyword: searchKeyword });
+      const fetchedUsers = Array.isArray(res?.users) ? res.users : [];
+      return fetchedUsers.map(u => mapUserResponse(u, { isAdmin: false }));
     }
+  });
+
+  useEffect(() => {
+    if (queryUsers) {
+      setUsers(queryUsers);
+      setFetchError("");
+    }
+  }, [queryUsers]);
+
+  useEffect(() => {
+    if (queryError) {
+      console.error("Fetch archived users error:", queryError);
+      setFetchError("Failed to load archived users. Please try again.");
+    }
+  }, [queryError]);
+
+  useEffect(() => {
+    setLoading(isQueryLoading);
+  }, [isQueryLoading]);
+
+  const fetchArchivedUsers = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['archivedUsers'] });
   };
 
-  const hardDeleteUser = async (userId, label) => {
-    try {
-      await userService.hardDeleteUser(userId);
-      setSuccessMessage(`${label} has been permanently deleted.`);
-      await fetchArchivedUsers();
-    } catch (error) {
-      console.error("Hard delete error:", error);
-      throw error;
+  const unarchiveUserMutation = useMutation({
+    mutationFn: async ({ userId, label }) => {
+      await userService.unarchiveUser(userId);
+      return label;
+    },
+    onSuccess: (label) => {
+      setSuccessMessage(`${label} has been restored successfully.`);
+      queryClient.invalidateQueries({ queryKey: ['archivedUsers'] });
+    },
+    onError: (error) => {
+      console.error("Unarchive error:", error);
     }
+  });
+
+  const unarchiveUser = async (userId, label) => {
+    return unarchiveUserMutation.mutateAsync({ userId, label });
+  };
+
+  const hardDeleteUserMutation = useMutation({
+    mutationFn: async ({ userId, label }) => {
+      await userService.hardDeleteUser(userId);
+      return label;
+    },
+    onSuccess: (label) => {
+      setSuccessMessage(`${label} has been permanently deleted.`);
+      queryClient.invalidateQueries({ queryKey: ['archivedUsers'] });
+    },
+    onError: (error) => {
+      console.error("Hard delete error:", error);
+    }
+  });
+
+  const hardDeleteUser = async (userId, label) => {
+    return hardDeleteUserMutation.mutateAsync({ userId, label });
   };
 
   const totalResults = users.length;

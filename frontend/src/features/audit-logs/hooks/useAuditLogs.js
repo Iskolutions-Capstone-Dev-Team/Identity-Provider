@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { logService } from "../../../services/logService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
@@ -158,16 +159,13 @@ export function useAuditLogs({ globalViewType, setGlobalViewType }) {
     }
   };
 
-  const [logs, setLogs] = useState([]);
-  const [totalResults, setTotalResults] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
   const [selectedLog, setSelectedLog] = useState(null);
   const [isMetadataOpen, setIsMetadataOpen] = useState(false);
   const [isMetadataLoading, setIsMetadataLoading] = useState(false);
   const [metadataError, setMetadataError] = useState("");
-  const [logMetrics, setLogMetrics] = useState(null);
+  
+  const queryClient = useQueryClient();
 
   const selectedLogTypeLabel = getLogTypeLabel(logType);
   const isSecurityLogType = logType === SECURITY_LOG_TYPE;
@@ -177,9 +175,10 @@ export function useAuditLogs({ globalViewType, setGlobalViewType }) {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
   }, []);
 
-  useEffect(() => {
-    metricsService.getLogMetrics().then(setLogMetrics).catch(() => { });
-  }, []);
+  const { data: logMetrics = null } = useQuery({
+    queryKey: ['logMetrics'],
+    queryFn: () => metricsService.getLogMetrics()
+  });
 
   useEffect(() => {
     if (globalViewType) {
@@ -194,81 +193,49 @@ export function useAuditLogs({ globalViewType, setGlobalViewType }) {
     }
   }, [canViewSecurityLogs, isSecurityLogType]);
 
-  useEffect(() => {
-    let ignore = false;
-    const controller = new AbortController();
+  const fetchLogsFn = async ({ signal }) => {
+    if (isSecurityLogType && !canViewSecurityLogs) {
+      return { logs: [], totalResults: 0, totalPages: 1 };
+    }
 
-    const loadLogs = async () => {
-      if (isSecurityLogType && !canViewSecurityLogs) {
-        setLoading(false);
-        setLogs([]);
-        setTotalResults(0);
-        setTotalPages(1);
-        setError("");
-        return;
-      }
+    const payload = await getLogsByType(logType, {
+      page,
+      limit,
+      sortBy,
+      order: sort,
+      actor: search,
+      signal,
+    });
+    
+    const nextLogs = getAuditLogs(payload).map((log, index) =>
+      normalizeLog(log, index),
+    );
 
-      try {
-        setLoading(true);
-        setError("");
-
-        const payload = await getLogsByType(logType, {
-          page,
-          limit,
-          sortBy,
-          order: sort,
-          actor: search,
-          signal: controller.signal,
-        });
-        const nextLogs = getAuditLogs(payload).map((log, index) =>
-          normalizeLog(log, index),
-        );
-
-        if (ignore) {
-          return;
-        }
-
-        setLogs(nextLogs);
-        setTotalResults(getTotalResults(payload, nextLogs.length));
-        setTotalPages(getTotalPages(payload));
-      } catch (fetchError) {
-        if (ignore || fetchError?.name === "CanceledError") {
-          return;
-        }
-
-        setLogs([]);
-        setTotalResults(0);
-        setTotalPages(1);
-
-        if (fetchError?.response?.status === 404) {
-          setError(`${selectedLogTypeLabel} log endpoint is not available in the current backend.`);
-        } else {
-          setError(`Failed to load ${selectedLogTypeLabel.toLowerCase()} logs. Check the backend connection.`);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
+    return {
+      logs: nextLogs,
+      totalResults: getTotalResults(payload, nextLogs.length),
+      totalPages: getTotalPages(payload),
     };
+  };
 
-    loadLogs();
+  const { data: logsData, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['logs', logType, page, limit, sortBy, sort, search, selectedLogTypeLabel],
+    queryFn: fetchLogsFn,
+    placeholderData: keepPreviousData,
+  });
 
-    return () => {
-      ignore = true;
-      controller.abort();
-    };
-  }, [
-    canViewSecurityLogs,
-    isSecurityLogType,
-    logType,
-    page,
-    limit,
-    sortBy,
-    sort,
-    search,
-    selectedLogTypeLabel,
-  ]);
+  const logs = logsData?.logs || [];
+  const totalResults = logsData?.totalResults || 0;
+  const totalPages = logsData?.totalPages || 1;
+  let error = "";
+
+  if (queryError) {
+    if (queryError?.response?.status === 404) {
+      error = `${selectedLogTypeLabel} log endpoint is not available in the current backend.`;
+    } else {
+      error = `Failed to load ${selectedLogTypeLabel.toLowerCase()} logs. Check the backend connection.`;
+    }
+  }
 
   useEffect(() => {
     if (page > totalPages) {
@@ -293,7 +260,10 @@ export function useAuditLogs({ globalViewType, setGlobalViewType }) {
     try {
       setIsMetadataLoading(true);
 
-      const payload = await getLogByType(logType, log.id);
+      const payload = await queryClient.fetchQuery({
+        queryKey: ['logDetails', logType, log.id],
+        queryFn: () => getLogByType(logType, log.id)
+      });
       const detailedLog = normalizeLog(
         {
           id: log.id,
