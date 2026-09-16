@@ -159,6 +159,7 @@ export default function MfaSetupConfirmStep({ code, name, backupCodes, isSaving,
                 value={name} 
                 onChange={(event) => onNameChange(event.target.value)} 
                 placeholder="Enter the App Name (e.g., Google Auth)" 
+                maxLength={255}
                 className="flex h-9 w-full bg-transparent text-slate-800 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>

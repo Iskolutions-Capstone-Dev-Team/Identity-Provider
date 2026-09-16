@@ -154,6 +154,11 @@ export function useNewAuthenticatorModal({ open, email, onClose, onCreated }) {
       return;
     }
 
+    if (name.trim().length > 255) {
+      setError("Authenticator app name cannot exceed 255 characters.");
+      return;
+    }
+
     saveAuthenticatorMutation.mutate({
       email,
       secret: setup.secret,
