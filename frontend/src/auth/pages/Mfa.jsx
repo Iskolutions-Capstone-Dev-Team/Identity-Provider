@@ -49,6 +49,7 @@ export default function Mfa() {
   const [error, setError] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [hasSentOtp, setHasSentOtp] = useState(false);
 
   useEffect(() => {
     let timer;
