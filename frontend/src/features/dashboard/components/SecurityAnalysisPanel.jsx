@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "../../../components/reui/alert";
 import { Badge } from "../../../components/ui/badge";
@@ -8,6 +8,9 @@ import { Button } from "../../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
 import { Frame, FrameHeader, FramePanel, FrameTitle } from "../../../components/reui/frame";
 import { ArrowLeftIcon, ArrowRightIcon, MessageCircleQuestionMark, ShieldCheck, Fingerprint, Clock, CircleCheckIcon, ChevronRightIcon } from "lucide-react";
+import { Mascot } from "page-mascot";
+import { Carousel, CarouselContent, CarouselItem } from "../../../components/ui/carousel";
+import { cn } from "../../../lib/utils";
 
 function SecurityMetric({ icon, label, value, isLoading = false }) {
   return (
@@ -107,8 +110,48 @@ export default function SecurityAnalysisPanel({ analysis, analyzedAt, isLoading 
   // Use a softer color for low threat, destructive for high
   const threatLevelColor = threatLevel === "LOW" ? "text-emerald-500" : threatLevel === "HIGH" ? "text-destructive" : "text-amber-500";
 
+  const [api, setApi] = useState();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!api) return;
+
+    const onSelect = () => {
+      setCount(api.scrollSnapList().length);
+      setCurrent(api.selectedScrollSnap());
+    };
+
+    onSelect(); // initial call
+    api.on("reInit", onSelect);
+    api.on("select", onSelect);
+
+    return () => {
+      api.off("reInit", onSelect);
+      api.off("select", onSelect);
+    };
+  }, [api]);
+
+  const metrics = [
+    {
+      icon: <ShieldCheck aria-hidden="true" />,
+      label: "Threat Level",
+      value: <span className={threatLevelColor}>{threatLevel}</span>,
+    },
+    {
+      icon: <Fingerprint aria-hidden="true" />,
+      label: "Confidence",
+      value: `${confidencePercent}%`,
+    },
+    {
+      icon: <Clock aria-hidden="true" />,
+      label: "Analyzed At",
+      value: <span className="text-sm">{analyzedAt}</span>,
+    }
+  ];
+
   return (
-    <Card className="flex flex-col border-border bg-card shadow-sm h-full">
+    <Card className="flex flex-col border-border bg-card shadow-sm h-full overflow-hidden">
       <CardHeader className="pb-4 flex flex-row items-start justify-between">
         <div>
           <CardTitle className="text-xl font-bold uppercase tracking-wide">Security Analysis</CardTitle>
@@ -118,41 +161,62 @@ export default function SecurityAnalysisPanel({ analysis, analyzedAt, isLoading 
       </CardHeader>
 
       <CardContent className="flex flex-col gap-5 pt-2">
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
-          <SecurityMetric
-            icon={<ShieldCheck aria-hidden="true" />}
-            label="Threat Level"
-            value={<span className={threatLevelColor}>{threatLevel}</span>}
-            isLoading={isLoading}
-          />
-          <SecurityMetric
-            icon={<Fingerprint aria-hidden="true" />}
-            label="Confidence"
-            value={`${confidencePercent}%`}
-            isLoading={isLoading}
-          />
-          <SecurityMetric
-            icon={<Clock aria-hidden="true" />}
-            label="Analyzed At"
-            value={<span className="text-sm">{analyzedAt}</span>}
-            isLoading={isLoading}
-          />
+        {/* Desktop Grid */}
+        <div className="hidden sm:grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+          {metrics.map((metric, i) => (
+            <SecurityMetric key={i} {...metric} isLoading={isLoading} />
+          ))}
         </div>
 
-        <Alert variant="success">
-          <CircleCheckIcon />
-          <AlertTitle>AI Summary</AlertTitle>
-          <AlertDescription>
-            {isLoading ? (
-              <div className="space-y-2 mt-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </div>
-            ) : (
-              analysis?.advisory || "No security advisory is available."
-            )}
-          </AlertDescription>
-        </Alert>
+        {/* Mobile Carousel */}
+        <div className="block sm:hidden">
+          <Carousel setApi={setApi} className="w-full">
+            <CarouselContent>
+              {metrics.map((metric, i) => (
+                <CarouselItem key={i}>
+                  <SecurityMetric {...metric} isLoading={isLoading} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {/* Dots Navigation */}
+            <div className="flex justify-center gap-2 py-3">
+              {Array.from({ length: count }).map((_, index) => (
+                <button
+                  key={index}
+                  className={cn(
+                    "h-2 cursor-pointer rounded-full transition-all duration-500 ease-in-out",
+                    index === current
+                      ? "bg-primary w-4 opacity-100"
+                      : "bg-muted-foreground w-2 opacity-30 hover:opacity-50"
+                  )}
+                  onClick={() => api?.scrollTo(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+          </Carousel>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center">
+          <Mascot
+            directions="/mascots/cube-directions.webp"
+            reactions="/mascots/cube-reactions.webp"
+          />
+          <Alert variant="success" className="flex-1">
+            <CircleCheckIcon />
+            <AlertTitle>AI Summary</AlertTitle>
+            <AlertDescription>
+              {isLoading ? (
+                <div className="space-y-2 mt-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ) : (
+                analysis?.advisory || "No security advisory is available."
+              )}
+            </AlertDescription>
+          </Alert>
+        </div>
 
         <div className="pt-2">
           <Frame className="w-full" stacked>
