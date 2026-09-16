@@ -241,6 +241,7 @@ export default function UserPoolModal({
                           if (fieldErrors?.email) setFieldErrors(curr => ({ ...curr, email: "" }));
                         }} 
                         placeholder="Enter email" 
+                        maxLength={100}
                         className="h-10 rounded-lg" 
                         disabled={isSubmitting} 
                         aria-invalid={!!fieldErrors?.email} 
@@ -301,11 +302,18 @@ export default function UserPoolModal({
                         <Input 
                           id="middleName" 
                           value={formData.middleName} 
-                          onChange={(e) => setFormData(curr => ({ ...curr, middleName: e.target.value }))} 
+                          onChange={(e) => {
+                            setFormData(curr => ({ ...curr, middleName: e.target.value }));
+                            if (fieldErrors?.middleName) setFieldErrors(curr => ({ ...curr, middleName: "" }));
+                          }} 
                           placeholder="Enter middle name" 
                           maxLength={50}
                           className="h-10 rounded-lg"
+                          aria-invalid={!!fieldErrors?.middleName}
                         />
+                        {fieldErrors?.middleName && (
+                          <p className="!mt-0 text-xs text-destructive">{fieldErrors.middleName}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between min-h-[24px]">

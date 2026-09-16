@@ -42,7 +42,7 @@ export default function DeviceRenameModal({ device, isOpen, isRenaming, onClose,
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="e.g. My Personal Laptop"
-                                maxLength={50}
+                                maxLength={255}
                                 disabled={isRenaming}
                                 autoFocus
                                 className="flex h-10 w-full rounded-md border border-slate-300 dark:border-white/10 focus-visible:ring-slate-300 dark:focus-visible:ring-white/20 bg-white dark:bg-[#141414] px-3 py-2 text-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 text-slate-900 dark:text-slate-100 transition-colors duration-200"

@@ -390,7 +390,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                       <InputGroupAddon>
                         <MailIcon className="h-5 w-5" />
                       </InputGroupAddon>
-                      <InputGroupInput type="email" name="email" value={data.email} onChange={handleChange} onFocus={() => setActiveVoiceField("email")} required placeholder="Enter email" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                      <InputGroupInput type="email" name="email" value={data.email} onChange={handleChange} onFocus={() => setActiveVoiceField("email")} required maxLength={100} placeholder="Enter email" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
                     </InputGroup>
                     {fieldErrors.email && (
                       <p className="!mt-0 text-xs text-red-500">
@@ -409,7 +409,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                     </div>
                     <div className="validator w-full">
                       <InputGroup className={`${getInputClassName("givenName")} validator`}>
-                        <InputGroupInput type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required placeholder="Enter first name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                        <InputGroupInput type="text" name="givenName" value={data.givenName} onChange={handleChange} onFocus={() => setActiveVoiceField("givenName")} required maxLength={50} placeholder="Enter first name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
                       </InputGroup>
                       {fieldErrors.givenName && (
                         <p className="!mt-0 text-xs text-red-500">
@@ -425,10 +425,15 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                         Middle Name
                       </Label>
                     </div>
-                    <div className="w-full">
+                    <div className="validator w-full">
                       <InputGroup className={getInputClassName("middleName")}>
-                        <InputGroupInput type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                        <InputGroupInput type="text" name="middleName" value={data.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} maxLength={50} placeholder="Enter middle name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
                       </InputGroup>
+                      {fieldErrors.middleName && (
+                        <p className="!mt-0 text-xs text-red-500">
+                          {fieldErrors.middleName}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -440,7 +445,7 @@ export default function AddUserForm({ onClose, onSubmit, userType = "regular", c
                     </div>
                     <div className="validator w-full">
                       <InputGroup className={`${getInputClassName("surname")} validator`}>
-                        <InputGroupInput type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required placeholder="Enter last name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
+                        <InputGroupInput type="text" name="surname" value={data.surname} onChange={handleChange} onFocus={() => setActiveVoiceField("surname")} required maxLength={50} placeholder="Enter last name" className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent" />
                       </InputGroup>
                       {fieldErrors.surname && (
                         <p className="!mt-0 text-xs text-red-500">

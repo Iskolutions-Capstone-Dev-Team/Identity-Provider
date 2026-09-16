@@ -253,15 +253,26 @@ export function useUserPoolModal({
     const nextFieldErrors = {};
     if (!formData.email?.trim()) {
       nextFieldErrors.email = "Email is required.";
+    } else if (formData.email.trim().length > 100) {
+      nextFieldErrors.email = "Email cannot exceed 100 characters.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       nextFieldErrors.email = "Please enter a valid email address.";
     }
     
     if (!formData.givenName?.trim()) {
       nextFieldErrors.givenName = "First name is required.";
+    } else if (formData.givenName.length > 50) {
+      nextFieldErrors.givenName = "First name cannot exceed 50 characters.";
     }
+
+    if (formData.middleName && formData.middleName.length > 50) {
+      nextFieldErrors.middleName = "Middle name cannot exceed 50 characters.";
+    }
+
     if (!formData.surname?.trim()) {
       nextFieldErrors.surname = "Last name is required.";
+    } else if (formData.surname.length > 50) {
+      nextFieldErrors.surname = "Last name cannot exceed 50 characters.";
     }
 
     setFieldErrors(nextFieldErrors);

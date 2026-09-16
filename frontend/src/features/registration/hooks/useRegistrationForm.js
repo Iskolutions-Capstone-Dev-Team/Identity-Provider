@@ -86,6 +86,11 @@ export function useRegistrationForm({ mode = "create", config = null, appClientO
       return;
     }
 
+    if (nextAccountTypeName.length > 50) {
+      setAccountTypeNameError("Account type name cannot exceed 50 characters.");
+      return;
+    }
+
     try {
       clearErrors();
       if (onSave) {

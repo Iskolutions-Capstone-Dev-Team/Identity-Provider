@@ -71,7 +71,7 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                 <FieldLabel htmlFor="email">
                   Email Address <span className="text-red-500">*</span>
                 </FieldLabel>
-                <Input type="email" id="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" className="h-10 rounded-lg" disabled={isSaving} aria-invalid={!!fieldErrors.email} />
+                <Input type="email" id="email" name="email" value={profile.email} onChange={handleChange} placeholder="Enter email" maxLength={100} className="h-10 rounded-lg" disabled={isSaving} aria-invalid={!!fieldErrors.email} />
                 {fieldErrors.email ? (
                   <FieldError>{fieldErrors.email}</FieldError>
                 ) : (
@@ -103,6 +103,11 @@ export default function EditProfileModal({ open, onClose, profileData, updatePro
                     <Label>Middle Name</Label>
                   </div>
                   <Input type="text" name="middleName" value={profile.middleName} onChange={handleChange} onFocus={() => setActiveVoiceField("middleName")} placeholder="Enter middle name" maxLength={50} className="h-10 rounded-lg" disabled={isSaving} />
+                  {fieldErrors.middleName && (
+                    <p className={fieldErrorClassName}>
+                      {fieldErrors.middleName}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
