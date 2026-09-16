@@ -58,6 +58,7 @@ export default function RegistrationCreateForm({
                     value={accountTypeName}
                     onChange={(event) => handleAccountTypeNameChange(event.target.value)}
                     placeholder="Enter account type"
+                    maxLength={50}
                     className="h-10 rounded-lg"
                   />
                   {accountTypeNameError && (
