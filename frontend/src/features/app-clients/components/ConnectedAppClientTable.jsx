@@ -204,7 +204,7 @@ export default function ConnectedAppClientTable({
                             </Button>
                           )}
                           {showDeleteAction && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => onDelete?.(client)} title="Delete">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onDelete?.(client)} title="Delete">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           )}

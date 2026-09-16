@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import useSWR from "swr";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { mfaService } from "../../../services/mfaService";
 
@@ -34,21 +34,17 @@ export function useAuthenticatorsPanel({ email }) {
     }
   }, [cooldown]);
 
-  const fetcher = async (key) => {
-    const [, userEmail] = key;
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    return mfaService.getAuthenticators(userEmail);
-  };
+  const queryClient = useQueryClient();
 
-  const { data: authenticators = [], error: loadError, isLoading, mutate } = useSWR(
-    email ? ["authenticators", email] : null,
-    fetcher,
-    {
-        revalidateOnFocus: false,
-        shouldRetryOnError: false,
-        revalidateIfStale: false
-    }
-  );
+  const { data: authenticators = [], error: loadError, isLoading } = useQuery({
+    queryKey: email ? ["authenticators", email] : null,
+    queryFn: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return mfaService.getAuthenticators(email);
+    },
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
     if (loadError) {
@@ -66,31 +62,27 @@ export function useAuthenticatorsPanel({ email }) {
     }
   }, [loadError]);
 
-  const handleDeleteAuthenticator = async () => {
-    if (!authenticatorToDelete) return;
-    
-    setError("");
-    try {
-      await mfaService.deleteAuthenticator({
-        email,
-        id: authenticatorToDelete.id,
-      });
+  const deleteAuthenticatorMutation = useMutation({
+    mutationFn: (id) => mfaService.deleteAuthenticator({ email, id }),
+    onSuccess: () => {
       setAuthenticatorToDelete(null);
       toast.success("Authenticator removed successfully.");
-      await mutate();
-    } catch (deleteError) {
+      queryClient.invalidateQueries({ queryKey: ["authenticators", email] });
+    },
+    onError: (deleteError) => {
       if (deleteError?.response?.status === 429) {
         setCooldown(12);
         setError("Too many attempts. Please wait.");
       } else {
-        setError(
-          getRequestErrorMessage(
-            deleteError,
-            "Unable to remove this authenticator.",
-          ),
-        );
+        setError(getRequestErrorMessage(deleteError, "Unable to remove this authenticator."));
       }
     }
+  });
+
+  const handleDeleteAuthenticator = () => {
+    if (!authenticatorToDelete) return;
+    setError("");
+    deleteAuthenticatorMutation.mutate(authenticatorToDelete.id);
   };
 
   return {
@@ -103,7 +95,7 @@ export function useAuthenticatorsPanel({ email }) {
     isNewConnectionOpen,
     setIsNewConnectionOpen,
     cooldown,
-    loadAuthenticators: mutate,
+    loadAuthenticators: () => queryClient.invalidateQueries({ queryKey: ["authenticators", email] }),
     handleDeleteAuthenticator,
   };
 }

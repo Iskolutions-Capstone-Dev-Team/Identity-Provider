@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { isInvitationForbiddenError, registrationActivationService } from "../services/registrationActivationService";
 
 const initialPasswordValues = {
@@ -85,7 +86,6 @@ export function useRegisterPasswordSetupForm({ invitationCode = "", onInvalidInv
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [isComplete, setIsComplete] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePasswordChange = (field, value) => {
     setPasswordValues((currentValues) => ({
@@ -140,7 +140,34 @@ export function useRegisterPasswordSetupForm({ invitationCode = "", onInvalidInv
     return !validationMessage;
   };
 
-  const handleSubmit = async (event) => {
+  const activateAccountMutation = useMutation({
+    mutationFn: () => registrationActivationService.activateAccount({
+      invitationCode,
+      password: passwordValues.password,
+    }),
+    onSuccess: () => {
+      setIsComplete(true);
+    },
+    onError: async (submissionError) => {
+      if (isInvitationForbiddenError(submissionError)) {
+        onInvalidInvitation?.();
+        return;
+      }
+
+      try {
+        await registrationActivationService.checkInvitation(invitationCode);
+      } catch (validationError) {
+        if (isInvitationForbiddenError(validationError)) {
+          onInvalidInvitation?.();
+          return;
+        }
+      }
+
+      setError(getApiErrorMessage(submissionError));
+    }
+  });
+
+  const handleSubmit = (event) => {
     event.preventDefault();
     setError("");
 
@@ -153,40 +180,7 @@ export function useRegisterPasswordSetupForm({ invitationCode = "", onInvalidInv
       return;
     }
 
-    let shouldSkipSubmittingReset = false;
-
-    try {
-      setIsSubmitting(true);
-
-      await registrationActivationService.activateAccount({
-        invitationCode,
-        password: passwordValues.password,
-      });
-
-      setIsComplete(true);
-    } catch (submissionError) {
-      if (isInvitationForbiddenError(submissionError)) {
-        shouldSkipSubmittingReset = true;
-        onInvalidInvitation?.();
-        return;
-      }
-
-      try {
-        await registrationActivationService.checkInvitation(invitationCode);
-      } catch (validationError) {
-        if (isInvitationForbiddenError(validationError)) {
-          shouldSkipSubmittingReset = true;
-          onInvalidInvitation?.();
-          return;
-        }
-      }
-
-      setError(getApiErrorMessage(submissionError));
-    } finally {
-      if (!shouldSkipSubmittingReset) {
-        setIsSubmitting(false);
-      }
-    }
+    activateAccountMutation.mutate();
   };
 
   return {
@@ -199,7 +193,7 @@ export function useRegisterPasswordSetupForm({ invitationCode = "", onInvalidInv
     error,
     setError,
     isComplete,
-    isSubmitting,
+    isSubmitting: activateAccountMutation.isPending,
     handlePasswordChange,
     handlePasswordBlur,
     handleSubmit,

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "../../services/userService";
 import { authService } from "../services/authService";
 import { clearAuthState } from "../utils/authCookies";
@@ -25,35 +26,50 @@ function getOnePortalRedirectUri() {
 
 export default function AccessDenied() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const clientId = getLoginClientId(searchParams);
   const redirectUri = getLoginRedirectUri(searchParams);
   const reason = searchParams.get("reason");
   const [isClearingSession, setIsClearingSession] = useState(false);
 
-  const handleReturnToLogin = async () => {
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      let currentUserId = "";
+      try {
+        const currentUser = await queryClient.fetchQuery({
+          queryKey: ['currentUserAccessDenied'],
+          queryFn: () => userService.getMe()
+        });
+        currentUserId = currentUser?.id;
+      } catch (e) {
+        // ignore
+      }
+
+      if (currentUserId) {
+        await authService.logout({
+          clientId,
+          userId: currentUserId,
+        });
+      }
+    },
+    onSettled: (data, error) => {
+      if (error) {
+        console.error("Unable to clear session before login return:", error);
+      }
+      clearAuthState();
+      window.location.replace(buildLoginPath(clientId, { redirectUri, authError: "cleared" }));
+    }
+  });
+
+  const handleReturnToLogin = () => {
     if (isClearingSession) {
       return;
     }
 
     setIsClearingSession(true);
     clearAuthorizeAttempt();
-
-    try {
-      const currentUser = await userService.getMe();
-
-      if (currentUser?.id) {
-        await authService.logout({
-          clientId,
-          userId: currentUser.id,
-        });
-      }
-    } catch (error) {
-      console.error("Unable to clear session before login return:", error);
-    } finally {
-      clearAuthState();
-      window.location.replace(buildLoginPath(clientId, { redirectUri, authError: "cleared" }));
-    }
+    logoutMutation.mutate();
   };
 
   const handleGoToOnePortal = () => {
