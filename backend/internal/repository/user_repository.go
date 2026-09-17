@@ -42,7 +42,7 @@ type UserRepository interface {
 		adminID []byte, sortBy, order, keyword string) ([]models.User, error)
 	GetAdminUserList(ctx context.Context, limit, offset int,
 		adminID []byte, hasViewAll bool,
-		sortBy, order string) ([]models.User, error)
+		sortBy, order, keyword string) ([]models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetUserByEmailIncludeDeleted(ctx context.Context,
 		email string) (*models.User, error)
@@ -64,7 +64,7 @@ type UserRepository interface {
 	SoftDelete(ctx context.Context, id []byte) error
 	CountUsers(ctx context.Context, keyword string) (int, error)
 	CountAdminUsers(ctx context.Context, adminID []byte,
-		hasViewAll bool) (int, error)
+		hasViewAll bool, keyword string) (int, error)
 	CountBoundUsers(ctx context.Context, adminID []byte,
 		keyword string) (int, error)
 	RemoveClientAdminBind(ctx context.Context, userID []byte) error
@@ -177,27 +177,39 @@ func (r *userRepository) GetUserList(ctx context.Context,
 // When hasViewAll is false, client data is scoped to the admin's
 // admin_allowed_clients entries.
 func (r *userRepository) GetAdminUserList(ctx context.Context,
-	limit, offset int, adminID []byte, hasViewAll bool, sortBy, order string,
+	limit, offset int, adminID []byte, hasViewAll bool, sortBy, order, keyword string,
 ) ([]models.User, error) {
 	var ids [][]byte
 	sortCol, sortOrd := getSafeUserSort(sortBy, order)
 	var err error
 
+	var queryParams []interface{}
+	whereClause := ""
+	if keyword != "" {
+		whereClause = " AND (" +
+			"LOWER(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.middle_name, ''), ' ', COALESCE(u.last_name, ''))) LIKE ? OR " +
+			"LOWER(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))) LIKE ? OR " +
+			"LOWER(u.email) LIKE ?)"
+		kwPattern := "%" + strings.ToLower(keyword) + "%"
+		queryParams = append(queryParams, kwPattern, kwPattern, kwPattern)
+	}
+
 	if hasViewAll {
 		idQuery := fmt.Sprintf(`
-			SELECT id FROM users
-			WHERE deleted_at IS NULL AND role_id IS NOT NULL
-			ORDER BY %s %s
-			LIMIT ? OFFSET ?`, sortCol, sortOrd)
-		err = r.db.SelectContext(ctx, &ids, idQuery, limit, offset)
+			SELECT u.id FROM users u
+			WHERE u.deleted_at IS NULL AND u.role_id IS NOT NULL%s
+			ORDER BY u.%s %s
+			LIMIT ? OFFSET ?`, whereClause, sortCol, sortOrd)
+		finalParams := append(queryParams, limit, offset)
+		err = r.db.SelectContext(ctx, &ids, idQuery, finalParams...)
 	} else {
 		idQuery := fmt.Sprintf(`
-			SELECT id FROM (
+			SELECT list_table.id FROM (
 				SELECT u.id, u.first_name, u.middle_name, u.last_name,
 				       u.name_suffix, u.email, u.status, u.created_at,
 				       u.updated_at
 				FROM users u
-				WHERE u.deleted_at IS NULL AND u.role_id IS NOT NULL AND (
+				WHERE u.deleted_at IS NULL AND u.role_id IS NOT NULL%s AND (
 					u.id IN (
 						SELECT cau.user_id FROM client_allowed_users cau
 						JOIN admin_allowed_clients aac ON cau.client_id = aac.client_id
@@ -210,9 +222,9 @@ func (r *userRepository) GetAdminUserList(ctx context.Context,
 				)
 			) AS list_table
 			ORDER BY list_table.%s %s
-			LIMIT ? OFFSET ?`, sortCol, sortOrd)
-		err = r.db.SelectContext(ctx, &ids, idQuery, adminID, adminID,
-			adminID, limit, offset)
+			LIMIT ? OFFSET ?`, whereClause, sortCol, sortOrd)
+		finalParams := append(queryParams, adminID, adminID, adminID, limit, offset)
+		err = r.db.SelectContext(ctx, &ids, idQuery, finalParams...)
 	}
 
 	if err != nil {
@@ -760,20 +772,32 @@ func (r *userRepository) CountUsers(
 }
 
 func (r *userRepository) CountAdminUsers(ctx context.Context, adminID []byte,
-	hasViewAll bool,
+	hasViewAll bool, keyword string,
 ) (int, error) {
 	var count int
+	var queryParams []interface{}
+	whereClause := ""
+	if keyword != "" {
+		whereClause = " AND (" +
+			"LOWER(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.middle_name, ''), ' ', COALESCE(u.last_name, ''))) LIKE ? OR " +
+			"LOWER(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))) LIKE ? OR " +
+			"LOWER(u.email) LIKE ?)"
+		kwPattern := "%" + strings.ToLower(keyword) + "%"
+		queryParams = append(queryParams, kwPattern, kwPattern, kwPattern)
+	}
+
 	if hasViewAll {
-		query := `SELECT COUNT(*) FROM users 
-                  WHERE deleted_at IS NULL AND role_id IS NOT NULL`
-		err := r.db.GetContext(ctx, &count, query)
+		query := fmt.Sprintf(`
+			SELECT COUNT(u.id) FROM users u
+            WHERE u.deleted_at IS NULL AND u.role_id IS NOT NULL%s`, whereClause)
+		err := r.db.GetContext(ctx, &count, query, queryParams...)
 		return count, err
 	}
 
-	query := `
+	query := fmt.Sprintf(`
 		SELECT COUNT(id) FROM (
 			SELECT u.id FROM users u
-			WHERE u.deleted_at IS NULL AND u.role_id IS NOT NULL AND (
+			WHERE u.deleted_at IS NULL AND u.role_id IS NOT NULL%s AND (
 				u.id IN (
 					SELECT cau.user_id FROM client_allowed_users cau
 					JOIN admin_allowed_clients aac ON cau.client_id = aac.client_id
@@ -785,8 +809,9 @@ func (r *userRepository) CountAdminUsers(ctx context.Context, adminID []byte,
 				) OR u.id = ?
 			)
 		) AS count_table
-	`
-	err := r.db.GetContext(ctx, &count, query, adminID, adminID, adminID)
+	`, whereClause)
+	finalParams := append(queryParams, adminID, adminID, adminID)
+	err := r.db.GetContext(ctx, &count, query, finalParams...)
 	return count, err
 }
 
