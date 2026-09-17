@@ -23,15 +23,6 @@ export function useRegistrationForm({ mode = "create", config = null, appClientO
   const isCreateMode = mode === "create";
   const isViewMode = mode === "view";
 
-  const isLockedDefaultAccountType =
-    !isCreateMode &&
-    Boolean(
-      getAccountTypeOption(
-        config?.accountTypeValue ?? config?.accountType ?? config?.label,
-        ACCOUNT_TYPE_OPTIONS,
-      ),
-    );
-
   useEffect(() => {
     if (isCreateMode) {
       setAccountTypeName("");
@@ -77,9 +68,7 @@ export function useRegistrationForm({ mode = "create", config = null, appClientO
     }
 
     const normalizedAccountTypeName = accountTypeName.trim();
-    const nextAccountTypeName = isLockedDefaultAccountType
-      ? normalizedAccountTypeName || config?.label?.trim() || ""
-      : normalizedAccountTypeName;
+    const nextAccountTypeName = normalizedAccountTypeName;
 
     if (!nextAccountTypeName) {
       setAccountTypeNameError("Account type name is required.");
@@ -117,7 +106,6 @@ export function useRegistrationForm({ mode = "create", config = null, appClientO
     accountTypeNameError,
     isCreateMode,
     isViewMode,
-    isLockedDefaultAccountType,
     displayedClientNames,
     handleAccountTypeNameChange,
     handleSubmit,

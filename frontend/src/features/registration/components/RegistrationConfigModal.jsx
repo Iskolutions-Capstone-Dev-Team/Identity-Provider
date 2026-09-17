@@ -27,7 +27,6 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
     accountTypeNameError,
     isCreateMode,
     isViewMode,
-    isLockedDefaultAccountType,
     displayedClientNames,
     handleAccountTypeNameChange,
     handleSubmit
@@ -90,34 +89,24 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
               <Card className="bg-muted/30 border-border/40">
                 <CardContent className="px-5 py-0 space-y-5">
                   <div>
-                    <h4 className="font-semibold text-sm uppercase">Account Type {!isLockedDefaultAccountType && <span className="text-red-500">*</span>}</h4>
-                    <p className="text-sm text-muted-foreground">{isLockedDefaultAccountType ? "Default account type names cannot be changed." : "Update the account type name."}</p>
+                    <h4 className="font-semibold text-sm uppercase">Account Type <span className="text-red-500">*</span></h4>
+                    <p className="text-sm text-muted-foreground">Update the account type name.</p>
                   </div>
                   <Separator />
                   <Field className="w-full">
-                    {isLockedDefaultAccountType ? (
+                    <div>
                       <Input
                         id="account-type-name"
-                        value={accountTypeName || config?.label || ""}
-                        readOnly
-                        disabled
-                        className="h-10 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed border-input opacity-70 hover:opacity-70"
+                        value={accountTypeName}
+                        onChange={(e) => handleAccountTypeNameChange(e.target.value)}
+                        placeholder="Enter account type"
+                        maxLength={50}
+                        className={`h-10 rounded-lg ${accountTypeNameError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                       />
-                    ) : (
-                      <div>
-                        <Input
-                          id="account-type-name"
-                          value={accountTypeName}
-                          onChange={(e) => handleAccountTypeNameChange(e.target.value)}
-                          placeholder="Enter account type"
-                          maxLength={50}
-                          className={`h-10 rounded-lg ${accountTypeNameError ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                        />
-                        {accountTypeNameError && (
-                          <p className="!mt-0 text-xs text-destructive">{accountTypeNameError}</p>
-                        )}
-                      </div>
-                    )}
+                      {accountTypeNameError && (
+                        <p className="!mt-0 text-xs text-destructive">{accountTypeNameError}</p>
+                      )}
+                    </div>
                   </Field>
                   <FieldGroup className="pt-2">
                     <FieldLabel>
