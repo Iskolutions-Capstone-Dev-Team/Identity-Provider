@@ -318,6 +318,7 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", defaultLimit))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", defaultPage))
+	keyword := strings.TrimSpace(c.Query("keyword"))
 
 	if page < 1 {
 		page = 1
@@ -343,7 +344,7 @@ func (h *UserHandler) GetAdminUserList(c *gin.Context) {
 	permissions := c.GetStringSlice("permissions")
 	ctx := c.Request.Context()
 	resp, err := h.Service.GetAdminUserList(
-		ctx, limit, page, adminID, permissions, sortBy, order,
+		ctx, limit, page, adminID, permissions, sortBy, order, keyword,
 	)
 	if err != nil {
 		log.Printf("[GetAdminUserList] Service Execution: %v", err)
