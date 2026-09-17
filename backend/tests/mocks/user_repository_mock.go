@@ -57,18 +57,18 @@ func (mr *MockUserRepositoryMockRecorder) ClearUserRelations(ctx, id any) *gomoc
 }
 
 // CountAdminUsers mocks base method.
-func (m *MockUserRepository) CountAdminUsers(ctx context.Context, adminID []byte, hasViewAll bool) (int, error) {
+func (m *MockUserRepository) CountAdminUsers(ctx context.Context, adminID []byte, hasViewAll bool, keyword string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountAdminUsers", ctx, adminID, hasViewAll)
+	ret := m.ctrl.Call(m, "CountAdminUsers", ctx, adminID, hasViewAll, keyword)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountAdminUsers indicates an expected call of CountAdminUsers.
-func (mr *MockUserRepositoryMockRecorder) CountAdminUsers(ctx, adminID, hasViewAll any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) CountAdminUsers(ctx, adminID, hasViewAll, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAdminUsers", reflect.TypeOf((*MockUserRepository)(nil).CountAdminUsers), ctx, adminID, hasViewAll)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAdminUsers", reflect.TypeOf((*MockUserRepository)(nil).CountAdminUsers), ctx, adminID, hasViewAll, keyword)
 }
 
 // CountBoundUsers mocks base method.
@@ -131,18 +131,18 @@ func (mr *MockUserRepositoryMockRecorder) CreateUser(ctx, u any) *gomock.Call {
 }
 
 // GetAdminUserList mocks base method.
-func (m *MockUserRepository) GetAdminUserList(ctx context.Context, limit, offset int, adminID []byte, hasViewAll bool, sortBy, order string) ([]models.User, error) {
+func (m *MockUserRepository) GetAdminUserList(ctx context.Context, limit, offset int, adminID []byte, hasViewAll bool, sortBy, order, keyword string) ([]models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdminUserList", ctx, limit, offset, adminID, hasViewAll, sortBy, order)
+	ret := m.ctrl.Call(m, "GetAdminUserList", ctx, limit, offset, adminID, hasViewAll, sortBy, order, keyword)
 	ret0, _ := ret[0].([]models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAdminUserList indicates an expected call of GetAdminUserList.
-func (mr *MockUserRepositoryMockRecorder) GetAdminUserList(ctx, limit, offset, adminID, hasViewAll, sortBy, order any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) GetAdminUserList(ctx, limit, offset, adminID, hasViewAll, sortBy, order, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminUserList", reflect.TypeOf((*MockUserRepository)(nil).GetAdminUserList), ctx, limit, offset, adminID, hasViewAll, sortBy, order)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminUserList", reflect.TypeOf((*MockUserRepository)(nil).GetAdminUserList), ctx, limit, offset, adminID, hasViewAll, sortBy, order, keyword)
 }
 
 // GetBoundUserList mocks base method.
