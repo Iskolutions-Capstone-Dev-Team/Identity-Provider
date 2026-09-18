@@ -40,7 +40,7 @@ type UserService interface {
 		sortBy, order string, keyword string) (*dto.UserSimplifiedResponseList, error)
 	GetAdminUserList(ctx context.Context, limit, page int,
 		adminID uuid.UUID, permissions []string,
-		sortBy, order string) (*dto.UserResponseList, error)
+		sortBy, order, keyword string) (*dto.UserResponseList, error)
 	UpdateUserPassword(ctx context.Context, id uuid.UUID,
 		newPassword string) error
 	UpdateUserPasswordByEmail(ctx context.Context, email string,
@@ -1181,7 +1181,7 @@ func (s *userService) GetAdminUserList(
 	limit, page int,
 	adminID uuid.UUID,
 	permissions []string,
-	sortBy, order string,
+	sortBy, order, keyword string,
 ) (*dto.UserResponseList, error) {
 	cacheKey := s.getUserListCacheKey(
 		ctx,
@@ -1191,7 +1191,7 @@ func (s *userService) GetAdminUserList(
 		page,
 		sortBy,
 		order,
-		"",
+		keyword,
 	)
 	if val, hit, err := s.Cache.Get(ctx, cacheKey); hit && err == nil {
 		var cached dto.UserResponseList
@@ -1204,7 +1204,7 @@ func (s *userService) GetAdminUserList(
 	hasViewAll := slices.Contains(permissions, "View all users")
 
 	users, err := s.Repo.GetAdminUserList(
-		ctx, limit, offset, adminID[:], hasViewAll, sortBy, order,
+		ctx, limit, offset, adminID[:], hasViewAll, sortBy, order, keyword,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -1212,7 +1212,7 @@ func (s *userService) GetAdminUserList(
 		)
 	}
 
-	total, err := s.Repo.CountAdminUsers(ctx, adminID[:], hasViewAll)
+	total, err := s.Repo.CountAdminUsers(ctx, adminID[:], hasViewAll, keyword)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"database query (CountAdmins): %w", err,

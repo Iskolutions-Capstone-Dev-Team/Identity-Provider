@@ -94,11 +94,10 @@ func TestCountAdminUsers(t *testing.T) {
 
 	// Test 1: hasViewAll = true
 	mock.ExpectQuery(regexp.QuoteMeta(
-		"SELECT COUNT(*) FROM users " +
-			"WHERE deleted_at IS NULL AND role_id IS NOT NULL",
+		"SELECT COUNT(u.id) FROM users u WHERE u.deleted_at IS NULL AND u.role_id IS NOT NULL",
 	)).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(5))
 
-	count, err := repo.CountAdminUsers(context.Background(), adminID[:], true)
+	count, err := repo.CountAdminUsers(context.Background(), adminID[:], true, "")
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -112,7 +111,7 @@ func TestCountAdminUsers(t *testing.T) {
 	)).WithArgs(adminID[:], adminID[:], adminID[:]).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
-	count, err = repo.CountAdminUsers(context.Background(), adminID[:], false)
+	count, err = repo.CountAdminUsers(context.Background(), adminID[:], false, "")
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
