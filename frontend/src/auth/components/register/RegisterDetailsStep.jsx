@@ -2,12 +2,10 @@ import { Link } from "react-router-dom";
 import { User, Mail, ShieldCheck } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Separator } from "../../../components/ui/separator";
-import { roleOptions } from "./registerRoleOptions";
 import { FieldError, FormLabel, RegisterSubmitButton, RegisterTextField, RoleSelectField, RegisterSuffixSelectField } from "./registerUi";
-
 import { SUFFIX_OPTIONS as suffixOptions } from "../../../utils/suffixOptions";
 
-export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, isSubmitting, loginPath, roleDropdownRef, onChange, onRoleMenuToggle, onRoleSelect, onSubmit }) {
+export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, isSubmitting, loginPath, roleDropdownRef, roleOptions, isLoadingRoles, onChange, onRoleMenuToggle, onRoleSelect, onSubmit }) {
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <RegisterTextField
@@ -20,6 +18,7 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
         type="text"
         value={details.firstName}
         onChange={(event) => onChange("firstName", event.target.value)}
+        maxLength={50}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -31,6 +30,7 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
           type="text"
           value={details.middleName}
           onChange={(event) => onChange("middleName", event.target.value)}
+          maxLength={50}
         />
 
         <div>
@@ -60,6 +60,7 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
         type="text"
         value={details.lastName}
         onChange={(event) => onChange("lastName", event.target.value)}
+        maxLength={50}
       />
 
       <RegisterTextField
@@ -72,15 +73,16 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
         type="email"
         value={details.email}
         onChange={(event) => onChange("email", event.target.value)}
+        maxLength={100}
       />
 
       <div>
         <FormLabel required>Select Your Role</FormLabel>
         <RoleSelectField
           error={errors.accountType}
-          isDisabled={isSubmitting}
+          isDisabled={isSubmitting || isLoadingRoles}
           isOpen={isRoleMenuOpen}
-          options={roleOptions}
+          options={roleOptions || []}
           placeholderIcon={<ShieldCheck className="size-5" strokeWidth={1.5} />}
           ref={roleDropdownRef}
           value={details.accountType}

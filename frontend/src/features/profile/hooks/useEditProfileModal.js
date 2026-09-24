@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
 
 const initialFieldErrors = {
@@ -30,14 +31,28 @@ function validateProfile(profile, allowEmailEdit) {
 
   if (!profile.firstName.trim()) {
     nextFieldErrors.firstName = "First name is required.";
+  } else if (profile.firstName.trim().length > 50) {
+    nextFieldErrors.firstName = "First name cannot exceed 50 characters.";
+  }
+
+  if (profile.middleName && profile.middleName.trim().length > 50) {
+    nextFieldErrors.middleName = "Middle name cannot exceed 50 characters.";
   }
 
   if (!profile.lastName.trim()) {
     nextFieldErrors.lastName = "Last name is required.";
+  } else if (profile.lastName.trim().length > 50) {
+    nextFieldErrors.lastName = "Last name cannot exceed 50 characters.";
   }
 
-  if (allowEmailEdit && !profile.email.trim()) {
-    nextFieldErrors.email = "Email is required.";
+  if (allowEmailEdit) {
+    if (!profile.email.trim()) {
+      nextFieldErrors.email = "Email is required.";
+    } else if (profile.email.trim().length > 100) {
+      nextFieldErrors.email = "Email cannot exceed 100 characters.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim())) {
+      nextFieldErrors.email = "Please enter a valid email address.";
+    }
   }
 
   return nextFieldErrors;
@@ -117,6 +132,7 @@ export function useEditProfileModal({ open, onClose, profileData, updateProfile,
     const nextFieldErrors = validateProfile(nextProfile, allowEmailEdit);
     const firstError =
       nextFieldErrors.firstName ||
+      nextFieldErrors.middleName ||
       nextFieldErrors.lastName ||
       nextFieldErrors.email;
 
@@ -147,7 +163,7 @@ export function useEditProfileModal({ open, onClose, profileData, updateProfile,
       onClose();
     } catch (error) {
       console.error("Update profile error:", error);
-      setErrorMessage(getProfileUpdateErrorMessage(error));
+      toast.error(getProfileUpdateErrorMessage(error));
     } finally {
       setIsSaving(false);
     }

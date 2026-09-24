@@ -102,12 +102,22 @@ export function useAppClientCreateForm({ onSubmit }) {
     const nextFieldErrors = { ...initialFieldErrors, imageFile: fieldErrors.imageFile, name: fieldErrors.name };
 
     if (!trimmedBaseURL) nextFieldErrors.baseURL = "Base URL is required.";
+    else if (trimmedBaseURL.length > 255) nextFieldErrors.baseURL = "Base URL cannot exceed 255 characters.";
     else if (!isValidHttpUrl(trimmedBaseURL)) nextFieldErrors.baseURL = "Base URL must be a valid URL.";
+    
     if (!trimmedRedirectURL) nextFieldErrors.redirectURL = "Redirect URL is required.";
+    else if (trimmedRedirectURL.length > 255) nextFieldErrors.redirectURL = "Redirect URL cannot exceed 255 characters.";
     else if (!isValidHttpUrl(trimmedRedirectURL)) nextFieldErrors.redirectURL = "Redirect URL must be a valid URL.";
+    
     if (!trimmedLogoutURL) nextFieldErrors.logoutURL = "Logout URL is required.";
+    else if (trimmedLogoutURL.length > 255) nextFieldErrors.logoutURL = "Logout URL cannot exceed 255 characters.";
     else if (!isValidHttpUrl(trimmedLogoutURL)) nextFieldErrors.logoutURL = "Logout URL must be a valid URL.";
-    if (trimmedOnePortalRedirectLink && !isValidHttpUrl(trimmedOnePortalRedirectLink)) nextFieldErrors.onePortalRedirectLink = "One Portal Redirect Link must be a valid URL.";
+    
+    if (trimmedOnePortalRedirectLink && trimmedOnePortalRedirectLink.length > 255) {
+      nextFieldErrors.onePortalRedirectLink = "One Portal Redirect Link cannot exceed 255 characters.";
+    } else if (trimmedOnePortalRedirectLink && !isValidHttpUrl(trimmedOnePortalRedirectLink)) {
+      nextFieldErrors.onePortalRedirectLink = "One Portal Redirect Link must be a valid URL.";
+    }
 
     setFieldErrors(nextFieldErrors);
     const firstError = nextFieldErrors.baseURL || nextFieldErrors.redirectURL || nextFieldErrors.logoutURL || nextFieldErrors.onePortalRedirectLink;

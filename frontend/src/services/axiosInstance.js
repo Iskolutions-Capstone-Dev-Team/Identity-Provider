@@ -6,7 +6,7 @@ import { buildLoginPath } from "../auth/utils/loginRoute";
 import { storeTokenResponse } from "../auth/utils/authCookies";
 import { authService } from "../auth/services/authService";
 
-const REQUEST_TIMEOUT_MS = 10000;
+const REQUEST_TIMEOUT_MS = 30000;
 const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 
 const axiosInstance = axios.create({

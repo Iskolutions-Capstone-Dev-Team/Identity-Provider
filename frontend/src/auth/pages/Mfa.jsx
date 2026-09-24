@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { consumeMfaReturnPath, MFA_AUTHENTICATOR_PATH, MFA_SETUP_PATH, rememberMfaVerified } from "../utils/mfaFlow";
 import { clearAuthState, promotePendingMfaTokenResponse } from "../utils/authCookies";
 import { buildLoginPath } from "../utils/loginRoute";
@@ -40,17 +41,31 @@ const authClientId = import.meta.env.VITE_CLIENT_ID ?? "";
 
 export default function Mfa() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [mode, setMode] = useState("email");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasSentOtp, setHasSentOtp] = useState(false);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isCheckingAuthenticators, setIsCheckingAuthenticators] =
-    useState(false);
-  const [isCheckingPasskey, setIsCheckingPasskey] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [hasSentOtp, setHasSentOtp] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    if (cooldown > 0) {
+      timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (cooldown > 0 && error && error.startsWith("Too many attempts. Please wait")) {
+      setError(`Too many attempts. Please wait ${cooldown}s.`);
+    } else if (cooldown === 0 && error && error.startsWith("Too many attempts. Please wait")) {
+      setError("");
+    }
+  }, [cooldown, error]);
 
   const finishMfa = () => {
     promotePendingMfaTokenResponse();
@@ -58,10 +73,18 @@ export default function Mfa() {
     navigate(consumeMfaReturnPath(), { replace: true });
   };
 
-  const handleCancel = async () => {
-    try {
-      const session = await authService.checkSession();
-      const userId = session?.user_id || "";
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      let userId = "";
+      try {
+        const session = await queryClient.fetchQuery({
+          queryKey: ['loginSessionCheck', authClientId],
+          queryFn: () => authService.checkSession()
+        });
+        userId = session?.user_id || "";
+      } catch (e) {
+        // ignore
+      }
 
       if (userId) {
         await authService.logout({
@@ -69,52 +92,58 @@ export default function Mfa() {
           userId,
         });
       }
-    } catch (logoutError) {
-      console.error("Unable to clear MFA session:", logoutError);
-    } finally {
+    },
+    onSettled: () => {
       clearAuthState();
       navigate(buildLoginPath(authClientId), { replace: true });
     }
-  };
+  });
+
+  const handleCancel = () => cancelMutation.mutate();
+
+  const { data: currentUser, isLoading: isUserLoading, isError: isUserError, error: userErrorObj } = useQuery({
+    queryKey: ['currentUserMfaPage'],
+    queryFn: () => userService.getMe(),
+    retry: false
+  });
 
   useEffect(() => {
-    let isMounted = true;
+    if (currentUser?.email) {
+      setEmail(currentUser.email);
+    }
+  }, [currentUser]);
 
-    async function loadCurrentUser() {
-      try {
-        const currentUser = await userService.getMe();
+  useEffect(() => {
+    if (isUserError && userErrorObj) {
+      setError(
+        getRequestErrorMessage(
+          userErrorObj,
+          "Unable to prepare MFA. Please sign in again.",
+        ),
+      );
+    }
+  }, [isUserError, userErrorObj]);
 
-        if (!isMounted) {
-          return;
-        }
+  const isLoading = isUserLoading || (!currentUser && !isUserError);
 
-        setEmail(currentUser?.email || "");
-      } catch (loadError) {
-        if (!isMounted) {
-          return;
-        }
-
+  const sendOtpMutation = useMutation({
+    mutationFn: () => passwordResetService.sendOtp({ email }),
+    onSuccess: () => {
+      setHasSentOtp(true);
+    },
+    onError: (otpError) => {
+      if (otpError?.response?.status === 429 || getRequestErrorMessage(otpError, "").toLowerCase().includes("limit exceeded")) {
+        setCooldown(60);
+        setError("Too many attempts. Please wait 60s.");
+      } else {
         setError(
-          getRequestErrorMessage(
-            loadError,
-            "Unable to prepare MFA. Please sign in again.",
-          ),
+          getRequestErrorMessage(otpError, "Unable to send an OTP right now."),
         );
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
       }
     }
+  });
 
-    loadCurrentUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const handleSendOtp = async () => {
+  const handleSendOtp = () => {
     setError("");
 
     if (!email) {
@@ -122,17 +151,7 @@ export default function Mfa() {
       return;
     }
 
-    try {
-      setIsSendingOtp(true);
-      await passwordResetService.sendOtp({ email });
-      setHasSentOtp(true);
-    } catch (otpError) {
-      setError(
-        getRequestErrorMessage(otpError, "Unable to send an OTP right now."),
-      );
-    } finally {
-      setIsSendingOtp(false);
-    }
+    sendOtpMutation.mutate();
   };
 
   const handleSelectEmail = () => {
@@ -141,30 +160,34 @@ export default function Mfa() {
     setError("");
   };
 
-  const handleSelectAuthenticator = async () => {
-    setError("");
-    setCode("");
-
-    try {
-      setIsCheckingAuthenticators(true);
-      const hasAuthenticator = await mfaService.hasTotpAuthenticator(email);
-
+  const checkAuthenticatorsMutation = useMutation({
+    mutationFn: () => mfaService.hasTotpAuthenticator(email),
+    onSuccess: (hasAuthenticator) => {
       if (!hasAuthenticator) {
         navigate(MFA_SETUP_PATH);
         return;
       }
-
       navigate(MFA_AUTHENTICATOR_PATH);
-    } catch (authenticatorError) {
-      setError(
-        getRequestErrorMessage(
-          authenticatorError,
-          "Unable to check your authenticator apps.",
-        ),
-      );
-    } finally {
-      setIsCheckingAuthenticators(false);
+    },
+    onError: (authenticatorError) => {
+      if (authenticatorError?.response?.status === 429 || getRequestErrorMessage(authenticatorError, "").toLowerCase().includes("limit exceeded")) {
+        setCooldown(60);
+        setError("Too many attempts. Please wait 60s.");
+      } else {
+        setError(
+          getRequestErrorMessage(
+            authenticatorError,
+            "Unable to check your authenticator apps.",
+          ),
+        );
+      }
     }
+  });
+
+  const handleSelectAuthenticator = () => {
+    setError("");
+    setCode("");
+    checkAuthenticatorsMutation.mutate();
   };
 
   const registerPasskey = async () => {
@@ -205,29 +228,53 @@ export default function Mfa() {
     finishMfa();
   };
 
-  const handleSelectPasskey = async () => {
-    setError("");
-    setCode("");
-    setMode("passkey");
-
-    try {
-      setIsCheckingPasskey(true);
+  const checkPasskeyMutation = useMutation({
+    mutationFn: async () => {
       const hasPasskey = await mfaService.hasPasskey(email);
-
       if (!hasPasskey) {
         await registerPasskey();
         return;
       }
-
       await verifyPasskey();
-    } catch (passkeyError) {
-      setError(getPasskeyErrorMessage(passkeyError));
-    } finally {
-      setIsCheckingPasskey(false);
+    },
+    onError: (passkeyError) => {
+      if (passkeyError?.response?.status === 429 || getRequestErrorMessage(passkeyError, "").toLowerCase().includes("limit exceeded")) {
+        setCooldown(60);
+        setError("Too many attempts. Please wait 60s.");
+      } else {
+        setError(getPasskeyErrorMessage(passkeyError));
+      }
     }
+  });
+
+  const handleSelectPasskey = () => {
+    setError("");
+    setCode("");
+    setMode("passkey");
+    checkPasskeyMutation.mutate();
   };
 
-  const handleVerify = async (event) => {
+  const verifyOtpMutation = useMutation({
+    mutationFn: () => passwordResetService.verifyOtp({
+      email,
+      otp: code,
+    }),
+    onSuccess: () => {
+      finishMfa();
+    },
+    onError: (verifyError) => {
+      if (verifyError?.response?.status === 429 || getRequestErrorMessage(verifyError, "").toLowerCase().includes("limit exceeded")) {
+        setCooldown(60);
+        setError("Too many attempts. Please wait 60s.");
+      } else {
+        setError(
+          getRequestErrorMessage(verifyError, "Unable to verify this code."),
+        );
+      }
+    }
+  });
+
+  const handleVerify = (event) => {
     event.preventDefault();
     setError("");
 
@@ -236,21 +283,7 @@ export default function Mfa() {
       return;
     }
 
-    try {
-      setIsVerifying(true);
-      await passwordResetService.verifyOtp({
-        email,
-        otp: code,
-      });
-
-      finishMfa();
-    } catch (verifyError) {
-      setError(
-        getRequestErrorMessage(verifyError, "Unable to verify this code."),
-      );
-    } finally {
-      setIsVerifying(false);
-    }
+    verifyOtpMutation.mutate();
   };
 
   return (
@@ -267,10 +300,11 @@ export default function Mfa() {
           code={code}
           mode={mode}
           hasSentOtp={hasSentOtp}
-          isSendingOtp={isSendingOtp}
-          isVerifying={isVerifying}
-          isCheckingAuthenticators={isCheckingAuthenticators}
-          isCheckingPasskey={isCheckingPasskey}
+          isSendingOtp={sendOtpMutation.isPending}
+          isVerifying={verifyOtpMutation.isPending}
+          isCheckingAuthenticators={checkAuthenticatorsMutation.isPending}
+          isCheckingPasskey={checkPasskeyMutation.isPending}
+          cooldown={cooldown}
           onSelectEmail={handleSelectEmail}
           onSelectAuthenticator={handleSelectAuthenticator}
           onSelectPasskey={handleSelectPasskey}

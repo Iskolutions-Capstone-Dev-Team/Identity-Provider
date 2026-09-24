@@ -322,17 +322,17 @@ func TestGetUserList_NullAccountType(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().
-		GetUserList(gomock.Any(), 10, 0, gomock.Any(), gomock.Any()).
+		GetUserList(gomock.Any(), 10, 0, gomock.Any(), gomock.Any(), "").
 		Return(users, nil).
 		Times(1)
 
 	mockRepo.EXPECT().
-		CountUsers(gomock.Any()).
+		CountUsers(gomock.Any(), "").
 		Return(1, nil).
 		Times(1)
 
 	resp, err := userService.GetUserList(
-		context.Background(), 10, 1, "", "",
+		context.Background(), 10, 1, "", "", "",
 	)
 
 	if err != nil {
@@ -384,17 +384,17 @@ func TestGetDeletedUserList(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().
-		GetDeletedUserList(gomock.Any(), 10, 0).
+		GetDeletedUserList(gomock.Any(), 10, 0, "").
 		Return(deletedUsers, nil).
 		Times(1)
 
 	mockRepo.EXPECT().
-		CountDeletedUsers(gomock.Any()).
+		CountDeletedUsers(gomock.Any(), "").
 		Return(1, nil).
 		Times(1)
 
 	resp, err := userService.GetDeletedUserList(
-		context.Background(), 10, 1,
+		context.Background(), 10, 1, "",
 	)
 
 	if err != nil {
@@ -468,5 +468,62 @@ func TestHardDeleteUser(t *testing.T) {
 	err := userService.HardDeleteUser(context.Background(), userID)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
+	}
+}
+
+func TestUpdateUserEmail(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockUserRepository(ctrl)
+	mockClientRepo := mocks.NewMockClientRepository(ctrl)
+	mockRegRepo := mocks.NewMockRegistrationRepository(ctrl)
+	mockCAURepo := mocks.NewMockClientAllowedUserRepository(ctrl)
+
+	userService := service.NewUserService(
+		mockRepo,
+		mockClientRepo,
+		mockRegRepo,
+		mockCAURepo,
+		cache.NewNoopCache(),
+	)
+
+	userID := uuid.New()
+	newEmail := "new@example.com"
+
+	// 1. Success case: email not in use
+	mockRepo.EXPECT().
+		GetUserByEmail(gomock.Any(), newEmail).
+		Return(nil, nil).
+		Times(1)
+
+	mockRepo.EXPECT().
+		UpdateUserEmail(gomock.Any(), userID[:], newEmail).
+		Return(nil).
+		Times(1)
+
+	err := userService.UpdateUserEmail(
+		context.Background(), userID, newEmail,
+	)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	// 2. Conflict case: email already in use
+	conflictID := uuid.New()
+	existingUser := &models.User{
+		ID:    conflictID[:],
+		Email: newEmail,
+	}
+	mockRepo.EXPECT().
+		GetUserByEmail(gomock.Any(), newEmail).
+		Return(existingUser, nil).
+		Times(1)
+
+	err = userService.UpdateUserEmail(
+		context.Background(), userID, newEmail,
+	)
+	if err == nil {
+		t.Error("expected error due to conflict, got nil")
 	}
 }

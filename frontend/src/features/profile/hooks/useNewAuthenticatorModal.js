@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 import { createPasskeyCredential } from "../../../auth/utils/webAuthn";
@@ -25,6 +26,23 @@ export function useNewAuthenticatorModal({ open, email, onClose, onCreated }) {
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    let intervalId;
+    if (cooldown > 0) {
+      intervalId = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (cooldown === 0) {
+      setError((prev) => prev === "Too many attempts. Please wait." ? "" : prev);
+    }
+  }, [cooldown]);
 
   useEffect(() => {
     if (open) {
@@ -42,44 +60,41 @@ export function useNewAuthenticatorModal({ open, email, onClose, onCreated }) {
     }
   }, [open]);
 
+  const { data: setupData, error: loadError, isLoading: isSetupLoading } = useQuery({
+    queryKey: ['authenticatorSetup', email],
+    queryFn: async () => {
+      const nextSetup = await mfaService.getSetup(email);
+      const nextQrCodeUrl = await QRCode.toDataURL(nextSetup.otpAuthUri, {
+        errorCorrectionLevel: "M",
+        margin: 2,
+        width: 320,
+      });
+      return { setup: nextSetup, qrCodeUrl: nextQrCodeUrl };
+    },
+    enabled: open && connectionType === "authenticator",
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
   useEffect(() => {
-    if (!open || connectionType !== "authenticator") {
-      return undefined;
+    if (setupData) {
+      setSetup(setupData.setup);
+      setQrCodeUrl(setupData.qrCodeUrl);
     }
+  }, [setupData]);
 
-    let isCancelled = false;
-
-    const loadSetup = async () => {
-      try {
-        const nextSetup = await mfaService.getSetup(email);
-        const nextQrCodeUrl = await QRCode.toDataURL(nextSetup.otpAuthUri, {
-          errorCorrectionLevel: "M",
-          margin: 2,
-          width: 320,
-        });
-
-        if (!isCancelled) {
-          setSetup(nextSetup);
-          setQrCodeUrl(nextQrCodeUrl);
-        }
-      } catch (setupError) {
-        if (!isCancelled) {
-          setError(
-            getRequestErrorMessage(
-              setupError,
-              "Unable to load authenticator setup.",
-            ),
-          );
-        }
+  useEffect(() => {
+    if (loadError) {
+      if (loadError?.response?.status === 429) {
+        setCooldown(12);
+        setError(`Too many attempts. Please wait.`);
+        setStep("choice");
+        setConnectionType("");
+      } else {
+        setError(getRequestErrorMessage(loadError, "Unable to load authenticator setup."));
       }
-    };
-
-    loadSetup();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [connectionType, email, open]);
+    }
+  }, [loadError]);
 
   const handleSelectAuthenticator = () => {
     setConnectionType("authenticator");
@@ -87,29 +102,45 @@ export function useNewAuthenticatorModal({ open, email, onClose, onCreated }) {
     setError("");
   };
 
-  const handleSelectPasskey = async () => {
-    setConnectionType("passkey");
-    setError("");
-
-    try {
-      setIsRegisteringPasskey(true);
+  const passkeyMutation = useMutation({
+    mutationFn: async () => {
       const options = await mfaService.beginPasskeyRegistration(email);
       const credential = await createPasskeyCredential(options);
-
       await mfaService.finishPasskeyRegistration(email, credential);
+    },
+    onSuccess: () => {
       onCreated?.({ type: "passkey" });
       toast.success("Passkey added successfully");
       onClose?.();
-    } catch (passkeyError) {
-      setError(
-        getRequestErrorMessage(passkeyError, "Unable to connect this passkey."),
-      );
-    } finally {
-      setIsRegisteringPasskey(false);
+    },
+    onError: (passkeyError) => {
+      if (passkeyError?.response?.status === 429) {
+        setCooldown(12);
+        setError("Too many attempts. Please wait.");
+      } else {
+        setError(getRequestErrorMessage(passkeyError, "Unable to connect this passkey."));
+      }
     }
+  });
+
+  const handleSelectPasskey = () => {
+    setConnectionType("passkey");
+    setError("");
+    passkeyMutation.mutate();
   };
 
-  const handleSaveAuthenticator = async (event) => {
+  const saveAuthenticatorMutation = useMutation({
+    mutationFn: (data) => mfaService.createAuthenticator(data),
+    onSuccess: (result) => {
+      setBackupCodes(result.backupCodes);
+      setHasCopiedBackupCodes(false);
+    },
+    onError: (saveError) => {
+      setError(getRequestErrorMessage(saveError, "Unable to save this authenticator."));
+    }
+  });
+
+  const handleSaveAuthenticator = (event) => {
     event?.preventDefault?.();
     setError("");
 
@@ -123,24 +154,17 @@ export function useNewAuthenticatorModal({ open, email, onClose, onCreated }) {
       return;
     }
 
-    try {
-      setIsSaving(true);
-      const result = await mfaService.createAuthenticator({
-        email,
-        secret: setup.secret,
-        code,
-        name,
-      });
-
-      setBackupCodes(result.backupCodes);
-      setHasCopiedBackupCodes(false);
-    } catch (saveError) {
-      setError(
-        getRequestErrorMessage(saveError, "Unable to save this authenticator."),
-      );
-    } finally {
-      setIsSaving(false);
+    if (name.trim().length > 255) {
+      setError("Authenticator app name cannot exceed 255 characters.");
+      return;
     }
+
+    saveAuthenticatorMutation.mutate({
+      email,
+      secret: setup.secret,
+      code,
+      name,
+    });
   };
 
   const handleFinish = () => {
@@ -164,8 +188,9 @@ export function useNewAuthenticatorModal({ open, email, onClose, onCreated }) {
     setHasCopiedBackupCodes,
     error,
     setError,
-    isSaving,
-    isRegisteringPasskey,
+    isSaving: saveAuthenticatorMutation.isPending,
+    isRegisteringPasskey: passkeyMutation.isPending,
+    cooldown,
     handleSelectAuthenticator,
     handleSelectPasskey,
     handleSaveAuthenticator,

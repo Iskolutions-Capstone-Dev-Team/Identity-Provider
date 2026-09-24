@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { mfaService } from "../../../services/mfaService";
 
@@ -12,60 +13,76 @@ function getRequestErrorMessage(error, fallbackMessage) {
 }
 
 export function useAuthenticatorsPanel({ email }) {
-  const [authenticators, setAuthenticators] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [authenticatorToDelete, setAuthenticatorToDelete] = useState(null);
   const [isNewConnectionOpen, setIsNewConnectionOpen] = useState(false);
-
-  const loadAuthenticators = useCallback(async () => {
-    if (!email) {
-      setAuthenticators([]);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError("");
-      const list = await mfaService.getAuthenticators(email);
-      setAuthenticators(list);
-    } catch (loadError) {
-      setError(
-        getRequestErrorMessage(
-          loadError,
-          "Unable to load authenticator apps.",
-        ),
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [email]);
+  const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
-    loadAuthenticators();
-  }, [loadAuthenticators]);
+    let intervalId;
+    if (cooldown > 0) {
+      intervalId = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+  }, [cooldown]);
 
-  const handleDeleteAuthenticator = async () => {
-    if (!authenticatorToDelete) return;
-    
-    setError("");
-    try {
-      await mfaService.deleteAuthenticator({
-        email,
-        id: authenticatorToDelete.id,
-      });
+  useEffect(() => {
+    if (cooldown === 0) {
+      setError((prev) => prev === "Too many attempts. Please wait." ? "" : prev);
+    }
+  }, [cooldown]);
+
+  const queryClient = useQueryClient();
+
+  const { data: authenticators = [], error: loadError, isLoading } = useQuery({
+    queryKey: email ? ["authenticators", email] : null,
+    queryFn: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return mfaService.getAuthenticators(email);
+    },
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (loadError) {
+      if (loadError?.response?.status === 429) {
+        setCooldown(12);
+        setError("Too many attempts. Please wait.");
+      } else {
+        setError(
+          getRequestErrorMessage(
+            loadError,
+            "Unable to load authenticator apps.",
+          ),
+        );
+      }
+    }
+  }, [loadError]);
+
+  const deleteAuthenticatorMutation = useMutation({
+    mutationFn: (id) => mfaService.deleteAuthenticator({ email, id }),
+    onSuccess: () => {
       setAuthenticatorToDelete(null);
       toast.success("Authenticator removed successfully.");
-      await loadAuthenticators();
-    } catch (deleteError) {
-      setError(
-        getRequestErrorMessage(
-          deleteError,
-          "Unable to remove this authenticator.",
-        ),
-      );
+      queryClient.invalidateQueries({ queryKey: ["authenticators", email] });
+    },
+    onError: (deleteError) => {
+      if (deleteError?.response?.status === 429) {
+        setCooldown(12);
+        setError("Too many attempts. Please wait.");
+      } else {
+        setError(getRequestErrorMessage(deleteError, "Unable to remove this authenticator."));
+      }
     }
+  });
+
+  const handleDeleteAuthenticator = () => {
+    if (!authenticatorToDelete) return;
+    setError("");
+    deleteAuthenticatorMutation.mutate(authenticatorToDelete.id);
   };
 
   return {
@@ -77,7 +94,8 @@ export function useAuthenticatorsPanel({ email }) {
     setAuthenticatorToDelete,
     isNewConnectionOpen,
     setIsNewConnectionOpen,
-    loadAuthenticators,
+    cooldown,
+    loadAuthenticators: () => queryClient.invalidateQueries({ queryKey: ["authenticators", email] }),
     handleDeleteAuthenticator,
   };
 }

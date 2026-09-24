@@ -11,9 +11,9 @@ import { FileCheck, FileSearchCorner } from "lucide-react";
 import { useAuditLogs } from "../hooks/useAuditLogs";
 
 export default function AuditLogs() {
-  const { colorMode = "light", globalViewType } = useOutletContext() || {};
+  const { colorMode = "light", globalViewType, setGlobalViewType } = useOutletContext() || {};
 
-  const auditLogsState = useAuditLogs({ globalViewType });
+  const auditLogsState = useAuditLogs({ globalViewType, setGlobalViewType });
   const {
     logType,
     canViewSecurityLogs,

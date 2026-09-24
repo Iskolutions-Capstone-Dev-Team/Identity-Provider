@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AuthLayout from "../layouts/AuthLayout";
 import AuthLoadingScreen from "../components/AuthLoadingScreen";
 import LoginForm from "../components/LoginForm";
@@ -21,6 +22,7 @@ function needsMfaVerification() {
 
 export default function Login() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const clientId = getLoginClientId(searchParams);
   const redirectUri = getLoginRedirectUri(searchParams);
@@ -56,17 +58,33 @@ export default function Login() {
     };
   }, []);
 
+  const { data: session, isError: isSessionError } = useQuery({
+    queryKey: ['loginSessionCheck', clientId],
+    queryFn: () => authService.checkSession(),
+    enabled: Boolean(
+      isResolvingAccess &&
+      isClientLoginFlow &&
+      !hasStoredAccessToken() &&
+      !isMfaRequested &&
+      !hasPendingMfa &&
+      !loginErrorCode &&
+      clientId
+    ),
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
   useEffect(() => {
-    let isActive = true;
+    if (!isResolvingAccess) return;
 
     if (!clientId || loginErrorCode) {
       setIsResolvingAccess(false);
-      return undefined;
+      return;
     }
 
     if (isMfaRequested || hasPendingMfa) {
       setIsResolvingAccess(false);
-      return undefined;
+      return;
     }
 
     if (hasStoredAccessToken()) {
@@ -81,50 +99,37 @@ export default function Login() {
           setIsResolvingAccess(false);
         }
 
-        return undefined;
+        return;
       }
 
       window.location.replace(DEFAULT_AUTHENTICATED_PATH);
-      return undefined;
+      return;
     }
 
     if (!isClientLoginFlow) {
       setIsResolvingAccess(false);
-      return undefined;
+      return;
     }
 
-    authService
-      .checkSession()
-      .then((session) => {
-        if (!isActive) {
-          return;
-        }
+    if (session) {
+      if (session.authenticated) {
+        const didRedirect = redirectToAuthorize(
+          clientId,
+          DEFAULT_AUTHENTICATED_PATH,
+          redirectUri,
+        );
 
-        if (session?.authenticated) {
-          const didRedirect = redirectToAuthorize(
-            clientId,
-            DEFAULT_AUTHENTICATED_PATH,
-            redirectUri,
-          );
-
-          if (!didRedirect) {
-            setIsResolvingAccess(false);
-          }
-
-          return;
-        }
-
-        setIsResolvingAccess(false);
-      })
-      .catch(() => {
-        if (isActive) {
+        if (!didRedirect) {
           setIsResolvingAccess(false);
         }
-      });
+      } else {
+        setIsResolvingAccess(false);
+      }
+    }
 
-    return () => {
-      isActive = false;
-    };
+    if (isSessionError) {
+      setIsResolvingAccess(false);
+    }
   }, [
     clientId,
     hasPendingMfa,
@@ -132,18 +137,23 @@ export default function Login() {
     isMfaRequested,
     loginErrorCode,
     redirectUri,
+    session,
+    isSessionError,
+    isResolvingAccess
   ]);
 
-  const handleBackToLogin = async () => {
-    if (isReturningToLogin) {
-      return;
-    }
-
-    setIsReturningToLogin(true);
-
-    try {
-      const session = await authService.checkSession();
-      const userId = session?.user_id || "";
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      let userId = "";
+      try {
+        const currentSession = await queryClient.fetchQuery({
+          queryKey: ['loginSessionCheck', clientId],
+          queryFn: () => authService.checkSession()
+        });
+        userId = currentSession?.user_id || "";
+      } catch (e) {
+        // ignore
+      }
 
       if (userId) {
         await authService.logout({
@@ -151,15 +161,23 @@ export default function Login() {
           userId,
         });
       }
-    } catch (logoutError) {
-      console.error("Unable to clear MFA session:", logoutError);
-    } finally {
+    },
+    onSettled: () => {
       clearAuthState();
       setMfaContext(null);
       setHasPendingMfa(false);
       setIsReturningToLogin(false);
       navigate(buildLoginPath(clientId, { redirectUri }), { replace: true });
     }
+  });
+
+  const handleBackToLogin = () => {
+    if (isReturningToLogin) {
+      return;
+    }
+
+    setIsReturningToLogin(true);
+    logoutMutation.mutate();
   };
 
   const handleLoginSuccess = (context) => {

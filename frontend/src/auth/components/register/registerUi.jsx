@@ -30,7 +30,7 @@ export function RegisterSubmitButton({ children, compactTracking = false, disabl
   );
 }
 
-export function RegisterTextField({ autoComplete, error = "", icon, label, placeholder, required = false, type, value, onChange }) {
+export function RegisterTextField({ autoComplete, error = "", icon, label, placeholder, required = false, type, value, onChange, maxLength }) {
   return (
     <div>
       <FormLabel required={required}>{label}</FormLabel>
@@ -38,7 +38,7 @@ export function RegisterTextField({ autoComplete, error = "", icon, label, place
         <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
           {icon}
         </span>
-        <Input type={type} value={value} onChange={onChange} autoComplete={autoComplete} placeholder={placeholder} className={getInputClassName(error)}/>
+        <Input type={type} value={value} onChange={onChange} autoComplete={autoComplete} placeholder={placeholder} maxLength={maxLength} className={getInputClassName(error)}/>
       </div>
       <FieldError message={error} />
     </div>
@@ -74,13 +74,10 @@ export const RoleSelectField = forwardRef(function RoleSelectField(
   },
   ref,
 ) {
-  const selectedOption = options.find((option) => option.id === value);
-  const SelectedIcon = selectedOption?.Icon;
-
   return (
     <div className="relative">
       <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7b0d15]/60 z-10">
-        {SelectedIcon ? <SelectedIcon className="size-5" strokeWidth={1.5} /> : placeholderIcon}
+        {placeholderIcon}
       </span>
       <Select value={value} onValueChange={(val) => onSelect(val === "none" ? "" : val)} disabled={isDisabled}>
         <SelectTrigger ref={ref} className={getInputClassName(error)}>
@@ -88,19 +85,13 @@ export const RoleSelectField = forwardRef(function RoleSelectField(
             <SelectValue placeholder="Select your role" />
           </span>
         </SelectTrigger>
-        <SelectContent alignItemWithTrigger={false} sideOffset={4} className="z-[90] bg-white shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl">
+        <SelectContent alignItemWithTrigger={false} sideOffset={4} className="z-[90] bg-white shadow-[0_28px_55px_-24px_rgba(15,23,42,0.88)] backdrop-blur-xl max-h-[300px]">
           <SelectItem value="none" className="py-2.5">
-            <span className="flex items-center gap-3">
-              {placeholderIcon}
-              Select your role
-            </span>
+            Select your role
           </SelectItem>
           {options.map((option) => (
             <SelectItem key={option.id} value={option.id} className="py-2.5">
-              <span className="flex items-center gap-3">
-                <option.Icon className="size-5" strokeWidth={1.5} />
-                {option.label}
-              </span>
+              {option.label}
             </SelectItem>
           ))}
         </SelectContent>

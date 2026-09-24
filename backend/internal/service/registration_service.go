@@ -17,7 +17,7 @@ import (
 type RegistrationService interface {
 	GetRegistrationConfig(ctx context.Context, permissions []string,
 		userID uuid.UUID, limit, page int,
-		sortBy, order string) (*dto.RegistrationConfigResponse, error)
+		sortBy, order, keyword string) (*dto.RegistrationConfigResponse, error)
 	GetClientsByAccountTypeID(ctx context.Context,
 		id int) (*dto.AccountTypeConfigResponse, error)
 	CreateAccountType(ctx context.Context,
@@ -30,6 +30,8 @@ type RegistrationService interface {
 		req dto.ActivateAccountRequest) error
 	CheckInvitation(ctx context.Context,
 		code string) (bool, error)
+	GetSelectableAccountTypes(ctx context.Context) (
+		[]dto.SelectableAccountTypeResponse, error)
 }
 
 type regService struct {
@@ -55,33 +57,36 @@ func NewRegistrationService(
 
 func (s *regService) GetRegistrationConfig(ctx context.Context,
 	permissions []string, userID uuid.UUID, limit,
-	page int, sortBy, order string) (*dto.RegistrationConfigResponse, error) {
+	page int, sortBy, order, keyword string,
+) (*dto.RegistrationConfigResponse, error) {
 	var total int
 	var rows []repository.AccountTypeClientRow
 	var err error
 
 	if slices.Contains(permissions, "View all appclients") {
-		total, err = s.repo.CountAccountTypes(ctx)
+		total, err = s.repo.CountAccountTypes(ctx, keyword)
 		if err != nil {
 			return nil, err
 		}
 
 		offset := (page - 1) * limit
 		rows, err = s.repo.GetRegistrationConfig(
-			ctx, limit, offset, sortBy, order,
+			ctx, limit, offset, sortBy, order, keyword,
 		)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		total, err = s.repo.CountScopedAccountTypes(ctx, userID[:])
+		total, err = s.repo.CountScopedAccountTypes(
+			ctx, userID[:], keyword,
+		)
 		if err != nil {
 			return nil, err
 		}
 
 		offset := (page - 1) * limit
 		rows, err = s.repo.GetScopedRegistrationConfig(
-			ctx, userID[:], limit, offset, sortBy, order,
+			ctx, userID[:], limit, offset, sortBy, order, keyword,
 		)
 		if err != nil {
 			return nil, err
@@ -90,6 +95,7 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 
 	configMap := make(map[string][]dto.PreapprovedClientResponse)
 	idMap := make(map[string]int)
+	selectableMap := make(map[string]bool)
 	var accountTypeOrder []string
 
 	for _, row := range rows {
@@ -98,6 +104,7 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 			configMap[row.AccountTypeName] =
 				[]dto.PreapprovedClientResponse{}
 			idMap[row.AccountTypeName] = row.AccountTypeID
+			selectableMap[row.AccountTypeName] = row.IsSelectable
 		}
 		if len(row.ClientID) > 0 {
 			id, _ := uuid.FromBytes(row.ClientID)
@@ -113,9 +120,10 @@ func (s *regService) GetRegistrationConfig(ctx context.Context,
 	var resp dto.RegistrationConfigResponse
 	for _, name := range accountTypeOrder {
 		cfg := dto.AccountTypeConfigResponse{
-			ID:          idMap[name],
-			AccountType: name,
-			Clients:     configMap[name],
+			ID:           idMap[name],
+			AccountType:  name,
+			IsSelectable: selectableMap[name],
+			Clients:      configMap[name],
 		}
 		resp.AccountTypes = append(resp.AccountTypes, cfg)
 	}
@@ -154,15 +162,16 @@ func (s *regService) GetClientsByAccountTypeID(ctx context.Context,
 	}
 
 	return &dto.AccountTypeConfigResponse{
-		ID:          rows[0].AccountTypeID,
-		AccountType: rows[0].AccountTypeName,
-		Clients:     clients,
+		ID:           rows[0].AccountTypeID,
+		AccountType:  rows[0].AccountTypeName,
+		IsSelectable: rows[0].IsSelectable,
+		Clients:      clients,
 	}, nil
 }
 
 func (s *regService) CreateAccountType(ctx context.Context,
 	req dto.UpsertAccountTypeRequest) error {
-	id, err := s.repo.CreateAccountType(ctx, req.Name)
+	id, err := s.repo.CreateAccountType(ctx, req.Name, req.IsSelectable)
 	if err != nil {
 		return err
 	}
@@ -181,7 +190,7 @@ func (s *regService) CreateAccountType(ctx context.Context,
 
 func (s *regService) UpdateAccountType(ctx context.Context,
 	req dto.UpsertAccountTypeRequest) error {
-	err := s.repo.UpdateAccountType(ctx, req.ID, req.Name)
+	err := s.repo.UpdateAccountType(ctx, req.ID, req.Name, req.IsSelectable)
 	if err != nil {
 		return err
 	}
@@ -301,4 +310,23 @@ func (s *regService) CheckInvitation(ctx context.Context,
 	}
 
 	return true, nil
+}
+
+func (s *regService) GetSelectableAccountTypes(
+	ctx context.Context,
+) ([]dto.SelectableAccountTypeResponse, error) {
+	types, err := s.repo.GetSelectableAccountTypes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]dto.SelectableAccountTypeResponse, 0, len(types))
+	for _, t := range types {
+		res = append(res, dto.SelectableAccountTypeResponse{
+			ID:   t.ID,
+			Name: t.Name,
+		})
+	}
+
+	return res, nil
 }

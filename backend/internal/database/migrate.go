@@ -71,6 +71,7 @@ func RunAllMigrations(db *sqlx.DB) {
 		tables.ClientAllowedUsersMigration,
 		tables.PreapprovedClientsMigration,
 		tables.UserAuthenticatorsMigration,
+		tables.UserDevicesMigration,
 	}
 
 	procedurePlan := []migrations.MigrationPart{

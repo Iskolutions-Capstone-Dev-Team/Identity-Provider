@@ -17,30 +17,24 @@ function getClientNames(clientIds = [], appClientOptions = []) {
 export function useRegistrationForm({ mode = "create", config = null, appClientOptions = [], onSave, onClose }) {
   const [accountTypeName, setAccountTypeName] = useState("");
   const [selectedClientIds, setSelectedClientIds] = useState([]);
+  const [isSelectable, setIsSelectable] = useState(true);
   const [accountTypeNameError, setAccountTypeNameError] = useState("");
 
   const isCreateMode = mode === "create";
   const isViewMode = mode === "view";
 
-  const isLockedDefaultAccountType =
-    !isCreateMode &&
-    Boolean(
-      getAccountTypeOption(
-        config?.accountTypeValue ?? config?.accountType ?? config?.label,
-        ACCOUNT_TYPE_OPTIONS,
-      ),
-    );
-
   useEffect(() => {
     if (isCreateMode) {
       setAccountTypeName("");
       setSelectedClientIds([]);
+      setIsSelectable(true);
       setAccountTypeNameError("");
       return;
     }
 
     setAccountTypeName(config?.label ?? "");
     setSelectedClientIds(Array.isArray(config?.clientIds) ? config.clientIds : []);
+    setIsSelectable(config?.isSelectable ?? true);
     setAccountTypeNameError("");
   }, [config, isCreateMode]);
 
@@ -74,12 +68,15 @@ export function useRegistrationForm({ mode = "create", config = null, appClientO
     }
 
     const normalizedAccountTypeName = accountTypeName.trim();
-    const nextAccountTypeName = isLockedDefaultAccountType
-      ? normalizedAccountTypeName || config?.label?.trim() || ""
-      : normalizedAccountTypeName;
+    const nextAccountTypeName = normalizedAccountTypeName;
 
     if (!nextAccountTypeName) {
       setAccountTypeNameError("Account type name is required.");
+      return;
+    }
+
+    if (nextAccountTypeName.length > 50) {
+      setAccountTypeNameError("Account type name cannot exceed 50 characters.");
       return;
     }
 
@@ -91,6 +88,7 @@ export function useRegistrationForm({ mode = "create", config = null, appClientO
           name: nextAccountTypeName,
           label: nextAccountTypeName,
           clientIds: selectedClientIds,
+          isSelectable,
         });
       }
       if (onClose && !isCreateMode) onClose();
@@ -103,10 +101,11 @@ export function useRegistrationForm({ mode = "create", config = null, appClientO
     accountTypeName,
     selectedClientIds,
     setSelectedClientIds,
+    isSelectable,
+    setIsSelectable,
     accountTypeNameError,
     isCreateMode,
     isViewMode,
-    isLockedDefaultAccountType,
     displayedClientNames,
     handleAccountTypeNameChange,
     handleSubmit,

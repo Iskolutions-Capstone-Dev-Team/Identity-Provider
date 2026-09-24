@@ -8,9 +8,10 @@ type PreapprovedClientResponse struct {
 }
 
 type AccountTypeConfigResponse struct {
-	ID          int                         `json:"id"`
-	AccountType string                      `json:"account_type"`
-	Clients     []PreapprovedClientResponse `json:"clients"`
+	ID           int                         `json:"id"`
+	AccountType  string                      `json:"account_type"`
+	IsSelectable bool                        `json:"is_selectable"`
+	Clients      []PreapprovedClientResponse `json:"clients"`
 }
 
 type RegistrationConfigResponse struct {
@@ -21,12 +22,18 @@ type RegistrationConfigResponse struct {
 }
 
 type UpsertAccountTypeRequest struct {
-	ID        int      `json:"id" binding:"required"`
-	Name      string   `json:"name" binding:"required"`
-	ClientIDs []string `json:"client_ids" binding:"required"`
+	ID           int      `json:"id" binding:"required"`
+	Name         string   `json:"name" binding:"required"`
+	IsSelectable bool     `json:"is_selectable"`
+	ClientIDs    []string `json:"client_ids" binding:"required"`
 }
 
 type ActivateAccountRequest struct {
 	InvitationCode string `json:"invitation_code" binding:"required"`
 	Password       string `json:"password" binding:"required"`
+}
+
+type SelectableAccountTypeResponse struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }

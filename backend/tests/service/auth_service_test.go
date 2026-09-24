@@ -35,6 +35,7 @@ func TestAuthLogout(t *testing.T) {
 		mockSessionRepo,
 		mockClientRepo,
 		nil, nil, // Keys not needed for logout
+		nil,
 	)
 
 	sessionID := "valid-session-id"
@@ -73,6 +74,44 @@ func TestAuthLogout(t *testing.T) {
 }
 
 /**
+ * TestAuthRevokeAllUserTokens verifies revoking all sessions for a user.
+ */
+func TestAuthRevokeAllUserTokens(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAuthRepo := mocks.NewMockAuthCodeRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	mockClientRepo := mocks.NewMockClientRepository(ctrl)
+
+	authService := service.NewAuthService(
+		mockAuthRepo,
+		mockSessionRepo,
+		mockClientRepo,
+		nil, nil,
+		nil,
+	)
+
+	userID := uuid.New()
+
+	mockSessionRepo.EXPECT().
+		DeleteByUserID(gomock.Any(), userID[:]).
+		Return(nil).
+		Times(1)
+
+	mockAuthRepo.EXPECT().
+		RevokeTokens(gomock.Any(), userID[:]).
+		Return(nil).
+		Times(1)
+
+	err := authService.RevokeAllUserTokens(context.Background(), userID)
+
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}
+
+/**
  * TestCheckSessionOrPendingMFA_Fallback verifies fallback token validation.
  */
 func TestCheckSessionOrPendingMFA_Fallback(t *testing.T) {
@@ -95,6 +134,7 @@ func TestCheckSessionOrPendingMFA_Fallback(t *testing.T) {
 		mockClientRepo,
 		privateKey,
 		publicKey,
+		nil,
 	)
 
 	// Set CLIENT_BASE_URL and KEY_ID env for token generation
@@ -191,6 +231,7 @@ func TestLoginAndAuthorize_SuspendedUser(t *testing.T) {
 		mockSessionRepo,
 		mockClientRepo,
 		nil, nil,
+		nil,
 	)
 
 	req := dto.LoginRequest{
@@ -202,11 +243,12 @@ func TestLoginAndAuthorize_SuspendedUser(t *testing.T) {
 		Return(nil, "", "suspended", nil).
 		Times(1)
 
-	_, _, err := authService.LoginAndAuthorize(
+	_, _, _, err := authService.LoginAndAuthorize(
 		context.Background(),
 		req,
 		"127.0.0.1",
 		"Mozilla",
+		"",
 	)
 
 	if err == nil || !strings.Contains(err.Error(), "suspended") {

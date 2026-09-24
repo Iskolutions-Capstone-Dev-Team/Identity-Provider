@@ -1,4 +1,5 @@
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { useEffect } from "react";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useUsers } from "../hooks/useUsers";
 import { useUserPoolPage } from "../hooks/useUserPoolPage";
@@ -29,7 +30,7 @@ export default function UserPool() {
   const colorMode = outletContext.colorMode || "light";
   const currentUser = outletContext.currentUser || {};
   const isLoadingCurrentUser = Boolean(outletContext.isLoadingCurrentUser);
-  const globalViewType = outletContext.globalViewType;
+  const { globalViewType, setGlobalViewType } = outletContext;
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
 
   const isCurrentUserSuperAdmin = hasSuperAdminRole(currentUser?.roles);
@@ -37,18 +38,11 @@ export default function UserPool() {
     enabled: !isLoadingCurrentUser,
   });
 
-  const shouldShowAllRegularUsers = isCurrentUserSuperAdmin;
-  const visibleClientIds = shouldShowAllRegularUsers
-    ? []
-    : appClientOptions.map((client) => client?.id).filter(Boolean);
-
   const {
     search,
     setSearch,
     userType,
     setUserType,
-    status,
-    setStatus,
     sortBy,
     setSortBy,
     sort,
@@ -65,11 +59,11 @@ export default function UserPool() {
     getUserDetails,
     updateUser,
     deleteUser,
-  } = useUsers({ visibleClientIds });
+  } = useUsers();
 
   const canAddUsers = hasPermission(PERMISSIONS.ADD_USER);
   const canDeleteUsers = hasPermission(PERMISSIONS.DELETE_USER);
-  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ALL_USERS);
+  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ADMINS);
   const canEditUserStatus = hasAnyPermission(USER_STATUS_EDIT_PERMISSIONS);
   const canEditUserRole = hasAnyPermission(USER_ROLE_EDIT_PERMISSIONS);
   const canEditUserAccess = hasAnyPermission(USER_ACCESS_EDIT_PERMISSIONS);
@@ -83,6 +77,7 @@ export default function UserPool() {
 
   const pageState = useUserPoolPage({
     globalViewType,
+    setGlobalViewType,
     userType,
     setUserType,
     getUserDetails,
@@ -94,6 +89,12 @@ export default function UserPool() {
     canDeleteCurrentUserType,
     canReinviteCurrentUserType,
   });
+
+  useEffect(() => {
+    if (userType === ADMIN_USER_TYPE && !canViewAdminUsers) {
+      setUserType(REGULAR_USER_TYPE);
+    }
+  }, [userType, canViewAdminUsers, setUserType]);
 
   const {
     userMetrics,
@@ -185,8 +186,6 @@ export default function UserPool() {
           setSearch={setSearch}
           userType={userType}
           setUserType={setUserType}
-          status={status}
-          setStatus={setStatus}
           sortBy={sortBy}
           setSortBy={setSortBy}
           sort={sort}

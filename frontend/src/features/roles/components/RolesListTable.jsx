@@ -1,12 +1,13 @@
-﻿import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, Pencil, Trash, ShieldUser } from "lucide-react"
+import { Eye, Pencil, Trash, ShieldUser, Ellipsis } from "lucide-react"
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { IconStack } from "@/components/reui/icon-stack";
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
 
 function getInitials(text) {
   if (!text) return "R";
@@ -50,7 +51,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
-                  <div className="flex justify-center gap-2">
+                  <div className="flex justify-center gap-1">
                     <Skeleton className="h-8 w-8 rounded-md" />
                     <Skeleton className="h-8 w-8 rounded-md" />
                     <Skeleton className="h-8 w-8 rounded-md" />
@@ -122,7 +123,7 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
                 ) : (
                   <div className="flex flex-wrap justify-center gap-1 w-full max-w-[24rem] mx-auto">
                     {role.permissionLabels.map((permission) => (
-                      <Badge key={permission} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
+                      <Badge key={permission} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center">
                         {permission}
                       </Badge>
                     ))}
@@ -130,22 +131,22 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
                 )}
               </TableCell>
               <TableCell className="text-center">
-                <div className="flex justify-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(role)} title={`View Role`}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  
-                  {role.canEdit && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(role)} title={`Edit Role`}>
-                      <Pencil className="h-4 w-4" />
+                <div className="flex items-center justify-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(role)} title="View">
+                      <Eye className="h-4 w-4" />
                     </Button>
-                  )}
-                  
-                  {role.canDelete && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onDelete(role.id)} title={`Delete Role`}>
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  )}
+                    
+                    {role.canEdit && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onEdit(role)} title="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    
+                    {role.canDelete && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onDelete(role.id)} title="Delete">
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    )}
                 </div>
               </TableCell>
             </TableRow>

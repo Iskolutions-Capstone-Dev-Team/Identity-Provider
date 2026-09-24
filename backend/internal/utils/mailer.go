@@ -8,7 +8,7 @@ import (
 )
 
 // SendOTPEmail sends an OTP code using Resend.
-func SendOTPEmail(toEmail string, otp string) error {
+var SendOTPEmail = func(toEmail string, otp string) error {
 	apiKey := os.Getenv("RESEND_API_KEY")
 	fromEmail := os.Getenv("RESEND_FROM_EMAIL")
 	fromName := os.Getenv("RESEND_FROM_NAME")
@@ -34,7 +34,7 @@ func SendOTPEmail(toEmail string, otp string) error {
 }
 
 // SendInvitationEmail sends an invitation code using Resend.
-func SendInvitationEmail(toEmail string, invitationCode string) error {
+var SendInvitationEmail = func(toEmail string, invitationCode string) error {
 	apiKey := os.Getenv("RESEND_API_KEY")
 	fromEmail := os.Getenv("RESEND_FROM_EMAIL")
 	fromName := os.Getenv("RESEND_FROM_NAME")

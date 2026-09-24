@@ -129,6 +129,7 @@ export function useUserPoolModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isEmailCopied, setIsEmailCopied] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [showMfaModal, setShowMfaModal] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
@@ -172,6 +173,7 @@ export function useUserPoolModal({
     isSubmittingRef.current = false;
     setIsCopied(false);
     setIsEmailCopied(false);
+    setFieldErrors({});
     setError("");
     setShowMfaModal(false);
     setMfaCode("");
@@ -247,6 +249,37 @@ export function useUserPoolModal({
       setError("Select a valid status.");
       return;
     }
+
+    const nextFieldErrors = {};
+    if (!formData.email?.trim()) {
+      nextFieldErrors.email = "Email is required.";
+    } else if (formData.email.trim().length > 100) {
+      nextFieldErrors.email = "Email cannot exceed 100 characters.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      nextFieldErrors.email = "Please enter a valid email address.";
+    }
+    
+    if (!formData.givenName?.trim()) {
+      nextFieldErrors.givenName = "First name is required.";
+    } else if (formData.givenName.length > 50) {
+      nextFieldErrors.givenName = "First name cannot exceed 50 characters.";
+    }
+
+    if (formData.middleName && formData.middleName.length > 50) {
+      nextFieldErrors.middleName = "Middle name cannot exceed 50 characters.";
+    }
+
+    if (!formData.surname?.trim()) {
+      nextFieldErrors.surname = "Last name is required.";
+    } else if (formData.surname.length > 50) {
+      nextFieldErrors.surname = "Last name cannot exceed 50 characters.";
+    }
+
+    setFieldErrors(nextFieldErrors);
+    if (Object.keys(nextFieldErrors).length > 0) {
+      return;
+    }
+
     try {
       isSubmittingRef.current = true;
       setIsSubmitting(true);
@@ -260,7 +293,7 @@ export function useUserPoolModal({
         setShowMfaModal(true);
         setMfaError("");
       } else {
-        setError(errMsg);
+        toast.error(errMsg);
       }
     } finally {
       isSubmittingRef.current = false;
@@ -308,6 +341,8 @@ export function useUserPoolModal({
     isEmailCopied,
     isSelectOpen,
     setIsSelectOpen,
+    fieldErrors,
+    setFieldErrors,
     showMfaModal,
     setShowMfaModal,
     mfaCode,

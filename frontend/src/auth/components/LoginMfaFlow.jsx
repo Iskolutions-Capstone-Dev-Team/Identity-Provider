@@ -47,6 +47,9 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
     handleOpenSetupConfirm,
     handleBackToSetupQr,
     handleSaveAuthenticator,
+    cooldown,
+    rememberDevice,
+    setRememberDevice,
   } = useLoginMfaFlow({ callbackRedirectUrl, initialEmail, onBackToLogin });
 
   const renderStep = () => {
@@ -58,6 +61,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
       return (
         <MfaAuthenticatorCodeStep
           code={code}
+          cooldown={cooldown}
           isVerifying={isVerifying}
           onCodeChange={(value) => setCode(getDigits(value))}
           onVerify={handleVerifyAuthenticator}
@@ -66,6 +70,9 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
             setError("");
             setStep(MFA_STEPS.BACKUP_CODE);
           }}
+          onBack={handleSelectEmail}
+          rememberDevice={rememberDevice}
+          onRememberDeviceChange={setRememberDevice}
         />
       );
     }
@@ -74,9 +81,11 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
       return (
         <MfaBackupCodeStep
           backupCode={backupCode}
+          cooldown={cooldown}
           isVerifying={isVerifying}
           onBackupCodeChange={setBackupCode}
           onVerify={handleVerifyBackupCode}
+          onBack={() => setStep(MFA_STEPS.AUTHENTICATOR)}
         />
       );
     }
@@ -114,6 +123,7 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
         mode={mode}
         hasSentOtp={hasSentOtp}
         isSendingOtp={isSendingOtp}
+        cooldown={cooldown}
         isVerifying={isVerifying}
         isCheckingAuthenticators={isCheckingAuthenticators}
         isCheckingPasskey={isCheckingPasskey}
@@ -125,6 +135,8 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
         onVerify={handleVerifyEmailOtp}
         isCancelling={isReturningToLogin}
         onCancel={onBackToLogin}
+        rememberDevice={rememberDevice}
+        onRememberDeviceChange={setRememberDevice}
       />
     );
   };
@@ -138,7 +150,10 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
           </div>
 
           <div className="mb-5 space-y-3">
-            <ErrorAlert message={error} onClose={() => setError("")} />
+            <ErrorAlert 
+              message={cooldown > 0 && error === "Too many attempts. Please wait." ? `Too many attempts. Please wait ${cooldown}s.` : error} 
+              onClose={() => setError("")} 
+            />
             <InfoAlert message={info} onClose={() => setInfo("")} />
           </div>
 

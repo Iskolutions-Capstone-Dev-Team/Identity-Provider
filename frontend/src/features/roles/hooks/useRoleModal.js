@@ -145,8 +145,8 @@ export function useRoleModal({
 
   const fieldErrors = useMemo(
     () => ({
-      name: isRoleNameEditable && !roleName.trim() ? "Name is required." : "",
-      description: !description.trim() ? "Description is required." : "",
+      name: isRoleNameEditable && !roleName.trim() ? "Name is required." : isRoleNameEditable && roleName.trim().length > 50 ? "Name cannot exceed 50 characters." : "",
+      description: !description.trim() ? "Description is required." : description.trim().length > 255 ? "Description cannot exceed 255 characters." : "",
     }),
     [description, isRoleNameEditable, roleName],
   );

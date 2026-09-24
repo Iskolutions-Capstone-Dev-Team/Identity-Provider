@@ -63,7 +63,7 @@ func (s *reportService) GenerateSystemReport(
 
 	if params.IncludeUsers && hasUsersPerm {
 		users, err = s.userRepo.GetUserList(
-			ctx, params.LimitUsers, 0, "created_at", "DESC",
+			ctx, params.LimitUsers, 0, "created_at", "DESC", "",
 		)
 		if err != nil {
 			log.Printf("[ReportService] GetUserList error: %v", err)

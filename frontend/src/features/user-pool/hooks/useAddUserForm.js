@@ -38,6 +38,7 @@ const initialFormData = {
 const initialFieldErrors = {
   email: "",
   givenName: "",
+  middleName: "",
   surname: "",
   tempPassword: "",
   accountType: "",
@@ -243,16 +244,26 @@ export function useAddUserForm({
 
     if (!trimmedEmail) {
       nextFieldErrors.email = "Email is required.";
+    } else if (trimmedEmail.length > 100) {
+      nextFieldErrors.email = "Email cannot exceed 100 characters.";
     } else if (!emailRegex.test(trimmedEmail)) {
       nextFieldErrors.email = "Enter a valid email address.";
     }
 
     if (!data.givenName.trim()) {
       nextFieldErrors.givenName = "First name is required.";
+    } else if (data.givenName.length > 50) {
+      nextFieldErrors.givenName = "First name cannot exceed 50 characters.";
+    }
+
+    if (data.middleName && data.middleName.length > 50) {
+      nextFieldErrors.middleName = "Middle name cannot exceed 50 characters.";
     }
 
     if (!data.surname.trim()) {
       nextFieldErrors.surname = "Last name is required.";
+    } else if (data.surname.length > 50) {
+      nextFieldErrors.surname = "Last name cannot exceed 50 characters.";
     }
 
     setFieldErrors(nextFieldErrors);

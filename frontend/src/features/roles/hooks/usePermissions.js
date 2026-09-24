@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { permissionService } from "../../../services/permissionService";
 
 const toPositiveInt = (value) => {
@@ -32,48 +32,16 @@ function normalizePermission(permission = {}) {
 }
 
 export function usePermissions({ enabled = true } = {}) {
-  const [permissions, setPermissions] = useState([]);
-  const [loading, setLoading] = useState(enabled);
+  const fetchPermissionsFn = async () => {
+    const data = await permissionService.getPermissions();
+    return data.map(normalizePermission).filter(Boolean);
+  };
 
-  useEffect(() => {
-    if (!enabled) {
-      setPermissions([]);
-      setLoading(false);
-      return undefined;
-    }
+  const { data: permissions = [], isLoading } = useQuery({
+    queryKey: ['permissions'],
+    queryFn: fetchPermissionsFn,
+    enabled,
+  });
 
-    let cancelled = false;
-
-    const fetchPermissions = async () => {
-      try {
-        setLoading(true);
-        const data = await permissionService.getPermissions();
-        const nextPermissions = data
-          .map((permission) => normalizePermission(permission))
-          .filter(Boolean);
-
-        if (!cancelled) {
-          setPermissions(nextPermissions);
-        }
-      } catch (error) {
-        console.error("Failed to fetch permissions:", error);
-
-        if (!cancelled) {
-          setPermissions([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchPermissions();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled]);
-
-  return { permissions, loading };
+  return { permissions, loading: isLoading };
 }

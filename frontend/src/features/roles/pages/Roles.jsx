@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { useRoles } from "../hooks/useRoles";
@@ -22,20 +23,22 @@ const ITEMS_PER_PAGE = 10;
 export default function Roles() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { colorMode = "light", globalViewType } = useOutletContext() || {};
-  const { hasPermission } = usePermissionAccess();
-  const [roleMetrics, setRoleMetrics] = useState(null);
-  const [permissionMetrics, setPermissionMetrics] = useState(null);
   const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
 
   useEffect(() => {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
   }, []);
+  const { colorMode = "light", globalViewType, setGlobalViewType } = useOutletContext() || {};
+  const { hasPermission } = usePermissionAccess();
+  const { data: roleMetrics = null } = useQuery({
+    queryKey: ['roleMetrics'],
+    queryFn: () => metricsService.getRoleMetrics()
+  });
 
-  useEffect(() => {
-    metricsService.getRoleMetrics().then(setRoleMetrics).catch(() => {});
-    metricsService.getPermissionMetrics().then(setPermissionMetrics).catch(() => {});
-  }, []);
+  const { data: permissionMetrics = null } = useQuery({
+    queryKey: ['permissionMetrics'],
+    queryFn: () => metricsService.getPermissionMetrics()
+  });
   const {
     search,
     setSearch,
@@ -64,23 +67,21 @@ export default function Roles() {
   } = usePermissions();
 
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("rolesViewType") || globalViewType || "table";
+    return globalViewType || "table";
   });
   
-  const isMounted = useRef(false);
-  useEffect(() => {
-    if (isMounted.current) {
-      if (globalViewType) {
-        setViewType(globalViewType);
-      }
-    } else {
-      isMounted.current = true;
+  const handleSetViewType = (newViewType) => {
+    setViewType(newViewType);
+    if (setGlobalViewType) {
+      setGlobalViewType(newViewType);
     }
-  }, [globalViewType]);
+  };
 
   useEffect(() => {
-    localStorage.setItem("rolesViewType", viewType);
-  }, [viewType]);
+    if (globalViewType) {
+      setViewType(globalViewType);
+    }
+  }, [globalViewType]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState("create");
@@ -233,7 +234,7 @@ export default function Roles() {
           sort={sort}
           setSort={setSort}
           viewType={viewType}
-          setViewType={setViewType}
+          setViewType={handleSetViewType}
         />
 
         <div className="relative">

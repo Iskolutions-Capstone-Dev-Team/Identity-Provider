@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { getPasswordRequirementChecks } from "../../utils/passwordRules";
 import { registrationFlowService } from "../services/registrationFlowService";
 
@@ -40,16 +41,23 @@ function getFirstErrorMessage(errors) {
 }
 
 function getFirstNameError(value) {
-  return value.trim() ? "" : "First name is required.";
+  if (!value.trim()) return "First name is required.";
+  if (value.trim().length > 50) return "First name cannot exceed 50 characters.";
+  return "";
 }
 
 function getLastNameError(value) {
-  return value.trim() ? "" : "Last name is required.";
+  if (!value.trim()) return "Last name is required.";
+  if (value.trim().length > 50) return "Last name cannot exceed 50 characters.";
+  return "";
 }
 
 function getEmailError(value) {
   if (!value.trim()) {
     return "Email address is required.";
+  }
+  if (value.trim().length > 100) {
+    return "Email address cannot exceed 100 characters.";
   }
 
   return emailRegex.test(value) ? "" : "Enter a valid email address.";
@@ -110,11 +118,6 @@ export function useRegisterForm() {
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isSubmittingRegistration, setIsSubmittingRegistration] =
-    useState(false);
-  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
-  const [isResendingCode, setIsResendingCode] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -205,7 +208,7 @@ export function useRegisterForm() {
     const nextErrors = {
       firstName: getFirstNameError(details.firstName),
       lastName: getLastNameError(details.lastName),
-      middleName: "",
+      middleName: details.middleName?.trim().length > 50 ? "Middle name cannot exceed 50 characters." : "",
       suffix: "",
       email: getEmailError(details.email),
       accountType: getAccountTypeError(details.accountType),
@@ -219,7 +222,25 @@ export function useRegisterForm() {
     return !validationMessage;
   };
 
-  const handleDetailsSubmit = async (event) => {
+  const sendOtpMutation = useMutation({
+    mutationFn: () => registrationFlowService.sendOtp({ email: details.email }),
+    onSuccess: () => {
+      setVerificationCode(Array(verificationLength).fill(""));
+      setVerificationError("");
+      setResendTimer(resendDurationSeconds);
+      setStep("verifyEmail");
+    },
+    onError: (submissionError) => {
+      setError(
+        getApiErrorMessage(
+          submissionError,
+          "Unable to send the OTP right now.",
+        ),
+      );
+    }
+  });
+
+  const handleDetailsSubmit = (event) => {
     event.preventDefault();
     setError("");
 
@@ -227,25 +248,7 @@ export function useRegisterForm() {
       return;
     }
 
-    try {
-      setIsSendingOtp(true);
-      await registrationFlowService.sendOtp({
-        email: details.email,
-      });
-      setVerificationCode(Array(verificationLength).fill(""));
-      setVerificationError("");
-      setResendTimer(resendDurationSeconds);
-      setStep("verifyEmail");
-    } catch (submissionError) {
-      setError(
-        getApiErrorMessage(
-          submissionError,
-          "Unable to send the OTP right now.",
-        ),
-      );
-    } finally {
-      setIsSendingOtp(false);
-    }
+    sendOtpMutation.mutate();
   };
 
   const handleVerificationChange = (value) => {
@@ -302,63 +305,67 @@ export function useRegisterForm() {
     return true;
   };
 
-  const handleVerificationSubmit = async (event) => {
-    event.preventDefault();
-
-    if (!validateVerificationStep()) {
-      return;
-    }
-
-    try {
-      if (!details.email) {
-        throw new Error("Registration session expired. Please start again.");
-      }
-
-      setIsVerifyingCode(true);
-      await registrationFlowService.verifyOtp({
-        email: details.email,
-        otp: verificationCode.join(""),
-      });
+  const verifyOtpMutation = useMutation({
+    mutationFn: () => registrationFlowService.verifyOtp({
+      email: details.email,
+      otp: verificationCode.join(""),
+    }),
+    onSuccess: () => {
       setPasswordValues(initialPasswordValues);
       setPasswordErrors(initialPasswordErrors);
       setStep("setPassword");
-    } catch (submissionError) {
+    },
+    onError: (submissionError) => {
       const errorMessage = getApiErrorMessage(
         submissionError,
         "Unable to verify the OTP right now.",
       );
       setVerificationError(errorMessage);
       setError(errorMessage);
-    } finally {
-      setIsVerifyingCode(false);
     }
-  };
+  });
 
-  const handleResendCode = async () => {
-    if (!details.email || resendTimer > 0 || isResendingCode) {
+  const handleVerificationSubmit = (event) => {
+    event.preventDefault();
+
+    if (!validateVerificationStep()) {
       return;
     }
 
-    try {
-      setIsResendingCode(true);
-      setError("");
-      await registrationFlowService.sendOtp({
-        email: details.email,
-      });
+    if (!details.email) {
+      setVerificationError("Registration session expired. Please start again.");
+      setError("Registration session expired. Please start again.");
+      return;
+    }
+
+    verifyOtpMutation.mutate();
+  };
+
+  const resendOtpMutation = useMutation({
+    mutationFn: () => registrationFlowService.sendOtp({ email: details.email }),
+    onSuccess: () => {
       setVerificationCode(Array(verificationLength).fill(""));
       setVerificationError("");
       setResendTimer(resendDurationSeconds);
       verificationInputsRef.current[0]?.focus();
-    } catch (resendError) {
+    },
+    onError: (resendError) => {
       const errorMessage = getApiErrorMessage(
         resendError,
         "Unable to resend the OTP right now.",
       );
       setVerificationError(errorMessage);
       setError(errorMessage);
-    } finally {
-      setIsResendingCode(false);
     }
+  });
+
+  const handleResendCode = () => {
+    if (!details.email || resendTimer > 0 || resendOtpMutation.isPending) {
+      return;
+    }
+
+    setError("");
+    resendOtpMutation.mutate();
   };
 
   const handlePasswordChange = (field, value) => {
@@ -414,7 +421,30 @@ export function useRegisterForm() {
     return !validationMessage;
   };
 
-  const handlePasswordSubmit = async (event) => {
+  const registerAccountMutation = useMutation({
+    mutationFn: () => registrationFlowService.registerAccount({
+      firstName: details.firstName,
+      lastName: details.lastName,
+      middleName: details.middleName,
+      suffix: details.suffix,
+      email: details.email,
+      accountType: details.accountType,
+      password: passwordValues.password,
+    }),
+    onSuccess: () => {
+      setStep("success");
+    },
+    onError: (submissionError) => {
+      setError(
+        getApiErrorMessage(
+          submissionError,
+          "Unable to continue registration right now.",
+        ),
+      );
+    }
+  });
+
+  const handlePasswordSubmit = (event) => {
     event.preventDefault();
     setError("");
 
@@ -422,29 +452,17 @@ export function useRegisterForm() {
       return;
     }
 
-    try {
-      setIsSubmittingRegistration(true);
-      await registrationFlowService.registerAccount({
-        firstName: details.firstName,
-        lastName: details.lastName,
-        middleName: details.middleName,
-        suffix: details.suffix,
-        email: details.email,
-        accountType: details.accountType,
-        password: passwordValues.password,
-      });
-      setStep("success");
-    } catch (submissionError) {
-      setError(
-        getApiErrorMessage(
-          submissionError,
-          "Unable to continue registration right now.",
-        ),
-      );
-    } finally {
-      setIsSubmittingRegistration(false);
-    }
+    registerAccountMutation.mutate();
   };
+
+  const { data: roleOptions = [], isLoading: isLoadingRoles } = useQuery({
+    queryKey: ['selectableAccountTypes'],
+    queryFn: async () => {
+      const types = await registrationFlowService.getSelectableAccountTypes();
+      return types.map(t => ({ id: t.name.toLowerCase(), label: t.name, originalId: t.id }));
+    },
+    retry: false
+  });
 
   return {
     verificationInputsRef,
@@ -463,11 +481,13 @@ export function useRegisterForm() {
     setShowPassword,
     showConfirmPassword,
     setShowConfirmPassword,
-    isSendingOtp,
-    isSubmittingRegistration,
-    isVerifyingCode,
-    isResendingCode,
+    isSendingOtp: sendOtpMutation.isPending,
+    isSubmittingRegistration: registerAccountMutation.isPending,
+    isVerifyingCode: verifyOtpMutation.isPending,
+    isResendingCode: resendOtpMutation.isPending,
     error,
+    roleOptions,
+    isLoadingRoles,
     setError,
     handleDetailChange,
     handleRoleSelect,

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import EditProfileModal from "./EditProfileModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import ProfileDetails from "./ProfileDetails";
@@ -8,6 +9,10 @@ import { Mail } from "lucide-react";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
 import { toast } from "sonner";
+import { authService } from "../../../auth/services/authService";
+import { clearAuthState } from "../../../auth/utils/authCookies";
+import { buildLoginPath } from "../../../auth/utils/loginRoute";
+import LogoutAllConfirmModal from "./LogoutAllConfirmModal";
 
 function formatProfileName(profile = {}) {
   return [profile.firstName, profile.middleName, profile.lastName, profile.suffix]
@@ -28,34 +33,65 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
   const isDarkMode = colorMode === "dark";
   const [isEditOpen, setEditOpen] = useState(false);
   const [isPasswordOpen, setPasswordOpen] = useState(false);
+  const [isLogoutAllOpen, setLogoutAllOpen] = useState(false);
+  const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
   const [currentProfile, setCurrentProfile] = useState(profile);
 
   useEffect(() => {
     setCurrentProfile(profile);
   }, [profile]);
 
+  const queryClient = useQueryClient();
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (updatedProfile) => {
+      const profileId = updatedProfile?.id || currentProfile?.id;
+      if (!profileId) {
+        throw new Error("User profile is unavailable.");
+      }
+
+      await userService.updateUserName(profileId, updatedProfile);
+
+      if (updatedProfile.email && updatedProfile.email !== currentProfile.email) {
+        await userService.updateUserEmailMe(updatedProfile.email);
+      }
+
+      return {
+        ...currentProfile,
+        ...updatedProfile,
+        id: profileId,
+      };
+    },
+    onSuccess: (nextProfile) => {
+      setCurrentProfile(nextProfile);
+      updateCurrentUser?.(nextProfile);
+      toast.success("Profile updated successfully!");
+      // Optionally invalidate any profile queries here if they existed globally
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+    },
+  });
+
   const handleProfileUpdate = async (updatedProfile) => {
-    const profileId = updatedProfile?.id || currentProfile?.id;
-
-    if (!profileId) {
-      throw new Error("User profile is unavailable.");
-    }
-
-    await userService.updateUserName(profileId, updatedProfile);
-
-    const nextProfile = {
-      ...currentProfile,
-      ...updatedProfile,
-      id: profileId,
-    };
-
-    setCurrentProfile(nextProfile);
-    updateCurrentUser?.(nextProfile);
-    toast.success("Profile updated successfully!");
+    return updateProfileMutation.mutateAsync(updatedProfile);
   };
 
   const profileName = formatProfileName(currentProfile) || "Profile";
   const profileInitials = getProfileInitials(currentProfile);
+
+  const handleLogoutAll = async () => {
+    try {
+      setIsLoggingOutAll(true);
+      const clientId = import.meta.env.VITE_CLIENT_ID;
+      await authService.logoutAll({ clientId, userId: currentProfile.id });
+      clearAuthState();
+      window.location.href = buildLoginPath(clientId);
+    } catch (err) {
+      console.error("Logout All failed", err);
+      toast.error("Failed to sign out of all devices");
+      setIsLoggingOutAll(false);
+      setLogoutAllOpen(false);
+    }
+  };
   return (
     <>
       <Card className="flex flex-col border-border bg-card shadow-sm overflow-hidden">
@@ -84,6 +120,7 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
           <ActionButtons
             openEdit={() => setEditOpen(true)}
             openPassword={() => setPasswordOpen(true)}
+            onLogoutAll={() => setLogoutAllOpen(true)}
             colorMode={colorMode}
           />
         </CardContent>
@@ -106,6 +143,13 @@ export default function ProfileCard({ profile, updateCurrentUser, addAuditLog, a
         addAuditLog={addAuditLog}
         enableSuccessAlert={true}
         colorMode={colorMode}
+      />
+
+      <LogoutAllConfirmModal
+        isOpen={isLogoutAllOpen}
+        isLoggingOut={isLoggingOutAll}
+        onCancel={() => setLogoutAllOpen(false)}
+        onConfirm={handleLogoutAll}
       />
     </>
   );

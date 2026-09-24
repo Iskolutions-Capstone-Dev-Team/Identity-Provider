@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { authService } from "../services/authService";
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import ErrorAlert from "../../components/ErrorAlert";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 import { buildAccessDeniedPath } from "../utils/loginRoute";
@@ -10,6 +9,7 @@ import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Separator } from "../../components/ui/separator";
 import { Card, CardContent } from "../../components/ui/card";
+import { useLoginForm } from "../hooks/useLoginForm";
 
 export default function LoginForm({ clientId, redirectUri = "", initialError = "", onLoginSuccess }) {
   const navigate = useNavigate();
@@ -18,6 +18,7 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
   const [showPassword, setShowPassword] = useState(false);
   const [isForgotOpen, setForgotOpen] = useState(false);
   const [error, setError] = useState(initialError);
+  const { loginMutation } = useLoginForm();
   const [fieldErrors, setFieldErrors] = useState({
     email: "",
     password: "",
@@ -120,50 +121,54 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
       return;
     }
 
-    try {
-      const { redirectUrl, hasMfa } = await authService.login(
-        email,
-        password,
-        clientId,
-      );
+    loginMutation.mutate(
+      { email, password, clientId },
+      {
+        onSuccess: (data) => {
+          const { redirectUrl, mfaRequired } = data;
 
-      if (!redirectUrl) {
-        setError("Invalid server response. Please contact support.");
-        return;
-      }
+          if (!redirectUrl) {
+            setError("Invalid server response. Please contact support.");
+            return;
+          }
 
-      if (onLoginSuccess && hasMfa) {
-        beginPendingMfaSession(email);
-        onLoginSuccess({
-          email,
-          redirectUrl,
-        });
-        return;
-      }
+          if (mfaRequired) {
+            if (onLoginSuccess) {
+              beginPendingMfaSession(email);
+              onLoginSuccess({
+                email,
+                redirectUrl,
+              });
+              return;
+            }
+          }
 
-      window.location.href = redirectUrl;
-    } catch (err) {
-      const status = err.response?.status;
-      if (status === 400) {
-        setError("Please enter valid credentials.");
-      } else if (status === 401) {
-        setError("Invalid email or password.");
-      } else if (status === 403) {
-        if (err.response?.data?.code === 1030) {
-          navigate(buildAccessDeniedPath(clientId, { redirectUri, reason: "suspended" }), {
-            replace: true,
-          });
-        } else {
-          navigate(buildAccessDeniedPath(clientId, { redirectUri }), {
-            replace: true,
-          });
+          window.location.href = redirectUrl;
+        },
+        onError: (err) => {
+          const status = err.response?.status;
+          if (status === 400) {
+            setError("Please enter valid credentials.");
+          } else if (status === 401) {
+            setError("Invalid email or password.");
+          } else if (status === 403) {
+            if (err.response?.data?.code === 1030) {
+              navigate(buildAccessDeniedPath(clientId, { redirectUri, reason: "suspended" }), {
+                replace: true,
+              });
+            } else {
+              navigate(buildAccessDeniedPath(clientId, { redirectUri }), {
+                replace: true,
+              });
+            }
+          } else if (status === 500) {
+            setError("Server error. Please try again later.");
+          } else {
+            setError("Login failed. Please try again.");
+          }
         }
-      } else if (status === 500) {
-        setError("Server error. Please try again later.");
-      } else {
-        setError("Login failed. Please try again.");
       }
-    }
+    );
   };
 
   return (
@@ -256,8 +261,15 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                   ) : null}
                 </div>
 
-                <Button type="submit" className="mt-2 h-12 w-full rounded-xl bg-[#ffd700] text-sm font-bold text-[#6f0f15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] hover:bg-[#991b1b] hover:text-white transition duration-300">
-                  SIGN IN
+                <Button type="submit" disabled={loginMutation.isPending} className="mt-2 h-12 w-full rounded-xl bg-[#ffd700] text-sm font-bold text-[#6f0f15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] hover:bg-[#991b1b] hover:text-white transition duration-300 disabled:opacity-70 disabled:cursor-not-allowed">
+                  {loginMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      SIGNING IN...
+                    </>
+                  ) : (
+                    "SIGN IN"
+                  )}
                 </Button>
 
                 <div className="flex items-center gap-4 text-xs text-white/55">

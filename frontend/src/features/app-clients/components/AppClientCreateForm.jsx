@@ -163,21 +163,21 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
             <CardContent className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Base URLs <span className="text-destructive">*</span></Label>
-                <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" className="h-10 rounded-lg" />
+                <Input type="url" required value={baseURL} onChange={(e) => updateFieldValue("baseURL", e.target.value, setBaseURL)} onFocus={() => setActiveVoiceField("baseURL")} placeholder="https://app.example.com" maxLength={255} className="h-10 rounded-lg" />
                 {fieldErrors.baseURL && <p className={inlineErrorClassName}>{fieldErrors.baseURL}</p>}
                 {!fieldErrors.baseURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
               </div>
 
               <div className="space-y-2">
                 <Label>Redirect URLs <span className="text-destructive">*</span></Label>
-                <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" className="h-10 rounded-lg" />
+                <Input type="url" required value={redirectURL} onChange={(e) => updateFieldValue("redirectURL", e.target.value, setRedirectURL)} onFocus={() => setActiveVoiceField("redirectURL")} placeholder="https://app.example.com/callback" maxLength={255} className="h-10 rounded-lg" />
                 {fieldErrors.redirectURL && <p className={inlineErrorClassName}>{fieldErrors.redirectURL}</p>}
                 {!fieldErrors.redirectURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
               </div>
 
               <div className="space-y-2">
                 <Label>Logout URLs <span className="text-destructive">*</span></Label>
-                <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" className="h-10 rounded-lg" />
+                <Input type="url" required value={logoutURL} onChange={(e) => updateFieldValue("logoutURL", e.target.value, setLogoutURL)} onFocus={() => setActiveVoiceField("logoutURL")} placeholder="https://app.example.com/logout" maxLength={255} className="h-10 rounded-lg" />
                 {fieldErrors.logoutURL && <p className={inlineErrorClassName}>{fieldErrors.logoutURL}</p>}
                 {!fieldErrors.logoutURL && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
               </div>
@@ -187,7 +187,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
                   One Portal Redirect Link
                   <span className="text-[10px] border px-1.5 py-0.5 rounded-md font-medium border-[#7b0d15]/40 text-[#7b0d15] dark:border-[#f8d24e]/40 dark:text-[#f8d24e]">Optional</span>
                 </Label>
-                <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder="https://one-portal.example.com" className="h-10 rounded-lg" />
+                <Input type="url" value={onePortalRedirectLink} onChange={(e) => updateFieldValue("onePortalRedirectLink", e.target.value, setOnePortalRedirectLink)} onFocus={() => setActiveVoiceField("onePortalRedirectLink")} placeholder="https://one-portal.example.com" maxLength={255} className="h-10 rounded-lg" />
                 {fieldErrors.onePortalRedirectLink && <p className={inlineErrorClassName}>{fieldErrors.onePortalRedirectLink}</p>}
                 {!fieldErrors.onePortalRedirectLink && <p className="text-xs text-muted-foreground">Must be valid URL</p>}
               </div>

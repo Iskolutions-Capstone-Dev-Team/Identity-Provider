@@ -67,7 +67,7 @@ export const passwordResetService = {
     return response.data;
   },
 
-  async verifyOtp({ email, otp } = {}) {
+  async verifyOtp({ email, otp, rememberDevice } = {}) {
     const headers = {
       "Content-Type": "application/json",
     };
@@ -80,6 +80,7 @@ export const passwordResetService = {
       {
         email: getRequiredTextValue(email, "Email address"),
         otp: getRequiredTextValue(otp, "OTP"),
+        remember_device: rememberDevice === true,
       },
       { headers },
     );

@@ -26,6 +26,7 @@ func TestGetTOTPSetupHandler(t *testing.T) {
 		mockMFAService,
 		mockUserService,
 		mockAuthService,
+		nil,
 	)
 
 	gin.SetMode(gin.TestMode)
@@ -58,6 +59,7 @@ func TestPostAuthenticatorHandler(t *testing.T) {
 		mockMFAService,
 		mockUserService,
 		mockAuthService,
+		nil,
 	)
 
 	gin.SetMode(gin.TestMode)
@@ -110,6 +112,7 @@ func TestGetAuthenticatorListHandler(t *testing.T) {
 		mockMFAService,
 		mockUserService,
 		mockAuthService,
+		nil,
 	)
 
 	gin.SetMode(gin.TestMode)
@@ -146,6 +149,7 @@ func TestGetHasTOTPHandler(t *testing.T) {
 			mockMFAService,
 			mockUserService,
 			mockAuthService,
+			nil,
 		)
 
 		gin.SetMode(gin.TestMode)
@@ -199,6 +203,7 @@ func TestGetHasTOTPHandler(t *testing.T) {
 			mockMFAService,
 			mockUserService,
 			mockAuthService,
+			nil,
 		)
 
 		gin.SetMode(gin.TestMode)
@@ -230,6 +235,7 @@ func TestGetHasPasskeyHandler(t *testing.T) {
 			mockPasskeyService,
 			mockUserService,
 			mockAuthService,
+			nil,
 		)
 
 		gin.SetMode(gin.TestMode)
@@ -283,6 +289,7 @@ func TestGetHasPasskeyHandler(t *testing.T) {
 			mockPasskeyService,
 			mockUserService,
 			mockAuthService,
+			nil,
 		)
 
 		gin.SetMode(gin.TestMode)

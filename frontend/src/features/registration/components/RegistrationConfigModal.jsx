@@ -2,9 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Field } from "@/components/ui/field";
+import { Field, FieldContent, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import AppClientComboboxField from "./AppClientComboboxField";
 import { useRegistrationForm } from "../hooks/useRegistrationForm";
 
@@ -21,10 +22,11 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
     accountTypeName,
     selectedClientIds,
     setSelectedClientIds,
+    isSelectable,
+    setIsSelectable,
     accountTypeNameError,
     isCreateMode,
     isViewMode,
-    isLockedDefaultAccountType,
     displayedClientNames,
     handleAccountTypeNameChange,
     handleSubmit
@@ -69,7 +71,7 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
                     {displayedClientNames.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {displayedClientNames.map((clientName) => (
-                          <Badge key={clientName} variant="secondary" className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1">
+                          <Badge key={clientName} variant="secondary" className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center">
                             {clientName}
                           </Badge>
                         ))}
@@ -87,34 +89,40 @@ export default function RegistrationConfigModal({ open, mode = "view", config = 
               <Card className="bg-muted/30 border-border/40">
                 <CardContent className="px-5 py-0 space-y-5">
                   <div>
-                    <h4 className="font-semibold text-sm uppercase">Account Type {!isLockedDefaultAccountType && <span className="text-red-500">*</span>}</h4>
-                    <p className="text-sm text-muted-foreground">{isLockedDefaultAccountType ? "Default account type names cannot be changed." : "Update the account type name."}</p>
+                    <h4 className="font-semibold text-sm uppercase">Account Type <span className="text-red-500">*</span></h4>
+                    <p className="text-sm text-muted-foreground">Update the account type name.</p>
                   </div>
                   <Separator />
                   <Field className="w-full">
-                    {isLockedDefaultAccountType ? (
+                    <div>
                       <Input
                         id="account-type-name"
-                        value={accountTypeName || config?.label || ""}
-                        readOnly
-                        disabled
-                        className="h-10 rounded-lg bg-muted/50 text-muted-foreground cursor-not-allowed border-input opacity-70 hover:opacity-70"
+                        value={accountTypeName}
+                        onChange={(e) => handleAccountTypeNameChange(e.target.value)}
+                        placeholder="Enter account type"
+                        maxLength={50}
+                        className={`h-10 rounded-lg ${accountTypeNameError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                       />
-                    ) : (
-                      <div>
-                        <Input
-                          id="account-type-name"
-                          value={accountTypeName}
-                          onChange={(e) => handleAccountTypeNameChange(e.target.value)}
-                          placeholder="Enter account type"
-                          className={`h-10 rounded-lg ${accountTypeNameError ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                        />
-                        {accountTypeNameError && (
-                          <p className="!mt-0 text-xs text-destructive">{accountTypeNameError}</p>
-                        )}
-                      </div>
-                    )}
+                      {accountTypeNameError && (
+                        <p className="!mt-0 text-xs text-destructive">{accountTypeNameError}</p>
+                      )}
+                    </div>
                   </Field>
+                  <FieldGroup className="pt-2">
+                    <FieldLabel>
+                      <Field orientation="horizontal">
+                        <Checkbox
+                          id="is-selectable"
+                          checked={isSelectable}
+                          onCheckedChange={setIsSelectable}
+                          className="data-checked:!bg-[#7b0d15] data-checked:!border-[#7b0d15] data-checked:!text-white dark:data-checked:!bg-[#f8d24e] dark:data-checked:!border-[#f8d24e] dark:data-checked:!text-[#7b0d15]"
+                        />
+                        <FieldContent>
+                          <FieldTitle>Allow users to select this account type during registration</FieldTitle>
+                        </FieldContent>
+                      </Field>
+                    </FieldLabel>
+                  </FieldGroup>
                 </CardContent>
               </Card>
 

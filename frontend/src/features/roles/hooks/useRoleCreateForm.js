@@ -32,8 +32,8 @@ export function useRoleCreateForm({
 
   const fieldErrors = useMemo(
     () => ({
-      name: !roleName.trim() ? "Name is required." : "",
-      description: !description.trim() ? "Description is required." : "",
+      name: !roleName.trim() ? "Name is required." : roleName.trim().length > 50 ? "Name cannot exceed 50 characters." : "",
+      description: !description.trim() ? "Description is required." : description.trim().length > 255 ? "Description cannot exceed 255 characters." : "",
     }),
     [description, roleName],
   );

@@ -152,19 +152,27 @@ func (mr *MockAuthServiceMockRecorder) GetSessionToken(ctx, userID, ipAddress, u
 }
 
 // LoginAndAuthorize mocks base method.
-func (m *MockAuthService) LoginAndAuthorize(ctx context.Context, req dto.LoginRequest, ipAddress, userAgent string) (string, string, error) {
+func (m *MockAuthService) LoginAndAuthorize(ctx context.Context,
+	req dto.LoginRequest, ipAddress, userAgent, deviceToken string,
+) (string, string, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoginAndAuthorize", ctx, req, ipAddress, userAgent)
+	ret := m.ctrl.Call(m, "LoginAndAuthorize", ctx, req, ipAddress,
+		userAgent, deviceToken)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret2, _ := ret[2].(bool)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
 }
 
 // LoginAndAuthorize indicates an expected call of LoginAndAuthorize.
-func (mr *MockAuthServiceMockRecorder) LoginAndAuthorize(ctx, req, ipAddress, userAgent any) *gomock.Call {
+func (mr *MockAuthServiceMockRecorder) LoginAndAuthorize(ctx, req,
+	ipAddress, userAgent, deviceToken any,
+) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoginAndAuthorize", reflect.TypeOf((*MockAuthService)(nil).LoginAndAuthorize), ctx, req, ipAddress, userAgent)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock,
+		"LoginAndAuthorize", reflect.TypeOf((*MockAuthService)(nil).
+			LoginAndAuthorize), ctx, req, ipAddress, userAgent, deviceToken)
 }
 
 // Logout mocks base method.

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { metricsService } from "../../../services/metricsService";
 
 export function useAppClientPage({
   globalViewType,
+  setGlobalViewType,
   canCreateClient,
   canEditClient,
   canDeleteClient,
@@ -17,15 +19,15 @@ export function useAppClientPage({
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [clientMetrics, setClientMetrics] = useState(null);
+  const { data: clientMetrics = null } = useQuery({
+    queryKey: ['clientMetrics'],
+    queryFn: () => metricsService.getClientMetrics()
+  });
+
   const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
 
   useEffect(() => {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
-  }, []);
-
-  useEffect(() => {
-    metricsService.getClientMetrics().then(setClientMetrics).catch(() => { });
   }, []);
 
   const [editViewOpen, setEditViewOpen] = useState(false);
@@ -38,23 +40,21 @@ export function useAppClientPage({
   const [pendingSuccessMessage, setPendingSuccessMessage] = useState("");
 
   const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("appClientViewType") || globalViewType || "table";
+    return globalViewType || "table";
   });
 
-  const isMounted = useRef(false);
-  useEffect(() => {
-    if (isMounted.current) {
-      if (globalViewType) {
-        setViewType(globalViewType);
-      }
-    } else {
-      isMounted.current = true;
+  const handleSetViewType = (newViewType) => {
+    setViewType(newViewType);
+    if (setGlobalViewType) {
+      setGlobalViewType(newViewType);
     }
-  }, [globalViewType]);
+  };
 
   useEffect(() => {
-    localStorage.setItem("appClientViewType", viewType);
-  }, [viewType]);
+    if (globalViewType) {
+      setViewType(globalViewType);
+    }
+  }, [globalViewType]);
 
   const openCreate = () => {
     if (!canCreateClient) return;
@@ -159,7 +159,7 @@ export function useAppClientPage({
     deleteTarget,
     showSecretConfirm,
     viewType,
-    setViewType,
+    setViewType: handleSetViewType,
     openCreate,
     openView,
     openEdit,

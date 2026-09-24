@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import QRCode from "qrcode";
 import { useNavigate } from "react-router-dom";
 import { MFA_SETUP_CONFIRM_PATH, rememberMfaSetup } from "../utils/mfaFlow";
@@ -21,10 +22,8 @@ function getRequestErrorMessage(error, fallbackMessage) {
 
 export default function MfaSetup() {
   const navigate = useNavigate();
-  const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
 
   const handleFlowError = (errorObj, defaultMessage) => {
     const message = getRequestErrorMessage(errorObj, defaultMessage);
@@ -40,51 +39,45 @@ export default function MfaSetup() {
     }
   };
 
+  const { data: currentUser, isLoading: isUserLoading } = useQuery({
+    queryKey: ['currentUserMfaSetup'],
+    queryFn: () => userService.getMe(),
+    retry: false
+  });
+
+  const { data: setupData, isLoading: isSetupLoading, isError: isSetupError, error: setupErrorObj } = useQuery({
+    queryKey: ['mfaSetup', currentUser?.email],
+    queryFn: async () => {
+      const email = currentUser.email;
+      const setup = await mfaService.getSetup(email);
+      const nextQrCodeUrl = await QRCode.toDataURL(setup.otpAuthUri, {
+        errorCorrectionLevel: "M",
+        margin: 2,
+        width: 320,
+      });
+
+      return { setup, nextQrCodeUrl, email };
+    },
+    enabled: !!currentUser?.email,
+    retry: false
+  });
+
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadSetup() {
-      try {
-        const currentUser = await userService.getMe();
-        const email = currentUser?.email || "";
-        const setup = await mfaService.getSetup(email);
-        const nextQrCodeUrl = await QRCode.toDataURL(setup.otpAuthUri, {
-          errorCorrectionLevel: "M",
-          margin: 2,
-          width: 320,
-        });
-
-        if (!isMounted) {
-          return;
-        }
-
-        rememberMfaSetup({
-          ...setup,
-          email,
-        });
-        setQrCodeUrl(nextQrCodeUrl);
-      } catch (setupError) {
-        if (!isMounted) {
-          return;
-        }
-
-        handleFlowError(
-          setupError,
-          "Unable to load authenticator setup.",
-        );
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+    if (setupData) {
+      rememberMfaSetup({
+        ...setupData.setup,
+        email: setupData.email,
+      });
     }
+  }, [setupData]);
 
-    loadSetup();
+  useEffect(() => {
+    if (isSetupError && setupErrorObj) {
+      handleFlowError(setupErrorObj, "Unable to load authenticator setup.");
+    }
+  }, [isSetupError, setupErrorObj]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const isLoading = isUserLoading || isSetupLoading || (!!currentUser && !setupData && !isSetupError);
 
   return (
     <MfaShell>
@@ -97,7 +90,7 @@ export default function MfaSetup() {
         <MfaLoadingStep />
       ) : (
         <MfaSetupQrStep
-          qrCodeUrl={qrCodeUrl}
+          qrCodeUrl={setupData?.nextQrCodeUrl || ""}
           isLoading={isLoading}
           onNext={() => navigate(MFA_SETUP_CONFIRM_PATH)}
         />

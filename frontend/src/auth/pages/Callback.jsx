@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import AuthLoadingScreen from "../components/AuthLoadingScreen";
 import { authService } from "../services/authService";
 import { storeTokenResponse } from "../utils/authCookies";
@@ -11,45 +12,57 @@ export default function Callback() {
   const navigate = useNavigate();
   const hasRun = useRef(false);
 
+  const code = searchParams.get("code");
+  const [hasStarted, setHasStarted] = useState(false);
+
   useEffect(() => {
     if (hasRun.current) return;
     hasRun.current = true;
 
-    const handleAuth = async () => {
-      const code = searchParams.get("code");
+    if (!code) {
+      clearAuthorizeAttempt();
+      clearAuthorizeReturnPath();
+      navigate(buildLoginPath(), { replace: true });
+      return;
+    }
 
-      if (!code) {
-        clearAuthorizeAttempt();
-        clearAuthorizeReturnPath();
-        navigate(buildLoginPath(), { replace: true });
-        return;
-      }
+    setHasStarted(true);
+  }, [code, navigate]);
 
-      try {
-        const tokenResponse = await authService.exchangeCode(code);
+  const { isSuccess, isError, data: tokenResponse, error } = useQuery({
+    queryKey: ['exchangeCode', code],
+    queryFn: () => authService.exchangeCode(code),
+    enabled: hasStarted && !!code,
+    retry: false
+  });
 
-        if (!tokenResponse?.access_token) {
-          throw new Error("Token exchange did not return an access token.");
-        }
-
-        storeTokenResponse(tokenResponse);
-        clearAuthorizeAttempt();
-        sessionStorage.removeItem("termsAccepted");
-        const returnPath = consumeAuthorizeReturnPath();
-
-        setTimeout(() => {
-          navigate(returnPath, { replace: true });
-        }, 1000);
-      } catch (err) {
-        console.error(err);
+  useEffect(() => {
+    if (isSuccess) {
+      if (!tokenResponse?.access_token) {
+        console.error("Token exchange did not return an access token.");
         clearAuthorizeAttempt();
         clearAuthorizeReturnPath();
         navigate(buildAccessDeniedPath(), { replace: true });
+        return;
       }
-    };
 
-    handleAuth();
-  }, [searchParams, navigate]);
+      storeTokenResponse(tokenResponse);
+      clearAuthorizeAttempt();
+      sessionStorage.removeItem("termsAccepted");
+      const returnPath = consumeAuthorizeReturnPath();
+
+      setTimeout(() => {
+        navigate(returnPath, { replace: true });
+      }, 1000);
+    }
+
+    if (isError) {
+      console.error(error);
+      clearAuthorizeAttempt();
+      clearAuthorizeReturnPath();
+      navigate(buildAccessDeniedPath(), { replace: true });
+    }
+  }, [isSuccess, isError, tokenResponse, error, navigate]);
 
   return <AuthLoadingScreen message="Signing You In" />;
 }

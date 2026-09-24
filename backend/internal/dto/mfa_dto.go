@@ -10,10 +10,11 @@ type TOTPSetupResponse struct {
 }
 
 type TOTPFinalizeRequest struct {
-	Email  string `json:"email" binding:"required"`
-	Secret string `json:"secret" binding:"required"`
-	Code   string `json:"code" binding:"required"`
-	Name   string `json:"name" binding:"required"`
+	Email          string `json:"email" binding:"required"`
+	Secret         string `json:"secret" binding:"required"`
+	Code           string `json:"code" binding:"required"`
+	Name           string `json:"name" binding:"required"`
+	RememberDevice bool   `json:"remember_device"`
 }
 
 type MFASetupResponse struct {
@@ -22,8 +23,9 @@ type MFASetupResponse struct {
 }
 
 type MFAVerifyRequest struct {
-	Email string `json:"email" binding:"required"`
-	Code  string `json:"code" binding:"required"`
+	Email          string `json:"email" binding:"required"`
+	Code           string `json:"code" binding:"required"`
+	RememberDevice bool   `json:"remember_device"`
 }
 
 type MFADeleteRequest struct {

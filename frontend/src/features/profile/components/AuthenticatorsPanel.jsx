@@ -6,7 +6,38 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../../components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../../../components/ui/carousel";
 import { Smartphone, KeySquare, Trash, CalendarDays, Clock } from 'lucide-react';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { useAuthenticatorsPanel } from "../hooks/useAuthenticatorsPanel";
+
+function AutomationIllustration() {
+    return (
+        <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            {/* Left connection line with arrow */}
+            <path d="M30 60 L68 60" className="stroke-[#7b0d15]/30 dark:stroke-[#f8d24e]/30" strokeWidth="2" strokeLinecap="round" markerEnd="url(#arrowhead)" />
+            <polygon points="66,56 74,60 66,64" className="fill-[#7b0d15]/30 dark:fill-[#f8d24e]/30" />
+
+            {/* Toggle body */}
+            <rect x="76" y="42" width="56" height="36" rx="18" className="stroke-[#7b0d15]/60 fill-[#7b0d15]/5 dark:stroke-[#f8d24e]/60 dark:fill-[#f8d24e]/10" strokeWidth="2" />
+            {/* Toggle circle */}
+            <circle cx="94" cy="60" r="12" className="fill-[#7b0d15]/40 dark:fill-[#f8d24e]/40" />
+            <circle cx="94" cy="60" r="6" className="fill-[#7b0d15] dark:fill-[#f8d24e]" />
+
+            {/* Right connection line */}
+            <path d="M134 60 Q150 60 158 48" className="stroke-[#7b0d15]/30 dark:stroke-[#f8d24e]/30" strokeWidth="2" fill="none" strokeLinecap="round" />
+            <circle cx="162" cy="44" r="3" className="fill-[#7b0d15]/20 dark:fill-[#f8d24e]/20" />
+
+            {/* Bottom right connection */}
+            <path d="M134 60 Q150 60 158 72" className="stroke-[#7b0d15]/30 dark:stroke-[#f8d24e]/30" strokeWidth="2" fill="none" strokeLinecap="round" />
+            <circle cx="162" cy="76" r="3" className="fill-[#7b0d15]/20 dark:fill-[#f8d24e]/20" />
+
+            {/* Decorative dots */}
+            <circle cx="22" cy="60" r="2" className="fill-[#7b0d15]/20 dark:fill-[#f8d24e]/20" />
+            <circle cx="174" cy="44" r="2" className="fill-[#7b0d15]/15 dark:fill-[#f8d24e]/15" />
+            <circle cx="174" cy="76" r="2" className="fill-[#7b0d15]/15 dark:fill-[#f8d24e]/15" />
+        </svg>
+    );
+}
 
 function FormattedDateDisplay({ value }) {
   if (!value) {
@@ -53,6 +84,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
     setAuthenticatorToDelete,
     isNewConnectionOpen,
     setIsNewConnectionOpen,
+    cooldown,
     loadAuthenticators,
     handleDeleteAuthenticator,
   } = panelState;
@@ -93,7 +125,7 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
             </div>
           </div>
         </CardContent>
-        <Button variant="ghost" size="icon" onClick={() => setAuthenticatorToDelete(authenticator)} aria-label={`Delete ${authenticator.name || "authenticator app"}`} className="absolute right-2 top-2 text-[#7b0d15] hover:bg-[#7b0d15]/10 hover:text-[#7b0d15] dark:text-[#f8d24e] dark:hover:bg-[#f8d24e]/10 dark:hover:text-[#f8d24e]">
+        <Button variant="ghost" size="icon" onClick={() => setAuthenticatorToDelete(authenticator)} disabled={cooldown > 0} aria-label={`Delete ${authenticator.name || "authenticator app"}`} className="absolute right-2 top-2 text-[#7b0d15] hover:bg-[#7b0d15]/10 hover:text-[#7b0d15] dark:text-[#f8d24e] dark:hover:bg-[#f8d24e]/10 dark:hover:text-[#f8d24e]">
           <Trash className="w-5 h-5" />
         </Button>
       </Card>
@@ -108,23 +140,65 @@ export default function AuthenticatorsPanel({ email = "", colorMode = "light" })
             <CardTitle className="text-xl font-bold uppercase tracking-wide">Authenticator Apps</CardTitle>
             <CardDescription className="mt-1">Manage the authenticator apps connected to your account.</CardDescription>
           </div>
-          <Button onClick={() => setIsNewConnectionOpen(true)} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors duration-200">
+          <Button onClick={() => setIsNewConnectionOpen(true)} disabled={cooldown > 0} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors duration-200">
             + New Connection
           </Button>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 lg:p-8">
-          <ErrorAlert message={error} onClose={() => setError("")} />
+          {error && (
+            <div className="mb-6">
+              <ErrorAlert 
+                message={cooldown > 0 && error === "Too many attempts. Please wait." ? `Too many attempts. Please wait ${cooldown}s.` : error} 
+                onClose={() => setError("")} 
+              />
+            </div>
+          )}
 
           {isLoading ? (
-            <div className="grid gap-3">
-              {[0, 1].map((item) => (
-                <div key={item} className="h-24 animate-pulse rounded-2xl bg-muted" />
-              ))}
+            <div className="w-full px-0 sm:px-12">
+              <div className="flex -ml-4 overflow-hidden">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/3 pl-4">
+                    <div className="p-1 h-[372px]">
+                      <Card className="mx-auto w-full max-w-xs overflow-hidden p-0 relative h-full">
+                        <CardContent className="flex flex-col items-center p-0 h-full">
+                          <div className="flex w-full flex-col items-center justify-center py-12">
+                            <Skeleton className="h-16 w-16 rounded-full mb-6" />
+                            <Skeleton className="h-6 w-3/4 rounded-md mb-2" />
+                            <Skeleton className="h-4 w-1/2 rounded-md" />
+                          </div>
+                          <div className="w-full space-y-2 px-3 pb-6 mt-auto">
+                            <Skeleton className="h-[52px] w-full rounded-lg" />
+                            <Skeleton className="h-[52px] w-full rounded-lg" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : authenticators.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">
-              No authenticator apps are connected yet.
-            </div>
+            !error && (
+                <div className="flex items-center justify-center p-4">
+                    <Empty className="py-12">
+                        <EmptyHeader>
+                            <EmptyMedia>
+                                <AutomationIllustration />
+                            </EmptyMedia>
+                            <EmptyTitle>No authenticator yet</EmptyTitle>
+                            <EmptyDescription>
+                                Get started by setting up your authenticator.
+                            </EmptyDescription>
+                        </EmptyHeader>
+                        <EmptyContent>
+                            <Button onClick={() => setIsNewConnectionOpen(true)} disabled={cooldown > 0} className="h-11 px-6 rounded-lg font-bold text-[15px] bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] transition-colors duration-200">
+                                New connection
+                            </Button>
+                        </EmptyContent>
+                    </Empty>
+                </div>
+            )
           ) : (
             <div className="w-full px-0 sm:px-12">
               <Carousel

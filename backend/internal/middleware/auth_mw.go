@@ -82,6 +82,8 @@ func AuthMiddleware(publicKey *rsa.PublicKey, logService service.LogService) gin
 
 		c.Set("user_id", claims.UserID)
 		c.Set("client_id", claims.AuthorizedParty)
+		c.Set("token_id", claims.ID)
+		c.Set("token_expires_at", claims.ExpiresAt.Time)
 		c.Next()
 	}
 }
@@ -188,6 +190,8 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 		c.Set("email", user.Email)
 		c.Set("permissions", permissions)
 		c.Set("client_id", claims.AuthorizedParty)
+		c.Set("token_id", claims.ID)
+		c.Set("token_expires_at", claims.ExpiresAt.Time)
 		c.Next()
 	}
 }

@@ -115,18 +115,18 @@ func (mr *MockRegistrationServiceMockRecorder) GetClientsByAccountTypeID(ctx, id
 }
 
 // GetRegistrationConfig mocks base method.
-func (m *MockRegistrationService) GetRegistrationConfig(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int, sortBy, order string) (*dto.RegistrationConfigResponse, error) {
+func (m *MockRegistrationService) GetRegistrationConfig(ctx context.Context, permissions []string, userID uuid.UUID, limit, page int, sortBy, order, keyword string) (*dto.RegistrationConfigResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistrationConfig", ctx, permissions, userID, limit, page, sortBy, order)
+	ret := m.ctrl.Call(m, "GetRegistrationConfig", ctx, permissions, userID, limit, page, sortBy, order, keyword)
 	ret0, _ := ret[0].(*dto.RegistrationConfigResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRegistrationConfig indicates an expected call of GetRegistrationConfig.
-func (mr *MockRegistrationServiceMockRecorder) GetRegistrationConfig(ctx, permissions, userID, limit, page, sortBy, order any) *gomock.Call {
+func (mr *MockRegistrationServiceMockRecorder) GetRegistrationConfig(ctx, permissions, userID, limit, page, sortBy, order, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationConfig", reflect.TypeOf((*MockRegistrationService)(nil).GetRegistrationConfig), ctx, permissions, userID, limit, page, sortBy, order)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationConfig", reflect.TypeOf((*MockRegistrationService)(nil).GetRegistrationConfig), ctx, permissions, userID, limit, page, sortBy, order, keyword)
 }
 
 // SyncUsersByAccountType mocks base method.
@@ -155,4 +155,19 @@ func (m *MockRegistrationService) UpdateAccountType(ctx context.Context, req dto
 func (mr *MockRegistrationServiceMockRecorder) UpdateAccountType(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAccountType", reflect.TypeOf((*MockRegistrationService)(nil).UpdateAccountType), ctx, req)
+}
+
+// GetSelectableAccountTypes mocks base method.
+func (m *MockRegistrationService) GetSelectableAccountTypes(ctx context.Context) ([]dto.SelectableAccountTypeResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSelectableAccountTypes", ctx)
+	ret0, _ := ret[0].([]dto.SelectableAccountTypeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSelectableAccountTypes indicates an expected call of GetSelectableAccountTypes.
+func (mr *MockRegistrationServiceMockRecorder) GetSelectableAccountTypes(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSelectableAccountTypes", reflect.TypeOf((*MockRegistrationService)(nil).GetSelectableAccountTypes), ctx)
 }

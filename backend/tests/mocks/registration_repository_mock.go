@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	models "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	repository "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
@@ -43,48 +44,59 @@ func (m *MockRegistrationRepository) EXPECT() *MockRegistrationRepositoryMockRec
 }
 
 // CountAccountTypes mocks base method.
-func (m *MockRegistrationRepository) CountAccountTypes(ctx context.Context) (int, error) {
+func (m *MockRegistrationRepository) CountAccountTypes(ctx context.Context, keyword string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountAccountTypes", ctx)
+	ret := m.ctrl.Call(m, "CountAccountTypes", ctx, keyword)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountAccountTypes indicates an expected call of CountAccountTypes.
-func (mr *MockRegistrationRepositoryMockRecorder) CountAccountTypes(ctx any) *gomock.Call {
+func (mr *MockRegistrationRepositoryMockRecorder) CountAccountTypes(ctx, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAccountTypes", reflect.TypeOf((*MockRegistrationRepository)(nil).CountAccountTypes), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAccountTypes", reflect.TypeOf((*MockRegistrationRepository)(nil).CountAccountTypes), ctx, keyword)
 }
 
 // CountScopedAccountTypes mocks base method.
-func (m *MockRegistrationRepository) CountScopedAccountTypes(ctx context.Context, userID []byte) (int, error) {
+func (m *MockRegistrationRepository) CountScopedAccountTypes(ctx context.Context, userID []byte, keyword string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountScopedAccountTypes", ctx, userID)
+	ret := m.ctrl.Call(m, "CountScopedAccountTypes", ctx, userID, keyword)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountScopedAccountTypes indicates an expected call of CountScopedAccountTypes.
-func (mr *MockRegistrationRepositoryMockRecorder) CountScopedAccountTypes(ctx, userID any) *gomock.Call {
+func (mr *MockRegistrationRepositoryMockRecorder) CountScopedAccountTypes(ctx, userID, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountScopedAccountTypes", reflect.TypeOf((*MockRegistrationRepository)(nil).CountScopedAccountTypes), ctx, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountScopedAccountTypes", reflect.TypeOf((*MockRegistrationRepository)(nil).CountScopedAccountTypes), ctx, userID, keyword)
 }
 
 // CreateAccountType mocks base method.
-func (m *MockRegistrationRepository) CreateAccountType(ctx context.Context, name string) (int, error) {
+func (m *MockRegistrationRepository) CreateAccountType(
+	ctx context.Context, name string, isSelectable bool,
+) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAccountType", ctx, name)
+	ret := m.ctrl.Call(m, "CreateAccountType", ctx, name, isSelectable)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAccountType indicates an expected call of CreateAccountType.
-func (mr *MockRegistrationRepositoryMockRecorder) CreateAccountType(ctx, name any) *gomock.Call {
+func (mr *MockRegistrationRepositoryMockRecorder) CreateAccountType(
+	ctx, name, isSelectable any,
+) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAccountType", reflect.TypeOf((*MockRegistrationRepository)(nil).CreateAccountType), ctx, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"CreateAccountType",
+		reflect.TypeOf((*MockRegistrationRepository)(nil).CreateAccountType),
+		ctx,
+		name,
+		isSelectable,
+	)
 }
 
 // DeleteAccountType mocks base method.
@@ -132,33 +144,33 @@ func (mr *MockRegistrationRepositoryMockRecorder) GetClientsByAccountTypeID(ctx,
 }
 
 // GetRegistrationConfig mocks base method.
-func (m *MockRegistrationRepository) GetRegistrationConfig(ctx context.Context, limit, offset int, sortBy, order string) ([]repository.AccountTypeClientRow, error) {
+func (m *MockRegistrationRepository) GetRegistrationConfig(ctx context.Context, limit, offset int, sortBy, order, keyword string) ([]repository.AccountTypeClientRow, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistrationConfig", ctx, limit, offset, sortBy, order)
+	ret := m.ctrl.Call(m, "GetRegistrationConfig", ctx, limit, offset, sortBy, order, keyword)
 	ret0, _ := ret[0].([]repository.AccountTypeClientRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRegistrationConfig indicates an expected call of GetRegistrationConfig.
-func (mr *MockRegistrationRepositoryMockRecorder) GetRegistrationConfig(ctx, limit, offset, sortBy, order any) *gomock.Call {
+func (mr *MockRegistrationRepositoryMockRecorder) GetRegistrationConfig(ctx, limit, offset, sortBy, order, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationConfig", reflect.TypeOf((*MockRegistrationRepository)(nil).GetRegistrationConfig), ctx, limit, offset, sortBy, order)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationConfig", reflect.TypeOf((*MockRegistrationRepository)(nil).GetRegistrationConfig), ctx, limit, offset, sortBy, order, keyword)
 }
 
 // GetScopedRegistrationConfig mocks base method.
-func (m *MockRegistrationRepository) GetScopedRegistrationConfig(ctx context.Context, userID []byte, limit, offset int, sortBy, order string) ([]repository.AccountTypeClientRow, error) {
+func (m *MockRegistrationRepository) GetScopedRegistrationConfig(ctx context.Context, userID []byte, limit, offset int, sortBy, order, keyword string) ([]repository.AccountTypeClientRow, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetScopedRegistrationConfig", ctx, userID, limit, offset, sortBy, order)
+	ret := m.ctrl.Call(m, "GetScopedRegistrationConfig", ctx, userID, limit, offset, sortBy, order, keyword)
 	ret0, _ := ret[0].([]repository.AccountTypeClientRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetScopedRegistrationConfig indicates an expected call of GetScopedRegistrationConfig.
-func (mr *MockRegistrationRepositoryMockRecorder) GetScopedRegistrationConfig(ctx, userID, limit, offset, sortBy, order any) *gomock.Call {
+func (mr *MockRegistrationRepositoryMockRecorder) GetScopedRegistrationConfig(ctx, userID, limit, offset, sortBy, order, keyword any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScopedRegistrationConfig", reflect.TypeOf((*MockRegistrationRepository)(nil).GetScopedRegistrationConfig), ctx, userID, limit, offset, sortBy, order)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScopedRegistrationConfig", reflect.TypeOf((*MockRegistrationRepository)(nil).GetScopedRegistrationConfig), ctx, userID, limit, offset, sortBy, order, keyword)
 }
 
 // SyncPreapprovedClients mocks base method.
@@ -176,15 +188,51 @@ func (mr *MockRegistrationRepositoryMockRecorder) SyncPreapprovedClients(ctx, ac
 }
 
 // UpdateAccountType mocks base method.
-func (m *MockRegistrationRepository) UpdateAccountType(ctx context.Context, id int, name string) error {
+func (m *MockRegistrationRepository) UpdateAccountType(
+	ctx context.Context, id int, name string, isSelectable bool,
+) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAccountType", ctx, id, name)
+	ret := m.ctrl.Call(m, "UpdateAccountType", ctx, id, name, isSelectable)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateAccountType indicates an expected call of UpdateAccountType.
-func (mr *MockRegistrationRepositoryMockRecorder) UpdateAccountType(ctx, id, name any) *gomock.Call {
+func (mr *MockRegistrationRepositoryMockRecorder) UpdateAccountType(
+	ctx, id, name, isSelectable any,
+) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAccountType", reflect.TypeOf((*MockRegistrationRepository)(nil).UpdateAccountType), ctx, id, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"UpdateAccountType",
+		reflect.TypeOf((*MockRegistrationRepository)(nil).UpdateAccountType),
+		ctx,
+		id,
+		name,
+		isSelectable,
+	)
+}
+
+// GetSelectableAccountTypes mocks base method.
+func (m *MockRegistrationRepository) GetSelectableAccountTypes(
+	ctx context.Context,
+) ([]models.AccountType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSelectableAccountTypes", ctx)
+	ret0, _ := ret[0].([]models.AccountType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSelectableAccountTypes indicates an expected call of GetSelectableAccountTypes.
+func (mr *MockRegistrationRepositoryMockRecorder) GetSelectableAccountTypes(
+	ctx any,
+) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"GetSelectableAccountTypes",
+		reflect.TypeOf((*MockRegistrationRepository)(nil).GetSelectableAccountTypes),
+		ctx,
+	)
 }

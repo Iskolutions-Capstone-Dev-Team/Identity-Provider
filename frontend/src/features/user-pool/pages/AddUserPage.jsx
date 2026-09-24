@@ -47,15 +47,9 @@ export default function AddUserPage() {
   } = useAllAppClients({
     enabled: !isLoadingCurrentUser,
   });
-  const shouldShowAllRegularUsers = isCurrentUserSuperAdmin;
-  const visibleClientIds = shouldShowAllRegularUsers
-    ? []
-    : appClientOptions.map((client) => client?.id).filter(Boolean);
-  const { userType, setUserType, createUser } = useUsers({
-    visibleClientIds,
-  });
+  const { userType, setUserType, createUser } = useUsers();
   const canAddUsers = hasPermission(PERMISSIONS.ADD_USER);
-  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ALL_USERS);
+  const canViewAdminUsers = hasPermission(PERMISSIONS.VIEW_ADMINS);
   const canAssignRoles = hasAnyPermission(USER_ROLE_EDIT_PERMISSIONS);
   const canManageUserAccess = hasAnyPermission(USER_ACCESS_EDIT_PERMISSIONS);
   const allowedUserType =
