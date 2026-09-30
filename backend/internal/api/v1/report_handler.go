@@ -92,3 +92,61 @@ func (h *ReportHandler) GetSystemReport(c *gin.Context) {
 	)
 	c.Data(http.StatusOK, "application/pdf", reportBytes)
 }
+
+// GetSummaryReport generates and streams an anonymized non-PII summary report.
+func (h *ReportHandler) GetSummaryReport(c *gin.Context) {
+	hasLogsPerm := middleware.HasPermission(c, "View audit logs")
+	hasUsersPerm := middleware.HasPermission(c, "View all users")
+	hasClientsPerm := middleware.HasPermission(c, "View all appclients")
+
+	if !hasLogsPerm && !hasUsersPerm && !hasClientsPerm {
+		errors.SendString(
+			c,
+			http.StatusForbidden,
+			errors.CodeForbidden,
+			"You do not have permission to view summary reports.",
+			"Forbidden",
+		)
+		return
+	}
+
+	var params dto.SummaryReportParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		log.Printf("[ReportHandler] GetSummaryReport Bind Query: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid query parameters",
+		})
+		return
+	}
+
+	ctx := c.Request.Context()
+	reportBytes, err := h.ReportService.GenerateSummaryReport(ctx, params)
+	if err != nil {
+		log.Printf("[ReportHandler] Generate Summary Report: %v", err)
+		errors.Send(
+			c,
+			http.StatusInternalServerError,
+			errors.CodeInternalError,
+			"Failed to generate summary report.",
+			err,
+		)
+		return
+	}
+
+	if params.Format == "json" {
+		c.Header("Content-Type", "application/json")
+		c.Header(
+			"Content-Disposition",
+			"attachment; filename=\"summary_report.json\"",
+		)
+		c.Data(http.StatusOK, "application/json", reportBytes)
+		return
+	}
+
+	c.Header("Content-Type", "application/pdf")
+	c.Header(
+		"Content-Disposition",
+		"attachment; filename=\"summary_report.pdf\"",
+	)
+	c.Data(http.StatusOK, "application/pdf", reportBytes)
+}
