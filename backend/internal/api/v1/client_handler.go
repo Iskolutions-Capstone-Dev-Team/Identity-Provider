@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -24,12 +25,12 @@ const (
 	actionDeleteClient = "delete_client"
 )
 
-// Token TTL guard limits
+// Token TTL guard limits (Security-First Standards)
 const (
-	MinAccessTokenTTL  = 1
-	MaxAccessTokenTTL  = 1440
-	MinRefreshTokenTTL = 1
-	MaxRefreshTokenTTL = 8760
+	MinAccessTokenTTL  = 5
+	MaxAccessTokenTTL  = 480
+	MinRefreshTokenTTL = 24
+	MaxRefreshTokenTTL = 720
 )
 
 // validateTokenTTL checks if the access/refresh token expiry is valid.
@@ -52,11 +53,11 @@ func validateTokenTTL(accStr, refStr string) (int, int, string) {
 	}
 
 	if accTTL < MinAccessTokenTTL || accTTL > MaxAccessTokenTTL {
-		return 0, 0, "access_token_ttl must be between 1 and 1440"
+		return 0, 0, fmt.Sprintf("access_token_ttl must be between %d and %d", MinAccessTokenTTL, MaxAccessTokenTTL)
 	}
 
 	if refTTL < MinRefreshTokenTTL || refTTL > MaxRefreshTokenTTL {
-		return 0, 0, "refresh_token_ttl must be between 1 and 8760"
+		return 0, 0, fmt.Sprintf("refresh_token_ttl must be between %d and %d", MinRefreshTokenTTL, MaxRefreshTokenTTL)
 	}
 
 	return accTTL, refTTL, ""
