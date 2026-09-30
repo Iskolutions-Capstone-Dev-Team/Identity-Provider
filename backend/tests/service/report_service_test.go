@@ -24,6 +24,7 @@ func TestGenerateSystemReport(t *testing.T) {
 		mockUserRepo,
 		mockClientRepo,
 		mockLogRepo,
+		nil,
 	)
 
 	// Mock data
@@ -129,5 +130,77 @@ func TestGenerateSystemReport(t *testing.T) {
 	}
 	if len(jsonBytes) == 0 {
 		t.Error("expected non-empty JSON bytes")
+	}
+}
+
+func TestGenerateSummaryReport(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserRepo := mocks.NewMockUserRepository(ctrl)
+	mockClientRepo := mocks.NewMockClientRepository(ctrl)
+	mockLogRepo := mocks.NewMockLogRepository(ctrl)
+	mockMetricsRepo := mocks.NewMockMetricsRepository(ctrl)
+
+	reportService := service.NewReportService(
+		mockUserRepo,
+		mockClientRepo,
+		mockLogRepo,
+		mockMetricsRepo,
+	)
+
+	ctx := context.Background()
+
+	mockMetricsRepo.EXPECT().GetUserMetrics(gomock.Any(), nil).Return([]models.MetricCard{
+		{Title: "Total Accounts", Value: "100"},
+		{Title: "Active Accounts", Value: "90"},
+	}, nil).AnyTimes()
+
+	mockMetricsRepo.EXPECT().GetRoleMetrics(gomock.Any()).Return([]models.MetricCard{
+		{Title: "Total Roles", Value: "5"},
+	}, nil).AnyTimes()
+
+	mockMetricsRepo.EXPECT().GetPermissionMetrics(gomock.Any()).Return([]models.MetricCard{
+		{Title: "Total Permissions", Value: "20"},
+	}, nil).AnyTimes()
+
+	mockMetricsRepo.EXPECT().GetClientMetrics(gomock.Any(), nil).Return([]models.MetricCard{
+		{Title: "Total Clients", Value: "3"},
+	}, nil).AnyTimes()
+
+	mockMetricsRepo.EXPECT().GetLogMetrics(gomock.Any(), true, true).Return([]models.MetricCard{
+		{Title: "Audit Logs", Value: "50"},
+	}, nil).AnyTimes()
+
+	mockMetricsRepo.EXPECT().GetTotalLogins(gomock.Any(), gomock.Any(), nil).Return(200, nil).AnyTimes()
+	mockMetricsRepo.EXPECT().GetFailedAuthAttempts(gomock.Any(), gomock.Any(), nil).Return([]models.FailedAuthAttempt{}, nil).AnyTimes()
+	mockMetricsRepo.EXPECT().GetTopClients(gomock.Any(), 10, gomock.Any(), nil).Return([]models.TopClientLogin{
+		{ClientName: "One-Portal", LoginCount: 150},
+	}, nil).AnyTimes()
+
+	jsonParams := dto.SummaryReportParams{
+		TimeFrame: "24h",
+		Format:    "json",
+	}
+
+	jsonBytes, err := reportService.GenerateSummaryReport(ctx, jsonParams)
+	if err != nil {
+		t.Fatalf("unexpected error generating JSON summary report: %v", err)
+	}
+	if len(jsonBytes) == 0 {
+		t.Error("expected non-empty JSON summary bytes")
+	}
+
+	pdfParams := dto.SummaryReportParams{
+		TimeFrame: "24h",
+		Format:    "pdf",
+	}
+
+	pdfBytes, err := reportService.GenerateSummaryReport(ctx, pdfParams)
+	if err != nil {
+		t.Fatalf("unexpected error generating PDF summary report: %v", err)
+	}
+	if len(pdfBytes) == 0 {
+		t.Error("expected non-empty PDF summary bytes")
 	}
 }
