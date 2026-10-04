@@ -138,4 +138,24 @@ export const metricsService = {
 
     return response.data;
   },
+
+  async downloadSummaryReport(filters = {}) {
+    const params = new URLSearchParams();
+    
+    if (filters.timeframe) {
+      params.append("timeframe", filters.timeframe);
+    }
+    if (filters.format) {
+      params.append("format", filters.format);
+    }
+
+    const queryString = params.toString();
+    const url = queryString ? `/admin/reports/summary?${queryString}` : "/admin/reports/summary";
+
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+    });
+
+    return response.data;
+  },
 };
