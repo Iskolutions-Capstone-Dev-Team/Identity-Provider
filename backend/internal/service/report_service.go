@@ -380,11 +380,11 @@ func (s *reportService) GenerateSummaryReport(
 	overview := dto.AccountSystemOverviewDTO{}
 	for _, m := range userMetrics {
 		switch m.Title {
-		case "Total Accounts":
+		case "Total Users":
 			overview.TotalAccounts = parseMetricValue(m.Value)
-		case "Active Accounts":
+		case "Active Users":
 			overview.ActiveAccounts = parseMetricValue(m.Value)
-		case "Archived Accounts":
+		case "Suspended Users":
 			overview.ArchivedAccounts = parseMetricValue(m.Value)
 		}
 	}
@@ -492,34 +492,52 @@ func (s *reportService) GenerateSummaryReport(
 	pdf.Ln(18)
 
 	addReportSectionTitle(pdf, "1. Account & System Overview")
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(0, 6, fmt.Sprintf("Total Accounts: %d | Active: %d | Archived: %d", overview.TotalAccounts, overview.ActiveAccounts, overview.ArchivedAccounts))
-	pdf.Ln(6)
-	pdf.Cell(0, 6, fmt.Sprintf("Total App Clients: %d | Active Clients: %d", overview.TotalClients, overview.ActiveClients))
-	pdf.Ln(6)
-	pdf.Cell(0, 6, fmt.Sprintf("System Roles: %d | Total Permissions: %d | Assigned: %d", overview.TotalRoles, overview.TotalPermissions, overview.AssignedPermissions))
+	widths1 := []float64{90, 90}
+	addReportTableHeader(pdf, []string{"METRIC", "VALUE"}, widths1)
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Total Users", fmt.Sprintf("%d", overview.TotalAccounts)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Active Users", fmt.Sprintf("%d", overview.ActiveAccounts)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Suspended Users", fmt.Sprintf("%d", overview.ArchivedAccounts)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Total App Clients", fmt.Sprintf("%d", overview.TotalClients)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Active Clients", fmt.Sprintf("%d", overview.ActiveClients)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"System Roles", fmt.Sprintf("%d", overview.TotalRoles)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Total / Assigned Permissions", fmt.Sprintf("%d / %d", overview.TotalPermissions, overview.AssignedPermissions)}, []string{"L", "R"})
 	pdf.Ln(12)
 
 	addReportSectionTitle(pdf, "2. Security & Authentication Telemetry")
-	pdf.Cell(0, 6, fmt.Sprintf("Total Login Attempts: %d | Successful: %d | Failed: %d", security.TotalLogins, security.SuccessfulLogins, security.FailedLogins))
-	pdf.Ln(6)
-	pdf.Cell(0, 6, fmt.Sprintf("Login Success Rate: %.2f%%", security.SuccessRatePercent))
+	widths2 := []float64{90, 90}
+	addReportTableHeader(pdf, []string{"METRIC", "VALUE"}, widths2)
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+	addMultiCellReportRow(pdf, widths2, 10, []string{"Total Login Attempts", fmt.Sprintf("%d", security.TotalLogins)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths2, 10, []string{"Successful Logins", fmt.Sprintf("%d", security.SuccessfulLogins)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths2, 10, []string{"Failed Logins", fmt.Sprintf("%d", security.FailedLogins)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths2, 10, []string{"Login Success Rate", fmt.Sprintf("%.2f%%", security.SuccessRatePercent)}, []string{"L", "R"})
 	pdf.Ln(12)
 
 	addReportSectionTitle(pdf, "3. Connected Applications & Traffic Volume")
+	widths3 := []float64{120, 60}
+	addReportTableHeader(pdf, []string{"APPLICATION CLIENT", "LOGIN VOLUME"}, widths3)
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
 	if len(topClientsUsage) == 0 {
-		pdf.Cell(0, 6, "No client application traffic recorded in this timeframe.")
-		pdf.Ln(6)
+		addReportCell(pdf, 180, 10, "No client application traffic recorded in this timeframe.", "C", false)
+		pdf.Ln(-1)
 	} else {
 		for _, tc := range topClientsUsage {
-			pdf.Cell(0, 6, fmt.Sprintf("• %s: %d logins", tc.ClientName, tc.LoginCount))
-			pdf.Ln(6)
+			addMultiCellReportRow(pdf, widths3, 10, []string{tc.ClientName, fmt.Sprintf("%d", tc.LoginCount)}, []string{"L", "R"})
 		}
 	}
-	pdf.Ln(6)
+	pdf.Ln(12)
 
 	addReportSectionTitle(pdf, "4. Infrastructure & Audit Event Telemetry")
-	pdf.Cell(0, 6, fmt.Sprintf("System Health: %s | Cache Status: %s", performance.SystemHealth, performance.CacheStatus))
+	widths4 := []float64{90, 90}
+	addReportTableHeader(pdf, []string{"METRIC", "VALUE"}, widths4)
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+	addMultiCellReportRow(pdf, widths4, 10, []string{"System Health", performance.SystemHealth}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Cache Status", performance.CacheStatus}, []string{"L", "R"})
 	pdf.Ln(12)
 
 	var buf bytes.Buffer
