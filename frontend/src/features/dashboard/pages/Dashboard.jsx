@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import MetricFilterCard from "../components/MetricFilterCard";
 import ReportConfirmModal from "../components/ReportConfirmModal";
 import SystemReportConfirmModal from "../components/SystemReportConfirmModal";
+import SummaryReportConfirmModal from "../components/SummaryReportConfirmModal";
 import ReportTypeSelectionModal from "../components/ReportTypeSelectionModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/TopLoginsPanel";
@@ -48,6 +49,9 @@ export default function Dashboard() {
     handleReportConfirm,
     handleSystemReportConfirmCancel,
     handleSystemReportConfirm,
+    isSummaryReportConfirmOpen,
+    handleSummaryReportConfirmCancel,
+    handleSummaryReportConfirm,
   } = dashboardState;
 
   const [api, setApi] = useState();
@@ -212,6 +216,14 @@ export default function Dashboard() {
         isGenerating={isDownloadingReport}
         onCancel={handleSystemReportConfirmCancel}
         onConfirm={handleSystemReportConfirm}
+      />
+
+      <SummaryReportConfirmModal
+        open={isSummaryReportConfirmOpen}
+        colorMode={colorMode}
+        isGenerating={isDownloadingReport}
+        onCancel={handleSummaryReportConfirmCancel}
+        onConfirm={handleSummaryReportConfirm}
       />
 
       <SystemLoginsModal

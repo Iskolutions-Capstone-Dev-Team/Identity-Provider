@@ -43,6 +43,12 @@ export default function ReportTypeSelectionModal({ open, onClose, onSelectType }
                 icon={<Database className="size-5" />}
                 onClick={() => onSelectType?.('system')}
               />
+              <ReportOptionButton
+                title="Summary Report"
+                description="Export general system usage without personal data."
+                icon={<FileText className="size-5" />}
+                onClick={() => onSelectType?.('summary')}
+              />
             </div>
           </div>
         </div>
