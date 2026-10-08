@@ -462,6 +462,16 @@ func (s *reportService) GenerateSummaryReport(
 	pdf.SetAutoPageBreak(true, 28)
 
 	pdf.SetFooterFunc(func() {
+		pdf.SetY(-27)
+		pdf.SetFont("Arial", "", 8)
+		pdf.SetTextColor(25, 25, 25)
+		pdf.SetX(105)
+		pdf.CellFormat(
+			90, 5,
+			"This is system-generated, signature is not required.",
+			"", 0, "R", false, 0, "",
+		)
+
 		pdf.SetY(-21)
 		pdf.SetDrawColor(30, 30, 30)
 		pdf.Line(15, pdf.GetY(), 195, pdf.GetY())
@@ -471,7 +481,7 @@ func (s *reportService) GenerateSummaryReport(
 		pdf.SetTextColor(0, 120, 0)
 		pdf.SetX(5)
 		pdf.CellFormat(
-			190, 4,
+			145, 4,
 			"This summary report contains zero personally identifiable information (PII).",
 			"", 0, "C", false, 0, "",
 		)
@@ -530,32 +540,19 @@ func (s *reportService) GenerateSummaryReport(
 	pdf.Ln(12)
 
 	addReportSectionTitle(pdf, "4. Infrastructure & Audit Event Telemetry")
-	pdf.SetFont("Arial", "", 10)
-	pdf.Cell(
-		0, 6,
-		fmt.Sprintf(
-			"System Health: %s | Cache Status: %s",
-			performance.SystemHealth, performance.CacheStatus,
-		),
-	)
-	pdf.Ln(6)
-	pdf.Cell(
-		0, 6,
-		fmt.Sprintf(
-			"Avg Latency: %.2f ms | Tx Processing: %.2f ms | Throughput: %.2f req/s",
-			performance.AvgLatencyMs, performance.TxProcessingTimeMs,
-			performance.ThroughputRPS,
-		),
-	)
-	pdf.Ln(6)
-	pdf.Cell(
-		0, 6,
-		fmt.Sprintf(
-			"Active Sessions: %d | CPU Load: %.2f%% | Memory Usage: %.2f MB",
-			performance.ActiveSessions, performance.CPULoadPercent,
-			performance.MemoryUsageMB,
-		),
-	)
+	widths4 := []float64{90, 90}
+	addReportTableHeader(pdf, []string{"METRIC", "VALUE"}, widths4)
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+	
+	addMultiCellReportRow(pdf, widths4, 10, []string{"System Health", performance.SystemHealth}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Cache Status", performance.CacheStatus}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Avg Latency", fmt.Sprintf("%.2f ms", performance.AvgLatencyMs)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Tx Processing", fmt.Sprintf("%.2f ms", performance.TxProcessingTimeMs)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Throughput", fmt.Sprintf("%.2f req/s", performance.ThroughputRPS)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Active Sessions", fmt.Sprintf("%d", performance.ActiveSessions)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"CPU Load", fmt.Sprintf("%.2f%%", performance.CPULoadPercent)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Memory Usage", fmt.Sprintf("%.2f MB", performance.MemoryUsageMB)}, []string{"L", "R"})
 	pdf.Ln(12)
 
 	var buf bytes.Buffer
