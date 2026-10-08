@@ -28,9 +28,9 @@ export default function SummaryReportConfirmModal({ open, colorMode = "light", i
           <AlertDialogMedia className="bg-[#7b0d15]/10 text-[#7b0d15] dark:bg-[#f8d24e]/20 dark:text-[#f8d24e]">
             <ArrowDownToLine className="h-6 w-6" />
           </AlertDialogMedia>
-          <AlertDialogTitle className="text-center">Generate Summary Report</AlertDialogTitle>
+          <AlertDialogTitle className="text-center">Generate System Analytics Report</AlertDialogTitle>
           <AlertDialogDescription className="text-center">
-            Download a general overview of system usage without personal data.
+            Download anonymized APM metrics and usage data.
           </AlertDialogDescription>
         </AlertDialogHeader>
         
