@@ -7,6 +7,7 @@ import (
 	v1 "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/telemetry"
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,6 +37,8 @@ type Handlers struct {
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
+	r.Use(telemetry.GlobalCollector.Middleware())
+
 	// Open health check endpoints
 	r.GET("/health", h.HealthHandler.GetHealth)
 
