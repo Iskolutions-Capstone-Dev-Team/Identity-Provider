@@ -143,7 +143,7 @@ export const metricsService = {
     const params = new URLSearchParams();
     
     if (filters.timeframe) {
-      params.append("timeframe", filters.timeframe);
+      params.append("time_frame", filters.timeframe);
     }
     if (filters.format) {
       params.append("format", filters.format);
