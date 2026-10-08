@@ -12,6 +12,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/telemetry"
 	"github.com/jung-kurt/gofpdf/v2"
 )
 
@@ -439,11 +440,8 @@ func (s *reportService) GenerateSummaryReport(
 			Count:    parseMetricValue(lm.Value),
 		})
 	}
-	performance := dto.AuditPerformanceTelemetryDTO{
-		AuditLogMetrics: auditMetrics,
-		SystemHealth:    "Healthy",
-		CacheStatus:     "Operational",
-	}
+	performance := telemetry.GlobalCollector.GetTelemetry(ctx, nil, nil)
+	performance.AuditLogMetrics = auditMetrics
 
 	summary := dto.SummaryReportResponse{
 		Title:       "Anonymized System Summary Report",
@@ -532,12 +530,32 @@ func (s *reportService) GenerateSummaryReport(
 	pdf.Ln(12)
 
 	addReportSectionTitle(pdf, "4. Infrastructure & Audit Event Telemetry")
-	widths4 := []float64{90, 90}
-	addReportTableHeader(pdf, []string{"METRIC", "VALUE"}, widths4)
-	pdf.SetDrawColor(185, 185, 185)
-	pdf.SetTextColor(20, 20, 20)
-	addMultiCellReportRow(pdf, widths4, 10, []string{"System Health", performance.SystemHealth}, []string{"L", "R"})
-	addMultiCellReportRow(pdf, widths4, 10, []string{"Cache Status", performance.CacheStatus}, []string{"L", "R"})
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(
+		0, 6,
+		fmt.Sprintf(
+			"System Health: %s | Cache Status: %s",
+			performance.SystemHealth, performance.CacheStatus,
+		),
+	)
+	pdf.Ln(6)
+	pdf.Cell(
+		0, 6,
+		fmt.Sprintf(
+			"Avg Latency: %.2f ms | Tx Processing: %.2f ms | Throughput: %.2f req/s",
+			performance.AvgLatencyMs, performance.TxProcessingTimeMs,
+			performance.ThroughputRPS,
+		),
+	)
+	pdf.Ln(6)
+	pdf.Cell(
+		0, 6,
+		fmt.Sprintf(
+			"Active Sessions: %d | CPU Load: %.2f%% | Memory Usage: %.2f MB",
+			performance.ActiveSessions, performance.CPULoadPercent,
+			performance.MemoryUsageMB,
+		),
+	)
 	pdf.Ln(12)
 
 	var buf bytes.Buffer
