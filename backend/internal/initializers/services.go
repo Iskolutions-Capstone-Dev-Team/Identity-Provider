@@ -105,6 +105,9 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 			userRepo, clientRepo, logRepo, metricsRepo,
 		),
 		DeviceService: deviceSvc,
-		Cache:         appCache,
+		KPIService: service.NewKPIService(
+			userRepo, metricsRepo, appCache, db,
+		),
+		Cache: appCache,
 	}
 }
