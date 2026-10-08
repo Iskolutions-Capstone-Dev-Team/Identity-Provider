@@ -18,5 +18,6 @@ type ServiceContainer struct {
 	MetricsService           MetricsService
 	ReportService            ReportService
 	DeviceService            DeviceService
+	KPIService               KPIService
 	Cache                    cache.Cache
 }
