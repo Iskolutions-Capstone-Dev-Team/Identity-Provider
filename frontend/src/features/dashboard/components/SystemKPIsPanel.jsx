@@ -93,7 +93,7 @@ export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoadin
       <Card className="flex flex-col border-border bg-card shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-xl font-bold uppercase tracking-wide">
-            System Key Performance Indicators (KPIs)
+            Operational KPIs
           </CardTitle>
           <CardDescription>
             Live APM, security health, and identity aggregate metrics.
@@ -111,55 +111,56 @@ export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoadin
 
   return (
     <Card className="flex flex-col border-border bg-card shadow-sm">
-      <CardHeader className="flex flex-col gap-3 pb-3 sm:flex-row sm:items-center sm:justify-between">
+      <CardHeader className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-xl font-bold uppercase tracking-wide">
-              Operational KPIs
-            </CardTitle>
-            <Badge
-              variant="outline"
-              className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-            >
-              {systemHealth}
-            </Badge>
-          </div>
+          <CardTitle className="text-xl font-bold uppercase tracking-wide">
+            Operational KPIs
+          </CardTitle>
           <CardDescription className="mt-1">
             Real-time APM telemetry, authentication posture, and identity population metrics.
           </CardDescription>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Cache: <strong className="text-foreground">{cacheStatus}</strong></span>
-        </div>
+        <Badge
+          variant="outline"
+          className="px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+        >
+          {systemHealth}
+        </Badge>
       </CardHeader>
 
       <CardContent className="pt-1">
         <Tabs defaultValue="apm" className="w-full">
-          <TabsList className="mb-4 grid w-full grid-cols-3 max-w-md">
-            <TabsTrigger
-              value="apm"
-              className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
-            >
-              <Activity className="size-4" />
-              <span>APM & Health</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="security"
-              className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
-            >
-              <ShieldCheck className="size-4" />
-              <span>Auth Security</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="identity"
-              className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
-            >
-              <Users className="size-4" />
-              <span>Identity</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <TabsList className="grid w-full grid-cols-3 max-w-md">
+              <TabsTrigger
+                value="apm"
+                className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+              >
+                <Activity className="size-4" />
+                <span>APM & Health</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="security"
+                className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+              >
+                <ShieldCheck className="size-4" />
+                <span>Auth Security</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="identity"
+                className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+              >
+                <Users className="size-4" />
+                <span>Identity</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="flex items-center gap-2 text-xs text-muted-foreground self-end sm:self-center pr-1">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Cache: <strong className="text-foreground">{cacheStatus}</strong></span>
+            </div>
+          </div>
 
           {/* Tab 1: APM & Health */}
           <TabsContent value="apm" className="space-y-4">
