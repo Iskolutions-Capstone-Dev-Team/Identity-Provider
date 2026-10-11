@@ -7,6 +7,7 @@ let clientMetricsPromise = null;
 let permissionMetricsPromise = null;
 let logMetricsPromise = null;
 let registrationMetricsPromise = null;
+let kpiMetricsPromise = null;
 
 export const metricsService = {
   async getDashboardMetrics() {
@@ -136,6 +137,18 @@ export const metricsService = {
       responseType: "blob",
     });
 
+    return response.data;
+  },
+
+  async getSystemKPIs() {
+    if (!kpiMetricsPromise) {
+      kpiMetricsPromise = axiosInstance
+        .get("/admin/kpis")
+        .finally(() => {
+          kpiMetricsPromise = null;
+        });
+    }
+    const response = await kpiMetricsPromise;
     return response.data;
   },
 

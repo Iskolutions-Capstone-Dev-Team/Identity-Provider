@@ -15,6 +15,7 @@ import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/TopLoginsPanel";
 import SystemLoginsModal from "../components/SystemLoginsModal";
 import SystemHealthWidget from "../components/SystemHealthWidget";
+import SystemKPIsPanel from "../components/SystemKPIsPanel";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useDashboard } from "../hooks/useDashboard";
@@ -172,6 +173,7 @@ export default function Dashboard() {
         </section>
 
         <div className="grid gap-6">
+          <SystemKPIsPanel colorMode={colorMode} isDashboardLoading={showLoading} />
           <SystemHealthWidget colorMode={colorMode} isDashboardLoading={showLoading} />
         </div>
 
