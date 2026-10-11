@@ -138,15 +138,24 @@ export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoadin
       <CardContent className="pt-1">
         <Tabs defaultValue="apm" className="w-full">
           <TabsList className="mb-4 grid w-full grid-cols-3 max-w-md">
-            <TabsTrigger value="apm" className="gap-2">
+            <TabsTrigger
+              value="apm"
+              className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+            >
               <Activity className="size-4" />
               <span>APM & Health</span>
             </TabsTrigger>
-            <TabsTrigger value="security" className="gap-2">
+            <TabsTrigger
+              value="security"
+              className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+            >
               <ShieldCheck className="size-4" />
               <span>Auth Security</span>
             </TabsTrigger>
-            <TabsTrigger value="identity" className="gap-2">
+            <TabsTrigger
+              value="identity"
+              className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+            >
               <Users className="size-4" />
               <span>Identity</span>
             </TabsTrigger>
