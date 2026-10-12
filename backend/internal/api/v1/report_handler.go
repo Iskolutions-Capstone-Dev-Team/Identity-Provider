@@ -9,6 +9,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type ReportHandler struct {
@@ -21,11 +22,14 @@ func NewReportHandler(svc service.ReportService) *ReportHandler {
 
 // GetSystemReport generates and streams the system report in PDF or JSON.
 func (h *ReportHandler) GetSystemReport(c *gin.Context) {
-	hasUsersPerm := middleware.HasPermission(c, "View all users")
+	hasAllUsers := middleware.HasPermission(c, "View all users")
+	hasClientUsers := middleware.HasPermission(
+		c, "View users based on appclient",
+	)
 	hasClientsPerm := middleware.HasPermission(c, "View all appclients")
 	hasLogsPerm := middleware.HasPermission(c, "View audit logs")
 
-	if !hasUsersPerm && !hasClientsPerm && !hasLogsPerm {
+	if !hasAllUsers && !hasClientUsers && !hasClientsPerm && !hasLogsPerm {
 		errors.SendString(
 			c,
 			http.StatusForbidden,
@@ -38,7 +42,7 @@ func (h *ReportHandler) GetSystemReport(c *gin.Context) {
 
 	var params dto.SystemReportParams
 	if err := c.ShouldBindQuery(&params); err != nil {
-		log.Printf("[ReportHandler] Bind Query: %v", err)
+		log.Printf("[ReportHandler] {Bind Query}: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid query parameters",
 		})
@@ -47,7 +51,7 @@ func (h *ReportHandler) GetSystemReport(c *gin.Context) {
 
 	// Dynamic constraint mapping to filter out unauthorized requests for
 	// specific sections
-	if !hasUsersPerm {
+	if !hasAllUsers && !hasClientUsers {
 		params.IncludeUsers = false
 	}
 	if !hasClientsPerm {
@@ -57,14 +61,28 @@ func (h *ReportHandler) GetSystemReport(c *gin.Context) {
 		params.IncludeLogs = false
 	}
 
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf("[ReportHandler] {Parse User ID}: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid user context.",
+			err,
+		)
+		return
+	}
+
 	ctx := c.Request.Context()
 	permissions := c.GetStringSlice("permissions")
 
 	reportBytes, err := h.ReportService.GenerateSystemReport(
-		ctx, permissions, params,
+		ctx, permissions, userID, params,
 	)
 	if err != nil {
-		log.Printf("[ReportHandler] Generate System Report: %v", err)
+		log.Printf("[ReportHandler] {Generate System Report}: %v", err)
 		errors.Send(
 			c,
 			http.StatusInternalServerError,
@@ -96,10 +114,13 @@ func (h *ReportHandler) GetSystemReport(c *gin.Context) {
 // GetSummaryReport generates and streams an anonymized non-PII summary report.
 func (h *ReportHandler) GetSummaryReport(c *gin.Context) {
 	hasLogsPerm := middleware.HasPermission(c, "View audit logs")
-	hasUsersPerm := middleware.HasPermission(c, "View all users")
+	hasAllUsers := middleware.HasPermission(c, "View all users")
+	hasClientUsers := middleware.HasPermission(
+		c, "View users based on appclient",
+	)
 	hasClientsPerm := middleware.HasPermission(c, "View all appclients")
 
-	if !hasLogsPerm && !hasUsersPerm && !hasClientsPerm {
+	if !hasLogsPerm && !hasAllUsers && !hasClientUsers && !hasClientsPerm {
 		errors.SendString(
 			c,
 			http.StatusForbidden,
@@ -112,17 +133,34 @@ func (h *ReportHandler) GetSummaryReport(c *gin.Context) {
 
 	var params dto.SummaryReportParams
 	if err := c.ShouldBindQuery(&params); err != nil {
-		log.Printf("[ReportHandler] GetSummaryReport Bind Query: %v", err)
+		log.Printf("[ReportHandler] {GetSummaryReport Bind Query}: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid query parameters",
 		})
 		return
 	}
 
-	ctx := c.Request.Context()
-	reportBytes, err := h.ReportService.GenerateSummaryReport(ctx, params)
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		log.Printf("[ReportHandler] Generate Summary Report: %v", err)
+		log.Printf("[ReportHandler] {Parse User ID}: %v", err)
+		errors.Send(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"Invalid user context.",
+			err,
+		)
+		return
+	}
+
+	ctx := c.Request.Context()
+	permissions := c.GetStringSlice("permissions")
+	reportBytes, err := h.ReportService.GenerateSummaryReport(
+		ctx, permissions, userID, params,
+	)
+	if err != nil {
+		log.Printf("[ReportHandler] {Generate Summary Report}: %v", err)
 		errors.Send(
 			c,
 			http.StatusInternalServerError,

@@ -13,6 +13,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/telemetry"
+	"github.com/google/uuid"
 	"github.com/jung-kurt/gofpdf/v2"
 )
 
@@ -20,10 +21,13 @@ type ReportService interface {
 	GenerateSystemReport(
 		ctx context.Context,
 		permissions []string,
+		userID uuid.UUID,
 		params dto.SystemReportParams,
 	) ([]byte, error)
 	GenerateSummaryReport(
 		ctx context.Context,
+		permissions []string,
+		userID uuid.UUID,
 		params dto.SummaryReportParams,
 	) ([]byte, error)
 }
@@ -58,6 +62,7 @@ type SystemReportJSON struct {
 func (s *reportService) GenerateSystemReport(
 	ctx context.Context,
 	permissions []string,
+	userID uuid.UUID,
 	params dto.SystemReportParams,
 ) ([]byte, error) {
 	var users []models.User
@@ -65,17 +70,33 @@ func (s *reportService) GenerateSystemReport(
 	var logs []models.AuditLog
 	var err error
 
-	hasUsersPerm := slices.Contains(permissions, "View all users")
+	hasAllUsers := slices.Contains(permissions, "View all users")
+	hasClientUsers := slices.Contains(
+		permissions, "View users based on appclient",
+	)
 	hasClientsPerm := slices.Contains(permissions, "View all appclients")
 	hasLogsPerm := slices.Contains(permissions, "View audit logs")
 
-	if params.IncludeUsers && hasUsersPerm {
-		users, err = s.userRepo.GetUserList(
-			ctx, params.LimitUsers, 0, "created_at", "DESC", "",
-		)
-		if err != nil {
-			log.Printf("[ReportService] GetUserList error: %v", err)
-			return nil, fmt.Errorf("failed to fetch users: %w", err)
+	if params.IncludeUsers {
+		if hasAllUsers {
+			users, err = s.userRepo.GetUserList(
+				ctx, params.LimitUsers, 0, "created_at", "DESC", "",
+			)
+			if err != nil {
+				log.Printf("[ReportService] GetUserList error: %v", err)
+				return nil, fmt.Errorf("failed to fetch users: %w", err)
+			}
+		} else if hasClientUsers {
+			users, err = s.userRepo.GetBoundUserList(
+				ctx, params.LimitUsers, 0, userID[:], "created_at",
+				"DESC", "",
+			)
+			if err != nil {
+				log.Printf(
+					"[ReportService] GetBoundUserList error: %v", err,
+				)
+				return nil, fmt.Errorf("failed to fetch bound users: %w", err)
+			}
 		}
 	}
 
@@ -149,14 +170,15 @@ func (s *reportService) GenerateSystemReport(
 	genDate := time.Now().Format("2006-01-02 15:04:05 MST")
 	addSystemReportHeader(pdf, genDate)
 
-	if params.IncludeUsers && hasUsersPerm {
+	hasAnyUsersPerm := hasAllUsers || hasClientUsers
+	if params.IncludeUsers && hasAnyUsersPerm {
 		addReportSectionTitle(pdf, "1. Registered Users")
 		addUsersTable(pdf, users)
 	}
 
 	if params.IncludeClients && hasClientsPerm {
 		sectionNum := "2"
-		if !params.IncludeUsers || !hasUsersPerm {
+		if !params.IncludeUsers || !hasAnyUsersPerm {
 			sectionNum = "1"
 		}
 		addReportSectionTitle(
@@ -167,10 +189,10 @@ func (s *reportService) GenerateSystemReport(
 
 	if params.IncludeLogs && hasLogsPerm {
 		sectionNum := "3"
-		if (!params.IncludeUsers || !hasUsersPerm) &&
+		if (!params.IncludeUsers || !hasAnyUsersPerm) &&
 			(!params.IncludeClients || !hasClientsPerm) {
 			sectionNum = "1"
-		} else if (!params.IncludeUsers || !hasUsersPerm) ||
+		} else if (!params.IncludeUsers || !hasAnyUsersPerm) ||
 			(!params.IncludeClients || !hasClientsPerm) {
 			sectionNum = "2"
 		}
@@ -329,6 +351,8 @@ func addLogsTable(pdf *gofpdf.Fpdf, logs []models.AuditLog) {
 
 func (s *reportService) GenerateSummaryReport(
 	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
 	params dto.SummaryReportParams,
 ) ([]byte, error) {
 	var since time.Duration
@@ -344,21 +368,53 @@ func (s *reportService) GenerateSummaryReport(
 
 	startTime := time.Now().Add(-since)
 
-	var userMetrics, roleMetrics, permMetrics, clientMetrics, logMetrics []models.MetricCard
+	var allowedClients []string
+	if !slices.Contains(permissions, "View all appclients") &&
+		s.metricsRepo != nil {
+		allowedClients, _ = s.metricsRepo.GetBoundClientIDs(ctx, userID[:])
+		if allowedClients == nil {
+			allowedClients = []string{}
+		}
+	}
+
+	hasAllUsers := slices.Contains(permissions, "View all users")
+	hasClientUsers := slices.Contains(
+		permissions, "View users based on appclient",
+	)
+
+	var (
+		userMetrics   []models.MetricCard
+		roleMetrics   []models.MetricCard
+		permMetrics   []models.MetricCard
+		clientMetrics []models.MetricCard
+		logMetrics    []models.MetricCard
+	)
 	var totalLoginsInt int
 	var failedAttempts []models.FailedAuthAttempt
 	var topClients []models.TopClientLogin
 
 	if s.metricsRepo != nil {
-		userMetrics, _ = s.metricsRepo.GetUserMetrics(ctx, nil)
+		if hasAllUsers || hasClientUsers {
+			var adminID []byte
+			if !hasAllUsers {
+				adminID = userID[:]
+			}
+			userMetrics, _ = s.metricsRepo.GetUserMetrics(ctx, adminID)
+		}
 		roleMetrics, _ = s.metricsRepo.GetRoleMetrics(ctx)
 		permMetrics, _ = s.metricsRepo.GetPermissionMetrics(ctx)
-		clientMetrics, _ = s.metricsRepo.GetClientMetrics(ctx, nil)
+		clientMetrics, _ = s.metricsRepo.GetClientMetrics(ctx, allowedClients)
 		logMetrics, _ = s.metricsRepo.GetLogMetrics(ctx, true, true)
 
-		totalLoginsInt, _ = s.metricsRepo.GetTotalLogins(ctx, startTime, nil)
-		failedAttempts, _ = s.metricsRepo.GetFailedAuthAttempts(ctx, startTime, nil)
-		topClients, _ = s.metricsRepo.GetTopClients(ctx, 10, startTime, nil)
+		totalLoginsInt, _ = s.metricsRepo.GetTotalLogins(
+			ctx, startTime, allowedClients,
+		)
+		failedAttempts, _ = s.metricsRepo.GetFailedAuthAttempts(
+			ctx, startTime, allowedClients,
+		)
+		topClients, _ = s.metricsRepo.GetTopClients(
+			ctx, 10, startTime, allowedClients,
+		)
 	}
 
 	totalLogins := int64(totalLoginsInt)
