@@ -37,4 +37,19 @@ describe('RegisterDetailsStep Component', () => {
     fireEvent.submit(screen.getByRole('button', { name: /CONTINUE/i }));
     expect(defaultProps.onSubmit).toHaveBeenCalled();
   });
+
+  it('renders terms and privacy policy agreement with PUP links', () => {
+    render(<BrowserRouter><RegisterDetailsStep {...defaultProps} /></BrowserRouter>);
+    const termsLink = screen.getByRole('link', { name: /Terms of Use/i });
+    expect(termsLink).toBeInTheDocument();
+    expect(termsLink).toHaveAttribute('href', 'https://www.pup.edu.ph/terms/');
+    expect(termsLink).toHaveAttribute('target', '_blank');
+
+    const privacyLink = screen.getByRole('link', { name: /Privacy Policy/i });
+    expect(privacyLink).toBeInTheDocument();
+    expect(privacyLink).toHaveAttribute('href', '/register/privacy-policy');
+    expect(privacyLink).not.toHaveAttribute('target', '_blank');
+
+    expect(screen.getByText(/stored in PUP-Taguig/i)).toBeInTheDocument();
+  });
 });
