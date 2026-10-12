@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"slices"
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	repo "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/telemetry"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -18,6 +21,8 @@ import (
 type KPIService interface {
 	GetSystemKPIs(
 		ctx context.Context,
+		permissions []string,
+		userID uuid.UUID,
 	) (*dto.SystemKPISummaryDTO, error)
 }
 
@@ -46,15 +51,30 @@ func NewKPIService(
 // GetSystemKPIs calculates live APM, security, and identity lifecycle KPIs.
 func (s *kpiService) GetSystemKPIs(
 	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
 ) (*dto.SystemKPISummaryDTO, error) {
 	apmTelemetry := telemetry.GlobalCollector.GetTelemetry(
 		ctx, s.db, s.cache,
 	)
 
-	userMetrics, err := s.metricsRepo.GetUserMetrics(ctx, nil)
-	if err != nil {
-		log.Printf("[KPIService] GetUserMetrics: %v", err)
-		return nil, fmt.Errorf("failed to fetch user metrics: %w", err)
+	hasAllUsers := slices.Contains(permissions, "View all users")
+	hasClientUsers := slices.Contains(
+		permissions, "View users based on appclient",
+	)
+
+	var userMetrics []models.MetricCard
+	if hasAllUsers || hasClientUsers {
+		var adminID []byte
+		if !hasAllUsers {
+			adminID = userID[:]
+		}
+		var err error
+		userMetrics, err = s.metricsRepo.GetUserMetrics(ctx, adminID)
+		if err != nil {
+			log.Printf("[KPIService] GetUserMetrics: %v", err)
+			return nil, fmt.Errorf("failed to fetch user metrics: %w", err)
+		}
 	}
 
 	identity := dto.IdentityKPIDTO{}

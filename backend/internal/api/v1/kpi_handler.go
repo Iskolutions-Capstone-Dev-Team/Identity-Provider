@@ -7,6 +7,7 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type KPIHandler struct {
@@ -26,8 +27,12 @@ func (h *KPIHandler) GetSystemKPIs(c *gin.Context) {
 	hasAll := middleware.HasPermission(
 		c, "View all appclients",
 	)
+	hasAllUsers := middleware.HasPermission(c, "View all users")
+	hasClientUsers := middleware.HasPermission(
+		c, "View users based on appclient",
+	)
 
-	if !hasLogs && !hasConn && !hasAll {
+	if !hasLogs && !hasConn && !hasAll && !hasAllUsers && !hasClientUsers {
 		c.JSON(
 			http.StatusForbidden,
 			gin.H{"error": "Insufficient permissions to view system KPIs."},
@@ -35,10 +40,22 @@ func (h *KPIHandler) GetSystemKPIs(c *gin.Context) {
 		return
 	}
 
-	ctx := c.Request.Context()
-	kpis, err := h.KPIService.GetSystemKPIs(ctx)
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		log.Printf("[KPIHandler] GetSystemKPIs: %v", err)
+		log.Printf("[KPIHandler] {Parse User ID}: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": "Invalid user context."},
+		)
+		return
+	}
+
+	permissions := c.GetStringSlice("permissions")
+	ctx := c.Request.Context()
+	kpis, err := h.KPIService.GetSystemKPIs(ctx, permissions, userID)
+	if err != nil {
+		log.Printf("[KPIHandler] {GetSystemKPIs}: %v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{"error": "Failed to fetch system KPIs."},

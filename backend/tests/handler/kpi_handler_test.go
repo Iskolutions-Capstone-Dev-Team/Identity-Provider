@@ -10,6 +10,7 @@ import (
 	v1 "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,6 +21,8 @@ type mockKPIService struct {
 
 func (m *mockKPIService) GetSystemKPIs(
 	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
 ) (*dto.SystemKPISummaryDTO, error) {
 	if m.err != nil {
 		return nil, m.err
@@ -50,6 +53,7 @@ func TestKPIHandlerGetSystemKPIs(t *testing.T) {
 
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
+		c.Set("user_id", uuid.New().String())
 		c.Set("permissions", []string{"View audit logs"})
 		c.Next()
 	})
