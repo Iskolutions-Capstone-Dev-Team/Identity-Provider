@@ -10,6 +10,7 @@ const items = [
   { id: "login", value: "login" },
   { id: "register", value: "register" },
   { id: "privacy-policy", value: "privacy-policy" },
+  { id: "register-privacy-policy", value: "register/privacy-policy" },
 ];
 
 export default function PublicNotFound() {
