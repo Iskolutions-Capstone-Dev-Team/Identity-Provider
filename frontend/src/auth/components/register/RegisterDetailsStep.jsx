@@ -1,11 +1,13 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { User, Mail, ShieldCheck } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Separator } from "../../../components/ui/separator";
 import { FieldError, FormLabel, RegisterSubmitButton, RegisterTextField, RoleSelectField, RegisterSuffixSelectField } from "./registerUi";
 import { SUFFIX_OPTIONS as suffixOptions } from "../../../utils/suffixOptions";
+import { ROUTE_PATHS } from "../../../routes/routePaths";
 
 export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, isSubmitting, loginPath, roleDropdownRef, roleOptions, isLoadingRoles, onChange, onRoleMenuToggle, onRoleSelect, onSubmit }) {
+  const location = useLocation();
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <RegisterTextField
@@ -91,6 +93,26 @@ export default function RegisterDetailsStep({ details, errors, isRoleMenuOpen, i
         />
         <FieldError message={errors.accountType} />
       </div>
+
+      <p className="text-left text-xs leading-relaxed text-white/75">
+        By continuing, you accept our{" "}
+        <a
+          href="https://www.pup.edu.ph/terms/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-[#ffd700] underline decoration-transparent transition duration-300 hover:decoration-[#ffd700]"
+        >
+          Terms of Use
+        </a>
+        , our{" "}
+        <Link
+          to={`${ROUTE_PATHS.REGISTER_PRIVACY_POLICY}${location.search}`}
+          className="font-medium text-[#ffd700] underline decoration-transparent transition duration-300 hover:decoration-[#ffd700]"
+        >
+          Privacy Policy
+        </Link>
+        , and agree that your data is processed and stored in PUP-Taguig.
+      </p>
 
       <RegisterSubmitButton disabled={isSubmitting}>
         {isSubmitting ? "SENDING OTP..." : "CONTINUE"}
