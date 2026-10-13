@@ -112,6 +112,7 @@ export function useDashboard() {
   const [isReportTypeSelectionOpen, setIsReportTypeSelectionOpen] = useState(false);
   const [isReportConfirmOpen, setIsReportConfirmOpen] = useState(false);
   const [isSystemReportConfirmOpen, setIsSystemReportConfirmOpen] = useState(false);
+  const [isSummaryReportConfirmOpen, setIsSummaryReportConfirmOpen] = useState(false);
   const [isLoginsModalOpen, setIsLoginsModalOpen] = useState(false);
   const [selectedModalPeriod, setSelectedModalPeriod] = useState(null);
 
@@ -185,13 +186,33 @@ export function useDashboard() {
     downloadSystemReportMutation.mutate(filters);
   };
 
-  const isDownloadingReport = downloadReportMutation.isPending || downloadSystemReportMutation.isPending;
+  const downloadSummaryReportMutation = useMutation({
+    mutationFn: (filters) => metricsService.downloadSummaryReport(filters),
+    onSuccess: (reportBlob, filters) => {
+      setReportError("");
+      const datePart = new Date().toISOString().slice(0, 10);
+      const ext = filters?.format === "json" ? "json" : "pdf";
+      downloadBlob(reportBlob, `summary_report_${datePart}.${ext}`);
+    },
+    onError: (downloadError) => {
+      console.error("Summary report download error:", downloadError);
+      setReportError("Unable to generate the summary report right now.");
+    }
+  });
+
+  const handleDownloadSummaryReport = (filters) => {
+    downloadSummaryReportMutation.mutate(filters);
+  };
+
+  const isDownloadingReport = downloadReportMutation.isPending || downloadSystemReportMutation.isPending || downloadSummaryReportMutation.isPending;
 
   const handleSelectReportType = (type) => {
     if (type === 'authentication') {
       setIsReportConfirmOpen(true);
     } else if (type === 'system') {
       setIsSystemReportConfirmOpen(true);
+    } else if (type === 'summary') {
+      setIsSummaryReportConfirmOpen(true);
     }
   };
 
@@ -214,6 +235,17 @@ export function useDashboard() {
     toast.success("System Report generated");
     await handleDownloadSystemReport(filters);
     setIsSystemReportConfirmOpen(false);
+    setIsReportTypeSelectionOpen(false);
+  };
+
+  const handleSummaryReportConfirmCancel = () => {
+    setIsSummaryReportConfirmOpen(false);
+  };
+
+  const handleSummaryReportConfirm = async (filters) => {
+    toast.success("Summary Report generated");
+    await handleDownloadSummaryReport(filters);
+    setIsSummaryReportConfirmOpen(false);
     setIsReportTypeSelectionOpen(false);
   };
 
@@ -243,5 +275,8 @@ export function useDashboard() {
     handleReportConfirm,
     handleSystemReportConfirmCancel,
     handleSystemReportConfirm,
+    isSummaryReportConfirmOpen,
+    handleSummaryReportConfirmCancel,
+    handleSummaryReportConfirm,
   };
 }
