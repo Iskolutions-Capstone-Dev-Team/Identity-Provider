@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../components/ui/dialog";
 import { Button } from "../../../components/ui/button";
-import { FileText, Database } from "lucide-react";
+import { FileText, Database, ChartNoAxesCombined } from "lucide-react";
 
 function ReportOptionButton({ title, description, icon, onClick, disabled }) {
   return (
@@ -42,6 +42,12 @@ export default function ReportTypeSelectionModal({ open, onClose, onSelectType }
                 description="Export users, clients, and logs."
                 icon={<Database className="size-5" />}
                 onClick={() => onSelectType?.('system')}
+              />
+              <ReportOptionButton
+                title="System Analytics"
+                description="Export anonymized APM metrics and usage data."
+                icon={<ChartNoAxesCombined className="size-5" />}
+                onClick={() => onSelectType?.('summary')}
               />
             </div>
           </div>
