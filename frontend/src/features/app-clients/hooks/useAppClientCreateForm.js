@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
 export const TOKEN_TTL_LIMITS = {
-  accessToken: { min: 1, max: 1440, defaultValue: "60" },
-  refreshToken: { min: 1, max: 8760, defaultValue: "168" },
+  accessToken: { min: 5, max: 480, defaultValue: "15" },
+  refreshToken: { min: 24, max: 720, defaultValue: "168" },
 };
 export const GRANT_OPTIONS = ["authorization_code", "refresh_token", "client_credentials"];
 
@@ -133,10 +133,10 @@ export function useAppClientCreateForm({ onSubmit }) {
     const nextFieldErrors = { ...initialFieldErrors, imageFile: fieldErrors.imageFile, name: fieldErrors.name, baseURL: fieldErrors.baseURL, redirectURL: fieldErrors.redirectURL, logoutURL: fieldErrors.logoutURL, onePortalRedirectLink: fieldErrors.onePortalRedirectLink };
 
     if (!accessTokenTTL) nextFieldErrors.accessTokenTTL = "Access Token expiration is required.";
-    else if (!isValidTokenTTL(parsedAccessTokenTTL, TOKEN_TTL_LIMITS.accessToken)) nextFieldErrors.accessTokenTTL = "Expiration must be between 1 and 1,440 minutes.";
+    else if (!isValidTokenTTL(parsedAccessTokenTTL, TOKEN_TTL_LIMITS.accessToken)) nextFieldErrors.accessTokenTTL = "Expiration must be between 5 and 480 minutes.";
 
     if (!refreshTokenTTL) nextFieldErrors.refreshTokenTTL = "Refresh Token expiration is required.";
-    else if (!isValidTokenTTL(parsedRefreshTokenTTL, TOKEN_TTL_LIMITS.refreshToken)) nextFieldErrors.refreshTokenTTL = "Expiration must be between 1 and 8,760 hours.";
+    else if (!isValidTokenTTL(parsedRefreshTokenTTL, TOKEN_TTL_LIMITS.refreshToken)) nextFieldErrors.refreshTokenTTL = "Expiration must be between 24 and 720 hours.";
 
     setFieldErrors(nextFieldErrors);
     const firstError = nextFieldErrors.accessTokenTTL || nextFieldErrors.refreshTokenTTL;
