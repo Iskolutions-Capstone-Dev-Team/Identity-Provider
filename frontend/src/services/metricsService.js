@@ -7,6 +7,7 @@ let clientMetricsPromise = null;
 let permissionMetricsPromise = null;
 let logMetricsPromise = null;
 let registrationMetricsPromise = null;
+let kpiMetricsPromise = null;
 
 export const metricsService = {
   async getDashboardMetrics() {
@@ -131,6 +132,38 @@ export const metricsService = {
 
     const queryString = params.toString();
     const url = queryString ? `/admin/reports/system?${queryString}` : "/admin/reports/system";
+
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+    });
+
+    return response.data;
+  },
+
+  async getSystemKPIs() {
+    if (!kpiMetricsPromise) {
+      kpiMetricsPromise = axiosInstance
+        .get("/admin/kpis")
+        .finally(() => {
+          kpiMetricsPromise = null;
+        });
+    }
+    const response = await kpiMetricsPromise;
+    return response.data;
+  },
+
+  async downloadSummaryReport(filters = {}) {
+    const params = new URLSearchParams();
+    
+    if (filters.timeframe) {
+      params.append("time_frame", filters.timeframe);
+    }
+    if (filters.format) {
+      params.append("format", filters.format);
+    }
+
+    const queryString = params.toString();
+    const url = queryString ? `/admin/reports/summary?${queryString}` : "/admin/reports/summary";
 
     const response = await axiosInstance.get(url, {
       responseType: "blob",

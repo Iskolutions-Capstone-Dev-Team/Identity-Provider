@@ -9,11 +9,15 @@ import { cn } from "@/lib/utils";
 import MetricFilterCard from "../components/MetricFilterCard";
 import ReportConfirmModal from "../components/ReportConfirmModal";
 import SystemReportConfirmModal from "../components/SystemReportConfirmModal";
+import SummaryReportConfirmModal from "../components/SummaryReportConfirmModal";
 import ReportTypeSelectionModal from "../components/ReportTypeSelectionModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/TopLoginsPanel";
 import SystemLoginsModal from "../components/SystemLoginsModal";
+import SystemKPIsPanel from "../components/SystemKPIsPanel";
 import SystemHealthWidget from "../components/SystemHealthWidget";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Gauge, Activity } from "lucide-react";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useDashboard } from "../hooks/useDashboard";
@@ -48,6 +52,9 @@ export default function Dashboard() {
     handleReportConfirm,
     handleSystemReportConfirmCancel,
     handleSystemReportConfirm,
+    isSummaryReportConfirmOpen,
+    handleSummaryReportConfirmCancel,
+    handleSummaryReportConfirm,
   } = dashboardState;
 
   const [api, setApi] = useState();
@@ -167,9 +174,32 @@ export default function Dashboard() {
           </Carousel>
         </section>
 
-        <div className="grid gap-6">
-          <SystemHealthWidget colorMode={colorMode} isDashboardLoading={showLoading} />
-        </div>
+        <Tabs defaultValue="kpis" className="w-full">
+          <TabsList className="mb-3 grid w-full grid-cols-2 max-w-xs">
+            <TabsTrigger
+              value="kpis"
+              className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+            >
+              <Gauge className="size-4" />
+              <span>KPIs</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="system-status"
+              className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+            >
+              <Activity className="size-4" />
+              <span>System Status</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="kpis" className="mt-0">
+            <SystemKPIsPanel colorMode={colorMode} isDashboardLoading={showLoading} />
+          </TabsContent>
+
+          <TabsContent value="system-status" className="mt-0">
+            <SystemHealthWidget colorMode={colorMode} isDashboardLoading={showLoading} />
+          </TabsContent>
+        </Tabs>
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <TopLoginsPanel
@@ -212,6 +242,14 @@ export default function Dashboard() {
         isGenerating={isDownloadingReport}
         onCancel={handleSystemReportConfirmCancel}
         onConfirm={handleSystemReportConfirm}
+      />
+
+      <SummaryReportConfirmModal
+        open={isSummaryReportConfirmOpen}
+        colorMode={colorMode}
+        isGenerating={isDownloadingReport}
+        onCancel={handleSummaryReportConfirmCancel}
+        onConfirm={handleSummaryReportConfirm}
       />
 
       <SystemLoginsModal
