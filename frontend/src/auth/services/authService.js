@@ -35,10 +35,13 @@ export const authService = {
     const pendingToken = response.data?.mfa_pending_token;
     if (pendingToken) {
       storePendingMfaTokenResponse({ access_token: pendingToken });
-      return { redirectUrl, hasMfa: true };
     }
 
-    return { redirectUrl, mfaRequired: !!pendingToken };
+    return {
+      redirectUrl,
+      mfaRequired: !!pendingToken,
+      hasMfa: !!pendingToken,
+    };
   },
 
   async exchangeCode(code) {
