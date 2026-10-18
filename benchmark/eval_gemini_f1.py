@@ -25,11 +25,16 @@ try:
 except ImportError:
     pass
 
-# Check for requests
+# Check for requests and tabulate
 try:
     import requests
 except ImportError:
     requests = None
+
+try:
+    from tabulate import tabulate
+except ImportError:
+    tabulate = None
 
 CLASSES = ["LOW", "MEDIUM", "HIGH"]
 
@@ -230,19 +235,59 @@ def print_and_format_report(metrics: Dict[str, Any], model_name: str) -> str:
     lines.append(f"**Overall Accuracy:** {acc * 100:.2f}%\n")
 
     lines.append("## Classification Report")
-    lines.append("| Class | Precision | Recall | F1-Score | Support |")
-    lines.append("| :--- | :---: | :---: | :---: | :---: |")
+    clf_headers = ["Class", "Precision", "Recall", "F1-Score", "Support"]
+    clf_rows = []
     for c in CLASSES:
         m = per_class[c]
-        lines.append(f"| **{c}** | {m['precision']:.4f} | {m['recall']:.4f} | {m['f1_score']:.4f} | {m['support']} |")
-    lines.append(f"| **Macro Avg** | {macro['precision']:.4f} | {macro['recall']:.4f} | **{macro['f1_score']:.4f}** | {total} |")
-    lines.append(f"| **Weighted Avg** | {weighted['precision']:.4f} | {weighted['recall']:.4f} | **{weighted['f1_score']:.4f}** | {total} |\n")
+        clf_rows.append([
+            f"**{c}**",
+            f"{m['precision']:.4f}",
+            f"{m['recall']:.4f}",
+            f"{m['f1_score']:.4f}",
+            str(m['support'])
+        ])
+    clf_rows.append([
+        "**Macro Avg**",
+        f"{macro['precision']:.4f}",
+        f"{macro['recall']:.4f}",
+        f"**{macro['f1_score']:.4f}**",
+        str(total)
+    ])
+    clf_rows.append([
+        "**Weighted Avg**",
+        f"{weighted['precision']:.4f}",
+        f"{weighted['recall']:.4f}",
+        f"**{weighted['f1_score']:.4f}**",
+        str(total)
+    ])
+
+    if tabulate:
+        lines.append(tabulate(clf_rows, headers=clf_headers, tablefmt="pipe", disable_numparse=True, colalign=("left", "center", "center", "center", "center")))
+    else:
+        lines.append("| Class | Precision | Recall | F1-Score | Support |")
+        lines.append("| :--- | :---: | :---: | :---: | :---: |")
+        for row in clf_rows:
+            lines.append(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} |")
+    lines.append("")
 
     lines.append("## Confusion Matrix")
-    lines.append("| Actual \\ Predicted | Pred LOW | Pred MEDIUM | Pred HIGH |")
-    lines.append("| :--- | :---: | :---: | :---: |")
+    cm_headers = ["Actual \\ Predicted", "Pred LOW", "Pred MEDIUM", "Pred HIGH"]
+    cm_rows = []
     for i, c in enumerate(CLASSES):
-        lines.append(f"| **Actual {c}** | {cm[i][0]} | {cm[i][1]} | {cm[i][2]} |")
+        cm_rows.append([
+            f"**Actual {c}**",
+            str(cm[i][0]),
+            str(cm[i][1]),
+            str(cm[i][2])
+        ])
+
+    if tabulate:
+        lines.append(tabulate(cm_rows, headers=cm_headers, tablefmt="pipe", disable_numparse=True, colalign=("left", "center", "center", "center")))
+    else:
+        lines.append("| Actual \\ Predicted | Pred LOW | Pred MEDIUM | Pred HIGH |")
+        lines.append("| :--- | :---: | :---: | :---: |")
+        for row in cm_rows:
+            lines.append(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} |")
     lines.append("")
 
     return "\n".join(lines)
