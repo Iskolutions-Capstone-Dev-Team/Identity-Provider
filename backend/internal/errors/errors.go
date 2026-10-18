@@ -21,8 +21,9 @@ const (
 	CodeOTPFailed          = 1010
 	CodeRegistrationFailed = 1011
 	CodeClientError        = 1012
-	CodeRateLimitExceeded  = 1029
-	CodeSuspended          = 1030
+	CodeRateLimitExceeded    = 1029
+	CodeSuspended            = 1030
+	CodePasswordRecentlyUsed = 1031
 )
 
 // Send sends a standardized error response to the client.
