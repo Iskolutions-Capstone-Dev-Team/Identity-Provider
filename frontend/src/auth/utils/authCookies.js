@@ -6,7 +6,7 @@ const LEGACY_REFRESH_TOKEN_COOKIE = "refresh_token";
 const SESSION_COOKIE = "session_cookie";
 const TERMS_STORAGE_KEY = "termsAccepted";
 const PENDING_MFA_TOKEN_RESPONSE_STORAGE_KEY = "idp.pendingMfaTokenResponse";
-const DEFAULT_ACCESS_TOKEN_MAX_AGE_SECONDS = 3600;
+const DEFAULT_ACCESS_TOKEN_MAX_AGE_SECONDS = 900;
 
 function getCookieRow(name) {
   if (typeof document === "undefined") {

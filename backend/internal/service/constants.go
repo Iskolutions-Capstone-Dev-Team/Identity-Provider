@@ -12,10 +12,10 @@ const (
 	SESSION_COOKIE_NAME = "session_cookie"
 	SECRET_ENTROPY      = 32
 	DEFAULT_PAGE        = 1
-	ACCESS_TOKEN_EXPIRY = 3600
+	ACCESS_TOKEN_EXPIRY = 900
 
-	// DefaultAccessTokenTTL represents access token duration in minutes
-	DefaultAccessTokenTTL = 60
+	// DefaultAccessTokenTTL represents access token duration in minutes (15 mins industry standard)
+	DefaultAccessTokenTTL = 15
 	// DefaultRefreshTokenTTL represents refresh token duration in hours
 	DefaultRefreshTokenTTL = 168
 )

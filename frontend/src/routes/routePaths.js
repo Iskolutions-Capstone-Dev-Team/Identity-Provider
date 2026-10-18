@@ -21,5 +21,6 @@ export const ROUTE_PATHS = Object.freeze({
   BACKUP_RESTORE: "/backup-restore",
   PROFILE: "/profile",
   PRIVACY_POLICY: "/privacy-policy",
+  REGISTER_PRIVACY_POLICY: "/register/privacy-policy",
   INTERNAL_PRIVACY_POLICY: "/internal/privacy-policy",
 });
