@@ -44,6 +44,7 @@ function PasswordRuleList({ validation, colorMode = "light" }) {
 
 export function getPasswordValidationState(form) {
   const password = form.newPassword || "";
+  const currentPassword = form.currentPassword || "";
 
   const checks = {
     length: password.length >= 8,
@@ -52,12 +53,16 @@ export function getPasswordValidationState(form) {
     special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
   };
 
+  const isDifferentFromCurrent = !currentPassword || password !== currentPassword;
+
   return {
     checks,
+    isDifferentFromCurrent,
     isValid:
       Object.values(checks).every(Boolean) &&
       form.newPassword !== "" &&
-      form.newPassword === form.confirmPassword,
+      form.newPassword === form.confirmPassword &&
+      isDifferentFromCurrent,
   };
 }
 
@@ -140,7 +145,16 @@ export default function ChangePasswordStep({ form, setForm, showCurrentPassword 
             </InputGroup>
 
             {field === "newPassword" && (
-              <PasswordRuleList validation={validation} colorMode={colorMode} />
+              <>
+                <PasswordRuleList validation={validation} colorMode={colorMode} />
+                {form.currentPassword &&
+                  form.newPassword &&
+                  form.newPassword === form.currentPassword && (
+                    <p className="mt-2 text-xs font-medium text-destructive">
+                      New password cannot be the same as your current password.
+                    </p>
+                  )}
+              </>
             )}
           </Field>
         ))}
