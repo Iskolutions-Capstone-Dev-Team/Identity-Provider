@@ -1,0 +1,2038 @@
+{
+  "metadata": {
+    "model": "gemini-3.1-flash-lite",
+    "timestamp": "2026-10-18T16:42:08.553035",
+    "elapsed_seconds": 0.014957904815673828,
+    "total_samples": 210
+  },
+  "metrics": {
+    "confusion_matrix": [
+      [
+        64,
+        6,
+        0
+      ],
+      [
+        0,
+        70,
+        0
+      ],
+      [
+        0,
+        0,
+        70
+      ]
+    ],
+    "classes": [
+      "LOW",
+      "MEDIUM",
+      "HIGH"
+    ],
+    "per_class": {
+      "LOW": {
+        "precision": 1.0,
+        "recall": 0.9142857142857143,
+        "f1_score": 0.955223880597015,
+        "support": 70
+      },
+      "MEDIUM": {
+        "precision": 0.9210526315789473,
+        "recall": 1.0,
+        "f1_score": 0.958904109589041,
+        "support": 70
+      },
+      "HIGH": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "support": 70
+      }
+    },
+    "macro_avg": {
+      "precision": 0.9736842105263158,
+      "recall": 0.9714285714285714,
+      "f1_score": 0.9713759967286854
+    },
+    "weighted_avg": {
+      "precision": 0.9736842105263157,
+      "recall": 0.9714285714285714,
+      "f1_score": 0.9713759967286855
+    },
+    "accuracy": 0.9714285714285714,
+    "total_samples": 210
+  },
+  "predictions": [
+    {
+      "scenario_id": "high_013_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_064_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_029_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_007_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_059_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_041_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_044_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_035_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_001_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_043_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_004_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_049_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_012_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_046_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_042_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_009_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_037_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_059_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_052_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_054_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_061_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_049_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_013_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_029_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_024_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_006_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_063_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_055_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_034_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_011_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_026_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_052_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_038_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_045_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_066_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_038_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_017_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_022_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_048_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_023_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_044_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_023_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_025_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_009_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_004_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_069_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_028_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_043_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_065_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_062_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_026_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_066_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_002_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_015_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_061_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_012_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_056_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_002_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_033_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_025_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_013_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_055_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_016_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_008_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_036_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_039_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_060_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_065_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_031_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_007_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_048_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_010_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_070_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_009_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_047_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_021_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_034_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_064_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_048_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_056_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_017_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_008_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_040_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_023_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_067_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_018_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_049_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_053_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_024_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_062_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_010_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_047_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_053_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_045_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_039_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_031_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_065_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_050_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_063_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_041_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_035_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_068_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_032_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_014_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_038_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_001_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_030_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_037_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_039_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_022_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_057_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_029_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_026_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_046_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_035_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_019_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_020_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_003_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_052_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_055_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_051_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_069_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_032_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_051_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_057_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_016_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_015_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_044_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_032_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_068_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_005_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_063_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_054_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_011_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_005_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_003_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_047_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_022_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_028_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_033_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_020_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_062_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_064_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_004_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_012_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_006_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_068_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_036_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_042_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_003_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_024_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_060_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_061_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_069_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_042_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_018_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_050_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_021_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_025_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_018_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_031_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_043_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_030_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_036_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_001_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_040_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_045_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_033_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_027_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_030_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_014_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_054_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_058_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_005_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_028_abnormal_failure_ratio",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_016_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_067_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_051_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_007_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_015_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_006_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_059_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_008_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_057_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_041_persistent_slow_probe",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_020_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_027_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_058_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_060_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_058_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_066_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_027_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_011_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_046_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_070_standard_business_hours",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "low_034_quiet_off_peak",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "med_053_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "high_002_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "low_021_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_070_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_050_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_014_volumetric_auth_ddos_flood",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "med_037_credential_stuffing_distributed",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_019_high_volume_enterprise",
+      "ground_truth": "LOW",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "med_019_horizontal_password_spray",
+      "ground_truth": "MEDIUM",
+      "predicted": "MEDIUM",
+      "source": "CACHE",
+      "confidence": 0.85,
+      "anomalies": [
+        "Elevated suspicious failure activity / Spray pattern"
+      ]
+    },
+    {
+      "scenario_id": "low_010_accidental_typos",
+      "ground_truth": "LOW",
+      "predicted": "LOW",
+      "source": "CACHE",
+      "confidence": 0.9,
+      "anomalies": []
+    },
+    {
+      "scenario_id": "high_067_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_056_targeted_rapid_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_040_aggressive_credential_stuffing_burst",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    },
+    {
+      "scenario_id": "high_017_botnet_distributed_bruteforce",
+      "ground_truth": "HIGH",
+      "predicted": "HIGH",
+      "source": "CACHE",
+      "confidence": 0.95,
+      "anomalies": [
+        "Critical failure spike / Targeted brute force detected"
+      ]
+    }
+  ]
+}
