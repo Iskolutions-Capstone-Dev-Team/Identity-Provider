@@ -19,6 +19,16 @@ var UpdateUserPasswordProcedure = migrations.MigrationPart{
 
             START TRANSACTION;
 
+            -- 0. Archive old password hash into history
+            INSERT INTO password_histories (
+                user_id,
+                password_hash,
+                created_at
+            )
+            SELECT id, password_hash, NOW()
+            FROM users
+            WHERE id = p_userId AND password_hash IS NOT NULL;
+
             -- 1. Update password hash
             UPDATE users
             SET password_hash = p_newPasswordHash, updated_at = NOW()
