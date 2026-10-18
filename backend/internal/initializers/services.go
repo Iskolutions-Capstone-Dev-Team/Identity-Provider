@@ -47,12 +47,14 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 	passkeyRepo := repository.NewPasskeyRepository(db)
 	metricsRepo := repository.NewMetricsRepository(db)
 	deviceRepo := repository.NewDeviceRepository(db)
+	passHistRepo := repository.NewPasswordHistoryRepository(db)
 
 	userSvc := service.NewUserService(
 		userRepo,
 		clientRepo,
 		registrationRepo,
 		cauRepo,
+		passHistRepo,
 		appCache,
 	)
 
