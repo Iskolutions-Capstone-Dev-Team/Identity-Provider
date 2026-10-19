@@ -190,13 +190,13 @@ export function useAppClientModal({ open, mode, client, getClientDetails, onClos
     if (!accessTokenTTL) {
       nextFieldErrors.accessTokenTTL = "Access Token expiration is required.";
     } else if (!isValidTokenTTL(parseTokenTTL(accessTokenTTL), TOKEN_TTL_LIMITS.accessToken)) {
-      nextFieldErrors.accessTokenTTL = "Expiration must be between 1 and 1,440 minutes.";
+      nextFieldErrors.accessTokenTTL = "Expiration must be between 5 and 480 minutes.";
     }
 
     if (!refreshTokenTTL) {
       nextFieldErrors.refreshTokenTTL = "Refresh Token expiration is required.";
     } else if (!isValidTokenTTL(parseTokenTTL(refreshTokenTTL), TOKEN_TTL_LIMITS.refreshToken)) {
-      nextFieldErrors.refreshTokenTTL = "Expiration must be between 1 and 8,760 hours.";
+      nextFieldErrors.refreshTokenTTL = "Expiration must be between 24 and 720 hours.";
     }
 
     setFieldErrors(nextFieldErrors);

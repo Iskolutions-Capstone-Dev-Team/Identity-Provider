@@ -101,13 +101,36 @@ function getApiErrorMessage(
   );
 }
 
+const DRAFT_STORAGE_KEY = "idp_register_details_draft";
+
+function getDraftDetails() {
+  if (typeof window === "undefined") return initialDetails;
+  try {
+    const raw = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+    if (raw) {
+      return { ...initialDetails, ...JSON.parse(raw) };
+    }
+  } catch {
+    // ignore
+  }
+  return initialDetails;
+}
+
 export function useRegisterForm() {
   const verificationInputsRef = useRef([]);
   const roleDropdownRef = useRef(null);
 
   const [step, setStep] = useState("details");
-  const [details, setDetails] = useState(initialDetails);
+  const [details, setDetails] = useState(getDraftDetails);
   const [detailErrors, setDetailErrors] = useState(initialDetailErrors);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(details));
+    } catch {
+      // ignore
+    }
+  }, [details]);
   const [passwordValues, setPasswordValues] = useState(initialPasswordValues);
   const [passwordErrors, setPasswordErrors] = useState(initialPasswordErrors);
   const [verificationCode, setVerificationCode] = useState(
@@ -432,6 +455,11 @@ export function useRegisterForm() {
       password: passwordValues.password,
     }),
     onSuccess: () => {
+      try {
+        sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
       setStep("success");
     },
     onError: (submissionError) => {

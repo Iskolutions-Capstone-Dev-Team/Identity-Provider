@@ -239,7 +239,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
                     </InputGroupAddon>
                   </InputGroup>
                   {fieldErrors.accessTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.accessTokenTTL}</p>}
-                  {!fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1-1,440 minutes (24 hours)</p>}
+                  {!fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 5-480 minutes (8 hours)</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -251,7 +251,7 @@ export default function AppClientCreateForm({ onClose, onSubmit, colorMode = "li
                     </InputGroupAddon>
                   </InputGroup>
                   {fieldErrors.refreshTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.refreshTokenTTL}</p>}
-                  {!fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1 - 8,760 hours (1 year)</p>}
+                  {!fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 24 - 720 hours (30 days)</p>}
                 </div>
               </div>
             </CardContent>
