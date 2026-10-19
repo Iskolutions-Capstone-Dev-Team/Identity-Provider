@@ -67,5 +67,21 @@ test.describe('Login flow', () => {
     // We should be back at the login page, so the email field should be visible again
     await expect(page.locator('input[type="email"]')).toBeVisible();
   });
+
+  test('should open Forgot Password modal from login page', async ({ page }) => {
+    await page.goto('http://localhost:5173/login');
+
+    const forgotPasswordBtn = page.locator('button:has-text("Forgot Password?"), a:has-text("Forgot Password?")').first();
+    await expect(forgotPasswordBtn).toBeVisible();
+    await forgotPasswordBtn.click();
+
+    // Forgot password dialog header should be visible
+    await expect(page.locator('text=Forgot Password?')).toBeVisible();
+    await expect(page.locator('button:has-text("Cancel")')).toBeVisible();
+
+    // Clicking cancel closes the modal
+    await page.click('button:has-text("Cancel")');
+    await expect(page.locator('text=Forgot Password?')).not.toBeVisible();
+  });
 });
 

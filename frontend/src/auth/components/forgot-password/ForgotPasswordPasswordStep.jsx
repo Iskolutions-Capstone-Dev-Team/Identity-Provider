@@ -103,7 +103,12 @@ export default function ForgotPasswordPasswordStep({ form, setForm, validation, 
             </InputGroup>
 
             {field === "newPassword" && (
-              <PasswordRuleList validation={validation} colorMode={colorMode} />
+              <>
+                <p className={`text-xs ${colorMode === "dark" ? "text-[#aeb9c8]" : "text-[#64748b]"}`}>
+                  Must be different from your last 5 passwords.
+                </p>
+                <PasswordRuleList validation={validation} colorMode={colorMode} />
+              </>
             )}
           </Field>
         ))}
