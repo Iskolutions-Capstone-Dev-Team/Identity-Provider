@@ -49,4 +49,30 @@ describe('ChangePasswordStep Component', () => {
       screen.getByText('New password cannot be the same as your current password.')
     ).toBeInTheDocument();
   });
+
+
+  it('renders hint indicating password cannot match last 5 passwords', () => {
+    render(
+      <ChangePasswordStep
+        form={{ currentPassword: '', newPassword: '', confirmPassword: '' }}
+        setForm={vi.fn()}
+      />
+    );
+    expect(
+      screen.getByText('Must be different from your last 5 passwords.')
+    ).toBeInTheDocument();
+  });
+
+  it('displays errorMessage alert when provided', () => {
+    render(
+      <ChangePasswordStep
+        form={{}}
+        setForm={vi.fn()}
+        errorMessage="You cannot reuse any of your last 5 passwords."
+      />
+    );
+    expect(
+      screen.getByText('You cannot reuse any of your last 5 passwords.')
+    ).toBeInTheDocument();
+  });
 });

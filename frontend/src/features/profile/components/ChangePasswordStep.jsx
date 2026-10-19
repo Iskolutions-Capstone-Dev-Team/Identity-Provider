@@ -146,6 +146,9 @@ export default function ChangePasswordStep({ form, setForm, showCurrentPassword 
 
             {field === "newPassword" && (
               <>
+                <p className={`text-xs ${colorMode === "dark" ? "text-[#aeb9c8]" : "text-[#64748b]"}`}>
+                  Must be different from your last 5 passwords.
+                </p>
                 <PasswordRuleList validation={validation} colorMode={colorMode} />
                 {form.currentPassword &&
                   form.newPassword &&

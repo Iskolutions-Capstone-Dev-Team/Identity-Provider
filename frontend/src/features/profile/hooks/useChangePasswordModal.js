@@ -17,8 +17,13 @@ function normalizeTextValue(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function getRequestErrorMessage(error, fallbackMessage) {
-  const responseMessage = normalizeTextValue(error?.response?.data?.error);
+export function getRequestErrorMessage(error, fallbackMessage) {
+  const data = error?.response?.data;
+  if (data?.code === 1031) {
+    return normalizeTextValue(data?.message) || "You cannot reuse any of your last 5 passwords.";
+  }
+
+  const responseMessage = normalizeTextValue(data?.message || data?.error);
   const errorMessage = normalizeTextValue(error?.message);
 
   return responseMessage || errorMessage || fallbackMessage;
@@ -231,6 +236,13 @@ export function useChangePasswordModal({
     },
     onError: (error) => {
       setPasswordError(getRequestErrorMessage(error, "Unable to change the password right now."));
+      if (error?.response?.data?.code === 1031) {
+        setForm((currentForm) => ({
+          ...currentForm,
+          newPassword: "",
+          confirmPassword: "",
+        }));
+      }
     }
   });
 
@@ -315,6 +327,13 @@ export function useChangePasswordModal({
     onError: (error) => {
       setOtp(EMPTY_OTP);
       setPasswordError(getRequestErrorMessage(error, "Unable to change the password right now."));
+      if (error?.response?.data?.code === 1031) {
+        setForm((currentForm) => ({
+          ...currentForm,
+          newPassword: "",
+          confirmPassword: "",
+        }));
+      }
       setStep("password");
     }
   });
