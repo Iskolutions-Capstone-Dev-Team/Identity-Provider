@@ -1,15 +1,16 @@
 package dto
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
-	ClientID string `json:"client_id" binding:"required"`
+	Email          string `json:"email" binding:"required"`
+	Password       string `json:"password" binding:"required"`
+	ClientID       string `json:"client_id" binding:"required"`
+	TurnstileToken string `json:"turnstile_token,omitempty"`
 }
 
 type TokenExchangeRequest struct {
 	Code         string `json:"code" form:"code" binding:"required"`
 	ClientID     string `json:"client_id" form:"client_id" binding:"required"`
-	ClientSecret string `json:"client_secret" form:"client_secret" binding:"required"`
+	ClientSecret string `json:"client_secret" form:"client_secret"`
 }
 
 type TokenResponse struct {

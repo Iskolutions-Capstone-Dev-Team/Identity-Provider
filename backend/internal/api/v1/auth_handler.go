@@ -6,9 +6,11 @@ import (
 	"net/url"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
@@ -27,13 +29,18 @@ const (
 	actionJWKS          = "jwks"
 	actionTokenExchange = "token_exchange"
 	actionTokenRotate   = "token_rotate"
+
+	maxLoginFailuresBeforeCaptcha = 3
+	loginFailCooldown             = 15 * time.Minute
 )
 
 // AuthHandler handles authentication HTTP requests.
 type AuthHandler struct {
-	AuthService   service.AuthService
-	ClientService service.ClientService
-	LogService    service.LogService
+	AuthService      service.AuthService
+	ClientService    service.ClientService
+	LogService       service.LogService
+	TurnstileService service.TurnstileService
+	Cache            cache.Cache
 }
 
 // GetAuthorize initiates the authorization flow for the user.
@@ -235,6 +242,57 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		"user_agent":  c.Request.UserAgent(),
 	})
 
+	emailClean := strings.ToLower(strings.TrimSpace(req.Email))
+	failKey := "fail:login:" + emailClean
+	var failCount int
+	if h.Cache != nil && emailClean != "" {
+		if val, ok, _ := h.Cache.Get(c.Request.Context(), failKey); ok {
+			failCount, _ = strconv.Atoi(val)
+		}
+	}
+
+	siteKey := ""
+	if h.TurnstileService != nil {
+		siteKey = h.TurnstileService.GetSiteKey()
+	}
+
+	if failCount >= maxLoginFailuresBeforeCaptcha {
+		turnstileToken := req.TurnstileToken
+		if turnstileToken == "" {
+			turnstileToken = c.GetHeader("X-Turnstile-Token")
+		}
+		if turnstileToken == "" {
+			errors.SendWithCaptcha(
+				c,
+				http.StatusUnauthorized,
+				errors.CodeCaptchaRequired,
+				"Security verification required. Please solve the CAPTCHA.",
+				nil,
+				siteKey,
+			)
+			return
+		}
+
+		if h.TurnstileService != nil {
+			valid, err := h.TurnstileService.VerifyToken(
+				c.Request.Context(),
+				turnstileToken,
+				c.ClientIP(),
+			)
+			if err != nil || !valid {
+				errors.SendWithCaptcha(
+					c,
+					http.StatusUnauthorized,
+					errors.CodeCaptchaRequired,
+					"Security verification failed. Please try again.",
+					err,
+					siteKey,
+				)
+				return
+			}
+		}
+	}
+
 	deviceToken, _ := c.Cookie("remember_device")
 
 	redirectLink, sessionID, isMfaRequired, err := h.AuthService.
@@ -286,6 +344,27 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 			status = http.StatusUnauthorized
 			code = errors.CodeInvalidCredentials
 			msg = "Incorrect email or password."
+
+			newFailCount := failCount + 1
+			if h.Cache != nil && emailClean != "" {
+				_ = h.Cache.Set(
+					c.Request.Context(),
+					failKey,
+					strconv.Itoa(newFailCount),
+					loginFailCooldown,
+				)
+			}
+			if newFailCount >= maxLoginFailuresBeforeCaptcha {
+				errors.SendWithCaptcha(
+					c,
+					status,
+					code,
+					msg,
+					err,
+					siteKey,
+				)
+				return
+			}
 		} else if strings.Contains(err.Error(), "Validation") {
 			status = http.StatusForbidden
 			code = errors.CodeForbidden
@@ -294,6 +373,10 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 
 		errors.Send(c, status, code, msg, err)
 		return
+	}
+
+	if h.Cache != nil && emailClean != "" {
+		_ = h.Cache.Delete(c.Request.Context(), failKey)
 	}
 
 	// Log success with the email that just logged in
