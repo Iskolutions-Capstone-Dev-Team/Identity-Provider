@@ -106,6 +106,7 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 		),
 		DeviceService:    deviceSvc,
 		TurnstileService: service.NewTurnstileService(),
+		GeoIPService:     service.NewGeoIPService(),
 		Cache:            appCache,
 	}
 }
