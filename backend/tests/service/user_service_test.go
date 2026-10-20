@@ -31,6 +31,7 @@ func TestGetUserByID(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		mocks.NewMockPasswordHistoryRepository(ctrl),
 		cache.NewNoopCache(),
 	)
 
@@ -93,6 +94,7 @@ func TestSyncAdminClientAccess(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		mocks.NewMockPasswordHistoryRepository(ctrl),
 		cache.NewNoopCache(),
 	)
 
@@ -125,6 +127,7 @@ func TestUpdateUserAccountAndRole(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		mocks.NewMockPasswordHistoryRepository(ctrl),
 		cache.NewNoopCache(),
 	)
 
@@ -184,6 +187,7 @@ func TestUpdateUserAccountAndRole_RevokeAdmin(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		mocks.NewMockPasswordHistoryRepository(ctrl),
 		cache.NewNoopCache(),
 	)
 
@@ -252,6 +256,7 @@ func TestGetUserByID_NullAccountType(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		mocks.NewMockPasswordHistoryRepository(ctrl),
 		cache.NewNoopCache(),
 	)
 
@@ -306,6 +311,7 @@ func TestGetUserList_NullAccountType(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		mocks.NewMockPasswordHistoryRepository(ctrl),
 		cache.NewNoopCache(),
 	)
 
@@ -367,6 +373,7 @@ func TestGetDeletedUserList(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		mocks.NewMockPasswordHistoryRepository(ctrl),
 		cache.NewNoopCache(),
 	)
 
@@ -425,6 +432,7 @@ func TestUnarchiveUser(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		mocks.NewMockPasswordHistoryRepository(ctrl),
 		cache.NewNoopCache(),
 	)
 
@@ -455,6 +463,7 @@ func TestHardDeleteUser(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		mocks.NewMockPasswordHistoryRepository(ctrl),
 		cache.NewNoopCache(),
 	)
 
@@ -485,6 +494,7 @@ func TestUpdateUserEmail(t *testing.T) {
 		mockClientRepo,
 		mockRegRepo,
 		mockCAURepo,
+		mocks.NewMockPasswordHistoryRepository(ctrl),
 		cache.NewNoopCache(),
 	)
 

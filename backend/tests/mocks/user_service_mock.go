@@ -56,6 +56,20 @@ func (mr *MockUserServiceMockRecorder) ChangePassword(ctx, id, oldPassword, newP
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockUserService)(nil).ChangePassword), ctx, id, oldPassword, newPassword)
 }
 
+// ValidatePasswordReuse mocks base method.
+func (m *MockUserService) ValidatePasswordReuse(ctx context.Context, id uuid.UUID, currentHash, newPassword string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidatePasswordReuse", ctx, id, currentHash, newPassword)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ValidatePasswordReuse indicates an expected call of ValidatePasswordReuse.
+func (mr *MockUserServiceMockRecorder) ValidatePasswordReuse(ctx, id, currentHash, newPassword any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatePasswordReuse", reflect.TypeOf((*MockUserService)(nil).ValidatePasswordReuse), ctx, id, currentHash, newPassword)
+}
+
 // CreateAdminUser mocks base method.
 func (m *MockUserService) CreateAdminUser(ctx context.Context, req dto.PostAdminUserRequest) (uuid.UUID, error) {
 	m.ctrl.T.Helper()

@@ -17,11 +17,21 @@ import (
 
 // DeviceService manages user device validation, list, and updates.
 type DeviceService interface {
-	RegisterDevice(ctx context.Context, userID uuid.UUID, ip, ua string) (string, error)
-	VerifyDevice(ctx context.Context, userID uuid.UUID, token string) (bool, error)
-	ListDevices(ctx context.Context, userID uuid.UUID) ([]dto.UserDeviceResponse, error)
-	UpdateDeviceName(ctx context.Context, id uuid.UUID, userID uuid.UUID, name string) error
-	DeleteDevice(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
+	RegisterDevice(
+		ctx context.Context, userID uuid.UUID, ip, ua string,
+	) (string, error)
+	VerifyDevice(
+		ctx context.Context, userID uuid.UUID, token string,
+	) (bool, error)
+	ListDevices(
+		ctx context.Context, userID uuid.UUID,
+	) ([]dto.UserDeviceResponse, error)
+	UpdateDeviceName(
+		ctx context.Context, id uuid.UUID, userID uuid.UUID, name string,
+	) error
+	DeleteDevice(
+		ctx context.Context, id uuid.UUID, userID uuid.UUID,
+	) error
 }
 
 type deviceService struct {
@@ -101,7 +111,7 @@ func (s *deviceService) ListDevices(ctx context.Context,
 		return nil, err
 	}
 
-	var resp []dto.UserDeviceResponse
+	resp := make([]dto.UserDeviceResponse, 0)
 	for _, d := range devices {
 		idVal, err := uuid.FromBytes(d.ID)
 		if err != nil {

@@ -18,10 +18,7 @@ export function useRememberedDevices() {
 
     const { data: devices = [], error, isLoading } = useQuery({
         queryKey: ["trusted_devices"],
-        queryFn: async () => {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-            return deviceService.getDevices();
-        },
+        queryFn: deviceService.getDevices,
         retry: false,
         refetchOnWindowFocus: false,
     });
