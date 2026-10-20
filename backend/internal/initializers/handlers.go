@@ -18,11 +18,21 @@ func InitializeHandlers(db *sqlx.DB,
 
 	mw := &middleware.Middleware{ClientRepo: clientRepo}
 
+	// Connect Redis cache to rate limiters if available
+	if service.Cache != nil {
+		middleware.LooseIPLimiter.SetCache(service.Cache)
+		middleware.UserLimiter.SetCache(service.Cache)
+		middleware.SensitiveIPLimiter.SetCache(service.Cache)
+		middleware.TargetOTPLimiter.SetCache(service.Cache)
+	}
+
 	return &api.Handlers{
 		AuthHandler: &v1.AuthHandler{
-			AuthService:   service.AuthService,
-			LogService:    service.LogService,
-			ClientService: service.ClientService,
+			AuthService:      service.AuthService,
+			LogService:       service.LogService,
+			ClientService:    service.ClientService,
+			TurnstileService: service.TurnstileService,
+			Cache:            service.Cache,
 		},
 		HealthHandler: v1.NewHealthHandler(
 			db,
