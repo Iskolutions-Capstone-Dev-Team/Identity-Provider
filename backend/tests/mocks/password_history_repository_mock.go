@@ -32,8 +32,7 @@ func NewMockPasswordHistoryRepository(
 }
 
 // EXPECT returns an object that allows caller to indicate expected use.
-func (m *MockPasswordHistoryRepository) EXPECT(
-) *MockPasswordHistoryRepositoryMockRecorder {
+func (m *MockPasswordHistoryRepository) EXPECT() *MockPasswordHistoryRepositoryMockRecorder {
 	return m.recorder
 }
 

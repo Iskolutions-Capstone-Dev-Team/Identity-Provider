@@ -600,7 +600,7 @@ func (s *reportService) GenerateSummaryReport(
 	addReportTableHeader(pdf, []string{"METRIC", "VALUE"}, widths4)
 	pdf.SetDrawColor(185, 185, 185)
 	pdf.SetTextColor(20, 20, 20)
-	
+
 	addMultiCellReportRow(pdf, widths4, 10, []string{"System Health", performance.SystemHealth}, []string{"L", "R"})
 	addMultiCellReportRow(pdf, widths4, 10, []string{"Cache Status", performance.CacheStatus}, []string{"L", "R"})
 	addMultiCellReportRow(pdf, widths4, 10, []string{"Avg Latency", fmt.Sprintf("%.2f ms", performance.AvgLatencyMs)}, []string{"L", "R"})
