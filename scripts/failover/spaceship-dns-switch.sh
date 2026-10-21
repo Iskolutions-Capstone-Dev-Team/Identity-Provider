@@ -65,7 +65,7 @@ PAYLOAD=$(cat <<EOF
 EOF
 )
 
-API_URL="https://api.spaceship.com/v1/dns/records/${FAILOVER_DOMAIN}"
+API_URL="https://spaceship.dev/api/v1/dns/records/${FAILOVER_DOMAIN}"
 
 RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "${API_URL}" \
   -H "X-API-Key: ${SPACESHIP_API_KEY}" \
