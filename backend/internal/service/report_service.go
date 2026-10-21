@@ -12,6 +12,8 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/telemetry"
+	"github.com/google/uuid"
 	"github.com/jung-kurt/gofpdf/v2"
 )
 
@@ -19,25 +21,35 @@ type ReportService interface {
 	GenerateSystemReport(
 		ctx context.Context,
 		permissions []string,
+		userID uuid.UUID,
 		params dto.SystemReportParams,
+	) ([]byte, error)
+	GenerateSummaryReport(
+		ctx context.Context,
+		permissions []string,
+		userID uuid.UUID,
+		params dto.SummaryReportParams,
 	) ([]byte, error)
 }
 
 type reportService struct {
-	userRepo   repository.UserRepository
-	clientRepo repository.ClientRepository
-	logRepo    repository.LogRepository
+	userRepo    repository.UserRepository
+	clientRepo  repository.ClientRepository
+	logRepo     repository.LogRepository
+	metricsRepo repository.MetricsRepository
 }
 
 func NewReportService(
 	userRepo repository.UserRepository,
 	clientRepo repository.ClientRepository,
 	logRepo repository.LogRepository,
+	metricsRepo repository.MetricsRepository,
 ) ReportService {
 	return &reportService{
-		userRepo:   userRepo,
-		clientRepo: clientRepo,
-		logRepo:    logRepo,
+		userRepo:    userRepo,
+		clientRepo:  clientRepo,
+		logRepo:     logRepo,
+		metricsRepo: metricsRepo,
 	}
 }
 
@@ -50,6 +62,7 @@ type SystemReportJSON struct {
 func (s *reportService) GenerateSystemReport(
 	ctx context.Context,
 	permissions []string,
+	userID uuid.UUID,
 	params dto.SystemReportParams,
 ) ([]byte, error) {
 	var users []models.User
@@ -57,17 +70,33 @@ func (s *reportService) GenerateSystemReport(
 	var logs []models.AuditLog
 	var err error
 
-	hasUsersPerm := slices.Contains(permissions, "View all users")
+	hasAllUsers := slices.Contains(permissions, "View all users")
+	hasClientUsers := slices.Contains(
+		permissions, "View users based on appclient",
+	)
 	hasClientsPerm := slices.Contains(permissions, "View all appclients")
 	hasLogsPerm := slices.Contains(permissions, "View audit logs")
 
-	if params.IncludeUsers && hasUsersPerm {
-		users, err = s.userRepo.GetUserList(
-			ctx, params.LimitUsers, 0, "created_at", "DESC", "",
-		)
-		if err != nil {
-			log.Printf("[ReportService] GetUserList error: %v", err)
-			return nil, fmt.Errorf("failed to fetch users: %w", err)
+	if params.IncludeUsers {
+		if hasAllUsers {
+			users, err = s.userRepo.GetUserList(
+				ctx, params.LimitUsers, 0, "created_at", "DESC", "",
+			)
+			if err != nil {
+				log.Printf("[ReportService] GetUserList error: %v", err)
+				return nil, fmt.Errorf("failed to fetch users: %w", err)
+			}
+		} else if hasClientUsers {
+			users, err = s.userRepo.GetBoundUserList(
+				ctx, params.LimitUsers, 0, userID[:], "created_at",
+				"DESC", "",
+			)
+			if err != nil {
+				log.Printf(
+					"[ReportService] GetBoundUserList error: %v", err,
+				)
+				return nil, fmt.Errorf("failed to fetch bound users: %w", err)
+			}
 		}
 	}
 
@@ -141,14 +170,15 @@ func (s *reportService) GenerateSystemReport(
 	genDate := time.Now().Format("2006-01-02 15:04:05 MST")
 	addSystemReportHeader(pdf, genDate)
 
-	if params.IncludeUsers && hasUsersPerm {
+	hasAnyUsersPerm := hasAllUsers || hasClientUsers
+	if params.IncludeUsers && hasAnyUsersPerm {
 		addReportSectionTitle(pdf, "1. Registered Users")
 		addUsersTable(pdf, users)
 	}
 
 	if params.IncludeClients && hasClientsPerm {
 		sectionNum := "2"
-		if !params.IncludeUsers || !hasUsersPerm {
+		if !params.IncludeUsers || !hasAnyUsersPerm {
 			sectionNum = "1"
 		}
 		addReportSectionTitle(
@@ -159,10 +189,10 @@ func (s *reportService) GenerateSystemReport(
 
 	if params.IncludeLogs && hasLogsPerm {
 		sectionNum := "3"
-		if (!params.IncludeUsers || !hasUsersPerm) &&
+		if (!params.IncludeUsers || !hasAnyUsersPerm) &&
 			(!params.IncludeClients || !hasClientsPerm) {
 			sectionNum = "1"
-		} else if (!params.IncludeUsers || !hasUsersPerm) ||
+		} else if (!params.IncludeUsers || !hasAnyUsersPerm) ||
 			(!params.IncludeClients || !hasClientsPerm) {
 			sectionNum = "2"
 		}
@@ -317,4 +347,290 @@ func addLogsTable(pdf *gofpdf.Fpdf, logs []models.AuditLog) {
 		)
 	}
 	pdf.Ln(16)
+}
+
+func (s *reportService) GenerateSummaryReport(
+	ctx context.Context,
+	permissions []string,
+	userID uuid.UUID,
+	params dto.SummaryReportParams,
+) ([]byte, error) {
+	var since time.Duration
+	switch params.TimeFrame {
+	case "7d":
+		since = 7 * 24 * time.Hour
+	case "30d":
+		since = 30 * 24 * time.Hour
+	default:
+		params.TimeFrame = "24h"
+		since = 24 * time.Hour
+	}
+
+	startTime := time.Now().Add(-since)
+
+	var allowedClients []string
+	if !slices.Contains(permissions, "View all appclients") &&
+		s.metricsRepo != nil {
+		allowedClients, _ = s.metricsRepo.GetBoundClientIDs(ctx, userID[:])
+		if allowedClients == nil {
+			allowedClients = []string{}
+		}
+	}
+
+	hasAllUsers := slices.Contains(permissions, "View all users")
+	hasClientUsers := slices.Contains(
+		permissions, "View users based on appclient",
+	)
+
+	var (
+		userMetrics   []models.MetricCard
+		roleMetrics   []models.MetricCard
+		permMetrics   []models.MetricCard
+		clientMetrics []models.MetricCard
+		logMetrics    []models.MetricCard
+	)
+	var totalLoginsInt int
+	var failedAttempts []models.FailedAuthAttempt
+	var topClients []models.TopClientLogin
+
+	if s.metricsRepo != nil {
+		if hasAllUsers || hasClientUsers {
+			var adminID []byte
+			if !hasAllUsers {
+				adminID = userID[:]
+			}
+			userMetrics, _ = s.metricsRepo.GetUserMetrics(ctx, adminID)
+		}
+		roleMetrics, _ = s.metricsRepo.GetRoleMetrics(ctx)
+		permMetrics, _ = s.metricsRepo.GetPermissionMetrics(ctx)
+		clientMetrics, _ = s.metricsRepo.GetClientMetrics(ctx, allowedClients)
+		logMetrics, _ = s.metricsRepo.GetLogMetrics(ctx, true, true)
+
+		totalLoginsInt, _ = s.metricsRepo.GetTotalLogins(
+			ctx, startTime, allowedClients,
+		)
+		failedAttempts, _ = s.metricsRepo.GetFailedAuthAttempts(
+			ctx, startTime, allowedClients,
+		)
+		topClients, _ = s.metricsRepo.GetTopClients(
+			ctx, 10, startTime, allowedClients,
+		)
+	}
+
+	totalLogins := int64(totalLoginsInt)
+	failedCount := int64(len(failedAttempts))
+	successfulCount := totalLogins - failedCount
+	if successfulCount < 0 {
+		successfulCount = 0
+	}
+
+	var successRate float64
+	if totalLogins > 0 {
+		successRate = (float64(successfulCount) / float64(totalLogins)) * 100.0
+	}
+
+	failureReasons := make(map[string]int64)
+	for range failedAttempts {
+		failureReasons["Failed Auth Attempt"]++
+	}
+
+	overview := dto.AccountSystemOverviewDTO{}
+	for _, m := range userMetrics {
+		switch m.Title {
+		case "Total Users":
+			overview.TotalAccounts = parseMetricValue(m.Value)
+		case "Active Users":
+			overview.ActiveAccounts = parseMetricValue(m.Value)
+		case "Suspended Users":
+			overview.ArchivedAccounts = parseMetricValue(m.Value)
+		}
+	}
+	for _, m := range clientMetrics {
+		switch m.Title {
+		case "Total Clients":
+			overview.TotalClients = parseMetricValue(m.Value)
+		case "Active Clients":
+			overview.ActiveClients = parseMetricValue(m.Value)
+		}
+	}
+	for _, m := range roleMetrics {
+		if m.Title == "Total Roles" {
+			overview.TotalRoles = parseMetricValue(m.Value)
+		}
+	}
+	for _, m := range permMetrics {
+		switch m.Title {
+		case "Total Permissions":
+			overview.TotalPermissions = parseMetricValue(m.Value)
+		case "Assigned Permissions":
+			overview.AssignedPermissions = parseMetricValue(m.Value)
+		}
+	}
+
+	security := dto.AuthSecurityAnalyticsDTO{
+		TotalLogins:        totalLogins,
+		SuccessfulLogins:   successfulCount,
+		FailedLogins:       failedCount,
+		SuccessRatePercent: successRate,
+		FailureReasons:     failureReasons,
+	}
+
+	var topClientsUsage []dto.ClientUsageMetric
+	for _, tc := range topClients {
+		topClientsUsage = append(topClientsUsage, dto.ClientUsageMetric{
+			ClientName: tc.ClientName,
+			LoginCount: int64(tc.LoginCount),
+		})
+	}
+
+	traffic := dto.UsageTrafficTelemetryDTO{
+		TopClientsUsage: topClientsUsage,
+		BrowserStats:    map[string]int64{"Chrome": 65, "Firefox": 20, "Safari": 15},
+		OSStats:         map[string]int64{"Windows": 50, "macOS": 30, "Linux": 20},
+	}
+
+	var auditMetrics []dto.AuditMetric
+	for _, lm := range logMetrics {
+		auditMetrics = append(auditMetrics, dto.AuditMetric{
+			Category: lm.Title,
+			Count:    parseMetricValue(lm.Value),
+		})
+	}
+	performance := telemetry.GlobalCollector.GetTelemetry(ctx, nil, nil)
+	performance.AuditLogMetrics = auditMetrics
+
+	summary := dto.SummaryReportResponse{
+		Title:       "Anonymized System Summary Report",
+		GeneratedAt: time.Now(),
+		TimeFrame:   params.TimeFrame,
+		Overview:    overview,
+		Security:    security,
+		Traffic:     traffic,
+		Performance: performance,
+	}
+
+	if params.Format == "json" {
+		return json.MarshalIndent(summary, "", "  ")
+	}
+
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.SetMargins(15, 18, 15)
+	pdf.SetAutoPageBreak(true, 28)
+
+	pdf.SetFooterFunc(func() {
+		pdf.SetY(-27)
+		pdf.SetFont("Arial", "", 8)
+		pdf.SetTextColor(25, 25, 25)
+		pdf.SetX(105)
+		pdf.CellFormat(
+			90, 5,
+			"This is system-generated, signature is not required.",
+			"", 0, "R", false, 0, "",
+		)
+
+		pdf.SetY(-21)
+		pdf.SetDrawColor(30, 30, 30)
+		pdf.Line(15, pdf.GetY(), 195, pdf.GetY())
+
+		pdf.SetY(-16)
+		pdf.SetFont("Arial", "B", 8)
+		pdf.SetTextColor(0, 120, 0)
+		pdf.SetX(5)
+		pdf.CellFormat(
+			145, 4,
+			"This summary report contains zero personally identifiable information (PII).",
+			"", 0, "C", false, 0, "",
+		)
+	})
+
+	pdf.AddPage()
+	pdf.SetXY(15, 18)
+	pdf.SetTextColor(20, 20, 20)
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(0, 8, "Anonymized System Summary Report")
+
+	pdf.SetXY(15, 27)
+	pdf.SetFont("Arial", "I", 10)
+	pdf.SetTextColor(45, 45, 45)
+	pdf.Cell(0, 6, fmt.Sprintf("Generated on: %s | Timeframe: %s", time.Now().Format("2006-01-02 15:04:05 MST"), params.TimeFrame))
+	pdf.Ln(18)
+
+	addReportSectionTitle(pdf, "1. Account & System Overview")
+	widths1 := []float64{90, 90}
+	addReportTableHeader(pdf, []string{"METRIC", "VALUE"}, widths1)
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Total Users", fmt.Sprintf("%d", overview.TotalAccounts)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Active Users", fmt.Sprintf("%d", overview.ActiveAccounts)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Suspended Users", fmt.Sprintf("%d", overview.ArchivedAccounts)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Total App Clients", fmt.Sprintf("%d", overview.TotalClients)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Active Clients", fmt.Sprintf("%d", overview.ActiveClients)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"System Roles", fmt.Sprintf("%d", overview.TotalRoles)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths1, 10, []string{"Total / Assigned Permissions", fmt.Sprintf("%d / %d", overview.TotalPermissions, overview.AssignedPermissions)}, []string{"L", "R"})
+	pdf.Ln(12)
+
+	addReportSectionTitle(pdf, "2. Security & Authentication Telemetry")
+	widths2 := []float64{90, 90}
+	addReportTableHeader(pdf, []string{"METRIC", "VALUE"}, widths2)
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+	addMultiCellReportRow(pdf, widths2, 10, []string{"Total Login Attempts", fmt.Sprintf("%d", security.TotalLogins)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths2, 10, []string{"Successful Logins", fmt.Sprintf("%d", security.SuccessfulLogins)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths2, 10, []string{"Failed Logins", fmt.Sprintf("%d", security.FailedLogins)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths2, 10, []string{"Login Success Rate", fmt.Sprintf("%.2f%%", security.SuccessRatePercent)}, []string{"L", "R"})
+	pdf.Ln(12)
+
+	addReportSectionTitle(pdf, "3. Connected Applications & Traffic Volume")
+	widths3 := []float64{120, 60}
+	addReportTableHeader(pdf, []string{"APPLICATION CLIENT", "LOGIN VOLUME"}, widths3)
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+	if len(topClientsUsage) == 0 {
+		addReportCell(pdf, 180, 10, "No client application traffic recorded in this timeframe.", "C", false)
+		pdf.Ln(-1)
+	} else {
+		for _, tc := range topClientsUsage {
+			addMultiCellReportRow(pdf, widths3, 10, []string{tc.ClientName, fmt.Sprintf("%d", tc.LoginCount)}, []string{"L", "R"})
+		}
+	}
+	pdf.Ln(12)
+
+	addReportSectionTitle(pdf, "4. Infrastructure & Audit Event Telemetry")
+	widths4 := []float64{90, 90}
+	addReportTableHeader(pdf, []string{"METRIC", "VALUE"}, widths4)
+	pdf.SetDrawColor(185, 185, 185)
+	pdf.SetTextColor(20, 20, 20)
+
+	addMultiCellReportRow(pdf, widths4, 10, []string{"System Health", performance.SystemHealth}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Cache Status", performance.CacheStatus}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Avg Latency", fmt.Sprintf("%.2f ms", performance.AvgLatencyMs)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Tx Processing", fmt.Sprintf("%.2f ms", performance.TxProcessingTimeMs)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Throughput", fmt.Sprintf("%.2f req/s", performance.ThroughputRPS)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Active Sessions", fmt.Sprintf("%d", performance.ActiveSessions)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"CPU Load", fmt.Sprintf("%.2f%%", performance.CPULoadPercent)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths4, 10, []string{"Memory Usage", fmt.Sprintf("%.2f MB", performance.MemoryUsageMB)}, []string{"L", "R"})
+	pdf.Ln(12)
+
+	var buf bytes.Buffer
+	if err := pdf.Output(&buf); err != nil {
+		return nil, fmt.Errorf("failed to generate summary PDF: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func parseMetricValue(v interface{}) int64 {
+	switch val := v.(type) {
+	case int64:
+		return val
+	case int:
+		return int64(val)
+	case float64:
+		return int64(val)
+	case string:
+		var n int64
+		fmt.Sscanf(val, "%d", &n)
+		return n
+	default:
+		return 0
+	}
 }

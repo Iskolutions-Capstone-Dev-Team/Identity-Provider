@@ -1,0 +1,17 @@
+[Unit]
+Description=Failover Watcher Daemon for Identity Provider & One Portal
+After=docker.service network-online.target
+Requires=docker.service network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/luthor/Documents/github/capstone/Identity-Provider/scripts/failover
+ExecStart=/home/luthor/Documents/github/capstone/Identity-Provider/scripts/failover/failover-daemon.sh
+Restart=on-failure
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

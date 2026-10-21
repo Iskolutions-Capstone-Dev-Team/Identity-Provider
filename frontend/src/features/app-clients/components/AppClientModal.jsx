@@ -353,7 +353,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                             </InputGroupAddon>
                           </InputGroup>
                           {!isView && fieldErrors.accessTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.accessTokenTTL}</p>}
-                          {!isView && !fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1-1,440 minutes (24 hours)</p>}
+                          {!isView && !fieldErrors.accessTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 5-480 minutes (8 hours)</p>}
                         </div>
 
                         <div className="space-y-2">
@@ -365,7 +365,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                             </InputGroupAddon>
                           </InputGroup>
                           {!isView && fieldErrors.refreshTokenTTL && <p className={inlineErrorClassName}>{fieldErrors.refreshTokenTTL}</p>}
-                          {!isView && !fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 1 - 8,760 hours (1 year)</p>}
+                          {!isView && !fieldErrors.refreshTokenTTL && <p className="text-xs text-muted-foreground">Valid range: 24 - 720 hours (30 days)</p>}
                         </div>
                       </div>
                     </div>

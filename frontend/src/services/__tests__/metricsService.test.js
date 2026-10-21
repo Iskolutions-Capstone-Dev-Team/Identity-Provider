@@ -18,5 +18,14 @@ describe('metricsService', () => {
     axiosInstance.get.mockResolvedValueOnce({ data: { users: 10 } });
     const res = await metricsService.getDashboardMetrics();
     expect(axiosInstance.get).toHaveBeenCalledWith('/admin/metrics');
+    expect(res).toEqual({ users: 10 });
+  });
+
+  it('fetches system KPIs', async () => {
+    const mockKPIs = { system_health: 'Healthy', apm: { throughput_rps: 42.5 } };
+    axiosInstance.get.mockResolvedValueOnce({ data: mockKPIs });
+    const res = await metricsService.getSystemKPIs();
+    expect(axiosInstance.get).toHaveBeenCalledWith('/admin/kpis');
+    expect(res).toEqual(mockKPIs);
   });
 });

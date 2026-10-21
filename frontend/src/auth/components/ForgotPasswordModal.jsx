@@ -34,7 +34,7 @@ function getStepDescription(step) {
   }
 }
 
-export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = "" }) {
+export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = "", colorMode = "light" }) {
   const {
     step,
     recoveryEmail,
@@ -134,6 +134,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, emailAddress = ""
                 validation={passwordValidation}
                 errorMessage={passwordError}
                 onClearError={() => setPasswordError("")}
+                colorMode={colorMode}
               />
             ) : null}
 
