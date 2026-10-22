@@ -1,0 +1,1554 @@
+{
+  "f692150698e5387413d1b06cd9d2ba2e8c1960a188146102426e193009f47edb": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "5becee97d408f0d8c970478bf5a28f01dde9fb77c10a11238c91d1c46f059dac": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "2ef70f8b07bf5c5c979dbecb8f9d8500a8bb14a1edff31b53991a8086aec82a3": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "1a3bc8f560745ce511f54263207396b1e4dd8e19f3d744e941ef8e630ef9a6f8": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "bbb736d5b7ea842604a606361c1ea65bbbf4eb373c1f432021f4fc5e6a7b6193": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "eb89b928a092b07992b4900b67349cce12eab5dead938b0087454ff3d4244676": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "de20b4724aa1e9d8ab2e2ba44f04dcc48c27f86203067cd605167486bf1ac920": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "273ae5fb8fd78450c69d8f241a0a4c22083969054f298760d8378b12824adb01": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "e9e53739c00b67fac027c6bd8083bba95d4dbc50c9b87a3b623b1cf0c90c8ec4": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "7dbd0b8765b86a1eb2abc163c6325d59a5e4baf6f63e54db88cca94e8984e0db": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "803b11d4cbb9cf85da43a1e93943a15903c4a425d5d06a110f1e7a0bbcd25fdb": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "47ac4069a8c1dca62bfd4074216aa48542938627e75aa764d959230793f25663": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "45891177c938a6cc7b23b7b9cd14a1d754492fa0263e1006f3dbe0a2d32aef39": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "2c65e5db8588238abacfe28666d14dfce456c113d19cd83e7fe61f399c57d816": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "dd6dce5fc47d015e0ee8704efcfd176ad42465aa245ae353a3fa1110cd8b4e59": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "3a7494034e2217ba0502f3396057206fe0f7eb8179d55ece5a52cf4b06c51c0d": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "4b5aa8b98010a43ab79945282d856df15c40f76eb518be8c77f63a8a7ef7ee11": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "edfe4ebf75fac114e35de14bb8054b6fba8d30e4395d65b055da20caf2bb66e7": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "bc855e747ef1dc71278400168b3677537ab741ebc2b95221f04217e5e012f499": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "169917776361ffb6980c287982d90097aee9c01abfeab5b728e86a807de72eb7": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "1e0557c1315d43b40e7bfb3e3a61909aa7e5076b6e7cee4aeeeae287ae3586c2": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "4011ea87ad9087f20dc4a34078c9e4ab2878018d814f1affc4cae72102825c2d": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "1ab54b46633da59abf86b8258d80674e26a01a82c7eca6d8ac295f5c1c7ecafb": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "ebe4cced0e6ac1cb7e05621d4e9b95061ae265a754fad18290cc76b15ccdad3c": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "33455a0ef8777f30613b69c51d0a374b3deca5d8e31f2b97d0f5161142b9250c": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "b5bb040b1baadebe4d45a47f7753f17f05bf1d1e470b0f02386ad0ab617bef14": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "3b37e8b7baec7d72e89e6e79438120dfdec614e103133c91011cd51811ec05e0": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "cb707a8d7b7d1cf2c0e2304d8144fccd0eb44db4989a2fd421f4cbbc248d5dad": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "f8bd02f16d0850f69f55af46991c94dfd82663f5ca27089af002375d8ff6d690": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "e97afbff282f734b20629e9dd384397e0fa8c1da3f8e46095f696cb0b2e2dc99": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "88f5d84d4be9236fb3d6a3af346e5961c35f1e68c0d11b7572a52374657b6825": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "a22020be4711ad30baa9627f30a96eadd33f5665b5ea184d195c718d003f45f6": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "b1a91e8fc07642b599eab313e796e752a1f715fecdb4ec0d78bcbae5b9281575": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "4f92e2e0676c00e995dcef933762e1794f80e6e71ad953b0ff15b8a9b8668394": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "cb8fc2a9719215f1304bc1d78b0f97c63ff941cb56b2aa9b6ac503a485358126": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "29fa9586b9b1a54a6b4466ffafe792500b3a8d29b85117476d3733de93ee8120": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "224866901a498c2a62771acf2e16a1d185d933b8c1fb02a7c0bc4e977783c448": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "6a4679194cda99ecf060f28ce878a70cb85d40dac7fa4be2a3312c5f9d8938e4": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "8b1f3d25f3798558d3093f7028b466549d44af961dada97014d62a4ae4173fd6": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "b0200a94fa8419ebb32c4b736a8e22d4a1b7ae6e0435dd519342acae92d4ec37": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "6cf20575a7fd85952d5e6084147e27eab296406725d46663cbf5c780816cf24d": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "bd6dcd17920d60ba165a9690dc5efc3a97cbdfb4700d63b1353ba35e3d29f1b1": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "7b6983f5446a454065460ade5c7a1e5d1d421fb10f2c1cd52e94e31d1c75ac17": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "f51e858295d4749abfdfcc6d69b6be547e20b14c43830b4795fbe5c721bf8725": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "5f241cb120deaa39745fdf2699137b211175d8665c03b461866b61fa39aed277": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "59596059d69b6aa651d134814c02a5ec239a5c076a46da614035a5827fc9f87a": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "4d8ee5ff35237a59cc16850901e6ec4b8b90d57c1e4c2b1aa13f6c1d58b75e62": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "bbb005fd5539b98a8ea5273ca94f9669b47f201dfd841312046bf3964da683e1": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "922924a3bfddd62229db10e8d0e9d7d9d2b3d96e9de528d3e5568a88eb356f70": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "e43478849888028130e5fbc52d80f98698bb32b2fe2acfc9646e4d1a125204f1": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "dbb860898e32f6a5d139f392326de2b6f8c7b7a3e5a2424604a993d6614b7025": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "31fe9999fff69c039c1f59872f149d65ddae5c4e7694cad078545a78711e20a0": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "f44c1af4f8d92033b8d5d9b0d503f262921b0913b358df18462d3d6f556e3924": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "8c0ed50de6af13e898e3ed535430215c53910c1acd744223c1078d07d3ceb8de": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "8ece87ffb48f9fe433ec27fda961a9edeb2780bf63a0bf411e30c4aede299bea": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "4e29853b6c6587cbffc1b6d597290e316dc7d808489400fe0f8a086c2d814309": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "cefc01efb0fc6f49150f5ae27fd8196b239b34b09096c3684b554068706156dd": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "86dc88cbceeb46cc1766dcc72c491f2a2088a80ec8fa8c48be328deb554444e3": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "b42a6b32f2259c503060cfa3ec72a25342247f8e8bc1ffa6f898e65d13e7d329": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "7a9ae6a62922de4f2603332172b75b30a075f5b3b48dae0dd4b3ab7ae6d77b7d": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "e5ecba47ddcbab7304e3dc50b097e99ff0c13c5814f384de76962d7a5d3aaeff": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "abe6f10c956e61dd7d31787cf5304e959519add67ab36dccd4757bf03ea4f4b2": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "c00fc5ad890300af6713d6f83e490d12961a603ba5ff2b053868d468a2e0f6c5": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "57e36606f2cb2df54e8da1b079c64db8fc3fca09279d25db61e8a740909d0780": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "ed6cea1328506b7a434cf1fb07cbb4063b75c7b80340ca19a8e98167bbad1f88": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "9a970d010b1b3d969de66d951fcc351fcd6cf7f141bd2edfdbba3498c3ed51fc": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "233c1d22fcfdda0fb5427cf6c579fa8d4cadbc375e79533bda478b984b01a497": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "9c464f87a2214769e8fdef1aea707e95240a3ae393df7e28182167bae9f17fed": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "b66d7b7299a9f04216868386325de336bdaa8ae6840ccbd1ba77774f13799bb8": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "432908494048e2165dd74aae7def4b754efc225c63f515601e014ccbc3617b53": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "5d0a43685c84c96a276dbac62750fed9231f8311088d9bdf189b8b4dae95f94b": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "995e8f6a7fb74bc262c4adb68e8d09a9c9436cf33a889eeb832e9336e06e2579": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "5c82849d0b02491e2a31b58f7c5388e9944b39638ce9ee644e32ce2b3f59191d": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "30af8f39238567b062e828ae7808c11afc9d6ff10a5c00da4c006aab6e17dafb": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "e1b55ab97f3a368469adfd557ebcb15cd9d6d6851a6a351b4ebe58d3b9577997": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "37d6ee1886c4c8d98bd9c3525445d70ab67a45ba42ae2c91b748240bbb11b4f8": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "e0f31d423f508715c6cdc7ad4650858439eb49251ef8e3cc40b2241e95dbb77c": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "8bbe5c8c9acbf84afd5c5f49ba19a5d7194175ccd042b4015f22f1fef1ace152": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "5a3f77b957fb8f6d4f5d7612e86b79c0f8b31d60d804702618d5015a5eb0781f": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "ba2c338297e0b1ed225f949e0a66c0568ed11c3c0fa9db519cf47273b722c3c0": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "480ee3c39e8c185a57dfe534b652884d178d2158b9621a231d71cb632f5364ff": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "003df3484b7445d945b94d4d728a836d40b1e4691b4422f572815a21fd6c8bee": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "a24f4524a205b9b11f5d65351422fc70a68fe848cddb9e04a994618da1d162b3": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "b9ff0f6d54732de9158e09f3a798910cdc05c11b317144ef2f1ee59129808075": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "8bd96d9cd4a9873b50281d665cfe595bcc1d9aedf7616f207a8e8e4763136364": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "af3c9d4680978a01fc89c5ff8033723184adf918c81848700e6cb9ea8b8612d8": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "2e3947f54842fe6c63205e0caf9967f207188a7773f9884082776a83474497d9": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "f9d192c76375b44be226ce1a6352239303be6d4cb1f5582e778547ec504e101d": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "289a7508d86a04550086d6623b8529c69e262925ffdcb919c941e00edbc966a2": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "e13c1bb7c4f603d633c3805b90bc1767e17665abc121b2778e67bb017631d527": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "1ee3d695549a506a953750e7ba8f8262e8f3ab5363a5a0c64efbc38e10b33a6d": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "f8f32769fff44e03fdf19dca7e318530083d608f3b693f7a2dbbb111d36aeebc": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "2a974418e29531be0129ca8095338cf8b12c14b6d340d944fe10aceac439a49e": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "3a726fa51e993de35374535f4de410443126cbafb7670c33f0e2dd39f418d0ed": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "612e5f1304b00d77f362747ea867dac3ddc5db9c3ea546024738dfdb0ccbcfb9": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "c4d33c0186b396c54813ad044f80d59073761af36a96889743f9b0ad80fd90fe": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "852f164ba3b4b466acd5531eec59b0027684a4b24b9159c6eaa7f9da57694838": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "3e2fa676bf37b9eeeb3685b96ef1e34f946a9ae1a7430388328496bbe141478e": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "e12aa30308d6d285b57ebc37c88298fee6d2070788633ce1fe0637e7cfa58083": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "b52476d89748424f61d609ebc90175eebb24baf66111e5ffa4710e7a17c214b0": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "603d44af0eddb2692eab9b86032660d8c927a1763c60c349901131d972417802": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "971d744d0fddfc17a675f779b14d7ce51fc0e5046dcbaf814ff825516d7d70ea": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "8d7b94ac188f02cdf194ee913b3baf98dc4f3b1deb947dcd606d016174de3183": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "7635ccefd2cfdf73dfcc2fa74398f4f599c261de1852863da718eba54a9a803d": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "ece76e9c2ca15579eff7aa911f2170e23b0d645187510d75a03770833564225a": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "167595cef14c77033b54ba6476a20736f3eef4fc3b97347a5cc244065ed5910e": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "be8cd6ec6f7a0fbafa5c345738cfd06f2d8ddeec7036c07f125e494c035f59f6": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "de30e1ef026177b270668c9258a09014a7c2f087dab395e375dfdd614449f3e5": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "e3e042fbeb587b5c8a88383f94785f6dea3102a7d6d8fb1f2e61c74863c33c9f": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "5eba715abb7c4c1ce58bd623a177393bad077b420e042e281a17ebc0cd45392d": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "464f3a18e2afc1c418d9177b53f576fd5448dfd112b55cf0d6dd23233a5450a3": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "ead18091973e80d96223017b93bb8be9278803fecccd26085e0cfb91f5a8c451": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "68a38aee632b74bf2882037cf6e11014cf4f83194523d2e0f89ac21f671f14f3": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "a2733b62759d2c7c8228d90adb5d13ee868faaf33e0b0c6a3da0cf5c6be0d44e": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "63654ae962421f121526ca7f6ca394667f004163b21260282a0cb02232806213": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "363b18855da720ae66e173e53527a6a894945ce402218eb57fc38347ba017172": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "6fd47046a0a7957c98683add75e8e7d11c15da0647a54b9bfe571f26089bba1c": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "ee121e755e664956855483e67e0c27644e2d83883eb4b59325ae2ac4cd086079": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "be358ad267ff22ee6f42a23c072e7aadcc529532888715f35914ac55f88e7b5e": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "82ba55635e87ddbd2744d7d2de744ef0ef1c259f11d49952b9462ae9f3fd0e91": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "95b18e470f64df3398f6c6dd19c8a3796ba307b26af20f6465a934ab728a0b49": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "3e15330c784658925752671e8bb11aa0cbc3dff9d8ef3d33e7dda09d7c80b37f": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "8da4e062ce96e1eb5d22866dcb80df3922515a6047fb733b9a7048afa7d88662": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "7c7a4adc82498f58886b6666aa2e9bb4d5ccfe9a9ec24a13fff7d99945f8eb1d": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "a37b6d8aa95950975962bd3cfd5cde27a98a642b842cc1c7e414ef44854671e0": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "61e8a67547a06388f552479754477599af526288f02d6e96c2ed38c654605e3f": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "91823e0841b204a9568e30484bdbc21283e952640597b09e7f3b7e3dc765a2da": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "a409e8a4888c12796dd1c12431c29a1a68b945b3192a2e60fdd29fca3eecbd5d": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "bbbf44c1055a624a0861a0a5b755e974df495de9caf9b78994215e82e9abcff3": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "df20ba54d9a4586006f3a52bef47fda2250fe2a50193c44c5a25cd5b5d8fb1ef": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "e2355b37d4e18ea4990dac630f3da8f36e1f335f1e72a386550d2202520d4116": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "8547120a3bbfa64124024dfd7dff5c39c703821a3c6ffcdcdea978fe49490c00": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "a88c32a450c16552a34b607054fef0362684cee101e18f43deadda758fec02dd": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "8312cbdc64a751d394e0f42d26a49c485326657c6b07db467e3334043058ec11": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "9a454dd2b52d864ed8674f6a38c88b5cd9d9870b0ea4abfe974bb5e48a6316e9": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "b32f911f444274e6c4c140a34809e40f48d4c19afacbb870ae8358d3e977ca2a": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "d3be859452bb16bd5c5f881e296999665d8933eb473b2d79b52c3ae0fc4c8d68": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "dd2dbbaf6e36159e2e6116b138fcbd5768bc818049be7619a7e28716403a8083": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "9e682e5c0fd81499d27e5d7237594ce47319795a71f367416b8332bc071ccd26": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "d3ccb2a82816499aa12a7b6d7e258251290aec7ebf5fdf542e1a7313503c91bf": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "0f81a0faf05b992922e6aafc3c78cda7b9b5f2beb7922c9140c02d36cc73fa62": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "c7e704ed82b7b7317c3efa4adb487360fe079ce87f217eac4fe7ad0517de1d3e": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "4a30d6892b5ee0f7154be77ccc745ebee444ca0619af804d649f468dc1f20cdc": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "ecfca1936b5cb6f6f0b39113f0cff4d451dd069d372e8aabc71ac729b6c5dc10": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "315b3934e901426ca0c7be4087a4e00e9ab37001e7b65fd8fb6b3c657269dcda": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "b9a0dbbf2fddf5c0b9588e9ca358a6e9e6bbbde090bd3f26354292db87d705d2": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "eab1b93bda7a1f21346b025a3fb0f62c7a6baf5cc9ec6c179494c838ef4b3cd4": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "e89eae356239b4780469f2997b274e6523b501bbb9fe29a5fff376ee8fe5217b": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "f63b4a798531f89c7f24a0b467e6daef99e8b5c9b40b757216dc625ba682bef1": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "761a79eb4fdaf0445f402bb035616f194ae55957da04beff6bbd89f3b46f0c25": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "f330d9fa75256b8361e2f01ca0d2291a8a6ccd668d74c1f049b2ff51c0b7b08b": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "712ae0fd990274a772e9058fb662da9e852be524e94632bb77d7473d828b971c": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "fec71eb96b0597880adad4fc4fa6c1694c824f80e78cd996119a8a90995d16b0": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "0a5aa3563dd6be5353f60d6e7b64c0a6e207f61da788ac95b5d8e9b0bed2eb49": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "7a99a20d1e3e93dc500b65439220198e0a224f63e8306406ff64c6b4afab3608": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "4c573b4f6a9964729a37fff826e10792eea1864ec1bebbfe2bfc36244ebee454": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "54885e12b548870f30c637a3a250484a9262a6160cb0bf3386f8a81d86d16009": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "f338cb8e0e847e3f96df78ae1c10f014f5422d1274e92d67e2df7366e7924d0f": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "93b198bcb133e79444e7d09b3d5a7832583c03079f956afcb89f91dc5530d93c": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "7dc72d4d29cbd3a5dab702caba171dde1cb41cb98f766e5883e49ee4e8e26ab2": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "17185db3c8680ddd39291c6b136d369531d64958d8ae336368be285f220cd7b8": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "246c150a4cff6facd75618097338fa449499ae0ea32faa70e25f3d4e79beb6c5": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "8ea124b6d5cba4318da0c0fe65c7806fbc9e56f7b3c5e04ee20da0f0e5e73ad2": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "32eba66952261fcee128b2db834571e6aa6557ae429766d8eb80e3b992d86dcc": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "d3e3884342189d0d60818320d6bfe3c118ea9ce35eb3483814cb3567e1061583": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "420d2a4829374c28da3f2870e6f026a441a82d40abc68248d66e9153703f2fde": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "b870009881b7ed5316e06c3bba0abe2eeda474cc27ddc217cdd7ac40b4d3b69c": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "1f844237a7845c86d81d1ff6a20c7ca197b269908d8e5f5d314720c671dd8e2d": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "83758ac8688f5ca56e2aa700d4a0f935dd7494ed6eac41cab053ca32afcb19fc": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "ca810e1c57547f7472b54ac5447f96c06e39acbfc13f27caf7d7e900ad3d706f": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "650441b4c2b50710b434170f458b6d618e3746fbcd131dbb874779fcbd459984": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "1799df4acdde7f62123f1104d5e7e7f37acb1047481c44ee1f6f227e46e23954": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "7ddad0f50d1dc42ae148829df5b81d89573c3f07ace510f2fc5fe50092755f5f": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "d944a234c5f890148fd38e9921f76969c27d18f5169c3033d1bb60e8ada9c12b": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "7ac17de3fb00b97b47bc41d1f1b725c2376b962be236a55843575a14e2d1aabf": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "cab231f5ec225500d3db70090e421caa677636571c887171a74f071b385c9982": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "5b8122b943c05bdb6c6c277fcb24c9c808fb707695471df21612a828ce93a20e": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "0a3b02f9f62512ef70a71da197446ebfbca200a1c8514ee0d4c1e40f5bb42e41": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "a2d5d9d75675a1a2ab1da5cd5d65c0bddf57e5699cc566fda2429ba1330d8e0b": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "2817a96de29451467b1eef3cdb1230a5b3805796171b73f3f4a273afefae28b9": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "9ed34149dfa18096e87d21ad78acac9b97b1367453d6a3ad32f60fd8b5711689": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "2518dc02011f1f580708ba79e38dbfda0d2df024843c7b999a3dc24c4be06a84": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "e9c7e451e8504dfee8091ecc7cf8edab1120720ac3d7ee6b2f7a53f7fba1ed4b": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "5fa19681f431b84962765d0f901da7ada0812c862c3e10640e6d57566f74f721": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "36597c3dbc42398671e2bfb7d22b4c14bc0c30f34b66bd8502c6f907437788cf": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "e1f8c1c78a1f5209d93d1ff93246e9d28df27504cb0d4c3f95e58e8c8078d9d9": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "53af8dce018cfe8c7b7ba9afaf24342dc334d0f1fffc5c64a603e4958d39a4d2": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "22b65665130ef21396f02b3465c62f405db65070eeaacf8768646c1ee100ec9b": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "403800b1afda852cd40daf5d03cd697694cc3a9ed134531a813b2bcd6ddba091": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "33fbb92de20a16cbaa2d4bca87c81f8c65ecb62056bd77c10c17cdfd51e61b46": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "d099785dd8da86014484f7e0f285dd9224c975d3e5e28a270fa8f5fc4c9c7d2a": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "6c899545139a7a481829232d9f1c5632412069e2ff4313431e786c6b07e0e61e": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "d5ad1af52575df4323476b134e5fed2f9d43a5bc8b8acb8afa37c4b0163c4360": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "46f25948628c190a6d5946d6fa26d7f987fa772bb3f7a1fc4d1989af91f6ab00": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "74a37c69fc98c29ebfdee25158eba5f73a0140e160ff40dca6985ccbb7e071d2": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "4d06d2f3d0f54534e1b2bc9393b9c78f286049f2d9a68c11801f867678373aa1": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "6056031594ed20df25f71b4ecaa57300adcf9a16e4e444b045b78a529ea71481": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "583e08d39dc74faddda585d16a15ec377ac99860cb3d0b4ae436599c52ddd8c9": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "652d329aadee0f846144e688c34332d9e8265bb3213ca5a0d4c698c8031de005": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "ab4be38ef322ea7457a5e71bf3fc74a1c6d2985db31bc2bc3826d18a8a820271": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "950b862070d823c3fe55d7903624f21c4c5614571bc7ba3f2293d2ac894b33e5": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "9dad8cd430b2d3d8c7f0180233612b160ad26892407e30fca58aca111cda2704": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "35a80d3f4a390bf255bea9f23ff23b9e562b1a5a494b03088bcd4ea5a3ccfbf0": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "67ed459c2f2f87b4338f8584e4079b3a11b001a75acd9901fdd852dd8c12b75a": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "2927097ec6d0992bd98f0c91e2269b7225da4b09c74cf53e5e605017b61f32cb": {
+    "threat_level": "MEDIUM",
+    "confidence": 0.85,
+    "anomalies": [
+      "Elevated suspicious failure activity / Spray pattern"
+    ],
+    "advisory": "Monitor client access and verify user alerts."
+  },
+  "c74093d648fd08d17f24fe4882166a9a7d56cc57c3a8f66896bc7b1ad25b8373": {
+    "threat_level": "LOW",
+    "confidence": 0.9,
+    "anomalies": [],
+    "advisory": "Traffic patterns appear normal."
+  },
+  "61082b8d7417685e462ca7d35df59a6832dbbec2af42e75a2eb3b1b913ac0eaa": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "e0179810f4672791c1b6ecff03a8de819654b3a006b37a142ca026d671680571": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "ec0856912e1a138595d243be1ad6d429cbd84b8b719dd87ffbac6ad1ad95973d": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  },
+  "3200118f62097062606ec01e72cd50517bb39d5bf544629ec830fcfa0fb8cd57": {
+    "threat_level": "HIGH",
+    "confidence": 0.95,
+    "anomalies": [
+      "Critical failure spike / Targeted brute force detected"
+    ],
+    "advisory": "Trigger emergency IP rate limiting and enforce MFA."
+  }
+}

@@ -132,3 +132,102 @@ func TestVerifyDevice(t *testing.T) {
 		}
 	})
 }
+
+// TestListDevices verifies listing user devices including empty state.
+func TestListDevices(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockDeviceRepository(ctrl)
+	deviceSvc := service.NewDeviceService(mockRepo)
+
+	userID := uuid.New()
+	devID := uuid.New()
+
+	t.Run("Devices exist", func(t *testing.T) {
+		mockRepo.EXPECT().GetByUserID(gomock.Any(), userID[:]).
+			Return([]models.UserDevice{
+				{
+					ID:         devID[:],
+					UserID:     userID[:],
+					DeviceName: "Test Device",
+					IPAddress:  "127.0.0.1",
+					UserAgent:  "TestAgent",
+					CreatedAt:  time.Now(),
+					ExpiresAt:  time.Now().Add(time.Hour),
+				},
+			}, nil).Times(1)
+
+		resp, err := deviceSvc.ListDevices(context.Background(), userID)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(resp) != 1 {
+			t.Fatalf("expected 1 device, got %d", len(resp))
+		}
+		if resp[0].ID != devID.String() {
+			t.Errorf("expected device ID %s, got %s", devID, resp[0].ID)
+		}
+	})
+
+	t.Run("Empty devices returns non-nil slice", func(t *testing.T) {
+		mockRepo.EXPECT().GetByUserID(gomock.Any(), userID[:]).
+			Return([]models.UserDevice{}, nil).Times(1)
+
+		resp, err := deviceSvc.ListDevices(context.Background(), userID)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if resp == nil {
+			t.Fatal("expected non-nil slice, got nil")
+		}
+		if len(resp) != 0 {
+			t.Fatalf("expected 0 devices, got %d", len(resp))
+		}
+	})
+}
+
+// TestUpdateDeviceName verifies renaming a trusted device.
+func TestUpdateDeviceName(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockDeviceRepository(ctrl)
+	deviceSvc := service.NewDeviceService(mockRepo)
+
+	userID := uuid.New()
+	devID := uuid.New()
+	newName := "Renamed Device"
+
+	mockRepo.EXPECT().UpdateName(
+		gomock.Any(), devID[:], userID[:], newName,
+	).Return(nil).Times(1)
+
+	err := deviceSvc.UpdateDeviceName(
+		context.Background(), devID, userID, newName,
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+// TestDeleteDevice verifies deleting a trusted device.
+func TestDeleteDevice(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockDeviceRepository(ctrl)
+	deviceSvc := service.NewDeviceService(mockRepo)
+
+	userID := uuid.New()
+	devID := uuid.New()
+
+	mockRepo.EXPECT().Delete(
+		gomock.Any(), devID[:], userID[:],
+	).Return(nil).Times(1)
+
+	err := deviceSvc.DeleteDevice(context.Background(), devID, userID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
