@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-const turnstileVerifyURL =
-	"https://challenges.cloudflare.com/turnstile/v0/siteverify"
+const turnstileVerifyURL = "https://challenges.cloudflare.com/" +
+	"turnstile/v0/siteverify"
 
 // TurnstileService validates Cloudflare Turnstile CAPTCHA tokens.
 type TurnstileService interface {
