@@ -32,12 +32,12 @@ const chartConfig = {
 
 function PeriodTabs({ periods, selectedPeriodKey, onSelectPeriod }) {
   return (
-    <div className="grid grid-cols-2 overflow-hidden rounded-lg bg-muted p-1 text-sm text-muted-foreground">
+    <div className="inline-flex h-8 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-muted-foreground">
       {periods.map((period) => {
         const isSelected = selectedPeriodKey === period.key;
         return (
           <button key={period.key} type="button" onClick={() => onSelectPeriod(period.key)}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+            className={`relative inline-flex h-[calc(100%-1px)] items-center justify-center rounded-md px-3 py-0.5 text-sm font-medium transition-all ${
               isSelected
                 ? "bg-[#7b0d15] text-[#f8d24e] shadow-sm dark:bg-[#f8d24e] dark:text-[#7b0d15]"
                 : "hover:bg-background/50 hover:text-foreground"

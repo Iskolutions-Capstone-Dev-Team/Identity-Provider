@@ -34,8 +34,6 @@ html[data-theme="dark"] input:-webkit-autofill {
   -webkit-text-fill-color: white !important;
 }
 
-
-
 @keyframes floatLogo {
   0%, 100% {
     transform: translateY(0px);
@@ -65,8 +63,6 @@ html[data-theme="dark"] input:-webkit-autofill {
 .drift-glow-delayed {
   animation-delay: -7s;
 }
-
-
 
 .idp-sidebar-scroll {
   scrollbar-width: thin;
@@ -279,4 +275,11 @@ html.dark .app-sidebar-custom [data-sidebar="menu-button"]:hover {
 html.dark .app-sidebar-custom [data-sidebar="menu-button"][data-active] {
   background-color: #f8d24e !important;
   color: #7b0d15 !important;
+}
+  ::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+html[data-magicui-theme-vt='active']::view-transition-new(root) {
+  clip-path: var(--magicui-theme-vt-clip-from);
 }

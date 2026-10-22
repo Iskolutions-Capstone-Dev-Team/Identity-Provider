@@ -136,14 +136,15 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
         onSuccess: (data) => {
           setRequiresCaptcha(false);
           setTurnstileToken("");
-          const { redirectUrl, mfaRequired } = data;
+          const { redirectUrl, mfaRequired, hasMfa } = data;
+          const isMfaRequired = Boolean(mfaRequired || hasMfa);
 
           if (!redirectUrl) {
             setError("Invalid server response. Please contact support.");
             return;
           }
 
-          if (mfaRequired) {
+          if (isMfaRequired) {
             if (onLoginSuccess) {
               beginPendingMfaSession(email);
               onLoginSuccess({
@@ -167,7 +168,7 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
 
           const status = err.response?.status;
           if (status === 400 || status === 401) {
-            if (respData?.code === 1031) {
+            if (respData?.code === 1032) {
               setError("Security verification required. Please complete the CAPTCHA.");
             } else {
               setError(respData?.message || "Invalid email or password.");

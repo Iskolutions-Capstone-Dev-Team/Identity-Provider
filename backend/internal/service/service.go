@@ -20,5 +20,6 @@ type ServiceContainer struct {
 	DeviceService            DeviceService
 	TurnstileService         TurnstileService
 	GeoIPService             GeoIPService
+	KPIService               KPIService
 	Cache                    cache.Cache
 }

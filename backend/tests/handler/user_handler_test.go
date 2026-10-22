@@ -12,6 +12,8 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
+	internalErrors "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -700,6 +702,146 @@ func TestPatchUserNameAdminHandler(t *testing.T) {
 		t.Errorf(
 			"expected msg 'User name updated successfully', got %s",
 			resp.Message,
+		)
+	}
+}
+
+func TestPatchChangePassword_PasswordReusePrevented(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockUserService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+
+	handler := &v1.UserHandler{
+		Service:    mockService,
+		LogService: mockLogService,
+	}
+
+	userID := uuid.New()
+	mockService.EXPECT().
+		ChangePassword(
+			gomock.Any(),
+			userID,
+			"OldPassword123!",
+			"ReusedPassword123!",
+		).
+		Return(service.ErrPasswordRecentlyUsed).
+		Times(1)
+
+	mockLogService.EXPECT().
+		GetUserEmail(gomock.Any(), gomock.Any()).
+		Return("user@example.com", nil).
+		AnyTimes()
+
+	mockLogService.EXPECT().
+		PostAuditLogWithActorString(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Set("user_id", userID.String())
+
+	reqBody := dto.ChangePasswordRequest{
+		OldPassword: "OldPassword123!",
+		NewPassword: "ReusedPassword123!",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+	c.Request, _ = http.NewRequest(
+		"PATCH",
+		"/user/password/change",
+		bytes.NewBuffer(bodyBytes),
+	)
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PatchChangePassword(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	var errResp dto.ErrorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &errResp); err != nil {
+		t.Fatalf("failed to unmarshal error response: %v", err)
+	}
+
+	if errResp.Code != internalErrors.CodePasswordRecentlyUsed {
+		t.Errorf(
+			"expected error code %d, got %d",
+			internalErrors.CodePasswordRecentlyUsed,
+			errResp.Code,
+		)
+	}
+}
+
+func TestPatchUserPasswordByEmail_PasswordReusePrevented(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockUserService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+
+	handler := &v1.UserHandler{
+		Service:    mockService,
+		LogService: mockLogService,
+	}
+
+	email := "forgot@example.com"
+	mockService.EXPECT().
+		UpdateUserPasswordByEmail(
+			gomock.Any(),
+			email,
+			"ReusedPassword123!",
+		).
+		Return(service.ErrPasswordRecentlyUsed).
+		Times(1)
+
+	mockLogService.EXPECT().
+		GetUserEmail(gomock.Any(), gomock.Any()).
+		Return("", nil).
+		AnyTimes()
+
+	mockLogService.EXPECT().
+		PostAuditLogWithActorString(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	reqBody := dto.UpdatePasswordByEmailRequest{
+		Email:       email,
+		NewPassword: "ReusedPassword123!",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+	c.Request, _ = http.NewRequest(
+		"PATCH",
+		"/internal/user/password/forgot",
+		bytes.NewBuffer(bodyBytes),
+	)
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PatchUserPasswordByEmail(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d. Body: %s", w.Code, w.Body.String())
+	}
+
+	var errResp dto.ErrorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &errResp); err != nil {
+		t.Fatalf("failed to unmarshal error response: %v", err)
+	}
+
+	if errResp.Code != internalErrors.CodePasswordRecentlyUsed {
+		t.Errorf(
+			"expected error code %d, got %d",
+			internalErrors.CodePasswordRecentlyUsed,
+			errResp.Code,
 		)
 	}
 }

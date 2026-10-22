@@ -24,12 +24,14 @@ func TestCreateUser_ReRegistration(t *testing.T) {
 	mockClientRepo := mocks.NewMockClientRepository(ctrl)
 	mockRegRepo := mocks.NewMockRegistrationRepository(ctrl)
 	mockCauRepo := mocks.NewMockClientAllowedUserRepository(ctrl)
+	mockPassHistRepo := mocks.NewMockPasswordHistoryRepository(ctrl)
 
 	userService := service.NewUserService(
 		mockUserRepo,
 		mockClientRepo,
 		mockRegRepo,
 		mockCauRepo,
+		mockPassHistRepo,
 		cache.NewNoopCache(),
 	)
 

@@ -1,6 +1,7 @@
 package v1
 
 import (
+	stdErrors "errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -715,7 +716,14 @@ func (h *UserHandler) PatchChangePassword(c *gin.Context) {
 		log.Printf("[PatchChangePassword] %v", err)
 		status := http.StatusInternalServerError
 		code := errors.CodeInternalError
-		if strings.Contains(err.Error(), "verification") {
+		msg := "Password change verification failed."
+
+		if stdErrors.Is(err, service.ErrPasswordRecentlyUsed) ||
+			strings.Contains(err.Error(), "recent history") {
+			status = http.StatusBadRequest
+			code = errors.CodePasswordRecentlyUsed
+			msg = "You cannot reuse any of your last 5 passwords."
+		} else if strings.Contains(err.Error(), "verification") {
 			status = http.StatusUnauthorized
 			code = errors.CodeUnauthorized
 		}
@@ -735,7 +743,7 @@ func (h *UserHandler) PatchChangePassword(c *gin.Context) {
 			c,
 			status,
 			code,
-			"Password change verification failed.",
+			msg,
 			err,
 		)
 		return
@@ -810,6 +818,17 @@ func (h *UserHandler) PatchUserPasswordByEmail(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[PatchUserPasswordByEmail] Service: %v", err)
+		status := http.StatusInternalServerError
+		code := errors.CodeInternalError
+		msg := "Failed to update password. Check if the user exists."
+
+		if stdErrors.Is(err, service.ErrPasswordRecentlyUsed) ||
+			strings.Contains(err.Error(), "recent history") {
+			status = http.StatusBadRequest
+			code = errors.CodePasswordRecentlyUsed
+			msg = "You cannot reuse any of your last 5 passwords."
+		}
+
 		logReq := &dto.PostAuditLogRequest{
 			Action: actionUpdatePass,
 			Target: email,
@@ -827,9 +846,9 @@ func (h *UserHandler) PatchUserPasswordByEmail(c *gin.Context) {
 		}
 		errors.Send(
 			c,
-			http.StatusInternalServerError,
-			errors.CodeInternalError,
-			"Failed to update password. Check if the user exists.",
+			status,
+			code,
+			msg,
 			err,
 		)
 		return
