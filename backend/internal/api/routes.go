@@ -7,6 +7,7 @@ import (
 	v1 "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/repository"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/telemetry"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,6 +28,7 @@ type Handlers struct {
 	BackupHandler       *v1.BackupHandler
 	ReportHandler       *v1.ReportHandler
 	DeviceHandler       *v1.DeviceHandler
+	KPIHandler          *v1.KPIHandler
 	UserRepo            repository.UserRepository
 
 	RoleRepo   repository.RoleRepository
@@ -36,6 +38,8 @@ type Handlers struct {
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
+	r.Use(telemetry.GlobalCollector.Middleware())
+
 	// Open health check endpoints
 	r.GET("/health", h.HealthHandler.GetHealth)
 
@@ -233,6 +237,8 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		admin.GET("/metrics/logins", h.MetricsHandler.GetPaginatedLogins)
 		admin.GET("/report", h.MetricsHandler.GetMetricsReportPDF)
 		admin.GET("/reports/system", h.ReportHandler.GetSystemReport)
+		admin.GET("/reports/summary", h.ReportHandler.GetSummaryReport)
+		admin.GET("/kpis", h.KPIHandler.GetSystemKPIs)
 
 		// Service Provider (Client) Maintenance
 		clients := admin.Group("/clients")

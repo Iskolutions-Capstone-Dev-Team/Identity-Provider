@@ -17,7 +17,12 @@ export function normalizeTextValue(value) {
 }
 
 export function getRequestErrorMessage(error, fallbackMessage) {
-  const responseMessage = normalizeTextValue(error?.response?.data?.error);
+  const data = error?.response?.data;
+  if (data?.code === 1031) {
+    return normalizeTextValue(data?.message) || "You cannot reuse any of your last 5 passwords.";
+  }
+
+  const responseMessage = normalizeTextValue(data?.message || data?.error);
   const errorMessage = normalizeTextValue(error?.message);
 
   return responseMessage || errorMessage || fallbackMessage;
