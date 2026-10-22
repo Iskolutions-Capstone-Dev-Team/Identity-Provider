@@ -32,6 +32,7 @@ const Registration = lazy(() => import("../features/registration/pages/Registrat
 const CreateRegistrationConfigPage = lazy(() => import("../features/registration/pages/CreateRegistrationConfigPage"));
 const Profile = lazy(() => import("../features/profile/pages/Profile"));
 const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
+const RegisterPrivacyPolicy = lazy(() => import("../pages/RegisterPrivacyPolicy"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const PublicNotFound = lazy(() => import("../pages/PublicNotFound"));
 
@@ -68,6 +69,7 @@ export default function App() {
           <Route path={ACCESS_DENIED_PATH} element={<AccessDenied />} />
           <Route path={LEGACY_UNAUTHORIZED_PATH} element={<Navigate to={buildAccessDeniedPath()} replace />} />
           <Route path={ROUTE_PATHS.PRIVACY_POLICY} element={<PrivacyPolicy isPublic={true} />} />
+          <Route path={ROUTE_PATHS.REGISTER_PRIVACY_POLICY} element={<RegisterPrivacyPolicy />} />
 
           {/* Protected Route */}
           <Route

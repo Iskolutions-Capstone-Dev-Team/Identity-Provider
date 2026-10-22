@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +21,28 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/google/uuid"
 )
+
+// DefaultPasswordHistoryLimit defines the default count of historical passwords
+// to check and retain.
+const DefaultPasswordHistoryLimit = 5
+
+// ErrPasswordRecentlyUsed indicates that a proposed new password was recently
+// used by the user.
+var ErrPasswordRecentlyUsed = errors.New(
+	"password cannot be reused from recent history",
+)
+
+func getPasswordHistoryLimit() int {
+	valStr := os.Getenv("PASSWORD_HISTORY_LIMIT")
+	if valStr == "" {
+		return DefaultPasswordHistoryLimit
+	}
+	limit, err := strconv.Atoi(valStr)
+	if err != nil || limit <= 0 {
+		return DefaultPasswordHistoryLimit
+	}
+	return limit
+}
 
 type UserService interface {
 	CreateUser(ctx context.Context, req dto.UserRequest) (uuid.UUID, error)
@@ -57,6 +81,8 @@ type UserService interface {
 		newEmail string) error
 	ChangePassword(ctx context.Context, id uuid.UUID,
 		oldPassword, newPassword string) error
+	ValidatePasswordReuse(ctx context.Context, id uuid.UUID,
+		currentHash, newPassword string) error
 	SyncAdminClientAccess(ctx context.Context, id uuid.UUID,
 		clientIDs []string) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
@@ -67,11 +93,12 @@ type UserService interface {
 }
 
 type userService struct {
-	Repo       repository.UserRepository
-	ClientRepo repository.ClientRepository
-	RegRepo    repository.RegistrationRepository
-	CAURepo    repository.ClientAllowedUserRepository
-	Cache      cache.Cache
+	Repo         repository.UserRepository
+	ClientRepo   repository.ClientRepository
+	RegRepo      repository.RegistrationRepository
+	CAURepo      repository.ClientAllowedUserRepository
+	PassHistRepo repository.PasswordHistoryRepository
+	Cache        cache.Cache
 }
 
 func NewUserService(
@@ -79,14 +106,16 @@ func NewUserService(
 	clientRepo repository.ClientRepository,
 	regRepo repository.RegistrationRepository,
 	cauRepo repository.ClientAllowedUserRepository,
+	passHistRepo repository.PasswordHistoryRepository,
 	c cache.Cache,
 ) UserService {
 	return &userService{
-		Repo:       repo,
-		ClientRepo: clientRepo,
-		RegRepo:    regRepo,
-		CAURepo:    cauRepo,
-		Cache:      c,
+		Repo:         repo,
+		ClientRepo:   clientRepo,
+		RegRepo:      regRepo,
+		CAURepo:      cauRepo,
+		PassHistRepo: passHistRepo,
+		Cache:        c,
 	}
 }
 
@@ -767,7 +796,29 @@ func (s *userService) UpdateUserPasswordByEmail(
 	}
 
 	userID, _ := uuid.FromBytes(user.ID)
-	return s.UpdateUserPassword(ctx, userID, newPassword)
+
+	if err := s.ValidatePasswordReuse(
+		ctx,
+		userID,
+		user.PasswordHash,
+		newPassword,
+	); err != nil {
+		return err
+	}
+
+	if err := s.UpdateUserPassword(ctx, userID, newPassword); err != nil {
+		return err
+	}
+
+	if s.PassHistRepo != nil {
+		_ = s.PassHistRepo.PrunePasswordHistory(
+			ctx,
+			userID[:],
+			getPasswordHistoryLimit(),
+		)
+	}
+
+	return nil
 }
 
 /**
@@ -1033,8 +1084,70 @@ func (s *userService) ChangePassword(
 		return fmt.Errorf("user verification: invalid credentials")
 	}
 
-	// 4. Update with new password
-	return s.UpdateUserPassword(ctx, id, newPassword)
+	// 4. Validate password reuse guard
+	if err := s.ValidatePasswordReuse(
+		ctx,
+		id,
+		userData.PasswordHash,
+		newPassword,
+	); err != nil {
+		return err
+	}
+
+	// 5. Update with new password
+	if err := s.UpdateUserPassword(ctx, id, newPassword); err != nil {
+		return err
+	}
+
+	// 6. Prune old history beyond limit
+	if s.PassHistRepo != nil {
+		_ = s.PassHistRepo.PrunePasswordHistory(
+			ctx,
+			id[:],
+			getPasswordHistoryLimit(),
+		)
+	}
+
+	return nil
+}
+
+/**
+ * ValidatePasswordReuse checks if newPassword matches current or recent
+ * historical password hashes.
+ */
+func (s *userService) ValidatePasswordReuse(
+	ctx context.Context,
+	userID uuid.UUID,
+	currentHash,
+	newPassword string,
+) error {
+	// 1. Compare against current active password hash
+	if currentHash != "" {
+		if err := utils.CompareSecret(currentHash, newPassword); err == nil {
+			return ErrPasswordRecentlyUsed
+		}
+	}
+
+	// 2. Compare against recent historical password hashes
+	if s.PassHistRepo != nil {
+		limit := getPasswordHistoryLimit()
+		hashes, err := s.PassHistRepo.GetRecentPasswordHashes(
+			ctx,
+			userID[:],
+			limit,
+		)
+		if err != nil {
+			return fmt.Errorf("lookup password history: %w", err)
+		}
+
+		for _, h := range hashes {
+			if err := utils.CompareSecret(h, newPassword); err == nil {
+				return ErrPasswordRecentlyUsed
+			}
+		}
+	}
+
+	return nil
 }
 
 /**

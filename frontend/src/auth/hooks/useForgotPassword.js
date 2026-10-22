@@ -179,6 +179,13 @@ export function useForgotPassword({ isOpen, emailAddress = "" }) {
     },
     onError: (error) => {
       setPasswordError(getRequestErrorMessage(error, "Unable to change the password right now."));
+      if (error?.response?.data?.code === 1031) {
+        setForm((currentForm) => ({
+          ...currentForm,
+          newPassword: "",
+          confirmPassword: "",
+        }));
+      }
     }
   });
 

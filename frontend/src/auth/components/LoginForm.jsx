@@ -125,14 +125,15 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
       { email, password, clientId },
       {
         onSuccess: (data) => {
-          const { redirectUrl, mfaRequired } = data;
+          const { redirectUrl, mfaRequired, hasMfa } = data;
+          const isMfaRequired = Boolean(mfaRequired || hasMfa);
 
           if (!redirectUrl) {
             setError("Invalid server response. Please contact support.");
             return;
           }
 
-          if (mfaRequired) {
+          if (isMfaRequired) {
             if (onLoginSuccess) {
               beginPendingMfaSession(email);
               onLoginSuccess({
