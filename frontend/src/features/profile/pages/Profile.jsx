@@ -10,12 +10,15 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Smartphone, Monitor } from "lucide-react";
 
+import { useProfileTabs } from "../hooks/useProfileTabs";
+
 export default function Profile() {
   const outletContext = useOutletContext();
   const profile = outletContext?.currentUser || EMPTY_CURRENT_USER;
   const updateCurrentUser = outletContext?.updateCurrentUser;
   const colorMode = outletContext?.colorMode || "light";
   const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
+  const { activeTab, handleTabChange } = useProfileTabs("idp:profile:tab");
 
   useEffect(() => {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
@@ -41,15 +44,21 @@ export default function Profile() {
           colorMode={colorMode}
         />
         <div className="flex w-full min-w-0 flex-col gap-6 mt-4">
-          <Tabs defaultValue="authenticators">
-            <TabsList variant="line" className="mb-3.5 justify-start flex-nowrap max-w-full overflow-x-auto overflow-y-hidden">
-              <TabsTrigger value="authenticators" className="gap-2 whitespace-nowrap">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+            <TabsList className="mb-3 grid w-full grid-cols-2 max-w-sm">
+              <TabsTrigger
+                value="authenticators"
+                className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-[state=active]:!bg-[#7b0d15] data-[state=active]:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15] dark:data-[state=active]:!bg-[#f8d24e] dark:data-[state=active]:!text-[#7b0d15]"
+              >
                 <Smartphone className="size-4 shrink-0" />
-                Authenticators
+                <span>Authenticators</span>
               </TabsTrigger>
-              <TabsTrigger value="devices" className="gap-2 whitespace-nowrap">
+              <TabsTrigger
+                value="devices"
+                className="gap-2 transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-[state=active]:!bg-[#7b0d15] data-[state=active]:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15] dark:data-[state=active]:!bg-[#f8d24e] dark:data-[state=active]:!text-[#7b0d15]"
+              >
                 <Monitor className="size-4 shrink-0" />
-                Remembered Devices
+                <span>Remembered Devices</span>
               </TabsTrigger>
             </TabsList>
             <div className="w-full min-w-0">
