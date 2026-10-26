@@ -1,18 +1,24 @@
 package v1
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/errors"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -27,13 +33,30 @@ const (
 	actionJWKS          = "jwks"
 	actionTokenExchange = "token_exchange"
 	actionTokenRotate   = "token_rotate"
+
+	maxLoginFailuresBeforeCaptcha = 3
+	loginFailCooldown             = 15 * time.Minute
 )
+
+type lastLoginGeo struct {
+	Latitude  float64 `json:"lat"`
+	Longitude float64 `json:"lon"`
+	Country   string  `json:"country"`
+	City      string  `json:"city"`
+	IP        string  `json:"ip"`
+	Timestamp int64   `json:"ts"`
+}
 
 // AuthHandler handles authentication HTTP requests.
 type AuthHandler struct {
-	AuthService   service.AuthService
-	ClientService service.ClientService
-	LogService    service.LogService
+	AuthService      service.AuthService
+	ClientService    service.ClientService
+	LogService       service.LogService
+	UserService      service.UserService
+	MailService      service.MailService
+	TurnstileService service.TurnstileService
+	GeoIPService     service.GeoIPService
+	Cache            cache.Cache
 }
 
 // GetAuthorize initiates the authorization flow for the user.
@@ -235,6 +258,81 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 		"user_agent":  c.Request.UserAgent(),
 	})
 
+	emailClean := strings.ToLower(strings.TrimSpace(req.Email))
+	failKey := "fail:login:" + emailClean
+	var failCount int
+	if h.Cache != nil && emailClean != "" {
+		if val, ok, _ := h.Cache.Get(c.Request.Context(), failKey); ok {
+			failCount, _ = strconv.Atoi(val)
+		}
+	}
+
+	siteKey := ""
+	if h.TurnstileService != nil {
+		siteKey = h.TurnstileService.GetSiteKey()
+	}
+
+	// Geolocation resolution
+	var loc *service.LocationInfo
+	if h.GeoIPService != nil {
+		cfCountry := c.GetHeader("CF-IPCountry")
+		loc, _ = h.GeoIPService.ResolveIP(c.ClientIP(), cfCountry)
+	}
+	if loc == nil {
+		loc = &service.LocationInfo{
+			CountryCode: "PH",
+			CountryName: "Philippines",
+			City:        "Manila (Local)",
+			Latitude:    14.5995,
+			Longitude:   120.9842,
+			IsPrivate:   true,
+		}
+	}
+
+	isForeign := loc.CountryCode != "PH" && !loc.IsPrivate
+
+	if isForeign || failCount >= maxLoginFailuresBeforeCaptcha {
+		turnstileToken := req.TurnstileToken
+		if turnstileToken == "" {
+			turnstileToken = c.GetHeader("X-Turnstile-Token")
+		}
+		if turnstileToken == "" {
+			msg := "Security verification required. Please solve the CAPTCHA."
+			if isForeign {
+				msg = "Login from outside the Philippines detected. " +
+					"Please complete the security challenge."
+			}
+			errors.SendWithCaptcha(
+				c,
+				http.StatusUnauthorized,
+				errors.CodeCaptchaRequired,
+				msg,
+				nil,
+				siteKey,
+			)
+			return
+		}
+
+		if h.TurnstileService != nil {
+			valid, err := h.TurnstileService.VerifyToken(
+				c.Request.Context(),
+				turnstileToken,
+				c.ClientIP(),
+			)
+			if err != nil || !valid {
+				errors.SendWithCaptcha(
+					c,
+					http.StatusUnauthorized,
+					errors.CodeCaptchaRequired,
+					"Security verification failed. Please try again.",
+					err,
+					siteKey,
+				)
+				return
+			}
+		}
+	}
+
 	deviceToken, _ := c.Cookie("remember_device")
 
 	redirectLink, sessionID, isMfaRequired, err := h.AuthService.
@@ -286,6 +384,27 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 			status = http.StatusUnauthorized
 			code = errors.CodeInvalidCredentials
 			msg = "Incorrect email or password."
+
+			newFailCount := failCount + 1
+			if h.Cache != nil && emailClean != "" {
+				_ = h.Cache.Set(
+					c.Request.Context(),
+					failKey,
+					strconv.Itoa(newFailCount),
+					loginFailCooldown,
+				)
+			}
+			if newFailCount >= maxLoginFailuresBeforeCaptcha {
+				errors.SendWithCaptcha(
+					c,
+					status,
+					code,
+					msg,
+					err,
+					siteKey,
+				)
+				return
+			}
 		} else if strings.Contains(err.Error(), "Validation") {
 			status = http.StatusForbidden
 			code = errors.CodeForbidden
@@ -294,6 +413,133 @@ func (h *AuthHandler) LoginAndAuthorize(c *gin.Context) {
 
 		errors.Send(c, status, code, msg, err)
 		return
+	}
+
+	if h.Cache != nil && emailClean != "" {
+		_ = h.Cache.Delete(c.Request.Context(), failKey)
+	}
+
+	// Impossible travel evaluation
+	if h.UserService != nil {
+		userResp, uErr := h.UserService.GetUserByEmail(
+			c.Request.Context(),
+			req.Email,
+		)
+		if uErr == nil && userResp != nil {
+			userUUID, _ := uuid.Parse(userResp.ID)
+			geoKey := "geo:last_login:" + userResp.ID
+
+			var prevGeo lastLoginGeo
+			hasPrev := false
+			if h.Cache != nil {
+				if val, ok, _ := h.Cache.Get(c.Request.Context(), geoKey); ok {
+					if json.Unmarshal([]byte(val), &prevGeo) == nil &&
+						prevGeo.Timestamp > 0 {
+						hasPrev = true
+					}
+				}
+			}
+
+			now := time.Now()
+			if hasPrev {
+				distKm := utils.CalculateHaversineDistanceKm(
+					prevGeo.Latitude, prevGeo.Longitude,
+					loc.Latitude, loc.Longitude,
+				)
+				elapsedHours := float64(now.Unix()-prevGeo.Timestamp) / 3600.0
+				speedKmH := utils.CalculateTravelSpeedKmH(distKm, elapsedHours)
+
+				if utils.IsImpossibleTravel(distKm, speedKmH) {
+					// 1. Suspend user account in database
+					_ = h.UserService.UpdateUserStatus(
+						c.Request.Context(),
+						userUUID,
+						string(models.StatusSuspended),
+					)
+
+					// 2. Invalidate all active user tokens & sessions
+					_ = h.AuthService.RevokeAllUserTokens(
+						c.Request.Context(),
+						userUUID,
+					)
+
+					// 3. Post high-priority security audit log
+					prevLoc := fmt.Sprintf(
+						"%s, %s",
+						prevGeo.City, prevGeo.Country,
+					)
+					currLoc := fmt.Sprintf(
+						"%s, %s",
+						loc.City, loc.CountryCode,
+					)
+					lockoutMeta := buildMetadata(map[string]interface{}{
+						"action":          "impossible_travel_suspension",
+						"user_id":         userResp.ID,
+						"email":           req.Email,
+						"origin_location": prevLoc,
+						"target_location": currLoc,
+						"previous_ip":     prevGeo.IP,
+						"current_ip":      c.ClientIP(),
+						"distance_km":     distKm,
+						"speed_kmh":       speedKmH,
+					})
+					_ = h.LogService.PostSecurityLogWithActorString(
+						c.Request.Context(),
+						req.Email,
+						&dto.PostAuditLogRequest{
+							Action:   "security_lockout",
+							Target:   userResp.ID,
+							Status:   models.StatusFail,
+							Metadata: lockoutMeta,
+						},
+					)
+
+					// 4. Send security notification alert email
+					if h.MailService != nil {
+						go func() {
+							_ = h.MailService.SendSecurityAlert(
+								context.Background(),
+								req.Email,
+								currLoc,
+								c.ClientIP(),
+								speedKmH,
+							)
+						}()
+					}
+
+					// 5. Abort and return 403 Forbidden (CodeSuspended)
+					errors.Send(
+						c,
+						http.StatusForbidden,
+						errors.CodeSuspended,
+						"Your account has been suspended due to suspicious "+
+							"location activity. Please contact your administrator.",
+						nil,
+					)
+					return
+				}
+			}
+
+			// Update last login location in Redis (30-day TTL)
+			if h.Cache != nil {
+				newGeo := lastLoginGeo{
+					Latitude:  loc.Latitude,
+					Longitude: loc.Longitude,
+					Country:   loc.CountryCode,
+					City:      loc.City,
+					IP:        c.ClientIP(),
+					Timestamp: now.Unix(),
+				}
+				if geoBytes, mErr := json.Marshal(newGeo); mErr == nil {
+					_ = h.Cache.Set(
+						c.Request.Context(),
+						geoKey,
+						string(geoBytes),
+						30*24*time.Hour,
+					)
+				}
+			}
+		}
 	}
 
 	clientBaseURL := os.Getenv("CLIENT_BASE_URL")

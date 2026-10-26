@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import ErrorAlert from "../../components/ErrorAlert";
@@ -10,6 +10,7 @@ import { Button } from "../../components/ui/button";
 import { Separator } from "../../components/ui/separator";
 import { Card, CardContent } from "../../components/ui/card";
 import { useLoginForm } from "../hooks/useLoginForm";
+import TurnstileWidget from "../../components/TurnstileWidget";
 
 export default function LoginForm({ clientId, redirectUri = "", initialError = "", onLoginSuccess }) {
   const navigate = useNavigate();
@@ -18,6 +19,10 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
   const [showPassword, setShowPassword] = useState(false);
   const [isForgotOpen, setForgotOpen] = useState(false);
   const [error, setError] = useState(initialError);
+  const [requiresCaptcha, setRequiresCaptcha] = useState(false);
+  const [captchaSiteKey, setCaptchaSiteKey] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef(null);
   const { loginMutation } = useLoginForm();
   const [fieldErrors, setFieldErrors] = useState({
     email: "",
@@ -121,10 +126,17 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
       return;
     }
 
+    if (requiresCaptcha && !turnstileToken) {
+      setError("Please complete the security verification challenge.");
+      return;
+    }
+
     loginMutation.mutate(
-      { email, password, clientId },
+      { email, password, clientId, turnstileToken },
       {
         onSuccess: (data) => {
+          setRequiresCaptcha(false);
+          setTurnstileToken("");
           const { redirectUrl, mfaRequired, hasMfa } = data;
           const isMfaRequired = Boolean(mfaRequired || hasMfa);
 
@@ -147,11 +159,25 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
           window.location.href = redirectUrl;
         },
         onError: (err) => {
+          const respData = err.response?.data;
+          if (respData?.requires_captcha) {
+            setRequiresCaptcha(true);
+            if (respData?.site_key) {
+              setCaptchaSiteKey(respData.site_key);
+            }
+          }
+
+          // Invalidate single-use Turnstile token & reset widget on error
+          setTurnstileToken("");
+          turnstileRef.current?.reset();
+
           const status = err.response?.status;
-          if (status === 400) {
-            setError("Please enter valid credentials.");
-          } else if (status === 401) {
-            setError("Invalid email or password.");
+          if (status === 400 || status === 401) {
+            if (respData?.requires_captcha || respData?.code === 1032) {
+              setError(respData?.message || "Security verification required. Please complete the CAPTCHA.");
+            } else {
+              setError(respData?.message || "Invalid email or password.");
+            }
           } else if (status === 403) {
             if (err.response?.data?.code === 1030) {
               navigate(buildAccessDeniedPath(clientId, { redirectUri, reason: "suspended" }), {
@@ -162,6 +188,8 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                 replace: true,
               });
             }
+          } else if (status === 429) {
+            setError(respData?.message || "Too many requests. Please wait a moment and try again.");
           } else if (status === 500) {
             setError("Server error. Please try again later.");
           } else {
@@ -171,6 +199,21 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
       }
     );
   };
+
+  const handleTurnstileSuccess = useCallback((token) => {
+    setTurnstileToken(token);
+    setError("");
+  }, []);
+
+  const handleTurnstileError = useCallback(() => {
+    setTurnstileToken("");
+    setError("Security verification error. Please retry.");
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken("");
+    turnstileRef.current?.reset();
+  }, []);
 
   return (
     <>
@@ -262,7 +305,19 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                   ) : null}
                 </div>
 
-                <Button type="submit" disabled={loginMutation.isPending} className="mt-2 h-12 w-full rounded-xl bg-[#ffd700] text-sm font-bold text-[#6f0f15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] hover:bg-[#991b1b] hover:text-white transition duration-300 disabled:opacity-70 disabled:cursor-not-allowed">
+                {requiresCaptcha && (
+                  <div className="space-y-1">
+                    <TurnstileWidget
+                      ref={turnstileRef}
+                      siteKey={captchaSiteKey}
+                      onSuccess={handleTurnstileSuccess}
+                      onError={handleTurnstileError}
+                      onExpire={handleTurnstileExpire}
+                    />
+                  </div>
+                )}
+
+                <Button type="submit" disabled={loginMutation.isPending || (requiresCaptcha && !turnstileToken)} className="mt-2 h-12 w-full rounded-xl bg-[#ffd700] text-sm font-bold text-[#6f0f15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] hover:bg-[#991b1b] hover:text-white transition duration-300 disabled:opacity-70 disabled:cursor-not-allowed">
                   {loginMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
