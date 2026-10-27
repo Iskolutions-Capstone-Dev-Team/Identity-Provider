@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Login from '../Login';
 
 global.sessionStorage = {
@@ -31,12 +32,25 @@ vi.mock('../../services/authService', () => ({
 }));
 
 describe('Login Page', () => {
+  let queryClient;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false }
+      }
+    });
   });
 
   it('renders login form or loading screen', () => {
-    render(<BrowserRouter><Login /></BrowserRouter>);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Login />
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
     expect(screen.getByText(/Preparing Sign-In/i)).toBeInTheDocument();
   });
 });
