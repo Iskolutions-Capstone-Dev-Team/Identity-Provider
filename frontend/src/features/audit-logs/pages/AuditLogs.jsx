@@ -11,9 +11,9 @@ import { FileCheck, FileSearchCorner } from "lucide-react";
 import { useAuditLogs } from "../hooks/useAuditLogs";
 
 export default function AuditLogs() {
-  const { colorMode = "light", globalViewType, setGlobalViewType } = useOutletContext() || {};
+  const { colorMode = "light" } = useOutletContext() || {};
 
-  const auditLogsState = useAuditLogs({ globalViewType, setGlobalViewType });
+  const auditLogsState = useAuditLogs();
   const {
     logType,
     canViewSecurityLogs,
@@ -26,8 +26,6 @@ export default function AuditLogs() {
     setSortBy,
     sort,
     setSort,
-    viewType,
-    setViewType,
     logs,
     totalResults,
     totalPages,
@@ -90,8 +88,6 @@ export default function AuditLogs() {
             setSortBy={setSortBy}
             sort={sort}
             setSort={setSort}
-            viewType={viewType}
-            setViewType={setViewType}
             logType={logType}
             onLogTypeChange={handleLogTypeChange}
             canViewSecurityLogs={canViewSecurityLogs}
@@ -99,7 +95,6 @@ export default function AuditLogs() {
           <AuditLogsListCard
             logs={logs}
             loading={showLoading}
-            viewType={viewType}
             logType={logType}
             error={error}
             onView={handleViewLog}
