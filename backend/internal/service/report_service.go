@@ -430,8 +430,50 @@ func (s *reportService) GenerateSummaryReport(
 	}
 
 	failureReasons := make(map[string]int64)
-	for range failedAttempts {
+	var totalFailedAttempts int64
+	for _, a := range failedAttempts {
 		failureReasons["Failed Auth Attempt"]++
+		totalFailedAttempts += int64(a.FailCount)
+	}
+	if totalFailedAttempts == 0 {
+		totalFailedAttempts = failedCount
+	}
+
+	threatLevel := "LOW"
+	threatReason := fmt.Sprintf(
+		"Authentication activity within normal baseline (%d failures <= 15).",
+		totalFailedAttempts,
+	)
+	if totalFailedAttempts > 50 {
+		threatLevel = "HIGH"
+		threatReason = fmt.Sprintf(
+			"Failed login count (%d) exceeded high threshold (50).",
+			totalFailedAttempts,
+		)
+	} else if totalFailedAttempts > 15 {
+		threatLevel = "MEDIUM"
+		threatReason = fmt.Sprintf(
+			"Failed login count (%d) exceeded elevated threshold (15).",
+			totalFailedAttempts,
+		)
+	}
+
+	var targetedClientDTOs []dto.TargetedClientMetricDTO
+	if s.metricsRepo != nil {
+		tfList, _ := s.metricsRepo.GetTargetedClientFailures(
+			ctx, 5, startTime, allowedClients,
+		)
+		for _, tf := range tfList {
+			targetedClientDTOs = append(
+				targetedClientDTOs, dto.TargetedClientMetricDTO{
+					ClientID:     tf.ClientID,
+					ClientName:   tf.ClientName,
+					FailedCount:  tf.FailedCount,
+					SuccessCount: tf.SuccessCount,
+					LastTargeted: tf.LastTargeted,
+				},
+			)
+		}
 	}
 
 	overview := dto.AccountSystemOverviewDTO{}
@@ -472,7 +514,10 @@ func (s *reportService) GenerateSummaryReport(
 		SuccessfulLogins:   successfulCount,
 		FailedLogins:       failedCount,
 		SuccessRatePercent: successRate,
+		ThreatLevel:        threatLevel,
+		ThreatReason:       threatReason,
 		FailureReasons:     failureReasons,
+		TargetedClients:    targetedClientDTOs,
 	}
 
 	var topClientsUsage []dto.ClientUsageMetric
@@ -578,6 +623,8 @@ func (s *reportService) GenerateSummaryReport(
 	addMultiCellReportRow(pdf, widths2, 10, []string{"Successful Logins", fmt.Sprintf("%d", security.SuccessfulLogins)}, []string{"L", "R"})
 	addMultiCellReportRow(pdf, widths2, 10, []string{"Failed Logins", fmt.Sprintf("%d", security.FailedLogins)}, []string{"L", "R"})
 	addMultiCellReportRow(pdf, widths2, 10, []string{"Login Success Rate", fmt.Sprintf("%.2f%%", security.SuccessRatePercent)}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths2, 10, []string{"Threat Posture", security.ThreatLevel}, []string{"L", "R"})
+	addMultiCellReportRow(pdf, widths2, 10, []string{"Threat Evaluation", security.ThreatReason}, []string{"L", "R"})
 	pdf.Ln(12)
 
 	addReportSectionTitle(pdf, "3. Connected Applications & Traffic Volume")
