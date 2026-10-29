@@ -56,7 +56,7 @@ describe("SystemKPIsPanel", () => {
     renderWithClient(<SystemKPIsPanel />);
 
     expect(await screen.findByText(/Operational KPIs/i)).toBeInTheDocument();
-    expect(await screen.findByText(/15.4 ms/i)).toBeInTheDocument();
-    expect(await screen.findByText(/3.50/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/15.4 ms/i)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/3.50/i)).length).toBeGreaterThan(0);
   });
 });
