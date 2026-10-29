@@ -65,3 +65,52 @@ func (h *KPIHandler) GetSystemKPIs(c *gin.Context) {
 
 	c.JSON(http.StatusOK, kpis)
 }
+
+// GetKPIThreatDetails returns detailed threat posture root cause data.
+func (h *KPIHandler) GetKPIThreatDetails(c *gin.Context) {
+	hasLogs := middleware.HasPermission(c, "View audit logs")
+	hasConn := middleware.HasPermission(
+		c, "View connected appclients",
+	)
+	hasAll := middleware.HasPermission(
+		c, "View all appclients",
+	)
+	hasAllUsers := middleware.HasPermission(c, "View all users")
+	hasClientUsers := middleware.HasPermission(
+		c, "View users based on appclient",
+	)
+
+	if !hasLogs && !hasConn && !hasAll && !hasAllUsers && !hasClientUsers {
+		c.JSON(
+			http.StatusForbidden,
+			gin.H{"error": "Insufficient permissions to view threat details."},
+		)
+		return
+	}
+
+	userIDStr := c.GetString("user_id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf("[KPIHandler] {Parse User ID}: %v", err)
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": "Invalid user context."},
+		)
+		return
+	}
+
+	permissions := c.GetStringSlice("permissions")
+	ctx := c.Request.Context()
+	details, err := h.KPIService.GetKPIThreatDetails(ctx, permissions, userID)
+	if err != nil {
+		log.Printf("[KPIHandler] {GetKPIThreatDetails}: %v", err)
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": "Failed to fetch KPI threat details."},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, details)
+}
+
