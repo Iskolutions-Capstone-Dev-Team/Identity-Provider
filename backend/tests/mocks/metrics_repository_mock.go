@@ -87,6 +87,21 @@ func (mr *MockMetricsRepositoryMockRecorder) GetFailedAuthAttempts(ctx, since, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFailedAuthAttempts", reflect.TypeOf((*MockMetricsRepository)(nil).GetFailedAuthAttempts), ctx, since, allowedClients)
 }
 
+// GetTargetedClientFailures mocks base method.
+func (m *MockMetricsRepository) GetTargetedClientFailures(ctx context.Context, limit int, since time.Time, allowedClients []string) ([]models.TargetedClientFailure, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTargetedClientFailures", ctx, limit, since, allowedClients)
+	ret0, _ := ret[0].([]models.TargetedClientFailure)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTargetedClientFailures indicates an expected call.
+func (mr *MockMetricsRepositoryMockRecorder) GetTargetedClientFailures(ctx, limit, since, allowedClients any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetedClientFailures", reflect.TypeOf((*MockMetricsRepository)(nil).GetTargetedClientFailures), ctx, limit, since, allowedClients)
+}
+
 // GetLogMetrics mocks base method.
 func (m *MockMetricsRepository) GetLogMetrics(ctx context.Context, hasAudit, hasSecurity bool) ([]models.MetricCard, error) {
 	m.ctrl.T.Helper()
