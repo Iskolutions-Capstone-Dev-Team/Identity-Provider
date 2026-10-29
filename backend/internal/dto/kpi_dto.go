@@ -76,4 +76,3 @@ type KPIThreatDetailsDTO struct {
 	TargetedClients  []TargetedClientMetricDTO      `json:"targeted_clients"`
 	OffendingSources []OffendingSourceDTO           `json:"offending_sources"`
 }
-

@@ -127,4 +127,3 @@ func TestKPIHandlerGetKPIThreatDetails(t *testing.T) {
 	assert.Len(t, resp.TargetedClients, 1)
 	assert.Equal(t, "App 1", resp.TargetedClients[0].ClientName)
 }
-

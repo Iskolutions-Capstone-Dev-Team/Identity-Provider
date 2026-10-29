@@ -233,4 +233,3 @@ func TestGetKPIThreatDetails_ClientAdmin_Masked(t *testing.T) {
 	assert.Equal(t, "a***@corp.com", res.OffendingSources[0].Actor)
 	assert.True(t, res.OffendingSources[0].IsMasked)
 }
-

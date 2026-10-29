@@ -113,4 +113,3 @@ func (h *KPIHandler) GetKPIThreatDetails(c *gin.Context) {
 
 	c.JSON(http.StatusOK, details)
 }
-

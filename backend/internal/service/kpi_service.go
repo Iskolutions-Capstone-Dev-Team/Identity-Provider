@@ -316,4 +316,3 @@ func maskActor(actor string) string {
 	}
 	return "***"
 }
-
