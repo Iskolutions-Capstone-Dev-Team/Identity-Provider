@@ -30,7 +30,6 @@ export default function UserPool() {
   const colorMode = outletContext.colorMode || "light";
   const currentUser = outletContext.currentUser || {};
   const isLoadingCurrentUser = Boolean(outletContext.isLoadingCurrentUser);
-  const { globalViewType, setGlobalViewType } = outletContext;
   const { hasAnyPermission, hasPermission } = usePermissionAccess();
 
   const isCurrentUserSuperAdmin = hasSuperAdminRole(currentUser?.roles);
@@ -76,8 +75,6 @@ export default function UserPool() {
   const canReinviteCurrentUserType = userType === REGULAR_USER_TYPE && canAddUsers;
 
   const pageState = useUserPoolPage({
-    globalViewType,
-    setGlobalViewType,
     userType,
     setUserType,
     getUserDetails,
@@ -112,8 +109,6 @@ export default function UserPool() {
     userToReinvite,
     setUserToReinvite,
     isSendingReinvite,
-    viewType,
-    setViewType,
     handleView,
     handleEdit,
     handleDeleteClick,
@@ -190,13 +185,12 @@ export default function UserPool() {
           setSortBy={setSortBy}
           sort={sort}
           setSort={setSort}
-          viewType={viewType}
-          setViewType={setViewType}
           showAdminUserType={canViewAdminUsers}
           colorMode={colorMode}
         />
 
-        {viewType === "table" ? (
+        {/* Laptop & Desktop Table (>= 1024px) */}
+        <div className="hidden lg:block w-full">
           <UserPoolTable
             loading={showLoading}
             users={paginatedUsers}
@@ -210,7 +204,10 @@ export default function UserPool() {
             showDeleteAction={canDeleteCurrentUserType}
             colorMode={colorMode}
           />
-        ) : (
+        </div>
+
+        {/* Mobile & Tablet Cards (< 1024px) */}
+        <div className="block lg:hidden w-full">
           <UserPoolCards
             loading={showLoading}
             users={paginatedUsers}
@@ -226,7 +223,7 @@ export default function UserPool() {
             search={search}
             setSearch={setSearch}
           />
-        )}
+        </div>
 
         {!showLoading && (
           <div className="w-full">

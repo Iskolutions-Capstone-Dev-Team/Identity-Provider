@@ -202,10 +202,10 @@ export default function RememberedDevicesPanel({ colorMode = "light" }) {
                     )}
 
                     {isLoading ? (
-                        <div className="w-full px-0 sm:px-12">
+                        <div className="w-full px-8 sm:px-12">
                             <div className="flex overflow-hidden">
                                 {[1, 2, 3, 4].map((i) => (
-                                    <div key={i} className="min-w-0 shrink-0 grow-0 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+                                    <div key={i} className="min-w-0 shrink-0 grow-0 basis-full sm:basis-1/2 lg:basis-1/4">
                                         <div className="p-1 h-[440px]">
                                             <Card className="mx-auto w-full overflow-hidden p-0 relative h-full">
                                                 <CardContent className="flex flex-col items-center p-0 h-full">
@@ -228,22 +228,22 @@ export default function RememberedDevicesPanel({ colorMode = "light" }) {
                     ) : (
                         <div>
                         {devices.length > 0 ? (
-                            <div className="w-full px-0 sm:px-12">
+                            <div className="w-full px-8 sm:px-12">
                                 <Carousel
                                     opts={{ align: "start" }}
                                     className="w-full"
                                 >
                                     <CarouselContent>
                                         {devices.map((device) => (
-                                            <CarouselItem key={device.id} className="sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+                                            <CarouselItem key={device.id} className="basis-full sm:basis-1/2 lg:basis-1/4">
                                                 <div className="p-1 h-[440px]">
                                                     {renderDeviceCard(device)}
                                                 </div>
                                             </CarouselItem>
                                         ))}
                                     </CarouselContent>
-                                    <CarouselPrevious className="hidden sm:inline-flex bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] border-0 transition-colors duration-200" />
-                                    <CarouselNext className="hidden sm:inline-flex bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] border-0 transition-colors duration-200" />
+                                    <CarouselPrevious className="inline-flex -left-7 sm:-left-12 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] border-0 transition-colors duration-200 disabled:opacity-40" />
+                                    <CarouselNext className="inline-flex -right-7 sm:-right-12 bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] border-0 transition-colors duration-200 disabled:opacity-40" />
                                 </Carousel>
                             </div>
                             ) : (

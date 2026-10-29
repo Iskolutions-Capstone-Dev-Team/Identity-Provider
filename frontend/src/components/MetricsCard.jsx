@@ -37,7 +37,6 @@ export default function MetricsCard({ metrics = [], colorMode = "light", isLoadi
 
   const cols = displayMetrics.length;
   const lgColsClass = cols === 1 ? "lg:grid-cols-1" : cols === 2 ? "lg:grid-cols-2" : cols === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4";
-  const mdColsClass = cols === 1 ? "md:grid-cols-1" : "md:grid-cols-2";
 
   const renderCard = (metric, idx) => {
     const Icon = metric.Icon;
@@ -86,12 +85,12 @@ export default function MetricsCard({ metrics = [], colorMode = "light", isLoadi
   return (
     <>
       {/* Desktop Grid */}
-      <div className={`hidden sm:grid w-full gap-4 ${mdColsClass} ${lgColsClass}`}>
+      <div className={`hidden lg:grid w-full gap-4 ${lgColsClass}`}>
         {displayMetrics.map((metric, idx) => renderCard(metric, idx))}
       </div>
 
-      {/* Mobile Carousel */}
-      <div className="block sm:hidden w-full">
+      {/* Mobile & Tablet Carousel */}
+      <div className="block lg:hidden w-full">
         <Carousel setApi={setApi} className="w-full">
           <CarouselContent>
             {displayMetrics.map((metric, i) => (

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import AuthenticatorsPanel from '../AuthenticatorsPanel';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('../../../../services/mfaService', () => ({
   mfaService: {
@@ -10,7 +11,14 @@ vi.mock('../../../../services/mfaService', () => ({
 
 describe('AuthenticatorsPanel Component', () => {
   it('renders without crashing', () => {
-    const { container } = render(<AuthenticatorsPanel />);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <AuthenticatorsPanel />
+      </QueryClientProvider>
+    );
     expect(container).toBeInTheDocument();
   });
 });
