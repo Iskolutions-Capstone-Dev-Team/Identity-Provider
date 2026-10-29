@@ -23,13 +23,16 @@ type AccountSystemOverviewDTO struct {
 
 // AuthSecurityAnalyticsDTO contains non-PII login & security metrics.
 type AuthSecurityAnalyticsDTO struct {
-	TotalLogins        int64            `json:"total_logins"`
-	SuccessfulLogins   int64            `json:"successful_logins"`
-	FailedLogins       int64            `json:"failed_logins"`
-	SuccessRatePercent float64          `json:"success_rate_percent"`
-	FailureReasons     map[string]int64 `json:"failure_reasons"`
-	MFAAdoptionCount   int64            `json:"mfa_adoption_count"`
-	TotalDevices       int64            `json:"total_devices"`
+	TotalLogins        int64                     `json:"total_logins"`
+	SuccessfulLogins   int64                     `json:"successful_logins"`
+	FailedLogins       int64                     `json:"failed_logins"`
+	SuccessRatePercent float64                   `json:"success_rate_percent"`
+	ThreatLevel        string                    `json:"threat_level"`
+	ThreatReason       string                    `json:"threat_reason"`
+	FailureReasons     map[string]int64          `json:"failure_reasons"`
+	MFAAdoptionCount   int64                     `json:"mfa_adoption_count"`
+	TotalDevices       int64                     `json:"total_devices"`
+	TargetedClients    []TargetedClientMetricDTO `json:"targeted_clients,omitempty"`
 }
 
 // ClientUsageMetric represents usage volume per public client application.
