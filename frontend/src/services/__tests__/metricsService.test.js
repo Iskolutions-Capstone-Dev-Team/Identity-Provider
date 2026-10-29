@@ -28,4 +28,12 @@ describe('metricsService', () => {
     expect(axiosInstance.get).toHaveBeenCalledWith('/admin/kpis');
     expect(res).toEqual(mockKPIs);
   });
+
+  it('fetches KPI threat details', async () => {
+    const mockThreatDetails = { threat_level: 'HIGH', triggers: { failed_logins: 60 } };
+    axiosInstance.get.mockResolvedValueOnce({ data: mockThreatDetails });
+    const res = await metricsService.getKPIThreatDetails();
+    expect(axiosInstance.get).toHaveBeenCalledWith('/admin/kpis/threat-details');
+    expect(res).toEqual(mockThreatDetails);
+  });
 });
