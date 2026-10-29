@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, ShieldCheck, ShieldAlert, Users, UserCheck, UserX, Gauge, Cpu, Layers, ArrowUpRight, TrendingUp, Server, Zap } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { metricsService } from "@/services/metricsService";
+import ThreatDetailsModal from "./ThreatDetailsModal";
 
 function KPIMetricCard({ icon, label, value, subtext, statusColor, children, isLoading }) {
   return (
@@ -49,6 +52,7 @@ function KPIMetricCard({ icon, label, value, subtext, statusColor, children, isL
 }
 
 export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoading = false }) {
+  const [isThreatModalOpen, setIsThreatModalOpen] = useState(false);
   const { data: kpiData, isLoading: isQueryLoading, error: queryError } = useQuery({
     queryKey: ["systemKPIs"],
     queryFn: () => metricsService.getSystemKPIs(),
@@ -263,10 +267,19 @@ export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoadin
                 value={threatBadge.label}
                 isLoading={isLoading}
               >
-                <div className="pt-1">
+                <div className="pt-1 flex items-center justify-between gap-1">
                   <Badge variant="outline" className={`text-[11px] font-bold ${threatBadge.className}`}>
                     {threatBadge.label}
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[11px] font-semibold text-primary hover:text-primary/80 gap-1"
+                    onClick={() => setIsThreatModalOpen(true)}
+                  >
+                    <span>Inspect</span>
+                    <ArrowUpRight className="size-3" />
+                  </Button>
                 </div>
               </KPIMetricCard>
             </div>
@@ -316,6 +329,11 @@ export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoadin
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      <ThreatDetailsModal
+        isOpen={isThreatModalOpen}
+        onClose={() => setIsThreatModalOpen(false)}
+      />
     </Card>
   );
 }
