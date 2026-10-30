@@ -34,10 +34,11 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
+import { Frame, FramePanel } from "@/components/reui/frame";
 import { IconStack } from "@/components/reui/icon-stack";
 import { metricsService } from "@/services/metricsService";
 
-export default function ThreatDetailsModal({ isOpen, onClose }) {
+export default function ThreatDetailsModal({ isOpen, onClose, colorMode = "light" }) {
   const [activeTab, setActiveTab] = useState("overview");
 
   const {
@@ -81,15 +82,15 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent 
-        className="max-w-2xl sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6"
-        closeButtonClassName="text-white hover:text-white/80 hover:bg-white/10 dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-muted top-4 right-4"
+        className="w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-3 sm:p-5"
+        closeButtonClassName="text-white hover:text-white/80 hover:bg-white/10 dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-muted top-3 right-3 sm:top-4 sm:right-4"
       >
-        <DialogHeader className="-mx-6 -mt-6 mb-2 rounded-t-xl border-b p-4 sm:p-5 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
-          <DialogTitle className="text-lg sm:text-xl font-bold text-white dark:text-foreground">
-            Threat Posture & Telemetry Drilldown
+        <DialogHeader className="-mx-3 sm:-mx-5 -mt-3 sm:-mt-5 mb-2 rounded-t-xl border-b p-3 sm:p-4 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
+          <DialogTitle className="text-base sm:text-xl font-bold text-white dark:text-foreground pr-6 sm:pr-0">
+            Security Threat & Activity Details
           </DialogTitle>
-          <DialogDescription className="mt-1 text-xs text-white/90 dark:text-muted-foreground">
-            Root-cause evaluation, affected application endpoints, and suspicious origin telemetry.
+          <DialogDescription className="mt-1 text-[11px] sm:text-xs text-white/90 dark:text-muted-foreground">
+            Review security risk levels, affected applications, and suspicious login activity.
           </DialogDescription>
         </DialogHeader>
 
@@ -107,9 +108,9 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
             </p>
           </div>
         ) : (
-          <div className="space-y-5 pt-3">
+          <div className="space-y-4 pt-1 w-full max-w-full min-w-0 overflow-x-hidden">
             {/* Posture & Evaluation Timeframe in Dialog Body */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-1">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-0.5">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Posture Status:
@@ -125,160 +126,182 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
             </div>
 
             {/* Trigger Banner */}
-            <div className="p-4 rounded-xl border border-border/70 bg-muted/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <Info className="size-3.5 text-primary" />
-                  Posture Evaluation Trigger
+            <div className="p-2.5 sm:p-3.5 rounded-xl border border-border/70 bg-muted/40 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-4 w-full max-w-full min-w-0">
+              <div className="space-y-0.5 sm:space-y-1 min-w-0 flex-1">
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <Info className="size-3 sm:size-3.5 text-primary shrink-0" />
+                  Security Assessment Reason
                 </span>
-                <p className="text-sm font-medium text-foreground leading-snug">
-                  {triggers.trigger_reason || "Authentication activity is within safe operational thresholds."}
+                <p className="text-[11px] sm:text-sm font-medium text-foreground leading-snug break-words">
+                  {triggers.trigger_reason || "Login activity is normal and within safe security limits."}
                 </p>
               </div>
-              <div className="flex items-center gap-4 shrink-0 bg-background/80 px-3 py-2 rounded-lg border border-border/60">
-                <div className="text-center">
-                  <span className="block text-[10px] uppercase font-bold text-muted-foreground">Failed</span>
-                  <span className="text-base font-extrabold text-foreground">{triggers.failed_logins ?? 0}</span>
+              <div className="grid grid-cols-3 divide-x divide-border/60 bg-background/80 py-1 px-1 sm:px-3 sm:py-2 rounded-lg border border-border/60 shrink-0 w-full sm:w-auto">
+                <div className="text-center px-1 sm:px-2">
+                  <span className="block text-[8px] sm:text-[10px] uppercase font-bold text-muted-foreground">Failed</span>
+                  <span className="text-xs sm:text-base font-extrabold text-foreground">{triggers.failed_logins ?? 0}</span>
                 </div>
-                <div className="h-6 w-px bg-border/60" />
-                <div className="text-center">
-                  <span className="block text-[10px] uppercase font-bold text-muted-foreground">Elevated</span>
-                  <span className="text-xs font-semibold text-amber-500">&gt; {triggers.medium_threshold ?? 15}</span>
+                <div className="text-center px-1 sm:px-2">
+                  <span className="block text-[8px] sm:text-[10px] uppercase font-bold text-muted-foreground">Elevated</span>
+                  <span className="text-[10px] sm:text-xs font-semibold text-amber-500">&gt; {triggers.medium_threshold ?? 15}</span>
                 </div>
-                <div className="h-6 w-px bg-border/60" />
-                <div className="text-center">
-                  <span className="block text-[10px] uppercase font-bold text-muted-foreground">High</span>
-                  <span className="text-xs font-semibold text-red-500">&gt; {triggers.high_threshold ?? 50}</span>
+                <div className="text-center px-1 sm:px-2">
+                  <span className="block text-[8px] sm:text-[10px] uppercase font-bold text-muted-foreground">High</span>
+                  <span className="text-[10px] sm:text-xs font-semibold text-red-500">&gt; {triggers.high_threshold ?? 50}</span>
                 </div>
               </div>
             </div>
 
-            {/* Drilldown Tabs - Responsive grid without number count */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto p-1 gap-1">
-                <TabsTrigger value="overview" className="gap-2 text-xs sm:text-sm py-2">
-                  <Users className="size-3.5" />
-                  <span>Offending Sources</span>
+            {/* Drilldown Tabs - Responsive grid with KPI brand pill styling */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-full min-w-0">
+              <TabsList className="grid w-full grid-cols-3 h-auto p-0.5 sm:p-1 sm:h-9 bg-muted min-w-0 max-w-full">
+                <TabsTrigger
+                  value="overview"
+                  className="gap-1 sm:gap-1.5 md:gap-2 px-1 sm:px-2 md:px-3 py-1 text-[10px] sm:text-xs md:text-sm font-semibold min-w-0 overflow-hidden transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+                >
+                  <Users className="size-3 sm:size-4 shrink-0" />
+                  <span className="truncate sm:hidden">Sources</span>
+                  <span className="truncate hidden sm:inline">Suspicious Sources</span>
                 </TabsTrigger>
-                <TabsTrigger value="clients" className="gap-2 text-xs sm:text-sm py-2">
-                  <Server className="size-3.5" />
-                  <span>Targeted Clients</span>
+                <TabsTrigger
+                  value="clients"
+                  className="gap-1 sm:gap-1.5 md:gap-2 px-1 sm:px-2 md:px-3 py-1 text-[10px] sm:text-xs md:text-sm font-semibold min-w-0 overflow-hidden transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+                >
+                  <Server className="size-3 sm:size-4 shrink-0" />
+                  <span className="truncate sm:hidden">Clients</span>
+                  <span className="truncate hidden sm:inline">Targeted Clients</span>
                 </TabsTrigger>
-                <TabsTrigger value="ai" className="gap-2 text-xs sm:text-sm py-2">
-                  <Sparkles className="size-3.5" />
-                  <span>AI Security Advisory</span>
+                <TabsTrigger
+                  value="ai"
+                  className="gap-1 sm:gap-1.5 md:gap-2 px-1 sm:px-2 md:px-3 py-1 text-[10px] sm:text-xs md:text-sm font-semibold min-w-0 overflow-hidden transition-all hover:bg-background/50 hover:text-foreground dark:hover:bg-background/40 dark:hover:text-[#f8d24e] data-active:!bg-[#7b0d15] data-active:!text-[#f8d24e] data-active:shadow-sm dark:data-active:!bg-[#f8d24e] dark:data-active:!text-[#7b0d15]"
+                >
+                  <Sparkles className="size-3 sm:size-4 shrink-0" />
+                  <span className="truncate sm:hidden">Advisory</span>
+                  <span className="truncate hidden sm:inline">AI Security Advisory</span>
                 </TabsTrigger>
               </TabsList>
 
-              {/* Tab 1: Offending Sources */}
-              <TabsContent value="overview" className="mt-4 space-y-3">
+              {/* Tab 1: Suspicious Sources */}
+              <TabsContent value="overview" className="mt-3 space-y-3 w-full min-w-0 max-w-full">
                 {offendingSources.length === 0 ? (
                   <div className="py-12 px-4 text-center border border-dashed border-border/80 rounded-xl flex flex-col items-center justify-center gap-3 bg-muted/10">
                     <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e]">
                       <ArchiveIcon className="size-4 text-[#7b0d15] dark:text-[#f8d24e]" />
                     </IconStack>
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-foreground">No Offending Sources Recorded</p>
+                      <p className="text-sm font-semibold text-foreground">No Suspicious Sources Detected</p>
                       <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                        No offending IP sources or accounts recorded in this window.
+                        No suspicious IP addresses or user accounts were detected during this timeframe.
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-border overflow-x-auto">
-                    <Table className="min-w-[500px]">
-                      <TableHeader className="bg-muted/40">
-                        <TableRow>
-                          <TableHead className="text-xs font-bold uppercase">IP Address</TableHead>
-                          <TableHead className="text-xs font-bold uppercase">Account / Actor</TableHead>
-                          <TableHead className="text-xs font-bold uppercase text-right">Fail Count</TableHead>
-                          <TableHead className="text-xs font-bold uppercase text-right">Last Attempt</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {offendingSources.map((source, idx) => (
-                          <TableRow key={idx}>
-                            <TableCell className="font-mono text-xs font-medium">
-                              <div className="flex items-center gap-2">
-                                <span>{source.ip || "Unknown IP"}</span>
-                                {source.is_masked && (
-                                  <Badge variant="outline" className="text-[10px] py-0 px-1 text-muted-foreground flex items-center gap-0.5">
-                                    <Lock className="size-2.5" /> Masked
-                                  </Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-xs font-medium text-foreground">
-                              {source.actor || "(unspecified)"}
-                            </TableCell>
-                            <TableCell className="text-xs font-bold text-destructive text-right">
-                              {source.fail_count}
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground text-right">
-                              {source.last_attempt ? new Date(source.last_attempt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "N/A"}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                  <div className="w-full min-w-0 max-w-full">
+                    <Frame spacing="xs" className="w-full min-w-0 max-w-full">
+                      <FramePanel className="p-0! w-full min-w-0 max-w-full overflow-hidden">
+                        <div className="w-full min-w-0 max-w-full overflow-x-auto">
+                          <Table className="min-w-[480px] w-full">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-left pl-3 sm:pl-6 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap">IP Address</TableHead>
+                                <TableHead className="text-center px-2 sm:px-3 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap">Account / Actor</TableHead>
+                                <TableHead className="text-center px-2 sm:px-3 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap">Fail Count</TableHead>
+                                <TableHead className="text-center pr-3 sm:pr-6 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap">Last Attempt</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {offendingSources.map((source, idx) => (
+                                <TableRow key={idx}>
+                                  <TableCell className="pl-3 sm:pl-6 py-2.5 sm:py-3 font-mono text-[11px] sm:text-xs font-medium text-left whitespace-nowrap">
+                                    <div className="flex items-center gap-1.5 sm:gap-2">
+                                      <span>{source.ip || "Unknown IP"}</span>
+                                      {source.is_masked && (
+                                        <Badge variant="outline" className="text-[9px] sm:text-[10px] py-0 px-1 text-muted-foreground flex items-center gap-0.5">
+                                          <Lock className="size-2.5" /> Masked
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center px-2 sm:px-3 py-2.5 sm:py-3 text-[11px] sm:text-xs font-medium text-foreground whitespace-nowrap">
+                                    {source.actor || "(unspecified)"}
+                                  </TableCell>
+                                  <TableCell className="text-center px-2 sm:px-3 py-2.5 sm:py-3 text-[11px] sm:text-xs font-bold text-destructive">
+                                    {source.fail_count}
+                                  </TableCell>
+                                  <TableCell className="text-center pr-3 sm:pr-6 py-2.5 sm:py-3 text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                                    {source.last_attempt ? new Date(source.last_attempt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "N/A"}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </FramePanel>
+                    </Frame>
                   </div>
                 )}
               </TabsContent>
 
               {/* Tab 2: Targeted Clients */}
-              <TabsContent value="clients" className="mt-4 space-y-3">
+              <TabsContent value="clients" className="mt-3 space-y-3 w-full min-w-0 max-w-full">
                 {targetedClients.length === 0 ? (
                   <div className="py-12 px-4 text-center border border-dashed border-border/80 rounded-xl flex flex-col items-center justify-center gap-3 bg-muted/10">
                     <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e]">
                       <PackageIcon className="size-4 text-[#7b0d15] dark:text-[#f8d24e]" />
                     </IconStack>
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-foreground">No Targeted Clients</p>
+                      <p className="text-sm font-semibold text-foreground">No Targeted Applications</p>
                       <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                        No application clients specifically targeted by authentication friction.
+                        No client applications experienced unusual login failures or security issues.
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-border overflow-x-auto">
-                    <Table className="min-w-[500px]">
-                      <TableHeader className="bg-muted/40">
-                        <TableRow>
-                          <TableHead className="text-xs font-bold uppercase">Application Client</TableHead>
-                          <TableHead className="text-xs font-bold uppercase text-right">Failures</TableHead>
-                          <TableHead className="text-xs font-bold uppercase text-right">Successes</TableHead>
-                          <TableHead className="text-xs font-bold uppercase text-right">Failure Rate</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {targetedClients.map((client, idx) => {
-                          const total = (client.failed_count || 0) + (client.success_count || 0);
-                          const failRate = total > 0 ? Math.round(((client.failed_count || 0) / total) * 100) : 0;
-                          return (
-                            <TableRow key={idx}>
-                              <TableCell>
-                                <div>
-                                  <span className="font-semibold text-xs text-foreground block">{client.client_name}</span>
-                                  <span className="text-[10px] text-muted-foreground font-mono">{client.client_id}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-xs font-bold text-destructive text-right">
-                                {client.failed_count}
-                              </TableCell>
-                              <TableCell className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 text-right">
-                                {client.success_count}
-                              </TableCell>
-                              <TableCell className="text-xs text-right font-medium">
-                                <span className={failRate > 30 ? "text-destructive font-bold" : "text-foreground"}>
-                                  {failRate}%
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
+                  <div className="w-full min-w-0 max-w-full">
+                    <Frame spacing="xs" className="w-full min-w-0 max-w-full">
+                      <FramePanel className="p-0! w-full min-w-0 max-w-full overflow-hidden">
+                        <div className="w-full min-w-0 max-w-full overflow-x-auto">
+                          <Table className="min-w-[480px] w-full">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-left pl-3 sm:pl-6 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap">Application Client</TableHead>
+                                <TableHead className="text-center px-2 sm:px-3 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap">Failures</TableHead>
+                                <TableHead className="text-center px-2 sm:px-3 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap">Successes</TableHead>
+                                <TableHead className="text-center pr-3 sm:pr-6 text-[10px] sm:text-xs font-bold uppercase whitespace-nowrap">Failure Rate</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                            {targetedClients.map((client, idx) => {
+                              const total = (client.failed_count || 0) + (client.success_count || 0);
+                              const failRate = total > 0 ? Math.round(((client.failed_count || 0) / total) * 100) : 0;
+                              return (
+                                <TableRow key={idx}>
+                                  <TableCell className="pl-3 sm:pl-6 py-2.5 sm:py-3 text-left">
+                                    <div className="min-w-[140px]">
+                                      <span className="font-semibold text-[11px] sm:text-xs text-foreground block whitespace-nowrap">{client.client_name}</span>
+                                      <span className="text-[9px] sm:text-[10px] text-muted-foreground font-mono block whitespace-nowrap">{client.client_id}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center px-2 sm:px-3 py-2.5 sm:py-3 text-[11px] sm:text-xs font-bold text-destructive">
+                                    {client.failed_count}
+                                  </TableCell>
+                                  <TableCell className="text-center px-2 sm:px-3 py-2.5 sm:py-3 text-[11px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                    {client.success_count}
+                                  </TableCell>
+                                  <TableCell className="text-center pr-3 sm:pr-6 py-2.5 sm:py-3 text-[11px] sm:text-xs font-medium">
+                                    <span className={failRate > 30 ? "text-destructive font-bold" : "text-foreground"}>
+                                      {failRate}%
+                                    </span>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </FramePanel>
+                  </Frame>
+                </div>
                 )}
               </TabsContent>
 
@@ -331,8 +354,9 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
 
                     {/* Advisory */}
                     {aiAnalysis.advisory && (
-                      <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 space-y-1">
-                        <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                      <div className="p-3.5 rounded-xl border border-blue-500/30 bg-blue-500/5 dark:bg-blue-500/10 space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                          <Info className="size-3.5 text-blue-600 dark:text-blue-400" />
                           Recommended Mitigation Advisory
                         </span>
                         <p className="text-xs text-foreground leading-relaxed">
@@ -349,7 +373,7 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-foreground">No Cached AI Advisory</p>
                       <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                        AI authentication review updates periodically based on scheduled background telemetry cycles.
+                        AI security review updates periodically based on automated background checks.
                       </p>
                     </div>
                   </div>
