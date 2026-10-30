@@ -97,6 +97,6 @@ describe("SystemKPIsPanel", () => {
 
     fireEvent.click(inspectBtns[0]);
 
-    expect(await screen.findByText(/Threat Posture & Telemetry Drilldown/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Security Threat & Activity Details/i)).toBeInTheDocument();
   });
 });
