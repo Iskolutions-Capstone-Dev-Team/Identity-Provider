@@ -1,5 +1,11 @@
 package dto
 
+import (
+	"time"
+
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
+)
+
 // APMKPIDTO holds performance and resource utilization metrics.
 type APMKPIDTO struct {
 	AvgLatencyMs       float64 `json:"avg_latency_ms"`
@@ -33,4 +39,40 @@ type SystemKPISummaryDTO struct {
 	APM          APMKPIDTO      `json:"apm"`
 	Security     SecurityKPIDTO `json:"security"`
 	Identity     IdentityKPIDTO `json:"identity"`
+}
+
+// ThreatTriggersDTO details threshold evaluation conditions.
+type ThreatTriggersDTO struct {
+	FailedLogins    int64  `json:"failed_logins"`
+	HighThreshold   int64  `json:"high_threshold"`
+	MediumThreshold int64  `json:"medium_threshold"`
+	TriggerReason   string `json:"trigger_reason"`
+}
+
+// TargetedClientMetricDTO aggregates authentication failures per app client.
+type TargetedClientMetricDTO struct {
+	ClientID     string    `json:"client_id"`
+	ClientName   string    `json:"client_name"`
+	FailedCount  int64     `json:"failed_count"`
+	SuccessCount int64     `json:"success_count"`
+	LastTargeted time.Time `json:"last_targeted"`
+}
+
+// OffendingSourceDTO represents an IP and actor causing failures.
+type OffendingSourceDTO struct {
+	IP          string    `json:"ip"`
+	Actor       string    `json:"actor"`
+	FailCount   int       `json:"fail_count"`
+	LastAttempt time.Time `json:"last_attempt"`
+	IsMasked    bool      `json:"is_masked"`
+}
+
+// KPIThreatDetailsDTO holds the complete threat posture drilldown payload.
+type KPIThreatDetailsDTO struct {
+	ThreatLevel      string                         `json:"threat_level"`
+	EvalTimeframe    string                         `json:"eval_timeframe"`
+	Triggers         ThreatTriggersDTO              `json:"triggers"`
+	AIAnalysis       *models.SecurityAnalysisResult `json:"ai_analysis,omitempty"`
+	TargetedClients  []TargetedClientMetricDTO      `json:"targeted_clients"`
+	OffendingSources []OffendingSourceDTO           `json:"offending_sources"`
 }

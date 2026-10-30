@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ShieldCheck, ShieldAlert, Users, UserCheck, UserX, Gauge, Cpu, Layers, ArrowUpRight, TrendingUp, Server, Zap } from "lucide-react";
+import { Activity, ShieldCheck, ShieldAlert, Users, UserCheck, UserX, Gauge, Cpu, Layers, ArrowUpRight, TrendingUp, Server, Zap, ChevronRight } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
 import { metricsService } from "@/services/metricsService";
+import ThreatDetailsModal from "./ThreatDetailsModal";
 
 function KPIMetricCard({ icon, label, value, subtext, statusColor, children, isLoading }) {
   return (
@@ -117,6 +119,7 @@ function KPICardsCarousel({ items = [], desktopCols = "lg:grid-cols-4" }) {
 }
 
 export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoading = false }) {
+  const [isThreatModalOpen, setIsThreatModalOpen] = useState(false);
   const { data: kpiData, isLoading: isQueryLoading, error: queryError } = useQuery({
     queryKey: ["systemKPIs"],
     queryFn: () => metricsService.getSystemKPIs(),
@@ -348,10 +351,19 @@ export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoadin
                     value={threatBadge.label}
                     isLoading={isLoading}
                   >
-                    <div className="pt-1">
+                    <div className="pt-1 flex items-center justify-between gap-1">
                       <Badge variant="outline" className={`text-[11px] font-bold ${threatBadge.className}`}>
                         {threatBadge.label}
                       </Badge>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-xs font-medium text-foreground hover:text-primary dark:text-foreground dark:hover:text-primary no-underline hover:no-underline gap-1 group/inspect cursor-pointer"
+                        onClick={() => setIsThreatModalOpen(true)}
+                      >
+                        <span className="group-hover/inspect:underline">Inspect</span>
+                        <ChevronRight className="size-3.5 text-muted-foreground transition-transform duration-200 group-hover/inspect:translate-x-0.5 group-hover/inspect:text-primary" />
+                      </Button>
                     </div>
                   </KPIMetricCard>
                 ),
@@ -410,6 +422,12 @@ export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoadin
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      <ThreatDetailsModal
+        isOpen={isThreatModalOpen}
+        onClose={() => setIsThreatModalOpen(false)}
+        colorMode={colorMode}
+      />
     </Card>
   );
 }

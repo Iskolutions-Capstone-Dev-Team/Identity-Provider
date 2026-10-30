@@ -260,6 +260,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		admin.GET("/reports/system", h.ReportHandler.GetSystemReport)
 		admin.GET("/reports/summary", h.ReportHandler.GetSummaryReport)
 		admin.GET("/kpis", h.KPIHandler.GetSystemKPIs)
+		admin.GET("/kpis/threat-details", h.KPIHandler.GetKPIThreatDetails)
 
 		// Service Provider (Client) Maintenance
 		clients := admin.Group("/clients")
