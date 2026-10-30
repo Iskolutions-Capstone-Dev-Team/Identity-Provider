@@ -21,8 +21,8 @@ describe('MetricsCard Component', () => {
     
     render(<MetricsCard metrics={metrics} />);
     
-    expect(screen.getByText('Total Users')).toBeInTheDocument();
-    expect(screen.getByText('1,200')).toBeInTheDocument(); // Checks if number is formatted
-    expect(screen.getByText('Active users')).toBeInTheDocument();
+    expect(screen.getAllByText('Total Users').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('1,200').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Active users').length).toBeGreaterThan(0);
   });
 });

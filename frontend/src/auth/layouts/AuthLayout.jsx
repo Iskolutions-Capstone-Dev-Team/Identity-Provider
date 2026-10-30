@@ -35,7 +35,7 @@ export default function AuthLayout({ children, allowPageScroll = false }) {
         />
       </div>
 
-      <div className={`relative z-10 mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-5 py-5 sm:px-8 lg:grid lg:grid-cols-[minmax(28rem,1fr)_minmax(27rem,35rem)] lg:items-stretch lg:gap-6 lg:px-10 lg:py-7 xl:grid-cols-[minmax(32rem,1fr)_minmax(30rem,37rem)] xl:gap-8 ${
+      <div className={`relative z-10 mx-auto flex min-h-screen w-full max-w-7xl 2xl:max-w-[84rem] flex-col px-3.5 py-3.5 sm:px-8 sm:py-6 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(26rem,32rem)] xl:grid-cols-[minmax(0,1.2fr)_minmax(28rem,34rem)] lg:items-stretch lg:gap-8 xl:gap-12 lg:px-10 lg:py-7 ${
           allowPageScroll ? "" : "lg:h-screen lg:min-h-0"
         }`}
       >
@@ -44,13 +44,13 @@ export default function AuthLayout({ children, allowPageScroll = false }) {
 
           <div className="hidden flex-1 items-center lg:flex lg:py-0">
             <section className="max-w-full lg:max-w-[34rem]">
-              <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.35)] whitespace-nowrap">
+              <h1 className="scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl xl:text-5xl text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.35)] whitespace-nowrap">
                 Welcome <span className="text-[#ffd21a]">PUPTian!</span>
               </h1>
 
-              <div className="mt-5 h-1.5 w-20 rounded-full bg-[#ffd21a] lg:mt-7" />
+              <div className="mt-4 h-1.5 w-20 rounded-full bg-[#ffd21a] lg:mt-6" />
 
-              <p className="text-sm leading-7 [&:not(:first-child)]:mt-6 text-white/65 max-w-[500px]">
+              <p className="text-sm leading-7 [&:not(:first-child)]:mt-5 text-white/65 max-w-[500px]">
                 One secure gateway for connected PUPT applications, services, and platforms.
               </p>
 
@@ -70,14 +70,14 @@ export default function AuthLayout({ children, allowPageScroll = false }) {
           </div>
         </aside>
 
-        <main className={`mt-8 flex w-full flex-1 items-center justify-center pb-8 sm:mt-10 lg:mt-0 lg:min-h-0 ${
+        <main className={`mt-4 flex w-full flex-1 items-center justify-center pb-4 sm:mt-8 sm:pb-8 lg:mt-0 lg:min-h-0 ${
             allowPageScroll ? "lg:py-8" : "lg:pb-0"
           }`}
         >
           {children}
         </main>
 
-        <div className="mt-auto lg:hidden">
+        <div className="mt-auto pt-2 pb-1 lg:hidden">
           <LoginFooter />
         </div>
       </div>
