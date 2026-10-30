@@ -11,6 +11,9 @@ import {
   Lock,
   ExternalLink,
   Info,
+  ArchiveIcon,
+  LayersIcon,
+  PackageIcon,
 } from "lucide-react";
 import {
   Dialog,
@@ -31,7 +34,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
+import { IconStack } from "@/components/reui/icon-stack";
 import { metricsService } from "@/services/metricsService";
 
 export default function ThreatDetailsModal({ isOpen, onClose }) {
@@ -54,19 +57,16 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
         return {
           label: "HIGH THREAT",
           className: "border-red-500 text-red-600 dark:text-red-400 bg-red-500/10",
-          icon: <ShieldAlert className="size-4 text-red-500" />,
         };
       case "MEDIUM":
         return {
           label: "ELEVATED",
           className: "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-500/10",
-          icon: <AlertTriangle className="size-4 text-amber-500" />,
         };
       default:
         return {
           label: "SECURE / LOW",
           className: "border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
-          icon: <ShieldCheck className="size-4 text-emerald-500" />,
         };
     }
   };
@@ -80,27 +80,17 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6">
-        <DialogHeader className="pb-3 border-b border-border/50">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                {badgeConfig.icon}
-                <span>Threat Posture & Telemetry Drilldown</span>
-              </DialogTitle>
-              <DialogDescription className="mt-1 text-xs text-muted-foreground">
-                Root-cause evaluation, affected application endpoints, and suspicious origin telemetry.
-              </DialogDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className={`font-bold ${badgeConfig.className}`}>
-                {badgeConfig.label}
-              </Badge>
-              <span className="text-[11px] font-medium text-muted-foreground">
-                {details?.eval_timeframe || "Past 24 Hours"}
-              </span>
-            </div>
-          </div>
+      <DialogContent 
+        className="max-w-2xl sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6"
+        closeButtonClassName="text-white hover:text-white/80 hover:bg-white/10 dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-muted top-4 right-4"
+      >
+        <DialogHeader className="-mx-6 -mt-6 mb-2 rounded-t-xl border-b p-4 sm:p-5 bg-[linear-gradient(180deg,rgba(123,13,21,0.97),rgba(43,3,7,0.98))] text-white dark:bg-none dark:bg-transparent dark:text-foreground">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-white dark:text-foreground">
+            Threat Posture & Telemetry Drilldown
+          </DialogTitle>
+          <DialogDescription className="mt-1 text-xs text-white/90 dark:text-muted-foreground">
+            Root-cause evaluation, affected application endpoints, and suspicious origin telemetry.
+          </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -118,6 +108,22 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
           </div>
         ) : (
           <div className="space-y-5 pt-3">
+            {/* Posture & Evaluation Timeframe in Dialog Body */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Posture Status:
+                </span>
+                <Badge variant="outline" className={`font-bold ${badgeConfig.className}`}>
+                  {badgeConfig.label}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                <Clock className="size-3.5 text-muted-foreground" />
+                <span>Evaluation Window: <strong className="text-foreground">{details?.eval_timeframe || "Past 24 Hours"}</strong></span>
+              </div>
+            </div>
+
             {/* Trigger Banner */}
             <div className="p-4 rounded-xl border border-border/70 bg-muted/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
@@ -147,18 +153,18 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            {/* Drilldown Tabs */}
+            {/* Drilldown Tabs - Responsive grid without number count */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview" className="gap-2">
+              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto p-1 gap-1">
+                <TabsTrigger value="overview" className="gap-2 text-xs sm:text-sm py-2">
                   <Users className="size-3.5" />
-                  <span>Offending Sources ({offendingSources.length})</span>
+                  <span>Offending Sources</span>
                 </TabsTrigger>
-                <TabsTrigger value="clients" className="gap-2">
+                <TabsTrigger value="clients" className="gap-2 text-xs sm:text-sm py-2">
                   <Server className="size-3.5" />
-                  <span>Targeted Clients ({targetedClients.length})</span>
+                  <span>Targeted Clients</span>
                 </TabsTrigger>
-                <TabsTrigger value="ai" className="gap-2">
+                <TabsTrigger value="ai" className="gap-2 text-xs sm:text-sm py-2">
                   <Sparkles className="size-3.5" />
                   <span>AI Security Advisory</span>
                 </TabsTrigger>
@@ -167,13 +173,20 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
               {/* Tab 1: Offending Sources */}
               <TabsContent value="overview" className="mt-4 space-y-3">
                 {offendingSources.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground border border-dashed rounded-lg">
-                    <ShieldCheck className="size-8 mx-auto mb-2 text-emerald-500" />
-                    <p className="text-sm font-medium">No offending IP sources or accounts recorded in this window.</p>
+                  <div className="py-12 px-4 text-center border border-dashed border-border/80 rounded-xl flex flex-col items-center justify-center gap-3 bg-muted/10">
+                    <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e]">
+                      <ArchiveIcon className="size-4 text-[#7b0d15] dark:text-[#f8d24e]" />
+                    </IconStack>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-foreground">No Offending Sources Recorded</p>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                        No offending IP sources or accounts recorded in this window.
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    <Table>
+                  <div className="rounded-lg border border-border overflow-x-auto">
+                    <Table className="min-w-[500px]">
                       <TableHeader className="bg-muted/40">
                         <TableRow>
                           <TableHead className="text-xs font-bold uppercase">IP Address</TableHead>
@@ -215,13 +228,20 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
               {/* Tab 2: Targeted Clients */}
               <TabsContent value="clients" className="mt-4 space-y-3">
                 {targetedClients.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground border border-dashed rounded-lg">
-                    <Server className="size-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm font-medium">No application clients specifically targeted by authentication friction.</p>
+                  <div className="py-12 px-4 text-center border border-dashed border-border/80 rounded-xl flex flex-col items-center justify-center gap-3 bg-muted/10">
+                    <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e]">
+                      <PackageIcon className="size-4 text-[#7b0d15] dark:text-[#f8d24e]" />
+                    </IconStack>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-foreground">No Targeted Clients</p>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                        No application clients specifically targeted by authentication friction.
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    <Table>
+                  <div className="rounded-lg border border-border overflow-x-auto">
+                    <Table className="min-w-[500px]">
                       <TableHeader className="bg-muted/40">
                         <TableRow>
                           <TableHead className="text-xs font-bold uppercase">Application Client</TableHead>
@@ -322,12 +342,16 @@ export default function ThreatDetailsModal({ isOpen, onClose }) {
                     )}
                   </div>
                 ) : (
-                  <div className="p-8 text-center text-muted-foreground border border-dashed rounded-lg space-y-2">
-                    <Sparkles className="size-8 mx-auto text-muted-foreground opacity-60" />
-                    <p className="text-sm font-medium">No cached AI security model review available.</p>
-                    <p className="text-xs">
-                      AI authentication review updates periodically based on scheduled background telemetry cycles.
-                    </p>
+                  <div className="py-12 px-4 text-center border border-dashed border-border/80 rounded-xl flex flex-col items-center justify-center gap-3 bg-muted/10 space-y-1">
+                    <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e]">
+                      <LayersIcon className="size-4 text-[#7b0d15] dark:text-[#f8d24e]" />
+                    </IconStack>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-foreground">No Cached AI Advisory</p>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                        AI authentication review updates periodically based on scheduled background telemetry cycles.
+                      </p>
+                    </div>
                   </div>
                 )}
               </TabsContent>
