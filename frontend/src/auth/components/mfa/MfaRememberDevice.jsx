@@ -1,27 +1,57 @@
 import { Checkbox } from "../../../components/ui/checkbox";
-import { Field, FieldGroup, FieldLabel, FieldTitle } from "../../../components/ui/field";
 import { ShieldLock } from "lucide-react";
 
 export default function MfaRememberDevice({ checked, onCheckedChange }) {
   return (
-    <FieldGroup className="w-full">
-      <FieldLabel htmlFor="remember-device" className="relative p-0 border-white/10 bg-white/5 dark:has-data-checked:!border-[#ffd700]/40 dark:has-data-checked:!bg-[#ffd700]/10 has-data-checked:!border-[#ffd700]/40 has-data-checked:!bg-[#ffd700]/10 hover:bg-white/10 cursor-pointer transition-colors">
-        <Field orientation="horizontal" className="items-center justify-between w-full">
-          <FieldTitle className="flex items-center gap-3">
-            <ShieldLock className="size-5 text-white/80 group-has-data-checked/field-label:text-[#ffd700]" strokeWidth={2} />
-            <div className="flex flex-col items-start gap-0.5">
-              <span className="text-sm font-semibold text-white">Remember this device</span>
-              <span className="text-white/60 text-xs font-normal">Skip MFA for 7 days</span>
-            </div>
-          </FieldTitle>
-          <Checkbox
-            id="remember-device"
-            checked={checked}
-            onCheckedChange={onCheckedChange}
-            className="size-5 rounded-sm border-white/50 dark:data-checked:!bg-[#ffd700] data-checked:!bg-[#ffd700] dark:data-checked:!border-[#ffd700] data-checked:!border-[#ffd700] data-checked:!text-[#7b0d15]"
-          />
-        </Field>
-      </FieldLabel>
-    </FieldGroup>
+    <label
+      htmlFor="remember-device"
+      className={`group/remember relative flex w-full cursor-pointer items-center justify-between rounded-xl border p-3 transition duration-300 ${
+        checked
+          ? "border-[#ffd700]/70 bg-[#ffd700]/15 hover:bg-[#ffd700]/20"
+          : "border-white/12 bg-white/6 hover:border-[#ffd700]/55 hover:bg-[#ffd700]/12"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <ShieldLock
+          className={`size-5 transition duration-300 ${
+            checked
+              ? "text-[#ffd700]"
+              : "text-white/70 group-hover/remember:text-[#ffd700]"
+          }`}
+          strokeWidth={2}
+        />
+        <div className="flex flex-col items-start gap-0.5">
+          <span
+            className={`text-sm font-semibold transition duration-300 ${
+              checked
+                ? "text-[#ffd700]"
+                : "text-white group-hover/remember:text-[#ffd700]"
+            }`}
+          >
+            Remember this device
+          </span>
+          <span
+            className={`text-xs transition duration-300 ${
+              checked
+                ? "text-[#ffd700]/80"
+                : "text-white/60 group-hover/remember:text-white/85"
+            }`}
+          >
+            Skip MFA for 7 days
+          </span>
+        </div>
+      </div>
+
+      <Checkbox
+        id="remember-device"
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        className={`size-5 rounded-md transition duration-300 ${
+          checked
+            ? "!border-[#ffd700] !bg-[#ffd700] !text-[#7b0d15]"
+            : "border-white/40 group-hover/remember:border-[#ffd700]/70"
+        }`}
+      />
+    </label>
   );
 }

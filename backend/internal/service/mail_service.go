@@ -14,6 +14,11 @@ type MailService interface {
 	SendAndSaveOTP(ctx context.Context, email string) error
 	SendAndSaveInvitation(ctx context.Context,
 		email string, accountTypeID int) error
+	SendSecurityAlert(
+		ctx context.Context,
+		email, location, ip string,
+		speedKmH float64,
+	) error
 }
 
 type mailService struct {
@@ -80,6 +85,15 @@ func (s *mailService) SendAndSaveInvitation(ctx context.Context,
 	}
 
 	return nil
+}
+
+// SendSecurityAlert sends an urgent security suspension notification email.
+func (s *mailService) SendSecurityAlert(
+	ctx context.Context,
+	email, location, ip string,
+	speedKmH float64,
+) error {
+	return utils.SendSecuritySuspensionEmail(email, location, ip, speedKmH)
 }
 
 func NewMailService(orp repository.OTPRepository,

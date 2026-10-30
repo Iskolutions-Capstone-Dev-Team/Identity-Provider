@@ -64,6 +64,38 @@ var SendInvitationEmail = func(toEmail string, invitationCode string) error {
 	return nil
 }
 
+// SendSecuritySuspensionEmail notifies a user of an automated lockout.
+var SendSecuritySuspensionEmail = func(
+	toEmail string,
+	location string,
+	ip string,
+	speedKmH float64,
+) error {
+	apiKey := os.Getenv("RESEND_API_KEY")
+	fromEmail := os.Getenv("RESEND_FROM_EMAIL")
+	fromName := os.Getenv("RESEND_FROM_NAME")
+
+	if apiKey == "" || fromEmail == "" {
+		return fmt.Errorf("mailer: missing resend configuration")
+	}
+
+	client := resend.NewClient(apiKey)
+	from := fmt.Sprintf("%s <%s>", fromName, fromEmail)
+	subject := "Security Alert: Your Account Has Been Suspended"
+	params := &resend.SendEmailRequest{
+		From:    from,
+		To:      []string{toEmail},
+		Subject: subject,
+		Html:    buildSecuritySuspensionHTML(location, ip, speedKmH),
+	}
+
+	_, err := client.Emails.Send(params)
+	if err != nil {
+		return fmt.Errorf("[SendSecuritySuspensionEmail]: %w", err)
+	}
+	return nil
+}
+
 func buildOTPEmailHTML(otp string) string {
 	content := fmt.Sprintf(`
 		<table role="presentation" width="100%%" cellpadding="0" cellspacing="0">
@@ -153,4 +185,54 @@ func buildEmailShell(content string) string {
 		</div>`,
 		content,
 	)
+}
+
+func buildSecuritySuspensionHTML(
+	location string,
+	ip string,
+	speedKmH float64,
+) string {
+	content := fmt.Sprintf(`
+		<table role="presentation" width="100%%" cellpadding="0"
+			cellspacing="0" style="padding: 32px 54px;">
+			<tr>
+				<td>
+					<p style="margin: 0 0 16px; color: #9b0000;
+						font-size: 20px; font-weight: 800;">
+						Suspicious Activity Detected
+					</p>
+					<p style="margin: 0 0 14px; color: #050505;
+						font-size: 15px; line-height: 1.5;">
+						Your account was automatically suspended because a
+						login attempt was detected from a location that
+						would require impossible physical travel.
+					</p>
+					<div style="background: #fff8f8; border: 1px solid
+						#ffcccc; border-radius: 8px; padding: 16px;
+						margin: 20px 0;">
+						<p style="margin: 0 0 8px; font-size: 14px;
+							color: #333333;"><strong>Detected Location:</strong>
+							%s</p>
+						<p style="margin: 0 0 8px; font-size: 14px;
+							color: #333333;"><strong>IP Address:</strong>
+							%s</p>
+						<p style="margin: 0; font-size: 14px;
+							color: #333333;"><strong>Calculated Speed:</strong>
+							%.0f km/h</p>
+					</div>
+					<p style="margin: 0 0 14px; color: #050505;
+						font-size: 14px; line-height: 1.5;">
+						All existing sessions and active tokens have been
+						revoked. If you believe this is a mistake or your
+						credentials have been compromised, please contact your
+						system administrator immediately.
+					</p>
+				</td>
+			</tr>
+		</table>`,
+		location,
+		ip,
+		speedKmH,
+	)
+	return buildEmailShell(content)
 }

@@ -50,9 +50,9 @@ export default function RegisterForm({ clientId }) {
   const loginPath = buildLoginPath(clientId);
 
   return (
-    <div className="relative z-20 w-full max-w-[38rem] px-1 sm:px-0">
-      <Card className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
-        <CardContent className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 lg:px-10">
+    <div className="relative z-20 w-full max-w-[38rem] px-0">
+      <Card className="rounded-[1.75rem] sm:rounded-[2rem] border-[2px] sm:border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_32px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
+        <CardContent className="rounded-[calc(1.75rem-5px)] sm:rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-4 py-5 sm:px-9 lg:px-10">
           <div className="space-y-5">
             <RegisterStepHeader step={step} email={details.email} />
 

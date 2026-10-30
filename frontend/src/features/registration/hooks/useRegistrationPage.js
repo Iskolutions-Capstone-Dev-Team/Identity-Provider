@@ -59,7 +59,7 @@ export function getRegistrationActionError(error, fallbackMessage) {
 export function useRegistrationPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { colorMode = "light", globalViewType, setGlobalViewType } = useOutletContext() || {};
+  const { colorMode = "light" } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
   
   const canCreateRegistration = hasPermission(PERMISSIONS.CREATE_REGISTRATION_CONFIG);
@@ -81,15 +81,10 @@ export function useRegistrationPage() {
   const [limit, setLimit] = useState(10);
   const [sortBy, setSortBy] = useState("account_type_name");
   const [sort, setSort] = useState("desc");
-  const [viewType, setViewType] = useState(() => {
-    return globalViewType || "card";
-  });
+  const [viewType, setViewType] = useState("table");
 
   const handleSetViewType = (newViewType) => {
     setViewType(newViewType);
-    if (setGlobalViewType) {
-      setGlobalViewType(newViewType);
-    }
   };
 
   const [totalPages, setTotalPages] = useState(1);
@@ -112,12 +107,7 @@ export function useRegistrationPage() {
     queryFn: () => metricsService.getRegistrationMetrics()
   });
 
-  useEffect(() => {
-    if (globalViewType) {
-      setViewType(globalViewType);
-    }
-  }, [globalViewType]);
-
+  
   const appClientOptions = useMemo(
     () => getAllAppClientSelectOptions(appClients),
     [appClients],

@@ -5,11 +5,12 @@ import IdpLayout from '../IdpLayout';
 // Mock dependencies
 vi.mock('react-router-dom', () => ({
   useLocation: () => ({ pathname: '/' }),
-  useOutlet: () => <div data-testid="outlet">Outlet Content</div>
+  useOutlet: () => <div data-testid="outlet">Outlet Content</div>,
+  useNavigate: () => vi.fn()
 }));
 
-vi.mock('../../components/Sidebar', () => ({
-  default: () => <div data-testid="sidebar" />
+vi.mock('../../components/app-sidebar', () => ({
+  AppSidebar: () => <div data-testid="sidebar" />
 }));
 
 vi.mock('../../components/Navbar', () => ({
@@ -40,6 +41,7 @@ Object.defineProperty(window, 'localStorage', {
   value: {
     getItem: vi.fn(),
     setItem: vi.fn(),
+    removeItem: vi.fn(),
   },
   writable: true
 });

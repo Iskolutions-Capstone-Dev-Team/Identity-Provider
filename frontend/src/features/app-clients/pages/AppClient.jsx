@@ -19,7 +19,7 @@ import { PERMISSIONS } from "../../../utils/permissionAccess";
 import MetricsCard from "../../../components/MetricsCard";
 
 export default function AppClient() {
-    const { colorMode = "light", globalViewType, setGlobalViewType } = useOutletContext() || {};
+    const { colorMode = "light" } = useOutletContext() || {};
     const { hasPermission } = usePermissionAccess();
     const canCreateClient = hasPermission(PERMISSIONS.ADD_APPCLIENT);
     const canEditClient = hasPermission(PERMISSIONS.EDIT_APPCLIENT);
@@ -41,8 +41,6 @@ export default function AppClient() {
     } = useAppClients({ enabled: canViewClientList });
 
     const pageState = useAppClientPage({
-        globalViewType,
-        setGlobalViewType,
         canCreateClient,
         canEditClient,
         canDeleteClient,
@@ -65,8 +63,6 @@ export default function AppClient() {
         setShowDeleteAlert,
         deleteTarget,
         showSecretConfirm,
-        viewType,
-        setViewType,
         openCreate,
         openView,
         openEdit,
@@ -131,11 +127,10 @@ export default function AppClient() {
                         setSortBy={setSortBy}
                         sort={sort}
                         setSort={setSort}
-                        viewType={viewType}
-                        setViewType={setViewType}
                     />
 
-                    {viewType === "table" ? (
+                    {/* Laptop & Desktop Table (>= 1024px) */}
+                    <div className="hidden lg:block w-full">
                         <ConnectedAppClientTable
                             loading={showLoading}
                             clients={paginatedClients}
@@ -148,7 +143,10 @@ export default function AppClient() {
                             showRotateSecretAction={canRotateClientSecret}
                             colorMode={colorMode}
                         />
-                    ) : (
+                    </div>
+
+                    {/* Mobile & Tablet Cards (< 1024px) */}
+                    <div className="block lg:hidden w-full">
                         <ConnectedAppClientCards
                             loading={showLoading}
                             clients={paginatedClients}
@@ -161,7 +159,7 @@ export default function AppClient() {
                             showRotateSecretAction={canRotateClientSecret}
                             colorMode={colorMode}
                         />
-                    )}
+                    </div>
 
                     {!showLoading && (
                         <div className="w-full">
