@@ -20,7 +20,9 @@ const TurnstileWidget = forwardRef(function TurnstileWidget(
   // Store latest callbacks in a mutable ref to prevent tearing down the widget
   // on parent state updates or re-renders (e.g. typing, clearing errors)
   const callbacksRef = useRef({ onSuccess, onError, onExpire });
-  callbacksRef.current = { onSuccess, onError, onExpire };
+  useEffect(() => {
+    callbacksRef.current = { onSuccess, onError, onExpire };
+  }, [onSuccess, onError, onExpire]);
 
   // Cloudflare test sitekey as default fallback if not configured
   const effectiveSiteKey =
