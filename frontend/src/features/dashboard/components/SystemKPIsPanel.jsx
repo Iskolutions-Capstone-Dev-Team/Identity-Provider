@@ -426,6 +426,7 @@ export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoadin
       <ThreatDetailsModal
         isOpen={isThreatModalOpen}
         onClose={() => setIsThreatModalOpen(false)}
+        colorMode={colorMode}
       />
     </Card>
   );
