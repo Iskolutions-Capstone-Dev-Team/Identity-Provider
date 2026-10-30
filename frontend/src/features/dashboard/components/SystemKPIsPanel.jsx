@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ShieldCheck, ShieldAlert, Users, UserCheck, UserX, Gauge, Cpu, Layers, ArrowUpRight, TrendingUp, Server, Zap } from "lucide-react";
+import { Activity, ShieldCheck, ShieldAlert, Users, UserCheck, UserX, Gauge, Cpu, Layers, ArrowUpRight, TrendingUp, Server, Zap, ChevronRight } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -356,13 +356,13 @@ export default function SystemKPIsPanel({ colorMode = "light", isDashboardLoadin
                         {threatBadge.label}
                       </Badge>
                       <Button
-                        variant="ghost"
+                        variant="link"
                         size="sm"
-                        className="h-6 px-2 text-[11px] font-semibold text-primary hover:text-primary/80 gap-1"
+                        className="h-auto p-0 text-xs font-medium text-foreground hover:text-primary dark:text-foreground dark:hover:text-primary no-underline hover:no-underline gap-1 group/inspect cursor-pointer"
                         onClick={() => setIsThreatModalOpen(true)}
                       >
-                        <span>Inspect</span>
-                        <ArrowUpRight className="size-3" />
+                        <span className="group-hover/inspect:underline">Inspect</span>
+                        <ChevronRight className="size-3.5 text-muted-foreground transition-transform duration-200 group-hover/inspect:translate-x-0.5 group-hover/inspect:text-primary" />
                       </Button>
                     </div>
                   </KPIMetricCard>
