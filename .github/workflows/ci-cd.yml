@@ -159,8 +159,8 @@ jobs:
               sudo docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
               --password-stdin
 
-            echo "Pulling latest images..."
-            sudo $DC -f docker-compose.ghcr.yml pull
+            echo "Pulling latest application images..."
+            sudo $DC -f docker-compose.ghcr.yml pull backend frontend
 
             echo "Starting containers..."
             sudo $DC -f docker-compose.ghcr.yml up -d --remove-orphans
@@ -270,8 +270,8 @@ jobs:
               sudo docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
               --password-stdin
 
-            echo "Pulling latest images..."
-            sudo $DC -f docker-compose.ghcr.yml pull
+            echo "Pulling latest application images..."
+            sudo $DC -f docker-compose.ghcr.yml pull backend frontend
 
             echo "Starting containers..."
             sudo $DC -f docker-compose.ghcr.yml up -d --remove-orphans

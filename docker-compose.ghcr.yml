@@ -75,9 +75,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # Minio (S3-Like storage)
+  # Minio (S3-Like storage - using pgsty/silo drop-in replacement)
   minio:
-    image: minio/minio:latest
+    image: pgsty/silo:latest
     container_name: idp_minio
     restart: always
     command: server /data --console-address ":9001"
@@ -107,13 +107,14 @@ services:
     entrypoint: >
       /bin/sh -c "
       sleep 5;
-      mc alias set local http://minio:9000 ${S3_KEY} ${S3_SECRET};
-      mc mb local/${S3_BUCKET} --ignore-existing;
-      mc anonymous set download local/${S3_BUCKET};
+      MC_CMD=\$$(command -v mc || command -v mcli);
+      \$$MC_CMD alias set local http://minio:9000 \${S3_KEY} \${S3_SECRET};
+      \$$MC_CMD mb local/\${S3_BUCKET} --ignore-existing;
+      \$$MC_CMD anonymous set download local/\${S3_BUCKET};
       JSON='[{\"AllowedOrigins\":[\"*\"],\"AllowedMethods\":[\"GET\"]}';
-      JSON=\"${JSON},\"'\"AllowedHeaders\":[\"*\"]}]';
-      echo \$JSON > /tmp/cors.json;
-      mc cors set local/${S3_BUCKET} /tmp/cors.json;
+      JSON=\"\$${JSON},\"'\"AllowedHeaders\":[\"*\"]}]';
+      echo \$$JSON > /tmp/cors.json;
+      \$$MC_CMD cors set local/\${S3_BUCKET} /tmp/cors.json;
       exit 0;
       "
 
