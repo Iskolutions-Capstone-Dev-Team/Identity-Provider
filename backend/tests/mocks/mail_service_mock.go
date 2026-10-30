@@ -67,3 +67,17 @@ func (mr *MockMailServiceMockRecorder) SendAndSaveOTP(ctx, email any) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendAndSaveOTP", reflect.TypeOf((*MockMailService)(nil).SendAndSaveOTP), ctx, email)
 }
+
+// SendSecurityAlert mocks base method.
+func (m *MockMailService) SendSecurityAlert(ctx context.Context, email, location, ip string, speedKmH float64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendSecurityAlert", ctx, email, location, ip, speedKmH)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendSecurityAlert indicates an expected call of SendSecurityAlert.
+func (mr *MockMailServiceMockRecorder) SendSecurityAlert(ctx, email, location, ip, speedKmH any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendSecurityAlert", reflect.TypeOf((*MockMailService)(nil).SendSecurityAlert), ctx, email, location, ip, speedKmH)
+}

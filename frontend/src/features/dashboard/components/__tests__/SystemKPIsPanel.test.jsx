@@ -57,8 +57,8 @@ describe("SystemKPIsPanel", () => {
     renderWithClient(<SystemKPIsPanel />);
 
     expect(await screen.findByText(/Operational KPIs/i)).toBeInTheDocument();
-    expect(await screen.findByText(/15.4 ms/i)).toBeInTheDocument();
-    expect(await screen.findByText(/3.50/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/15.4 ms/i)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/3.50/i)).length).toBeGreaterThan(0);
   });
 
   it("renders inspect button and opens ThreatDetailsModal on click", async () => {
@@ -92,10 +92,10 @@ describe("SystemKPIsPanel", () => {
     const securityTab = await screen.findByRole("tab", { name: /Auth Security/i });
     fireEvent.click(securityTab);
 
-    const inspectBtn = await screen.findByRole("button", { name: /Inspect/i });
-    expect(inspectBtn).toBeInTheDocument();
+    const inspectBtns = await screen.findAllByRole("button", { name: /Inspect/i });
+    expect(inspectBtns.length).toBeGreaterThan(0);
 
-    fireEvent.click(inspectBtn);
+    fireEvent.click(inspectBtns[0]);
 
     expect(await screen.findByText(/Threat Posture & Telemetry Drilldown/i)).toBeInTheDocument();
   });

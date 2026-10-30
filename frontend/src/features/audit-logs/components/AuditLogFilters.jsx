@@ -1,7 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Search, Table, WalletCards, ListFilter, View, User, ShieldAlert, Activity, Calendar, ListSortAscending, ListSortDescending, Clock4 } from "lucide-react";
+import { Search, ListFilter, User, ShieldAlert, Activity, Calendar, ListSortAscending, ListSortDescending, Clock4 } from "lucide-react";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,8 +25,6 @@ export default function AuditLogFilters({
   setSortBy, 
   sort = "desc", 
   setSort, 
-  viewType = "table", 
-  setViewType,
   logType = "transaction",
   onLogTypeChange,
   canViewSecurityLogs = false
@@ -68,58 +65,55 @@ export default function AuditLogFilters({
         )}
 
         <div className={`flex flex-row gap-4 w-full lg:w-auto mt-auto ${!showLogTypePicker ? "lg:ml-auto" : ""}`}>
-          <div className="w-1/2 lg:w-auto flex flex-col gap-2">
+          <div className="w-full lg:w-auto flex flex-col gap-2">
             <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-10! px-3 flex items-center gap-2 bg-background border shadow-sm w-full justify-between">
+              <DropdownMenuTrigger className="h-10! px-3 flex items-center gap-2 bg-background border rounded-lg shadow-sm w-full justify-between hover:bg-accent cursor-pointer">
                 <div className="flex items-center gap-2 text-foreground font-normal">
                   <ListFilter className="w-4 h-4 opacity-70" />
                   <span>Filter</span>
                 </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] lg:w-48">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sortBy} onValueChange={(val) => setSortBy(val === sortBy ? "" : val)}>
-                  <DropdownMenuRadioItem value="actor" className="cursor-pointer gap-2">
-                    <User className="w-4 h-4 opacity-70" />
-                    Actor
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="action" className="cursor-pointer gap-2">
-                    <Activity className="w-4 h-4 opacity-70" />
-                    Action
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="status" className="cursor-pointer gap-2">
-                    <ShieldAlert className="w-4 h-4 opacity-70" />
-                    Status
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="created_at" className="cursor-pointer gap-2">
-                    <Calendar className="w-4 h-4 opacity-70" />
-                    Date Created
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>Order By</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sort} onValueChange={(val) => setSort(val === sort ? "" : val)}>
-                  <DropdownMenuRadioItem value="asc" className="cursor-pointer gap-2">
-                    <ListSortAscending className="w-4 h-4 opacity-70" />
-                    Ascending
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="desc" className="cursor-pointer gap-2">
-                    <ListSortDescending className="w-4 h-4 opacity-70" />
-                    Descending
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] lg:w-48">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={sortBy} onValueChange={(val) => setSortBy(val === sortBy ? "" : val)}>
+                    <DropdownMenuRadioItem value="actor" className="cursor-pointer gap-2">
+                      <User className="w-4 h-4 opacity-70" />
+                      Actor
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="action" className="cursor-pointer gap-2">
+                      <Activity className="w-4 h-4 opacity-70" />
+                      Action
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="status" className="cursor-pointer gap-2">
+                      <ShieldAlert className="w-4 h-4 opacity-70" />
+                      Status
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="created_at" className="cursor-pointer gap-2">
+                      <Calendar className="w-4 h-4 opacity-70" />
+                      Date Created
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Order By</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={sort} onValueChange={(val) => setSort(val === sort ? "" : val)}>
+                    <DropdownMenuRadioItem value="asc" className="cursor-pointer gap-2">
+                      <ListSortAscending className="w-4 h-4 opacity-70" />
+                      Ascending
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="desc" className="cursor-pointer gap-2">
+                      <ListSortDescending className="w-4 h-4 opacity-70" />
+                      Descending
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-
       </div>
-    </div>
     </div>
   );
 }

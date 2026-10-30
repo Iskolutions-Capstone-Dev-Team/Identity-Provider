@@ -2,7 +2,7 @@ import axios from "axios";
 import { clearAuthState, getAccessToken, getPendingMfaAccessToken } from "../auth/utils/authCookies";
 import { getCurrentReturnPath, redirectToAuthorize } from "../auth/utils/authorizeFlow";
 import { showForbiddenAlert, isIdpProtectedPath } from "../utils/forbiddenAlert";
-import { buildLoginPath } from "../auth/utils/loginRoute";
+import { buildLoginPath, buildAccessDeniedPath } from "../auth/utils/loginRoute";
 import { storeTokenResponse } from "../auth/utils/authCookies";
 import { authService } from "../auth/services/authService";
 
@@ -87,6 +87,12 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     if (status === 403) {
+      if (error.response?.data?.code === 1030) {
+        clearAuthState();
+        window.location.replace(buildAccessDeniedPath(authClientId, { reason: "suspended" }));
+        return Promise.reject(error);
+      }
+
       if (
         !originalRequest?.skipForbiddenRedirect &&
         !originalRequest?.skipForbiddenAlert

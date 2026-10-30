@@ -134,15 +134,10 @@ export function useRoles() {
   const [limit, setLimit] = useState(10);
   const [sortBy, setSortBy] = useState("created_at");
   const [sort, setSort] = useState("desc");
-  const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("rolesViewType") || "table";
-  });
+  const [viewType, setViewType] = useState("table");
   const searchKeyword = search.trim();
 
-  useEffect(() => {
-    localStorage.setItem("rolesViewType", viewType);
-  }, [viewType]);
-
+  
   const fetchRolesFn = async () => {
     const data = await roleService.getRoles({
       page,

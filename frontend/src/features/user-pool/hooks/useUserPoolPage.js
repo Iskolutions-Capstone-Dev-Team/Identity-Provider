@@ -13,8 +13,6 @@ function getRequestErrorMessage(error, fallbackMessage) {
 }
 
 export function useUserPoolPage({
-  globalViewType,
-  setGlobalViewType,
   userType,
   setUserType,
   getUserDetails,
@@ -48,28 +46,8 @@ export function useUserPoolPage({
   const [userToDelete, setUserToDelete] = useState(null);
   const [openReinvite, setOpenReinvite] = useState(false);
   const [userToReinvite, setUserToReinvite] = useState(null);
-  const [isSendingReinvite, setIsSendingReinvite] = useState(false);
 
-  const [viewType, setViewType] = useState(() => {
-    return globalViewType || "table";
-  });
-  
-  const handleSetViewType = (newViewType) => {
-    setViewType(newViewType);
-    if (setGlobalViewType) {
-      setGlobalViewType(newViewType);
-    }
-  };
-
-  useEffect(() => {
-    if (globalViewType) {
-      setViewType(globalViewType);
-    }
-  }, [globalViewType]);
-
-  useEffect(() => {
-    localStorage.setItem("userPoolViewType", viewType);
-  }, [viewType]);
+  const [viewType, setViewType] = useState("table");
 
   const selectedUserRequestRef = useRef(0);
 
@@ -196,7 +174,7 @@ export function useUserPoolPage({
     setUserToReinvite,
     isSendingReinvite: reinviteMutation.isPending,
     viewType,
-    setViewType: handleSetViewType,
+    setViewType,
     handleView,
     handleEdit,
     handleDeleteClick,
