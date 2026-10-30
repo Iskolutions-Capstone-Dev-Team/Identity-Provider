@@ -64,12 +64,15 @@ jobs:
           npm run build
 
   build-and-push:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/main')
     needs: quality-check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -79,14 +82,14 @@ jobs:
           password: ${{ secrets.GH_PAT }}
 
       - name: Build and Push Backend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
           tags: ghcr.io/iskolutions-capstone-dev-team/idp-backend:latest
 
       - name: Build and Push Frontend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: true
@@ -100,7 +103,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Clean Staging App Images and Copy Compose file
+      - name: Sync Repository and Copy Compose file
         env:
           STAGING_HOST: ${{ secrets.STAGING_IP }}
           STAGING_USER: ${{ secrets.STAGING_USER }}
@@ -121,52 +124,106 @@ jobs:
             mkdir -p "$APP_DIR"
             chmod 755 "$APP_DIR"
 
-            docker rm -f idp_backend idp_frontend >/dev/null 2>&1 || true
-            docker image rm -f \
-              ghcr.io/iskolutions-capstone-dev-team/idp-backend:latest \
-              ghcr.io/iskolutions-capstone-dev-team/idp-frontend:latest \
-              >/dev/null 2>&1 || true
+            if [ -d "$APP_DIR/.git" ]; then
+              cd "$APP_DIR"
+              git fetch origin development
+              git checkout development
+              git reset --hard origin/development
+            fi
 
             cat > "$COMPOSE_FILE"
             ' \
             < docker-compose.ghcr.yml
 
-      - name: Deploy to Staging
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy and Verify Staging
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.STAGING_IP }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_PK }}
           script: |
-            cd "$HOME/Identity-Provider"
-            git pull origin development
+            set -e
+            APP_DIR="$HOME/Identity-Provider"
+            cd "$APP_DIR"
+
+            if docker compose version >/dev/null 2>&1; then
+              DC="docker compose"
+            elif docker-compose version >/dev/null 2>&1; then
+              DC="docker-compose"
+            else
+              echo "Error: Neither docker compose nor docker-compose was found."
+              exit 1
+            fi
+
             echo "${{ secrets.GH_PAT }}" | \
               sudo docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
               --password-stdin
-            sudo docker compose -f docker-compose.ghcr.yml pull
-            sudo docker compose -f docker-compose.ghcr.yml up -d
+
+            echo "Pulling latest images..."
+            sudo $DC -f docker-compose.ghcr.yml pull
+
+            echo "Starting containers..."
+            sudo $DC -f docker-compose.ghcr.yml up -d --remove-orphans
+
+            echo "Verifying container health..."
+            FAILED=0
+            for i in {1..8}; do
+              sleep 5
+              FAILED=0
+              for c in idp_backend idp_frontend; do
+                STATUS=$(sudo docker inspect -f '{{.State.Status}}' "$c" 2>/dev/null || echo "missing")
+                if [ "$STATUS" != "running" ]; then
+                  echo "Attempt $i: Container $c status is $STATUS"
+                  FAILED=1
+                fi
+              done
+              if [ "$FAILED" -eq 0 ]; then
+                echo "All application containers are running."
+                break
+              fi
+            done
+
+            if [ "$FAILED" -ne 0 ]; then
+              TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+              LOG_DIR="$APP_DIR/logs"
+              mkdir -p "$LOG_DIR"
+              FAIL_LOG="$LOG_DIR/deploy_failure_${TIMESTAMP}.log"
+              echo "=== Deployment Failure: Container health check failed at $TIMESTAMP ===" | tee -a "$FAIL_LOG"
+              for c in idp_backend idp_frontend; do
+                echo "=== Logs for $c (last 50 lines) ===" | tee -a "$FAIL_LOG"
+                sudo docker logs --tail 50 "$c" 2>&1 | tee -a "$FAIL_LOG"
+              done
+              exit 1
+            fi
+
+      - name: Cleanup Staging Dangling Images
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_IP }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_PK }}
+          script: |
+            echo "Pruning dangling images..."
+            sudo docker image prune -f
 
   deploy-production:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: quality-check
+    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Clean Production App Images and Copy Compose file
+      - name: Sync Repository and Copy Compose file
         env:
           PRODUCTION_HOST: ${{ secrets.VPS_IP }}
           PRODUCTION_USER: ${{ secrets.VPS_USER }}
           PRODUCTION_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          PRODUCTION_PASSWORD: ${{ secrets.VPS_PASSWORD }}
         run: |
-          sudo apt-get update && sudo apt-get install -y sshpass
           install -m 700 -d "$HOME/.ssh"
           printf '%s' "$PRODUCTION_KEY" > "$HOME/.ssh/production_key"
           chmod 600 "$HOME/.ssh/production_key"
-          sshpass -p "$PRODUCTION_PASSWORD" \
-            ssh -i "$HOME/.ssh/production_key" \
+          ssh -i "$HOME/.ssh/production_key" \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             "$PRODUCTION_USER@$PRODUCTION_HOST" \
@@ -178,27 +235,84 @@ jobs:
             mkdir -p "$APP_DIR"
             chmod 755 "$APP_DIR"
 
-            docker rm -f idp_backend idp_frontend >/dev/null 2>&1 || true
-            docker image rm -f \
-              ghcr.io/iskolutions-capstone-dev-team/idp-backend:latest \
-              ghcr.io/iskolutions-capstone-dev-team/idp-frontend:latest \
-              >/dev/null 2>&1 || true
+            if [ -d "$APP_DIR/.git" ]; then
+              cd "$APP_DIR"
+              git fetch origin main
+              git checkout main
+              git reset --hard origin/main
+            fi
 
             cat > "$COMPOSE_FILE"
             ' \
             < docker-compose.ghcr.yml
 
-      - name: Deploy to Production
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy and Verify Production
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_IP }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd "$HOME/Identity-Provider"
-            git pull origin main
+            set -e
+            APP_DIR="$HOME/Identity-Provider"
+            cd "$APP_DIR"
+
+            if docker compose version >/dev/null 2>&1; then
+              DC="docker compose"
+            elif docker-compose version >/dev/null 2>&1; then
+              DC="docker-compose"
+            else
+              echo "Error: Neither docker compose nor docker-compose was found."
+              exit 1
+            fi
+
             echo "${{ secrets.GH_PAT }}" | \
               sudo docker login ghcr.io -u ${{ secrets.GH_USERNAME }} \
               --password-stdin
-            sudo docker compose -f docker-compose.ghcr.yml pull
-            sudo docker compose -f docker-compose.ghcr.yml up -d
+
+            echo "Pulling latest images..."
+            sudo $DC -f docker-compose.ghcr.yml pull
+
+            echo "Starting containers..."
+            sudo $DC -f docker-compose.ghcr.yml up -d --remove-orphans
+
+            echo "Verifying container health..."
+            FAILED=0
+            for i in {1..8}; do
+              sleep 5
+              FAILED=0
+              for c in idp_backend idp_frontend; do
+                STATUS=$(sudo docker inspect -f '{{.State.Status}}' "$c" 2>/dev/null || echo "missing")
+                if [ "$STATUS" != "running" ]; then
+                  echo "Attempt $i: Container $c status is $STATUS"
+                  FAILED=1
+                fi
+              done
+              if [ "$FAILED" -eq 0 ]; then
+                echo "All application containers are running."
+                break
+              fi
+            done
+
+            if [ "$FAILED" -ne 0 ]; then
+              TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+              LOG_DIR="$APP_DIR/logs"
+              mkdir -p "$LOG_DIR"
+              FAIL_LOG="$LOG_DIR/deploy_failure_${TIMESTAMP}.log"
+              echo "=== Deployment Failure: Container health check failed at $TIMESTAMP ===" | tee -a "$FAIL_LOG"
+              for c in idp_backend idp_frontend; do
+                echo "=== Logs for $c (last 50 lines) ===" | tee -a "$FAIL_LOG"
+                sudo docker logs --tail 50 "$c" 2>&1 | tee -a "$FAIL_LOG"
+              done
+              exit 1
+            fi
+
+      - name: Cleanup Production Dangling Images
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "Pruning dangling images..."
+            sudo docker image prune -f
