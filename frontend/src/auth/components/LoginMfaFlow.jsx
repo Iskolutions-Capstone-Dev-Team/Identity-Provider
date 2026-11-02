@@ -142,11 +142,11 @@ export default function LoginMfaFlow({ callbackRedirectUrl = "", initialEmail = 
   };
 
   return (
-    <div className="w-full max-w-[34.5rem] px-1 sm:px-0">
-      <Card className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
-        <CardContent className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-5 py-6 sm:px-8 sm:py-8">
-          <div className="mb-6 flex justify-center">
-            <img src="/assets/images/IDP_Logo.png" alt="Identity Provider" className="h-20 w-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)]" />
+    <div className="w-full max-w-[28rem] sm:max-w-[29rem] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[34rem] px-0">
+      <Card className="rounded-[1.75rem] sm:rounded-[2rem] border-[2px] sm:border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
+        <CardContent className="rounded-[calc(1.75rem-5px)] sm:rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-4 py-4 sm:px-8 sm:py-8">
+          <div className="mb-4 sm:mb-6 flex justify-center">
+            <img src="/assets/images/IDP_Logo.png" alt="Identity Provider" className="h-14 sm:h-18 lg:h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)]" />
           </div>
 
           <div className="mb-5 space-y-3">

@@ -22,13 +22,19 @@ function getLoginRedirectUrl(data) {
 }
 
 export const authService = {
-  async login(email, password, clientId) {
-    const response = await axiosInstance.post("/auth/login", {
+  async login(email, password, clientId, turnstileToken = "") {
+    const payload = {
       email,
       password,
       client_id: clientId,
-    }, {
+    };
+    if (turnstileToken) {
+      payload.turnstile_token = turnstileToken;
+    }
+
+    const response = await axiosInstance.post("/auth/login", payload, {
       skipAuthRefresh: true,
+      headers: turnstileToken ? { "X-Turnstile-Token": turnstileToken } : {},
     });
 
     const redirectUrl = getLoginRedirectUrl(response.data);

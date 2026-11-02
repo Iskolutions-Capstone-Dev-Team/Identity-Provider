@@ -51,19 +51,31 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	v1Group := r.Group("api/v1")
 	v1Group.GET("/health", h.HealthHandler.GetHealth)
 	auth := v1Group.Group("/auth")
-	auth.Use(middleware.RateLimitMiddleware())
 	{
-		auth.GET("/authorize", h.AuthHandler.Authorize)
-		auth.POST("/login", h.ClientCORS, h.AuthHandler.LoginAndAuthorize)
-		auth.POST("/token", h.AuthHandler.PostTokenExchange)
-		auth.POST("/refresh", h.AuthHandler.PostTokenRotate)
+		auth.GET("/authorize",
+			middleware.RateLimitMiddleware(),
+			h.AuthHandler.Authorize)
+		auth.POST("/login",
+			h.ClientCORS,
+			middleware.SensitiveRateLimitMiddleware(),
+			h.AuthHandler.LoginAndAuthorize)
+		auth.POST("/token",
+			middleware.RateLimitMiddleware(),
+			h.AuthHandler.PostTokenExchange)
+		auth.POST("/refresh",
+			middleware.RateLimitMiddleware(),
+			h.AuthHandler.PostTokenRotate)
 		auth.POST("/logout",
 			middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+			middleware.UserRateLimitMiddleware(),
 			h.AuthHandler.Logout)
 		auth.POST("/logout-all",
 			middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+			middleware.UserRateLimitMiddleware(),
 			h.AuthHandler.LogoutAll)
-		auth.GET("/session", h.AuthHandler.CheckSession)
+		auth.GET("/session",
+			middleware.RateLimitMiddleware(),
+			h.AuthHandler.CheckSession)
 	}
 
 	v1Group.POST("/activate", h.RegistrationHandler.ActivateAccount)
@@ -79,12 +91,21 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 
 	// Endpoint for getting user information
 	me := v1Group.Group("/me")
-	me.Use(middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService))
+	me.Use(
+		middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+		middleware.UserRateLimitMiddleware(),
+	)
 	me.GET("", h.UserHandler.GetMe)
 	me.PATCH("/email", h.UserHandler.PatchUserEmailMe)
 
 	otp := v1Group.Group("/otp")
-	otp.Use(middleware.RateLimitMiddleware())
+	otp.Use(
+		middleware.SensitiveRateLimitMiddleware(),
+		middleware.RateLimitWithKey(
+			middleware.TargetOTPLimiter,
+			middleware.TargetEmailKeyExtractor,
+		),
+	)
 	{
 		otp.POST("/send", h.OTPHandler.SendOTP)
 		otp.POST("/verify", h.OTPHandler.VerifyOTP)
@@ -94,7 +115,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	mfaVerify := v1Group.Group("/mfa")
 	mfaVerify.Use(
 		h.ClientCORS,
-		middleware.RateLimitMiddleware(),
+		middleware.SensitiveRateLimitMiddleware(),
 	)
 	{
 		// TOTP verification (mid-login, no JWT available)
@@ -157,8 +178,8 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	mfaManage := v1Group.Group("/mfa")
 	mfaManage.Use(
 		h.ClientCORS,
-		middleware.RateLimitMiddleware(),
 		middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+		middleware.UserRateLimitMiddleware(),
 		middleware.APIKeyMiddleware(),
 	)
 	{
@@ -178,8 +199,8 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	devices := v1Group.Group("/devices")
 	devices.Use(
 		h.ClientCORS,
-		middleware.RateLimitMiddleware(),
 		middleware.AuthMiddleware(h.PubKey, h.LogHandler.LogService),
+		middleware.UserRateLimitMiddleware(),
 		middleware.APIKeyMiddleware(),
 	)
 	{
@@ -239,6 +260,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		admin.GET("/reports/system", h.ReportHandler.GetSystemReport)
 		admin.GET("/reports/summary", h.ReportHandler.GetSummaryReport)
 		admin.GET("/kpis", h.KPIHandler.GetSystemKPIs)
+		admin.GET("/kpis/threat-details", h.KPIHandler.GetKPIThreatDetails)
 
 		// Service Provider (Client) Maintenance
 		clients := admin.Group("/clients")

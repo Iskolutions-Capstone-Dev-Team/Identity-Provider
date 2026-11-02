@@ -4,8 +4,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { metricsService } from "../../../services/metricsService";
 
 export function useAppClientPage({
-  globalViewType,
-  setGlobalViewType,
   canCreateClient,
   canEditClient,
   canDeleteClient,
@@ -39,22 +37,7 @@ export function useAppClientPage({
   const [secretTarget, setSecretTarget] = useState(null);
   const [pendingSuccessMessage, setPendingSuccessMessage] = useState("");
 
-  const [viewType, setViewType] = useState(() => {
-    return globalViewType || "table";
-  });
-
-  const handleSetViewType = (newViewType) => {
-    setViewType(newViewType);
-    if (setGlobalViewType) {
-      setGlobalViewType(newViewType);
-    }
-  };
-
-  useEffect(() => {
-    if (globalViewType) {
-      setViewType(globalViewType);
-    }
-  }, [globalViewType]);
+  const [viewType, setViewType] = useState("table");
 
   const openCreate = () => {
     if (!canCreateClient) return;
@@ -159,7 +142,7 @@ export function useAppClientPage({
     deleteTarget,
     showSecretConfirm,
     viewType,
-    setViewType: handleSetViewType,
+    setViewType,
     openCreate,
     openView,
     openEdit,

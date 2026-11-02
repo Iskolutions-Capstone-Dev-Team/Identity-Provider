@@ -1,6 +1,8 @@
 package service
 
-import "github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
+import (
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/cache"
+)
 
 type ServiceContainer struct {
 	ClientService            ClientService
@@ -18,6 +20,8 @@ type ServiceContainer struct {
 	MetricsService           MetricsService
 	ReportService            ReportService
 	DeviceService            DeviceService
+	TurnstileService         TurnstileService
+	GeoIPService             GeoIPService
 	KPIService               KPIService
 	Cache                    cache.Cache
 }

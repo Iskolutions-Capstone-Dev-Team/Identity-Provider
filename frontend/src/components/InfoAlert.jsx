@@ -46,20 +46,20 @@ export default function InfoAlert({ message, onClose, autoHideDuration = 4000 })
   return (
     <div className={`transition-all duration-150 ease-out ${animationClass}`}>
       <Alert className="bg-blue-50 border-blue-200 text-blue-900 [&>svg]:text-blue-600 shadow-sm">
-        <InfoIcon />
-        <AlertDescription className="text-blue-800">{message}</AlertDescription>
+        <InfoIcon className="size-4 shrink-0" />
+        <AlertDescription className="text-blue-800 text-xs sm:text-sm font-medium leading-normal">{message}</AlertDescription>
         {onClose && (
           <AlertAction>
             <button
               type="button"
               onClick={() => {
                 setIsVisible(false);
-                setTimeout(() => onClose(), 150);
+                onClose?.();
               }}
               aria-label="Close alert"
-              className="flex items-center justify-center rounded-md p-1 text-blue-600 hover:bg-blue-100 transition-colors"
+              className="flex size-6 items-center justify-center rounded-md text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors"
             >
-              <XIcon className="h-4 w-4" />
+              <XIcon className="size-3.5 sm:size-4 shrink-0" />
             </button>
           </AlertAction>
         )}

@@ -24,6 +24,7 @@ const (
 	CodeRateLimitExceeded    = 1029
 	CodeSuspended            = 1030
 	CodePasswordRecentlyUsed = 1031
+	CodeCaptchaRequired      = 1032
 )
 
 // Send sends a standardized error response to the client.
@@ -36,6 +37,28 @@ func Send(c *gin.Context, status int, code int, msg string, err error) {
 		Code:    code,
 		Message: msg,
 		Error:   errStr,
+	})
+}
+
+// SendWithCaptcha sends a standardized error response requesting CAPTCHA.
+func SendWithCaptcha(
+	c *gin.Context,
+	status int,
+	code int,
+	msg string,
+	err error,
+	siteKey string,
+) {
+	errStr := ""
+	if err != nil {
+		errStr = err.Error()
+	}
+	c.JSON(status, dto.ErrorResponse{
+		Code:            code,
+		Message:         msg,
+		Error:           errStr,
+		RequiresCaptcha: true,
+		SiteKey:         siteKey,
 	})
 }
 

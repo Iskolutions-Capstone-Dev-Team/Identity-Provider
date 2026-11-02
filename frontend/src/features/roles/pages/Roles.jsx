@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
@@ -18,8 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Plus, ShieldCheck, Lock, ShieldUser } from "lucide-react";
 import { createPortal } from "react-dom";
 
-const ITEMS_PER_PAGE = 10;
-
 export default function Roles() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -28,7 +26,7 @@ export default function Roles() {
   useEffect(() => {
     setBreadcrumbsContainer(document.getElementById("navbar-breadcrumbs"));
   }, []);
-  const { colorMode = "light", globalViewType, setGlobalViewType } = useOutletContext() || {};
+  const { colorMode = "light" } = useOutletContext() || {};
   const { hasPermission } = usePermissionAccess();
   const { data: roleMetrics = null } = useQuery({
     queryKey: ['roleMetrics'],
@@ -45,12 +43,10 @@ export default function Roles() {
     page,
     setPage,
     limit,
-    setLimit,
     sortBy,
     setSortBy,
     sort,
     setSort,
-
     paginatedRoles,
     totalPages,
     totalResults,
@@ -65,23 +61,6 @@ export default function Roles() {
     permissions: permissionOptions,
     loading: isPermissionOptionsLoading,
   } = usePermissions();
-
-  const [viewType, setViewType] = useState(() => {
-    return globalViewType || "table";
-  });
-  
-  const handleSetViewType = (newViewType) => {
-    setViewType(newViewType);
-    if (setGlobalViewType) {
-      setGlobalViewType(newViewType);
-    }
-  };
-
-  useEffect(() => {
-    if (globalViewType) {
-      setViewType(globalViewType);
-    }
-  }, [globalViewType]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState("create");
@@ -99,7 +78,6 @@ export default function Roles() {
     if (!canCreateRole) {
       return;
     }
-
     navigate("/roles/create");
   };
 
@@ -113,7 +91,6 @@ export default function Roles() {
     if (!canEditRole) {
       return;
     }
-
     setMode("edit");
     setActiveRole(role);
     setModalOpen(true);
@@ -123,7 +100,6 @@ export default function Roles() {
     if (!canDeleteRole) {
       return;
     }
-
     setDeleteTarget(id);
     setShowDeleteAlert(true);
   };
@@ -156,7 +132,6 @@ export default function Roles() {
 
   useEffect(() => {
     const routeState = location.state || {};
-
     if (routeState.successMessage) {
       toast.success(routeState.successMessage, { 
         id: "role-route-success"
@@ -233,13 +208,10 @@ export default function Roles() {
           setSortBy={setSortBy}
           sort={sort}
           setSort={setSort}
-          viewType={viewType}
-          setViewType={handleSetViewType}
         />
 
         <div className="relative">
           <RolesListCard
-            viewType={viewType}
             loading={showLoading}
             roles={visibleRoles}
             totalResults={totalResults}

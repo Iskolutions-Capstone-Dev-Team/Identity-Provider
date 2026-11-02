@@ -35,8 +35,6 @@ export default function Registration() {
     setSortBy,
     sort,
     setSort,
-    viewType,
-    setViewType,
     totalPages,
     totalResults,
     selectedConfig,
@@ -138,13 +136,10 @@ export default function Registration() {
             setSortBy={setSortBy}
             sort={sort}
             setSort={setSort}
-            viewType={viewType}
-            setViewType={setViewType}
           />
           <RegistrationListCard
             loading={showLoading}
             rows={rows}
-            viewType={viewType}
             onView={handleOpenView}
             onEdit={handleOpenEdit}
             onDelete={handleDeleteClick}

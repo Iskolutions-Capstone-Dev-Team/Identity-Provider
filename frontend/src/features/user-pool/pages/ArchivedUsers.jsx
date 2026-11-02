@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useOutletContext, Link, Navigate } from "react-router-dom";
 import { useArchivedUsers } from "../hooks/useArchivedUsers";
@@ -10,7 +10,6 @@ import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import UnarchiveConfirmModal from "../../../components/UnarchiveConfirmModal";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import { useAllAppClients } from "../../app-clients/hooks/useAllAppClients";
-import { getUserLabel } from "../utils/userLabels";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { Archive } from "lucide-react";
 import { createPortal } from "react-dom";
@@ -61,26 +60,6 @@ export default function ArchivedUsers() {
   
   const [openUnarchive, setOpenUnarchive] = useState(false);
   const [userToUnarchive, setUserToUnarchive] = useState(null);
-
-  const globalViewType = outletContext.globalViewType;
-  const setGlobalViewType = outletContext.setGlobalViewType;
-
-  const [viewType, setViewType] = useState(() => {
-    return globalViewType || "table";
-  });
-
-  const handleSetViewType = (newViewType) => {
-    setViewType(newViewType);
-    if (setGlobalViewType) {
-      setGlobalViewType(newViewType);
-    }
-  };
-
-  useEffect(() => {
-    if (globalViewType) {
-      setViewType(globalViewType);
-    }
-  }, [globalViewType]);
 
   const showLoading = useDelayedLoading(loading || isLoadingAppClients || isLoadingCurrentUser);
 
@@ -171,15 +150,10 @@ export default function ArchivedUsers() {
         <ArchivedUserPoolFilters
           search={search}
           setSearch={setSearch}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sort={sort}
-          setSort={setSort}
-          viewType={viewType}
-          setViewType={handleSetViewType}
         />
         
-        {viewType === "table" ? (
+        {/* Laptop & Desktop Table (>= 1024px) */}
+        <div className="hidden lg:block w-full">
           <ArchivedUserPoolTable
             loading={showLoading}
             users={paginatedUsers}
@@ -190,7 +164,10 @@ export default function ArchivedUsers() {
             showUnarchiveAction={true}
             showHardDeleteAction={true}
           />
-        ) : (
+        </div>
+
+        {/* Mobile & Tablet Cards (< 1024px) */}
+        <div className="block lg:hidden w-full">
           <ArchivedUserPoolCards
             loading={showLoading}
             users={paginatedUsers}
@@ -201,7 +178,7 @@ export default function ArchivedUsers() {
             showUnarchiveAction={true}
             showHardDeleteAction={true}
           />
-        )}
+        </div>
 
         {!showLoading && (
           <div className="w-full">

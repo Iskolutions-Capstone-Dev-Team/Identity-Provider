@@ -138,7 +138,7 @@ function getTotalPages(payload) {
     : 1;
 }
 
-export function useAuditLogs({ globalViewType, setGlobalViewType }) {
+export function useAuditLogs() {
   const { hasPermission } = usePermissionAccess();
   const canViewSecurityLogs = hasPermission(PERMISSIONS.VIEW_SECURITY_LOGS);
 
@@ -148,15 +148,10 @@ export function useAuditLogs({ globalViewType, setGlobalViewType }) {
   const [limit, setLimit] = useState(10);
   const [sortBy, setSortBy] = useState("created_at");
   const [sort, setSort] = useState("desc");
-  const [viewType, setViewType] = useState(() => {
-    return globalViewType || "table";
-  });
+  const [viewType, setViewType] = useState("table");
 
   const handleSetViewType = (newViewType) => {
     setViewType(newViewType);
-    if (setGlobalViewType) {
-      setGlobalViewType(newViewType);
-    }
   };
 
 
@@ -180,12 +175,7 @@ export function useAuditLogs({ globalViewType, setGlobalViewType }) {
     queryFn: () => metricsService.getLogMetrics()
   });
 
-  useEffect(() => {
-    if (globalViewType) {
-      setViewType(globalViewType);
-    }
-  }, [globalViewType]);
-
+  
   useEffect(() => {
     if (isSecurityLogType && !canViewSecurityLogs) {
       setLogType(TRANSACTION_LOG_TYPE);

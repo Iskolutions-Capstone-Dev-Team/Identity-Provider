@@ -48,20 +48,20 @@ export default function SuccessAlert({ message, onClose }) {
     <div className={`pointer-events-none fixed right-3 top-4 z-[180] flex w-[calc(100%-1.5rem)] max-w-[24rem] justify-end sm:right-5 sm:top-5 sm:w-[24rem] lg:right-6 lg:top-6 xl:right-8 transition-all duration-150 ease-out ${animationClass}`}>
       <div className="pointer-events-auto w-full">
         <Alert variant="success" className="bg-emerald-50 border-emerald-200 text-emerald-900 shadow-lg [&>svg]:text-emerald-600">
-          <CircleCheckIcon />
-          <AlertDescription className="text-emerald-800">{message}</AlertDescription>
+          <CircleCheckIcon className="size-4 shrink-0" />
+          <AlertDescription className="text-emerald-800 text-xs sm:text-sm font-medium leading-normal">{message}</AlertDescription>
           {onClose && (
             <AlertAction>
               <button
                 type="button"
                 onClick={() => {
                   setIsVisible(false);
-                  setTimeout(() => onClose(), 150);
+                  onClose?.();
                 }}
                 aria-label="Close alert"
-                className="flex items-center justify-center rounded-md p-1 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                className="flex size-6 items-center justify-center rounded-md text-emerald-600 hover:bg-emerald-100 hover:text-emerald-800 transition-colors"
               >
-                <XIcon className="h-4 w-4" />
+                <XIcon className="size-3.5 sm:size-4 shrink-0" />
               </button>
             </AlertAction>
           )}

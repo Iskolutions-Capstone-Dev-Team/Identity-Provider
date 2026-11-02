@@ -215,6 +215,10 @@ func TestGenerateSummaryReport_ViewAllUsers(t *testing.T) {
 		{ClientName: "One-Portal", LoginCount: 150},
 	}, nil).AnyTimes()
 
+	mockMetricsRepo.EXPECT().GetTargetedClientFailures(
+		gomock.Any(), 5, gomock.Any(), nil,
+	).Return([]models.TargetedClientFailure{}, nil).AnyTimes()
+
 	jsonParams := dto.SummaryReportParams{
 		TimeFrame: "24h",
 		Format:    "json",
@@ -286,6 +290,10 @@ func TestGenerateSummaryReport_ViewUsersBasedOnAppClient(t *testing.T) {
 	mockMetricsRepo.EXPECT().GetTopClients(
 		gomock.Any(), 10, gomock.Any(), []string{"client-1"},
 	).Return([]models.TopClientLogin{}, nil).AnyTimes()
+
+	mockMetricsRepo.EXPECT().GetTargetedClientFailures(
+		gomock.Any(), 5, gomock.Any(), []string{"client-1"},
+	).Return([]models.TargetedClientFailure{}, nil).AnyTimes()
 
 	pdfParams := dto.SummaryReportParams{
 		TimeFrame: "24h",

@@ -12,6 +12,15 @@ import { DEFAULT_FORBIDDEN_ALERT_MESSAGE, IDP_FORBIDDEN_ALERT_EVENT } from "../u
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+const LEGACY_VIEW_KEYS = [
+  "idpGlobalViewType",
+  "userPoolViewType",
+  "appClientsViewType",
+  "rolesViewType",
+  "registrationViewType",
+  "auditLogsViewType",
+];
+
 export default function IdpLayout() {
   const location = useLocation();
   const [openTerms, setOpenTerms] = useState(false);
@@ -24,10 +33,6 @@ export default function IdpLayout() {
     const legacyAppClientColorMode = window.localStorage.getItem("appClientColorMode");
     return legacyUserPoolColorMode === "dark" || legacyAppClientColorMode === "dark" ? "dark" : "light";
   });
-  const [globalViewType, setGlobalViewType] = useState(() => {
-    if (typeof window === "undefined") return "table";
-    return window.localStorage.getItem("idpGlobalViewType") || "table";
-  });
   
   const { currentUser, isLoadingCurrentUser, updateCurrentUser } = useCurrentUser();
   const showColorModeToggle = true;
@@ -35,6 +40,19 @@ export default function IdpLayout() {
   useEffect(() => {
     const accepted = sessionStorage.getItem("termsAccepted") === "true";
     if (!accepted) setOpenTerms(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    LEGACY_VIEW_KEYS.forEach((key) => {
+      try {
+        if (typeof window.localStorage.removeItem === "function") {
+          window.localStorage.removeItem(key);
+        }
+      } catch {
+        // ignore errors in sandboxed storage
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -65,11 +83,6 @@ export default function IdpLayout() {
     }
   }, [colorMode]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("idpGlobalViewType", globalViewType);
-  }, [globalViewType]);
-
   const handleContinue = () => {
     sessionStorage.setItem("termsAccepted", "true");
     setOpenTerms(false);
@@ -90,8 +103,6 @@ export default function IdpLayout() {
     colorMode,
     userPoolColorMode: colorMode,
     appClientColorMode: colorMode,
-    globalViewType,
-    setGlobalViewType,
   });
 
   return (
@@ -131,8 +142,6 @@ export default function IdpLayout() {
                 onToggleColorMode={handleToggleColorMode}
                 showColorModeToggle={showColorModeToggle}
                 currentUser={currentUser}
-                globalViewType={globalViewType}
-                setGlobalViewType={setGlobalViewType}
               />
             </div>
           </div>

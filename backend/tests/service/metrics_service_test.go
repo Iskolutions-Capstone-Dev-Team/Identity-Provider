@@ -38,6 +38,12 @@ func (m *mockMetricsRepository) GetFailedAuthAttempts(
 	return m.Failed, nil
 }
 
+func (m *mockMetricsRepository) GetTargetedClientFailures(
+	ctx context.Context, limit int, since time.Time, allowedClients []string,
+) ([]models.TargetedClientFailure, error) {
+	return []models.TargetedClientFailure{}, nil
+}
+
 func (m *mockMetricsRepository) GetBoundClientIDs(
 	ctx context.Context, userID []byte,
 ) ([]string, error) {

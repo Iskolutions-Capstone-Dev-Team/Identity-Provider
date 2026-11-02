@@ -17,6 +17,9 @@ type MetricsRepository interface {
 		allowedClients []string) ([]models.TopClientLogin, error)
 	GetFailedAuthAttempts(ctx context.Context, since time.Time,
 		allowedClients []string) ([]models.FailedAuthAttempt, error)
+	GetTargetedClientFailures(ctx context.Context, limit int,
+		since time.Time, allowedClients []string,
+	) ([]models.TargetedClientFailure, error)
 	GetBoundClientIDs(ctx context.Context, userID []byte) (
 		[]string, error)
 	GetClientMetrics(
@@ -184,6 +187,59 @@ func (r *metricsRepository) GetFailedAuthAttempts(ctx context.Context,
 			"[MetricsRepository] GetFailedAuthAttempts: %w", err)
 	}
 	return attempts, nil
+}
+
+func (r *metricsRepository) GetTargetedClientFailures(
+	ctx context.Context, limit int, since time.Time, allowedClients []string,
+) ([]models.TargetedClientFailure, error) {
+	if allowedClients != nil && len(allowedClients) == 0 {
+		return []models.TargetedClientFailure{}, nil
+	}
+
+	var results []models.TargetedClientFailure
+	query := `
+		SELECT 
+			a.target AS client_id,
+			COALESCE(c.client_name, a.target) AS client_name,
+			SUM(CASE WHEN a.status = 'fail' THEN 1 ELSE 0 END) AS failed_count,
+			SUM(CASE WHEN a.status = 'success' THEN 1 ELSE 0 END) AS success_count,
+			MAX(a.created_at) AS last_targeted
+		FROM audit_logs a
+		LEFT JOIN clients c ON BIN_TO_UUID(c.id) = a.target
+		WHERE a.action = 'login' AND a.created_at >= ?`
+
+	var args = []interface{}{since}
+
+	if allowedClients != nil {
+		query += " AND a.target IN (?)"
+		args = append(args, allowedClients)
+	}
+
+	query += `
+		GROUP BY a.target, c.client_name
+		HAVING failed_count > 0
+		ORDER BY failed_count DESC
+		LIMIT ?`
+	args = append(args, limit)
+
+	if allowedClients != nil {
+		var err error
+		query, args, err = sqlx.In(query, args...)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"[MetricsRepository] GetTargetedClientFailures sqlx.In: %w",
+				err,
+			)
+		}
+		query = r.db.Rebind(query)
+	}
+
+	err := r.db.SelectContext(ctx, &results, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"[MetricsRepository] GetTargetedClientFailures: %w", err)
+	}
+	return results, nil
 }
 
 func (r *metricsRepository) GetBoundClientIDs(ctx context.Context,

@@ -1,11 +1,9 @@
 import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Search, Table, WalletCards, ListFilter, View, User, Mail, Calendar, ListSortAscending, ListSortDescending } from "lucide-react";
+import { Search } from "lucide-react";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Label } from "@/components/ui/label";
 
-export default function ArchivedUserPoolFilters({ search, setSearch, sortBy = "created_at", setSortBy, sort = "desc", setSort, viewType = "table", setViewType }) {
+export default function ArchivedUserPoolFilters({ search, setSearch }) {
   return (
     <div className="bg-card border rounded-xl p-4 sm:p-5 shadow-sm w-full">
       <div className="flex flex-col lg:flex-row lg:items-end gap-4 lg:gap-6 w-full">
@@ -25,7 +23,6 @@ export default function ArchivedUserPoolFilters({ search, setSearch, sortBy = "c
             />
           </div>
         </div>
-
       </div>
     </div>
   );

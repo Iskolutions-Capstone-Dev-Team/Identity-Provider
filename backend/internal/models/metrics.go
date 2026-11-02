@@ -48,6 +48,15 @@ type FailedAuthAttempt struct {
 	LastAttempt time.Time `db:"last_attempt" json:"last_attempt"`
 }
 
+// TargetedClientFailure tracks authentication stats for targeted clients.
+type TargetedClientFailure struct {
+	ClientID     string    `db:"client_id" json:"client_id"`
+	ClientName   string    `db:"client_name" json:"client_name"`
+	FailedCount  int64     `db:"failed_count" json:"failed_count"`
+	SuccessCount int64     `db:"success_count" json:"success_count"`
+	LastTargeted time.Time `db:"last_targeted" json:"last_targeted"`
+}
+
 // MetricCard represents metric counts/info for an admin group.
 type MetricCard struct {
 	Title       string `json:"title"`

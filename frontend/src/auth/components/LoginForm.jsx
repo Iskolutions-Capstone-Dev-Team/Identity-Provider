@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import ErrorAlert from "../../components/ErrorAlert";
@@ -10,6 +10,7 @@ import { Button } from "../../components/ui/button";
 import { Separator } from "../../components/ui/separator";
 import { Card, CardContent } from "../../components/ui/card";
 import { useLoginForm } from "../hooks/useLoginForm";
+import TurnstileWidget from "../../components/TurnstileWidget";
 
 export default function LoginForm({ clientId, redirectUri = "", initialError = "", onLoginSuccess }) {
   const navigate = useNavigate();
@@ -18,6 +19,10 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
   const [showPassword, setShowPassword] = useState(false);
   const [isForgotOpen, setForgotOpen] = useState(false);
   const [error, setError] = useState(initialError);
+  const [requiresCaptcha, setRequiresCaptcha] = useState(false);
+  const [captchaSiteKey, setCaptchaSiteKey] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef(null);
   const { loginMutation } = useLoginForm();
   const [fieldErrors, setFieldErrors] = useState({
     email: "",
@@ -121,10 +126,17 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
       return;
     }
 
+    if (requiresCaptcha && !turnstileToken) {
+      setError("Please complete the security verification challenge.");
+      return;
+    }
+
     loginMutation.mutate(
-      { email, password, clientId },
+      { email, password, clientId, turnstileToken },
       {
         onSuccess: (data) => {
+          setRequiresCaptcha(false);
+          setTurnstileToken("");
           const { redirectUrl, mfaRequired, hasMfa } = data;
           const isMfaRequired = Boolean(mfaRequired || hasMfa);
 
@@ -147,11 +159,25 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
           window.location.href = redirectUrl;
         },
         onError: (err) => {
+          const respData = err.response?.data;
+          if (respData?.requires_captcha) {
+            setRequiresCaptcha(true);
+            if (respData?.site_key) {
+              setCaptchaSiteKey(respData.site_key);
+            }
+          }
+
+          // Invalidate single-use Turnstile token & reset widget on error
+          setTurnstileToken("");
+          turnstileRef.current?.reset();
+
           const status = err.response?.status;
-          if (status === 400) {
-            setError("Please enter valid credentials.");
-          } else if (status === 401) {
-            setError("Invalid email or password.");
+          if (status === 400 || status === 401) {
+            if (respData?.requires_captcha || respData?.code === 1032) {
+              setError(respData?.message || "Security verification required. Please complete the CAPTCHA.");
+            } else {
+              setError(respData?.message || "Invalid email or password.");
+            }
           } else if (status === 403) {
             if (err.response?.data?.code === 1030) {
               navigate(buildAccessDeniedPath(clientId, { redirectUri, reason: "suspended" }), {
@@ -162,6 +188,8 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                 replace: true,
               });
             }
+          } else if (status === 429) {
+            setError(respData?.message || "Too many requests. Please wait a moment and try again.");
           } else if (status === 500) {
             setError("Server error. Please try again later.");
           } else {
@@ -172,19 +200,34 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
     );
   };
 
+  const handleTurnstileSuccess = useCallback((token) => {
+    setTurnstileToken(token);
+    setError("");
+  }, []);
+
+  const handleTurnstileError = useCallback(() => {
+    setTurnstileToken("");
+    setError("Security verification error. Please retry.");
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken("");
+    turnstileRef.current?.reset();
+  }, []);
+
   return (
     <>
-      <div className="w-full max-w-[34.5rem] px-1 sm:px-0">
-        <Card className="rounded-[2rem] border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
-          <CardContent className="rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-6 py-6 sm:px-9 sm:py-7 lg:px-10">
-            <div className="space-y-5">
-              <div className="space-y-3 text-center">
-                <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="mx-auto block h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)] transition duration-300 hover:scale-105"/>
-                <div className="space-y-2 text-center">
-                  <h2 className="text-2xl font-semibold tracking-tight text-white">
+      <div className="w-full max-w-[28rem] sm:max-w-[29rem] md:max-w-[30rem] lg:max-w-[32rem] xl:max-w-[34rem] px-0">
+        <Card className="rounded-[1.75rem] sm:rounded-[2rem] border-[2px] sm:border-[3px] border-[#a13a3a]/60 bg-[#5b0b10]/35 p-1 shadow-[0_34px_90px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm">
+          <CardContent className="rounded-[calc(1.75rem-5px)] sm:rounded-[calc(2rem-7px)] bg-[linear-gradient(180deg,rgba(122,13,21,0.72),rgba(55,6,11,0.78))] px-4 py-4 sm:px-8 sm:py-7 lg:px-9">
+            <div className="space-y-4 sm:space-y-5">
+              <div className="space-y-2.5 sm:space-y-3 text-center">
+                <img src="/assets/images/IDP_Logo.png" alt="IDP Logo" className="mx-auto block h-14 sm:h-18 lg:h-20 object-contain drop-shadow-[0_0_22px_rgba(248,210,78,0.5)] transition duration-300 hover:scale-105"/>
+                <div className="space-y-1.5 sm:space-y-2 text-center">
+                  <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-white">
                     Sign in <span className="text-[#ffd700]">PUPTian!</span>
                   </h2>
-                  <p className="text-sm text-muted-foreground text-white/70">
+                  <p className="text-xs sm:text-sm text-muted-foreground text-white/70">
                     Sign in to access PUPT systems
                   </p>
                 </div>
@@ -197,9 +240,9 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                 />
               </div>
 
-              <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              <form onSubmit={handleSubmit} noValidate className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-white/90">
+                  <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-medium text-white/90">
                     Email
                   </label>
                   <div className="relative">
@@ -207,7 +250,7 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                       <Mail className="size-5" />
                     </span>
                     <Input type="email" value={email} onChange={handleEmailChange} required placeholder="Enter your email"
-                      className={`h-12 w-full rounded-xl bg-background pl-10 pr-4 text-base shadow-sm ${
+                      className={`h-11 sm:h-12 w-full rounded-xl bg-background pl-10 pr-4 text-sm sm:text-base shadow-sm ${
                         fieldErrors.email
                           ? "border-destructive focus-visible:ring-destructive"
                           : "border-input focus-visible:ring-[#ffd700]"
@@ -215,15 +258,15 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                     />
                   </div>
                   {fieldErrors.email ? (
-                    <p className="pl-1 pt-2 text-xs text-red-100/95">
+                    <p className="pl-1 pt-1.5 text-xs text-red-100/95">
                       {fieldErrors.email}
                     </p>
                   ) : null}
                 </div>
 
                 <div>
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <label className="block text-sm font-medium text-white/90">
+                  <div className="mb-1.5 sm:mb-2 flex items-center justify-between gap-3">
+                    <label className="block text-xs sm:text-sm font-medium text-white/90">
                       Password
                     </label>
                     <a href="#" className="text-xs font-medium text-white/70 transition duration-300 hover:text-[#ffd700]"
@@ -241,13 +284,13 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                       <Lock className="size-5" />
                     </span>
                     <Input type={showPassword ? "text" : "password"} value={password} onChange={handlePasswordChange} required placeholder="Enter your password"
-                      className={`h-12 w-full rounded-xl bg-background pl-10 pr-10 text-base shadow-sm ${
+                      className={`h-11 sm:h-12 w-full rounded-xl bg-background pl-10 pr-10 text-sm sm:text-base shadow-sm ${
                         fieldErrors.password
                           ? "border-destructive focus-visible:ring-destructive"
                           : "border-input focus-visible:ring-[#ffd700]"
                       }`}
                     />
-                    <button type="button" onClick={toggleShowPassword} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]" aria-label={showPassword ? "Hide password" : "Show password"}>
+                    <button type="button" onClick={toggleShowPassword} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 transition duration-300 hover:text-[#7b0d15]" aria-label={showPassword ? "Hide password" : "Show password"}>
                       {showPassword ? (
                         <EyeOff className="size-5" />
                       ) : (
@@ -256,13 +299,25 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                     </button>
                   </div>
                   {fieldErrors.password ? (
-                    <p className="pl-1 pt-2 text-xs text-red-100/95">
+                    <p className="pl-1 pt-1.5 text-xs text-red-100/95">
                       {fieldErrors.password}
                     </p>
                   ) : null}
                 </div>
 
-                <Button type="submit" disabled={loginMutation.isPending} className="mt-2 h-12 w-full rounded-xl bg-[#ffd700] text-sm font-bold text-[#6f0f15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] hover:bg-[#991b1b] hover:text-white transition duration-300 disabled:opacity-70 disabled:cursor-not-allowed">
+                {requiresCaptcha && (
+                  <div className="space-y-1">
+                    <TurnstileWidget
+                      ref={turnstileRef}
+                      siteKey={captchaSiteKey}
+                      onSuccess={handleTurnstileSuccess}
+                      onError={handleTurnstileError}
+                      onExpire={handleTurnstileExpire}
+                    />
+                  </div>
+                )}
+
+                <Button type="submit" disabled={loginMutation.isPending || (requiresCaptcha && !turnstileToken)} className="mt-1 sm:mt-2 h-11 sm:h-12 w-full rounded-xl bg-[#ffd700] text-sm font-bold text-[#6f0f15] shadow-[0_18px_40px_-22px_rgba(248,210,78,0.9)] hover:bg-[#991b1b] hover:text-white transition duration-300 disabled:opacity-70 disabled:cursor-not-allowed">
                   {loginMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -279,7 +334,7 @@ export default function LoginForm({ clientId, redirectUri = "", initialError = "
                   <Separator className="flex-1 bg-white/15" />
                 </div>
 
-                <Link to={registerPath} className="block text-center text-sm font-medium text-white/85 transition duration-300 hover:text-white">
+                <Link to={registerPath} className="block text-center text-xs sm:text-sm font-medium text-white/85 transition duration-300 hover:text-white">
                   Don't have an account?{" "}
                   <span className="font-semibold text-[#ffd700] underline decoration-transparent transition duration-300 hover:decoration-[#ffd700]">
                     Sign up

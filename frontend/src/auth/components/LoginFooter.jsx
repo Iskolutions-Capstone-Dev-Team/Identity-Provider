@@ -9,7 +9,7 @@ export default function LoginFooter() {
   return (
     <footer className="w-full">
       <Separator className="bg-white/25 w-full max-w-[34rem] mx-auto lg:mx-0" />
-      <div className="mx-auto flex w-full max-w-[34rem] flex-col items-center justify-center gap-4 pt-4 sm:flex-row sm:gap-4 lg:mx-0 lg:justify-start">
+      <div className="mx-auto flex w-full max-w-[34rem] flex-col items-center justify-center gap-3 pt-3 sm:flex-row sm:gap-4 sm:pt-4 lg:mx-0 lg:justify-start">
         {/* Top group on mobile / Left group on desktop */}
         <div className="flex flex-row items-center gap-4">
           <aside className="flex items-center gap-4 text-left">

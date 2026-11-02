@@ -69,7 +69,7 @@ export default function Dashboard() {
       setCurrent(api.selectedScrollSnap());
     };
 
-    onSelect();
+    onSelect(); // initial call
     api.on("reInit", onSelect);
     api.on("select", onSelect);
 
@@ -128,7 +128,8 @@ export default function Dashboard() {
           </div>
         ) : null}
 
-        <section className="hidden sm:grid w-full gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Metric Cards - Desktop Grid */}
+        <section className="hidden lg:grid w-full gap-6 lg:grid-cols-3">
           {normalizedMetrics.loginStats.map((stat) => (
             <MetricFilterCard
               key={stat.key}
@@ -141,7 +142,8 @@ export default function Dashboard() {
           ))}
         </section>
 
-        <section className="block sm:hidden w-full">
+        {/* Metric Cards - Mobile & Tablet Carousel */}
+        <section className="block lg:hidden w-full">
           <Carousel setApi={setApi} className="w-full">
             <CarouselContent>
               {normalizedMetrics.loginStats.map((stat) => (

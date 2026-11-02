@@ -3,14 +3,12 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils"
 
 const alertVariants = cva([
-  "relative w-full text-sm border has-[>svg]:grid-cols-[calc(var(--spacing)*3)_1fr] grid-cols-[0_1fr] grid gap-y-0.5 items-center [&>svg:not([class*=size-])]:size-4",
-  "has-[>[data-slot=alert-title]+[data-slot=alert-description]]:[&_[data-slot=alert-action]]:sm:row-end-3",
+  "relative w-full text-sm border grid items-center rounded-lg px-3 py-2.5 has-[>svg]:gap-x-2.5",
+  "has-[>svg]:grid-cols-[1rem_1fr] grid-cols-[1fr]",
+  "has-[>[data-slot=alert-action]]:pr-9",
+  "[&>svg:not([class*=size-])]:size-4",
   "has-[>[data-slot=alert-title]+[data-slot=alert-description]]:items-start",
   "has-[>[data-slot=alert-title]+[data-slot=alert-description]]:[&_svg]:translate-y-0.5",
-  "rounded-lg",
-  "px-3",
-  "py-2.5",
-  "has-[>svg]:gap-x-2.5",
 ], {
   variants: {
     variant: {
@@ -63,7 +61,7 @@ function AlertDescription({
     <div
       data-slot="alert-description"
       className={cn(
-        "text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed",
+        "text-muted-foreground col-start-2 text-sm leading-relaxed",
         className
       )}
       {...props} />
@@ -78,7 +76,7 @@ function AlertAction({
     <div
       data-slot="alert-action"
       className={cn(
-        "flex gap-1.5 max-sm:col-start-2 max-sm:mt-2 max-sm:justify-start sm:col-start-3 sm:row-start-1 sm:justify-end sm:self-center",
+        "absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center",
         className
       )}
       {...props} />

@@ -1,13 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { Settings, Palette, LayoutTemplate } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
-export default function Navbar({ activeColorMode = "light", setColorMode, onToggleColorMode, showColorModeToggle = false, currentUser, globalViewType, setGlobalViewType }) {
+export default function Navbar({ activeColorMode = "light", setColorMode, onToggleColorMode, showColorModeToggle = false, currentUser }) {
   const navigate = useNavigate();
   const isDarkMode = activeColorMode === "dark";
 
@@ -28,77 +25,22 @@ export default function Navbar({ activeColorMode = "light", setColorMode, onTogg
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-0.5">
-          {showColorModeToggle && (
-            <AnimatedThemeToggler
-              theme={activeColorMode}
-              onThemeChange={(nextMode) => {
-                if (onToggleColorMode) {
-                  onToggleColorMode(nextMode);
-                } else if (setColorMode) {
-                  setColorMode(nextMode);
-                }
-              }}
-              aria-pressed={isDarkMode}
-              aria-label={isDarkMode ? "Switch page to light mode" : "Switch page to dark mode"}
-              title={isDarkMode ? "Switch page to light mode" : "Switch page to dark mode"}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-9 w-9 cursor-pointer"
-            />
-          )}
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-9 w-9 cursor-pointer" aria-label="Settings" title="Settings">
-              <Settings className="h-5 w-5" />
-            </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" sideOffset={12}>
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Appearance</DropdownMenuLabel>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Palette className="mr-2 h-4 w-4" />
-                  Theme
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuRadioGroup
-                      value={activeColorMode}
-                      onValueChange={setColorMode}
-                    >
-                      <DropdownMenuRadioItem value="light">
-                        Light
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="dark">
-                        Dark
-                      </DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <LayoutTemplate className="mr-2 h-4 w-4" />
-                  View
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuRadioGroup
-                      value={globalViewType}
-                      onValueChange={setGlobalViewType}
-                    >
-                      <DropdownMenuRadioItem value="card">
-                        Card
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="table">
-                        Table
-                      </DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        </div>
+        {showColorModeToggle && (
+          <AnimatedThemeToggler
+            theme={activeColorMode}
+            onThemeChange={(nextMode) => {
+              if (onToggleColorMode) {
+                onToggleColorMode(nextMode);
+              } else if (setColorMode) {
+                setColorMode(nextMode);
+              }
+            }}
+            aria-pressed={isDarkMode}
+            aria-label={isDarkMode ? "Switch page to light mode" : "Switch page to dark mode"}
+            title={isDarkMode ? "Switch page to light mode" : "Switch page to dark mode"}
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-9 w-9 cursor-pointer"
+          />
+        )}
 
         <HoverCard>
           <HoverCardTrigger asChild>

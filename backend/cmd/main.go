@@ -131,6 +131,22 @@ func main() {
 	database.StartJanitor(ctx, appDB, 10*time.Minute)
 
 	r := gin.Default()
+	trustedProxiesEnv := os.Getenv("TRUSTED_PROXIES")
+	if trustedProxiesEnv != "" {
+		proxies := strings.Split(trustedProxiesEnv, ",")
+		for i := range proxies {
+			proxies[i] = strings.TrimSpace(proxies[i])
+		}
+		_ = r.SetTrustedProxies(proxies)
+	} else {
+		_ = r.SetTrustedProxies([]string{
+			"127.0.0.1",
+			"10.0.0.0/8",
+			"172.16.0.0/12",
+			"192.168.0.0/16",
+			"::1",
+		})
+	}
 	r.Use(middleware.SecurityHeadersMiddleware())
 	r.Use(h.CORS)
 

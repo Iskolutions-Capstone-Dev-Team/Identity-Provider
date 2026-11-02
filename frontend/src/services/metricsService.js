@@ -152,6 +152,11 @@ export const metricsService = {
     return response.data;
   },
 
+  async getKPIThreatDetails() {
+    const response = await axiosInstance.get("/admin/kpis/threat-details");
+    return response.data;
+  },
+
   async downloadSummaryReport(filters = {}) {
     const params = new URLSearchParams();
     

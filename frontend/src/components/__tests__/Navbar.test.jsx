@@ -51,6 +51,12 @@ describe('Navbar Component', () => {
     expect(screen.queryByRole('button', { name: /Switch page to/i })).not.toBeInTheDocument();
   });
 
+  it('does not render the settings menu or view selector', () => {
+    renderNavbar({ showColorModeToggle: true });
+    expect(screen.queryByLabelText(/Settings/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Appearance/i)).not.toBeInTheDocument();
+  });
+
   it('calls onToggleColorMode when theme button is clicked', async () => {
     const handleToggle = vi.fn();
     renderNavbar({ showColorModeToggle: true, activeColorMode: "light", onToggleColorMode: handleToggle });
@@ -77,4 +83,3 @@ describe('Navbar Component', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/profile');
   });
 });
-

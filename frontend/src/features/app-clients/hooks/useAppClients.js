@@ -91,9 +91,7 @@ export function useAppClients({ enabled = true } = {}) {
   const [limit, setLimit] = useState(10);
   const [sortBy, setSortBy] = useState("created_at");
   const [sort, setSort] = useState("desc");
-  const [viewType, setViewType] = useState(() => {
-    return localStorage.getItem("appClientsViewType") || "table";
-  });
+  const [viewType, setViewType] = useState("table");
   const [successMessage, setSuccessMessage] = useState("");
   const queryClient = useQueryClient();
   const [secretModal, setSecretModal] = useState({
@@ -108,10 +106,7 @@ export function useAppClients({ enabled = true } = {}) {
 
   const searchKeyword = search.trim();
 
-  useEffect(() => {
-    localStorage.setItem("appClientsViewType", viewType);
-  }, [viewType]);
-
+  
   const fetchAppClientsFn = async () => {
     const { items, total, lastPage } = await clientService.getClients({
       limit,

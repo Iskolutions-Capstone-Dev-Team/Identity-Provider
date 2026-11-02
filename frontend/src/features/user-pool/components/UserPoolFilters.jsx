@@ -1,14 +1,12 @@
 import { ADMIN_USER_TYPE, REGULAR_USER_TYPE } from "../../../utils/userPoolAccess";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Search, Users, Shield, Table, WalletCards, Settings, ListFilter, View, User, Mail, Activity, Calendar, ListSortAscending, ListSortDescending } from "lucide-react";
+import { Search, Users, Shield, ListFilter, User, Mail, Activity, Calendar, ListSortAscending, ListSortDescending } from "lucide-react";
 import { SpeechInputToolbar } from "../../../components/SpeechInputButton";
 import { Label } from "@/components/ui/label";
 
-export default function UserPoolFilters({ search, setSearch, userType, setUserType, sortBy = "created_at", setSortBy, sort = "desc", setSort, viewType = "table", setViewType, showAdminUserType = true }) {
+export default function UserPoolFilters({ search, setSearch, userType, setUserType, sortBy = "created_at", setSortBy, sort = "desc", setSort, showAdminUserType = true }) {
   const visibleUserTypeOptions = showAdminUserType
     ? [
         { value: REGULAR_USER_TYPE, label: "Users", Icon: Users },
@@ -51,66 +49,63 @@ export default function UserPoolFilters({ search, setSearch, userType, setUserTy
         </div>
 
         <div className="flex flex-row gap-4 w-full lg:w-auto mt-auto">
-          <div className="w-1/2 lg:w-auto flex flex-col gap-2">
+          <div className="w-full lg:w-auto flex flex-col gap-2">
             <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-10! px-3 flex items-center gap-2 bg-background border shadow-sm w-full justify-between">
+              <DropdownMenuTrigger className="h-10! px-3 flex items-center gap-2 bg-background border rounded-lg shadow-sm w-full justify-between hover:bg-accent cursor-pointer">
                 <div className="flex items-center gap-2 text-foreground font-normal">
                   <ListFilter className="w-4 h-4 opacity-70" />
                   <span>Filter</span>
                 </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] lg:w-48">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sortBy} onValueChange={(val) => setSortBy(val === sortBy ? "" : val)}>
-                  <DropdownMenuRadioItem value="first_name" className="cursor-pointer gap-2">
-                    <User className="w-4 h-4 opacity-70" />
-                    First Name
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="last_name" className="cursor-pointer gap-2">
-                    <User className="w-4 h-4 opacity-70" />
-                    Last Name
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="email" className="cursor-pointer gap-2">
-                    <Mail className="w-4 h-4 opacity-70" />
-                    Email
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="status" className="cursor-pointer gap-2">
-                    <Activity className="w-4 h-4 opacity-70" />
-                    Status
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="created_at" className="cursor-pointer gap-2">
-                    <Calendar className="w-4 h-4 opacity-70" />
-                    Date Created
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="updated_at" className="cursor-pointer gap-2">
-                    <Calendar className="w-4 h-4 opacity-70" />
-                    Date Updated
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>Order By</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sort} onValueChange={(val) => setSort(val === sort ? "" : val)}>
-                  <DropdownMenuRadioItem value="asc" className="cursor-pointer gap-2">
-                    <ListSortAscending className="w-4 h-4 opacity-70" />
-                    Ascending
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="desc" className="cursor-pointer gap-2">
-                    <ListSortDescending className="w-4 h-4 opacity-70" />
-                    Descending
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] lg:w-48">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={sortBy} onValueChange={(val) => setSortBy(val === sortBy ? "" : val)}>
+                    <DropdownMenuRadioItem value="first_name" className="cursor-pointer gap-2">
+                      <User className="w-4 h-4 opacity-70" />
+                      First Name
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="last_name" className="cursor-pointer gap-2">
+                      <User className="w-4 h-4 opacity-70" />
+                      Last Name
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="email" className="cursor-pointer gap-2">
+                      <Mail className="w-4 h-4 opacity-70" />
+                      Email
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="status" className="cursor-pointer gap-2">
+                      <Activity className="w-4 h-4 opacity-70" />
+                      Status
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="created_at" className="cursor-pointer gap-2">
+                      <Calendar className="w-4 h-4 opacity-70" />
+                      Date Created
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="updated_at" className="cursor-pointer gap-2">
+                      <Calendar className="w-4 h-4 opacity-70" />
+                      Date Updated
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Order By</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={sort} onValueChange={(val) => setSort(val === sort ? "" : val)}>
+                    <DropdownMenuRadioItem value="asc" className="cursor-pointer gap-2">
+                      <ListSortAscending className="w-4 h-4 opacity-70" />
+                      Ascending
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="desc" className="cursor-pointer gap-2">
+                      <ListSortDescending className="w-4 h-4 opacity-70" />
+                      Descending
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-
       </div>
-    </div>
     </div>
   );
 }
