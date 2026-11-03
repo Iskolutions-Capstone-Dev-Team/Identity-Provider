@@ -1205,6 +1205,20 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		)
 		return
 	}
+
+	// Validate authorization code format
+	if !utils.IsValidAuthorizationCode(req.Code) {
+		log.Printf("[PostTokenExchange] Code Validation: invalid format")
+		errors.SendString(
+			c,
+			http.StatusBadRequest,
+			errors.CodeInvalidInput,
+			"The authorization code is invalid or has expired.",
+			"invalid authorization code",
+		)
+		return
+	}
+
 	uIDStr := c.GetString("user_id")
 	uID, _ := uuid.Parse(uIDStr)
 	perms := c.GetStringSlice("permissions")
@@ -1245,7 +1259,7 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		req,
 	)
 	if err != nil {
-		log.Printf("[PostTokenExchange] %v", err)
+		log.Printf("[PostTokenExchange] Code Exchange: %v", err)
 
 		metadataWithErr := buildMetadata(map[string]interface{}{
 			"client_id":   req.ClientID,
@@ -1276,13 +1290,14 @@ func (h *AuthHandler) PostTokenExchange(c *gin.Context) {
 		code := errors.CodeInternalError
 		msg := "An unexpected error occurred. Please try again."
 
-		if strings.Contains(err.Error(), "verification") {
+		errLower := strings.ToLower(err.Error())
+		if strings.Contains(errLower, "verification") {
 			status, code = http.StatusUnauthorized, errors.CodeUnauthorized
 			msg = "The request is unauthorized."
-		} else if strings.Contains(err.Error(), "Code Exchange") {
+		} else if strings.Contains(errLower, "code exchange") {
 			status, code = http.StatusBadRequest, errors.CodeInvalidInput
 			msg = "The authorization code is invalid or has expired."
-		} else if strings.Contains(err.Error(), "UUID Parse") {
+		} else if strings.Contains(errLower, "uuid parse") {
 			status, code = http.StatusBadRequest, errors.CodeClientError
 			msg = "The Client ID is invalid."
 		}

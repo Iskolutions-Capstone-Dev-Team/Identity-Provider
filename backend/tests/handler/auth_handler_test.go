@@ -1,6 +1,8 @@
 package handler_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -9,10 +11,12 @@ import (
 	"testing"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/api/v1"
+	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/models"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/service"
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/tests/mocks"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 )
 
@@ -147,6 +151,302 @@ func TestAuthorize_SessionInvalidRedirectsToLogin(t *testing.T) {
 			"expected redirect to contain %q, got %q",
 			expectedLocation,
 			location,
+		)
+	}
+}
+
+/**
+ * TestPostTokenExchange_InvalidClientID verifies client ID UUID validation.
+ */
+func TestPostTokenExchange_InvalidClientID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAuthService := mocks.NewMockAuthService(ctrl)
+	mockClientService := mocks.NewMockClientService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+
+	handler := &v1.AuthHandler{
+		AuthService:   mockAuthService,
+		ClientService: mockClientService,
+		LogService:    mockLogService,
+	}
+
+	body := []byte(`{"client_id":"' OR '1'='1","client_secret":"sec","code":"c"}`)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("POST", "/auth/token", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PostTokenExchange(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", w.Code)
+	}
+
+	var errResp dto.ErrorResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &errResp)
+	if strings.Contains(errResp.Error, "sql") {
+		t.Errorf(
+			"error response should not leak sql keywords: %s",
+			errResp.Error,
+		)
+	}
+}
+
+/**
+ * TestPostTokenExchange_SQLInjectionCode verifies code format validation.
+ */
+func TestPostTokenExchange_SQLInjectionCode(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAuthService := mocks.NewMockAuthService(ctrl)
+	mockClientService := mocks.NewMockClientService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+
+	handler := &v1.AuthHandler{
+		AuthService:   mockAuthService,
+		ClientService: mockClientService,
+		LogService:    mockLogService,
+	}
+
+	cUUID := uuid.New()
+	body := []byte(fmt.Sprintf(
+		`{"client_id":"%s","client_secret":"sec","code":"' OR 1=1 --"}`,
+		cUUID.String(),
+	))
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("POST", "/auth/token", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PostTokenExchange(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", w.Code)
+	}
+}
+
+/**
+ * TestPostTokenExchange_CodeNotFoundReturns400 verifies 400 on invalid code.
+ */
+func TestPostTokenExchange_CodeNotFoundReturns400(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAuthService := mocks.NewMockAuthService(ctrl)
+	mockClientService := mocks.NewMockClientService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+
+	handler := &v1.AuthHandler{
+		AuthService:   mockAuthService,
+		ClientService: mockClientService,
+		LogService:    mockLogService,
+	}
+
+	cUUID := uuid.New()
+	validCode := "abcdefghijklmnopqrstuvwxyz0123456789-_ABCDE"
+	clientResp := &dto.ClientResponse{
+		ID:     cUUID.String(),
+		Grants: []string{"authorization_code"},
+	}
+
+	mockClientService.EXPECT().
+		GetClientByID(gomock.Any(), cUUID, gomock.Any(), gomock.Any()).
+		Return(clientResp, nil)
+
+	mockLogService.EXPECT().
+		ResolveClientName(gomock.Any(), cUUID.String()).
+		Return("test-client")
+
+	mockAuthService.EXPECT().
+		ExchangeCodeForToken(gomock.Any(), gomock.Any()).
+		Return(nil, fmt.Errorf("code exchange: code not found"))
+
+	mockLogService.EXPECT().
+		PostAuditLogWithActorString(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	mockLogService.EXPECT().
+		PostSecurityLogWithActorString(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	body := []byte(fmt.Sprintf(
+		`{"client_id":"%s","client_secret":"sec","code":"%s"}`,
+		cUUID.String(),
+		validCode,
+	))
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("POST", "/auth/token", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PostTokenExchange(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400 for code exchange failure, got %d", w.Code)
+	}
+
+	var errResp dto.ErrorResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &errResp)
+	if strings.Contains(errResp.Error, "sql:") {
+		t.Errorf("error response leaked SQL details: %s", errResp.Error)
+	}
+}
+
+/**
+ * TestPostTokenExchange_DatabaseErrorMasked verifies SQL error redaction.
+ */
+func TestPostTokenExchange_DatabaseErrorMasked(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAuthService := mocks.NewMockAuthService(ctrl)
+	mockClientService := mocks.NewMockClientService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+
+	handler := &v1.AuthHandler{
+		AuthService:   mockAuthService,
+		ClientService: mockClientService,
+		LogService:    mockLogService,
+	}
+
+	cUUID := uuid.New()
+	validCode := "abcdefghijklmnopqrstuvwxyz0123456789-_ABCDE"
+	clientResp := &dto.ClientResponse{
+		ID:     cUUID.String(),
+		Grants: []string{"authorization_code"},
+	}
+
+	mockClientService.EXPECT().
+		GetClientByID(gomock.Any(), cUUID, gomock.Any(), gomock.Any()).
+		Return(clientResp, nil)
+
+	mockLogService.EXPECT().
+		ResolveClientName(gomock.Any(), cUUID.String()).
+		Return("test-client")
+
+	mockAuthService.EXPECT().
+		ExchangeCodeForToken(gomock.Any(), gomock.Any()).
+		Return(
+			nil,
+			fmt.Errorf("database query (GetClaims): sql: connection dead"),
+		)
+
+	mockLogService.EXPECT().
+		PostAuditLogWithActorString(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	mockLogService.EXPECT().
+		PostSecurityLogWithActorString(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	body := []byte(fmt.Sprintf(
+		`{"client_id":"%s","client_secret":"sec","code":"%s"}`,
+		cUUID.String(),
+		validCode,
+	))
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("POST", "/auth/token", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PostTokenExchange(c)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected status 500 for db failure, got %d", w.Code)
+	}
+
+	var errResp dto.ErrorResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &errResp)
+	if strings.Contains(errResp.Error, "sql:") ||
+		strings.Contains(errResp.Error, "database query") {
+		t.Errorf("error response leaked internal db details: %s", errResp.Error)
+	}
+	if errResp.Error != "An unexpected error occurred. Please try again." {
+		t.Errorf("expected clean masked error, got: %s", errResp.Error)
+	}
+}
+
+/**
+ * TestPostTokenExchange_Success verifies valid token exchange behavior.
+ */
+func TestPostTokenExchange_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAuthService := mocks.NewMockAuthService(ctrl)
+	mockClientService := mocks.NewMockClientService(ctrl)
+	mockLogService := mocks.NewMockLogService(ctrl)
+
+	handler := &v1.AuthHandler{
+		AuthService:   mockAuthService,
+		ClientService: mockClientService,
+		LogService:    mockLogService,
+	}
+
+	cUUID := uuid.New()
+	validCode := "abcdefghijklmnopqrstuvwxyz0123456789-_ABCDE"
+	clientResp := &dto.ClientResponse{
+		ID:     cUUID.String(),
+		Grants: []string{"authorization_code"},
+	}
+
+	mockClientService.EXPECT().
+		GetClientByID(gomock.Any(), cUUID, gomock.Any(), gomock.Any()).
+		Return(clientResp, nil)
+
+	mockLogService.EXPECT().
+		ResolveClientName(gomock.Any(), cUUID.String()).
+		Return("test-client")
+
+	tokenResp := &dto.TokenResponse{
+		AccessToken:  "valid-jwt-token",
+		RefreshToken: "valid-refresh-token",
+		ExpiresIn:    3600,
+		TokenType:    "Bearer",
+	}
+
+	mockAuthService.EXPECT().
+		ExchangeCodeForToken(gomock.Any(), gomock.Any()).
+		Return(tokenResp, nil)
+
+	mockLogService.EXPECT().
+		PostAuditLogWithActorString(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	mockLogService.EXPECT().
+		PostSecurityLogWithActorString(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	body := []byte(fmt.Sprintf(
+		`{"client_id":"%s","client_secret":"sec","code":"%s"}`,
+		cUUID.String(),
+		validCode,
+	))
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("POST", "/auth/token", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	handler.PostTokenExchange(c)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+
+	var parsedResp dto.TokenResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &parsedResp)
+	if parsedResp.AccessToken != "valid-jwt-token" {
+		t.Errorf(
+			"expected access token 'valid-jwt-token', got %s",
+			parsedResp.AccessToken,
 		)
 	}
 }
