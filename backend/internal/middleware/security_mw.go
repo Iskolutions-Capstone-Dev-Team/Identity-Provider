@@ -8,9 +8,16 @@ import (
 // removes leaking headers like "Server".
 func SecurityHeadersMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		csp := "default-src 'self'; script-src 'self'; " +
+		csp := "default-src 'self'; " +
+			"base-uri 'self'; " +
+			"object-src 'none'; " +
+			"frame-ancestors 'none'; " +
+			"form-action 'self'; " +
+			"script-src 'self'; " +
 			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-			"font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;"
+			"font-src 'self' https://fonts.gstatic.com; " +
+			"img-src 'self' data:; " +
+			"connect-src 'self';"
 
 		// Content Security Policy (CSP) Header Not Set
 		c.Header("Content-Security-Policy", csp)
