@@ -51,9 +51,9 @@ export default function App() {
   return (
     <Router>
       <Suspense fallback={
-        <div className="relative flex min-h-screen items-center justify-center overflow-hidden" style={{ background: authPageBackground }}>
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden auth-page-bg">
           <div className="absolute inset-0">
-            <div className="absolute inset-0 opacity-45 [mask-image:linear-gradient(90deg,#000_0%,transparent_24%,transparent_76%,#000_100%)]" style={authPagePatternStyle} />
+            <div className="absolute inset-0 opacity-45 [mask-image:linear-gradient(90deg,#000_0%,transparent_24%,transparent_76%,#000_100%)] auth-page-pattern" />
           </div>
           <span className="loading loading-dots w-10 text-[#f8d24e] relative z-10"></span>
         </div>

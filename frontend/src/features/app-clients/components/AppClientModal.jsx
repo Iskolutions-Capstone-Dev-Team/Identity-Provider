@@ -319,7 +319,7 @@ export default function AppClientModal({ open, mode, client, getClientDetails, o
                             const formatGrantName = (name) => name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
                             return (
-                              <FieldLabel key={grant} className="relative p-0 !w-auto flex-1 min-w-fit" style={{ pointerEvents: isView ? "none" : "auto" }}>
+                              <FieldLabel key={grant} className={`relative p-0 !w-auto flex-1 min-w-fit ${isView ? "pointer-events-none" : "pointer-events-auto"}`}>
                                 <Field orientation="horizontal" className="justify-center">
                                   <Checkbox
                                     checked={isSelected}
