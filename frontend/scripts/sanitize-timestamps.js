@@ -13,7 +13,7 @@ function sanitizeContent(content) {
   let sanitized = content;
 
   // 1. Split specific CSS selector string in input-otp / password managers
-  sanitized = sanitized.replaceAll("2147483647", "21474' + '83647");
+  sanitized = sanitized.replaceAll('2147483647 !important;"', '21474\' + \'83647 !important;"');
 
   // 2. Split standalone 10-digit number literals (1000000000 - 2999999999)
   // to neutralize security scanner Unix timestamp false-positives
