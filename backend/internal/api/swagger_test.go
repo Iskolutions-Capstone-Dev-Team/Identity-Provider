@@ -24,6 +24,5 @@ func TestNewSwaggerHandler(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	body := w.Body.String()
-	assert.True(t, strings.Contains(body, `r.version="3.16.2"`))
+	assert.True(t, strings.Contains(body, `DOMPurify.version="3.4.17"`))
 }
-
