@@ -20,7 +20,6 @@ import (
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/swag"
 	"strings"
@@ -150,12 +149,13 @@ func main() {
 	r.Use(middleware.SecurityHeadersMiddleware())
 	r.Use(h.CORS)
 
+	swaggerHandler := api.NewSwaggerHandler()
 	// Register separate Swagger UI routes for Internal and External views
 	r.GET("/swagger/internal/*any", ginSwagger.WrapHandler(
-		swaggerFiles.Handler, ginSwagger.InstanceName("internal"),
+		swaggerHandler, ginSwagger.InstanceName("internal"),
 	))
 	r.GET("/swagger/external/*any", ginSwagger.WrapHandler(
-		swaggerFiles.Handler, ginSwagger.InstanceName("external"),
+		swaggerHandler, ginSwagger.InstanceName("external"),
 	))
 
 	api.SetupRoutes(r, *h)

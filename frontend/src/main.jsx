@@ -5,6 +5,12 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from "./App.jsx";
 import { clearLegacyRefreshTokenCookie } from "./auth/utils/authCookies";
 import "./index.css";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 

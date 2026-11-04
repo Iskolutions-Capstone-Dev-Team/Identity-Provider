@@ -14,19 +14,22 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 			"frame-ancestors 'none'; " +
 			"form-action 'self'; " +
 			"script-src 'self'; " +
-			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-			"font-src 'self' https://fonts.gstatic.com; " +
+			"style-src 'self' 'unsafe-inline'; " +
+			"font-src 'self' data:; " +
 			"img-src 'self' data:; " +
 			"connect-src 'self';"
 
-		// Content Security Policy (CSP) Header Not Set
+		// Content Security Policy (CSP) Header
 		c.Header("Content-Security-Policy", csp)
 
 		// Missing Anti-clickjacking Header
 		c.Header("X-Frame-Options", "DENY")
 
+		// Prevent MIME type sniffing
+		c.Header("X-Content-Type-Options", "nosniff")
+
 		hsts := "max-age=31536000; includeSubDomains; preload"
-		// Strict-Transport-Security Header Not Set
+		// Strict-Transport-Security Header
 		c.Header("Strict-Transport-Security", hsts)
 
 		// Server Leaks Version Information via "Server" HTTP Response
