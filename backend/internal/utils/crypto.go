@@ -81,6 +81,27 @@ func GenerateAuthorizationCode() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
+/**
+ * IsValidAuthorizationCode verifies that code contains only URL-safe
+ * characters and conforms to the expected authorization code length.
+ */
+func IsValidAuthorizationCode(code string) bool {
+	if len(code) < 16 || len(code) > 128 {
+		return false
+	}
+	for i := 0; i < len(code); i++ {
+		c := code[i]
+		if (c >= 'a' && c <= 'z') ||
+			(c >= 'A' && c <= 'Z') ||
+			(c >= '0' && c <= '9') ||
+			c == '-' || c == '_' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
 func HashSecret(plainText string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(plainText), 12)
 	return string(bytes), err
