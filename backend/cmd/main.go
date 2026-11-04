@@ -149,14 +149,18 @@ func main() {
 	r.Use(middleware.SecurityHeadersMiddleware())
 	r.Use(h.CORS)
 
-	swaggerHandler := api.NewSwaggerHandler()
-	// Register separate Swagger UI routes for Internal and External views
-	r.GET("/swagger/internal/*any", ginSwagger.WrapHandler(
-		swaggerHandler, ginSwagger.InstanceName("internal"),
-	))
-	r.GET("/swagger/external/*any", ginSwagger.WrapHandler(
-		swaggerHandler, ginSwagger.InstanceName("external"),
-	))
+	if os.Getenv("ENABLE_SWAGGER") == "true" ||
+		(os.Getenv("APP_ENV") != "production" &&
+			os.Getenv("ENABLE_SWAGGER") != "false") {
+		swaggerHandler := api.NewSwaggerHandler()
+		// Register separate Swagger UI routes for Internal and External views
+		r.GET("/swagger/internal/*any", ginSwagger.WrapHandler(
+			swaggerHandler, ginSwagger.InstanceName("internal"),
+		))
+		r.GET("/swagger/external/*any", ginSwagger.WrapHandler(
+			swaggerHandler, ginSwagger.InstanceName("external"),
+		))
+	}
 
 	api.SetupRoutes(r, *h)
 

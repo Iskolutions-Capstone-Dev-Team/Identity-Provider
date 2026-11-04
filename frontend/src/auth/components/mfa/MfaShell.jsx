@@ -2,7 +2,7 @@ export default function MfaShell({ children }) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#250508] font-[Poppins] text-white">
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url(/assets/images/pup_bg.png)" }}/>
+        <div className="absolute inset-0 bg-cover bg-center bg-pup-hero"/>
         <div className="absolute inset-0 bg-gradient-to-br from-[#2b0307]/92 via-[#7b0d15]/86 to-[#180204]/94" />
       </div>
 

@@ -14,7 +14,7 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 			"frame-ancestors 'none'; " +
 			"form-action 'self'; " +
 			"script-src 'self'; " +
-			"style-src 'self' 'unsafe-inline'; " +
+			"style-src 'self'; " +
 			"font-src 'self' data:; " +
 			"img-src 'self' data:; " +
 			"connect-src 'self';"

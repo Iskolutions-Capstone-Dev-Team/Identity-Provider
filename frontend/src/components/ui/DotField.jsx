@@ -231,22 +231,11 @@ const DotField = memo(({
     <div className="w-full h-full relative" {...rest}>
       <canvas
         ref={canvasRef}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-        }}
+        className="absolute inset-0 w-full h-full"
       />
       <svg
         ref={svgRef}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-        }}
+        className="absolute inset-0 w-full h-full pointer-events-none"
       >
         <defs>
           <radialGradient id={glowIdRef.current}>
@@ -260,7 +249,7 @@ const DotField = memo(({
           cy="-9999"
           r={glowRadius}
           fill={`url(#${glowIdRef.current})`}
-          style={{ opacity: 0, willChange: 'opacity' }}
+          className="opacity-0 will-change-[opacity]"
         />
       </svg>
     </div>

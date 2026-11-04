@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"io"
 	"io/fs"
@@ -9,9 +10,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	swaggerFiles "github.com/swaggo/files/v2"
 	"golang.org/x/net/webdav"
 )
+
+//go:embed swagger_dist/*
+var swaggerDist embed.FS
+
+var swaggerFS, _ = fs.Sub(swaggerDist, "swagger_dist")
 
 type webdavFS struct {
 	fs fs.FS
@@ -101,11 +106,10 @@ func (f *webdavFile) Write(p []byte) (n int, err error) {
 	return 0, os.ErrPermission
 }
 
-// NewSwaggerHandler returns a webdav.Handler backed by swaggerFiles.FS v2.
+// NewSwaggerHandler returns a webdav.Handler backed by embedded swagger_dist.
 func NewSwaggerHandler() *webdav.Handler {
 	return &webdav.Handler{
-		FileSystem: &webdavFS{fs: swaggerFiles.FS},
+		FileSystem: &webdavFS{fs: swaggerFS},
 		LockSystem: webdav.NewMemLS(),
 	}
 }
-
