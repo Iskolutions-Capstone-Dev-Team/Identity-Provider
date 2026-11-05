@@ -1,8 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
 import { Skeleton } from "../../../components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
-import { Bar, BarChart } from "recharts";
-import { ChartContainer } from "../../../components/ui/chart";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "../../../components/ui/tooltip";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../../../components/ui/empty";
 import { ScrollArea, ScrollBar } from "../../../components/ui/scroll-area";
@@ -23,12 +21,41 @@ const sparklineData = [
   { val: 70 }, { val: 80 }, { val: 60 }, { val: 90 }, { val: 100 }
 ];
 
-const chartConfig = {
-  val: {
-    label: "Logins",
-    color: "#34d399",
-  }
-};
+function TopLoginSparkline({ loginCount, maxLoginCount }) {
+  const count = Number(loginCount) || 0;
+  const scale = maxLoginCount > 0 ? count / maxLoginCount : 1;
+  const rowChartData = sparklineData.map((d) => ({
+    val: Math.max(d.val * scale, 5),
+  }));
+
+  return (
+    <svg
+      role="img"
+      aria-label={`Login activity: ${count} logins`}
+      viewBox="0 0 100 32"
+      className="h-7 w-[96px] shrink-0"
+    >
+      {rowChartData.map((d, index) => {
+        const barHeight = Math.max(4, Math.round((d.val / 100) * 26));
+        const x = 2 + index * 10;
+        const y = 29 - barHeight;
+
+        return (
+          <rect
+            key={index}
+            x={x}
+            y={y}
+            width={6}
+            height={barHeight}
+            rx={2}
+            ry={2}
+            className="fill-emerald-500 dark:fill-emerald-400 transition-all duration-300"
+          />
+        );
+      })}
+    </svg>
+  );
+}
 
 function PeriodTabs({ periods, selectedPeriodKey, onSelectPeriod }) {
   return (
@@ -56,10 +83,6 @@ function TopLoginRow({ client, maxLoginCount, totalLoginCount }) {
   const percentage = totalLoginCount > 0
     ? (loginCount / totalLoginCount) * 100
     : 0;
-  
-  // Scale sparkline based on login count
-  const scale = maxLoginCount > 0 ? (loginCount / maxLoginCount) : 1;
-  const rowChartData = sparklineData.map(d => ({ val: Math.max(d.val * scale, 5) }));
 
   return (
     <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-3 shadow-sm transition-colors hover:bg-muted/50">
@@ -92,11 +115,7 @@ function TopLoginRow({ client, maxLoginCount, totalLoginCount }) {
       </div>
 
       <div className="flex h-8 w-[100px] shrink-0 items-center justify-center">
-        <ChartContainer config={chartConfig} className="h-full w-full">
-          <BarChart data={rowChartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-            <Bar dataKey="val" fill="var(--color-val)" radius={2} isAnimationActive={false} />
-          </BarChart>
-        </ChartContainer>
+        <TopLoginSparkline loginCount={loginCount} maxLoginCount={maxLoginCount} />
       </div>
 
       <div className="flex w-32 shrink-0 items-center justify-end gap-4 text-right">
@@ -136,7 +155,9 @@ function TopLoginRowsSkeleton() {
   );
 }
 
-export default function TopLoginsPanel({ clients, periods, selectedPeriod, selectedPeriodKey, isRestrictedView = false, isLoading = false, onSelectPeriod }) {
+export default function TopLoginsPanel({ clients = [], periods = [], selectedPeriod, selectedPeriodKey, isRestrictedView = false, isLoading = false, onSelectPeriod }) {
+  const safeClients = Array.isArray(clients) ? clients : [];
+  const safePeriods = Array.isArray(periods) ? periods : [];
   const totalLoginCount = Number(selectedPeriod?.count) || 0;
   const subtitle = isRestrictedView
     ? "Highest login volume by accessible applications"
@@ -144,7 +165,7 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
   const emptyMessage = isRestrictedView
     ? "No login activity is available."
     : "No login activity is available for today.";
-  const maxLoginCount = clients.reduce((maxCount, client) => {
+  const maxLoginCount = safeClients.reduce((maxCount, client) => {
     const loginCount = Number(client.login_count) || 0;
     return Math.max(maxCount, loginCount);
   }, 0);
@@ -160,7 +181,7 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
         </div>
 
         <PeriodTabs
-          periods={periods}
+          periods={safePeriods}
           selectedPeriodKey={selectedPeriodKey}
           onSelectPeriod={onSelectPeriod}
         />
@@ -168,8 +189,8 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
 
       <CardContent>
         <ScrollArea className="w-full">
-          <div className="min-w-[500px] pb-4">
-            {clients.length > 0 && !isLoading && (
+          <div className="min-w-full sm:min-w-[460px] md:min-w-0 pb-2">
+            {safeClients.length > 0 && !isLoading && (
               <div className="mb-3 flex items-center justify-between px-3 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                 <div className="flex-[2]">CLIENT</div>
                 <div className="w-[100px] shrink-0 text-center">LOGINS</div>
@@ -177,12 +198,12 @@ export default function TopLoginsPanel({ clients, periods, selectedPeriod, selec
               </div>
             )}
             <div className={`space-y-3 ${
-              clients.length > 4 ? `max-h-[30rem] overflow-y-auto pr-2 ${scrollClassName}` : ""
+              safeClients.length > 4 ? `max-h-[30rem] overflow-y-auto pr-2 ${scrollClassName}` : ""
             }`}>
               {isLoading ? (
                 <TopLoginRowsSkeleton />
-              ) : clients.length > 0 ? (
-                clients.map((client) => (
+              ) : safeClients.length > 0 ? (
+                safeClients.map((client) => (
                   <TopLoginRow
                     key={client.client_id || client.client_name}
                     client={client}

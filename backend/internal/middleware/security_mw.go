@@ -13,11 +13,15 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 			"object-src 'none'; " +
 			"frame-ancestors 'none'; " +
 			"form-action 'self'; " +
-			"script-src 'self'; " +
+			"script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://challenges.cloudflare.com; " +
 			"style-src 'self'; " +
 			"font-src 'self' data:; " +
-			"img-src 'self' data:; " +
-			"connect-src 'self';"
+			"img-src 'self' data: blob: http://localhost:9000; " +
+			"connect-src 'self' http://localhost:8080 http://localhost:5173 http://localhost:5174 http://localhost:9000 blob: data:; " +
+			"worker-src 'self' blob:; " +
+			"child-src 'self' blob:; " +
+			"frame-src 'self' https://challenges.cloudflare.com; " +
+			"media-src 'self' blob: data:;"
 
 		// Content Security Policy (CSP) Header
 		c.Header("Content-Security-Policy", csp)
