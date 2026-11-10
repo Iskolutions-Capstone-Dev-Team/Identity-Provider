@@ -31,4 +31,3 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 		"form-action 'self'")
 	assert.Empty(t, w.Header().Get("Server"))
 }
-
