@@ -17,7 +17,7 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 			"style-src 'self' 'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=' 'sha256-CIxDM5jnsGiKqXs2v7NKCY5MzdR9gu6TtiMJrDw29AY=' 'sha256-zGa58lXb2oygE4hoHpmzXYA2TBtkgAZDzFuKlQ2FzyI=' 'sha256-kLmvWqfziFavKtqHqRsb90f006UAK2Dmd0It5Iz2KFA=' 'sha256-StEaX+se6YS7pqjzrzMIA0KaX9zF/8zAhvQXZAe5epY=' 'sha256-qv/lLZ+h6qkk6F0yffkDTgVFHR6dUogNKazioCz5Tyo='; " +
 			"style-src-attr 'unsafe-inline'; " +
 			"font-src 'self' data:; " +
-			"img-src 'self' data: blob: http://localhost:9000; " +
+			"img-src 'self' data: blob: http://localhost:9000 https://*.amazonaws.com https://*.s3.dualstack.ap-southeast-1.amazonaws.com; " +
 			"connect-src 'self' http://localhost:8080 http://localhost:5173 http://localhost:5174 http://localhost:9000 blob: data:; " +
 			"worker-src 'self' blob:; " +
 			"child-src 'self' blob:; " +
