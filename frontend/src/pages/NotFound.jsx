@@ -34,7 +34,7 @@ export default function NotFound() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden font-[Poppins] text-white flex items-center justify-center p-4" style={{ background: authPageBackground }}>
+    <div className="relative min-h-screen overflow-hidden font-[Poppins] text-white flex items-center justify-center p-4 auth-page-bg">
       <div className="absolute inset-0 overflow-hidden">
         <DotField
           dotRadius={1.5}

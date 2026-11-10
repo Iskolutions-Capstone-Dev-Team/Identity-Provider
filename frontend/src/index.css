@@ -283,3 +283,34 @@ html.dark .app-sidebar-custom [data-sidebar="menu-button"][data-active] {
 html[data-magicui-theme-vt='active']::view-transition-new(root) {
   clip-path: var(--magicui-theme-vt-clip-from);
 }
+
+.auth-page-bg {
+  background: radial-gradient(circle at 12% 14%, rgba(145, 31, 42, 0.5), transparent 30rem),
+    radial-gradient(circle at 84% 20%, rgba(248, 210, 78, 0.08), transparent 26rem),
+    linear-gradient(135deg, #1c0306 0%, #4f0d17 48%, #230407 100%);
+}
+
+.auth-page-pattern {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06), transparent 28%, transparent 72%, rgba(255, 255, 255, 0.06));
+  background-position: 0 0, center;
+  background-size: 1.05rem 1.05rem, 100% 100%;
+}
+
+.bg-pup-hero {
+  background-image: url('/assets/images/pup_bg.png');
+}
+
+.toaster {
+  --normal-bg: var(--popover);
+  --normal-text: var(--popover-foreground);
+  --normal-border: var(--border);
+  --error-bg: var(--popover);
+  --error-text: var(--popover-foreground);
+  --error-border: var(--border);
+  --success-bg: var(--popover);
+  --success-text: var(--popover-foreground);
+  --success-border: var(--border);
+  --border-radius: var(--radius);
+}
+

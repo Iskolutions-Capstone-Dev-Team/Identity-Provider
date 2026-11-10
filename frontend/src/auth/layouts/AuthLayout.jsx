@@ -13,10 +13,9 @@ export default function AuthLayout({ children, allowPageScroll = false }) {
   }, []);
 
   return (
-    <div className={`relative min-h-screen overflow-x-hidden font-[Poppins] text-white ${
+    <div className={`relative min-h-screen overflow-x-hidden font-[Poppins] text-white auth-page-bg ${
         allowPageScroll ? "" : "lg:h-screen lg:overflow-hidden"
       }`}
-      style={{ background: authPageBackground }}
     >
       <div className="absolute inset-0 overflow-hidden">
         <DotField

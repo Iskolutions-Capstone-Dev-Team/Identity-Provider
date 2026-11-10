@@ -92,7 +92,7 @@ export default function AccessDenied() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden font-[Poppins] text-white" style={{ background: authPageBackground }}>
+    <main className="relative min-h-screen overflow-hidden font-[Poppins] text-white auth-page-bg">
       <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
         <DotField
           dotRadius={1.5}

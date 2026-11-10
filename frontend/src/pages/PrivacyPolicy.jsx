@@ -44,7 +44,7 @@ export default function PrivacyPolicy({ isPublic = false }) {
   };
 
   const pageBgClass = isPublic 
-    ? "relative overflow-x-hidden font-[Poppins] text-white" 
+    ? "relative overflow-x-hidden font-[Poppins] text-white auth-page-bg" 
     : "bg-slate-50/50 dark:bg-background text-foreground";
     
   const cardClass = isPublic 
@@ -61,7 +61,6 @@ export default function PrivacyPolicy({ isPublic = false }) {
   return (
     <div 
       className={`min-h-screen pt-6 pb-16 ${pageBgClass}`}
-      style={isPublic ? { background: authPageBackground } : undefined}
     >
       {isPublic && (
 
