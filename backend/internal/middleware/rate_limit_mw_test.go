@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -145,5 +146,58 @@ func TestLimiterStore_TargetEmailKeyExtractor(t *testing.T) {
 	r.ServeHTTP(w3, req3)
 	if w3.Code != http.StatusOK {
 		t.Fatalf("student B on same NAT expected 200, got %d", w3.Code)
+	}
+}
+
+func TestLimiterStore_TargetEmailKeyExtractor_JSONBody(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	store := NewLimiterStore(nil, 1*time.Second, 1)
+
+	r := gin.New()
+	r.Use(RateLimitWithKey(store, TargetEmailKeyExtractor))
+	r.POST("/otp/verify", func(c *gin.Context) {
+		var req struct {
+			Email string `json:"email"`
+			OTP   string `json:"otp"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.String(http.StatusBadRequest, "invalid body")
+			return
+		}
+		c.String(http.StatusOK, "verified:"+req.Email)
+	})
+
+	// Student A sends JSON body with email
+	body1 := `{"email":"studentA@school.edu","otp":"123456"}`
+	req1 := httptest.NewRequest(http.MethodPost, "/otp/verify", strings.NewReader(body1))
+	req1.Header.Set("Content-Type", "application/json")
+	req1.Header.Set("X-Forwarded-For", "198.51.100.1")
+	w1 := httptest.NewRecorder()
+	r.ServeHTTP(w1, req1)
+	if w1.Code != http.StatusOK || w1.Body.String() != "verified:studentA@school.edu" {
+		t.Fatalf("student A first request expected 200, got %d: %s", w1.Code, w1.Body.String())
+	}
+
+	// Student A immediate second request should get 429
+	body2 := `{"email":"studentA@school.edu","otp":"123456"}`
+	req2 := httptest.NewRequest(http.MethodPost, "/otp/verify", strings.NewReader(body2))
+	req2.Header.Set("Content-Type", "application/json")
+	req2.Header.Set("X-Forwarded-For", "198.51.100.1")
+	w2 := httptest.NewRecorder()
+	r.ServeHTTP(w2, req2)
+	if w2.Code != http.StatusTooManyRequests {
+		t.Fatalf("student A second request expected 429, got %d", w2.Code)
+	}
+
+	// Student B on the SAME IP should succeed because email key is isolated
+	body3 := `{"email":"studentB@school.edu","otp":"654321"}`
+	req3 := httptest.NewRequest(http.MethodPost, "/otp/verify", strings.NewReader(body3))
+	req3.Header.Set("Content-Type", "application/json")
+	req3.Header.Set("X-Forwarded-For", "198.51.100.1")
+	w3 := httptest.NewRecorder()
+	r.ServeHTTP(w3, req3)
+	if w3.Code != http.StatusOK || w3.Body.String() != "verified:studentB@school.edu" {
+		t.Fatalf("student B on same NAT expected 200, got %d: %s", w3.Code, w3.Body.String())
 	}
 }
