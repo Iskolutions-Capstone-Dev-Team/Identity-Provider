@@ -283,6 +283,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
 
   const handleVerifyEmailOtp = (event) => {
     event.preventDefault();
+    if (verifyEmailOtpMutation.isPending || cooldown > 0) return;
     setError("");
     if (code.length !== 6) {
       setError("Enter the 6-digit verification code.");
@@ -304,6 +305,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
 
   const handleVerifyAuthenticator = (event) => {
     event.preventDefault();
+    if (verifyAuthenticatorMutation.isPending || cooldown > 0) return;
     setError("");
     if (code.length !== 6) {
       setError("Enter the 6-digit authenticator code.");
@@ -325,6 +327,7 @@ export function useLoginMfaFlow({ callbackRedirectUrl = "", initialEmail = "", o
 
   const handleVerifyBackupCode = (event) => {
     event.preventDefault();
+    if (verifyBackupCodeMutation.isPending || cooldown > 0) return;
     setError("");
     const normalizedBackupCode = backupCode.trim();
     if (!normalizedBackupCode) {
