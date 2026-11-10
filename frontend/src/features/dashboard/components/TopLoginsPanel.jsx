@@ -33,7 +33,7 @@ function TopLoginSparkline({ loginCount, maxLoginCount }) {
       role="img"
       aria-label={`Login activity: ${count} logins`}
       viewBox="0 0 100 32"
-      className="h-7 w-[96px] shrink-0"
+      className="h-7 w-[96px] shrink-0 text-emerald-500 dark:text-emerald-400"
     >
       {rowChartData.map((d, index) => {
         const barHeight = Math.max(4, Math.round((d.val / 100) * 26));
@@ -49,7 +49,8 @@ function TopLoginSparkline({ loginCount, maxLoginCount }) {
             height={barHeight}
             rx={2}
             ry={2}
-            className="fill-emerald-500 dark:fill-emerald-400 transition-all duration-300"
+            fill="currentColor"
+            className="fill-emerald-500 dark:fill-emerald-400 text-emerald-500 dark:text-emerald-400 transition-all duration-300"
           />
         );
       })}
@@ -189,7 +190,7 @@ export default function TopLoginsPanel({ clients = [], periods = [], selectedPer
 
       <CardContent>
         <ScrollArea className="w-full">
-          <div className="min-w-full sm:min-w-[460px] md:min-w-0 pb-2">
+          <div className="w-full min-w-[420px] lg:min-w-0 pb-2">
             {safeClients.length > 0 && !isLoading && (
               <div className="mb-3 flex items-center justify-between px-3 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                 <div className="flex-[2]">CLIENT</div>
