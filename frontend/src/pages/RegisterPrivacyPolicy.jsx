@@ -60,8 +60,7 @@ export default function RegisterPrivacyPolicy() {
 
   return (
     <div
-      className={`min-h-screen pt-6 pb-16 ${pageBgClass}`}
-      style={{ background: authPageBackground }}
+      className={`min-h-screen pt-6 pb-16 auth-page-bg ${pageBgClass}`}
     >
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <DotField

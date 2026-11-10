@@ -2,8 +2,11 @@
 package middleware
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -147,12 +150,40 @@ func UserKeyExtractor(c *gin.Context) string {
 	return IPKeyExtractor(c)
 }
 
-// TargetEmailKeyExtractor extracts email from query, form, or context.
+// TargetEmailKeyExtractor extracts email from query, form, context, or JSON body.
 func TargetEmailKeyExtractor(c *gin.Context) string {
 	email := strings.TrimSpace(c.Query("email"))
 	if email != "" {
 		return "target:" + strings.ToLower(email)
 	}
+
+	email = strings.TrimSpace(c.PostForm("email"))
+	if email != "" {
+		return "target:" + strings.ToLower(email)
+	}
+
+	if val, exists := c.Get("email"); exists {
+		if s, ok := val.(string); ok && strings.TrimSpace(s) != "" {
+			return "target:" + strings.ToLower(strings.TrimSpace(s))
+		}
+	}
+
+	if c.Request != nil && c.Request.Body != nil {
+		bodyBytes, err := io.ReadAll(c.Request.Body)
+		if err == nil {
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+			var payload struct {
+				Email string `json:"email"`
+			}
+			if err := json.Unmarshal(bodyBytes, &payload); err == nil {
+				parsedEmail := strings.TrimSpace(payload.Email)
+				if parsedEmail != "" {
+					return "target:" + strings.ToLower(parsedEmail)
+				}
+			}
+		}
+	}
+
 	return IPKeyExtractor(c)
 }
 

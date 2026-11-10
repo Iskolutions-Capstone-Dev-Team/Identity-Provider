@@ -9,7 +9,7 @@ export default function AuthLoadingScreen({ message }) {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden font-[Poppins] text-white" style={{ background: authPageBackground }}>
+    <div className="relative min-h-screen overflow-hidden font-[Poppins] text-white auth-page-bg">
       <div className="absolute inset-0 overflow-hidden">
         <DotField
           dotRadius={1.5}

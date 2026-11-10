@@ -262,8 +262,10 @@ function ChartLegendContent({
               ) : (
                 <div
                   className="h-2 w-2 shrink-0 rounded-[2px]"
-                  style={{
-                    backgroundColor: item.color,
+                  ref={(el) => {
+                    if (el && item.color) {
+                      el.style.backgroundColor = item.color;
+                    }
                   }} />
               )}
               {itemConfig?.label}

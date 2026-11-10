@@ -3,24 +3,6 @@ import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area"
 
 import { cn } from "@/lib/utils"
 
-function ScrollArea({
-  className,
-  children,
-  ...props
-}) {
-  return (
-    <ScrollAreaPrimitive.Root data-slot="scroll-area" className={cn("relative", className)} {...props}>
-      <ScrollAreaPrimitive.Viewport
-        data-slot="scroll-area-viewport"
-        className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1">
-        {children}
-      </ScrollAreaPrimitive.Viewport>
-      <ScrollBar />
-      <ScrollAreaPrimitive.Corner />
-    </ScrollAreaPrimitive.Root>
-  );
-}
-
 function ScrollBar({
   className,
   orientation = "vertical",
@@ -32,14 +14,53 @@ function ScrollBar({
       data-orientation={orientation}
       orientation={orientation}
       className={cn(
-        "flex touch-none p-px transition-colors select-none data-horizontal:h-2.5 data-horizontal:flex-col data-horizontal:border-t data-horizontal:border-t-transparent data-vertical:h-full data-vertical:w-2.5 data-vertical:border-l data-vertical:border-l-transparent",
+        "flex touch-none p-0.5 transition-opacity select-none data-hidden:opacity-0 data-hidden:pointer-events-none",
+        orientation === "horizontal"
+          ? "h-2 w-full flex-col border-t border-t-transparent"
+          : "h-full w-2 border-l border-l-transparent",
         className
       )}
-      {...props}>
+      {...props}
+    >
       <ScrollAreaPrimitive.Thumb
         data-slot="scroll-area-thumb"
-        className="relative flex-1 rounded-full bg-border" />
+        className="relative flex-1 rounded-full bg-border hover:bg-muted-foreground/40 transition-colors"
+      />
     </ScrollAreaPrimitive.Scrollbar>
+  );
+}
+
+function ScrollArea({
+  className,
+  children,
+  ...props
+}) {
+  const content = [];
+  const scrollbars = [];
+
+  React.Children.forEach(children, (child) => {
+    if (React.isValidElement(child) && (child.type === ScrollBar || child.props?.["data-slot"] === "scroll-area-scrollbar")) {
+      scrollbars.push(child);
+    } else {
+      content.push(child);
+    }
+  });
+
+  return (
+    <ScrollAreaPrimitive.Root
+      data-slot="scroll-area"
+      className={cn("relative overflow-hidden", className)}
+      {...props}
+    >
+      <ScrollAreaPrimitive.Viewport
+        data-slot="scroll-area-viewport"
+        className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0 [-ms-overflow-style:none]"
+      >
+        {content}
+      </ScrollAreaPrimitive.Viewport>
+      {scrollbars.length > 0 ? scrollbars : <ScrollBar orientation="vertical" />}
+      <ScrollAreaPrimitive.Corner />
+    </ScrollAreaPrimitive.Root>
   );
 }
 
