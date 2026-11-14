@@ -128,6 +128,7 @@ func main() {
 	defer stop()
 
 	database.StartJanitor(ctx, appDB, 10*time.Minute)
+	initializers.StartRetentionWorker(ctx, s.RetentionService)
 
 	r := gin.Default()
 	trustedProxiesEnv := os.Getenv("TRUSTED_PROXIES")

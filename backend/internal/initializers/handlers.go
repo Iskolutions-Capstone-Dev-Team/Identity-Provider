@@ -99,7 +99,10 @@ func InitializeHandlers(db *sqlx.DB,
 		BackupHandler: &v1.BackupHandler{
 			LogService: service.LogService,
 		},
-		ReportHandler: v1.NewReportHandler(service.ReportService),
+		ReportHandler: v1.NewReportHandler(
+			service.ReportService,
+			service.RetentionService,
+		),
 		DeviceHandler: &v1.DeviceHandler{Service: service.DeviceService},
 		KPIHandler:    v1.NewKPIHandler(service.KPIService),
 		UserRepo:      userRepo,

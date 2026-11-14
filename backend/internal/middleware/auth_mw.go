@@ -188,6 +188,7 @@ func AuthorizeRBAC(publicKey *rsa.PublicKey,
 
 		c.Set("user_id", claims.UserID)
 		c.Set("email", user.Email)
+		c.Set("role", user.Role.RoleName)
 		c.Set("permissions", permissions)
 		c.Set("client_id", claims.AuthorizedParty)
 		c.Set("token_id", claims.ID)
@@ -207,4 +208,18 @@ func HasPermission(c *gin.Context, permission string) bool {
 		return false
 	}
 	return slices.Contains(permissionList, permission)
+}
+
+// IsSuperadmin checks if the current user has the Superadmin role.
+func IsSuperadmin(c *gin.Context) bool {
+	r, exists := c.Get("role")
+	if !exists {
+		return false
+	}
+	roleName, ok := r.(string)
+	if !ok {
+		return false
+	}
+	return strings.EqualFold(roleName, "Superadmin") ||
+		strings.EqualFold(roleName, "IDP:superadmin")
 }
