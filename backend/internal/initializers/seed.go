@@ -61,6 +61,8 @@ func MigrateAndSeed() {
 		"user_devices",
 		"users",
 		"password_histories",
+		"audit_logs",
+		"security_logs",
 	}
 
 	for _, tableName := range privilegedTables {

@@ -18,5 +18,13 @@ var AuditLogsMigration = migrations.TableMigration{
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			);`,
 		},
+		{
+			ID: "add-audit-logs-created-at-index",
+			SQL: `CREATE INDEX idx_audit_logs_created_at ON audit_logs (created_at);`,
+		},
+		{
+			ID: "add-audit-logs-status-created-at-index",
+			SQL: `CREATE INDEX idx_audit_logs_status_created_at ON audit_logs (status, created_at);`,
+		},
 	},
 }
