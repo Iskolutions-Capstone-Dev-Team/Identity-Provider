@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { usePermissionAccess } from "../../../providers/PermissionProvider";
 import { logService } from "../../../services/logService";
 import { formatTimestamp } from "../../../utils/formatTimestamp";
@@ -67,6 +68,17 @@ function formatLogTimestamp(timestamp) {
   }
 
   return formatTimestamp(date.toISOString());
+}
+
+function downloadBlob(blob, fileName) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }
 
 function normalizeLogId(log) {
@@ -297,6 +309,27 @@ export function useAuditLogs() {
     setPage(1);
   };
 
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  const exportMutation = useMutation({
+    mutationFn: (filters) => metricsService.exportReportCSV(filters),
+    onSuccess: (blob, variables) => {
+      const typeStr = variables?.type || "all";
+      const filename = `logs_export_${typeStr}_${variables?.from || "start"}_to_${variables?.to || "end"}.csv`;
+      downloadBlob(blob, filename);
+      toast.success("Log report exported successfully.");
+      setIsExportModalOpen(false);
+    },
+    onError: (err) => {
+      console.error("Export logs error:", err);
+      toast.error("Failed to export logs. Please check your date range.");
+    },
+  });
+
+  const handleExportCSV = async (filters) => {
+    exportMutation.mutate(filters);
+  };
+
   const setSearchKeyword = (val) => {
     setSearch(val);
     setPage(1);
@@ -331,5 +364,9 @@ export function useAuditLogs() {
     handleViewLog,
     closeMetadataModal,
     handleLogTypeChange,
+    isExportModalOpen,
+    setIsExportModalOpen,
+    isExporting: exportMutation.isPending,
+    handleExportCSV,
   };
 }

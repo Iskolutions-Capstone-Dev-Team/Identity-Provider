@@ -18,5 +18,13 @@ var SecurityLogsMigration = migrations.TableMigration{
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			);`,
 		},
+		{
+			ID: "add-security-logs-created-at-index",
+			SQL: `CREATE INDEX idx_security_logs_created_at ON security_logs (created_at);`,
+		},
+		{
+			ID: "add-security-logs-status-created-at-index",
+			SQL: `CREATE INDEX idx_security_logs_status_created_at ON security_logs (status, created_at);`,
+		},
 	},
 }

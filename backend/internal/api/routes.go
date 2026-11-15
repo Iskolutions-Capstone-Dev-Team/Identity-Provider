@@ -257,8 +257,11 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		admin.GET("/metrics", h.MetricsHandler.GetDashboardMetrics)
 		admin.GET("/metrics/logins", h.MetricsHandler.GetPaginatedLogins)
 		admin.GET("/report", h.MetricsHandler.GetMetricsReportPDF)
+		admin.GET("/reports", h.ReportHandler.GetAnalyticsReport)
+		admin.GET("/reports/export", h.ReportHandler.ExportReportCSV)
 		admin.GET("/reports/system", h.ReportHandler.GetSystemReport)
 		admin.GET("/reports/summary", h.ReportHandler.GetSummaryReport)
+		admin.POST("/logs/retention/run", h.ReportHandler.TriggerRetentionRun)
 		admin.GET("/kpis", h.KPIHandler.GetSystemKPIs)
 		admin.GET("/kpis/threat-details", h.KPIHandler.GetKPIThreatDetails)
 

@@ -25,4 +25,9 @@ export const backupRestoreService = {
     });
     return response.data;
   },
+
+  async triggerRetentionRun() {
+    const response = await axiosInstance.post("/admin/logs/retention/run");
+    return response.data;
+  },
 };

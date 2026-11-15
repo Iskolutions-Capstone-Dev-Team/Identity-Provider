@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { backupRestoreService } from "../../../services/backupRestoreService";
+import { useCurrentUser } from "../../../hooks/useCurrentUser";
+import { hasSuperAdminRole } from "../../../utils/userPoolAccess";
 import { toast } from "sonner";
 
 export function useBackupRestore() {
   const queryClient = useQueryClient();
+  const { currentUser } = useCurrentUser();
+  const isSuperadmin = hasSuperAdminRole(currentUser?.roles || []);
+
   const [breadcrumbsContainer, setBreadcrumbsContainer] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isRetentionConfirmOpen, setIsRetentionConfirmOpen] = useState(false);
+  const [retentionResult, setRetentionResult] = useState(null);
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
 
   const { data: latestBackup = null, isLoading: loadingLatest } = useQuery({
     queryKey: ['latestBackup'],
@@ -70,12 +78,46 @@ export function useBackupRestore() {
     restoreBackupMutation.mutate(selectedFile);
   };
 
+  const retentionMutation = useMutation({
+    mutationFn: () => backupRestoreService.triggerRetentionRun(),
+    onSuccess: (data) => {
+      toast.success("Log retention process completed successfully.");
+      setRetentionResult(data);
+      setIsRetentionConfirmOpen(false);
+      setIsResultModalOpen(true);
+      queryClient.invalidateQueries({ queryKey: ['logs'] });
+      queryClient.invalidateQueries({ queryKey: ['logMetrics'] });
+    },
+    onError: (error) => {
+      console.error("Log retention run failed", error);
+      const msg = error?.response?.data?.message || "Failed to execute log retention.";
+      toast.error(msg, { style: { backgroundColor: "#ef4444", color: "white", borderColor: "#ef4444" } });
+    },
+  });
+
+  const handleConfirmRetention = () => {
+    retentionMutation.mutate();
+  };
+
+  const closeResultModal = () => {
+    setIsResultModalOpen(false);
+    setRetentionResult(null);
+  };
+
   return {
     breadcrumbsContainer,
     latestBackup,
     loadingLatest,
     loadingBackup: runBackupMutation.isPending,
     loadingRestore: restoreBackupMutation.isPending,
+    loadingRetention: retentionMutation.isPending,
+    isSuperadmin,
+    isRetentionConfirmOpen,
+    setIsRetentionConfirmOpen,
+    retentionResult,
+    isResultModalOpen,
+    closeResultModal,
+    handleConfirmRetention,
     selectedFile,
     handleRunBackup,
     handleFileChange,

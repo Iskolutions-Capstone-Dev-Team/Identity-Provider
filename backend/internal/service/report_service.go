@@ -3,10 +3,14 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Iskolutions-Capstone-Dev-Team/Identity-Provider/internal/dto"
@@ -30,6 +34,15 @@ type ReportService interface {
 		userID uuid.UUID,
 		params dto.SummaryReportParams,
 	) ([]byte, error)
+	GetAnalyticsReport(
+		ctx context.Context,
+		query dto.AnalyticsReportQuery,
+	) (*dto.AnalyticsReportResponse, error)
+	StreamExportCSV(
+		ctx context.Context,
+		query dto.ReportExportQuery,
+		writer io.Writer,
+	) error
 }
 
 type reportService struct {
@@ -37,6 +50,7 @@ type reportService struct {
 	clientRepo  repository.ClientRepository
 	logRepo     repository.LogRepository
 	metricsRepo repository.MetricsRepository
+	reportRepo  repository.ReportRepository
 }
 
 func NewReportService(
@@ -44,12 +58,18 @@ func NewReportService(
 	clientRepo repository.ClientRepository,
 	logRepo repository.LogRepository,
 	metricsRepo repository.MetricsRepository,
+	reportRepos ...repository.ReportRepository,
 ) ReportService {
+	var repRepo repository.ReportRepository
+	if len(reportRepos) > 0 {
+		repRepo = reportRepos[0]
+	}
 	return &reportService{
 		userRepo:    userRepo,
 		clientRepo:  clientRepo,
 		logRepo:     logRepo,
 		metricsRepo: metricsRepo,
+		reportRepo:  repRepo,
 	}
 }
 
@@ -681,3 +701,163 @@ func parseMetricValue(v interface{}) int64 {
 		return 0
 	}
 }
+
+func parseReportDate(val string, isEnd bool) (time.Time, error) {
+	if t, err := time.Parse(time.RFC3339, val); err == nil {
+		return t.UTC(), nil
+	}
+	if t, err := time.Parse("2006-01-02", val); err == nil {
+		if isEnd {
+			return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, time.UTC), nil
+		}
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC), nil
+	}
+	return time.Time{}, fmt.Errorf("invalid date format: %q (expected YYYY-MM-DD or RFC3339)", val)
+}
+
+func (s *reportService) GetAnalyticsReport(
+	ctx context.Context,
+	query dto.AnalyticsReportQuery,
+) (*dto.AnalyticsReportResponse, error) {
+	if s.reportRepo == nil {
+		return nil, fmt.Errorf("report repository not initialized")
+	}
+
+	fromTime, err := parseReportDate(query.From, false)
+	if err != nil {
+		return nil, err
+	}
+	toTime, err := parseReportDate(query.To, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if fromTime.After(toTime) {
+		return nil, fmt.Errorf("from date cannot be after to date")
+	}
+
+	span := toTime.Sub(fromTime)
+	if span > 366*24*time.Hour {
+		return nil, fmt.Errorf("date range cannot exceed 366 days (1 year)")
+	}
+
+	logType := strings.ToLower(query.Type)
+	if logType == "" {
+		logType = "all"
+	}
+	if logType != "all" && logType != "audit" && logType != "security" {
+		return nil, fmt.Errorf("invalid type: %q (expected all, audit, or security)", query.Type)
+	}
+
+	interval := strings.ToLower(query.Interval)
+	if interval == "" {
+		if span <= 31*24*time.Hour {
+			interval = "day"
+		} else if span <= 92*24*time.Hour {
+			interval = "week"
+		} else {
+			interval = "month"
+		}
+	} else if interval != "day" && interval != "week" && interval != "month" {
+		return nil, fmt.Errorf("invalid interval: %q (expected day, week, or month)", query.Interval)
+	}
+
+	summary, err := s.reportRepo.GetAggregatedKPIs(ctx, fromTime, toTime, logType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate report KPIs: %w", err)
+	}
+
+	timeseries, err := s.reportRepo.GetTimeseries(ctx, fromTime, toTime, interval, logType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch timeseries buckets: %w", err)
+	}
+
+	return &dto.AnalyticsReportResponse{
+		From:       fromTime.Format("2006-01-02"),
+		To:         toTime.Format("2006-01-02"),
+		Interval:   interval,
+		Type:       logType,
+		Summary:    *summary,
+		Timeseries: timeseries,
+	}, nil
+}
+
+func (s *reportService) StreamExportCSV(
+	ctx context.Context,
+	query dto.ReportExportQuery,
+	writer io.Writer,
+) error {
+	if s.reportRepo == nil {
+		return fmt.Errorf("report repository not initialized")
+	}
+
+	fromTime, err := parseReportDate(query.From, false)
+	if err != nil {
+		return err
+	}
+	toTime, err := parseReportDate(query.To, true)
+	if err != nil {
+		return err
+	}
+
+	if fromTime.After(toTime) {
+		return fmt.Errorf("from date cannot be after to date")
+	}
+
+	if toTime.Sub(fromTime) > 366*24*time.Hour {
+		return fmt.Errorf("date range cannot exceed 366 days (1 year)")
+	}
+
+	logType := strings.ToLower(query.Type)
+	if logType == "" {
+		logType = "all"
+	}
+	if logType != "all" && logType != "audit" && logType != "security" {
+		return fmt.Errorf("invalid type: %q (expected all, audit, or security)", query.Type)
+	}
+
+	csvWriter := csv.NewWriter(writer)
+	header := []string{"ID", "Type", "Actor", "Action", "Target", "Status", "Timestamp", "Metadata"}
+	if err := csvWriter.Write(header); err != nil {
+		return fmt.Errorf("failed to write CSV header: %w", err)
+	}
+	csvWriter.Flush()
+
+	var recordCount int
+	err = s.reportRepo.StreamLogs(ctx, fromTime, toTime, logType, func(entry models.AuditLog, entryType string) error {
+		recordCount++
+		actor := ""
+		if entry.Actor != nil {
+			actor = *entry.Actor
+		}
+		row := []string{
+			strconv.FormatInt(entry.ID, 10),
+			entryType,
+			actor,
+			entry.Action,
+			entry.Target,
+			entry.Status,
+			entry.CreatedAt.UTC().Format(time.RFC3339),
+			string(entry.Metadata),
+		}
+		if err := csvWriter.Write(row); err != nil {
+			return err
+		}
+
+		if recordCount%500 == 0 {
+			csvWriter.Flush()
+			if err := csvWriter.Error(); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("streaming logs failed: %w", err)
+	}
+
+	csvWriter.Flush()
+	return csvWriter.Error()
+}
+
