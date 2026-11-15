@@ -176,4 +176,35 @@ export const metricsService = {
 
     return response.data;
   },
+
+  async getAnalyticsReport({ from, to, interval, type, signal } = {}) {
+    const params = new URLSearchParams();
+    if (from) params.append("from", from);
+    if (to) params.append("to", to);
+    if (interval) params.append("interval", interval);
+    if (type) params.append("type", type);
+
+    const queryString = params.toString();
+    const url = queryString ? `/admin/reports?${queryString}` : "/admin/reports";
+
+    const response = await axiosInstance.get(url, { signal });
+    return response.data;
+  },
+
+  async exportReportCSV({ from, to, type, signal } = {}) {
+    const params = new URLSearchParams();
+    if (from) params.append("from", from);
+    if (to) params.append("to", to);
+    if (type) params.append("type", type);
+
+    const queryString = params.toString();
+    const url = queryString ? `/admin/reports/export?${queryString}` : "/admin/reports/export";
+
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+      signal,
+    });
+
+    return response.data;
+  },
 };
