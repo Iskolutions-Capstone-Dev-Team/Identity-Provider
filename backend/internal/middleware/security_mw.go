@@ -33,9 +33,8 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		// Prevent MIME type sniffing
 		c.Header("X-Content-Type-Options", "nosniff")
 
-		hsts := "max-age=31536000; includeSubDomains; preload"
-		// Strict-Transport-Security Header
-		c.Header("Strict-Transport-Security", hsts)
+		// Strict-Transport-Security (HSTS) is delegated to the TLS termination reverse proxy
+		// (e.g. host Nginx / Cloudflare) per RFC 6797 & OWASP to prevent duplicate header entries.
 
 		// Server Leaks Version Information via "Server" HTTP Response
 		c.Writer.Header().Del("Server")

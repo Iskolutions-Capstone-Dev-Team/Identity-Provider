@@ -30,4 +30,5 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	assert.Contains(t, w.Header().Get("Content-Security-Policy"),
 		"form-action 'self'")
 	assert.Empty(t, w.Header().Get("Server"))
+	assert.Empty(t, w.Header().Get("Strict-Transport-Security"))
 }
