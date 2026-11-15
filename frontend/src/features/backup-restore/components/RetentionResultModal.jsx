@@ -22,7 +22,7 @@ export default function RetentionResultModal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose?.()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md overflow-hidden">
         <DialogHeader className="items-center text-center">
           <div className="size-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2">
             <CheckCircle2 className="size-7" />
@@ -35,7 +35,7 @@ export default function RetentionResultModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2 text-sm">
+        <div className="space-y-4 py-2 text-sm min-w-0">
           <div className="bg-muted/60 rounded-lg p-3 space-y-2.5">
             <div className="flex justify-between items-center text-xs">
               <span className="text-muted-foreground uppercase font-semibold">Cutoff Date</span>
@@ -56,13 +56,13 @@ export default function RetentionResultModal({
 
           <div className="grid grid-cols-2 gap-3 text-center">
             <div className="border rounded-lg p-3 bg-card">
-              <div className="text-xs text-muted-foreground">Audit Logs Archived</div>
+              <div className="text-xs text-muted-foreground leading-tight">Transaction Logs Archived</div>
               <div className="text-xl font-bold text-[#7b0d15] dark:text-[#f8d24e] mt-1">
                 {(result.audit_logs_purged || 0).toLocaleString()}
               </div>
             </div>
             <div className="border rounded-lg p-3 bg-card">
-              <div className="text-xs text-muted-foreground">Security Logs Archived</div>
+              <div className="text-xs text-muted-foreground leading-tight">Security Logs Archived</div>
               <div className="text-xl font-bold text-[#7b0d15] dark:text-[#f8d24e] mt-1">
                 {(result.security_logs_purged || 0).toLocaleString()}
               </div>
@@ -70,15 +70,21 @@ export default function RetentionResultModal({
           </div>
 
           {Array.isArray(result.archive_files) && result.archive_files.length > 0 && (
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <span className="text-xs font-semibold text-muted-foreground uppercase block">
                 Generated Archives ({result.archive_files.length})
               </span>
-              <div className="max-h-28 overflow-y-auto space-y-1 rounded border bg-muted/30 p-2 text-xs font-mono">
+              <div className="max-h-28 overflow-y-auto overflow-x-hidden space-y-1.5 rounded-lg border bg-muted/30 p-2.5 text-xs min-w-0">
                 {result.archive_files.map((file, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5 truncate text-muted-foreground">
-                    <FileArchive className="size-3.5 shrink-0 text-[#7b0d15] dark:text-[#f8d24e]" />
-                    <span className="truncate">{file}</span>
+                  <div
+                    key={idx}
+                    className="flex items-start gap-2 min-w-0 rounded bg-background/60 p-2 border border-border/40 text-muted-foreground"
+                    title={file}
+                  >
+                    <FileArchive className="size-4 shrink-0 mt-0.5 text-[#7b0d15] dark:text-[#f8d24e]" />
+                    <span className="break-all font-mono text-xs leading-relaxed select-all min-w-0 flex-1">
+                      {file}
+                    </span>
                   </div>
                 ))}
               </div>
