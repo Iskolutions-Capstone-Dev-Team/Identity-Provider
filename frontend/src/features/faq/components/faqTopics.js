@@ -1,5 +1,6 @@
 import AppClientFAQ from "./AppClientFAQ";
 import AuditLogsFAQ from "./AuditLogsFAQ";
+import BackupRestoreFAQ from "./BackupRestoreFAQ";
 import DashboardFAQ from "./DashboardFAQ";
 import OtherFAQ from "./OtherFAQ";
 import RegistrationFAQ from "./RegistrationFAQ";
@@ -13,6 +14,7 @@ const FAQ_TOPICS = [
   AppClientFAQ,
   RegistrationFAQ,
   AuditLogsFAQ,
+  BackupRestoreFAQ,
   OtherFAQ,
 ];
 
