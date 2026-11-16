@@ -25,44 +25,44 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
       <div className="mx-auto flex w-full flex-col">
         <Frame spacing="xs">
           <FramePanel className="p-0!">
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-center w-[25%]">Role Name</TableHead>
-              <TableHead className="text-center">Description</TableHead>
-              <TableHead className="text-center">Permissions</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 5 }).map((_, index) => (
-              <TableRow key={index}>
-                <TableCell className="pl-6">
-                  <div className="flex items-center justify-start gap-3">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <Skeleton className="h-4 w-28" />
-                  </div>
-                </TableCell>
-                <TableCell className="text-center"><Skeleton className="h-4 w-48 mx-auto" /></TableCell>
-                <TableCell className="text-center">
-                  <div className="flex justify-center gap-1 w-full max-w-[24rem] mx-auto">
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex justify-center gap-1">
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        </FramePanel>
-      </Frame>
+                  <TableHead className="text-left pl-6 w-[22%]">Role Name</TableHead>
+                  <TableHead className="text-center w-[34%]">Description</TableHead>
+                  <TableHead className="text-center w-[34%]">Permissions</TableHead>
+                  <TableHead className="text-center w-[10%]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="pl-6">
+                      <div className="flex items-center justify-start gap-3">
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <Skeleton className="h-4 w-28" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center whitespace-normal"><Skeleton className="h-4 w-48 mx-auto" /></TableCell>
+                    <TableCell className="text-center whitespace-normal">
+                      <div className="flex justify-center gap-1 w-full max-w-[24rem] mx-auto">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex justify-center gap-1">
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </FramePanel>
+        </Frame>
       </div>
     );
   }
@@ -71,65 +71,73 @@ export default function RolesListTable({ loading = false, roles, onView, onEdit,
     <div className="mx-auto flex w-full flex-col">
       <Frame spacing="xs">
         <FramePanel className="p-0!">
-          <Table>
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="text-center w-[25%]">Role Name</TableHead>
-                <TableHead className="text-center">Description</TableHead>
-                <TableHead className="text-center">Permissions</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
+                <TableHead className="text-left pl-6 w-[22%]">Role Name</TableHead>
+                <TableHead className="text-center w-[34%]">Description</TableHead>
+                <TableHead className="text-center w-[34%]">Permissions</TableHead>
+                <TableHead className="text-center w-[10%]">Actions</TableHead>
               </TableRow>
-        </TableHeader>
+            </TableHeader>
 
-        <TableBody>
-          {roles.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={4} className="h-24 text-center">
-                <div className="flex items-center justify-center w-full py-10">
-                  <Empty className="max-w-md">
-                    <EmptyHeader>
-                      <EmptyMedia>
-                        <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e] h-24 w-22">
-                          <ShieldUser className="text-[#7b0d15] dark:text-[#f8d24e] size-5" />
-                        </IconStack>
-                      </EmptyMedia>
-                      <EmptyTitle>No roles found</EmptyTitle>
-                      <EmptyDescription>
-                        We couldn't find any roles matching your criteria.
-                      </EmptyDescription>
-                    </EmptyHeader>
-                  </Empty>
-                </div>
-              </TableCell>
-            </TableRow>
-          )}
+            <TableBody>
+              {roles.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    <div className="flex items-center justify-center w-full py-10">
+                      <Empty className="max-w-md">
+                        <EmptyHeader>
+                          <EmptyMedia>
+                            <IconStack aria-hidden="true" className="text-[#7b0d15] dark:text-[#f8d24e] h-24 w-22">
+                              <ShieldUser className="text-[#7b0d15] dark:text-[#f8d24e] size-5" />
+                            </IconStack>
+                          </EmptyMedia>
+                          <EmptyTitle>No roles found</EmptyTitle>
+                          <EmptyDescription>
+                            We couldn't find any roles matching your criteria.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
 
-          {roles.map((role) => (
-            <TableRow key={role.id}>
-              <TableCell className="pl-6 font-medium">
-                <div className="flex items-center justify-start gap-3">
-                  <Avatar className="h-9 w-9 dark:border dark:border-gray-300">
-                    <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] font-medium">
-                      {getInitials(role.role_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="truncate">{role.role_name}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">{role.description}</TableCell>
-              <TableCell className="text-center">
-                {!Array.isArray(role.permissionLabels) || role.permissionLabels.length === 0 ? (
-                  <span className="text-muted-foreground italic text-sm">No permissions</span>
-                ) : (
-                  <div className="flex flex-wrap justify-center gap-1 w-full max-w-[24rem] mx-auto">
-                    {role.permissionLabels.map((permission) => (
-                      <Badge key={permission} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center">
-                        {permission}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </TableCell>
+              {roles.map((role) => (
+                <TableRow key={role.id}>
+                  <TableCell className="pl-6 font-medium">
+                    <div className="flex items-center justify-start gap-3">
+                      <Avatar className="h-9 w-9 dark:border dark:border-gray-300">
+                        <AvatarFallback className="bg-[#7b0d15] text-[#f8d24e] dark:bg-[#f8d24e] dark:text-[#7b0d15] font-medium">
+                          {getInitials(role.role_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate">{role.role_name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center whitespace-normal break-words py-4">
+                    <div className="max-w-md mx-auto whitespace-normal break-words text-sm leading-relaxed [overflow-wrap:anywhere]">
+                      {role.description ? (
+                        role.description
+                      ) : (
+                        <span className="text-muted-foreground italic text-xs">No description</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center whitespace-normal py-4">
+                    {!Array.isArray(role.permissionLabels) || role.permissionLabels.length === 0 ? (
+                      <span className="text-muted-foreground italic text-sm">No permissions</span>
+                    ) : (
+                      <div className="flex flex-wrap justify-center gap-1.5 w-full max-w-[28rem] mx-auto">
+                        {role.permissionLabels.map((permission) => (
+                          <Badge key={permission} className="bg-[#7b0d15]/10 border-[#7b0d15]/20 text-[#7b0d15] hover:bg-[#7b0d15]/20 dark:bg-[#f8d24e]/10 dark:border-[#f8d24e]/20 dark:text-[#ffe28a] dark:hover:bg-[#f8d24e]/20 font-semibold rounded-md px-3 py-1 whitespace-normal break-words text-center">
+                            {permission}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </TableCell>
               <TableCell className="text-center">
                 <div className="flex items-center justify-center gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#7b0d15] hover:text-[#ffd21a] dark:hover:bg-muted dark:hover:text-foreground transition-colors" onClick={() => onView(role)} title="View">
