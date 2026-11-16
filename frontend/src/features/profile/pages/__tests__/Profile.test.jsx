@@ -32,5 +32,6 @@ describe('Profile Page', () => {
     expect(container).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Authenticators/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Remembered Devices/i })).toBeInTheDocument();
+    expect(screen.getByRole('tablist')).toHaveClass('md:max-w-lg');
   });
 });
