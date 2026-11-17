@@ -11,4 +11,3 @@ type RetentionRunResponse struct {
 	ArchiveFiles         []string `json:"archive_files"`
 	Duration             string   `json:"duration"`
 }
-

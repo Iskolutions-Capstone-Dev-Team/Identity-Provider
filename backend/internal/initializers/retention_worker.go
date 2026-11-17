@@ -49,4 +49,3 @@ func StartRetentionWorker(ctx context.Context, retentionSvc service.RetentionSer
 		}
 	}()
 }
-

@@ -66,4 +66,3 @@ func TestExecuteRetention_Success(t *testing.T) {
 	assert.Equal(t, int64(0), resp.SecurityLogsPurged)
 	assert.NotEmpty(t, resp.CutoffDate)
 }
-

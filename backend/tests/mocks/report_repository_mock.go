@@ -101,4 +101,3 @@ func (mr *MockReportRepositoryMockRecorder) StreamLogs(
 		ctx, from, to, logType, fn,
 	)
 }
-

@@ -122,8 +122,8 @@ func TestReportHandler_TriggerRetentionRun(t *testing.T) {
 		mockRetentionSvc.EXPECT().
 			ExecuteRetention(gomock.Any()).
 			Return(&dto.RetentionRunResponse{
-				Status:            "completed",
-				AuditLogsPurged:   150,
+				Status:             "completed",
+				AuditLogsPurged:    150,
 				SecurityLogsPurged: 25,
 			}, nil)
 
@@ -142,4 +142,3 @@ func TestReportHandler_TriggerRetentionRun(t *testing.T) {
 		assert.Equal(t, int64(150), resp.AuditLogsPurged)
 	})
 }
-

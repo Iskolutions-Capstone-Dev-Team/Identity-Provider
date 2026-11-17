@@ -140,4 +140,3 @@ func (r *retentionRepository) GetOldestLogTimestamp(
 	}
 	return &oldest, nil
 }
-

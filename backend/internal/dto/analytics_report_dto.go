@@ -48,4 +48,3 @@ type ReportExportQuery struct {
 	To   string `form:"to" binding:"required"`
 	Type string `form:"type"` // "all", "audit", "security"
 }
-

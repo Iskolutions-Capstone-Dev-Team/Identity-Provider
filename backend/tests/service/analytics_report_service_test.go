@@ -146,4 +146,3 @@ func TestStreamExportCSV(t *testing.T) {
 	assert.True(t, strings.HasPrefix(content, "ID,Type,Actor,Action,Target,Status,Timestamp,Metadata"))
 	assert.Contains(t, content, "101,audit,admin@example.com,user_login,dashboard,success")
 }
-

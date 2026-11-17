@@ -56,4 +56,3 @@ func (s *S3Provider) UploadToBucket(
 
 	return nil
 }
-

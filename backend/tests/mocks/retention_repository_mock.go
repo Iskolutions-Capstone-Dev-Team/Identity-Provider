@@ -100,4 +100,3 @@ func (mr *MockRetentionRepositoryMockRecorder) GetOldestLogTimestamp(
 		ctx, tableName,
 	)
 }
-

@@ -204,4 +204,3 @@ func (s *retentionService) ExecuteRetention(ctx context.Context) (*dto.Retention
 
 	return resp, nil
 }
-
