@@ -11,6 +11,7 @@ import ReportConfirmModal from "../components/ReportConfirmModal";
 import SystemReportConfirmModal from "../components/SystemReportConfirmModal";
 import SummaryReportConfirmModal from "../components/SummaryReportConfirmModal";
 import ReportTypeSelectionModal from "../components/ReportTypeSelectionModal";
+import ExportLogsModal from "../../audit-logs/components/ExportLogsModal";
 import SecurityAnalysisPanel from "../components/SecurityAnalysisPanel";
 import TopLoginsPanel from "../components/TopLoginsPanel";
 import SystemLoginsModal from "../components/SystemLoginsModal";
@@ -55,6 +56,10 @@ export default function Dashboard() {
     isSummaryReportConfirmOpen,
     handleSummaryReportConfirmCancel,
     handleSummaryReportConfirm,
+    isExportCsvOpen,
+    setIsExportCsvOpen,
+    handleDownloadCsvReport,
+    canViewSecurityLogs,
   } = dashboardState;
 
   const [api, setApi] = useState();
@@ -252,6 +257,15 @@ export default function Dashboard() {
         isGenerating={isDownloadingReport}
         onCancel={handleSummaryReportConfirmCancel}
         onConfirm={handleSummaryReportConfirm}
+      />
+
+      <ExportLogsModal
+        open={isExportCsvOpen}
+        onClose={() => setIsExportCsvOpen(false)}
+        onExport={handleDownloadCsvReport}
+        isExporting={isDownloadingReport}
+        canViewSecurityLogs={canViewSecurityLogs}
+        defaultLogType="all"
       />
 
       <SystemLoginsModal

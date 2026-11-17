@@ -54,4 +54,9 @@ export const logService = {
     const response = await axiosInstance.get(`${SECURITY_LOGS_BASE_PATH}/${id}`);
     return response.data;
   },
+
+  async triggerRetentionRun() {
+    const response = await axiosInstance.post("/admin/logs/retention/run");
+    return response.data;
+  },
 };

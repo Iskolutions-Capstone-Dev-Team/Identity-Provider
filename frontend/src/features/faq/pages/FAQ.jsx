@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CircleHelp, Users, ShieldUser, MonitorCog, FileCheckCorner, FileSearchCorner, Info, MailQuestion } from "lucide-react";
+import { CircleHelp, Users, ShieldUser, MonitorCog, FileCheckCorner, FileSearchCorner, Info, MailQuestion, DatabaseBackup } from "lucide-react";
 import FAQSkeleton from "../components/FAQSkeleton";
 import FAQ_TOPICS from "../components/faqTopics";
 import FAQ_THEME from "../components/faqTheme";
@@ -21,6 +21,7 @@ const topicIcons = {
   "app-client": MonitorCog,
   "registration": FileCheckCorner,
   "audit-logs": FileSearchCorner,
+  "backup-restore": DatabaseBackup,
   "other": Info,
 };
 

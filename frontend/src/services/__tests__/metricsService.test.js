@@ -36,4 +36,41 @@ describe('metricsService', () => {
     expect(axiosInstance.get).toHaveBeenCalledWith('/admin/kpis/threat-details');
     expect(res).toEqual(mockThreatDetails);
   });
+
+  it('fetches 1-year analytics report', async () => {
+    const mockReport = {
+      from: '2025-11-15',
+      to: '2026-11-15',
+      interval: 'month',
+      summary: { total_events: 500 },
+      timeseries: [],
+    };
+    axiosInstance.get.mockResolvedValueOnce({ data: mockReport });
+    const res = await metricsService.getAnalyticsReport({
+      from: '2025-11-15',
+      to: '2026-11-15',
+      interval: 'month',
+      type: 'all',
+    });
+    expect(axiosInstance.get).toHaveBeenCalledWith(
+      '/admin/reports?from=2025-11-15&to=2026-11-15&interval=month&type=all',
+      { signal: undefined }
+    );
+    expect(res).toEqual(mockReport);
+  });
+
+  it('exports report CSV as blob', async () => {
+    const mockBlob = new Blob(['col1,col2\nval1,val2'], { type: 'text/csv' });
+    axiosInstance.get.mockResolvedValueOnce({ data: mockBlob });
+    const res = await metricsService.exportReportCSV({
+      from: '2026-01-01',
+      to: '2026-02-01',
+      type: 'audit',
+    });
+    expect(axiosInstance.get).toHaveBeenCalledWith(
+      '/admin/reports/export?from=2026-01-01&to=2026-02-01&type=audit',
+      { responseType: 'blob', signal: undefined }
+    );
+    expect(res).toEqual(mockBlob);
+  });
 });
