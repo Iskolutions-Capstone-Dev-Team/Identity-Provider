@@ -113,6 +113,7 @@ export function useDashboard() {
   const [isReportConfirmOpen, setIsReportConfirmOpen] = useState(false);
   const [isSystemReportConfirmOpen, setIsSystemReportConfirmOpen] = useState(false);
   const [isSummaryReportConfirmOpen, setIsSummaryReportConfirmOpen] = useState(false);
+  const [isExportCsvOpen, setIsExportCsvOpen] = useState(false);
   const [isLoginsModalOpen, setIsLoginsModalOpen] = useState(false);
   const [selectedModalPeriod, setSelectedModalPeriod] = useState(null);
 
@@ -204,7 +205,31 @@ export function useDashboard() {
     downloadSummaryReportMutation.mutate(filters);
   };
 
-  const isDownloadingReport = downloadReportMutation.isPending || downloadSystemReportMutation.isPending || downloadSummaryReportMutation.isPending;
+  const downloadCsvReportMutation = useMutation({
+    mutationFn: (filters) => metricsService.exportReportCSV(filters),
+    onSuccess: (reportBlob, variables) => {
+      setReportError("");
+      const typeStr = variables?.type || "all";
+      const filename = `logs_export_${typeStr}_${variables?.from || "start"}_to_${variables?.to || "end"}.csv`;
+      downloadBlob(reportBlob, filename);
+      toast.success("CSV log report generated and downloaded.");
+    },
+    onError: (downloadError) => {
+      console.error("CSV report export error:", downloadError);
+      setReportError("Unable to export the CSV report right now.");
+      toast.error("Unable to export CSV report.");
+    }
+  });
+
+  const handleDownloadCsvReport = (filters) => {
+    downloadCsvReportMutation.mutate(filters);
+  };
+
+  const isDownloadingReport =
+    downloadReportMutation.isPending ||
+    downloadSystemReportMutation.isPending ||
+    downloadSummaryReportMutation.isPending ||
+    downloadCsvReportMutation.isPending;
 
   const handleSelectReportType = (type) => {
     if (type === 'authentication') {
@@ -213,6 +238,8 @@ export function useDashboard() {
       setIsSystemReportConfirmOpen(true);
     } else if (type === 'summary') {
       setIsSummaryReportConfirmOpen(true);
+    } else if (type === 'csv_export') {
+      setIsExportCsvOpen(true);
     }
   };
 
@@ -278,5 +305,9 @@ export function useDashboard() {
     isSummaryReportConfirmOpen,
     handleSummaryReportConfirmCancel,
     handleSummaryReportConfirm,
+    isExportCsvOpen,
+    setIsExportCsvOpen,
+    handleDownloadCsvReport,
+    canViewSecurityLogs: hasPermission(PERMISSIONS.VIEW_SECURITY_LOGS),
   };
 }

@@ -48,6 +48,8 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 	metricsRepo := repository.NewMetricsRepository(db)
 	deviceRepo := repository.NewDeviceRepository(db)
 	passHistRepo := repository.NewPasswordHistoryRepository(db)
+	reportRepo := repository.NewReportRepository(db)
+	retentionRepo := repository.NewRetentionRepository(db)
 
 	userSvc := service.NewUserService(
 		userRepo,
@@ -104,13 +106,16 @@ func InitializeServices(db *sqlx.DB) service.ServiceContainer {
 			metricsRepo, appCache, Storage,
 		),
 		ReportService: service.NewReportService(
-			userRepo, clientRepo, logRepo, metricsRepo,
+			userRepo, clientRepo, logRepo, metricsRepo, reportRepo,
 		),
 		DeviceService:    deviceSvc,
 		TurnstileService: service.NewTurnstileService(),
 		GeoIPService:     service.NewGeoIPService(),
 		KPIService: service.NewKPIService(
 			userRepo, metricsRepo, appCache, db,
+		),
+		RetentionService: service.NewRetentionService(
+			retentionRepo, logRepo, Storage,
 		),
 		Cache: appCache,
 	}

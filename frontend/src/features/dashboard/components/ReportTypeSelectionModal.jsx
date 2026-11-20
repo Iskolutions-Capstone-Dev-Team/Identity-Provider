@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../components/ui/dialog";
 import { Button } from "../../../components/ui/button";
-import { FileText, Database, ChartNoAxesCombined } from "lucide-react";
+import { FileText, Database, ChartNoAxesCombined, FileSpreadsheet } from "lucide-react";
 
 function ReportOptionButton({ title, description, icon, onClick, disabled }) {
   return (
@@ -48,6 +48,12 @@ export default function ReportTypeSelectionModal({ open, onClose, onSelectType }
                 description="Export anonymized APM metrics and usage data."
                 icon={<ChartNoAxesCombined className="size-5" />}
                 onClick={() => onSelectType?.('summary')}
+              />
+              <ReportOptionButton
+                title="Audit & Security Logs"
+                description="Export raw log records as CSV (up to 1 year)."
+                icon={<FileSpreadsheet className="size-5" />}
+                onClick={() => onSelectType?.('csv_export')}
               />
             </div>
           </div>

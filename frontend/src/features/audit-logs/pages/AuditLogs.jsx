@@ -2,12 +2,14 @@ import { useOutletContext } from "react-router-dom";
 import AuditLogsListCard from "../components/AuditLogsListCard";
 import AuditLogFilters from "../components/AuditLogFilters";
 import LogMetadataModal from "../components/LogMetadataModal";
+import ExportLogsModal from "../components/ExportLogsModal";
 import Pagination from "../../../components/Pagination";
 import { useDelayedLoading } from "../../../hooks/useDelayedLoading";
 import MetricsCard from "../../../components/MetricsCard";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
 import { createPortal } from "react-dom";
-import { FileCheck, FileSearchCorner } from "lucide-react";
+import { FileCheck, FileSearchCorner, Download } from "lucide-react";
 import { useAuditLogs } from "../hooks/useAuditLogs";
 
 export default function AuditLogs() {
@@ -40,6 +42,10 @@ export default function AuditLogs() {
     handleViewLog,
     closeMetadataModal,
     handleLogTypeChange,
+    isExportModalOpen,
+    setIsExportModalOpen,
+    isExporting,
+    handleExportCSV,
   } = auditLogsState;
 
   const showLoading = useDelayedLoading(loading);
@@ -68,6 +74,15 @@ export default function AuditLogs() {
               <p className="text-muted-foreground">Track transaction and security activity</p>
             </div>
           </div>
+
+          <Button
+            type="button"
+            className="bg-[#7b0d15] text-white hover:bg-[#f8d24e] hover:text-[#7b0d15] dark:bg-[#f8d24e] dark:text-[#7b0d15] dark:hover:bg-[#7b0d15] dark:hover:text-[#f8d24e] h-11 px-6 rounded-lg font-bold text-[15px] transition-colors duration-200 w-full sm:w-auto"
+            onClick={() => setIsExportModalOpen(true)}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
         </div>
 
         <MetricsCard
@@ -126,6 +141,15 @@ export default function AuditLogs() {
         error={metadataError}
         onClose={closeMetadataModal}
         colorMode={colorMode}
+      />
+
+      <ExportLogsModal
+        open={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExportCSV}
+        isExporting={isExporting}
+        canViewSecurityLogs={canViewSecurityLogs}
+        defaultLogType={logType}
       />
     </>
   );
