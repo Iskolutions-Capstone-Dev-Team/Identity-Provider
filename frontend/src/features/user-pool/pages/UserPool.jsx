@@ -260,7 +260,12 @@ export default function UserPool() {
 
       <DeleteConfirmModal
         open={openDelete}
-        message={`Remove ${userToDelete?.email}?`}
+        message={
+          <>
+            <span>Remove</span>
+            <span className="block break-all">{userToDelete?.email}?</span>
+          </>
+        }
         confirmText="Remove"
         colorMode={colorMode}
         onCancel={() => {
