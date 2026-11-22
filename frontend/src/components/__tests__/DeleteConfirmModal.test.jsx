@@ -17,6 +17,22 @@ describe('DeleteConfirmModal Component', () => {
     expect(screen.getByText('Delete this user?')).toBeInTheDocument();
   });
 
+  it('renders JSX message elements with row break', () => {
+    render(
+      <DeleteConfirmModal
+        open={true}
+        message={
+          <>
+            <span>Remove</span>
+            <span className="block break-all">test_long_email_123456789@example.com?</span>
+          </>
+        }
+      />
+    );
+    expect(screen.getByText('Remove')).toBeInTheDocument();
+    expect(screen.getByText('test_long_email_123456789@example.com?')).toBeInTheDocument();
+  });
+
   it('calls onConfirm when Delete is clicked', async () => {
     const handleConfirm = vi.fn();
     render(

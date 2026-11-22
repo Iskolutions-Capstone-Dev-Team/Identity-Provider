@@ -18,7 +18,7 @@ export default function UnarchiveConfirmModal({ open, message = "Restore this us
           <AlertDialogMedia className="bg-[#7b0d15]/10 text-[#7b0d15] dark:bg-[#f8d24e]/10 dark:text-[#f8d24e]">
             <ArchiveRestore className="w-8 h-8" />
           </AlertDialogMedia>
-          <AlertDialogTitle>{displayMessage}</AlertDialogTitle>
+          <AlertDialogTitle className="break-words">{displayMessage}</AlertDialogTitle>
           <AlertDialogDescription>
             This user will be moved back to the user pool.
           </AlertDialogDescription>

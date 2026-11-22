@@ -18,7 +18,7 @@ export default function DeleteConfirmModal({ open, message = "Delete this app cl
           <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-[#f8d24e]/20 dark:text-[#f8d24e]">
             <Trash2Icon />
           </AlertDialogMedia>
-          <AlertDialogTitle>{displayMessage}</AlertDialogTitle>
+          <AlertDialogTitle className="break-words">{displayMessage}</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone.
           </AlertDialogDescription>
