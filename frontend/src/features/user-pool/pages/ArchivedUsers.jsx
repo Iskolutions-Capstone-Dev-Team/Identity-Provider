@@ -196,7 +196,12 @@ export default function ArchivedUsers() {
 
       <DeleteConfirmModal
         open={openHardDelete}
-        message={`Permanently delete ${userToHardDelete?.email}?`}
+        message={
+          <>
+            <span>Permanently delete</span>
+            <span className="block break-all">{userToHardDelete?.email}?</span>
+          </>
+        }
         colorMode={colorMode}
         onCancel={() => {
           setOpenHardDelete(false);
@@ -207,7 +212,12 @@ export default function ArchivedUsers() {
       
       <UnarchiveConfirmModal
         open={openUnarchive}
-        message={`Restore ${userToUnarchive?.email}?`}
+        message={
+          <>
+            <span>Restore</span>
+            <span className="block break-all">{userToUnarchive?.email}?</span>
+          </>
+        }
         colorMode={colorMode}
         onCancel={() => {
           setOpenUnarchive(false);
